@@ -29,9 +29,8 @@ getlength(approximation::GaussLaguerreQuadrature)     = length(getweights(approx
 approximation_name(approximation::GaussLaguerreQuadrature)       = "GaussLaguerre($(getlength(approximation)))"
 approximation_short_name(approximation::GaussLaguerreQuadrature) = "GL$(getlength(approximation))"
 
-approximate(approximation::GaussLaguerreQuadrature, fn::Function) = integral(
-    approximation.rule, fn
-)
+approximate(approximation::GaussLaguerreQuadrature, fn::Function) =
+    integral(approximation.rule, fn)
 
 """
 This function calculates the log of the Gauss-laguerre integral by making use of the log of the integrable function.

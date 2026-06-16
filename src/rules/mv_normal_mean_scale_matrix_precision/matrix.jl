@@ -5,7 +5,7 @@
 ) = begin
     m_out, v_out   = mean_cov(q_out)
     m_mean, v_mean = mean_cov(q_μ)
-    γ_bar         = mean(q_γ)
+    γ_bar          = mean(q_γ)
 
     n_G = ndims(q_μ) + 2
     V_G = inv(γ_bar * (v_out + v_mean + (m_out - m_mean) * (m_out - m_mean)'))

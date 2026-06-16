@@ -3,9 +3,8 @@
     out, (a, aliases = [α, left]), (b, aliases = [β, right])
 ]
 
-BayesBase.default_prod_rule(::Type{<:Uniform}, ::Type{<:Beta}) = PreserveTypeProd(
-    Distribution
-)
+BayesBase.default_prod_rule(::Type{<:Uniform}, ::Type{<:Beta}) =
+    PreserveTypeProd(Distribution)
 
 function Base.prod(::PreserveTypeProd{Distribution}, left::Uniform, right::Beta)
     @assert Distributions.minimum(left) === zero(eltype(left)) &&

@@ -58,9 +58,10 @@ BayesBase.cov(dist::ExponentialLinearQuadratic)             = var(dist)
 BayesBase.invcov(dist::ExponentialLinearQuadratic)       = mean_invcov(dist)[2]
 BayesBase.weightedmean(dist::ExponentialLinearQuadratic) = weightedmean_invcov(dist)[1]
 
-BayesBase.default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:ExponentialLinearQuadratic}) = PreserveTypeProd(
-    NormalMeanVariance
-)
+BayesBase.default_prod_rule(
+    ::Type{<:UnivariateNormalDistributionsFamily},
+    ::Type{<:ExponentialLinearQuadratic},
+) = PreserveTypeProd(NormalMeanVariance)
 
 function prod(
     ::PreserveTypeProd{NormalMeanVariance},
@@ -100,8 +101,8 @@ default_meta(::Type{GCV}) = DefaultGCVNodeMetadata
 ) = begin
     y_x_mean, y_x_cov = mean_cov(q_y_x)
     z_mean, z_var     = mean_var(q_z)
-    κ_mean, κ_var   = mean_var(q_κ)
-    ω_mean, ω_var   = mean_var(q_ω)
+    κ_mean, κ_var     = mean_var(q_κ)
+    ω_mean, ω_var     = mean_var(q_ω)
 
     ksi = (κ_mean^2) * z_var + κ_var * ((z_mean^2) + z_var)
     psi = @inbounds (y_x_mean[2] - y_x_mean[1])^2 +

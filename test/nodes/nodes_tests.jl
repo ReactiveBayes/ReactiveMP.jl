@@ -357,9 +357,9 @@ end
 
         @node DummyNodeForNodeFunctionAsDistribution Stochastic [out, mean, var]
 
-        Distributions.logpdf(node::DummyNodeForNodeFunctionAsDistribution, out) = Distributions.logpdf(
-            Distributions.Normal(node.mean, node.var), out
-        )
+        Distributions.logpdf(
+            node::DummyNodeForNodeFunctionAsDistribution, out
+        ) = Distributions.logpdf(Distributions.Normal(node.mean, node.var), out)
 
         nodefunction =
             (out, mean, var) ->

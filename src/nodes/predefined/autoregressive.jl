@@ -38,9 +38,8 @@ is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 
 @node AR Stochastic [(y, aliases = [out]), x, θ, γ]
 
-default_meta(::Type{AR}) = error(
-    "Autoregressive node requires meta flag explicitly specified"
-)
+default_meta(::Type{AR}) =
+    error("Autoregressive node requires meta flag explicitly specified")
 
 @average_energy AR (
     q_y_x::MultivariateNormalDistributionsFamily,
@@ -168,9 +167,9 @@ Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) =
         ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
     end
 
-Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{R}) where {T, R} = ARPrecisionMatrix(
-    matrix.order, convert(T, matrix.γ)
-)
+Base.convert(
+    ::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{R}
+) where {T, R} = ARPrecisionMatrix(matrix.order, convert(T, matrix.γ))
 Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{T}) where {T} =
     matrix
 
@@ -208,11 +207,9 @@ Base.size(transition::ARTransitionMatrix) = (transition.order, transition.order)
 Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) =
     (i === 1 && j === 1) ? transition.inv_γ : zero(eltype(transition))
 
-Base.convert(::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{R}) where {T, R} = ARTransitionMatrix{
-    T
-}(
-    matrix.order, convert(T, matrix.inv_γ)
-)
+Base.convert(
+    ::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{R}
+) where {T, R} = ARTransitionMatrix{T}(matrix.order, convert(T, matrix.inv_γ))
 Base.convert(
     ::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{T}
 ) where {T} = matrix

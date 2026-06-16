@@ -44,12 +44,16 @@ function FlowModel(
 end
 
 # prepare function for setting correct sizes in the layers (without assigning the parameters yet!)
-prepare(dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} = _prepare(
-    dim, layers
-)
-Broadcast.broadcasted(::typeof(prepare), dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} = broadcast(
-    _prepare, Ref(dim), layers
-)
+prepare(
+    dim::Int, layers::T
+) where {
+    T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}
+} = _prepare(dim, layers)
+Broadcast.broadcasted(
+    ::typeof(prepare), dim::Int, layers::T
+) where {
+    T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}
+} = broadcast(_prepare, Ref(dim), layers)
 
 @doc raw"""
 The CompiledFlowModel structure is the most generic type of compiled Flow model, in which the layers are not constrained to be of a specific type. The FlowModel structure contains the input dimension and a tuple of compiled layers. Do not manually create a CompiledFlowModel! Instead create a FlowModel first and compile it with `compile(model::FlowModel)`. This will make sure that all layers/mappings are configured with the proper dimensionality and with randomly sampled parameters. Alternatively, if you would like to pass your own parameters, call `compile(model::FlowModel, params::Vector)`.
@@ -157,14 +161,15 @@ function _forward(
 end
 
 # when calling forward, redirect to _forward
-forward(model::CompiledFlowModel, input::AbstractVector{<:Real}) = _forward(
-    model, input
-)
+forward(model::CompiledFlowModel, input::AbstractVector{<:Real}) =
+    _forward(model, input)
 
 # for broadcasting over forward, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(forward), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _forward, Ref(model), input
-)
+Broadcast.broadcasted(
+    ::typeof(forward),
+    model::CompiledFlowModel,
+    input::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_forward, Ref(model), input)
 
 # inplace forward pass through the Flow model
 function forward!(
@@ -228,14 +233,15 @@ function _backward(
 end
 
 # when calling backward, redirect to _backward
-backward(model::CompiledFlowModel, output::AbstractVector{<:Real}) = _backward(
-    model, output
-)
+backward(model::CompiledFlowModel, output::AbstractVector{<:Real}) =
+    _backward(model, output)
 
 # for broadcasting over backward, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(backward), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _backward, Ref(model), output
-)
+Broadcast.broadcasted(
+    ::typeof(backward),
+    model::CompiledFlowModel,
+    output::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_backward, Ref(model), output)
 
 # inplace backward pass through the Flow model
 function backward!(
@@ -306,14 +312,15 @@ function _forward_jacobian(
 end
 
 # when calling forward_jacobian, redirect to _forward_jacobian
-forward_jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) = _forward_jacobian(
-    model, input
-)
+forward_jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) =
+    _forward_jacobian(model, input)
 
 # for broadcasting over forward_jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(forward_jacobian), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _jacobian, Ref(model), input
-)
+Broadcast.broadcasted(
+    ::typeof(forward_jacobian),
+    model::CompiledFlowModel,
+    input::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_jacobian, Ref(model), input)
 
 # inplace forward_jacobian of the Flow model
 function forward_jacobian!(
@@ -438,14 +445,16 @@ function _backward_inv_jacobian(
 end
 
 # when calling backward inverse jacobian, redirect to _backward_inv_jacobian
-backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) = _backward_inv_jacobian(
-    model, output
-)
+backward_inv_jacobian(
+    model::CompiledFlowModel, output::AbstractVector{<:Real}
+) = _backward_inv_jacobian(model, output)
 
 # for broadcasting over backward inverse jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _backward_inv_jacobian, Ref(model), output
-)
+Broadcast.broadcasted(
+    ::typeof(backward_inv_jacobian),
+    model::CompiledFlowModel,
+    output::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_backward_inv_jacobian, Ref(model), output)
 
 # inplace inverse backward jacobian of the Flow model
 function backward_inv_jacobian!(
@@ -547,24 +556,24 @@ backward_inv_jacobian!(
 ) = return nothing
 
 # specify jacobian and inv_jacobian functions based on joint functions
-_jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) = forward_jacobian(
-    model, input
-)[2]
-jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) = _jacobian(
-    model, input
-)
-Broadcast.broadcasted(::typeof(jacobian), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _jacobian, Ref(model), input
-)
-_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) = backward_inv_jacobian(
-    model, output
-)[2]
-inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) = _inv_jacobian(
-    model, output
-)
-Broadcast.broadcasted(::typeof(inv_jacobian), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _inv_jacobian, Ref(model), output
-)
+_jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) =
+    forward_jacobian(model, input)[2]
+jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) =
+    _jacobian(model, input)
+Broadcast.broadcasted(
+    ::typeof(jacobian),
+    model::CompiledFlowModel,
+    input::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_jacobian, Ref(model), input)
+_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) =
+    backward_inv_jacobian(model, output)[2]
+inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) =
+    _inv_jacobian(model, output)
+Broadcast.broadcasted(
+    ::typeof(inv_jacobian),
+    model::CompiledFlowModel,
+    output::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_inv_jacobian, Ref(model), output)
 function jacobian!(
     J::AbstractMatrix{T1}, model::CompiledFlowModel, input::AbstractVector{T2}
 ) where {T1 <: Real, T2 <: Real}

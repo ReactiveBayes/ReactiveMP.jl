@@ -11,7 +11,7 @@ import StatsFuns: log2π
 
     m_mean, v_mean = mean_cov(q_μ)
     m_out, v_out   = mean_cov(q_out)
-    m_Λ           = mean(q_Λ)
+    m_Λ            = mean(q_Λ)
 
     result = zero(promote_samplefloattype(q_out, q_μ, q_Λ))
     result += dim * log2π
@@ -40,7 +40,7 @@ end
 
         m_mean, v_mean = mean_cov(q_μ)
         m_out, v_out   = mean_cov(q_out)
-        df_Λ, S_Λ    = params(q_Λ)  # prevent allocation of mean matrix
+        df_Λ, S_Λ      = params(q_Λ)  # prevent allocation of mean matrix
 
         T = promote_type(
             samplefloattype(q_out),

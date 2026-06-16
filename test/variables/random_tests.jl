@@ -75,14 +75,15 @@ end
             messages = map(msg, rand(d))
 
             marginal_expected = mgl(sum(getdata.(messages)))
-            marginal_result =
-                check_stream_updated_once(get_stream_of_marginals(var)) do
-                    foreach(
-                        zip(new_stream_of_inbound_messages, messages)
-                    ) do (new_stream_of_inbound_messages, message)
-                        next!(new_stream_of_inbound_messages, message)
-                    end
+            marginal_result = check_stream_updated_once(
+                get_stream_of_marginals(var)
+            ) do
+                foreach(
+                    zip(new_stream_of_inbound_messages, messages)
+                ) do (new_stream_of_inbound_messages, message)
+                    next!(new_stream_of_inbound_messages, message)
                 end
+            end
 
             # We check the `getdata` here approximatelly because the `marginal_prod_fn` can rearrange
             # the messages under the hood that introduces minor numerical differences
@@ -212,14 +213,15 @@ end
 
         messages = [msg(1.0), msg(2.0), msg(3.0)]
 
-        marginal_result =
-            check_stream_updated_once(get_stream_of_marginals(var)) do
-                foreach(
-                    zip(new_streams_of_inbounds_messages, messages)
-                ) do (new_stream_of_inbounds_messages, message)
-                    next!(new_stream_of_inbounds_messages, message)
-                end
+        marginal_result = check_stream_updated_once(
+            get_stream_of_marginals(var)
+        ) do
+            foreach(
+                zip(new_streams_of_inbounds_messages, messages)
+            ) do (new_stream_of_inbounds_messages, message)
+                next!(new_stream_of_inbounds_messages, message)
             end
+        end
 
         # sum(1.0 + 2.0 + 3.0) = 6.0
         @test getdata(marginal_result) ≈ 6.0
@@ -266,14 +268,15 @@ end
 
         messages = [msg(10.0), msg(20.0)]
 
-        marginal_result =
-            check_stream_updated_once(get_stream_of_marginals(var)) do
-                foreach(
-                    zip(new_streams_of_inbounds_messages, messages)
-                ) do (new_stream_of_inbound_messages, message)
-                    next!(new_stream_of_inbound_messages, message)
-                end
+        marginal_result = check_stream_updated_once(
+            get_stream_of_marginals(var)
+        ) do
+            foreach(
+                zip(new_streams_of_inbounds_messages, messages)
+            ) do (new_stream_of_inbound_messages, message)
+                next!(new_stream_of_inbound_messages, message)
             end
+        end
 
         # sum(10.0 + 20.0) = 30.0
         @test getdata(marginal_result) ≈ 30.0
