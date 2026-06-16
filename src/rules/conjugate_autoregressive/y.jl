@@ -6,12 +6,16 @@
     m_x::NormalDistributionsFamily, q_w::MvNormalGamma, meta::ARMeta
 ) = begin
     q_θ, q_γ = conjugatear_effective_marginals(q_w)
-    return @call_rule AR(:y, Marginalisation) (m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta)
+    return @call_rule AR(:y, Marginalisation) (
+        m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta
+    )
 end
 
 @rule ConjugateAR(:y, Marginalisation) (
     q_x::Any, q_w::MvNormalGamma, meta::ARMeta
 ) = begin
     q_θ, q_γ = conjugatear_effective_marginals(q_w)
-    return @call_rule AR(:y, Marginalisation) (q_x = q_x, q_θ = q_θ, q_γ = q_γ, meta = meta)
+    return @call_rule AR(:y, Marginalisation) (
+        q_x = q_x, q_θ = q_θ, q_γ = q_γ, meta = meta
+    )
 end

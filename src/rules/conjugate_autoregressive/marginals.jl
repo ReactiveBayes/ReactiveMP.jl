@@ -60,5 +60,7 @@ end
     meta::ARMeta,
 ) = begin
     q_θ, q_γ = conjugatear_effective_marginals(q_w)
-    return @call_marginalrule AR(:y_x) (m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta)
+    return @call_marginalrule AR(:y_x) (
+        m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta
+    )
 end
