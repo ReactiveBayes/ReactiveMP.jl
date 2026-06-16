@@ -16,9 +16,7 @@ import ExponentialFamily: InverseWishartDistributionsFamily
 end
 
 @rule MatrixNormal(:M, Marginalisation) (
-    m_out::PointMass,
-    m_U::InverseWishartDistributionsFamily,
-    m_V::PointMass,
+    m_out::PointMass, m_U::InverseWishartDistributionsFamily, m_V::PointMass
 ) = begin
     X = mean(m_out)
     ν_U, Ψ_U = params(m_U)
@@ -28,9 +26,7 @@ end
 end
 
 @rule MatrixNormal(:M, Marginalisation) (
-    m_out::PointMass,
-    m_U::PointMass,
-    m_V::InverseWishartDistributionsFamily,
+    m_out::PointMass, m_U::PointMass, m_V::InverseWishartDistributionsFamily
 ) = begin
     X = mean(m_out)
     U = mean(m_U)
@@ -43,8 +39,8 @@ end
 # proportional to MatrixNormal(E[out], (E[U⁻¹])⁻¹, (E[V⁻¹])⁻¹).
 @rule MatrixNormal(:M, Marginalisation) (
     q_out::MatrixNormal,
-    q_U::Union{InverseWishartDistributionsFamily,PointMass},
-    q_V::Union{InverseWishartDistributionsFamily,PointMass},
+    q_U::Union{InverseWishartDistributionsFamily, PointMass},
+    q_V::Union{InverseWishartDistributionsFamily, PointMass},
 ) = begin
     X = mean(q_out)
     U = cholinv(mean(cholinv, q_U))

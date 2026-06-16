@@ -52,60 +52,52 @@
         @test_rules [
             check_type_promotion = true,
             atol = [Float32 => 1e-3, Float64 => 1e-5, BigFloat => 1e-8],
-        ] MatrixNormal(
-            :U, Marginalisation
-        ) [
-            (
-                input = (
-                    q_out = PointMass([1.0 2.0; 3.0 4.0; 5.0 6.0]),
-                    q_M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]),
-                    q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0]),
-                ),
-                output = InverseWishartFast(
-                    -2.0,
-                    let X = [1.0 2.0; 3.0 4.0; 5.0 6.0],
-                        M = [0.5 1.0; 2.0 3.0; 4.0 5.0],
-                        q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0])
-
-                        D = X - M
-                        D * mean(cholinv, q_V) * D'
-                    end,
-                ),
+        ] MatrixNormal(:U, Marginalisation) [(
+            input = (
+                q_out = PointMass([1.0 2.0; 3.0 4.0; 5.0 6.0]),
+                q_M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]),
+                q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0]),
             ),
-        ]
+            output = InverseWishartFast(
+                -2.0,
+                let X = [1.0 2.0; 3.0 4.0; 5.0 6.0],
+                    M = [0.5 1.0; 2.0 3.0; 4.0 5.0],
+                    q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0])
+
+                    D = X - M
+                    D * mean(cholinv, q_V) * D'
+                end,
+            ),
+        ),]
     end
 
     @testset "Mean-field VMP: (q_out::MatrixNormal, q_M::PointMass, q_V::InverseWishart)" begin
         @test_rules [
             check_type_promotion = true,
             atol = [Float32 => 1e-3, Float64 => 1e-5, BigFloat => 1e-8],
-        ] MatrixNormal(
-            :U, Marginalisation
-        ) [
-            (
-                input = (
-                    q_out = MatrixNormal(
-                        [1.0 2.0; 3.0 4.0; 5.0 6.0],
-                        [0.5 0.0 0.0; 0.0 0.5 0.0; 0.0 0.0 0.5],
-                        [1.0 0.0; 0.0 0.5],
-                    ),
-                    q_M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]),
-                    q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0]),
+        ] MatrixNormal(:U, Marginalisation) [(
+            input = (
+                q_out = MatrixNormal(
+                    [1.0 2.0; 3.0 4.0; 5.0 6.0],
+                    [0.5 0.0 0.0; 0.0 0.5 0.0; 0.0 0.0 0.5],
+                    [1.0 0.0; 0.0 0.5],
                 ),
-                output = InverseWishartFast(
-                    -2.0,
-                    let X = [1.0 2.0; 3.0 4.0; 5.0 6.0],
-                        M = [0.5 1.0; 2.0 3.0; 4.0 5.0],
-                        U_out = [0.5 0.0 0.0; 0.0 0.5 0.0; 0.0 0.0 0.5],
-                        V_out = [1.0 0.0; 0.0 0.5],
-                        q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0])
-
-                        D = X - M
-                        invV = mean(cholinv, q_V)
-                        D * invV * D' + tr(invV * V_out) * U_out
-                    end,
-                ),
+                q_M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]),
+                q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0]),
             ),
-        ]
+            output = InverseWishartFast(
+                -2.0,
+                let X = [1.0 2.0; 3.0 4.0; 5.0 6.0],
+                    M = [0.5 1.0; 2.0 3.0; 4.0 5.0],
+                    U_out = [0.5 0.0 0.0; 0.0 0.5 0.0; 0.0 0.0 0.5],
+                    V_out = [1.0 0.0; 0.0 0.5],
+                    q_V = InverseWishart(5.0, [2.0 0.0; 0.0 2.0])
+
+                    D = X - M
+                    invV = mean(cholinv, q_V)
+                    D * invV * D' + tr(invV * V_out) * U_out
+                end,
+            ),
+        ),]
     end
 end

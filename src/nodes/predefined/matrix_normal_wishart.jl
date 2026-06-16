@@ -4,7 +4,11 @@ import SpecialFunctions: loggamma, digamma
 import StatsFuns: log2π, logπ
 
 @node MatrixNormalWishart Stochastic [
-    out, (M, aliases = [mean]), (U, aliases = [rowcov]), (V, aliases = [scale]), (ν, aliases = [dof])
+    out,
+    (M, aliases = [mean]),
+    (U, aliases = [rowcov]),
+    (V, aliases = [scale]),
+    (ν, aliases = [dof]),
 ]
 
 # Average energy (conjugate-prior node) for `out = (X, Y) ~ MatrixNormalWishart(M, U, V, ν)`,
@@ -35,20 +39,23 @@ import StatsFuns: log2π, logπ
     invV = cholinv(V)
 
     # E[log|Y|] for Y ~ Wishart(νq, Vq)
-    L = p * log(2) + logdet(Vq) + mapreduce(i -> digamma((νq + 1 - i) / 2), +, 1:p)
-    
+    L =
+        p * log(2) +
+        logdet(Vq) +
+        mapreduce(i -> digamma((νq + 1 - i) / 2), +, 1:p)
+
     # log Γ_p(ν/2)
-    logΓp = (p * (p - 1) / 4) * logπ + mapreduce(i -> loggamma((ν + 1 - i) / 2), +, 1:p)
+    logΓp =
+        (p * (p - 1) / 4) * logπ +
+        mapreduce(i -> loggamma((ν + 1 - i) / 2), +, 1:p)
 
     D = Mq - M
     quad = mul_trace(invU, D * (νq * Vq) * D') + p * mul_trace(invU, Uq)
     trVY = νq * mul_trace(invV, Vq)
 
     return (n * p / 2) * log2π +
-        (p / 2) * logdet(U) +
-        (ν * p / 2) * log(2) +
-        (ν / 2) * logdet(V) +
-        logΓp -
-        ((n + ν - p - 1) / 2) * L +
-        (quad + trVY) / 2
+           (p / 2) * logdet(U) +
+           (ν * p / 2) * log(2) +
+           (ν / 2) * logdet(V) +
+           logΓp - ((n + ν - p - 1) / 2) * L + (quad + trVY) / 2
 end

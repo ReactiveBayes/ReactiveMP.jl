@@ -96,8 +96,7 @@
                 input = (
                     m_out = PointMass(zeros(3, 2)),
                     m_U = InverseWishart(
-                        7.0,
-                        [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0],
+                        7.0, [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0]
                     ),
                     m_V = PointMass([1.0 0.5; 0.5 2.0]),
                 ),
@@ -167,13 +166,10 @@
             (
                 input = (
                     q_out = MatrixNormal(
-                        ones(3, 2),
-                        Matrix(1.0 * I, 3, 3),
-                        Matrix(1.0 * I, 2, 2),
+                        ones(3, 2), Matrix(1.0 * I, 3, 3), Matrix(1.0 * I, 2, 2)
                     ),
                     q_U = InverseWishart(
-                        7.0,
-                        [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0],
+                        7.0, [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0]
                     ),
                     q_V = InverseWishart(5.0, [1.0 0.5; 0.5 2.0]),
                 ),

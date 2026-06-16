@@ -18,8 +18,8 @@ end
 #   Ψ = D B Dᵀ + tr(B V_out) U_out + tr(B V_M) U_M
 # (the trailing terms vanish when `out`/`M` are point masses).
 @rule MatrixNormal(:U, Marginalisation) (
-    q_out::Union{PointMass,MatrixNormal},
-    q_M::Union{PointMass,MatrixNormal},
+    q_out::Union{PointMass, MatrixNormal},
+    q_M::Union{PointMass, MatrixNormal},
     q_V::Any,
 ) = begin
     D = mean(q_out) - mean(q_M)

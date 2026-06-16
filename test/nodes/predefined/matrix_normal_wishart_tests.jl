@@ -1,6 +1,7 @@
 
 @testitem "MatrixNormalWishartNode" begin
-    using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
+    using ReactiveMP,
+        Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
     using FastCholesky, StableRNGs
 
     import ReactiveMP: alias_interface
@@ -9,7 +10,8 @@
         @test ReactiveMP.is_predefined_node(MatrixNormalWishart) isa
             ReactiveMP.PredefinedNodeFunctionalForm
         @test ReactiveMP.sdtype(MatrixNormalWishart) === ReactiveMP.Stochastic()
-        @test ReactiveMP.interfaces(MatrixNormalWishart) === Val((:out, :M, :U, :V, :ν))
+        @test ReactiveMP.interfaces(MatrixNormalWishart) ===
+            Val((:out, :M, :U, :V, :ν))
     end
 
     @testset "Interface aliases" begin
@@ -54,7 +56,9 @@
         acc = 0.0
         for _ in 1:N
             X, Y = rand(rng, q_out)
-            acc -= logpdf(MatrixNormal(M, U, cholinv(Y)), X) + logpdf(Wishart(ν, V), Y)
+            acc -=
+                logpdf(MatrixNormal(M, U, cholinv(Y)), X) +
+                logpdf(Wishart(ν, V), Y)
         end
         mc = acc / N
 

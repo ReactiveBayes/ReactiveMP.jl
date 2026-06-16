@@ -1,6 +1,7 @@
 
 @testitem "MatrixNormalNode" begin
-    using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
+    using ReactiveMP,
+        Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
     using FastCholesky
 
     import ReactiveMP: alias_interface
@@ -70,7 +71,12 @@
             D = X - M
             Ψ = D * invV * D' + tr(invV * V_out) * U_out
             expected =
-                (p * logdet(U) + n * logdet(V) + n * p * log(2π) + tr(invU * Ψ)) / 2
+                (
+                    p * logdet(U) +
+                    n * logdet(V) +
+                    n * p * log(2π) +
+                    tr(invU * Ψ)
+                ) / 2
             @test score_ae(marginals) ≈ expected
         end
 

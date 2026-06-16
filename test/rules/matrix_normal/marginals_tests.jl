@@ -5,7 +5,9 @@
     import ReactiveMP: @test_marginalrules
 
     @testset ":out_M_U_V (m_out::PointMass, m_M::PointMass, m_U::PointMass, m_V::PointMass)" begin
-        @test_marginalrules [check_type_promotion = true] MatrixNormal(:out_M_U_V) [
+        @test_marginalrules [check_type_promotion = true] MatrixNormal(
+            :out_M_U_V
+        ) [
             (
                 input = (
                     m_out = PointMass([1.0 2.0; 3.0 4.0]),
