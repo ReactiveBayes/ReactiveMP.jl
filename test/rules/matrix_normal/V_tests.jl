@@ -108,4 +108,40 @@
             ),
         ),]
     end
+
+    @testset "Mean-field VMP: (q_out::PointMass, q_M::MatrixNormal, q_U::InverseWishart)" begin
+        # exercises the `q_M isa MatrixNormal` branch: the second-moment term
+        # `tr(E[U⁻¹] * U_M) * V_M` is added to Ψ when M is uncertain.
+        @test_rules [
+            check_type_promotion = true,
+            atol = [Float32 => 1e-3, Float64 => 1e-5, BigFloat => 1e-8],
+        ] MatrixNormal(:V, Marginalisation) [(
+            input = (
+                q_out = PointMass([1.0 2.0; 3.0 4.0; 5.0 6.0]),
+                q_M = MatrixNormal(
+                    [0.5 1.0; 2.0 3.0; 4.0 5.0],
+                    [0.5 0.0 0.0; 0.0 0.5 0.0; 0.0 0.0 0.5],
+                    [1.0 0.0; 0.0 0.5],
+                ),
+                q_U = InverseWishart(
+                    6.0, [2.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 2.0]
+                ),
+            ),
+            output = InverseWishartFast(
+                0.0,
+                let X = [1.0 2.0; 3.0 4.0; 5.0 6.0],
+                    M = [0.5 1.0; 2.0 3.0; 4.0 5.0],
+                    U_M = [0.5 0.0 0.0; 0.0 0.5 0.0; 0.0 0.0 0.5],
+                    V_M = [1.0 0.0; 0.0 0.5],
+                    q_U = InverseWishart(
+                        6.0, [2.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 2.0]
+                    )
+
+                    D = X - M
+                    invU = mean(cholinv, q_U)
+                    D' * invU * D + tr(invU * U_M) * V_M
+                end,
+            ),
+        ),]
+    end
 end
