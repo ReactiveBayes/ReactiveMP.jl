@@ -26,9 +26,8 @@ struct ConjugateAR end
 
 @node ConjugateAR Stochastic [(y, aliases = [out]), x, w]
 
-default_meta(::Type{ConjugateAR}) = error(
-    "ConjugateAR node requires a meta (ARMeta) flag explicitly specified"
-)
+default_meta(::Type{ConjugateAR}) =
+    error("ConjugateAR node requires a meta (ARMeta) flag explicitly specified")
 
 """
     conjugatear_effective_marginals(q_w::MvNormalGamma)
