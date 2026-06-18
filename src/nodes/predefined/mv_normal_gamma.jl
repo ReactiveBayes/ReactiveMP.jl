@@ -25,7 +25,7 @@ import StatsFuns: log2π
     Δ      = μ_q - μ0
     E_logγ = digamma(α_q) - log(β_q)
     E_γ    = α_q / β_q
-    E_quad  = tr(Λ0 * cholinv(Λ_q)) + E_γ * dot(Δ, Λ0, Δ)
+    E_quad = tr(Λ0 * cholinv(Λ_q)) + E_γ * dot(Δ, Λ0, Δ)
 
     E_logp =
         α0 * log(β0) + logdet(Λ0) / 2 - loggamma(α0) - (d / 2) * log2π +
