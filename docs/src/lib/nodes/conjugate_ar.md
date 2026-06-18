@@ -20,7 +20,7 @@ Keeping `(θ, γ)` joint makes the parameter update exactly conjugate: under the
 
 ## [Metadata](@id lib-nodes-conjugate-ar-meta)
 
-`ConjugateAR` reuses `ARMeta` for the order and variate form, and — like `AR` — requires it to be passed explicitly:
+`ConjugateAR` reuses [`ARMeta`](@ref) for the order and variate form, and — like `AR` — requires it to be passed explicitly:
 
 ```julia
 y[t] ~ ConjugateAR(x[t], w) where { meta = ARMeta(Multivariate, order, ARsafe()) }
