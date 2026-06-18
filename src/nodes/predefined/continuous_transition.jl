@@ -88,17 +88,14 @@ gettransformation(meta::CTMeta) = meta.f
 # getctoutputdim(meta::CTMeta, J) = div(size(J, 2), size(J, 1)) # returns dy where J ∈ ℝ^{dx × dydx}
 
 getjacobians(ctmeta::CTMeta, a) = process_Fs(gettransformation(ctmeta), a)
-process_Fs(f::Function, a) = [
-    ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 1:size(f(a), 1)
-]
+process_Fs(f::Function, a) =
+    [ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 1:size(f(a), 1)]
 
-default_meta(::Type{CTMeta}) = error(
-    "ContinuousTransition node requires meta flag explicitly specified"
-)
+default_meta(::Type{CTMeta}) =
+    error("ContinuousTransition node requires meta flag explicitly specified")
 
-default_functional_dependencies(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies(
-    a = nothing
-)
+default_functional_dependencies(::Type{<:ContinuousTransition}) =
+    RequireMarginalFunctionalDependencies(a = nothing)
 
 """
     `ctcompanion_matrix` casts a vector `a` into a matrix `A` by means of linearization of the transformation function `f` around the expansion point `a0`.

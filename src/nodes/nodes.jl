@@ -179,16 +179,13 @@ struct FactorNode{F, I, C} <: AbstractFactorNode
     interfaces::I
     localclusters::C
 
-    FactorNode(fform::Type{F}, interfaces::I, localclusters::C) where {F, I, C} = new{
-        Type{F}, I, C
-    }(
-        fform, interfaces, localclusters
-    )
-    FactorNode(fform::F, interfaces::I, localclusters::C) where {F <: Function, I, C} = new{
-        F, I, C
-    }(
-        fform, interfaces, localclusters
-    )
+    FactorNode(
+        fform::Type{F}, interfaces::I, localclusters::C
+    ) where {F, I, C} = new{Type{F}, I, C}(fform, interfaces, localclusters)
+    FactorNode(
+        fform::F, interfaces::I, localclusters::C
+    ) where {F <: Function, I, C} =
+        new{F, I, C}(fform, interfaces, localclusters)
 end
 
 function factornode(fform::F, interfaces::I, factorization) where {F, I}
@@ -302,9 +299,9 @@ getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 
 # Users can override the dependencies if they want to
-collect_functional_dependencies(fform::F, options::FactorNodeActivationOptions) where {F} = collect_functional_dependencies(
-    fform, getdependecies(options)
-)
+collect_functional_dependencies(
+    fform::F, options::FactorNodeActivationOptions
+) where {F} = collect_functional_dependencies(fform, getdependecies(options))
 
 """
     ReactiveMP.activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
@@ -406,20 +403,21 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     end
 
     alias_corrections = Expr(:block)
-    alias_corrections.args =
-        map(enumerate(interfaces)) do (index, (name, aliases))
-            # The `index` and `name` variables are defined further in the `alias_interface` function
-            quote
-                # TODO: (bvdmitri) maybe reserving `in` here is not a good idea, discuss with Wouter
-                if index === $index && (
-                    name === :in ||
-                    name === $(QuoteNode(name)) ||
-                    Base.in(name, ($(map(QuoteNode, aliases)...),))
-                )
-                    return $(QuoteNode(name))
-                end
+    alias_corrections.args = map(
+        enumerate(interfaces)
+    ) do (index, (name, aliases))
+        # The `index` and `name` variables are defined further in the `alias_interface` function
+        quote
+            # TODO: (bvdmitri) maybe reserving `in` here is not a good idea, discuss with Wouter
+            if index === $index && (
+                name === :in ||
+                name === $(QuoteNode(name)) ||
+                Base.in(name, ($(map(QuoteNode, aliases)...),))
+            )
+                return $(QuoteNode(name))
             end
         end
+    end
 
     collect_factorisation_fn = if node_type == :Stochastic
         :(
@@ -429,9 +427,9 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         )
     else
         :(
-            ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = (
-                $(ntuple(identity, length(interfaces))),
-            )
+            ReactiveMP.collect_factorisation(
+                ::$dispatch_type, factorisation::Tuple
+            ) = ($(ntuple(identity, length(interfaces))),)
         )
     end
 
@@ -491,15 +489,14 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
 
     # Define the necessary function types
     result = quote
-        @doc $doc ReactiveMP.is_predefined_node(::$dispatch_type) = ReactiveMP.PredefinedNodeFunctionalForm()
+        @doc $doc ReactiveMP.is_predefined_node(::$dispatch_type) =
+            ReactiveMP.PredefinedNodeFunctionalForm()
 
         ReactiveMP.sdtype(::$dispatch_type) = (ReactiveMP.$node_type)()
-        ReactiveMP.interfaces(::$dispatch_type) = Val(
-            $(Tuple(map(first, interfaces)))
-        )
-        ReactiveMP.inputinterfaces(::$dispatch_type) = Val(
-            $(Tuple(map(first, skipindex(interfaces, 1))))
-        )
+        ReactiveMP.interfaces(::$dispatch_type) =
+            Val($(Tuple(map(first, interfaces))))
+        ReactiveMP.inputinterfaces(::$dispatch_type) =
+            Val($(Tuple(map(first, skipindex(interfaces, 1)))))
         ReactiveMP.nodesymbol_to_nodefform(::Val{$(QuoteNode(node_symbol))}) = $node_symbol
 
         $collect_factorisation_fn

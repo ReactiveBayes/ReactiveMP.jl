@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `MatrixNormal` node with belief-propagation and variational (mean-field) message rules for `:out`, `:M`, `:U`, `:V`, joint marginal rule, and mean-field `@average_energy` ([#610](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/610))
+- `MatrixNormalWishart` conjugate-prior node with its `:out` construction rule and analytic `@average_energy` ([#610](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/610))
+
 ## [6.1.1] - 2026-05-22
 
 ### Changed

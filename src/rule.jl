@@ -280,17 +280,17 @@ Returns either `CallRuleNodeRequired()` or `CallRuleNodeNotRequired()` depending
 `fformtype` requires an access to the corresponding node in order to compute a message update rule.
 Returns `CallRuleNodeNotRequired()` for all known functional forms by default and `CallRuleNodeRequired()` for all unknown functional forms.
 """
-call_rule_is_node_required(fformtype) = call_rule_is_node_required(
-    is_predefined_node(fformtype), fformtype
-)
+call_rule_is_node_required(fformtype) =
+    call_rule_is_node_required(is_predefined_node(fformtype), fformtype)
 
-call_rule_is_node_required(::PredefinedNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
-call_rule_is_node_required(::UndefinedNodeFunctionalForm, fformtype) = CallRuleNodeRequired()
+call_rule_is_node_required(::PredefinedNodeFunctionalForm, fformtype) =
+    CallRuleNodeNotRequired()
+call_rule_is_node_required(::UndefinedNodeFunctionalForm, fformtype) =
+    CallRuleNodeRequired()
 
 # Returns the `node` if it is required for a rule, otherwise returns `nothing`
-node_if_required(fformtype, node) = node_if_required(
-    call_rule_is_node_required(fformtype), node
-)
+node_if_required(fformtype, node) =
+    node_if_required(call_rule_is_node_required(fformtype), node)
 
 node_if_required(::CallRuleNodeRequired, node) = node
 node_if_required(::CallRuleNodeNotRequired, node) = nothing
@@ -479,7 +479,7 @@ macro rule(fform, lambda)
 
     options = map(options) do option
         @capture(option, name_ = value_) || error(
-            "Error in macro. Option specification '$(option)' is incorrect",
+            "Error in macro. Option specification '$(option)' is incorrect"
         )
         return (name, value)
     end
@@ -530,26 +530,24 @@ macro rule(fform, lambda)
     end
 
     output = quote
-        $(
-            rule_function_expression(
-                fuppertype,
-                on_type,
-                vconstraint,
-                m_names,
-                m_types,
-                q_names,
-                q_types,
-                metatype,
-                whereargs,
-            ) do
-                return quote
-                    $(on_index_init)
-                    $(m_init_block...)
-                    $(q_init_block...)
-                    $(body)
-                end
+        $(rule_function_expression(
+            fuppertype,
+            on_type,
+            vconstraint,
+            m_names,
+            m_types,
+            q_names,
+            q_types,
+            metatype,
+            whereargs,
+        ) do
+            return quote
+                $(on_index_init)
+                $(m_init_block...)
+                $(q_init_block...)
+                $(body)
             end
-        )
+        end)
     end
 
     return esc(output)
@@ -804,25 +802,23 @@ macro marginalrule(fform, lambda)
     end
 
     output = quote
-        $(
-            marginalrule_function_expression(
-                fuppertype,
-                on_type,
-                m_names,
-                m_types,
-                q_names,
-                q_types,
-                metatype,
-                whereargs,
-            ) do
-                return quote
-                    $(on_index_init)
-                    $(m_init_block...)
-                    $(q_init_block...)
-                    $(body)
-                end
+        $(marginalrule_function_expression(
+            fuppertype,
+            on_type,
+            m_names,
+            m_types,
+            q_names,
+            q_types,
+            metatype,
+            whereargs,
+        ) do
+            return quote
+                $(on_index_init)
+                $(m_init_block...)
+                $(q_init_block...)
+                $(body)
             end
-        )
+        end)
     end
 
     return esc(output)
@@ -1053,16 +1049,17 @@ function test_rules_generate(
         test_entries,
     )
     type_promotion_block = Expr(:block)
-    type_promotion_block.args =
-        map(Iterators.flatten(type_promotion_tests)) do promoted_test_entry
-            return test_rules_generate_testset(
-                promoted_test_entry,
-                test_fn,
-                call_macro_fn,
-                rule_specification,
-                configuration,
-            )
-        end
+    type_promotion_block.args = map(
+        Iterators.flatten(type_promotion_tests)
+    ) do promoted_test_entry
+        return test_rules_generate_testset(
+            promoted_test_entry,
+            test_fn,
+            call_macro_fn,
+            rule_specification,
+            configuration,
+        )
+    end
 
     output = quote
         let $configuration = ReactiveMP.TestRulesConfiguration()
@@ -1106,9 +1103,8 @@ check_type_promotion!(configuration::TestRulesConfiguration, check::Bool) =
 
 float_tolerance(configuration::TestRulesConfiguration) =
     configuration.float_tolerance
-float_tolerance(configuration::TestRulesConfiguration, ::Type{T}) where {T} = get(
-    () -> DefaultFloatTolerance, float_tolerance(configuration), T
-)
+float_tolerance(configuration::TestRulesConfiguration, ::Type{T}) where {T} =
+    get(() -> DefaultFloatTolerance, float_tolerance(configuration), T)
 
 float_tolerance!(
     configuration::TestRulesConfiguration, ::Type{T}, atol::Number
@@ -1117,9 +1113,10 @@ float_tolerance!(configuration::TestRulesConfiguration, atol::Number) = foreach(
     ((key, _),) -> float_tolerance!(configuration, key, atol),
     float_tolerance(configuration),
 )
-float_tolerance!(configuration::TestRulesConfiguration, atol::AbstractArray) = foreach(
-    ((key, value),) -> float_tolerance!(configuration, key, value), atol
-)
+float_tolerance!(configuration::TestRulesConfiguration, atol::AbstractArray) =
+    foreach(
+        ((key, value),) -> float_tolerance!(configuration, key, value), atol
+    )
 
 extra_float_types(configuration::TestRulesConfiguration) =
     configuration.extra_float_types
@@ -1166,12 +1163,10 @@ Base.:(==)(
     right::TestRuleEntryInputSpecification,
 ) = (left.arguments == right.arguments) && (left.meta == right.meta)
 
-Base.copy(entry::TestRuleEntryInputSpecification) = TestRuleEntryInputSpecification(
-    copy(entry.arguments), entry.meta
-) # no need to copy `meta`
-Base.values(entry::TestRuleEntryInputSpecification) = Base.Generator(
-    (arg) -> arg.second, entry.arguments
-)
+Base.copy(entry::TestRuleEntryInputSpecification) =
+    TestRuleEntryInputSpecification(copy(entry.arguments), entry.meta) # no need to copy `meta`
+Base.values(entry::TestRuleEntryInputSpecification) =
+    Base.Generator((arg) -> arg.second, entry.arguments)
 
 # Convert the `TestRuleEntryInputSpecification` back into the `Expr` form, e.g `(m_x = ..., q_y = ..., meta = ...)`
 function rule_macro_convert_to_expr(test_entry::TestRuleEntryInputSpecification)
@@ -1543,7 +1538,18 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, annotations, __node) = RuleMethodError(
+rule(
+    fform,
+    on,
+    vconstraint,
+    mnames,
+    messages,
+    qnames,
+    marginals,
+    meta,
+    annotations,
+    __node,
+) = RuleMethodError(
     fform,
     on,
     vconstraint,
@@ -1697,11 +1703,12 @@ struct MarginalRuleMethodError
     node
 end
 
-marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) = throw(
-    MarginalRuleMethodError(
-        fform, on, mnames, messages, qnames, marginals, meta, __node
-    ),
-)
+marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) =
+    throw(
+        MarginalRuleMethodError(
+            fform, on, mnames, messages, qnames, marginals, meta, __node
+        ),
+    )
 
 function Base.showerror(io::IO, error::MarginalRuleMethodError)
     print(

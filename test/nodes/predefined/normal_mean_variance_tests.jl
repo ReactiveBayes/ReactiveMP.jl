@@ -32,7 +32,7 @@
 
         begin
             q_out = NormalMeanVariance(0.148725, 0.483501)
-            q_μ  = NormalMeanVariance(0.992776, 0.545851)
+            q_μ   = NormalMeanVariance(0.992776, 0.545851)
             q_v   = GammaShapeRate(0.309396, 0.343814)
 
             for N in (

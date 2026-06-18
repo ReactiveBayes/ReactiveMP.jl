@@ -50,9 +50,8 @@ rule execution, or a [`ProductInputArgumentsRecord`](@ref) when it is the result
 of one or more message products. Throws `KeyError` if the annotation has not been
 set.
 """
-get_rule_input_arguments(ann::AnnotationDict) = get_annotation(
-    ann, :rule_input_arguments
-)
+get_rule_input_arguments(ann::AnnotationDict) =
+    get_annotation(ann, :rule_input_arguments)
 
 function pre_rule_annotations!(
     ::InputArgumentsAnnotations,

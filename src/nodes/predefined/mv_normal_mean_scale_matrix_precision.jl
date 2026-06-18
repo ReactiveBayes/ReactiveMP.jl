@@ -15,7 +15,7 @@ import ExponentialFamily: MvNormalMeanScaleMatrixPrecision
 
     m_mean, v_mean = mean_cov(q_μ)
     m_out, v_out   = mean_cov(q_out)
-    m_Λ           = mean(q_γ) * mean(q_G)
+    m_Λ            = mean(q_γ) * mean(q_G)
 
     result = zero(promote_samplefloattype(q_out, q_μ, q_γ, q_G))
     result += dim * log2π

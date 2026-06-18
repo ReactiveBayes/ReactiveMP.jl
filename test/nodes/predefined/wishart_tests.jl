@@ -7,7 +7,7 @@
     @testset "AverageEnergy" begin
         begin
             q_out = Wishart(2.0, [2.0 0.0; 0.0 2.0])
-            q_ν  = PointMass(2.0)
+            q_ν   = PointMass(2.0)
             q_S   = PointMass([2.0 0.0; 0.0 2.0])
 
             marginals = (
@@ -34,7 +34,7 @@
             ν = 4.0
 
             q_out = Wishart(ν, S)
-            q_ν  = PointMass(ν)
+            q_ν   = PointMass(ν)
             q_S   = PointMass(S)
 
             marginals = (

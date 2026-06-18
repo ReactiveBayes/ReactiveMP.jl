@@ -1,7 +1,5 @@
 @testitem "cvi:prod - fisher information" begin
-    using ReactiveMP,
-        BayesBase,
-        ExponentialFamily
+    using ReactiveMP, BayesBase, ExponentialFamily
     import SpecialFunctions: polygamma
 
     function gammafisher(dist::GammaShapeRate)
@@ -24,10 +22,7 @@
 end
 
 @testitem "cvi:prod - noop optimiser" begin
-    using ReactiveMP,
-        BayesBase,
-        Distributions,
-        ExponentialFamily
+    using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     struct NoopOptimiser end
 
@@ -75,10 +70,7 @@ end
 end
 
 @testitem "cvi:prod - counting optimiser" begin
-    using ReactiveMP,
-        BayesBase,
-        Distributions,
-        ExponentialFamily
+    using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     mutable struct CountingOptimizer
         num_its::Int
@@ -127,10 +119,7 @@ end
 end
 
 @testitem "cvi:prod - lambda based counting optimiser" begin
-    using ReactiveMP,
-        BayesBase,
-        Distributions,
-        ExponentialFamily
+    using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     @testset "Checking that the procedure runs for different parameters (with a lambda based counting-optimiser)" begin
         for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)),
@@ -264,11 +253,7 @@ end
 end
 
 @testitem "cvi:prod - Normal x Normal" begin
-    using ReactiveMP,
-        StableRNGs,
-        BayesBase,
-        ExponentialFamily,
-        Optimisers
+    using ReactiveMP, StableRNGs, BayesBase, ExponentialFamily, Optimisers
 
     @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
         seed = 123
@@ -296,11 +281,7 @@ end
 
 @testitem "cvi:prod - MvNormal x MvNormal" begin
     using ReactiveMP,
-        StableRNGs,
-        BayesBase,
-        ExponentialFamily,
-        Optimisers,
-        LinearAlgebra
+        StableRNGs, BayesBase, ExponentialFamily, Optimisers, LinearAlgebra
 
     @testset "MvNormal x MvNormal (Log-likelihood preconditioner prod)" begin
         seed = 123

@@ -26,9 +26,8 @@ struct BinomialPolyaMeta
 end
 
 # Constructor with default RNG
-BinomialPolyaMeta(n_samples::Int = 1) = BinomialPolyaMeta(
-    n_samples, Random.default_rng()
-)
+BinomialPolyaMeta(n_samples::Int = 1) =
+    BinomialPolyaMeta(n_samples, Random.default_rng())
 
 getn_samples(meta::BinomialPolyaMeta) = meta.n_samples
 default_meta(::Type{BinomialPolya}) = nothing
