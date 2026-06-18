@@ -111,9 +111,8 @@ getflow(layer::AdditiveCouplingLayerEmpty)         = layer.f
 getpartitiondim(layer::AdditiveCouplingLayerEmpty) = layer.partition_dim
 
 # custom Base function for the AdditiveCouplingLayer structure
-eltype(layer::AdditiveCouplingLayer{T}) where {T} = promote_type(
-    map(eltype, getf(layer))...
-)
+eltype(layer::AdditiveCouplingLayer{T}) where {T} =
+    promote_type(map(eltype, getf(layer))...)
 
 # forward pass through the additive coupling layer
 function _forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real})
@@ -127,12 +126,13 @@ function _forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real})
     # return result
     return result
 end
-forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) = _forward(
-    layer, input
-)
-Broadcast.broadcasted(::typeof(forward), layer::AdditiveCouplingLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _forward, Ref(layer), input
-)
+forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) =
+    _forward(layer, input)
+Broadcast.broadcasted(
+    ::typeof(forward),
+    layer::AdditiveCouplingLayer,
+    input::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_forward, Ref(layer), input)
 
 # inplace forward pass through the additive coupling layer
 function forward!(
@@ -181,12 +181,13 @@ function _backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real})
     # return result
     return result
 end
-backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) = _backward(
-    layer, output
-)
-Broadcast.broadcasted(::typeof(backward), layer::AdditiveCouplingLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _backward, Ref(layer), output
-)
+backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) =
+    _backward(layer, output)
+Broadcast.broadcasted(
+    ::typeof(backward),
+    layer::AdditiveCouplingLayer,
+    output::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_backward, Ref(layer), output)
 
 # inplace backward pass through the additive coupling layer
 function backward!(
@@ -241,12 +242,13 @@ function _jacobian(
     # return result
     return LowerTriangular(result)
 end
-jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) = _jacobian(
-    layer, input
-)
-Broadcast.broadcasted(::typeof(jacobian), layer::AdditiveCouplingLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _jacobian, Ref(layer), input
-)
+jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) =
+    _jacobian(layer, input)
+Broadcast.broadcasted(
+    ::typeof(jacobian),
+    layer::AdditiveCouplingLayer,
+    input::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_jacobian, Ref(layer), input)
 
 # inplace jacobian through the additive coupling layer
 function jacobian!(
@@ -293,12 +295,13 @@ function _inv_jacobian(
     # return result
     return LowerTriangular(result)
 end
-inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) = _inv_jacobian(
-    layer, output
-)
-Broadcast.broadcasted(::typeof(inv_jacobian), layer::AdditiveCouplingLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _inv_jacobian, Ref(layer), output
-)
+inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) =
+    _inv_jacobian(layer, output)
+Broadcast.broadcasted(
+    ::typeof(inv_jacobian),
+    layer::AdditiveCouplingLayer,
+    output::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_inv_jacobian, Ref(layer), output)
 
 # inplace inv_jacobian through the additive coupling layer
 function inv_jacobian!(

@@ -148,12 +148,10 @@ function statistic_estimation(
     return (m_tilde, V_tilde, C_tilde)
 end
 
-__unscented_parameters_zero_covariance(m::T) where {T <: Real} = (
-    m, zero(T), nothing
-)
-__unscented_parameters_zero_covariance(m::AbstractVector{T}) where {T <: Real} = (
-    m, zeros(T, length(m), length(m)), nothing
-)
+__unscented_parameters_zero_covariance(m::T) where {T <: Real} =
+    (m, zero(T), nothing)
+__unscented_parameters_zero_covariance(m::AbstractVector{T}) where {T <: Real} =
+    (m, zeros(T, length(m), length(m)), nothing)
 
 # Single univariate variable
 function unscented_statistics(

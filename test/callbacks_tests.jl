@@ -383,9 +383,8 @@ end
     end
 
     ReactiveMP.handle_event(::MyCustomHandler, ::Event) = nothing
-    ReactiveMP.handle_event(handler::MyCustomHandler, ::CustomEvent{:event2}) = push!(
-        handler.events, :event2
-    )
+    ReactiveMP.handle_event(handler::MyCustomHandler, ::CustomEvent{:event2}) =
+        push!(handler.events, :event2)
 
     custom_handler = MyCustomHandler([])
 
@@ -482,18 +481,19 @@ end
 
     # Build a trivial MessageMapping that exercises the new show method.
     # `F = Int` is a stand-in functional form: `show(::Type{Int})` yields "Int64".
-    mapping(; vtag = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing) = MessageMapping(
-        Int,
-        vtag,
-        nothing,
-        msgs,
-        marginals,
-        nothing,
-        nothing,
-        nothing,
-        nothing,
-        nothing,
-    )
+    mapping(; vtag = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing) =
+        MessageMapping(
+            Int,
+            vtag,
+            nothing,
+            msgs,
+            marginals,
+            nothing,
+            nothing,
+            nothing,
+            nothing,
+            nothing,
+        )
 
     msg(d) = Message(d, false, false, AnnotationDict())
 

@@ -26,9 +26,8 @@ struct NodeInterface
     end
 end
 
-Base.show(io::IO, interface::NodeInterface) = print(
-    io, "Interface(", name(interface), ")"
-)
+Base.show(io::IO, interface::NodeInterface) =
+    print(io, "Interface(", name(interface), ")")
 
 israndom(interface::NodeInterface) = israndom(interface.variable)
 isdata(interface::NodeInterface)   = isdata(interface.variable)
@@ -63,18 +62,16 @@ get_stream_of_outbound_messages(interface::NodeInterface) = interface.m_out
 Connects `stream` to the outbound message observable of `interface`.
 See also [`ReactiveMP.get_stream_of_outbound_messages`](@ref), [`ReactiveMP.get_stream_of_inbound_messages`](@ref).
 """
-set_stream_of_outbound_messages!(interface::NodeInterface, stream) = connect!(
-    get_stream_of_outbound_messages(interface), stream
-)
+set_stream_of_outbound_messages!(interface::NodeInterface, stream) =
+    connect!(get_stream_of_outbound_messages(interface), stream)
 
 """
     get_stream_of_inbound_messages(interface)
 
 Returns an inbound messages stream from the given interface.
 """
-get_stream_of_inbound_messages(interface::NodeInterface) = get_stream_of_outbound_messages(
-    interface.variable, interface.message_index
-)
+get_stream_of_inbound_messages(interface::NodeInterface) =
+    get_stream_of_outbound_messages(interface.variable, interface.message_index)
 
 """
     getvariable(interface)
@@ -104,15 +101,12 @@ index(interface::IndexedNodeInterface) = interface.index
 name(interface::IndexedNodeInterface)  = name(interface.interface)
 tag(interface::IndexedNodeInterface)   = (tag(interface.interface), index(interface))
 
-get_stream_of_outbound_messages(interface::IndexedNodeInterface) = get_stream_of_outbound_messages(
-    interface.interface
-)
-set_stream_of_outbound_messages!(interface::IndexedNodeInterface, stream) = set_stream_of_outbound_messages!(
-    interface.interface, stream
-)
-get_stream_of_inbound_messages(interface::IndexedNodeInterface) = get_stream_of_inbound_messages(
-    interface.interface
-)
+get_stream_of_outbound_messages(interface::IndexedNodeInterface) =
+    get_stream_of_outbound_messages(interface.interface)
+set_stream_of_outbound_messages!(interface::IndexedNodeInterface, stream) =
+    set_stream_of_outbound_messages!(interface.interface, stream)
+get_stream_of_inbound_messages(interface::IndexedNodeInterface) =
+    get_stream_of_inbound_messages(interface.interface)
 getvariable(interface::IndexedNodeInterface) = getvariable(interface.interface)
 
 israndom(interface::IndexedNodeInterface) = israndom(interface.interface)
@@ -127,9 +121,8 @@ struct ManyOf{T}
     collection::T
 end
 
-Base.show(io::IO, manyof::ManyOf) = print(
-    io, "ManyOf(", join(manyof.collection, ",", ""), ")"
-)
+Base.show(io::IO, manyof::ManyOf) =
+    print(io, "ManyOf(", join(manyof.collection, ",", ""), ")")
 
 Rocket.getrecent(many::ManyOf) = ManyOf(getrecent(many.collection))
 
@@ -173,9 +166,8 @@ struct ManyOfObservable{S} <: Subscribable{ManyOf}
     source::S
 end
 
-Rocket.getrecent(observable::ManyOfObservable) = ManyOf(
-    Rocket.getrecent(observable.source)
-)
+Rocket.getrecent(observable::ManyOfObservable) =
+    ManyOf(Rocket.getrecent(observable.source))
 
 @inline function Rocket.on_subscribe!(observable::ManyOfObservable, actor)
     return subscribe!(observable.source |> map(ManyOf, (d) -> ManyOf(d)), actor)

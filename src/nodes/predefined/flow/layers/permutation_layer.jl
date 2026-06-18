@@ -33,9 +33,8 @@ struct PermutationLayerPlaceholder <: AbstractLayerPlaceholder end
 PermutationLayer() = PermutationLayerPlaceholder() # the function creates a placeholder, of which the dimensionality is set later on.
 
 # prepare placeholder 
-_prepare(dim::Int, layer::PermutationLayerPlaceholder) = (
-    PermutationLayer(dim),
-)
+_prepare(dim::Int, layer::PermutationLayerPlaceholder) =
+    (PermutationLayer(dim),)
 function _prepare(dim::Int, layer::PermutationLayer)
     @assert dim == size(getP(layer), 1) == size(getP(layer), 2) "The size of the passed permutation matrix does not comply with the dimensionality of the input."
     return (layer,)
@@ -69,12 +68,13 @@ function _forward(layer::PermutationLayer, input::AbstractVector{<:Real})
     # return result
     return result
 end
-forward(layer::PermutationLayer, input::AbstractVector{<:Real}) = _forward(
-    layer, input
-)
-Broadcast.broadcasted(::typeof(forward), layer::PermutationLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _forward, Ref(layer), input
-)
+forward(layer::PermutationLayer, input::AbstractVector{<:Real}) =
+    _forward(layer, input)
+Broadcast.broadcasted(
+    ::typeof(forward),
+    layer::PermutationLayer,
+    input::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_forward, Ref(layer), input)
 
 # inplace forward pass through the permutation layer
 function forward!(
@@ -102,12 +102,13 @@ function _backward(layer::PermutationLayer, output::AbstractVector{<:Real})
     # return result
     return result
 end
-backward(layer::PermutationLayer, output::AbstractVector{<:Real}) = _backward(
-    layer, output
-)
-Broadcast.broadcasted(::typeof(backward), layer::PermutationLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _backward, Ref(layer), output
-)
+backward(layer::PermutationLayer, output::AbstractVector{<:Real}) =
+    _backward(layer, output)
+Broadcast.broadcasted(
+    ::typeof(backward),
+    layer::PermutationLayer,
+    output::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_backward, Ref(layer), output)
 
 # inplace backward pass through the additive coupling layer
 function backward!(
@@ -129,12 +130,13 @@ function _jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})
     # return result
     return getP(layer)
 end
-jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) = _jacobian(
-    layer, input
-)
-Broadcast.broadcasted(::typeof(jacobian), layer::PermutationLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _jacobian, Ref(layer), input
-)
+jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) =
+    _jacobian(layer, input)
+Broadcast.broadcasted(
+    ::typeof(jacobian),
+    layer::PermutationLayer,
+    input::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_jacobian, Ref(layer), input)
 
 # inverse jacobian of the additive coupling layer
 function _inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})
@@ -142,12 +144,13 @@ function _inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})
     # return result
     return getP(layer)'
 end
-inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) = _inv_jacobian(
-    layer, output
-)
-Broadcast.broadcasted(::typeof(inv_jacobian), layer::PermutationLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
-    _inv_jacobian, Ref(layer), output
-)
+inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) =
+    _inv_jacobian(layer, output)
+Broadcast.broadcasted(
+    ::typeof(inv_jacobian),
+    layer::PermutationLayer,
+    output::AbstractVector{<:AbstractVector{<:Real}},
+) = broadcast(_inv_jacobian, Ref(layer), output)
 
 # extra utility functions 
 det_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})       = det(getP(layer))

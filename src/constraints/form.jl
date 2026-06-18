@@ -104,7 +104,8 @@ Used when no form constraint has been specified in the [`ReactiveMP.MessageProdu
 """
 struct UnspecifiedFormConstraint <: AbstractFormConstraint end
 
-default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLast()
+default_form_check_strategy(::UnspecifiedFormConstraint) =
+    FormConstraintCheckLast()
 
 default_prod_constraint(::UnspecifiedFormConstraint) = GenericProd()
 
@@ -139,22 +140,18 @@ prepare_context(constraint) = WrappedFormConstraintNoContext()
 Unwraps the constraint and delegates to [`constrain_form`](@ref) with the inner constraint.
 If a context was provided via [`ReactiveMP.prepare_context`](@ref), it is passed as the second argument.
 """
-constrain_form(wrapped::WrappedFormConstraint, something) = constrain_form(
-    wrapped, wrapped.context, something
-)
-constrain_form(wrapped::WrappedFormConstraint, ::WrappedFormConstraintNoContext, something) = constrain_form(
-    wrapped.constraint, something
-)
-constrain_form(wrapped::WrappedFormConstraint, context, something) = constrain_form(
-    wrapped.constraint, context, something
-)
+constrain_form(wrapped::WrappedFormConstraint, something) =
+    constrain_form(wrapped, wrapped.context, something)
+constrain_form(
+    wrapped::WrappedFormConstraint, ::WrappedFormConstraintNoContext, something
+) = constrain_form(wrapped.constraint, something)
+constrain_form(wrapped::WrappedFormConstraint, context, something) =
+    constrain_form(wrapped.constraint, context, something)
 
-default_form_check_strategy(wrapped::WrappedFormConstraint) = default_form_check_strategy(
-    wrapped.constraint
-)
-default_prod_constraint(wrapped::WrappedFormConstraint) = default_prod_constraint(
-    wrapped.constraint
-)
+default_form_check_strategy(wrapped::WrappedFormConstraint) =
+    default_form_check_strategy(wrapped.constraint)
+default_prod_constraint(wrapped::WrappedFormConstraint) =
+    default_prod_constraint(wrapped.constraint)
 
 """
     preprocess_form_constraints(constraints)
@@ -165,13 +162,11 @@ Objects that are not subtypes of [`AbstractFormConstraint`](@ref) get wrapped in
 """
 function preprocess_form_constraints end
 
-preprocess_form_constraints(constraints::Tuple) = CompositeFormConstraint(
-    map(preprocess_form_constraints, constraints)
-)
+preprocess_form_constraints(constraints::Tuple) =
+    CompositeFormConstraint(map(preprocess_form_constraints, constraints))
 preprocess_form_constraints(constraint::AbstractFormConstraint) = constraint
-preprocess_form_constraints(constraint) = WrappedFormConstraint(
-    constraint, prepare_context(constraint)
-)
+preprocess_form_constraints(constraint) =
+    WrappedFormConstraint(constraint, prepare_context(constraint))
 
 """
     CompositeFormConstraint
@@ -184,9 +179,8 @@ struct CompositeFormConstraint{C} <: AbstractFormConstraint
     constraints::C
 end
 
-Base.show(io::IO, constraint::CompositeFormConstraint) = join(
-    io, constraint.constraints, " :: "
-)
+Base.show(io::IO, constraint::CompositeFormConstraint) =
+    join(io, constraint.constraints, " :: ")
 
 function constrain_form(composite::CompositeFormConstraint, something)
     return reduce(

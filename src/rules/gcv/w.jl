@@ -5,7 +5,7 @@ export rule
 ) = begin
     y_x_mean, y_x_var = mean_cov(q_y_x)
     z_mean, z_var     = mean_var(q_z)
-    κ_mean, κ_var   = mean_var(q_κ)
+    κ_mean, κ_var     = mean_var(q_κ)
 
     γ = z_mean^2 * κ_var + κ_mean^2 * z_var + z_var * κ_var
     A = exp(-κ_mean * z_mean + γ / 2)

@@ -5,7 +5,8 @@ import Base.Broadcast: BroadcastFunction
 struct DiscreteTransition end
 
 ReactiveMP.sdtype(::Type{DiscreteTransition}) = ReactiveMP.Stochastic()
-ReactiveMP.is_predefined_node(::Type{DiscreteTransition}) = ReactiveMP.PredefinedNodeFunctionalForm()
+ReactiveMP.is_predefined_node(::Type{DiscreteTransition}) =
+    ReactiveMP.PredefinedNodeFunctionalForm()
 
 function ReactiveMP.prepare_interfaces_generic(
     fform::Type{DiscreteTransition}, interfaces::AbstractVector
