@@ -38,6 +38,7 @@ makedocs(
                 "Discrete Transition" => "lib/nodes/discrete_transition.md",
                 "Continuous transition" => "lib/nodes/ctransition.md",
                 "Autoregressive" => "lib/nodes/ar.md",
+                "Conjugate Autoregressive" => "lib/nodes/conjugate_ar.md",
                 "BinomialPolya" => "lib/nodes/binomial_polya.md",
                 "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
             ]
