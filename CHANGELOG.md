@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [6.2.0] - 2026-06-18
 
 ### Added
+
+- `ConjugateAR` node for fully-conjugate variational inference of autoregressive models. It keeps the AR coefficients `θ` and the transition precision `γ` jointly on a single `MvNormalGamma`-distributed parameter edge `w` (rather than the mean-field `q(θ)q(γ)` split of `AR`). The `ConjugateAR(:w)` message implements the Normal-Gamma / Bayesian-linear-regression parameter update; the state messages (`:y`, `:x`), the `(y, x)` joint marginal, and the average energy delegate to the existing `AR` rules via the effective `(q_θ, q_γ)` moments.
+- `MvNormalGamma` registered as a factor node (`[out, μ, Λ, α, β]`) with its `:out` message rule and average energy, so a joint `(θ, γ)` prior can be placed on the `ConjugateAR` parameter edge.
 - `MatrixNormal` node with belief-propagation and variational (mean-field) message rules for `:out`, `:M`, `:U`, `:V`, joint marginal rule, and mean-field `@average_energy` ([#610](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/610))
 - `MatrixNormalWishart` conjugate-prior node with its `:out` construction rule and analytic `@average_energy` ([#610](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/610))
 

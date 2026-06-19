@@ -10,6 +10,11 @@ where `yₜ` is the current observation, `xₜ = (yₜ₋₁, …, yₜ₋ₚ)` 
 
 This node is the natural building block for **time series models** such as AR(p), latent AR processes, and state-space models with autoregressive dynamics.
 
+```@docs
+AR
+ARMeta
+```
+
 ## [Interfaces](@id lib-nodes-ar-interfaces)
 
 | Interface | Alias | Role |

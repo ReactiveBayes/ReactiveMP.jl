@@ -135,6 +135,13 @@ include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
 
+include("conjugate_autoregressive/w.jl")
+include("conjugate_autoregressive/y.jl")
+include("conjugate_autoregressive/x.jl")
+include("conjugate_autoregressive/marginals.jl")
+
+include("mv_normal_gamma/out.jl")
+
 include("softdot/y.jl")
 include("softdot/x.jl")
 include("softdot/theta.jl")
