@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.3.1] - 2026-07-06
+
 ### Fixed
 - `InputArgumentsAnnotations`'s `post_product_annotations!` no longer throws `KeyError: key :rule_input_arguments not found` when one side of a message product is a clamped/constant message (e.g. a prior passed into a model as a `Distribution` object) that never went through a rule ([#600](https://github.com/ReactiveBayes/RxInfer.jl/issues/600), [#614](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/614))
 
@@ -246,7 +248,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.1...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.1...HEAD
+[6.3.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.0...v6.3.1
+[6.3.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.2.0...v6.3.0
+[6.2.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.1...v6.2.0
 [6.1.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.6...v6.0.0
