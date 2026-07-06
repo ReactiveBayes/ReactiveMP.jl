@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `InputArgumentsAnnotations`'s `post_product_annotations!` no longer throws `KeyError: key :rule_input_arguments not found` when one side of a message product is a clamped/constant message (e.g. a prior passed into a model as a `Distribution` object) that never went through a rule ([#600](https://github.com/ReactiveBayes/RxInfer.jl/issues/600), [#614](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/614))
+
 ## [6.3.0] - 2026-06-19
 
 ### Added

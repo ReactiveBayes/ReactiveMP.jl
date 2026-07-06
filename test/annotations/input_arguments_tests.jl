@@ -218,6 +218,78 @@ end
     @test prod.mappings[4] === r4
 end
 
+@testitem "post_product_annotations! copies the right record through when the left side never ran a rule (e.g. a clamped constant)" setup=[
+    RuleInputArgumentsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict,
+        annotate!,
+        post_product_annotations!,
+        InputArgumentsAnnotations,
+        RuleInputArgumentsRecord,
+        get_rule_input_arguments,
+        has_annotation
+
+    right_record = RuleInputArgumentsRecord(
+        RuleInputArgumentsTestUtils.MockMapping(:right), nothing, nothing, :right_result
+    )
+
+    left_ann  = AnnotationDict() # empty: represents a clamped/constant message, which never runs a rule
+    right_ann = AnnotationDict()
+    annotate!(right_ann, :rule_input_arguments, right_record)
+
+    merged = post_product_annotations!(
+        (InputArgumentsAnnotations(),), left_ann, right_ann, nothing, nothing, nothing
+    )
+
+    @test has_annotation(merged, :rule_input_arguments)
+    @test get_rule_input_arguments(merged) === right_record
+end
+
+@testitem "post_product_annotations! copies the left record through when the right side never ran a rule (e.g. a clamped constant)" setup=[
+    RuleInputArgumentsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict,
+        annotate!,
+        post_product_annotations!,
+        InputArgumentsAnnotations,
+        RuleInputArgumentsRecord,
+        get_rule_input_arguments,
+        has_annotation
+
+    left_record = RuleInputArgumentsRecord(
+        RuleInputArgumentsTestUtils.MockMapping(:left), nothing, nothing, :left_result
+    )
+
+    left_ann  = AnnotationDict()
+    right_ann = AnnotationDict() # empty: represents a clamped/constant message, which never runs a rule
+    annotate!(left_ann, :rule_input_arguments, left_record)
+
+    merged = post_product_annotations!(
+        (InputArgumentsAnnotations(),), left_ann, right_ann, nothing, nothing, nothing
+    )
+
+    @test has_annotation(merged, :rule_input_arguments)
+    @test get_rule_input_arguments(merged) === left_record
+end
+
+@testitem "post_product_annotations! leaves the merged annotation empty when neither side ran a rule (product of two clamped constants)" setup=[
+    RuleInputArgumentsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict, post_product_annotations!, InputArgumentsAnnotations, has_annotation
+
+    left_ann  = AnnotationDict()
+    right_ann = AnnotationDict()
+
+    merged = post_product_annotations!(
+        (InputArgumentsAnnotations(),), left_ann, right_ann, nothing, nothing, nothing
+    )
+
+    @test !has_annotation(merged, :rule_input_arguments)
+end
+
 @testitem "Base.show for RuleInputArgumentsRecord" begin
     import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
     import BayesBase: PointMass
