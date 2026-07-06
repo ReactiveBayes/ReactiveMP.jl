@@ -115,13 +115,21 @@ function post_product_annotations!(
     left_dist,
     right_dist,
 )
-    left_record  = get_rule_input_arguments(left_ann)
-    right_record = get_rule_input_arguments(right_ann)
-    annotate!(
-        merged,
-        :rule_input_arguments,
-        _merge_input_arguments(left_record, right_record),
-    )
+    has_left  = has_annotation(left_ann, :rule_input_arguments)
+    has_right = has_annotation(right_ann, :rule_input_arguments)
+    if has_left && has_right
+        left_record  = get_rule_input_arguments(left_ann)
+        right_record = get_rule_input_arguments(right_ann)
+        annotate!(
+            merged,
+            :rule_input_arguments,
+            _merge_input_arguments(left_record, right_record),
+        )
+    elseif has_left
+        annotate!(merged, :rule_input_arguments, get_rule_input_arguments(left_ann))
+    elseif has_right
+        annotate!(merged, :rule_input_arguments, get_rule_input_arguments(right_ann))
+    end
     return nothing
 end
 
