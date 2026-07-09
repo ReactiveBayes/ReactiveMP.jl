@@ -38,7 +38,7 @@ const softdot = SoftDot
         -mean(log, q_γ) +
         log2π +
         m_γ * (
-            V_y + m_y^2 - 2m_γ * m_y * m_θ'm_x +
+            V_y + m_y^2 - 2 * m_y * m_θ'm_x +
             mul_trace(V_θ, V_x) +
             m_x'V_θ * m_x +
             m_θ' * (V_x + m_x * m_x') * m_θ
