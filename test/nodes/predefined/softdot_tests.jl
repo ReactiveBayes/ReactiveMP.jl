@@ -24,7 +24,12 @@
         AverageEnergy(),
         SoftDot,
         Val{(:y, :θ, :x, :γ)}(),
-        (Marginal(q_y, false, false), Marginal(q_θ, false, false), Marginal(q_x, false, false), Marginal(q_γ, false, false)),
+        (
+            Marginal(q_y, false, false),
+            Marginal(q_θ, false, false),
+            Marginal(q_x, false, false),
+            Marginal(q_γ, false, false),
+        ),
         nothing,
     )
 
@@ -32,7 +37,11 @@
         AverageEnergy(),
         SoftDot,
         Val{(:y_x, :θ, :γ)}(),
-        (Marginal(q_y_x, false, false), Marginal(q_θ, false, false), Marginal(q_γ, false, false)),
+        (
+            Marginal(q_y_x, false, false),
+            Marginal(q_θ, false, false),
+            Marginal(q_γ, false, false),
+        ),
         nothing,
     )
 
@@ -40,8 +49,18 @@
         # Cover a range of `mean(q_γ)` values, including `mean(q_γ) ≠ 1`, which is where the
         # historical extra-`mean(q_γ)` bug on the cross term manifested.
         configs = (
-            (NormalMeanVariance(3.0, 7.0), NormalMeanVariance(11.0, 13.0), NormalMeanVariance(5.0, 9.0), GammaShapeRate(3 / 2, 4242 / 2)),
-            (NormalMeanVariance(0.4, 0.6), NormalMeanVariance(1.2, 0.25), NormalMeanVariance(0.5, 0.3), GammaShapeRate(4.0, 1.0)),
+            (
+                NormalMeanVariance(3.0, 7.0),
+                NormalMeanVariance(11.0, 13.0),
+                NormalMeanVariance(5.0, 9.0),
+                GammaShapeRate(3 / 2, 4242 / 2),
+            ),
+            (
+                NormalMeanVariance(0.4, 0.6),
+                NormalMeanVariance(1.2, 0.25),
+                NormalMeanVariance(0.5, 0.3),
+                GammaShapeRate(4.0, 1.0),
+            ),
             (
                 NormalMeanVariance(3.0, 7.0),
                 MvNormalMeanCovariance([23.0, 29.0], [31.0 37.0; 37.0 43.0]),
@@ -50,7 +69,8 @@
             ),
         )
         for (q_y, q_θ, q_x, q_γ) in configs
-            @test softdot_meanfield_ae(q_y, q_θ, q_x, q_γ) ≈ softdot_meanfield_ae_reference(q_y, q_θ, q_x, q_γ)
+            @test softdot_meanfield_ae(q_y, q_θ, q_x, q_γ) ≈
+                softdot_meanfield_ae_reference(q_y, q_θ, q_x, q_γ)
         end
     end
 
@@ -62,7 +82,11 @@
         q_x = NormalMeanVariance(0.5, 0.3)
         q_γ = GammaShapeRate(4.0, 1.0) # mean(q_γ) = 4
 
-        S = 0.6 + 0.4^2 - 2 * 0.4 * 1.2 * 0.5 + 0.25 * 0.3 + 0.5^2 * 0.25 + 1.2^2 * (0.3 + 0.5^2)
+        S =
+            0.6 + 0.4^2 - 2 * 0.4 * 1.2 * 0.5 +
+            0.25 * 0.3 +
+            0.5^2 * 0.25 +
+            1.2^2 * (0.3 + 0.5^2)
         ref = 0.5 * (log(2π) - mean(log, q_γ) + 4.0 * S)
 
         @test softdot_meanfield_ae(q_y, q_θ, q_x, q_γ) ≈ ref
@@ -81,7 +105,8 @@
         q_x = NormalMeanVariance(m_x, V_x)
         q_θ = NormalMeanVariance(1.2, 0.25)
         q_yx = MvNormalMeanCovariance([m_y, m_x], [V_y 0.0; 0.0 V_x])
-        @test softdot_meanfield_ae(q_y, q_θ, q_x, q_γ) ≈ softdot_structured_ae(q_yx, q_θ, q_γ)
+        @test softdot_meanfield_ae(q_y, q_θ, q_x, q_γ) ≈
+            softdot_structured_ae(q_yx, q_θ, q_γ)
 
         # Multivariate x
         m_y2, V_y2 = 3.0, 7.0
@@ -90,8 +115,16 @@
         q_y2 = NormalMeanVariance(m_y2, V_y2)
         q_x2 = MvNormalMeanCovariance(m_x2, V_x2)
         q_θ2 = MvNormalMeanCovariance([1.2, 0.7], [0.25 0.05; 0.05 0.3])
-        q_yx2 = MvNormalMeanCovariance([m_y2; m_x2], [V_y2 0.0 0.0; 0.0 V_x2[1, 1] V_x2[1, 2]; 0.0 V_x2[2, 1] V_x2[2, 2]])
-        @test softdot_meanfield_ae(q_y2, q_θ2, q_x2, q_γ) ≈ softdot_structured_ae(q_yx2, q_θ2, q_γ)
+        q_yx2 = MvNormalMeanCovariance(
+            [m_y2; m_x2],
+            [
+                V_y2 0.0 0.0;
+                0.0 V_x2[1, 1] V_x2[1, 2];
+                0.0 V_x2[2, 1] V_x2[2, 2]
+            ],
+        )
+        @test softdot_meanfield_ae(q_y2, q_θ2, q_x2, q_γ) ≈
+            softdot_structured_ae(q_yx2, q_θ2, q_γ)
     end
 
     @testset "AverageEnergy: structured variant" begin

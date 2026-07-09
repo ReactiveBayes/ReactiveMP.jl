@@ -95,7 +95,7 @@ default_meta(::Type{CTMeta}) =
     error("ContinuousTransition node requires meta flag explicitly specified")
 
 default_functional_dependencies(::Type{<:ContinuousTransition}) =
-    RequireMarginalFunctionalDependencies(a = nothing)
+    RequireMarginalFunctionalDependencies(; a = nothing)
 
 """
     `ctcompanion_matrix` casts a vector `a` into a matrix `A` by means of linearization of the transformation function `f` around the expansion point `a0`.
