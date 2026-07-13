@@ -126,9 +126,13 @@ function post_product_annotations!(
             _merge_input_arguments(left_record, right_record),
         )
     elseif has_left
-        annotate!(merged, :rule_input_arguments, get_rule_input_arguments(left_ann))
+        annotate!(
+            merged, :rule_input_arguments, get_rule_input_arguments(left_ann)
+        )
     elseif has_right
-        annotate!(merged, :rule_input_arguments, get_rule_input_arguments(right_ann))
+        annotate!(
+            merged, :rule_input_arguments, get_rule_input_arguments(right_ann)
+        )
     end
     return nothing
 end
