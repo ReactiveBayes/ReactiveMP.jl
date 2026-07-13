@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Structured VMP with 3+ mutually-dependent clusters no longer deadlocks when a provisional (`is_initial`) sibling value permanently retired `PushNew()`'s mutual-refresh requirement once it settled on its real value ([#344](https://github.com/ReactiveBayes/RxInfer.jl/issues/344), [#620](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/620))
+
 ## [6.3.1] - 2026-07-06
 
 ### Fixed
