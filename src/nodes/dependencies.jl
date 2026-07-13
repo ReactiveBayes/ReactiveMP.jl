@@ -16,10 +16,21 @@ function __collect_latest_updates(f::F, collection::Tuple) where {F}
     return if isempty(collection)
         (nothing, of(nothing))
     else
+        streams = map(f, collection)
         (
             Val{map(name, collection)}(),
-            combineLatestUpdates(map(f, collection), PushNew()),
+            combineLatestUpdates(streams, PushNew(), typeof(streams), identity, __reset_vstatus_of_sources),
         )
+    end
+end
+
+# Mirrors `reset_vstatus` from `clusters.jl`/`random.jl`: without this, a sibling that only ever
+# emitted a provisional (`is_initial`) value permanently retires `PushNew()`'s mutual-refresh
+# requirement for the rest of the group once it settles on its real value.
+function __reset_vstatus_of_sources(wrapper, sources)
+    values = map(getrecent, sources)
+    if is_initial(values)
+        Rocket.fill_vstatus!(wrapper, true)
     end
 end
 
