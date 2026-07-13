@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CI: the `test` job now runs with a 60-minute timeout so a hung dependency fails fast instead of consuming GitHub's default 6-hour limit ([#618](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/618))
+
 ## [6.3.1] - 2026-07-06
 
 ### Fixed
