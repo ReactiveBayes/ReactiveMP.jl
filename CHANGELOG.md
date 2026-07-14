@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Structured VMP with 3+ mutually-dependent clusters no longer deadlocks when an initialized message caused the first outbound message computation to consume only provisional (`is_initial`) marginals: the marginal dependencies of a node now stay consumable while all of their recent values are `is_initial`, instead of `PushNew()` requiring every dependency to refresh before the next computation. The relaxation applies to marginal dependencies only — message dependencies keep strict `PushNew()` semantics, so message-update schedules (and hence free-energy trajectories) of unaffected models remain unchanged ([#344](https://github.com/ReactiveBayes/RxInfer.jl/issues/344), [#620](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/620))
+
 ## [6.3.2] - 2026-07-13
 
 ### Fixed
