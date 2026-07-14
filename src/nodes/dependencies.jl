@@ -4,22 +4,30 @@ export DefaultFunctionalDependencies,
     RequireEverythingFunctionalDependencies
 
 collect_latest_messages(dependencies, factornode, collection) =
-    __collect_latest_updates(get_stream_of_inbound_messages, collection)
+    __collect_latest_updates(
+        get_stream_of_inbound_messages, nothing, collection
+    )
 collect_latest_marginals(dependencies, factornode, collection) =
-    __collect_latest_updates(get_stream_of_marginals, collection)
+    __collect_latest_updates(
+        get_stream_of_marginals, __reset_vstatus_of_sources, collection
+    )
 
-function __collect_latest_updates(f::F, collection) where {F}
-    return __collect_latest_updates(f, Tuple(collection))
+function __collect_latest_updates(f::F, callback::C, collection) where {F, C}
+    return __collect_latest_updates(f, callback, Tuple(collection))
 end
 
-function __collect_latest_updates(f::F, collection::Tuple) where {F}
+function __collect_latest_updates(
+    f::F, callback::C, collection::Tuple
+) where {F, C}
     return if isempty(collection)
         (nothing, of(nothing))
     else
         streams = map(f, collection)
         (
             Val{map(name, collection)}(),
-            combineLatestUpdates(streams, PushNew(), typeof(streams), identity, __reset_vstatus_of_sources),
+            combineLatestUpdates(
+                streams, PushNew(), typeof(streams), identity, callback
+            ),
         )
     end
 end
@@ -27,6 +35,11 @@ end
 # Mirrors `reset_vstatus` from `clusters.jl`/`random.jl`: without this, a sibling that only ever
 # emitted a provisional (`is_initial`) value permanently retires `PushNew()`'s mutual-refresh
 # requirement for the rest of the group once it settles on its real value.
+# The reset is applied to marginal dependencies only. Applying it to message dependencies as well
+# alters the message-update schedule in models that are not affected by the deadlock (an outbound
+# message would be recomputed as soon as a single dependency refreshes while the others are still
+# `is_initial`), which changes free-energy trajectories and breaks strict FE-monotonicity
+# guarantees downstream. Marginal dependencies alone are sufficient to resolve the deadlock.
 function __reset_vstatus_of_sources(wrapper, sources)
     values = map(getrecent, sources)
     if is_initial(values)

@@ -138,6 +138,156 @@ end
     end
 end
 
+@testitem "collect_latest_marginals should re-fire while all dependencies are initial (deadlock guard, RxInfer#344)" begin
+    # Regression test for https://github.com/ReactiveBayes/RxInfer.jl/issues/344
+    # With plain `PushNew()` semantics every marginal dependency must refresh before the
+    # combined stream may fire again. If the first firing consumed only provisional
+    # (`is_initial`) marginals, structured VMP with 3+ mutually-dependent clusters deadlocks:
+    # the combination never fires again because the clusters wait on each other.
+    # `__reset_vstatus_of_sources` must keep the combination hot while all of its recent
+    # values are `is_initial`, and strict `PushNew()` semantics must be restored as soon as
+    # at least one dependency holds a real (non-initial) value.
+    include("../testutilities.jl")
+    using BayesBase, Rocket
+
+    import ReactiveMP:
+        collect_latest_marginals,
+        default_functional_dependencies,
+        getlocalclusters,
+        set_stream_of_marginals!,
+        get_node_local_marginals
+
+    struct ArbitraryNodeForMarginalsVstatusReset end
+
+    @node ArbitraryNodeForMarginalsVstatusReset Stochastic [a, b, c]
+
+    node = factornode(
+        ArbitraryNodeForMarginalsVstatusReset,
+        [(:a, randomvar()), (:b, randomvar()), (:c, randomvar())],
+        ((1,), (2,), (3,)),
+    )
+    dependencies = default_functional_dependencies(
+        ArbitraryNodeForMarginalsVstatusReset
+    )
+
+    a, b, c = get_node_local_marginals(getlocalclusters(node))
+
+    sa = RecentSubject(Marginal)
+    sb = RecentSubject(Marginal)
+    sc = RecentSubject(Marginal)
+
+    set_stream_of_marginals!(a, sa)
+    set_stream_of_marginals!(b, sb)
+    set_stream_of_marginals!(c, sc)
+
+    (tag, stream) = collect_latest_marginals(dependencies, node, (a, b, c))
+
+    updates = Ref(0)
+    subscription = subscribe!(stream, (_) -> updates[] += 1)
+
+    initial(value)     = Marginal(value, false, true)
+    non_initial(value) = Marginal(value, false, false)
+
+    # The combination fires for the first time only once all dependencies emitted
+    next!(sa, initial(PointMass(1)))
+    next!(sb, initial(PointMass(2)))
+    @test updates[] == 0
+    next!(sc, initial(PointMass(3)))
+    @test updates[] == 1
+
+    # All consumed values were `is_initial`, thus a single refreshed dependency must be
+    # enough to re-fire the combination (this is the #344 deadlock fix)
+    next!(sa, non_initial(PointMass(1)))
+    @test updates[] == 2
+
+    # The last firing consumed a real value for `a`, thus strict `PushNew()` semantics
+    # apply again: the combination must not re-fire until all dependencies refresh
+    next!(sb, non_initial(PointMass(2)))
+    @test updates[] == 2
+    next!(sc, non_initial(PointMass(3)))
+    @test updates[] == 2
+    next!(sa, non_initial(PointMass(1)))
+    @test updates[] == 3
+
+    # And a single refresh alone keeps being insufficient
+    next!(sb, non_initial(PointMass(2)))
+    @test updates[] == 3
+
+    unsubscribe!(subscription)
+end
+
+@testitem "collect_latest_messages should keep strict PushNew semantics even for initial messages" begin
+    # Guards the scoping of the RxInfer#344 deadlock fix: the `is_initial` vstatus reset is
+    # deliberately applied to marginal dependencies only. Applying it to message dependencies
+    # as well changes the message-update schedule in models unaffected by the deadlock
+    # (an outbound message would be recomputed as soon as a single dependency refreshes while
+    # the others are still `is_initial`), which changes free-energy trajectories and breaks
+    # strict FE-monotonicity guarantees downstream (observed in RxInfer model tests).
+    include("../testutilities.jl")
+    using BayesBase, Rocket
+
+    import ReactiveMP:
+        MessageObservable,
+        collect_latest_messages,
+        default_functional_dependencies,
+        getinterfaces,
+        getvariable,
+        connect!
+
+    struct ArbitraryNodeForMessagesVstatusReset end
+
+    @node ArbitraryNodeForMessagesVstatusReset Stochastic [a, b, c]
+
+    node = factornode(
+        ArbitraryNodeForMessagesVstatusReset,
+        [(:a, randomvar()), (:b, randomvar()), (:c, randomvar())],
+        ((1, 2, 3),),
+    )
+    dependencies = default_functional_dependencies(
+        ArbitraryNodeForMessagesVstatusReset
+    )
+
+    a, b, c = getinterfaces(node)
+
+    sa = RecentSubject(Message)
+    sb = RecentSubject(Message)
+    sc = RecentSubject(Message)
+
+    # Wire the variables' outbound message streams (the inbound message streams of the
+    # interfaces) manually, the same way `activate!` would do
+    for (interface, subject) in zip((a, b, c), (sa, sb, sc))
+        output = MessageObservable(Message)
+        connect!(output, subject)
+        push!(getvariable(interface).output_messages, output)
+    end
+
+    (tag, stream) = collect_latest_messages(dependencies, node, (a, b, c))
+
+    updates = Ref(0)
+    subscription = subscribe!(stream, (_) -> updates[] += 1)
+
+    initial(value)     = Message(value, false, true)
+    non_initial(value) = Message(value, false, false)
+
+    # The combination fires for the first time only once all dependencies emitted
+    next!(sa, initial(PointMass(1)))
+    next!(sb, initial(PointMass(2)))
+    @test updates[] == 0
+    next!(sc, initial(PointMass(3)))
+    @test updates[] == 1
+
+    # Even though all consumed values were `is_initial`, message dependencies must keep
+    # strict `PushNew()` semantics: a single refreshed dependency is not enough to re-fire
+    next!(sa, non_initial(PointMass(1)))
+    @test updates[] == 1
+    next!(sb, non_initial(PointMass(2)))
+    @test updates[] == 1
+    next!(sc, non_initial(PointMass(3)))
+    @test updates[] == 2
+
+    unsubscribe!(subscription)
+end
+
 @testitem "Various functional dependencies" begin
     include("../testutilities.jl")
 
