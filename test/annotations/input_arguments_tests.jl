@@ -231,7 +231,10 @@ end
         has_annotation
 
     right_record = RuleInputArgumentsRecord(
-        RuleInputArgumentsTestUtils.MockMapping(:right), nothing, nothing, :right_result
+        RuleInputArgumentsTestUtils.MockMapping(:right),
+        nothing,
+        nothing,
+        :right_result,
     )
 
     left_ann  = AnnotationDict() # empty: represents a clamped/constant message, which never runs a rule
@@ -239,7 +242,12 @@ end
     annotate!(right_ann, :rule_input_arguments, right_record)
 
     merged = post_product_annotations!(
-        (InputArgumentsAnnotations(),), left_ann, right_ann, nothing, nothing, nothing
+        (InputArgumentsAnnotations(),),
+        left_ann,
+        right_ann,
+        nothing,
+        nothing,
+        nothing,
     )
 
     @test has_annotation(merged, :rule_input_arguments)
@@ -259,7 +267,10 @@ end
         has_annotation
 
     left_record = RuleInputArgumentsRecord(
-        RuleInputArgumentsTestUtils.MockMapping(:left), nothing, nothing, :left_result
+        RuleInputArgumentsTestUtils.MockMapping(:left),
+        nothing,
+        nothing,
+        :left_result,
     )
 
     left_ann  = AnnotationDict()
@@ -267,7 +278,12 @@ end
     annotate!(left_ann, :rule_input_arguments, left_record)
 
     merged = post_product_annotations!(
-        (InputArgumentsAnnotations(),), left_ann, right_ann, nothing, nothing, nothing
+        (InputArgumentsAnnotations(),),
+        left_ann,
+        right_ann,
+        nothing,
+        nothing,
+        nothing,
     )
 
     @test has_annotation(merged, :rule_input_arguments)
@@ -278,13 +294,21 @@ end
     RuleInputArgumentsTestUtils
 ] begin
     import ReactiveMP:
-        AnnotationDict, post_product_annotations!, InputArgumentsAnnotations, has_annotation
+        AnnotationDict,
+        post_product_annotations!,
+        InputArgumentsAnnotations,
+        has_annotation
 
     left_ann  = AnnotationDict()
     right_ann = AnnotationDict()
 
     merged = post_product_annotations!(
-        (InputArgumentsAnnotations(),), left_ann, right_ann, nothing, nothing, nothing
+        (InputArgumentsAnnotations(),),
+        left_ann,
+        right_ann,
+        nothing,
+        nothing,
+        nothing,
     )
 
     @test !has_annotation(merged, :rule_input_arguments)

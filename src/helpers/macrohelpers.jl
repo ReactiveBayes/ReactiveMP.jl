@@ -115,8 +115,9 @@ macro test_inferred(T, expression)
         quote
             let
                 local result = Test.@inferred($expression)
-                if !(ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <:
-                     $T)
+                if !(
+                    ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
+                )
                     error(
                         "Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T",
                     )

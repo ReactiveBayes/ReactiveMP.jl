@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Structured VMP with 3+ mutually-dependent clusters no longer deadlocks when a provisional (`is_initial`) sibling value permanently retired `PushNew()`'s mutual-refresh requirement once it settled on its real value ([#344](https://github.com/ReactiveBayes/RxInfer.jl/issues/344), [#620](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/620))
 
+## [6.3.2] - 2026-07-13
+
+### Fixed
+- Mean-field `@average_energy` for the `softdot` node no longer applies a spurious extra `mean(q_γ)` factor to the cross term `−2·m_y·m_θᵀm_x`, which biased the term by `mean(q_γ)²` instead of `mean(q_γ)`. Message rules were unaffected (they were and remain correct); only the Bethe free energy contribution of a `softdot` node under full mean-field factorization was wrong, and only when `mean(q_γ) ≠ 1`. The mean-field variant now agrees with the (already-correct) structured `q(y, x)` variant. This bug was present unchanged from at least v4.4.3 through v6.3.1, so any Bethe free energy values previously reported for mean-field `softdot` models were biased by `½·mean(q_γ)·(mean(q_γ)−1)·(−2·m_y·m_θᵀm_x)` ([#615](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/615))
+
+### Changed
+- CI: the `test` job now runs with a 60-minute timeout so a hung dependency fails fast instead of consuming GitHub's default 6-hour limit ([#618](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/618))
+
 ## [6.3.1] - 2026-07-06
 
 ### Fixed
@@ -251,7 +259,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.1...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.2...HEAD
+[6.3.2]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.1...v6.3.2
 [6.3.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.0...v6.3.1
 [6.3.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.2.0...v6.3.0
 [6.2.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.1...v6.2.0
