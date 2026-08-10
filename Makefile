@@ -3,8 +3,16 @@ SHELL = /bin/bash
 
 .PHONY: lint format
 
+# No `Pkg.update()` in `scripts_init` on purpose: it defeated `scripts/Manifest.toml` by
+# re-resolving JuliaFormatter to the newest allowed version on every `make format` /
+# `make check-format`, so which formatter you got depended only on when you last ran it --
+# and CI and contributors could therefore disagree with no code change involved.
+# Use `make scripts_update` to bump deliberately.
 scripts_init:
-	julia --project=scripts/ -e 'using Pkg; Pkg.instantiate(); Pkg.update(); Pkg.precompile();'
+	julia --project=scripts/ -e 'using Pkg; Pkg.instantiate(); Pkg.precompile();'
+
+scripts_update: ## Re-resolve scripts/Manifest.toml (bumps JuliaFormatter within its compat bound)
+	julia --project=scripts/ -e 'using Pkg; Pkg.update(); Pkg.precompile();'
 
 format: scripts_init ## Format Julia code
 	julia --project=scripts/ scripts/formatter.jl --overwrite

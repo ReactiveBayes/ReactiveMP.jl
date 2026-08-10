@@ -26,7 +26,14 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
+      # Pinned deliberately. `JuliaFormatter` parses through `JuliaSyntax`, so its output can
+      # shift with the Julia minor version independently of the formatter version itself.
+      # Leaving this unpinned meant CI floated to whatever Julia was latest that day while
+      # contributors ran something else locally, producing format diffs with no code change.
+      # Keep this in step with the highest version in ci.yml's test matrix.
       - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
       - uses: julia-actions/cache@v2
       
       # Find existing format PR if any
