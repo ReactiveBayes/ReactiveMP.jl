@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `new_observation!` now rejects observation values that cannot be represented as a `PointMass` with an informative error naming the offending type, the accepted types, and `missing` as the likely intent. `PointMass` defines `variate_form` — and hence a usable `mean` — only for real numbers, arrays of real numbers and `UniformScaling`; wrapping anything else produced a `PointMass` that constructed fine but whose `mean` recursed between `Statistics.mean(itr)` and `BayesBase.mean(fn, ::PointMass)` until the stack overflowed. Passing `Uninformative()` in a data tuple where `missing` was meant therefore failed with a ~40,000-frame `StackOverflowError` that named neither the variable nor the mistake. Distributions get an additional note explaining that data variables hold observed point values rather than beliefs ([#588](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/588))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
