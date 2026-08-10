@@ -922,7 +922,8 @@ The macro takes three arguments:
 The following options are available:
 
 - `check_type_promotion`: By default, this option is set to `false`. If set to `true`, the macro generates an extensive list of extra tests that aim to check the correct type promotion within the tests. For example, if all inputs are of type `Float32`, then the expected output should also be of type `Float32`. See the `paramfloattype` and `convert_paramfloattype` functions for details.
-- `atol`: Sets the desired accuracy for the tests. The tests use the `custom_rule_isapprox` function from `ReactiveMP` to check if outputs are approximately the same. This argument can be either a single number or an array of `key => value` pairs.
+- `atol`: Sets the desired absolute accuracy for the tests. The tests use the `custom_rule_isapprox` function from `ReactiveMP` to check if outputs are approximately the same. This argument can be either a single number or an array of `key => value` pairs.
+- `rtol`: Sets the desired relative accuracy for the tests, in the same format as `atol` (either a single number or an array of `key => value` pairs). Useful when the rule's inputs (and hence outputs) are very large or very small, where a fixed absolute tolerance is either meaninglessly loose or impossible to satisfy.
 - `extra_float_types`: A set of extra float types to be used in the `check_type_promotion` tests. This argument has no effect if `check_type_promotion` is set to `false`.
 
 The default values for the `atol` option are:
@@ -930,6 +931,17 @@ The default values for the `atol` option are:
 - `Float32`: `1e-4`
 - `Float64`: `1e-6`
 - `BigFloat`: `1e-8`
+
+The default value of `rtol` is `0` for every float type, which reproduces the behaviour of `Base.isapprox`
+when only a positive `atol` is given. Both tolerances are forwarded to `isapprox`, so they combine as
+`|actual - expected| <= max(atol, rtol * max(|actual|, |expected|))` — that is, a test passes if *either*
+tolerance is satisfied. To test purely relatively, set `atol` to `0` explicitly:
+
+```julia
+@test_rules [atol = 0, rtol = 1e-8] NormalMeanVariance(:out, Marginalisation) [
+    (input = (m_μ = PointMass(1e10), m_v = PointMass(1e10)), output = NormalMeanVariance(1e10, 1e10))
+]
+```
 
 ## Examples
 
@@ -1091,10 +1103,18 @@ Base.@kwdef mutable struct TestRulesConfiguration
     float_tolerance::Dict = Dict(
         Float32 => 1e-4, Float64 => 1e-6, BigFloat => 1e-8
     )
+    float_rtolerance::Dict = Dict(
+        Float32 => 0.0, Float64 => 0.0, BigFloat => 0.0
+    )
     extra_float_types::Vector = [Float32, Float64, BigFloat]
 end
 
 const DefaultFloatTolerance = 1e-6
+
+# `0` reproduces Julia's own `isapprox` behaviour when a positive `atol` is supplied
+# (`rtoldefault` returns zero in that case), so the default leaves every existing
+# `@test_rules` invocation numerically unchanged.
+const DefaultFloatRelativeTolerance = 0.0
 
 check_type_promotion(configuration::TestRulesConfiguration)::Bool =
     configuration.check_type_promotion
@@ -1116,6 +1136,27 @@ float_tolerance!(configuration::TestRulesConfiguration, atol::Number) = foreach(
 float_tolerance!(configuration::TestRulesConfiguration, atol::AbstractArray) =
     foreach(
         ((key, value),) -> float_tolerance!(configuration, key, value), atol
+    )
+
+float_rtolerance(configuration::TestRulesConfiguration) =
+    configuration.float_rtolerance
+float_rtolerance(configuration::TestRulesConfiguration, ::Type{T}) where {T} =
+    get(
+        () -> DefaultFloatRelativeTolerance,
+        float_rtolerance(configuration),
+        T,
+    )
+
+float_rtolerance!(
+    configuration::TestRulesConfiguration, ::Type{T}, rtol::Number
+) where {T} = configuration.float_rtolerance[T] = rtol
+float_rtolerance!(configuration::TestRulesConfiguration, rtol::Number) = foreach(
+    ((key, _),) -> float_rtolerance!(configuration, key, rtol),
+    float_rtolerance(configuration),
+)
+float_rtolerance!(configuration::TestRulesConfiguration, rtol::AbstractArray) =
+    foreach(
+        ((key, value),) -> float_rtolerance!(configuration, key, value), rtol
     )
 
 extra_float_types(configuration::TestRulesConfiguration) =
@@ -1141,6 +1182,8 @@ function test_rules_parse_configuration(configuration::Symbol, options::Expr)
             ))
         elseif key === :atol
             return :(ReactiveMP.float_tolerance!($configuration, $value))
+        elseif key === :rtol
+            return :(ReactiveMP.float_rtolerance!($configuration, $value))
         elseif key === :extra_float_types
             return :(ReactiveMP.extra_float_types!($configuration, $value))
         else
@@ -1297,8 +1340,12 @@ function test_rules_generate_testset(
                 actual_output, expected_output
             )
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
+            local _rtolerance = ReactiveMP.float_rtolerance($configuration, _T)
             local _isapprox = ReactiveMP.custom_rule_isapprox(
-                actual_output, expected_output; atol = _tolerance
+                actual_output,
+                expected_output;
+                atol = _tolerance,
+                rtol = _rtolerance,
             )
             local _isequal_typeof = ReactiveMP.BayesBase.isequal_typeof(
                 actual_output, expected_output

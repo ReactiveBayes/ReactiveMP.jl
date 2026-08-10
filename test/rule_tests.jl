@@ -9,6 +9,7 @@
         import ReactiveMP: TestRulesConfiguration
         import ReactiveMP: check_type_promotion, check_type_promotion!
         import ReactiveMP: float_tolerance, float_tolerance!
+        import ReactiveMP: float_rtolerance, float_rtolerance!
         import ReactiveMP: extra_float_types, extra_float_types!
         import ReactiveMP: test_rules_parse_configuration
         import ReactiveMP: rule_macro_convert_to_expr
@@ -59,6 +60,61 @@
                 end
             end
 
+            # `rtol` defaults to zero for every float type, which keeps `isapprox`
+            # behaving exactly as it did before `rtol` was configurable
+            let configuration = TestRulesConfiguration()
+                @test all(
+                    iszero, values(float_rtolerance(configuration))
+                )
+                for T in [Float32, Float64, BigFloat, Float16, Int]
+                    @test iszero(float_rtolerance(configuration, T))
+                end
+            end
+
+            # check rtol can be set as a single number
+            let configuration = TestRulesConfiguration()
+                for rtol in (1e-6, 1e-12)
+                    float_rtolerance!(configuration, rtol)
+                    @test all(
+                        tolerance -> isequal(tolerance, rtol),
+                        values(float_rtolerance(configuration)),
+                    )
+                end
+            end
+
+            # check rtol can be set as an array of pairs
+            let configuration = TestRulesConfiguration()
+                for rtol in [
+                    [Float32 => 1e-5, Float64 => 1e-11],
+                    [Float32 => 1e-4, Float64 => 1e-10],
+                ]
+                    float_rtolerance!(configuration, rtol)
+                    for (key, value) in rtol
+                        @test isequal(
+                            float_rtolerance(configuration, key), value
+                        )
+                    end
+                end
+            end
+
+            # check rtol can be set individually
+            let configuration = TestRulesConfiguration()
+                for T in [Float32, Float16, BigFloat, Int],
+                    rtol in (1e-6, 1e-12)
+
+                    float_rtolerance!(configuration, T, rtol)
+                    @test isequal(float_rtolerance(configuration, T), rtol)
+                end
+            end
+
+            # `atol` and `rtol` are independent knobs
+            let configuration = TestRulesConfiguration()
+                float_tolerance!(configuration, Float64, 1e-3)
+                float_rtolerance!(configuration, Float64, 1e-9)
+                @test isequal(float_tolerance(configuration, Float64), 1e-3)
+                @test isequal(float_rtolerance(configuration, Float64), 1e-9)
+            end
+
             # extra_float_types setter test
             let configuration = TestRulesConfiguration()
                 for extra_types in ([Float64, Float32], [Int, BigFloat])
@@ -77,6 +133,7 @@
             for name in (:configuration, :blabla),
                 check in (true, false),
                 atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
+                rtol in (1e-8, :([Float64 => 1e-13, Float32 => 1e-6])),
                 extra_types in (:([Float64]), :([Float32, BigFloat]))
 
                 expression = test_rules_parse_configuration(
@@ -84,6 +141,7 @@
                     :([
                         check_type_promotion = $check,
                         atol = $atol,
+                        rtol = $rtol,
                         extra_float_types = $extra_types,
                     ]),
                 )
@@ -96,6 +154,9 @@
                 )
                 @test inexpr(
                     expression, :(ReactiveMP.float_tolerance!($name, $atol))
+                )
+                @test inexpr(
+                    expression, :(ReactiveMP.float_rtolerance!($name, $rtol))
                 )
                 @test inexpr(
                     expression,
@@ -138,6 +199,7 @@
                 @test inexpr(expression, output)
                 @test inexpr(expression, test_f)
                 @test inexpr(expression, :(ReactiveMP.float_tolerance))
+                @test inexpr(expression, :(ReactiveMP.float_rtolerance))
                 @test inexpr(expression, :(ReactiveMP.custom_rule_isapprox))
                 @test inexpr(expression, :(ReactiveMP.BayesBase.isequal_typeof))
             end
@@ -538,6 +600,94 @@
                 "Testset for rule TestNodeForTestRuleMacro(:out, Marginalisation) has failed",
                 test_output,
             )
+        end
+
+        @testset "`rtol` option end-to-end" begin
+            struct TestNodeForRtolOption end
+
+            @node TestNodeForRtolOption Stochastic [out, x]
+
+            # Returns the input scaled by `1 + 1e-4`, i.e. a fixed *relative* error
+            # of 1e-4 regardless of the magnitude of the input.
+            @rule TestNodeForRtolOption(:out, Marginalisation) (m_x::PointMass,) = PointMass(
+                mean(m_x) * (1 + 1e-4)
+            )
+
+            # A huge value, where the 1e-4 relative error is an enormous absolute error.
+            # The default `atol = 1e-6` cannot possibly be satisfied here.
+            let statuses = Bool[]
+                with_logger(SimpleLogger(IOBuffer())) do
+                    ReactiveMP.@test_rules (status) ->
+                        push!(statuses, status) [check_type_promotion = false] TestNodeForRtolOption(
+                        :out, Marginalisation
+                    ) [(
+                        input = (m_x = PointMass(1e10),),
+                        output = PointMass(1e10),
+                    )]
+                end
+                @test statuses == [false]
+            end
+
+            # The same entry passes once a relative tolerance loose enough to cover
+            # the 1e-4 relative error is supplied.
+            let statuses = Bool[]
+                ReactiveMP.@test_rules (status) ->
+                    push!(statuses, status) [
+                    check_type_promotion = false, atol = 0, rtol = 1e-3
+                ] TestNodeForRtolOption(:out, Marginalisation) [(
+                    input = (m_x = PointMass(1e10),),
+                    output = PointMass(1e10),
+                )]
+                @test statuses == [true]
+            end
+
+            # `rtol` is genuinely relative: a tolerance tighter than the rule's
+            # relative error still fails, at any magnitude.
+            let statuses = Bool[]
+                with_logger(SimpleLogger(IOBuffer())) do
+                    ReactiveMP.@test_rules (status) ->
+                        push!(statuses, status) [
+                        check_type_promotion = false, atol = 0, rtol = 1e-6
+                    ] TestNodeForRtolOption(:out, Marginalisation) [
+                        (
+                            input = (m_x = PointMass(1e10),),
+                            output = PointMass(1e10),
+                        ),
+                        (
+                            input = (m_x = PointMass(1e-10),),
+                            output = PointMass(1e-10),
+                        ),
+                    ]
+                end
+                @test statuses == [false, false]
+            end
+
+            # `atol` and `rtol` combine disjunctively: a tiny-magnitude entry that
+            # `rtol` rejects is still accepted when `atol` alone covers it.
+            let statuses = Bool[]
+                ReactiveMP.@test_rules (status) ->
+                    push!(statuses, status) [
+                    check_type_promotion = false, atol = 1e-6, rtol = 1e-9
+                ] TestNodeForRtolOption(:out, Marginalisation) [(
+                    input = (m_x = PointMass(1e-10),),
+                    output = PointMass(1e-10),
+                )]
+                @test statuses == [true]
+            end
+
+            # Per-type `rtol` is honoured, mirroring the `atol` spelling.
+            let statuses = Bool[]
+                ReactiveMP.@test_rules (status) ->
+                    push!(statuses, status) [
+                    check_type_promotion = false,
+                    atol = 0,
+                    rtol = [Float64 => 1e-3],
+                ] TestNodeForRtolOption(:out, Marginalisation) [(
+                    input = (m_x = PointMass(1e10),),
+                    output = PointMass(1e10),
+                )]
+                @test statuses == [true]
+            end
         end
     end
 

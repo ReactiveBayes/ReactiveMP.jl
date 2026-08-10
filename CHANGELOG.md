@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `rtol` option for `@test_rules` / `@test_marginalrules`, accepted in the same spellings as `atol` (a single number or an array of `Type => value` pairs) and forwarded to `isapprox` alongside `atol`. This makes it possible to test rules whose inputs are very large or very small, where a fixed absolute tolerance is either meaninglessly loose or impossible to satisfy. The default is `0` for every float type, which reproduces `Base.isapprox`'s own behaviour when a positive `atol` is supplied, so existing test invocations are numerically unchanged. Set `atol = 0` explicitly to test purely relatively ([#573](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/573))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
