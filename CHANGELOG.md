@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Documented the buffer-reuse contract of the multivariate `getpoints` generators for `GaussHermiteCubature` and `SphericalRadialCubature`. Both write every cubature point into a single preallocated vector and yield that same object each iteration, so `collect(getpoints(...))` returns one buffer repeated — silently wrong cubature with no error — and `map(copy, getpoints(...))` is required to materialize independent points. The reuse is intentional and load-bearing: `approximate_meancov` mutates the yielded point in place rather than allocating, so the sharing runs in both directions. Behaviour is unchanged; the contract is now stated in docstrings and pinned by tests ([#633](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/633))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
