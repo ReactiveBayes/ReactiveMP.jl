@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `InputArgumentsAnnotations` no longer records rule executions that never contributed to a message. `_merge_input_arguments` merged by `push!`/`append!`/`pushfirst!`-ing into one operand's `mappings` vector and returning that same object, but the operand is owned by a `Message` that `EqualityChain` caches and reuses across several all-but-one outbound products. The second product therefore saw a record that had already grown from the first, so the stored trace accumulated entries from unrelated products. Merging is now copy-on-write: it builds a fresh `ProductInputArgumentsRecord` and leaves both operands untouched. This affects only the diagnostic trace returned by `get_rule_input_arguments`, never the messages themselves, and only when `InputArgumentsAnnotations` is enabled ([#622](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/622))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
