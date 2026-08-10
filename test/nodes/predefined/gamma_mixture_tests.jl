@@ -9,7 +9,7 @@
 end
 
 @testitem "nodes:GammaMixtureNode" begin
-    using ReactiveMP, BayesBase, ExponentialFamily, Test
+    using ReactiveMP, BayesBase, ExponentialFamily, Rocket, Test
 
     import ReactiveMP:
         GammaMixtureNode,
@@ -150,19 +150,23 @@ end
             ),
         )
 
-        # First overload: (out, as, bs)
+        # First overload: (out, as, bs). The returned names are derived from the interfaces,
+        # so assert the actual tuple rather than merely that *some* `Val` came back -- a
+        # transposed or truncated name tuple would silently pass the weaker check, and these
+        # names are what the rule dispatch keys off.
         marg_names, marg_obs = collect_latest_marginals(
             deps, node, (node.out, node.as, node.bs)
         )
-        @test marg_names isa Val
-        @test !isnothing(marg_obs)
+        @test marg_names === Val((:out, :a, :b))
+        @test marg_obs isa Rocket.Subscribable
 
-        # Second overload: (out, switch, var)
+        # Second overload: (out, switch, var) -- a different arity, and the middle name must be
+        # `:switch` rather than repeating `:out`.
         marg_names, marg_obs = collect_latest_marginals(
             deps, node, (node.out, node.switch, node.as[1])
         )
-        @test marg_names isa Val
-        @test !isnothing(marg_obs)
+        @test marg_names === Val((:out, :switch, :a))
+        @test marg_obs isa Rocket.Subscribable
     end
 
     @testset "GammaShapeLikelihood basic checks" begin
@@ -317,7 +321,7 @@ end
 end
 
 @testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" begin
-    using ReactiveMP, Test
+    using ReactiveMP, Rocket, Test
     import ReactiveMP:
         GammaMixtureNodeFunctionalDependencies,
         GammaMixtureNode,
@@ -349,7 +353,11 @@ end
     deps = GammaMixtureNodeFunctionalDependencies()
     val, obs = collect_latest_messages(deps, node, ())
     @test val === nothing
-    @test obs !== nothing
+    # `of(nothing)` is a synchronous single-value stream, so subscribing is enough to assert
+    # that it actually *emits* `nothing` -- rather than only that some object was returned.
+    emitted = []
+    subscribe!(obs, (v) -> push!(emitted, v))
+    @test emitted == [nothing]
 end
 
 @testitem "GammaShapeLikelihood: support and prod rule" begin

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Strengthened the weakest assertions in the mixture-node dependency tests. `collect_latest_marginals` returns a `(Val{names}, observable)` pair, and the tests asserted only `marg_names isa Val` and `!isnothing(marg_obs)` — which a transposed, truncated or wrongly-named tuple would satisfy, even though those names are what rule dispatch keys off. They now assert the exact name tuples, and the `of(nothing)` streams are subscribed to so the test confirms they actually *emit* rather than merely that an object was returned ([#629](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/629))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
