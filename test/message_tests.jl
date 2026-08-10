@@ -1,3 +1,55 @@
+@testitem "Message/Marginal equality ignores annotations" begin
+    using ReactiveMP, BayesBase, Distributions, ExponentialFamily
+
+    import ReactiveMP:
+        Message, Marginal, AnnotationDict, annotate!, getannotations
+
+    # `==` deliberately compares only `data`, `is_clamped` and `is_initial` -- annotations are
+    # out-of-band metadata about *how* a message was computed, not part of the belief it
+    # represents. Issue #632 asked whether this is intentional; it is, and it is now documented
+    # in the `Message`/`Marginal` docstrings and in docs/src/lib/message.md.
+    #
+    # These tests pin the semantics so the documented contract cannot drift silently in either
+    # direction.
+
+    for Wrapper in (Message, Marginal)
+        @testset "$(Wrapper)" begin
+            distribution = NormalMeanVariance(0.0, 1.0)
+
+            @testset "differing annotations do not break equality" begin
+                plain     = Wrapper(distribution, false, false)
+                annotated = Wrapper(distribution, false, false)
+                annotate!(getannotations(annotated), :logscale, 42.0)
+
+                @test plain == annotated
+                # ... while the annotation dicts themselves are clearly different.
+                @test getannotations(plain) != getannotations(annotated)
+            end
+
+            @testset "differing :logscale values do not break equality either" begin
+                left  = Wrapper(distribution, false, false)
+                right = Wrapper(distribution, false, false)
+                annotate!(getannotations(left), :logscale, 1.0)
+                annotate!(getannotations(right), :logscale, 2.0)
+
+                @test left == right
+                @test getannotations(left) != getannotations(right)
+            end
+
+            @testset "the three compared fields still matter" begin
+                # Guards against the above being vacuously true.
+                base = Wrapper(distribution, false, false)
+
+                @test base !=
+                    Wrapper(NormalMeanVariance(1.0, 1.0), false, false)
+                @test base != Wrapper(distribution, true, false)
+                @test base != Wrapper(distribution, false, true)
+                @test base == Wrapper(distribution, false, false)
+            end
+        end
+    end
+end
+
 @testitem "Message" begin
     using Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 

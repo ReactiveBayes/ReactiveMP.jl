@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Documented that `==` on `Message` and `Marginal` compares `data`, `is_clamped` and `is_initial` but deliberately **not** `annotations`, so two messages carrying the same distribution are equal even when their `:logscale` differs. Annotations describe how a message was computed rather than the belief it represents; callers needing annotation-sensitive equality should compare `getannotations` explicitly. Added to both docstrings with runnable doctests and to the message library page; behaviour is unchanged ([#632](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/632))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed

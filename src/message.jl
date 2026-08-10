@@ -46,6 +46,33 @@ julia> is_initial(message)
 true
 
 ```
+
+# Equality
+
+`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations`. Two messages
+carrying the same distribution are equal even when their annotations differ — including
+`:logscale`, which underpins free-energy bookkeeping:
+
+```jldoctest
+julia> using ReactiveMP, BayesBase, ExponentialFamily
+
+julia> a = Message(NormalMeanVariance(0.0, 1.0), false, false);
+
+julia> b = Message(NormalMeanVariance(0.0, 1.0), false, false);
+
+julia> ReactiveMP.annotate!(ReactiveMP.getannotations(b), :logscale, 42.0);
+
+julia> a == b
+true
+
+julia> ReactiveMP.getannotations(a) == ReactiveMP.getannotations(b)
+false
+
+```
+
+This is intentional: annotations are out-of-band metadata about *how* a message was computed,
+not part of the belief the message represents. Compare `getannotations` explicitly when you
+need annotation-sensitive equality.
 """
 mutable struct Message{D} <: AbstractMessage    # `mutable` structure here appears to be more performance
     const data        :: D                      # in `RxInfer` benchmarks
