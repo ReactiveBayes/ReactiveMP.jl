@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Linking a `DataVariable` to a variable whose marginal is not a `PointMass` (e.g. a `RandomVariable`) now raises an informative error naming each offending argument by position and type, explaining that a linked data variable is a deterministic function of observed point values, and pointing at the alternatives. Previously this surfaced as a bare `MethodError: no method matching __apply_link(...)`, which named only an internal helper ([#634](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/634))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
