@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The mean-field `GCV(:ω)` message rule (the `q_y`/`q_x` factorized method) was a copy-paste of the `:κ` rule and stamped `z`-dependent coefficients `(a, c, d) = (⟨z⟩, −⟨z⟩, Var(z))` onto the `ω` message. Since the `GCV` node is `p(y | x, z, κ, ω) = N(y | x, exp(κz + ω))`, `ω` enters the log-likelihood linearly with a *constant* coefficient of one and never inside the exponential's quadratic slot, so the correct coefficients are `(1, ψ·⟨e^{−κz}⟩, −1, 0)` — none of which depend on `z`. The bug silently corrupted the `ω` posterior, and everything downstream of it, whenever `GCV` ran under a mean-field factorization; it produced no error and no warning. The structured `q(y, x)` method and both `:κ` methods were and remain correct, so the two `:ω` methods disagreed with each other — an invariant now pinned by a regression test. `GCV` message rules previously had no test coverage at all, which is how this shipped undetected ([#621](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/621))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
