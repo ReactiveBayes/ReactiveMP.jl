@@ -160,9 +160,9 @@ end
     # A rule whose input is *not* a `PointMass`, so `LogScaleAnnotations` cannot fall back
     # to `:logscale = 0` and would `error()` if it ran. The rule body itself deliberately
     # never sets `@logscale`.
-    @rule NodeForDeferredLogScaleTest(:out, Marginalisation) (
-        m_in::NormalMeanVariance,
-    ) = NormalMeanVariance(mean(m_in), var(m_in))
+    @rule NodeForDeferredLogScaleTest(:out, Marginalisation) (m_in::NormalMeanVariance,) = NormalMeanVariance(
+        mean(m_in), var(m_in)
+    )
 
     mapping = MessageMapping(
         NodeForDeferredLogScaleTest,
