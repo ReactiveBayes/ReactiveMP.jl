@@ -135,11 +135,7 @@ end
         err = try
             __apply_link_data(
                 +,
-                (
-                    NormalMeanVariance(0.0, 1.0),
-                    PointMass(1.0),
-                    Gamma(1.0, 1.0),
-                ),
+                (NormalMeanVariance(0.0, 1.0), PointMass(1.0), Gamma(1.0, 1.0)),
             )
             nothing
         catch e
