@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Pinned the formatter toolchain so CI and local runs cannot disagree. `scripts/Project.toml` had no compat bound on `JuliaFormatter`, `scripts/Manifest.toml` was gitignored, `scripts_init` ran `Pkg.update()` on every `make format` / `make check-format`, and `FormatCheck.yml` specified no Julia version — so which formatter (and which Julia, which matters because `JuliaFormatter` parses via `JuliaSyntax`) you got depended only on when you last ran the command. Now: `JuliaFormatter = "~2.12"` compat, `scripts/Manifest.toml` tracked, `Pkg.update()` moved out of `scripts_init` into a new `make scripts_update` target, and `FormatCheck.yml` pinned to Julia 1.12. Verified reproducible by instantiating the two files alone under an isolated depot
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
