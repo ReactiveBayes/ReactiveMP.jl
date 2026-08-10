@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A `missing` message no longer crashes when `LogScaleAnnotations` is enabled. `MessageMapping` short-circuits to `missing` without running the rule when any input is `missing` (the mechanism behind `new_observation!(datavar, missing)`), but it still invoked the post-rule annotation processors afterwards. `LogScaleAnnotations.post_rule_annotations!` only defaults `:logscale` to `0` when *all* inputs are `PointMass`, and otherwise calls `error(...)` — so a deferred message from a node with non-`PointMass` inputs was turned into a hard failure, defeating the `missing` short-circuit entirely. Post-rule processors are now skipped when the rule was short-circuited, leaving the message genuinely deferred and annotation-free. Products involving such a message were already handled correctly by `post_product_annotations!`'s `::Missing` dispatches, which copy the other side's annotations through unchanged ([#623](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/623))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed

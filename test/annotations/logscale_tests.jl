@@ -137,6 +137,94 @@ end
     @test getlogscale(merged) == 13.0
 end
 
+@testitem "A `missing` message stays deferred under LogScaleAnnotations" begin
+    using ReactiveMP, BayesBase, Distributions, ExponentialFamily
+
+    import ReactiveMP:
+        MessageMapping,
+        LogScaleAnnotations,
+        Message,
+        getdata,
+        getannotations,
+        has_annotation,
+        MessageProductContext,
+        compute_product_of_two_messages,
+        randomvar,
+        activate!,
+        RandomVariableActivationOptions
+
+    struct NodeForDeferredLogScaleTest end
+
+    @node NodeForDeferredLogScaleTest Stochastic [out, in]
+
+    # A rule whose input is *not* a `PointMass`, so `LogScaleAnnotations` cannot fall back
+    # to `:logscale = 0` and would `error()` if it ran. The rule body itself deliberately
+    # never sets `@logscale`.
+    @rule NodeForDeferredLogScaleTest(:out, Marginalisation) (
+        m_in::NormalMeanVariance,
+    ) = NormalMeanVariance(mean(m_in), var(m_in))
+
+    mapping = MessageMapping(
+        NodeForDeferredLogScaleTest,
+        Val(:out),
+        Marginalisation(),
+        Val((:in,)),
+        nothing,
+        nothing,
+        (LogScaleAnnotations(),),
+        NodeForDeferredLogScaleTest(),
+        nothing,
+        nothing,
+    )
+
+    @testset "a concrete message still goes through the processor" begin
+        # Sanity check that the setup is right: with a real (non-PointMass) message and no
+        # `@logscale` in the rule body, the processor is reached and does error. This is what
+        # makes the `missing` case below meaningful rather than vacuous.
+        @test_throws "Log-scale annotation has not been set" mapping(
+            (Message(NormalMeanVariance(0.0, 1.0), false, false),), nothing
+        )
+    end
+
+    @testset "a missing message is returned, not turned into an error" begin
+        # `MessageMapping` short-circuits to `missing` without running the rule. Previously
+        # the post-rule processors ran anyway, so `LogScaleAnnotations` turned a legitimately
+        # deferred message into a hard crash (issue #623).
+        result = mapping((Message(missing, false, false),), nothing)
+
+        @test getdata(result) === missing
+        # No log-scale was invented for a message that never went through a rule.
+        @test !has_annotation(getannotations(result), :logscale)
+    end
+
+    @testset "a deferred message survives a subsequent product" begin
+        # The deferred message carries no `:logscale`, so the product must not try to read
+        # one. `post_product_annotations!`'s `::Missing` dispatches handle this by copying
+        # the other side's annotations through unchanged.
+        deferred = mapping((Message(missing, false, false),), nothing)
+
+        concrete_ann = ReactiveMP.AnnotationDict()
+        ReactiveMP.annotate!(concrete_ann, :logscale, 4.0)
+        concrete = Message(
+            NormalMeanVariance(1.0, 2.0), false, false, concrete_ann
+        )
+
+        variable = randomvar()
+        context  = MessageProductContext(annotations = (LogScaleAnnotations(),))
+
+        # Both orderings: the missing side may be on the left or on the right.
+        left_product = compute_product_of_two_messages(
+            variable, context, deferred, concrete
+        )
+        right_product = compute_product_of_two_messages(
+            variable, context, concrete, deferred
+        )
+
+        @test ReactiveMP.getlogscale(getannotations(left_product)) == 4.0
+        @test ReactiveMP.getlogscale(getannotations(right_product)) == 4.0
+    end
+end
+
 @testitem "AddonLogScale throws an error" begin
     import ReactiveMP: AddonLogScale
 
