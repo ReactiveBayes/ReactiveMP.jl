@@ -63,9 +63,7 @@
             # `rtol` defaults to zero for every float type, which keeps `isapprox`
             # behaving exactly as it did before `rtol` was configurable
             let configuration = TestRulesConfiguration()
-                @test all(
-                    iszero, values(float_rtolerance(configuration))
-                )
+                @test all(iszero, values(float_rtolerance(configuration)))
                 for T in [Float32, Float64, BigFloat, Float16, Int]
                     @test iszero(float_rtolerance(configuration, T))
                 end
@@ -617,10 +615,9 @@
             # The default `atol = 1e-6` cannot possibly be satisfied here.
             let statuses = Bool[]
                 with_logger(SimpleLogger(IOBuffer())) do
-                    ReactiveMP.@test_rules (status) ->
-                        push!(statuses, status) [check_type_promotion = false] TestNodeForRtolOption(
-                        :out, Marginalisation
-                    ) [(
+                    ReactiveMP.@test_rules (status) -> push!(statuses, status) [
+                        check_type_promotion = false
+                    ] TestNodeForRtolOption(:out, Marginalisation) [(
                         input = (m_x = PointMass(1e10),),
                         output = PointMass(1e10),
                     )]
@@ -631,12 +628,10 @@
             # The same entry passes once a relative tolerance loose enough to cover
             # the 1e-4 relative error is supplied.
             let statuses = Bool[]
-                ReactiveMP.@test_rules (status) ->
-                    push!(statuses, status) [
+                ReactiveMP.@test_rules (status) -> push!(statuses, status) [
                     check_type_promotion = false, atol = 0, rtol = 1e-3
                 ] TestNodeForRtolOption(:out, Marginalisation) [(
-                    input = (m_x = PointMass(1e10),),
-                    output = PointMass(1e10),
+                    input = (m_x = PointMass(1e10),), output = PointMass(1e10)
                 )]
                 @test statuses == [true]
             end
@@ -645,8 +640,7 @@
             # relative error still fails, at any magnitude.
             let statuses = Bool[]
                 with_logger(SimpleLogger(IOBuffer())) do
-                    ReactiveMP.@test_rules (status) ->
-                        push!(statuses, status) [
+                    ReactiveMP.@test_rules (status) -> push!(statuses, status) [
                         check_type_promotion = false, atol = 0, rtol = 1e-6
                     ] TestNodeForRtolOption(:out, Marginalisation) [
                         (
@@ -665,26 +659,22 @@
             # `atol` and `rtol` combine disjunctively: a tiny-magnitude entry that
             # `rtol` rejects is still accepted when `atol` alone covers it.
             let statuses = Bool[]
-                ReactiveMP.@test_rules (status) ->
-                    push!(statuses, status) [
+                ReactiveMP.@test_rules (status) -> push!(statuses, status) [
                     check_type_promotion = false, atol = 1e-6, rtol = 1e-9
                 ] TestNodeForRtolOption(:out, Marginalisation) [(
-                    input = (m_x = PointMass(1e-10),),
-                    output = PointMass(1e-10),
+                    input = (m_x = PointMass(1e-10),), output = PointMass(1e-10)
                 )]
                 @test statuses == [true]
             end
 
             # Per-type `rtol` is honoured, mirroring the `atol` spelling.
             let statuses = Bool[]
-                ReactiveMP.@test_rules (status) ->
-                    push!(statuses, status) [
+                ReactiveMP.@test_rules (status) -> push!(statuses, status) [
                     check_type_promotion = false,
                     atol = 0,
                     rtol = [Float64 => 1e-3],
                 ] TestNodeForRtolOption(:out, Marginalisation) [(
-                    input = (m_x = PointMass(1e10),),
-                    output = PointMass(1e10),
+                    input = (m_x = PointMass(1e10),), output = PointMass(1e10)
                 )]
                 @test statuses == [true]
             end

@@ -1141,19 +1141,16 @@ float_tolerance!(configuration::TestRulesConfiguration, atol::AbstractArray) =
 float_rtolerance(configuration::TestRulesConfiguration) =
     configuration.float_rtolerance
 float_rtolerance(configuration::TestRulesConfiguration, ::Type{T}) where {T} =
-    get(
-        () -> DefaultFloatRelativeTolerance,
-        float_rtolerance(configuration),
-        T,
-    )
+    get(() -> DefaultFloatRelativeTolerance, float_rtolerance(configuration), T)
 
 float_rtolerance!(
     configuration::TestRulesConfiguration, ::Type{T}, rtol::Number
 ) where {T} = configuration.float_rtolerance[T] = rtol
-float_rtolerance!(configuration::TestRulesConfiguration, rtol::Number) = foreach(
-    ((key, _),) -> float_rtolerance!(configuration, key, rtol),
-    float_rtolerance(configuration),
-)
+float_rtolerance!(configuration::TestRulesConfiguration, rtol::Number) =
+    foreach(
+        ((key, _),) -> float_rtolerance!(configuration, key, rtol),
+        float_rtolerance(configuration),
+    )
 float_rtolerance!(configuration::TestRulesConfiguration, rtol::AbstractArray) =
     foreach(
         ((key, value),) -> float_rtolerance!(configuration, key, value), rtol
