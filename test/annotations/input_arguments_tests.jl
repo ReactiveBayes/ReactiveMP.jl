@@ -483,7 +483,10 @@ end
         _merge_input_arguments
 
     record(name) = RuleInputArgumentsRecord(
-        RuleInputArgumentsTestUtils.MockMapping(name), nothing, nothing, name
+        RuleInputArgumentsTestUtils.MockMapping(name),
+        nothing,
+        nothing,
+        name,
     )
 
     @testset "prod (left) merged twice with different records" begin
