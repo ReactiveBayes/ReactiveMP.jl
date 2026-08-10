@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Test coverage for the `GCV` message rule family, which previously had none — `grep -rn GCV test/` matched nothing, and the only GCV test file exercised the `ExponentialLinearQuadratic` distribution and `prod` without ever calling a message rule. New `test/rules/gcv/` covers `:y`, `:x`, `:z`, `:κ` (mean-field and structured variants), the `:y_x` joint marginal, and both `@average_energy` methods, with expected values derived in-source from the node's likelihood `N(y | x, exp(κz + ω))` rather than captured as golden numbers. Includes cross-method invariants that need no reference values at all: structured variants must reduce to their mean-field siblings at zero `y`–`x` covariance, `:y` and `:x` must agree under the node's `y ↔ x` symmetry, `:κ` and `:z` must agree under `κ ↔ z`, and the joint marginal's off-diagonal coupling must be the reciprocal of the variance the `:y` rule adds. GCV assertions go from 57 (distribution only) to 416 ([#626](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/626))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
