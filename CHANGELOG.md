@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `LaplaceApproximation`'s `approximate_meancov` returned a **negated covariance for every input**, not just pathological ones. It computed `-cholinv(H)` from the Hessian `H` of the log-density at the mode. `-(H⁻¹)` and `(-H)⁻¹` agree in exact arithmetic, but `cholinv` factorizes via Cholesky, which is only defined for positive-definite input — and at a maximum `H` is negative-definite. Passing it directly does not raise; it silently returns a matrix that is not `H⁻¹`, so the sign flip was not compensated and the result was negative-definite. It now negates before inverting, giving `(-H)⁻¹`. Verified against the closed-form Gaussian-product answer, for which the Laplace approximation is exact. `LaplaceApproximation` had no test coverage at all, which is why this went unnoticed ([#635](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/635))
+- `LaplaceApproximation` now rejects a stationary point that is not a strict local maximum instead of returning an invalid Gaussian. `Optim.converged` only reports that the optimizer stopped moving, so for a non-log-concave integrand it could settle on a saddle point or flat region where the negated Hessian is not positive-definite. The error names the offending matrix and suggests approximation methods that do not assume local concavity ([#635](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/635))
+
+### Removed
+- Dead `d_logf` gradient closure in `LaplaceApproximation`'s `approximate_meancov`, which was constructed but never used ([#635](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/635))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
