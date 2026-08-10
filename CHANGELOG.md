@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `ImportanceSamplingApproximation`'s effective sample size is now computed with the scale-invariant `(Σwᵢ)²/Σwᵢ²` instead of `1/Σwᵢ²`. The latter is only valid for weights that already sum to one, but at that point the buffer holds raw unnormalised `g(z)` values, so the `n_eff < N/10` resampling threshold depended on the absolute magnitude of `g` rather than on how uneven the weights were — rescaling `g` by a constant, which cannot change the estimate, switched resampling on or off, and perfectly uniform weights of value 1 gave `n_eff = 1/N` and triggered resampling ([#637](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/637))
+- `ImportanceSamplingApproximation` no longer throws from inside resampling on degenerate weights. `sample!` rejects all-zero weights (`ArgumentError: all weights are zero`) and non-finite weights (`ArgumentError: weights cannot contain Inf or NaN values`); reaching it with either pre-empted the existing degenerate-estimate fallbacks and turned a handled case into a hard failure. Resampling is now skipped when the weights are not resamplable ([#637](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/637))
+- `ImportanceSamplingApproximation`'s degenerate-estimate guard now also covers `isinf(v)` and `isnan(v)`; previously only the mean was checked for being non-finite, so an infinite variance escaped into the returned moments ([#637](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/637))
+
+### Changed
+- `ImportanceSamplingApproximation` now warns (once per session) when it falls back to the proposal distribution's own moments, instead of substituting them silently. The fallback returns a confident-looking answer that never saw the target, so it should be visible ([#631](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/631))
+- Documented that `ImportanceSamplingApproximation` is **not reentrant**: its sample and weight buffers are preallocated and overwritten in place, so an integrand `g` that itself calls `approximate_meancov` with the same approximation object silently corrupts the outer result. This is a reentrancy constraint, not a thread-safety one — ReactiveMP's schedulers are `@async` coroutines on a single thread ([#637](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/637))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
