@@ -14,10 +14,10 @@
     κ_mean, κ_var = mean_var(q_κ)
     ω_mean, ω_var = mean_var(q_ω)
 
-    ksi = κ_mean^2 * z_var + z_mean^2 * κ_var + z_var * κ_var
-    A = exp(-ω_mean + ω_var / 2)
-    B = exp(-κ_mean * z_mean + ksi / 2)
-    W = [y_precision+A * B -A*B; -A*B x_precision+A * B]
+    # See `__gcv_log_noise_precision`: the coupling is `⟨e^{-(κz+ω)}⟩`, computed from summed
+    # log-exponents so it cannot come out `NaN` for individually extreme factors.
+    ab = exp(__gcv_log_noise_precision(q_z, q_κ, q_ω))
+    W = [y_precision+ab -ab; -ab x_precision+ab]
     ξ = [y_mean * y_precision; x_mean * x_precision]
 
     return MvNormalWeightedMeanPrecision(ξ, W)

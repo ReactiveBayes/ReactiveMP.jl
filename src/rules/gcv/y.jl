@@ -12,11 +12,12 @@ export rule
     κ_mean, κ_var = mean_var(q_κ)
     ω_mean, ω_var = mean_var(q_ω)
 
-    ksi = κ_mean^2 * z_var + z_mean^2 * κ_var + z_var * κ_var
-    A = exp(-ω_mean + ω_var / 2)
-    B = exp(-κ_mean * z_mean + ksi / 2)
+    # Effective noise variance is `1/⟨e^{-(κz+ω)}⟩`. Computed from the summed log-exponents
+    # rather than `inv(A * B)`, which yields `NaN` when one factor overflows while the other
+    # underflows even though their product is representable. See `__gcv_log_noise_precision`.
+    log_ab = __gcv_log_noise_precision(q_z, q_κ, q_ω)
 
-    return NormalMeanVariance(x_mean, x_var + inv(A * B))
+    return NormalMeanVariance(x_mean, x_var + exp(-log_ab))
 end
 
 @rule GCV(:y, Marginalisation) (
@@ -27,9 +28,8 @@ end
     κ_mean, κ_var = mean_var(q_κ)
     ω_mean, ω_var = mean_var(q_ω)
 
-    ksi = κ_mean^2 * z_var + z_mean^2 * κ_var + z_var * κ_var
-    A = exp(-ω_mean + ω_var / 2)
-    B = exp(-κ_mean * z_mean + ksi / 2)
+    # See `__gcv_log_noise_precision`.
+    log_ab = __gcv_log_noise_precision(q_z, q_κ, q_ω)
 
-    return NormalMeanVariance(x_mean, inv(A * B))
+    return NormalMeanVariance(x_mean, exp(-log_ab))
 end
