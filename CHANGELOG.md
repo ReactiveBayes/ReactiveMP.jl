@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Rewrote the stale `# calculate marginals of input WRONG` marker in `src/rules/bifm/in.jl` to `# calculate the marginal of the input`. The marker was appended by the 2021 commit that *fixed* that rule (`edf799f4`, "fix BIFM input update rule"), most likely as a note that the previous formulation had been wrong, and read as a standing warning that the current rule is defective. Comment only — no behaviour change, and no claim either way about the rule's correctness ([#638](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/638))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
