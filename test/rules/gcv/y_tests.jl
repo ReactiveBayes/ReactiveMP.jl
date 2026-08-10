@@ -2,7 +2,8 @@
 @testitem "rules:GCV:y" setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
 
-    import ReactiveMP: @test_rules, ExponentialLinearQuadratic, GaussHermiteCubature
+    import ReactiveMP:
+        @test_rules, ExponentialLinearQuadratic, GaussHermiteCubature
 
     expected_A     = GCVRulesTestUtils.expected_A
     expected_B     = GCVRulesTestUtils.expected_B
@@ -61,9 +62,7 @@
         #                        B    = exp(-0.8·0.5 + 0.828/2)              = exp(0.014)
         #                        A·B  = exp(-0.95 + 0.014)                   = exp(-0.936)
         #   q_x = N(1.0, 2.0)  → var  = 2.0 + exp(0.936)
-        @test_rules [check_type_promotion = true] GCV(
-            :y, Marginalisation
-        ) [(
+        @test_rules [check_type_promotion = true] GCV(:y, Marginalisation) [(
             input = (
                 m_x = NormalMeanVariance(1.0, 2.0),
                 q_z = NormalMeanVariance(0.5, 0.7),

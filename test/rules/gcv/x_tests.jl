@@ -2,7 +2,8 @@
 @testitem "rules:GCV:x" setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
 
-    import ReactiveMP: @test_rules, ExponentialLinearQuadratic, GaussHermiteCubature
+    import ReactiveMP:
+        @test_rules, ExponentialLinearQuadratic, GaussHermiteCubature
 
     expected_A     = GCVRulesTestUtils.expected_A
     expected_B     = GCVRulesTestUtils.expected_B
@@ -48,9 +49,7 @@
     @testset "Type promotion, against fully worked-out constants" begin
         # Same intermediates as the `:y` type-promotion case (A·B = exp(-0.936)), with
         # q_y = N(3.0, 1.0) → var = 1.0 + exp(0.936).
-        @test_rules [check_type_promotion = true] GCV(
-            :x, Marginalisation
-        ) [(
+        @test_rules [check_type_promotion = true] GCV(:x, Marginalisation) [(
             input = (
                 m_y = NormalMeanVariance(3.0, 1.0),
                 q_z = NormalMeanVariance(0.5, 0.7),

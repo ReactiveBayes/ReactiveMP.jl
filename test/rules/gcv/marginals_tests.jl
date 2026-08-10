@@ -130,9 +130,7 @@
         # A·B = exp(-0.936) as derived in `y_tests.jl`. With m_y = N(3.0, 1.0) and
         # m_x = N(1.0, 2.0): W_y = 1.0, W_x = 0.5, ξ = [3.0, 0.5].
         ab = exp(-0.936)
-        @test_marginalrules [check_type_promotion = true] GCV(
-            :y_x
-        ) [(
+        @test_marginalrules [check_type_promotion = true] GCV(:y_x) [(
             input = (
                 m_y = NormalMeanVariance(3.0, 1.0),
                 m_x = NormalMeanVariance(1.0, 2.0),
@@ -158,12 +156,7 @@
         m_x, w_x = mean_precision(q_x)
 
         joint = @call_marginalrule GCV(:y_x) (
-            m_y = elq,
-            m_x = q_x,
-            q_z = q_z,
-            q_κ = q_κ,
-            q_ω = q_ω,
-            meta = meta,
+            m_y = elq, m_x = q_x, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
         )
 
         @test joint isa MvNormalWeightedMeanPrecision
