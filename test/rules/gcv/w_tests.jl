@@ -55,9 +55,7 @@
             )
 
             @test msg isa ExponentialLinearQuadratic
-            @test all(
-                coefficients(msg) .≈ gcv_omega_reference(psi, q_z, q_κ)
-            )
+            @test all(coefficients(msg) .≈ gcv_omega_reference(psi, q_z, q_κ))
 
             # Pin the three `z`-independent coefficients explicitly, so a future
             # regression that reintroduces a `z`-dependence fails loudly here.
@@ -84,9 +82,7 @@
             )
 
             @test msg isa ExponentialLinearQuadratic
-            @test all(
-                coefficients(msg) .≈ gcv_omega_reference(psi, q_z, q_κ)
-            )
+            @test all(coefficients(msg) .≈ gcv_omega_reference(psi, q_z, q_κ))
             @test msg.a == 1
             @test msg.c == -1
             @test msg.d == 0
