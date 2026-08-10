@@ -115,10 +115,7 @@ end
         AverageEnergy(),
         GCV,
         Val{(:y, :x, :z, :κ, :ω)}(),
-        map(
-            q -> Marginal(q, false, false),
-            (q_y, q_x, q_z, q_κ, q_ω),
-        ),
+        map(q -> Marginal(q, false, false), (q_y, q_x, q_z, q_κ, q_ω)),
         GCVMetadata(GaussHermiteCubature(20)),
     )
 
@@ -126,10 +123,7 @@ end
         AverageEnergy(),
         GCV,
         Val{(:y_x, :z, :κ, :ω)}(),
-        map(
-            q -> Marginal(q, false, false),
-            (q_y_x, q_z, q_κ, q_ω),
-        ),
+        map(q -> Marginal(q, false, false), (q_y_x, q_z, q_κ, q_ω)),
         GCVMetadata(GaussHermiteCubature(20)),
     )
 
@@ -159,8 +153,7 @@ end
 
     @testset "Mean-field variant against the derived reference" begin
         for (q_y, q_x, q_z, q_κ, q_ω) in parameter_sets
-            psi =
-                (mean(q_y) - mean(q_x))^2 + var(q_y) + var(q_x)
+            psi = (mean(q_y) - mean(q_x))^2 + var(q_y) + var(q_x)
             @test meanfield_ae(q_y, q_x, q_z, q_κ, q_ω) ≈
                 reference_ae(psi, q_z, q_κ, q_ω)
         end
@@ -219,9 +212,7 @@ end
 
         psi = (3.0 - 1.0)^2 + 1.0 + 2.0
         ω_samples = rand(rng, Normal(0.7, sqrt(0.4)), 10^6)
-        mc = mean(
-            @. (log2π + ω_samples + psi * exp(-ω_samples)) / 2
-        )
+        mc = mean(@. (log2π + ω_samples + psi * exp(-ω_samples)) / 2)
 
         @test meanfield_ae(q_y, q_x, q_z, q_κ, q_ω) ≈ mc rtol = 5e-3
     end

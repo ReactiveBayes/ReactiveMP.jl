@@ -33,8 +33,7 @@
 
             @test msg isa ExponentialLinearQuadratic
             @test all(
-                coefficients(msg) .≈
-                reference(expected_psi(q_y, q_x), q_κ, q_ω)
+                coefficients(msg) .≈ reference(expected_psi(q_y, q_x), q_κ, q_ω)
             )
             @test msg.a ≈ -msg.c
         end

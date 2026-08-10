@@ -42,8 +42,7 @@
 
             @test msg isa ExponentialLinearQuadratic
             @test all(
-                coefficients(msg) .≈
-                reference(expected_psi(q_y, q_x), q_z, q_ω)
+                coefficients(msg) .≈ reference(expected_psi(q_y, q_x), q_z, q_ω)
             )
             # `a` and `c` are equal and opposite by construction.
             @test msg.a ≈ -msg.c
