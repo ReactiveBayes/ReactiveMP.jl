@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Added missing `BayesBase` module prefix to `paramfloattype(::ManyOf)` method so the extension is correctly registered ([#606](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/606))
 
-## [6.1.0] - 04-05-2026
+## [6.1.0] - 2026-05-04
 
 ### Added
 - `Base.show` methods for every callback `Event` defined in `src/callbacks.jl` (`Before/AfterMessageRuleCallEvent`, `Before/AfterProductOfTwoMessagesEvent`, `Before/AfterProductOfMessagesEvent`, `Before/AfterFormConstraintAppliedEvent`, `Before/AfterMarginalComputationEvent`) so the RxInfer trace logger no longer dumps raw struct contents into TBLogger text summaries ([#599](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/599), [RxInfer.jl#638](https://github.com/ReactiveBayes/RxInfer.jl/issues/638)). The methods honor the `IOContext` `:compact` flag: trace loggers pass `:compact => true` to get a one-line `nmsgs=N` / 4-char span summary, while REPL/Pluto/Jupyter sees the full form with actual messages and the full UUID span id.
@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `Base.show(io, ::AnnotationDict)` now switches between the count summary `AnnotationDict(n=K)` and the full key/value listing based on `get(io, :compact, false)` rather than `MIME"text/plain"` dispatch, matching the convention used by the new event show methods
 
-## [6.0.0]
+## [6.0.0] - 2026-04-17
 
 ### Added
 - `AbstractStreamPostprocessor` abstraction unifying the old pipeline stages and the per-node `scheduler` argument under a single concept that postprocesses outbound message streams, marginal streams, and score streams uniformly
