@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A zero-covariance inbound message no longer crashes the `DeltaFn(:ins)` joint marginal rules. `unscented_statistics`' zero-covariance fallback returned `nothing` for the cross-covariance — "not computed" rather than a degenerate value of the same kind as the zeros beside it — and the marginal rules feed that third return value straight into `smoothRTS`, failing with `MethodError: no method matching *(::Nothing, ::Float64)`. It now returns a genuine zero cross-covariance, which is both correct (a deterministic input has zero covariance with anything) and type-stable with the non-degenerate path ([#630](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/630))
+- `smoothRTS` now short-circuits when the forward output covariance is singular or non-finite, returning the forward inbound statistics unchanged. A deterministic node output cannot be revised by the backward message, so that *is* the smoothed marginal. Previously `cholinv(V_tilde)` on a zero covariance returned `Inf` rather than raising, so `D_tilde = C_tilde * W_tilde` evaluated to `0 * Inf = NaN` and a silently corrupted marginal propagated. This affects both the `Unscented` and `Linearization` delta-node paths ([#630](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/630))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed
