@@ -54,6 +54,26 @@ function getpoints(
     end
 end
 
+"""
+    getpoints(cubature::GaussHermiteCubature, mean::AbstractVector, covariance::AbstractMatrix)
+
+Return a lazy generator over the multivariate Gauss-Hermite cubature points.
+
+!!! warning "The generator yields the same buffer every iteration"
+    For performance, every point is written into a single preallocated vector that is reused
+    across iterations, so the generator yields *the same object* each time with new contents.
+    Two consequences:
+
+    * **Do not materialize the result.** `collect(getpoints(...))` returns `n` references to
+      that one buffer, i.e. `n` copies of the *last* point — silently wrong cubature with no
+      error. Use `map(copy, getpoints(...))` if you need independent points.
+    * **Consumers may destroy the contents.** `approximate_meancov` deliberately mutates the
+      yielded point in place (`broadcast!(*, point, point, cv)`) rather than allocating; that
+      is safe only because the next iteration rewrites the buffer from `mean` before use.
+
+    The univariate method above does not have this property: it yields freshly computed
+    scalars.
+"""
 function getpoints(
     cubature::GaussHermiteCubature,
     mean::AbstractVector{T},
