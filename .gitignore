@@ -3,8 +3,6 @@
 docs/build
 docs/Manifest.toml
 
-scripts/Manifest.toml
-
 demo/.ipynb_checkpoints
 demo/*incomplete.ipynb
 demo/*.jl
@@ -32,6 +30,8 @@ examples/*Compiled
 **/Manifest.toml
 **/LocalPreferences.toml
 !benchmark/Manifest.toml
+# Tracked so `make format` uses a reproducible JuliaFormatter version everywhere.
+!scripts/Manifest.toml
 
 **/.benchmarkci
 benchmark/*.json
