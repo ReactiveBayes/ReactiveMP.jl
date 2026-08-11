@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `ImportanceSamplingApproximation` now warns (once per session) when it falls back to the proposal distribution's own moments, instead of substituting them silently. The fallback returns a confident-looking answer that never saw the target, so it should be visible ([#631](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/631))
 - Documented that `ImportanceSamplingApproximation` is **not reentrant**: its sample and weight buffers are preallocated and overwritten in place, so an integrand `g` that itself calls `approximate_meancov` with the same approximation object silently corrupts the outer result. This is a reentrancy constraint, not a thread-safety one — ReactiveMP's schedulers are `@async` coroutines on a single thread ([#637](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/637))
+### Fixed
+- `LaplaceApproximation`'s `approximate_meancov` returned a **negated covariance for every input**, not just pathological ones. It computed `-cholinv(H)` from the Hessian `H` of the log-density at the mode. `-(H⁻¹)` and `(-H)⁻¹` agree in exact arithmetic, but `cholinv` factorizes via Cholesky, which is only defined for positive-definite input — and at a maximum `H` is negative-definite. Passing it directly does not raise; it silently returns a matrix that is not `H⁻¹`, so the sign flip was not compensated and the result was negative-definite. It now negates before inverting, giving `(-H)⁻¹`. Verified against the closed-form Gaussian-product answer, for which the Laplace approximation is exact. `LaplaceApproximation` had no test coverage at all, which is why this went unnoticed ([#635](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/635))
+- `LaplaceApproximation` now rejects a stationary point that is not a strict local maximum instead of returning an invalid Gaussian. `Optim.converged` only reports that the optimizer stopped moving, so for a non-log-concave integrand it could settle on a saddle point or flat region where the negated Hessian is not positive-definite. The error names the offending matrix and suggests approximation methods that do not assume local concavity ([#635](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/635))
+
+### Removed
+- Dead `d_logf` gradient closure in `LaplaceApproximation`'s `approximate_meancov`, which was constructed but never used ([#635](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/635))
 
 ## [6.3.3] - 2026-07-14
 
