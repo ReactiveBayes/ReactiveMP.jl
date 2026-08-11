@@ -9,6 +9,12 @@ on:
             - main
     pull_request:
 
+concurrency:
+  # Cancel superseded runs for the same ref: new pushes to `main` cancel the
+  # previous `main` run, and new commits on a PR cancel that PR's earlier run.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
     test:
         name: ${{ matrix.package.repo }}
