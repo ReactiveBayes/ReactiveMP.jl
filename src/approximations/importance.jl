@@ -15,7 +15,7 @@ convenient functions to generate samples and weights to approximate expectations
 
 !!! warning "Not reentrant"
     The sample and weight buffers (`bsamples`, `bweights`, `rsamples`) are preallocated once and
-    overwritten in place on every [`approximate_meancov`](@ref) call. A single approximation
+    overwritten in place on every `approximate_meancov` call. A single approximation
     object therefore must not be used by two overlapping evaluations. In particular, if the
     integrand `g` passed to `approximate_meancov` itself calls `approximate_meancov` with the
     *same* approximation object, the inner call overwrites the outer call's buffers and the

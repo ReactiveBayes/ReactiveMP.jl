@@ -92,29 +92,27 @@ const DefaultGCVNodeMetadata = GCVMetadata(GaussHermiteCubature(20))
 
 default_meta(::Type{GCV}) = DefaultGCVNodeMetadata
 
-"""
-    __gcv_log_noise_precision(q_z, q_κ, q_ω)
-
-Return `log ⟨e^{-(κz + ω)}⟩`, the log of the `GCV` node's effective noise *precision*.
-
-Since `p(y | x, z, κ, ω) = N(y | x, exp(κz + ω))`, that expectation factorizes as `A · B` with
-
-    A = ⟨e^{-ω}⟩  = exp(-⟨ω⟩ + Var(ω)/2)
-    B ≈ ⟨e^{-κz}⟩ = exp(-⟨κ⟩⟨z⟩ + Var(κz)/2)
-
-(`A` is exact — the mean of a lognormal; `B` applies the same formula to `κz`, which is a
-product of Gaussians and so not itself Gaussian, and is therefore an approximation the node
-adopts deliberately.)
-
-This helper exists so callers never form `A * B` directly. Both factors are exponentials, and
-either can overflow or underflow *on its own* while their product is perfectly representable.
-The worst case is not a large result but a silent `NaN`: with `log A = +800` and
-`log B = -800`, `A = Inf` and `B = 0`, so `A * B` is `NaN` where the true value is `1`. Summing
-the exponents first sidesteps that entirely, and also loses less precision in ordinary ranges.
-
-Callers still need to exponentiate, so a genuinely unrepresentable result (a variance beyond
-`floatmax`) remains `Inf` — that is the honest answer, not a defect.
-"""
+# __gcv_log_noise_precision(q_z, q_κ, q_ω)
+#
+# Return `log ⟨e^{-(κz + ω)}⟩`, the log of the `GCV` node's effective noise precision.
+#
+# Since `p(y | x, z, κ, ω) = N(y | x, exp(κz + ω))`, that expectation factorizes as `A · B` with
+#
+#     A = ⟨e^{-ω}⟩  = exp(-⟨ω⟩ + Var(ω)/2)
+#     B ≈ ⟨e^{-κz}⟩ = exp(-⟨κ⟩⟨z⟩ + Var(κz)/2)
+#
+# (`A` is exact — the mean of a lognormal; `B` applies the same formula to `κz`, which is a
+# product of Gaussians and so not itself Gaussian, and is therefore an approximation the node
+# adopts deliberately.)
+#
+# This helper exists so callers never form `A * B` directly. Both factors are exponentials, and
+# either can overflow or underflow on its own while their product is perfectly representable.
+# The worst case is not a large result but a silent `NaN`: with `log A = +800` and
+# `log B = -800`, `A = Inf` and `B = 0`, so `A * B` is `NaN` where the true value is `1`. Summing
+# the exponents first sidesteps that entirely, and also loses less precision in ordinary ranges.
+#
+# Callers still need to exponentiate, so a genuinely unrepresentable result (a variance beyond
+# `floatmax`) remains `Inf` — that is the honest answer, not a defect.
 function __gcv_log_noise_precision(q_z, q_κ, q_ω)
     z_mean, z_var = mean_var(q_z)
     κ_mean, κ_var = mean_var(q_κ)

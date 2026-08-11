@@ -20,24 +20,22 @@ function getweights(
     end
 end
 
-"""
-    getpoints(::SphericalRadialCubature, mean::AbstractVector, covariance::AbstractMatrix)
-
-Return a lazy generator over the `2d + 1` spherical-radial cubature points.
-
-!!! warning "The generator yields the same buffer every iteration"
-    Two preallocated vectors are reused across iterations -- `tmpbuffer` for the unit sigma
-    point and `tbuffer` for the transformed one -- so the generator yields *the same object*
-    each time with new contents. Two consequences:
-
-    * **Do not materialize the result.** `collect(getpoints(...))` returns `2d + 1` references
-      to one buffer, i.e. that many copies of the *last* point. The last point here is the
-      centre, so a collected result is the mean repeated -- silently wrong cubature with no
-      error. Use `map(copy, getpoints(...))` if you need independent points.
-    * **Consumers may destroy the contents.** `approximate_meancov` deliberately mutates the
-      yielded point in place (`broadcast!(*, point, point, cv)`) rather than allocating; that
-      is safe only because the next iteration rewrites the buffer before use.
-"""
+# getpoints(::SphericalRadialCubature, mean::AbstractVector, covariance::AbstractMatrix)
+#
+# Return a lazy generator over the `2d + 1` spherical-radial cubature points.
+#
+# WARNING: the generator yields the same buffer every iteration. Two preallocated vectors are
+# reused across iterations -- `tmpbuffer` for the unit sigma point and `tbuffer` for the
+# transformed one -- so the generator yields the same object each time with new contents. Two
+# consequences:
+#
+#   * Do not materialize the result. `collect(getpoints(...))` returns `2d + 1` references to one
+#     buffer, i.e. that many copies of the last point. The last point here is the centre, so a
+#     collected result is the mean repeated -- silently wrong cubature with no error. Use
+#     `map(copy, getpoints(...))` if you need independent points.
+#   * Consumers may destroy the contents. `approximate_meancov` deliberately mutates the yielded
+#     point in place (`broadcast!(*, point, point, cv)`) rather than allocating; that is safe only
+#     because the next iteration rewrites the buffer before use.
 function getpoints(
     ::SphericalRadialCubature,
     mean::AbstractVector{T},
