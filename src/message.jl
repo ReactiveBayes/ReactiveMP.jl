@@ -716,7 +716,10 @@ function (mapping::MessageMapping)(messages, marginals)
         end
 
     # Run annotation processors after the rule has been executed
-    if !isnothing(mapping.annotations)
+    # Skip them entirely when the rule was short-circuited to `missing`: no rule ran, so
+    # post-rule processors (e.g. `LogScaleAnnotations`, which `error()`s when `:logscale`
+    # was never set and inputs are not all `PointMass`) must not run on a deferred message.
+    if !isnothing(mapping.annotations) && result !== missing
         for p in mapping.annotations
             post_rule_annotations!(
                 p, annotations, mapping, messages, marginals, result
