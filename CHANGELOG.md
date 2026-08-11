@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The 2-interface `DiscreteTransition(:in)` rule for `PointMass` inputs now uses `softmax!` like the twenty sibling rules in the same file, instead of `exp.` followed by `normalize!`, and two lines of unreachable code after its `return` have been removed. Output is unchanged — `clamplog` bounds the log values from below and the `probvec`-weighted average pulls them toward zero, so both formulations agree on any reachable input; this is a dead-code and consistency cleanup, not a bug fix ([#627](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/627))
+
 ## [6.3.3] - 2026-07-14
 
 ### Fixed

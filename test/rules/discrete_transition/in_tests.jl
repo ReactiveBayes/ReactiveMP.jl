@@ -44,6 +44,48 @@ end
     )]
 end
 
+@testitem "rules:DiscreteTransition:in: 2-interface PointMass rule matches exp-then-normalise" begin
+    using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+
+    # This rule computes `eloga' * probvec(q_out)` -- a vector of unnormalised *log*
+    # probabilities -- and then converts it to a probability vector. It used to do that with
+    # `out .= exp.(out); normalize!(out, 1)` while all twenty sibling rules in the same file
+    # used `softmax!`, and it carried two lines of unreachable code after its `return`
+    # (issue #627). It now uses `softmax!` like its siblings.
+    #
+    # `softmax!` subtracts the maximum before exponentiating, so it is the more defensive
+    # formulation in general. It is worth being precise about the benefit here, though: with
+    # `clamplog` bounding the log values from below and the subsequent `probvec`-weighted
+    # average pulling them toward zero, this particular rule's inputs stay in a range where
+    # both formulations agree -- including at extreme `q_a` scales. So this is a dead-code and
+    # consistency change, not a bug fix, and this test pins that the output is unchanged.
+    @testset "agrees with the naive form across a wide range of q_a scales" begin
+        q_out = PointMass([0.1, 0.4, 0.5])
+
+        for q_a in (
+            PointMass([0.2 0.4 0.1; 0.1 0.3 0.6; 0.7 0.3 0.3]),
+            PointMass([1e-8 1.0 1.0; 1.0 1e-8 1.0; 1.0 1.0 1e-8]),
+            PointMass([1e8 1.0 1.0; 1.0 1e8 1.0; 1.0 1.0 1e8]),
+            PointMass(diageye(3) .+ tiny),
+        )
+            eloga = mean(
+                Base.Broadcast.BroadcastFunction(ReactiveMP.clamplog), q_a
+            )
+            naive = exp.(eloga' * probvec(q_out))
+            naive ./= sum(naive)
+
+            msg = @call_rule DiscreteTransition(:in, Marginalisation) (
+                q_out = q_out, q_a = q_a
+            )
+
+            p = probvec(msg)
+            @test p ≈ naive
+            @test all(isfinite, p)
+            @test sum(p) ≈ 1
+        end
+    end
+end
+
 @testitem "rules:DiscreteTransition:in:Variational Bayes: (m_out::Categorical, q_a::DirichletCollection)" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 

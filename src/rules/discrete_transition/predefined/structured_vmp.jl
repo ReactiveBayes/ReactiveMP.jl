@@ -8,8 +8,6 @@ using Tullio
 ) where {T} = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
     out = eloga' * probvec(q_out)
-    out .= exp.(out)
-    return Categorical(normalize!(out, 1); check_args = false)
     softmax!(out)
     return Categorical(out; check_args = false)
 end
