@@ -38,6 +38,33 @@ false
 julia> is_initial(message)
 true
 ```
+
+# Equality
+
+`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations` — matching
+[`Message`](@ref). Two marginals carrying the same distribution are equal even when their
+annotations differ:
+
+```jldoctest
+julia> using ReactiveMP, BayesBase, ExponentialFamily
+
+julia> a = Marginal(NormalMeanVariance(0.0, 1.0), false, false);
+
+julia> b = Marginal(NormalMeanVariance(0.0, 1.0), false, false);
+
+julia> ReactiveMP.annotate!(ReactiveMP.getannotations(b), :logscale, 42.0);
+
+julia> a == b
+true
+
+julia> ReactiveMP.getannotations(a) == ReactiveMP.getannotations(b)
+false
+
+```
+
+This is intentional: annotations are out-of-band metadata about *how* a marginal was computed,
+not part of the belief it represents. Compare `getannotations` explicitly when you need
+annotation-sensitive equality.
 """
 mutable struct Marginal{D}      # `mutable` structure here appears to be more performance
     const data        :: D      # in `RxInfer` benchmarks
