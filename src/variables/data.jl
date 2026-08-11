@@ -150,8 +150,34 @@ __link_getmarginal(l::AbstractVariable) = get_stream_of_marginals(l)
 __link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
     collectLatest(map(get_stream_of_marginals, l))
 
-__apply_link(f::F, args) where {F} = __apply_link(f, getdata.(args))
-__apply_link(f::F, args::NTuple{N, PointMass}) where {F, N} = f(mean.(args)...)
+__apply_link(f::F, args) where {F} = __apply_link_data(f, getdata.(args))
+
+__apply_link_data(f::F, data::NTuple{N, PointMass}) where {F, N} =
+    f(mean.(data)...)
+
+# A linked `DataVariable` must be a deterministic function of *point* values: the
+# transformation is applied to plain numbers, not to distributions. Linking to a
+# `RandomVariable` therefore delivers a full posterior here, which has no meaningful
+# point value to substitute. Previously this produced a bare `MethodError` mentioning
+# only `__apply_link`, which gives no indication of what the user did wrong.
+function __apply_link_data(f::F, data::Tuple) where {F}
+    offenders = join(
+        (
+            "  argument $(i) :: $(typeof(d))" for
+            (i, d) in enumerate(data) if !(d isa PointMass)
+        ),
+        "\n",
+    )
+    error(
+        """
+        Cannot apply the link function `$(f)` to a linked data variable: every linked argument must resolve to a `PointMass`, but the following did not:
+        $(offenders)
+
+        A linked data variable is a deterministic function of observed point values, so its arguments must be constants or other data variables holding observations. Linking to a random variable is not supported, because its marginal is a distribution rather than a point value.
+
+        If you intended to use the random variable's expectation, link to a data variable that you update explicitly with `new_observation!`, or introduce a deterministic node into the model instead.""",
+    )
+end
 
 """
     new_observation!(datavar::DataVariable, data)

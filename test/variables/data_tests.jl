@@ -92,6 +92,97 @@ end
     end
 end
 
+@testitem "DataVariable: linking to a non-PointMass marginal gives an informative error" begin
+    using BayesBase, Distributions, ExponentialFamily
+    import ReactiveMP:
+        DataVariable,
+        DataVariableActivationOptions,
+        RandomVariable,
+        RandomVariableActivationOptions,
+        activate!,
+        get_stream_of_marginals,
+        __apply_link,
+        __apply_link_data
+
+    include("../testutilities.jl")
+
+    # A linked data variable applies its transform to *point* values. Linking it to
+    # something whose marginal is a distribution used to fail with a bare `MethodError`
+    # naming only the internal `__apply_link`, which tells the user nothing about what
+    # they did wrong (issue #634).
+
+    @testset "the error names the offending argument and its type" begin
+        err = try
+            __apply_link_data(+, (PointMass(1.0), NormalMeanVariance(0.0, 1.0)))
+            nothing
+        catch e
+            e
+        end
+
+        @test err isa ErrorException
+        @test occursin("must resolve to a `PointMass`", err.msg)
+        # Points at the specific argument, by position and by type.
+        @test occursin("argument 2", err.msg)
+        @test occursin("NormalMeanVariance", err.msg)
+        # Does not mention the first argument, which was fine.
+        @test !occursin("argument 1", err.msg)
+        # Explains why, and what to do instead.
+        @test occursin("random variable", err.msg)
+        @test occursin("new_observation!", err.msg)
+    end
+
+    @testset "every offending argument is listed" begin
+        err = try
+            __apply_link_data(
+                +,
+                (NormalMeanVariance(0.0, 1.0), PointMass(1.0), Gamma(1.0, 1.0)),
+            )
+            nothing
+        catch e
+            e
+        end
+
+        @test err isa ErrorException
+        @test occursin("argument 1", err.msg)
+        @test occursin("argument 3", err.msg)
+        @test !occursin("argument 2", err.msg)
+    end
+
+    @testset "reached through the real entry point, which receives Marginals" begin
+        # `activate!` wires `__apply_link(f, getrecent.(args))`, where each element is the
+        # `Marginal` most recently emitted by a linked variable's marginal stream. This is the
+        # path an actual model takes, so drive it with `Marginal`s rather than raw data.
+        err = try
+            __apply_link(
+                +,
+                (
+                    Marginal(PointMass(1.0), true, false),
+                    Marginal(NormalMeanVariance(0.0, 1.0), false, false),
+                ),
+            )
+            nothing
+        catch e
+            e
+        end
+
+        @test err isa ErrorException
+        @test occursin("must resolve to a `PointMass`", err.msg)
+        @test occursin("argument 2", err.msg)
+    end
+
+    @testset "the all-PointMass path is unaffected" begin
+        # The valid case must still work, and must not go anywhere near the error branch.
+        @test __apply_link_data(+, (PointMass(2.0), PointMass(3.0))) == 5.0
+        @test __apply_link(
+            *,
+            (
+                Marginal(PointMass(2.0), true, false),
+                Marginal(PointMass(3.0), true, false),
+            ),
+        ) == 6.0
+    end
+end
+
 @testitem "DataVariable: linked variable" begin
     using BayesBase
     import ReactiveMP:
