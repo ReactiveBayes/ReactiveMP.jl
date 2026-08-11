@@ -23,7 +23,7 @@
     Λtildex = Λztilde - Λztilde * A * Σ_zprev * A' * Λztilde
     tmp = B * Σu
 
-    # calculate marginals of input WRONG
+    # calculate the marginal of the input
     μ_in = μu - (Σu * (B' * ξtildex))
     Σ_in = Σu - tmp' * Λtildex * tmp
 
