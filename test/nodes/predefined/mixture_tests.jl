@@ -1,5 +1,5 @@
 @testitem "nodes:MixtureNode" begin
-    using ReactiveMP, BayesBase, ExponentialFamily, Test
+    using ReactiveMP, BayesBase, ExponentialFamily, Rocket, Test
     import ReactiveMP:
         Mixture,
         MixtureNode,
@@ -134,13 +134,20 @@
         deps1 = MixtureNodeFunctionalDependencies()
         deps2 = RequireMarginalFunctionalDependencies()
 
+        # The empty-tuple overload returns `of(nothing)`, a synchronous single-value stream, so
+        # subscribing asserts it actually *emits* `nothing` rather than only that some object
+        # came back.
         val1, obs1 = collect_latest_marginals(deps1, node, ())
         @test val1 === nothing
-        @test obs1 !== nothing
+        emitted = []
+        subscribe!(obs1, (v) -> push!(emitted, v))
+        @test emitted == [nothing]
 
+        # `RequireMarginalFunctionalDependencies` names the marginal it requires, so assert the
+        # actual name -- `isa Val` would pass even if the wrong interface were reported.
         switchiface = NodeInterface(:switch, randomvar())
         val2, obs2 = collect_latest_marginals(deps2, node, (switchiface,))
-        @test val2 isa Val
-        @test obs2 !== nothing
+        @test val2 === Val((:switch,))
+        @test obs2 isa Rocket.Subscribable
     end
 end

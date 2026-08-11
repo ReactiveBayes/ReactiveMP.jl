@@ -187,7 +187,7 @@
 end
 
 @testitem "nodes:NormalMixtureNode" begin
-    using ReactiveMP, BayesBase, ExponentialFamily, Test
+    using ReactiveMP, BayesBase, ExponentialFamily, Rocket, Test
 
     import ReactiveMP:
         NormalMixtureNode,
@@ -353,24 +353,31 @@ end
             ),
         )
 
-        # collect_latest_messages with empty tuple
+        # collect_latest_messages with empty tuple. `of(nothing)` is a synchronous single-value
+        # stream, so subscribing asserts that it actually *emits* `nothing` rather than only
+        # that some object was returned.
         val, obs = collect_latest_messages(deps, node, ())
         @test val === nothing
-        @test obs !== nothing
+        emitted = []
+        subscribe!(obs, (v) -> push!(emitted, v))
+        @test emitted == [nothing]
 
-        # collect_latest_marginals with full (out, means, precs)
+        # collect_latest_marginals with full (out, means, precs). The names come from the
+        # interfaces, so assert the actual tuple -- a transposed or truncated one would pass
+        # `isa Val`, and these names are what rule dispatch keys off.
         marg_names, marg_obs = collect_latest_marginals(
             deps, node, (node.out, node.means, node.precs)
         )
-        @test marg_names isa Val
-        @test !isnothing(marg_obs)
+        @test marg_names === Val((:out, :m, :p))
+        @test marg_obs isa Rocket.Subscribable
 
-        # collect_latest_marginals with (out, switch, var)
+        # collect_latest_marginals with (out, switch, var) -- different arity, and the middle
+        # name must be `:switch`.
         marg_names, marg_obs = collect_latest_marginals(
             deps, node, (node.out, node.switch, node.means[1])
         )
-        @test marg_names isa Val
-        @test !isnothing(marg_obs)
+        @test marg_names === Val((:out, :switch, :m))
+        @test marg_obs isa Rocket.Subscribable
     end
 
     @testset "Type-level utilities" begin
