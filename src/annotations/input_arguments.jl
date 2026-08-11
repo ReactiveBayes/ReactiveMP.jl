@@ -88,22 +88,23 @@ end
 function _merge_input_arguments(
     left::RuleInputArgumentsRecord, right::ProductInputArgumentsRecord
 )
-    pushfirst!(right.mappings, left)
-    return right
+    return ProductInputArgumentsRecord(
+        vcat(RuleInputArgumentsRecord[left], right.mappings)
+    )
 end
 
 function _merge_input_arguments(
     left::ProductInputArgumentsRecord, right::RuleInputArgumentsRecord
 )
-    push!(left.mappings, right)
-    return left
+    return ProductInputArgumentsRecord(
+        vcat(left.mappings, RuleInputArgumentsRecord[right])
+    )
 end
 
 function _merge_input_arguments(
     left::ProductInputArgumentsRecord, right::ProductInputArgumentsRecord
 )
-    append!(left.mappings, right.mappings)
-    return left
+    return ProductInputArgumentsRecord(vcat(left.mappings, right.mappings))
 end
 
 function post_product_annotations!(

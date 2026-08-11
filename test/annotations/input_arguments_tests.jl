@@ -458,6 +458,113 @@ end
     @test occursin("res_b", output)
 end
 
+@testitem "merging does not mutate the operand records" setup = [
+    RuleInputArgumentsTestUtils
+] begin
+    # `EqualityChain` hands the *same* cached `Message` -- and therefore the same
+    # `AnnotationDict` and the same `ProductInputArgumentsRecord` -- to several
+    # all-but-one outbound products. When `_merge_input_arguments` merged by
+    # `push!`/`append!`/`pushfirst!`-ing into one operand's `mappings` vector and
+    # returning that same object, the second product observed a record that had
+    # already grown from the first, so the stored trace accumulated rule executions
+    # that never contributed to it (issue #622).
+    #
+    # These tests merge the same operand twice and assert the operand is unchanged
+    # and that the two results are independent, which is the property the
+    # copy-on-write implementation provides and the in-place one did not.
+    import ReactiveMP:
+        AnnotationDict,
+        annotate!,
+        post_product_annotations!,
+        InputArgumentsAnnotations,
+        RuleInputArgumentsRecord,
+        ProductInputArgumentsRecord,
+        get_rule_input_arguments,
+        _merge_input_arguments
+
+    record(name) = RuleInputArgumentsRecord(
+        RuleInputArgumentsTestUtils.MockMapping(name),
+        nothing,
+        nothing,
+        name,
+    )
+
+    @testset "prod (left) merged twice with different records" begin
+        shared = ProductInputArgumentsRecord([record(:a), record(:b)])
+
+        first  = _merge_input_arguments(shared, record(:c))
+        second = _merge_input_arguments(shared, record(:d))
+
+        # The shared operand must not have grown.
+        @test length(shared.mappings) == 2
+        @test map(r -> r.result, shared.mappings) == [:a, :b]
+
+        # Neither result aliases the operand, and neither leaked into the other.
+        @test second !== shared
+        @test second.mappings !== shared.mappings
+        @test map(r -> r.result, first.mappings) == [:a, :b, :c]
+        @test map(r -> r.result, second.mappings) == [:a, :b, :d]
+    end
+
+    @testset "prod (right) merged twice with different records" begin
+        shared = ProductInputArgumentsRecord([record(:a), record(:b)])
+
+        first  = _merge_input_arguments(record(:c), shared)
+        second = _merge_input_arguments(record(:d), shared)
+
+        @test length(shared.mappings) == 2
+        @test map(r -> r.result, shared.mappings) == [:a, :b]
+        @test map(r -> r.result, first.mappings) == [:c, :a, :b]
+        @test map(r -> r.result, second.mappings) == [:d, :a, :b]
+    end
+
+    @testset "prod merged twice with another prod" begin
+        shared = ProductInputArgumentsRecord([record(:a), record(:b)])
+        other  = ProductInputArgumentsRecord([record(:c)])
+
+        first  = _merge_input_arguments(shared, other)
+        second = _merge_input_arguments(shared, other)
+
+        @test length(shared.mappings) == 2
+        @test length(other.mappings) == 1
+        @test map(r -> r.result, first.mappings) == [:a, :b, :c]
+        @test map(r -> r.result, second.mappings) == [:a, :b, :c]
+        @test first.mappings !== second.mappings
+    end
+
+    @testset "reusing one side's annotations across two products" begin
+        # The same scenario one layer up, through the public processor entry point:
+        # a single `left_ann` (as a cached message would supply) feeding two products.
+        shared_record = ProductInputArgumentsRecord([record(:a), record(:b)])
+        left_ann      = AnnotationDict()
+        annotate!(left_ann, :rule_input_arguments, shared_record)
+
+        function merge_with(name)
+            right_ann = AnnotationDict()
+            annotate!(right_ann, :rule_input_arguments, record(name))
+            return get_rule_input_arguments(
+                post_product_annotations!(
+                    (InputArgumentsAnnotations(),),
+                    left_ann,
+                    right_ann,
+                    nothing,
+                    nothing,
+                    nothing,
+                ),
+            )
+        end
+
+        first  = merge_with(:c)
+        second = merge_with(:d)
+
+        # Under the in-place implementation this was [:a, :b, :c, :d] -- the second
+        # product's trace contained `:c`, which never contributed to it.
+        @test map(r -> r.result, first.mappings) == [:a, :b, :c]
+        @test map(r -> r.result, second.mappings) == [:a, :b, :d]
+        @test map(r -> r.result, shared_record.mappings) == [:a, :b]
+    end
+end
+
 @testitem "AddonMemory throws an error" begin
     import ReactiveMP: AddonMemory
 
