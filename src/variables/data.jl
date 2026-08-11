@@ -187,10 +187,33 @@ Provides a new observation to a [`ReactiveMP.DataVariable`](@ref) (or an array o
 The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
 Pass `missing` to indicate that the observation is not available.
 """
-new_observation!(datavar::DataVariable, data) =
-    new_observation!(datavar, PointMass(data))
+function new_observation!(datavar::DataVariable, data)
+    __assert_valid_observation(datavar, data)
+    return new_observation!(datavar, PointMass(data))
+end
 new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
 new_observation!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false))
+
+# `PointMass` only defines `variate_form` (and hence usable `mean`/`var`) for these payloads.
+# Wrapping anything else produces a `PointMass` that *constructs* fine but whose `mean` recurses
+# between `Statistics.mean(itr)` and `BayesBase.mean(fn, ::PointMass)` until the stack overflows,
+# which surfaces tens of thousands of frames deep with no hint of the actual mistake (issue #588).
+__assert_valid_observation(
+    ::DataVariable, ::Union{Real, AbstractArray, UniformScaling}
+) = nothing
+
+function __assert_valid_observation(datavar::DataVariable, data::D) where {D}
+    label = something(datavar.label, "")
+    named = isempty(string(label)) ? "" : " for `$(label)`"
+    error(
+        """
+        Invalid observation$(named): `$(D)` cannot be used as observed data.
+
+        Observations must be a real number, an array of real numbers, or a `UniformScaling`. Got a value of type `$(D)`.
+
+        If you meant to indicate that this observation is not available, pass `missing` instead$(D <: Distribution ? ".\n\nPassing a distribution as data is not supported: data variables hold observed point values, not beliefs. To place a prior on a quantity, make it a random variable in the model instead." : ".")""",
+    )
+end
 
 function new_observation!(
     datavars::AbstractArray{<:DataVariable}, data::AbstractArray

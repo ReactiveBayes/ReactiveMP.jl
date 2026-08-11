@@ -183,6 +183,97 @@ end
     end
 end
 
+@testitem "DataVariable: invalid observation types are rejected with a clear error" begin
+    using BayesBase, Distributions, ExponentialFamily, LinearAlgebra
+    import ReactiveMP: DataVariable, datavar, new_observation!, Uninformative
+
+    # `PointMass` defines `variate_form` -- and therefore a usable `mean` -- only for reals,
+    # arrays of reals and `UniformScaling`. Wrapping anything else builds a `PointMass` that
+    # constructs fine but whose `mean` recurses between `Statistics.mean(itr)` and
+    # `BayesBase.mean(fn, ::PointMass)` until the stack overflows. Issue #588 reported this as
+    # a 40,000-frame `StackOverflowError` from passing `Uninformative()` in a data tuple where
+    # `missing` was meant.
+
+    @testset "Uninformative() -- the reported case" begin
+        var = datavar()
+        err = try
+            new_observation!(var, Uninformative())
+            nothing
+        catch e
+            e
+        end
+
+        # An informative error, not a StackOverflowError.
+        @test err isa ErrorException
+        @test occursin("cannot be used as observed data", err.msg)
+        @test occursin("Uninformative", err.msg)
+        # Points the user at what they almost certainly meant.
+        @test occursin("pass `missing` instead", err.msg)
+    end
+
+    @testset "distributions get the extra explanation" begin
+        for d in (NormalMeanVariance(0.0, 1.0), Beta(1.0, 1.0), Gamma(2.0, 3.0))
+            var = datavar()
+            err = try
+                new_observation!(var, d)
+                nothing
+            catch e
+                e
+            end
+
+            @test err isa ErrorException
+            @test occursin("cannot be used as observed data", err.msg)
+            @test occursin("pass `missing` instead", err.msg)
+            # Distributions are a distinct enough mistake to warrant their own note.
+            @test occursin("not beliefs", err.msg)
+        end
+    end
+
+    @testset "the label is named when the variable has one" begin
+        var = datavar(label = :y)
+        err = try
+            new_observation!(var, Uninformative())
+            nothing
+        catch e
+            e
+        end
+
+        @test err isa ErrorException
+        @test occursin("`y`", err.msg)
+    end
+
+    @testset "all supported payloads still work" begin
+        # The guard must not narrow what has always been accepted.
+        for value in (
+            1.0,
+            -3,
+            true,
+            Float32(2.5),
+            big(1.0),
+            [1.0, 2.0],
+            [1 2; 3 4],
+            ones(2, 2, 2),
+            Diagonal([1.0, 2.0]),
+        )
+            var = datavar()
+            new_observation!(var, value)
+            @test true # did not throw
+        end
+
+        # `missing` keeps its dedicated path.
+        let var = datavar()
+            new_observation!(var, missing)
+            @test true
+        end
+
+        # An explicitly-constructed `PointMass` bypasses the check, as before.
+        let var = datavar()
+            new_observation!(var, PointMass(1.0))
+            @test true
+        end
+    end
+end
+
 @testitem "DataVariable: linked variable" begin
     using BayesBase
     import ReactiveMP:
