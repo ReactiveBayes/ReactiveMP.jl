@@ -33,10 +33,10 @@ end
     A = exp(-κ_mean * z_mean + γ / 2)
     psi = (y_mean - x_mean)^2 + y_var + x_var
 
-    a = z_mean
+    a = one(typeof(γ))
     b = psi * A
-    c = -a
-    d = z_var
+    c = -one(typeof(γ))
+    d = zero(typeof(γ))
 
     return ExponentialLinearQuadratic(get_approximation(meta), a, b, c, d)
 end
