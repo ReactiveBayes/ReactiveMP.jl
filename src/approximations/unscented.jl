@@ -148,10 +148,19 @@ function statistic_estimation(
     return (m_tilde, V_tilde, C_tilde)
 end
 
+# A zero-covariance input means the input is known exactly, so the transformed output is a
+# point too: zero output covariance *and* zero cross-covariance with the input.
+#
+# The cross-covariance used to be returned as `nothing`, which is not a degenerate value of the
+# same kind as the zeros beside it -- it is "not computed". Consumers that legitimately asked
+# for it (`Val(true)`, i.e. the `DeltaFn(:ins)` marginal rules) then fed `nothing` into
+# arithmetic and failed with `MethodError: no method matching *(::Nothing, ::Float64)`. Callers
+# that did not ask for it discard the third element anyway, so returning a genuine zero is
+# correct for both and keeps the return type stable.
 __unscented_parameters_zero_covariance(m::T) where {T <: Real} =
-    (m, zero(T), nothing)
+    (m, zero(T), zero(T))
 __unscented_parameters_zero_covariance(m::AbstractVector{T}) where {T <: Real} =
-    (m, zeros(T, length(m), length(m)), nothing)
+    (m, zeros(T, length(m), length(m)), zeros(T, length(m), length(m)))
 
 # Single univariate variable
 function unscented_statistics(
