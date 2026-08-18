@@ -64,6 +64,8 @@ new_observation!(y, 3.14)
 
 This call pushes a new [`Message`](@ref) wrapping a `PointMass(3.14)` into the data variable's outbound stream. The change propagates reactively through all connected factor nodes, triggering rule computations, which in turn push updated messages to downstream variables, which update their marginals.
 
+Only values a `PointMass` can represent — a real number, an array of real numbers or a `UniformScaling` — may be passed this way; anything else is rejected with an error. Data that is deliberately not numeric, consumed by a custom node, must be wrapped explicitly: see [Non-standard observations](@ref lib-variables-data-nonstandard).
+
 The result is that subscribing to the marginal stream of `x` yields updated posterior beliefs automatically:
 
 ```

@@ -209,6 +209,10 @@ end
         @test occursin("Uninformative", err.msg)
         # Points the user at what they almost certainly meant.
         @test occursin("pass `missing` instead", err.msg)
+        # ... and at the supported route for observations that genuinely are not numeric,
+        # which is the `::PointMass` method (issue #588 follow-up).
+        @test occursin("PointMass", err.msg)
+        @test occursin("getpointmass", err.msg)
     end
 
     @testset "distributions get the extra explanation" begin
@@ -226,6 +230,9 @@ end
             @test occursin("pass `missing` instead", err.msg)
             # Distributions are a distinct enough mistake to warrant their own note.
             @test occursin("not beliefs", err.msg)
+            # The wrap suggestion is deliberately withheld here: wrapping a prior in a
+            # `PointMass` would silently bypass the guard rather than fix the model.
+            @test !occursin("wrap it in a `PointMass`", err.msg)
         end
     end
 
@@ -271,7 +278,54 @@ end
             new_observation!(var, PointMass(1.0))
             @test true
         end
+
+        # The bypass is total, not merely relaxed: a payload with no `variate_form` at all is
+        # accepted too. This is the documented route for custom nodes over non-numeric data,
+        # so it must keep working -- see `lib-variables-data-nonstandard` in the docs.
+        let var = datavar()
+            new_observation!(var, PointMass("some observed text"))
+            @test true
+        end
     end
+end
+
+@testitem "DataVariable: an explicitly wrapped non-numeric observation reaches the nodes" begin
+    using BayesBase, Rocket
+
+    import BayesBase: getpointmass
+    import ReactiveMP:
+        DataVariable,
+        DataVariableActivationOptions,
+        datavar,
+        activate!,
+        new_observation!,
+        get_stream_of_outbound_messages,
+        get_stream_of_marginals
+
+    # A custom node may dispatch its rules on `PointMass{<:String}` and read the payload with
+    # `getpointmass`, never calling `mean`. Wrapping the observation by hand is the supported way
+    # to feed such a node, so the payload must arrive at the connected nodes untouched.
+    var = datavar(label = :y)
+    activate!(
+        var, DataVariableActivationOptions(false, false, nothing, nothing)
+    )
+
+    messages = []
+    marginals = []
+
+    subscribe!(
+        get_stream_of_outbound_messages(var, 1), (m) -> push!(messages, m)
+    )
+    subscribe!(get_stream_of_marginals(var), (m) -> push!(marginals, m))
+
+    new_observation!(var, PointMass("some observed text"))
+
+    @test length(messages) === 1
+    @test getdata(messages[1]) === PointMass("some observed text")
+    @test getpointmass(getdata(messages[1])) == "some observed text"
+
+    @test length(marginals) === 1
+    @test getdata(marginals[1]) === PointMass("some observed text")
 end
 
 @testitem "DataVariable: linked variable" begin
