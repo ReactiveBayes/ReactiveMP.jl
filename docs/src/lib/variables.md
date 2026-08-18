@@ -105,6 +105,49 @@ ReactiveMP.datavar
 ReactiveMP.new_observation!
 ```
 
+### [Non-standard observations](@id lib-variables-data-nonstandard)
+
+There are two ways into a data variable, and they behave differently:
+
+| Call | Validated? | What happens |
+|------|-----------|--------------|
+| `new_observation!(y, value)` | Yes | `value` is checked, then wrapped in `PointMass(value)` |
+| `new_observation!(y, PointMass(value))` | No | the `PointMass` is pushed as-is |
+
+The generic method accepts a real number, an array of real numbers or a `UniformScaling`, and rejects anything else with an error naming the offending type. These are exactly the payloads for which `PointMass` defines a [`BayesBase.variate_form`](https://github.com/ReactiveBayes/BayesBase.jl) — wrapping anything else builds a `PointMass` that constructs fine, but whose `mean` recurses between `Statistics.mean(itr)` and `BayesBase.mean(fn, ::PointMass)` until the stack overflows, tens of thousands of frames away from the actual mistake.
+
+Most of the time that error is catching a genuine slip — a distribution passed where a sample was meant, or a placeholder where `missing` was meant. But not always: a **custom node** may be defined over data that is not numeric at all, such as text, symbols, or a struct describing a measurement. For those cases, wrap the value yourself:
+
+```julia
+using BayesBase # exports `PointMass`; RxInfer.jl re-exports it
+
+new_observation!(y, PointMass("some observed text"))
+```
+
+The rules of the node consuming `y` then dispatch on the concrete `PointMass` type and read the payload back with `BayesBase.getpointmass`, which is defined for every payload:
+
+```julia
+struct TextLikelihood end
+
+@node TextLikelihood Stochastic [out, θ]
+
+@rule TextLikelihood(:θ, Marginalisation) (m_out::PointMass{<:String},) = begin
+    text = BayesBase.getpointmass(m_out) # never `mean(m_out)` — see below
+    return score_text(text)
+end
+```
+
+!!! note
+    `new_observation!(::DataVariable, ::PointMass)` performs *no* validation whatsoever — `PointMass(Beta(1, 1))` goes through just as readily as `PointMass("text")`. Wrapping explicitly is an opt-in statement that you know what the payload is for, so it is your responsibility that only rules which understand it ever see it.
+
+A data variable holding a non-numeric `PointMass` comes with real constraints:
+
+- It has no `variate_form`, and therefore no usable `mean`, `var`, `cov` or `logpdf`. Always reach for `BayesBase.getpointmass` (which is not exported, so it needs qualifying or an explicit `import`); calling `mean` on it reintroduces the very stack overflow the validation exists to prevent.
+- It cannot feed the built-in numeric nodes, whose rules compute with the moments of their inbound messages. Only nodes written for the payload can be connected to it.
+- Bethe free energy is not meaningful for such an edge, since it is defined through log-densities the payload does not have.
+
+See [Adding a custom node](@ref lib-custom-node) for defining the node and its rules.
+
 ### Stream creation
 
 A `DataVariable` has two distinct directions of information flow:

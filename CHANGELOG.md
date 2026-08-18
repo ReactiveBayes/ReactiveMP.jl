@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The invalid-observation error added in 6.4.0 now names the third legitimate option instead of only two. It presented "a real number, an array of real numbers, or a `UniformScaling`" or `missing`, but a custom node may be defined over data that has no moments at all — text, symbols, a struct — and is fed by wrapping the value in a `PointMass` explicitly, which routes through the deliberately unvalidated `new_observation!(::DataVariable, ::PointMass)` method. That path was intentional from the start yet documented nowhere, so anyone with a genuinely non-numeric observation was told their model was wrong when it wasn't (this is exactly how the RxInfer "Large Language Models" example, whose rules dispatch on `PointMass{<:String}`, broke on 6.4.0). The error now shows the wrap, and states the price of it: such a `PointMass` has no `variate_form`, hence no `mean`/`var`/`logpdf`, so only rules dispatching on its concrete type and reading the payload with `BayesBase.getpointmass` can consume it. `Distribution` payloads deliberately do *not* get the hint — `PointMass(Beta(1, 1))` is not what anyone means, and suggesting it would route a real mistake around the guard — and keep the existing "point values, not beliefs" note. Also documented in the `new_observation!` docstring and in a new "Non-standard observations" section of the Variables page, cross-referenced from "Adding a custom node" and the inference lifecycle. Message text and documentation only; the accepted set of payloads is unchanged ([#588](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/588))
+
 ## [6.4.0] - 2026-08-11
 
 ### Added

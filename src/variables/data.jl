@@ -186,6 +186,12 @@ end
 Provides a new observation to a [`ReactiveMP.DataVariable`](@ref) (or an array of data variables).
 The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
 Pass `missing` to indicate that the observation is not available.
+
+The value must be a real number, an array of real numbers or a `UniformScaling` — the payloads
+for which `PointMass` defines a `variate_form`, and hence a usable `mean`. Anything else is
+rejected with an informative error. An observation of a different kind, such as text consumed by
+a custom node, has to be wrapped in a `PointMass` explicitly; that method performs no validation.
+See [Non-standard observations](@ref lib-variables-data-nonstandard).
 """
 function new_observation!(datavar::DataVariable, data)
     __assert_valid_observation(datavar, data)
@@ -202,16 +208,41 @@ __assert_valid_observation(
     ::DataVariable, ::Union{Real, AbstractArray, UniformScaling}
 ) = nothing
 
+# A non-numeric payload is not always a mistake. A custom node may dispatch its rules on, say,
+# `PointMass{<:String}` and read the payload back with `getpointmass`, never calling `mean` — for
+# which the explicitly-wrapped `new_observation!(::DataVariable, ::PointMass)` method, deliberately
+# left unvalidated, is the supported route. The error points at it, since being told to pass a real
+# number is unhelpful when the observation genuinely is not one.
+#
+# Distributions are excluded from that hint: `PointMass(Beta(1, 1))` is not what anyone means, so
+# suggesting the wrap there would only route a real mistake around the guard.
+function __observation_hint(::Type{D}, varname) where {D <: Distribution}
+    return """
+    Passing a distribution as data is not supported: data variables hold observed point values, not beliefs. To place a prior on a quantity, make it a random variable in the model instead."""
+end
+
+function __observation_hint(::Type{D}, varname) where {D}
+    return """
+    If the value is *intentionally* not numeric — for example text consumed by a custom node whose rules dispatch on `PointMass{<:$(D)}` — wrap it in a `PointMass` yourself:
+
+        new_observation!($(varname), PointMass(value))
+
+    `new_observation!(::DataVariable, ::PointMass)` performs no validation, so the payload reaches the connected factor nodes untouched. In exchange, such a `PointMass` has no `variate_form`, and therefore no `mean`, `var` or `logpdf`: only rules that dispatch on its concrete type and read the payload with `BayesBase.getpointmass` can consume it. See the "Non-standard observations" section of the ReactiveMP.jl documentation."""
+end
+
 function __assert_valid_observation(datavar::DataVariable, data::D) where {D}
     label = something(datavar.label, "")
     named = isempty(string(label)) ? "" : " for `$(label)`"
+    varname = isempty(string(label)) ? "y" : string(label)
     error(
         """
         Invalid observation$(named): `$(D)` cannot be used as observed data.
 
         Observations must be a real number, an array of real numbers, or a `UniformScaling`. Got a value of type `$(D)`.
 
-        If you meant to indicate that this observation is not available, pass `missing` instead$(D <: Distribution ? ".\n\nPassing a distribution as data is not supported: data variables hold observed point values, not beliefs. To place a prior on a quantity, make it a random variable in the model instead." : ".")""",
+        If you meant to indicate that this observation is not available, pass `missing` instead.
+
+        $(__observation_hint(D, varname))""",
     )
 end
 

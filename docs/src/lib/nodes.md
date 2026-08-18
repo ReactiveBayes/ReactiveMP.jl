@@ -59,6 +59,8 @@ This expression registers a new node that can be used with the inference engine.
 Note, however, that the `@node` macro does not generate any message passing update rules.
 These must be defined using the [`@rule`](@ref) macro. 
 
+A custom node is not restricted to numeric data. If its rules are written for a payload that has no moments — text, symbols, a struct — the observation has to be wrapped in a `PointMass` explicitly; see [Non-standard observations](@ref lib-variables-data-nonstandard).
+
 ## [Collecting node properties](@id lib-node-collect)
 
 ```@docs
