@@ -32,5 +32,5 @@ struct Bilinear end
 @average_energy Bilinear (q_out_in::Any, q_a::Any) = begin
     # U = -E[log φ] = -mean(q_a) * E_{q(out, in)}[out * in]
     m, V = mean_cov(q_out_in)
-    return -mean(q_a) * (V[1, 2] + m[1] * m[2])  
+    return -mean(q_a) * (V[1, 2] + m[1] * m[2])
 end
