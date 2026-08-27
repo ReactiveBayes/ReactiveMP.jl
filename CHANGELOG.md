@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A new `Bilinear` factor node with potential `φ(out, in, a) = exp(out ⋅ a ⋅ in)`. This adds the node definition (`@node Bilinear Stochastic [out, in, a]`, exported), stubs for the average energy, the `:out`/`:in` message rules and the `:out_in` joint marginal rule.
+
 ## [6.4.1] - 2026-08-18
 
 ### Changed
