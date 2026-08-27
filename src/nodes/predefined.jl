@@ -39,6 +39,7 @@ include("predefined/continuous_transition.jl")
 include("predefined/half_normal.jl")
 include("predefined/binomial_polya.jl")
 include("predefined/multinomial_polya.jl")
+include("predefined/bilinear.jl")
 
 include("predefined/flow/flow.jl")
 include("predefined/delta/delta.jl")
