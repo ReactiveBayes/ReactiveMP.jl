@@ -1,17 +1,17 @@
-@testitem "BilinearNode" begin
+@testitem "GaussianCouplingNode" begin
     using ReactiveMP, BayesBase, ExponentialFamily
     using LinearAlgebra
 
     @testset "Node metadata" begin
-        @test ReactiveMP.sdtype(Bilinear) === Stochastic()
-        @test ReactiveMP.interfaces(Bilinear) === Val((:out, :in, :a))
+        @test ReactiveMP.sdtype(GaussianCoupling) === Stochastic()
+        @test ReactiveMP.interfaces(GaussianCoupling) === Val((:out, :in, :a))
     end
 
     @testset "AverageEnergy" begin
         # ⟨-log φ⟩ = -E[a] ⋅ E_{q(out, in)}[out ⋅ in] = -E[a] ⋅ (V[1, 2] + m[1] ⋅ m[2])
         energy(q_out_in, q_a) = score(
             AverageEnergy(),
-            Bilinear,
+            GaussianCoupling,
             Val{(:out_in, :a)}(),
             (Marginal(q_out_in, false, false), Marginal(q_a, false, false)),
             nothing,
@@ -44,7 +44,7 @@
         @testset "Cross-check against NormalMeanPrecision" begin
             # Since N(out; in, w⁻¹) ∝ exp(-w⋅out²/2) ⋅ exp(w⋅out⋅in) ⋅ exp(-w⋅in²/2),
             #   ⟨-log N⟩ = -log(w)/2 + log(2π)/2 + w⋅(E[out²] + E[in²])/2 + ⟨-log φ⟩
-            # with a = w. This ties the Bilinear energy to an independently tested node.
+            # with a = w. This ties the GaussianCoupling energy to an independently tested node.
             for (q_out_in, w) in (
                 (MvNormalMeanCovariance([1.0, 2.0], [2.0 0.5; 0.5 3.0]), 2.0),
                 (
@@ -75,7 +75,7 @@
     @testset "GaBP: solving a linear system" begin
         # arXiv:0810.1119 casts `A x = b` as message passing with
         #   self-potential  exp(b_i⋅x_i - A_ii⋅x_i²/2) = NormalWeightedMeanPrecision(b_i, A_ii)
-        #   edge potential  exp(-x_i⋅A_ij⋅x_j)         = Bilinear(x_i, x_j, -A_ij)
+        #   edge potential  exp(-x_i⋅A_ij⋅x_j)         = GaussianCoupling(x_i, x_j, -A_ij)
         function gabp(A, b; iterations = 100)
             n = size(A, 1)
             prior = [NormalWeightedMeanPrecision(b[i], A[i, i]) for i in 1:n]
@@ -89,7 +89,7 @@
                 init = prior[i],
             )
             for _ in 1:iterations, i in 1:n, j in nbrs[i]
-                msg[i, j] = @call_rule Bilinear(:in, Marginalisation) (
+                msg[i, j] = @call_rule GaussianCoupling(:in, Marginalisation) (
                     m_out = collect_into(i, j), q_a = PointMass(-A[i, j])
                 )
             end

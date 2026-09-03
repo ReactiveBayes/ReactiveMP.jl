@@ -1,4 +1,4 @@
-@rule Bilinear(:out, Marginalisation) (
+@rule GaussianCoupling(:out, Marginalisation) (
     m_in::UnivariateNormalDistributionsFamily, q_a::PointMass
 ) = begin
     # m(out) ∝ ∫ exp(a⋅out⋅in) m_in(in) d(in) = exp(a⋅μ_in⋅out + a²⋅v_in⋅out²/2)

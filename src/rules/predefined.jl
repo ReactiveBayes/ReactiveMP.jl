@@ -152,9 +152,9 @@ include("probit/marginals.jl")
 include("probit/in.jl")
 include("probit/out.jl")
 
-include("bilinear/marginals.jl")
-include("bilinear/in.jl")
-include("bilinear/out.jl")
+include("gaussian_coupling/marginals.jl")
+include("gaussian_coupling/in.jl")
+include("gaussian_coupling/out.jl")
 
 include("flow/marginals.jl")
 include("flow/in.jl")

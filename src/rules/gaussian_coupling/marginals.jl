@@ -1,4 +1,4 @@
-@marginalrule Bilinear(:out_in) (
+@marginalrule GaussianCoupling(:out_in) (
     m_out::UnivariateNormalDistributionsFamily,
     m_in::UnivariateNormalDistributionsFamily,
     q_a::PointMass,

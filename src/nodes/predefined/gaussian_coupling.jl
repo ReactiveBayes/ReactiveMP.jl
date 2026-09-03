@@ -1,9 +1,9 @@
-export Bilinear
+export GaussianCoupling
 
 @doc raw"""
-    Bilinear
+    GaussianCoupling
 
-Stochastic factor node representing the bilinear interaction
+Stochastic factor node representing the pairwise Gaussian coupling (a bilinear interaction)
 
 ```math
 \phi(\mathrm{out}, \mathrm{in}, a) = \exp(\mathrm{out} \cdot a \cdot \mathrm{in})
@@ -32,7 +32,7 @@ end
 ```
 
 When `a` is supplied as a constant — the intended usage, as in
-`x[j] ~ Bilinear(x[i], -A[i, j])` — this factorization is applied automatically, because
+`x[j] ~ GaussianCoupling(x[i], -A[i, j])` — this factorization is applied automatically, because
 constant interfaces are always factorized out of the local cluster. `MeanField()` is **not**
 supported: there are no `q(out)q(in)` message rules and no mean-field average energy.
 
@@ -63,11 +63,11 @@ Per Shental et al.:
   walk-sum approximations of ``\mathrm{diag}(A^{-1})`` and must not be reported as the marginal
   variances of the exact solution.
 """
-struct Bilinear end
+struct GaussianCoupling end
 
-@node Bilinear Stochastic [out, in, a]
+@node GaussianCoupling Stochastic [out, in, a]
 
-@average_energy Bilinear (q_out_in::Any, q_a::PointMass) = begin
+@average_energy GaussianCoupling (q_out_in::Any, q_a::PointMass) = begin
     # ⟨-log φ⟩ = -E[a] ⋅ E_{q(out, in)}[out ⋅ in] = -E[a] ⋅ (V[1, 2] + m[1] ⋅ m[2])
     m, V = mean_cov(q_out_in)
     return -mean(q_a) * (V[1, 2] + m[1] * m[2])

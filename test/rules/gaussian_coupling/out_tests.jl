@@ -1,4 +1,4 @@
-@testitem "rules:Bilinear:out" begin
+@testitem "rules:GaussianCoupling:out" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -8,7 +8,7 @@
         #        ⇒ NormalWeightedMeanPrecision(a⋅μ_in, -a²⋅v_in)
         # This is the GaBP message of arXiv:0810.1119 with a = -A[i, j]:
         #   ξ_ij = -A_ij⋅μ_{i∖j},  P_ij = -A_ij²/P_{i∖j}.
-        @test_rules [check_type_promotion = true] Bilinear(
+        @test_rules [check_type_promotion = true] GaussianCoupling(
             :out, Marginalisation
         ) [
             (
@@ -46,9 +46,9 @@
             (NormalMeanVariance(1.5, 2.0), 0.75),
             (NormalMeanPrecision(-2.0, 3.0), -1.25),
         )
-            @test (@call_rule Bilinear(:out, Marginalisation) (
+            @test (@call_rule GaussianCoupling(:out, Marginalisation) (
                 m_in = m, q_a = PointMass(a)
-            )) ≈ (@call_rule Bilinear(:in, Marginalisation) (
+            )) ≈ (@call_rule GaussianCoupling(:in, Marginalisation) (
                 m_out = m, q_a = PointMass(a)
             ))
         end
@@ -57,8 +57,8 @@
     @testset "Cross-check against NormalMeanPrecision" begin
         # The Gaussian density factorizes as
         #   N(out; in, w⁻¹) ∝ exp(-w⋅out²/2) ⋅ exp(w⋅out⋅in) ⋅ exp(-w⋅in²/2),
-        # so the Bilinear factor with a = w is exactly the Gaussian cross-term. Tilting
-        # the incoming message precision by +w and multiplying the Bilinear message by
+        # so the GaussianCoupling factor with a = w is exactly the Gaussian cross-term. Tilting
+        # the incoming message precision by +w and multiplying the GaussianCoupling message by
         # NormalWeightedMeanPrecision(0, w) must reproduce the NormalMeanPrecision
         # message towards `out`: N(out; mean(m_μ), var(m_μ) + 1/w).
         for (ξ, w_in, w) in ((0.5, 2.0, 1.0), (-1.0, 4.0, 0.5))
@@ -71,7 +71,7 @@
                         GenericProd(),
                         NormalWeightedMeanPrecision(0.0, w),
                         @call_rule(
-                            Bilinear(:out, Marginalisation),
+                            GaussianCoupling(:out, Marginalisation),
                             (m_in = m_in_tilted, q_a = PointMass(w))
                         )
                     ),

@@ -1,4 +1,4 @@
-@testitem "rules:Bilinear:in" begin
+@testitem "rules:GaussianCoupling:in" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -8,7 +8,7 @@
         #       ⇒ NormalWeightedMeanPrecision(a⋅μ_out, -a²⋅v_out)
         # This is the GaBP message of arXiv:0810.1119 with a = -A[i, j]:
         #   ξ_ij = -A_ij⋅μ_{i∖j},  P_ij = -A_ij²/P_{i∖j}.
-        @test_rules [check_type_promotion = true] Bilinear(:in, Marginalisation) [
+        @test_rules [check_type_promotion = true] GaussianCoupling(:in, Marginalisation) [
             (
                 input  = (m_out = NormalMeanVariance(0.0, 1.0), q_a = PointMass(1.0)),
                 output = NormalWeightedMeanPrecision(0.0, -1.0),
@@ -41,8 +41,8 @@
     @testset "Cross-check against NormalMeanPrecision" begin
         # The Gaussian density factorizes as
         #   N(out; in, w⁻¹) ∝ exp(-w⋅out²/2) ⋅ exp(w⋅out⋅in) ⋅ exp(-w⋅in²/2),
-        # so the Bilinear factor with a = w is exactly the Gaussian cross-term. Tilting
-        # the incoming message precision by +w and multiplying the Bilinear message by
+        # so the GaussianCoupling factor with a = w is exactly the Gaussian cross-term. Tilting
+        # the incoming message precision by +w and multiplying the GaussianCoupling message by
         # NormalWeightedMeanPrecision(0, w) must reproduce the NormalMeanPrecision
         # message towards its mean interface: N(in; mean(m_out), var(m_out) + 1/w).
         for (ξ, w_out, w) in ((0.5, 2.0, 1.0), (-1.0, 4.0, 0.5))
@@ -55,7 +55,7 @@
                         GenericProd(),
                         NormalWeightedMeanPrecision(0.0, w),
                         @call_rule(
-                            Bilinear(:in, Marginalisation),
+                            GaussianCoupling(:in, Marginalisation),
                             (m_out = m_out_tilted, q_a = PointMass(w))
                         )
                     ),

@@ -1,4 +1,4 @@
-@testitem "rules:Bilinear:marginals" begin
+@testitem "rules:GaussianCoupling:marginals" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     using LinearAlgebra
 
@@ -8,7 +8,7 @@
         # q(out, in) ∝ m_out(out) m_in(in) exp(a⋅out⋅in), so in weighted-mean/precision
         # form ξ = [ξ_out, ξ_in] and W = [w_out -a; -a w_in]: the factor contributes the
         # cross-term only, never the quadratic self-terms.
-        @test_marginalrules [check_type_promotion = true] Bilinear(:out_in) [
+        @test_marginalrules [check_type_promotion = true] GaussianCoupling(:out_in) [
             (
                 input  = (m_out = NormalWeightedMeanPrecision(1.0, 2.0), m_in = NormalWeightedMeanPrecision(2.0, 3.0), q_a = PointMass(1.0)),
                 output = MvNormalWeightedMeanPrecision([1.0, 2.0], [2.0 -1.0; -1.0 3.0]),
@@ -44,7 +44,7 @@
             (2.0, 2.0, 2.0, false),  # 4 == 4, singular
             (1.0, 1.0, 2.0, false),  # 1 < 4, indefinite
         )
-            q = @call_marginalrule Bilinear(:out_in) (
+            q = @call_marginalrule GaussianCoupling(:out_in) (
                 m_out = NormalWeightedMeanPrecision(0.5, w_out),
                 m_in  = NormalWeightedMeanPrecision(-0.5, w_in),
                 q_a   = PointMass(a),
