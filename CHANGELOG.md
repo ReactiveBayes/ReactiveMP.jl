@@ -5,7 +5,7 @@ All notable changes to ReactiveMP.jl will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [6.5.0] - 2026-09-03
 
 ### Added
 - A new exported `GaussianCoupling` factor node with potential `φ(out, in, a) = exp(out ⋅ a ⋅ in)`, the pairwise edge potential of Gaussian Belief Propagation ([Shental et al., arXiv:0810.1119](https://arxiv.org/abs/0810.1119)), where `a = -A[i, j]`. Combined with `NormalWeightedMeanPrecision(b[i], A[i, i])` self-potentials it expresses the solution of `A x = b` as message passing. Adds the node definition (`@node GaussianCoupling Stochastic [out, in, a]`), the average energy, the `:out`/`:in` message rules, the `:out_in` joint marginal rule and a documentation page. Only the structured factorization `q(out, in) q(a)` is supported, which is applied automatically when `a` is a constant. The potential is not integrable on its own: the `:out`/`:in` messages are improper Gaussians with negative precision, and the joint marginal is proper only when `w_out ⋅ w_in > a²`. Per the paper, the inferred means are exact when `A` is strictly diagonally dominant (or `ρ(|I - A|) < 1`), but the inferred variances are exact only on acyclic graphs — on graphs with cycles they are walk-sum approximations of `diag(inv(A))`.
