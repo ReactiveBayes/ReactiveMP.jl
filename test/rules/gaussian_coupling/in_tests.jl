@@ -8,7 +8,9 @@
         #       ⇒ NormalWeightedMeanPrecision(a⋅μ_out, -a²⋅v_out)
         # This is the GaBP message of arXiv:0810.1119 with a = -A[i, j]:
         #   ξ_ij = -A_ij⋅μ_{i∖j},  P_ij = -A_ij²/P_{i∖j}.
-        @test_rules [check_type_promotion = true] GaussianCoupling(:in, Marginalisation) [
+        @test_rules [check_type_promotion = true] GaussianCoupling(
+            :in, Marginalisation
+        ) [
             (
                 input  = (m_out = NormalMeanVariance(0.0, 1.0), q_a = PointMass(1.0)),
                 output = NormalWeightedMeanPrecision(0.0, -1.0),

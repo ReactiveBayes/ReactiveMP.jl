@@ -8,7 +8,9 @@
         # q(out, in) ∝ m_out(out) m_in(in) exp(a⋅out⋅in), so in weighted-mean/precision
         # form ξ = [ξ_out, ξ_in] and W = [w_out -a; -a w_in]: the factor contributes the
         # cross-term only, never the quadratic self-terms.
-        @test_marginalrules [check_type_promotion = true] GaussianCoupling(:out_in) [
+        @test_marginalrules [check_type_promotion = true] GaussianCoupling(
+            :out_in
+        ) [
             (
                 input  = (m_out = NormalWeightedMeanPrecision(1.0, 2.0), m_in = NormalWeightedMeanPrecision(2.0, 3.0), q_a = PointMass(1.0)),
                 output = MvNormalWeightedMeanPrecision([1.0, 2.0], [2.0 -1.0; -1.0 3.0]),
