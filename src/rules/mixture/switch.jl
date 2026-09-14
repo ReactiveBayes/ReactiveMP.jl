@@ -8,7 +8,7 @@
         input -> getlogscale(
             ReactiveMP.getannotations(
                 compute_product_of_two_messages(
-                    ReactiveMP.randomvar(; label = :mixture_switch_rule),
+                    ReactiveMP.RuleProductVariable(:mixture_switch_rule),
                     ReactiveMP.MessageProductContext(;
                         annotations = (LogScaleAnnotations(),)
                     ),
