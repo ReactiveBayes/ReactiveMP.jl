@@ -67,8 +67,12 @@ mutable struct MulticoreMapJob{A, F, D, R} <: AbstractMulticoreJob
 
     # R cannot be inferred from an initial `nothing` result. Require the
     # explicit result type already supplied by the stream's map operator.
-    function MulticoreMapJob{A, F, D, R}(actor, mapping, input, parallel, result, exception, done) where {A, F, D, R}
-        return new{A, F, D, R}(actor, mapping, input, parallel, result, exception, done)
+    function MulticoreMapJob{A, F, D, R}(
+        actor, mapping, input, parallel, result, exception, done
+    ) where {A, F, D, R}
+        return new{A, F, D, R}(
+            actor, mapping, input, parallel, result, exception, done
+        )
     end
 end
 

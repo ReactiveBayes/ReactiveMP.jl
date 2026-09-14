@@ -10,8 +10,12 @@ error; this backend never falls back to reactive inference.
 struct CompiledRunner
     workers::Int
     optimize::Bool
-    function CompiledRunner(; workers::Integer = Threads.nthreads(), optimize::Bool = true)
-        1 <= workers <= Threads.nthreads() || throw(ArgumentError("workers must be between 1 and Threads.nthreads()"))
+    function CompiledRunner(;
+        workers::Integer = Threads.nthreads(), optimize::Bool = true
+    )
+        1 <= workers <= Threads.nthreads() || throw(
+            ArgumentError("workers must be between 1 and Threads.nthreads()"),
+        )
         return new(workers, optimize)
     end
 end
@@ -19,7 +23,12 @@ end
 struct UnsupportedCompiledFeature <: Exception
     feature::String
 end
-Base.showerror(io::IO, error::UnsupportedCompiledFeature) = print(io, "CompiledRunner does not support ", error.feature, ". No reactive fallback was used.")
+Base.showerror(io::IO, error::UnsupportedCompiledFeature) = print(
+    io,
+    "CompiledRunner does not support ",
+    error.feature,
+    ". No reactive fallback was used.",
+)
 
 "A variable identity usable by product rules, without observable fields."
 struct CompiledVariable <: AbstractVariable
@@ -49,8 +58,16 @@ struct CompiledLocalMarginal
 end
 name(marginal::CompiledLocalMarginal) = marginal.name
 tag(marginal::CompiledLocalMarginal) = Val(marginal.name)
-get_stream_of_inbound_messages(::CompiledInterface) = throw(UnsupportedCompiledFeature("a dependency policy that requires reactive streams"))
-get_stream_of_marginals(::CompiledLocalMarginal) = throw(UnsupportedCompiledFeature("a dependency policy that requires reactive streams"))
+get_stream_of_inbound_messages(::CompiledInterface) = throw(
+    UnsupportedCompiledFeature(
+        "a dependency policy that requires reactive streams"
+    ),
+)
+get_stream_of_marginals(::CompiledLocalMarginal) = throw(
+    UnsupportedCompiledFeature(
+        "a dependency policy that requires reactive streams"
+    ),
+)
 
 struct CompiledManyOf{T}
     slots::T
@@ -76,22 +93,34 @@ end
 
 compiled_read(values, slot::Int32) = values[slot]
 compiled_read(values, ::Nothing) = nothing
-compiled_read(values, slots::Tuple) = map(slot -> compiled_read(values, slot), slots)
-compiled_read(values, slots::AbstractVector{Int32}) = map(slot -> compiled_read(values, slot), slots)
-compiled_read(values, slots::CompiledManyOf) = ManyOf(compiled_read(values, slots.slots))
-compiled_read(values, slots::CompiledExcept) = CompiledMessageView(values, slots)
+compiled_read(values, slots::Tuple) =
+    map(slot -> compiled_read(values, slot), slots)
+compiled_read(values, slots::AbstractVector{Int32}) =
+    map(slot -> compiled_read(values, slot), slots)
+compiled_read(values, slots::CompiledManyOf) =
+    ManyOf(compiled_read(values, slots.slots))
+compiled_read(values, slots::CompiledExcept) =
+    CompiledMessageView(values, slots)
 compiled_ready(values, slot::Int32) = values[slot] !== nothing
 compiled_ready(values, ::Nothing) = true
-compiled_ready(values, slots::Tuple) = all(slot -> compiled_ready(values, slot), slots)
-compiled_ready(values, slots::AbstractVector{Int32}) = all(slot -> compiled_ready(values, slot), slots)
-compiled_ready(values, slots::CompiledManyOf) = compiled_ready(values, slots.slots)
-compiled_ready(values, slots::CompiledExcept) = all(i -> i == slots.excluded || compiled_ready(values, slots.slots[i]), eachindex(slots.slots))
+compiled_ready(values, slots::Tuple) =
+    all(slot -> compiled_ready(values, slot), slots)
+compiled_ready(values, slots::AbstractVector{Int32}) =
+    all(slot -> compiled_ready(values, slot), slots)
+compiled_ready(values, slots::CompiledManyOf) =
+    compiled_ready(values, slots.slots)
+compiled_ready(values, slots::CompiledExcept) = all(
+    i -> i == slots.excluded || compiled_ready(values, slots.slots[i]),
+    eachindex(slots.slots),
+)
 
 foreach_compiled_slot(f, slot::Int32) = f(slot)
 foreach_compiled_slot(f, ::Nothing) = nothing
-foreach_compiled_slot(f, slots::Tuple) = foreach(slot -> foreach_compiled_slot(f, slot), slots)
+foreach_compiled_slot(f, slots::Tuple) =
+    foreach(slot -> foreach_compiled_slot(f, slot), slots)
 foreach_compiled_slot(f, slots::AbstractVector{Int32}) = foreach(f, slots)
-foreach_compiled_slot(f, slots::CompiledManyOf) = foreach_compiled_slot(f, slots.slots)
+foreach_compiled_slot(f, slots::CompiledManyOf) =
+    foreach_compiled_slot(f, slots.slots)
 function foreach_compiled_slot(f, slots::CompiledExcept)
     for i in eachindex(slots.slots)
         i == slots.excluded || f(slots.slots[i])
@@ -106,7 +135,8 @@ end
 struct CompiledMarginalKernel{M}
     mapping::M
 end
-(kernel::CompiledMarginalKernel)(inputs) = compute_marginal(kernel.mapping, inputs[1], inputs[2])
+(kernel::CompiledMarginalKernel)(inputs) =
+    compute_marginal(kernel.mapping, inputs[1], inputs[2])
 
 struct CompiledProductKernel{C}
     variable::CompiledVariable
@@ -114,7 +144,9 @@ struct CompiledProductKernel{C}
     marginal::Bool
 end
 function (kernel::CompiledProductKernel)(inputs)
-    result = compute_product_of_messages(kernel.variable, kernel.context, inputs)
+    result = compute_product_of_messages(
+        kernel.variable, kernel.context, inputs
+    )
     return kernel.marginal ? as_marginal(result) : result
 end
 
@@ -141,19 +173,32 @@ compiled_callbacks_parallel_safe(::Any) = false
 compiled_callbacks_parallel_safe(::Nothing) = true
 function compiled_parallel_safe(kernel::CompiledMessageKernel)
     mapping = kernel.mapping
-    return compiled_callbacks_parallel_safe(mapping.callbacks) && mapping.annotations === nothing &&
-        mapping.rulefallback === nothing && mapping.factornode === nothing &&
-        multicore_readonly(mapping.meta) && multicore_readonly(mapping.vconstraint)
+    return compiled_callbacks_parallel_safe(mapping.callbacks) &&
+           mapping.annotations === nothing &&
+           mapping.rulefallback === nothing &&
+           mapping.factornode === nothing &&
+           multicore_readonly(mapping.meta) &&
+           multicore_readonly(mapping.vconstraint)
 end
-compiled_parallel_safe(kernel::CompiledMarginalKernel) = multicore_readonly(kernel.mapping)
+compiled_parallel_safe(kernel::CompiledMarginalKernel) =
+    multicore_readonly(kernel.mapping)
 function compiled_parallel_safe(kernel::CompiledProductKernel)
     context = kernel.context
-    return compiled_callbacks_parallel_safe(context.callbacks) && context.annotations === nothing &&
-        all(field -> field === :callbacks || multicore_readonly(getfield(context, field)), fieldnames(typeof(context)))
+    return compiled_callbacks_parallel_safe(context.callbacks) &&
+           context.annotations === nothing &&
+           all(
+               field ->
+                   field === :callbacks ||
+                   multicore_readonly(getfield(context, field)),
+               fieldnames(typeof(context)),
+           )
 end
 compiled_parallel_safe(::CompiledAsMarginalKernel) = true
 compiled_parallel_safe(kernel::CompiledVariationalProductKernel) =
-    compiled_parallel_safe(kernel.product) && all(message -> message === nothing || compiled_parallel_safe(message), kernel.messages)
+    compiled_parallel_safe(kernel.product) && all(
+        message -> message === nothing || compiled_parallel_safe(message),
+        kernel.messages,
+    )
 
 struct CompiledLinkKernel{F, A}
     transform::F
@@ -162,13 +207,17 @@ end
 struct CompiledLiteral{T}
     value::T
 end
-compiled_parallel_safe(kernel::CompiledLinkKernel) = multicore_readonly(kernel.transform)
+compiled_parallel_safe(kernel::CompiledLinkKernel) =
+    multicore_readonly(kernel.transform)
 compiled_link_arg(arg::CompiledLiteral, inputs) = arg.value
 compiled_link_arg(index::Int, inputs) = mean(getdata(inputs[index]))
-compiled_link_arg(args::AbstractArray, inputs) = map(arg -> compiled_link_arg(arg, inputs), args)
+compiled_link_arg(args::AbstractArray, inputs) =
+    map(arg -> compiled_link_arg(arg, inputs), args)
 function (kernel::CompiledLinkKernel)(inputs)
-    any(input -> ismissing(getdata(input)), inputs) && return Message(missing, false, false)
-    all(input -> getdata(input) isa PointMass, inputs) || throw(ArgumentError("Linked data requires PointMass inputs"))
+    any(input -> ismissing(getdata(input)), inputs) &&
+        return Message(missing, false, false)
+    all(input -> getdata(input) isa PointMass, inputs) ||
+        throw(ArgumentError("Linked data requires PointMass inputs"))
     args = map(arg -> compiled_link_arg(arg, inputs), kernel.arguments)
     return Message(PointMass(kernel.transform(args...)), false, false)
 end
@@ -193,15 +242,30 @@ mutable struct CompiledProgram
     failed::Bool
 end
 
-CompiledProgram(config::CompiledRunner) = CompiledProgram(config, Any[], Dict{Any, Int32}(), CompiledOperation[], Any[], Int32[], Int[1], BitVector(), nothing, 0, false)
+CompiledProgram(config::CompiledRunner) = CompiledProgram(
+    config,
+    Any[],
+    Dict{Any, Int32}(),
+    CompiledOperation[],
+    Any[],
+    Int32[],
+    Int[1],
+    BitVector(),
+    nothing,
+    0,
+    false,
+)
 
 function compiled_slot!(program::CompiledProgram, value = nothing)
-    length(program.values) < typemax(Int32) || throw(OverflowError("Compiled message slot capacity exceeded"))
+    length(program.values) < typemax(Int32) ||
+        throw(OverflowError("Compiled message slot capacity exceeded"))
     push!(program.values, value)
     return Int32(length(program.values))
 end
 
-function compiled_operation!(program::CompiledProgram, kernel, output::Int32, inputs)
+function compiled_operation!(
+    program::CompiledProgram, kernel, output::Int32, inputs
+)
     kid = get!(program.kernel_ids, kernel) do
         push!(program.kernels, kernel)
         Int32(length(program.kernels))
@@ -213,7 +277,8 @@ end
 function compiled_producers(program::CompiledProgram)
     producers = zeros(Int32, length(program.values))
     for (index, operation) in enumerate(program.operations)
-        iszero(producers[operation.output]) || error("Multiple writers for compiled slot $(operation.output)")
+        iszero(producers[operation.output]) ||
+            error("Multiple writers for compiled slot $(operation.output)")
         producers[operation.output] = index
     end
     return producers
@@ -247,7 +312,9 @@ function prune_compiled_operations!(program::CompiledProgram, roots)
             push!(kernels, program.kernels[operation.kernel])
             remap[operation.kernel] = length(kernels)
         end
-        program.operations[i] = CompiledOperation(remap[operation.kernel], operation.output, operation.inputs)
+        program.operations[i] = CompiledOperation(
+            remap[operation.kernel], operation.output, operation.inputs
+        )
     end
     program.kernels = kernels
     program.kernel_ids = Dict{Any, Int32}()
@@ -257,7 +324,9 @@ function prune_compiled_operations!(program::CompiledProgram, roots)
     foreach(slot -> live_values[slot] = true, roots)
     for operation in program.operations
         live_values[operation.output] = true
-        foreach_compiled_slot(slot -> live_values[slot] = true, operation.inputs)
+        foreach_compiled_slot(
+            slot -> live_values[slot] = true, operation.inputs
+        )
     end
     for i in eachindex(program.values)
         live_values[i] || (program.values[i] = nothing)
@@ -267,7 +336,8 @@ end
 
 compiled_variational_message(::Any) = false
 compiled_variational_message(kernel::CompiledMessageKernel) =
-    kernel.mapping.msgs_names === nothing && kernel.mapping.marginals_names !== nothing
+    kernel.mapping.msgs_names === nothing &&
+    kernel.mapping.marginals_names !== nothing
 
 """
 Fuse single-consumer variational messages into their marginal product. Coloring
@@ -295,8 +365,10 @@ function fuse_compiled_variational_products!(program::CompiledProgram, roots)
         fused = false
         for slot in operation.inputs
             producer = producers[slot]
-            if readers[slot] == 1 && !iszero(producer) &&
-                program.operations[producer].kernel <= length(candidates) && candidates[program.operations[producer].kernel]
+            if readers[slot] == 1 &&
+                !iszero(producer) &&
+                program.operations[producer].kernel <= length(candidates) &&
+                candidates[program.operations[producer].kernel]
                 message = program.operations[producer]
                 push!(messages, program.kernels[message.kernel])
                 push!(inputs, message.inputs)
@@ -308,8 +380,13 @@ function fuse_compiled_variational_products!(program::CompiledProgram, roots)
             end
         end
         if fused
-            push!(program.kernels, CompiledVariationalProductKernel(product, messages))
-            program.operations[i] = CompiledOperation(Int32(length(program.kernels)), operation.output, Tuple(inputs))
+            push!(
+                program.kernels,
+                CompiledVariationalProductKernel(product, messages),
+            )
+            program.operations[i] = CompiledOperation(
+                Int32(length(program.kernels)), operation.output, Tuple(inputs)
+            )
         end
     end
     keepat!(program.operations, .!removed)
@@ -327,7 +404,9 @@ function compiled_dependency_csr(program::CompiledProgram)
             producer = producers[slot]
             if !iszero(producer)
                 counts[index] = Base.checked_add(counts[index], Int32(1))
-                reverse_counts[producer] = Base.checked_add(reverse_counts[producer], Int32(1))
+                reverse_counts[producer] = Base.checked_add(
+                    reverse_counts[producer], Int32(1)
+                )
             end
         end
     end
@@ -344,7 +423,7 @@ function compiled_dependency_csr(program::CompiledProgram)
             end
         end
     end
-    positions = reverse_offsets[1:end-1]
+    positions = reverse_offsets[1:(end - 1)]
     consumers = Vector{Int32}(undef, length(dependencies))
     for i in 1:n, edge in offsets[i]:(offsets[i + 1] - 1)
         producer = dependencies[edge]
@@ -420,13 +499,15 @@ function compile_schedule!(program::CompiledProgram)
     deps_offsets, deps, users_offsets, users = compiled_dependency_csr(program)
     @debug "Compiled schedule: dependencies complete" peak_rss = Sys.maxrss() live_heap = Base.gc_live_bytes()
     # Edges producer -> consumer give topologically ordered component IDs.
-    components, ncomponents = compiled_components(users_offsets, users, deps_offsets, deps)
+    components, ncomponents = compiled_components(
+        users_offsets, users, deps_offsets, deps
+    )
     @debug "Compiled schedule: components complete" peak_rss = Sys.maxrss() live_heap = Base.gc_live_bytes()
     n = length(program.operations)
     counts = zeros(Int32, ncomponents)
     foreach(c -> counts[c] += 1, components)
     offsets = compiled_csr_offsets(counts)
-    positions = offsets[1:end-1]
+    positions = offsets[1:(end - 1)]
     members = Vector{Int32}(undef, n)
     for i in 1:n
         c = components[i]
@@ -458,7 +539,8 @@ function compile_schedule!(program::CompiledProgram)
         maxcolor = 0
         for p in first:last
             i = members[p]
-            for (adjoffsets, adjacent) in ((deps_offsets, deps), (users_offsets, users))
+            for (adjoffsets, adjacent) in
+                ((deps_offsets, deps), (users_offsets, users))
                 for edge in adjoffsets[i]:(adjoffsets[i + 1] - 1)
                     neighbor = adjacent[edge]
                     color = colors[neighbor]
@@ -484,7 +566,7 @@ function compile_schedule!(program::CompiledProgram)
     phase_counts = zeros(Int, nphases)
     foreach(phase -> phase_counts[phase] += 1, phases)
     program.phase_offsets = vcat(1, 1 .+ cumsum(phase_counts))
-    phase_positions = copy(program.phase_offsets[1:end-1])
+    phase_positions = copy(program.phase_offsets[1:(end - 1)])
     resize!(program.order, n)
     program.phase_parallel = trues(nphases)
     kernel_safe = map(compiled_parallel_safe, program.kernels)
@@ -506,10 +588,13 @@ end
 function execute_compiled_operation!(program::CompiledProgram, index::Int32)
     operation = program.operations[index]
     compiled_ready(program.values, operation.inputs) || return false
-    if program.typed !== nothing && execute_compiled_typed!(program.typed, program, index)
+    if program.typed !== nothing &&
+        execute_compiled_typed!(program.typed, program, index)
         return true
     end
-    program.values[operation.output] = execute_compiled_kernel(program.kernels[operation.kernel], program.values, operation.inputs)
+    program.values[operation.output] = execute_compiled_kernel(
+        program.kernels[operation.kernel], program.values, operation.inputs
+    )
     return true
 end
 
@@ -518,9 +603,11 @@ function compiled_complete_initialization!(program::CompiledProgram)
     # Initial marginals are seeds, not proof that their inference dependencies
     # can be resolved. Include blocked operations even when their output was
     # initialized, otherwise a disconnected cycle can silently return a prior.
-    missing = Int32[index for index in program.order if
+    missing = Int32[
+        index for index in program.order if
         program.values[program.operations[index].output] === nothing ||
-        !compiled_ready(program.values, program.operations[index].inputs)]
+            !compiled_ready(program.values, program.operations[index].inputs)
+    ]
     isempty(missing) && return program
     # Only unavailable inputs need watchers. Every waiting edge is visited once;
     # long seeded cycles must not require repeated scans of the entire graph.
@@ -550,20 +637,34 @@ function compiled_complete_initialization!(program::CompiledProgram)
         end
     end
     unresolved = count(eachindex(missing)) do i
-        !iszero(counts[i]) || program.values[program.operations[missing[i]].output] === nothing
+        !iszero(counts[i]) ||
+            program.values[program.operations[missing[i]].output] === nothing
     end
-    iszero(unresolved) || throw(ArgumentError("Compiled inference has $unresolved unresolved operations; provide the required data or initialization"))
+    iszero(unresolved) || throw(
+        ArgumentError(
+            "Compiled inference has $unresolved unresolved operations; provide the required data or initialization",
+        ),
+    )
     return program
 end
 
 function compiled_sweep!(program::CompiledProgram)
-    program.failed && throw(ArgumentError("Cannot reuse a failed compiled program; create a fresh inference instance"))
+    program.failed && throw(
+        ArgumentError(
+            "Cannot reuse a failed compiled program; create a fresh inference instance",
+        ),
+    )
     try
         for phase in 1:(length(program.phase_offsets) - 1)
-            first, last = program.phase_offsets[phase], program.phase_offsets[phase + 1] - 1
+            first, last = program.phase_offsets[phase],
+            program.phase_offsets[phase + 1] - 1
             # Coarse chunks amortize task creation for cheap scalar rules.
             # No operation in a phase reads a slot another operation writes.
-            workers = program.phase_parallel[phase] ? min(program.config.workers, (last - first + 1) ÷ 256) : 1
+            workers = if program.phase_parallel[phase]
+                min(program.config.workers, (last - first + 1) ÷ 256)
+            else
+                1
+            end
             if workers <= 1
                 for p in first:last
                     execute_compiled_operation!(program, program.order[p])
@@ -580,7 +681,10 @@ function compiled_sweep!(program::CompiledProgram)
         end
         iszero(program.sweeps) && compiled_complete_initialization!(program)
         program.sweeps += 1
-        if program.config.optimize && program.sweeps == 2 && length(program.operations) >= 1024 && all(program.phase_parallel)
+        if program.config.optimize &&
+            program.sweeps == 2 &&
+            length(program.operations) >= 1024 &&
+            all(program.phase_parallel)
             specialize_compiled_program!(program)
         end
     catch

@@ -10,7 +10,9 @@
     unused = R.compiled_slot!(program)
     R.compiled_operation!(program, x -> x[1] * x[2], d, (c, b))
     R.compiled_operation!(program, x -> x[1] + x[2], c, (a, b))
-    R.compiled_operation!(program, x -> error("unused operation must not execute"), unused, a)
+    R.compiled_operation!(
+        program, x -> error("unused operation must not execute"), unused, a
+    )
     R.prune_compiled_operations!(program, [d])
     @test length(program.operations) == 2
     R.compile_schedule!(program)
@@ -39,7 +41,9 @@
 
     seeded = R.CompiledProgram(CompiledRunner(workers = 1))
     a = R.compiled_slot!(seeded, 1.0)
-    b, c, d = R.compiled_slot!(seeded), R.compiled_slot!(seeded), R.compiled_slot!(seeded)
+    b, c, d = R.compiled_slot!(seeded),
+    R.compiled_slot!(seeded),
+    R.compiled_slot!(seeded)
     for (out, input) in ((b, c), (c, d), (d, a), (a, b))
         R.compiled_operation!(seeded, x -> x / 2, out, input)
     end
@@ -80,9 +84,13 @@ end
     using ExponentialFamily, BayesBase
     const R = ReactiveMP
     program = R.CompiledProgram(CompiledRunner(workers = 1))
-    source = R.compiled_slot!(program, Message(NormalMeanVariance(1.0, 2.0), false, false))
+    source = R.compiled_slot!(
+        program, Message(NormalMeanVariance(1.0, 2.0), false, false)
+    )
     output = R.compiled_slot!(program)
-    kernel = input -> Message(NormalMeanPrecision(mean(input) + 1, 2.0), false, false)
+    kernel =
+        input ->
+            Message(NormalMeanPrecision(mean(input) + 1, 2.0), false, false)
     R.compiled_operation!(program, kernel, output, source)
     R.compile_schedule!(program)
     R.compiled_sweep!(program)
@@ -95,7 +103,9 @@ end
     @test program.values[output] == expected
     # Streaming/approximation updates may change a slot's distribution family.
     # The guard must use the general kernel, never assert a stale inferred type.
-    program.values[source] = Message(NormalWeightedMeanPrecision(6.0, 2.0), false, false)
+    program.values[source] = Message(
+        NormalWeightedMeanPrecision(6.0, 2.0), false, false
+    )
     R.compiled_sweep!(program)
     @test mean(program.values[output]) == 4.0
     @test iszero(program.values.tags[source])
@@ -118,7 +128,9 @@ end
         a = R.compiled_slot!(program, 1.0)
         roots = Int32[]
         for i in 1:2048
-            b, c, d = R.compiled_slot!(program), R.compiled_slot!(program), R.compiled_slot!(program)
+            b, c, d = R.compiled_slot!(program),
+            R.compiled_slot!(program),
+            R.compiled_slot!(program)
             R.compiled_operation!(program, sum, d, (b, c))
             R.compiled_operation!(program, identity, b, a)
             R.compiled_operation!(program, x -> x * 2, c, b)
