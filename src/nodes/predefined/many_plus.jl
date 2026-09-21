@@ -4,17 +4,24 @@ export ManyPlus
     ManyPlus
 
 A deterministic factor that adds a collection of two or more scalar Gaussian
-inputs with a single factor node, without introducing intermediate sum variables.
+or constant inputs with a single factor node, without introducing intermediate
+sum variables.
 
 The node uses sum-product messages on all edges, independently of the surrounding
-factorisation. It supports univariate Gaussian messages in all parameterisations
-and computes its contribution to the Bethe free energy.
+factorisation. It assumes a joint local belief `q(inputs, output)` with
+`output = sum(inputs)` enforced exactly; the input belief can contain correlations.
+It supports univariate Gaussian messages in all parameterisations and scalar
+`PointMass` input messages, and computes its contribution to the Bethe free energy.
+The incoming message on the output interface must be Gaussian.
 
 Use it in an RxInfer model as
 
 ```julia
 total := ManyPlus(inputs = [x1, x2, x3])
 ```
+
+The inputs may include fixed input variables. See the ManyPlus node documentation
+for an RxInfer example with fixed inputs and graph-construction considerations.
 """
 struct ManyPlus end
 
@@ -163,9 +170,22 @@ collect_latest_marginals(
     ::ManyPlusFunctionalDependencies, ::ManyPlusFactorNode, ::Tuple{}
 ) = (nothing, of(nothing))
 
-function _manyplus_negative_entropy(output, inputs)
+function _manyplus_negative_entropy(
+    output::UnivariateNormalDistributionsFamily, inputs
+)
     _, output_variance = mean_var(output)
-    input_variances = map(input -> last(mean_var(input)), inputs)
+    gaussian_inputs = filter(input -> !(input isa PointMass), inputs)
+    input_variances = map(input -> last(mean_var(input)), gaussian_inputs)
+
+    # Point masses do not enter the Gaussian precision matrix, but their entropy
+    # counts must be retained for cancellation with clamped-variable terms.
+    pointmass_entropy = mapreduce(
+        input -> input isa PointMass ? entropy(input) : zero(output_variance),
+        +,
+        inputs;
+        init = zero(output_variance),
+    )
+    isempty(input_variances) && return -pointmass_entropy
 
     # The joint input precision is diag(1 ./ variances) + 11ᵀ / output_variance.
     # The matrix determinant lemma avoids constructing this dense matrix.
@@ -178,7 +198,8 @@ function _manyplus_negative_entropy(output, inputs)
     two_value = one_value + one_value
     log_two_pi = log(two_value * oftype(logdet_precision, pi))
 
-    return (logdet_precision - dimension * (one_value + log_two_pi)) / two_value
+    return (logdet_precision - dimension * (one_value + log_two_pi)) /
+           two_value - pointmass_entropy
 end
 
 function score(

@@ -174,6 +174,50 @@ end
             @test analytic ≈ -entropy(dense_joint) rtol = 1e-12 atol = 1e-12
         end
     end
+
+    @testset "Point-mass entropy bookkeeping" begin
+        output = NormalMeanVariance(0.7, 0.9)
+        gaussian = NormalMeanPrecision(-0.4, 2.0)
+        constant = PointMass(2.0)
+        for inputs in ((gaussian, constant), (constant, gaussian))
+            binary_joint = @call_marginalrule typeof(+)(:in1_in2) (
+                m_out = output, m_in1 = inputs[1], m_in2 = inputs[2]
+            )
+            expected =
+                -score(
+                    DifferentialEntropy(), Marginal(binary_joint, false, false)
+                )
+            actual = ReactiveMP._manyplus_negative_entropy(output, inputs)
+            @test BayesBase.value(actual) ≈ BayesBase.value(expected)
+            @test BayesBase.infinities(actual) ==
+                BayesBase.infinities(expected) ==
+                1
+        end
+
+        # Constants change the joint mean, but only the Gaussian dimensions
+        # enter the finite entropy. Each constant contributes one infinity.
+        inputs = (
+            PointMass(2),
+            gaussian,
+            PointMass(-3.0f0),
+            NormalMeanVariance(0.5, 0.25),
+        )
+        precision = Diagonal([2.0, 4.0]) + fill(inv(0.9), 2, 2)
+        joint = MvNormalWeightedMeanPrecision(zeros(2), Matrix(precision))
+        actual = ReactiveMP._manyplus_negative_entropy(output, inputs)
+        @test BayesBase.value(actual) ≈ -entropy(joint)
+        @test BayesBase.infinities(actual) == 2
+
+        for T in (Float32, Float64, BigFloat)
+            constants = (PointMass(T(2)), PointMass(T(-3)), PointMass(4))
+            result = ReactiveMP._manyplus_negative_entropy(
+                NormalMeanVariance(T(0), T(1)), constants
+            )
+            @test result isa ReactiveMP.CountingReal{T}
+            @test iszero(BayesBase.value(result))
+            @test BayesBase.infinities(result) == 3
+        end
+    end
 end
 
 @testitem "nodes:ManyPlus:score stream" begin
@@ -229,4 +273,77 @@ end
         @test last(received) ≈ -entropy(joint)
     end
     unsubscribe!(subscription)
+end
+
+@testitem "nodes:ManyPlus:constant input streams" begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Rocket, LinearAlgebra
+
+    variables = (
+        randomvar(), constvar(2), randomvar(), constvar(-1.0f0), randomvar()
+    )
+    node = ReactiveMP.factornode(
+        ManyPlus,
+        [(:out, variables[1]); [(:inputs, v) for v in Base.tail(variables)]],
+        nothing,
+    )
+    random_variables = variables[[1, 3, 5]]
+    sources = map(_ -> Subject(Message), random_variables)
+    foreach(zip(random_variables, sources)) do (variable, source)
+        incoming, _ = ReactiveMP.create_new_stream_of_inbound_messages!(
+            variable
+        )
+        ReactiveMP.connect!(incoming, source)
+        ReactiveMP.activate!(
+            variable, ReactiveMP.RandomVariableActivationOptions()
+        )
+    end
+    ReactiveMP.activate!(
+        node,
+        ReactiveMP.FactorNodeActivationOptions(
+            nothing, nothing, nothing, nothing, nothing, nothing
+        ),
+    )
+    received = [Any[] for _ in 1:3]
+    interfaces = (node.out, node.inputs[2], node.inputs[4])
+    subscriptions = map(zip(interfaces, received)) do (interface, values)
+        subscribe!(
+            ReactiveMP.get_stream_of_outbound_messages(interface),
+            message -> push!(values, getdata(ReactiveMP.as_message(message))),
+        )
+    end
+    scores = []
+    score_subscription = subscribe!(
+        score(
+            ReactiveMP.CountingReal{Float64},
+            FactorBoundFreeEnergy(),
+            node,
+            nothing,
+            nothing,
+        ),
+        value -> push!(scores, value),
+    )
+
+    for (iteration, scale) in enumerate((1.0, 2.0))
+        messages = (
+            NormalMeanVariance(5scale, 1.25scale),
+            NormalMeanVariance(0.5scale, 0.25scale),
+            NormalMeanVariance(-0.25scale, 0.5scale),
+        )
+        foreach(zip(sources, messages)) do (source, message)
+            next!(source, Message(message, false, false))
+        end
+        @test all(values -> length(values) == iteration, received)
+        @test collect(mean_var(last(received[1]))) ≈ [1 + 0.25scale, 0.75scale]
+        @test collect(mean_var(last(received[2]))) ≈ [5.25scale - 1, 1.75scale]
+        @test collect(mean_var(last(received[3]))) ≈ [4.5scale - 1, 1.5scale]
+        @test length(scores) == iteration
+        precision =
+            Diagonal(inv.(scale .* [0.25, 0.5])) + fill(inv(1.25scale), 2, 2)
+        joint = MvNormalWeightedMeanPrecision(zeros(2), Matrix(precision))
+        @test BayesBase.value(last(scores)) ≈ -entropy(joint)
+        @test BayesBase.infinities(last(scores)) == 2
+    end
+
+    foreach(unsubscribe!, subscriptions)
+    unsubscribe!(score_subscription)
 end

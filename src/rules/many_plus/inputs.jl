@@ -1,7 +1,9 @@
 # `m_inputs` contains only the other inputs; the target is excluded by the node.
 @rule ManyPlus((:inputs, k), Marginalisation) (
     m_out::UnivariateNormalDistributionsFamily,
-    m_inputs::ManyOf{N, UnivariateNormalDistributionsFamily},
+    m_inputs::ManyOf{
+        N, Union{UnivariateNormalDistributionsFamily, PointMass{<:Real}}
+    },
 ) where {N} = begin
     output_mean, output_variance = mean_var(m_out)
     other_mean, other_variance = foldl(
