@@ -4,9 +4,18 @@
     @test ReactiveMP.as_node_symbol(ManyPlus) === :ManyPlus
     @test ReactiveMP.interfaces(ManyPlus) === Val((:out, :inputs))
     @test ReactiveMP.inputinterfaces(ManyPlus) === Val((:inputs,))
+    @test ReactiveMP.alias_interface(ManyPlus, 1, :out) === :out
+    @test ReactiveMP.alias_interface(ManyPlus, 2, :inputs) === :inputs
+    @test ReactiveMP.alias_interface(ManyPlus, 3, :inputs) === :inputs
     @test ReactiveMP.is_predefined_node(ManyPlus) isa
         ReactiveMP.PredefinedNodeFunctionalForm
     @test ReactiveMP.sdtype(ManyPlus) === Deterministic()
+
+    # The node uses the same local joint belief for every surrounding factorisation.
+    for factorisation in (nothing, ((1, 2, 3),), ((1,), (2,), (3,)))
+        @test ReactiveMP.collect_factorisation(ManyPlus, factorisation) isa
+            ReactiveMP.ManyPlusNodeFactorisation
+    end
 
     for ninputs in (0, 1)
         interfaces = [
