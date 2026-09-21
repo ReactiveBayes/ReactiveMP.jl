@@ -5,6 +5,10 @@ All notable changes to ReactiveMP.jl will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Support for fixed input variables in the `ManyPlus` node, allowing numeric literals to be included alongside variable references in the input vector. This enables models to construct sums without intermediate sum variables, improving user experience with RxInfer graph construction.
+
 ## [6.5.0] - 2026-09-03
 
 ### Added
