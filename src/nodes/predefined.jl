@@ -47,6 +47,7 @@ include("predefined/distribution/distribution.jl")
 
 # Deterministic nodes
 include("predefined/addition.jl")
+include("predefined/many_plus.jl")
 include("predefined/subtraction.jl")
 include("predefined/multiplication.jl")
 include("predefined/and.jl")

@@ -8,6 +8,9 @@ include("addition/out.jl")
 include("addition/in1.jl")
 include("addition/in2.jl")
 
+include("many_plus/out.jl")
+include("many_plus/inputs.jl")
+
 include("subtraction/marginals.jl")
 include("subtraction/out.jl")
 include("subtraction/in1.jl")

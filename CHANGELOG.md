@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Support for fixed input variables in the `ManyPlus` node, allowing numeric literals to be included alongside variable references in the input vector. This enables models to construct sums without intermediate sum variables, improving user experience with RxInfer graph construction.
+- A new `ManyPlus` node represents a sum with one factor and no intermediate sum variables, simplifying message initialization in RxInfer. Supports scalar Gaussian and fixed `PointMass` inputs, sum-product message rules, and deterministic joint-belief free-energy scoring. See the node documentation for constructing models with mixed random and fixed inputs.
 
 ## [6.5.0] - 2026-09-03
 

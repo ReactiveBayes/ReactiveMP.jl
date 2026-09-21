@@ -31,6 +31,7 @@ makedocs(
             "Helper utils"         => "lib/helpers.md",
             "Algebra utils"        => "lib/algebra.md",
             "Specific factor nodes" => [
+                "ManyPlus" => "lib/nodes/many_plus.md",
                 "Delta" => "lib/nodes/delta.md",
                 "Flow" => "lib/nodes/flow.md",
                 "BIFM" => "lib/nodes/bifm.md",
