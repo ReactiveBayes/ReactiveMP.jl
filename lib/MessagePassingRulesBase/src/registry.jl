@@ -12,10 +12,10 @@ The rules and nodes one module defines.
 """
 struct Registry
     rules::Vector{RuleSpec}
-    nodes::Vector{Any}
+    nodes::Vector{NodeSpec}
 end
 
-Registry() = Registry(RuleSpec[], Any[])
+Registry() = Registry(RuleSpec[], NodeSpec[])
 
 """
     @define_registry
@@ -41,6 +41,21 @@ function register!(registry::Registry, spec::RuleSpec)
         push!(registry.rules, spec)
     else
         registry.rules[position] = spec
+    end
+    return spec
+end
+
+"""
+    register!(registry, spec::NodeSpec)
+
+Add a node, replacing an earlier declaration of the same node.
+"""
+function register!(registry::Registry, spec::NodeSpec)
+    position = findfirst(existing -> existing.node === spec.node, registry.nodes)
+    if position === nothing
+        push!(registry.nodes, spec)
+    else
+        registry.nodes[position] = spec
     end
     return spec
 end
@@ -83,6 +98,13 @@ end
 Every rule defined in the loaded modules.
 """
 registered_rules() = RuleSpec[spec for (_, registry) in registries() for spec in registry.rules]
+
+"""
+    registered_nodes()
+
+Every node declared in the loaded modules.
+"""
+registered_nodes() = NodeSpec[spec for (_, registry) in registries() for spec in registry.nodes]
 
 """
     duplicate_rules()

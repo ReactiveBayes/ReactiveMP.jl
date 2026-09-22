@@ -39,7 +39,7 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
    `find_average_energy`), each total; the engine's fallback sits on their `RuleNotFound`
    branch, and `execute_rule` never catches;
 4. **done** — the per-module registry and its lifecycle test matrix;
-5. `@define_factor_node`;
+5. **done** — `@define_factor_node`. `dependencies` is rejected until step 7;
 6. the three rule-definition macros, checked against the spike's ten hand-lowered rules
    (`git show 81822c57:spike/dispatch/02_rules.jl`);
 7. the dependency language — **propose** the representation of static gating, the empty
@@ -523,7 +523,8 @@ proposal. Citations are as of `545425a2`.
   its own RNG is `pure = false`.
 
 **Exit criteria**
-- [ ] `@define_factor_node` with variadic interface groups
+- [x] `@define_factor_node` with variadic interface groups — several, non-trailing, and
+      interface names containing underscores (`nodes:*` tests)
 - [ ] `@define_message_update_rule` / `@define_marginal_update_rule` / `@define_average_energy`
 - [ ] `RuleSpec`/`NodeSpec` registry, per-module const + discovery (never `push!` into a
       shared global — precompilation hazard, see `PLAN.md`)
