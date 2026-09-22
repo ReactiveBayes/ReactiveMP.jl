@@ -21,7 +21,8 @@ const INVENTORY = joinpath(ROOT, "INVENTORY.md")
 
 const DESTINATIONS = [
     "base",             # MessagePassingRulesBase
-    "standard",         # StandardMessagePassingRules
+    "standard",         # StandardMessagePassingRules: distributions, arithmetic, logic, mixtures
+    "models",           # domain-specific models; package not yet named
     "approximations",   # MessagePassingRulesApproximations
     "testutils",        # MessagePassingRulesTestUtils
     "engine",           # ReactiveMP itself
@@ -293,7 +294,8 @@ Validate with `julia --project=. scripts/inventory.jl --check`.
 | value | meaning |
 |---|---|
 | `base` | `MessagePassingRulesBase` |
-| `standard` | `StandardMessagePassingRules` |
+| `standard` | `StandardMessagePassingRules` — distributions, arithmetic, logic, mixtures |
+| `models` | domain-specific models (GCV, Probit, SoftDot, GaussianCoupling); **package not yet named** |
 | `approximations` | `MessagePassingRulesApproximations` |
 | `testutils` | `MessagePassingRulesTestUtils` |
 | `engine` | stays in `ReactiveMP` |

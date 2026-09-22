@@ -17,7 +17,8 @@ Validate with `julia --project=. scripts/inventory.jl --check`.
 | value | meaning |
 |---|---|
 | `base` | `MessagePassingRulesBase` |
-| `standard` | `StandardMessagePassingRules` |
+| `standard` | `StandardMessagePassingRules` — distributions, arithmetic, logic, mixtures |
+| `models` | domain-specific models (GCV, Probit, SoftDot, GaussianCoupling); **package not yet named** |
 | `approximations` | `MessagePassingRulesApproximations` |
 | `testutils` | `MessagePassingRulesTestUtils` |
 | `engine` | stays in `ReactiveMP` |
@@ -45,55 +46,55 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `*` | `node` | `src/nodes/predefined/multiplication.jl` | `undecided` |  |
-| `+` | `node` | `src/nodes/predefined/addition.jl` | `undecided` |  |
-| `-` | `node` | `src/nodes/predefined/subtraction.jl` | `undecided` |  |
-| `AND` | `node` | `src/nodes/predefined/and.jl` | `undecided` |  |
-| `AR` | `node` | `src/nodes/predefined/autoregressive.jl` | `undecided` |  |
-| `BIFM` | `node` | `src/nodes/predefined/bifm.jl` | `undecided` |  |
-| `BIFMHelper` | `node` | `src/nodes/predefined/bifm_helper.jl` | `undecided` |  |
-| `BinomialPolya` | `node` | `src/nodes/predefined/binomial_polya.jl` | `undecided` |  |
-| `ConjugateAR` | `node` | `src/nodes/predefined/conjugate_autoregressive.jl` | `undecided` |  |
-| `ContinuousTransition` | `node` | `src/nodes/predefined/continuous_transition.jl` | `undecided` |  |
-| `DiscreteTransition` | `node` | `src/nodes/predefined/discrete_transition.jl` | `undecided` |  |
-| `Distributions.Bernoulli` | `node` | `src/nodes/predefined/bernoulli.jl` | `undecided` |  |
-| `Distributions.Beta` | `node` | `src/nodes/predefined/beta.jl` | `undecided` |  |
-| `Distributions.Categorical{P} where P<:Real` | `node` | `src/nodes/predefined/categorical.jl` | `undecided` |  |
-| `Distributions.Dirichlet` | `node` | `src/nodes/predefined/dirichlet.jl` | `undecided` |  |
-| `Distributions.Gamma` | `node` | `src/nodes/predefined/gamma.jl` | `undecided` |  |
-| `Distributions.InverseGamma` | `node` | `src/nodes/predefined/gamma_inverse.jl` | `undecided` |  |
-| `Distributions.MatrixNormal` | `node` | `src/nodes/predefined/matrix_normal.jl` | `undecided` |  |
-| `Distributions.Uniform` | `node` | `src/nodes/predefined/uniform.jl` | `undecided` |  |
-| `Distributions.Wishart` | `node` | `src/nodes/predefined/wishart.jl` | `undecided` |  |
-| `ExponentialFamily.DirichletCollection` | `node` | `src/nodes/predefined/dirichlet_collection.jl` | `undecided` |  |
-| `ExponentialFamily.GammaShapeRate` | `node` | `src/nodes/predefined/gamma_shape_rate.jl` | `undecided` |  |
-| `ExponentialFamily.MatrixNormalWishart` | `node` | `src/nodes/predefined/matrix_normal_wishart.jl` | `undecided` |  |
-| `ExponentialFamily.MvNormalMeanCovariance` | `node` | `src/nodes/predefined/mv_normal_mean_covariance.jl` | `undecided` |  |
-| `ExponentialFamily.MvNormalMeanPrecision` | `node` | `src/nodes/predefined/mv_normal_mean_precision.jl` | `undecided` |  |
-| `ExponentialFamily.MvNormalWeightedMeanPrecision` | `node` | `src/nodes/predefined/mv_normal_weighted_mean_precision.jl` | `undecided` |  |
-| `ExponentialFamily.MvNormalWishart` | `node` | `src/nodes/predefined/mv_normal_wishart.jl` | `undecided` |  |
-| `ExponentialFamily.NormalMeanPrecision` | `node` | `src/nodes/predefined/normal_mean_precision.jl` | `undecided` |  |
-| `ExponentialFamily.NormalMeanVariance` | `node` | `src/nodes/predefined/normal_mean_variance.jl` | `undecided` |  |
-| `Flow` | `node` | `src/nodes/predefined/flow/flow.jl` | `undecided` |  |
-| `GCV` | `node` | `src/nodes/predefined/gcv.jl` | `undecided` |  |
-| `GammaMixture` | `node` | `src/nodes/predefined/gamma_mixture.jl` | `undecided` |  |
-| `GaussianCoupling` | `node` | `src/nodes/predefined/gaussian_coupling.jl` | `undecided` |  |
-| `HalfNormal` | `node` | `src/nodes/predefined/half_normal.jl` | `undecided` |  |
-| `IMPLY` | `node` | `src/nodes/predefined/implication.jl` | `undecided` |  |
-| `InverseWishart` | `node` | `src/nodes/predefined/wishart_inverse.jl` | `undecided` |  |
-| `Mixture` | `node` | `src/nodes/predefined/mixture.jl` | `undecided` |  |
-| `MultinomialPolya` | `node` | `src/nodes/predefined/multinomial_polya.jl` | `undecided` |  |
-| `MvNormalGamma` | `node` | `src/nodes/predefined/mv_normal_gamma.jl` | `undecided` |  |
-| `MvNormalMeanScaleMatrixPrecision` | `node` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `undecided` |  |
-| `MvNormalMeanScalePrecision` | `node` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `undecided` |  |
-| `NOT` | `node` | `src/nodes/predefined/not.jl` | `undecided` |  |
-| `NormalMixture` | `node` | `src/nodes/predefined/normal_mixture.jl` | `undecided` |  |
-| `OR` | `node` | `src/nodes/predefined/or.jl` | `undecided` |  |
-| `Poisson` | `node` | `src/nodes/predefined/poisson.jl` | `undecided` |  |
-| `Probit` | `node` | `src/nodes/predefined/probit.jl` | `undecided` |  |
-| `SoftDot` | `node` | `src/nodes/predefined/softdot.jl` | `undecided` |  |
-| `Uninformative` | `node` | `src/nodes/predefined/uninformative.jl` | `undecided` |  |
-| `dot` | `node` | `src/nodes/predefined/dot_product.jl` | `undecided` |  |
+| `*` | `node` | `src/nodes/predefined/multiplication.jl` | `standard` | arithmetic |
+| `+` | `node` | `src/nodes/predefined/addition.jl` | `standard` | arithmetic |
+| `-` | `node` | `src/nodes/predefined/subtraction.jl` | `standard` | arithmetic |
+| `AND` | `node` | `src/nodes/predefined/and.jl` | `standard` | logic |
+| `AR` | `node` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
+| `BIFM` | `node` | `src/nodes/predefined/bifm.jl` | `node:BIFM` | impure: message rules mutate BIFMMeta (setH!, setLambdaz!, ...) |
+| `BIFMHelper` | `node` | `src/nodes/predefined/bifm_helper.jl` | `node:BIFM` |  |
+| `BinomialPolya` | `node` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 via PolyaGammaHybridSamplers |
+| `ConjugateAR` | `node` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` |  |
+| `ContinuousTransition` | `node` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | uses ForwardDiff; own package by decision |
+| `DiscreteTransition` | `node` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` | sole consumer of Tullio; declares its traits by hand |
+| `Distributions.Bernoulli` | `node` | `src/nodes/predefined/bernoulli.jl` | `standard` |  |
+| `Distributions.Beta` | `node` | `src/nodes/predefined/beta.jl` | `standard` |  |
+| `Distributions.Categorical{P} where P<:Real` | `node` | `src/nodes/predefined/categorical.jl` | `standard` |  |
+| `Distributions.Dirichlet` | `node` | `src/nodes/predefined/dirichlet.jl` | `standard` |  |
+| `Distributions.Gamma` | `node` | `src/nodes/predefined/gamma.jl` | `standard` |  |
+| `Distributions.InverseGamma` | `node` | `src/nodes/predefined/gamma_inverse.jl` | `standard` | declared as `@node GammaInverse` |
+| `Distributions.MatrixNormal` | `node` | `src/nodes/predefined/matrix_normal.jl` | `standard` |  |
+| `Distributions.Uniform` | `node` | `src/nodes/predefined/uniform.jl` | `standard` | carries 2 of the 3 known Aqua piracies (`uniform.jl:6,9`) |
+| `Distributions.Wishart` | `node` | `src/nodes/predefined/wishart.jl` | `standard` |  |
+| `ExponentialFamily.DirichletCollection` | `node` | `src/nodes/predefined/dirichlet_collection.jl` | `standard` |  |
+| `ExponentialFamily.GammaShapeRate` | `node` | `src/nodes/predefined/gamma_shape_rate.jl` | `standard` |  |
+| `ExponentialFamily.MatrixNormalWishart` | `node` | `src/nodes/predefined/matrix_normal_wishart.jl` | `standard` |  |
+| `ExponentialFamily.MvNormalMeanCovariance` | `node` | `src/nodes/predefined/mv_normal_mean_covariance.jl` | `standard` |  |
+| `ExponentialFamily.MvNormalMeanPrecision` | `node` | `src/nodes/predefined/mv_normal_mean_precision.jl` | `standard` |  |
+| `ExponentialFamily.MvNormalWeightedMeanPrecision` | `node` | `src/nodes/predefined/mv_normal_weighted_mean_precision.jl` | `standard` |  |
+| `ExponentialFamily.MvNormalWishart` | `node` | `src/nodes/predefined/mv_normal_wishart.jl` | `standard` |  |
+| `ExponentialFamily.NormalMeanPrecision` | `node` | `src/nodes/predefined/normal_mean_precision.jl` | `standard` |  |
+| `ExponentialFamily.NormalMeanVariance` | `node` | `src/nodes/predefined/normal_mean_variance.jl` | `standard` |  |
+| `Flow` | `node` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `GCV` | `node` | `src/nodes/predefined/gcv.jl` | `models` | needs only StatsFuns |
+| `GammaMixture` | `node` | `src/nodes/predefined/gamma_mixture.jl` | `standard` | ~250-line clone of NormalMixture; collapses with groups |
+| `GaussianCoupling` | `node` | `src/nodes/predefined/gaussian_coupling.jl` | `models` |  |
+| `HalfNormal` | `node` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
+| `IMPLY` | `node` | `src/nodes/predefined/implication.jl` | `standard` | logic |
+| `InverseWishart` | `node` | `src/nodes/predefined/wishart_inverse.jl` | `standard` |  |
+| `Mixture` | `node` | `src/nodes/predefined/mixture.jl` | `standard` | escapes `@node` entirely today; variadic groups delete ~70-85% |
+| `MultinomialPolya` | `node` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 via PolyaGammaHybridSamplers; also pulls ghcubature |
+| `MvNormalGamma` | `node` | `src/nodes/predefined/mv_normal_gamma.jl` | `standard` |  |
+| `MvNormalMeanScaleMatrixPrecision` | `node` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `standard` |  |
+| `MvNormalMeanScalePrecision` | `node` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `standard` |  |
+| `NOT` | `node` | `src/nodes/predefined/not.jl` | `standard` | logic |
+| `NormalMixture` | `node` | `src/nodes/predefined/normal_mixture.jl` | `standard` | canary rule for the migration: `NormalMixture((:m, k))` |
+| `OR` | `node` | `src/nodes/predefined/or.jl` | `standard` | logic |
+| `Poisson` | `node` | `src/nodes/predefined/poisson.jl` | `standard` |  |
+| `Probit` | `node` | `src/nodes/predefined/probit.jl` | `models` |  |
+| `SoftDot` | `node` | `src/nodes/predefined/softdot.jl` | `models` | declared as `@node softdot` |
+| `Uninformative` | `node` | `src/nodes/predefined/uninformative.jl` | `standard` | source of 11 Aqua ambiguities against BayesBase `prod` |
+| `dot` | `node` | `src/nodes/predefined/dot_product.jl` | `standard` | arithmetic |
 
 ## Exported symbols
 
@@ -273,14 +274,14 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `form constraints` | `hook` | `src/constraints/form.jl` | `undecided` |  |
-| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `undecided` |  |
-| `callbacks` | `hook` | `src/callbacks.jl` | `undecided` |  |
-| `stream postprocessors` | `hook` | `src/postprocessors.jl` | `undecided` |  |
-| `scoring` | `hook` | `src/score/` | `undecided` |  |
-| `node traits (@node-generated)` | `hook` | `src/nodes/nodes.jl` | `undecided` |  |
-| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `undecided` |  |
-| `CVI optimiser hooks` | `hook` | `src/approximations/cvi.jl` | `undecided` |  |
+| `form constraints` | `hook` | `src/constraints/form.jl` | `engine` | constrains a variable's marginal inside the graph; an engine concept, not a rule one |
+| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `base` | the fallback protocol is rule dispatch; the `FactorNodeActivationOptions` wiring stays in the engine. Phase 0 must specify it: an exception inside a selected rule must propagate, never trigger fallback |
+| `callbacks` | `hook` | `src/callbacks.jl` | `engine` | 10 event types, all message-passing lifecycle. Exports nothing but is documented public API (`lib/callbacks.md`) |
+| `stream postprocessors` | `hook` | `src/postprocessors.jl` | `engine` | Rocket streams. Exports nothing but is documented public API (`lib/stream-postprocessors.md`) |
+| `scoring` | `hook` | `src/score/` | `base` | `@average_energy`, `AverageEnergy` and `DifferentialEntropy` move to base; `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, since they walk the graph |
+| `node traits (@node-generated)` | `hook` | `src/nodes/nodes.jl` | `base` | `@define_factor_node` emits a `NodeSpec` alongside the 8 method kinds generated today |
+| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 tests whether the dependency language absorbs all four layouts; if it does not, this needs its own design |
+| `CVI optimiser hooks` | `hook` | `src/approximations/cvi.jl` | `delete` | `cvi_setup!`/`cvi_update!` belong to the superseded `ProdCVI`, not to `CVIProjection` |
 
 ## Extensions
 
@@ -288,8 +289,8 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `ReactiveMPOptimisersExt` | `ext` | `ext/ReactiveMPOptimisersExt/` | `undecided` |  |
-| `ReactiveMPProjectionExt` | `ext` | `ext/ReactiveMPProjectionExt/` | `undecided` |  |
+| `ReactiveMPOptimisersExt` | `ext` | `ext/ReactiveMPOptimisersExt/` | `delete` | exists solely to supply `cvi_setup`/`cvi_update!` for the old `ProdCVI`; predates `CVIProjection` by over a year |
+| `ReactiveMPProjectionExt` | `ext` | `ext/ReactiveMPProjectionExt/` | `node:Delta` | becomes a weakdep extension of the Delta package, conditional on the Phase 0 layout result |
 
 ## Rule-level exceptions
 
@@ -297,9 +298,9 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `mixture/switch.jl` | `rule` | `src/rules/mixture/switch.jl` | `undecided` |  |
-| `delta layout: default` | `rule` | `src/nodes/predefined/delta/layouts/default.jl` | `undecided` |  |
-| `delta layout: cvi` | `rule` | `src/nodes/predefined/delta/layouts/cvi.jl` | `undecided` |  |
-| `delta layout: cvi-projection` | `rule` | `ext/ReactiveMPProjectionExt/layout/cvi_projection.jl` | `undecided` |  |
-| `rules indexing raw messages[i]/marginals[i]` | `rule` | `src/rules/` | `undecided` |  |
-| `MessageMapping construction sites` | `rule` | `src/message.jl` | `undecided` |  |
+| `mixture/switch.jl` | `rule` | `src/rules/mixture/switch.jl` | `standard` | the one engine leak in the rules tree: allocates a throwaway `randomvar` to reach product-with-log-scale. Becomes a context service (open item #12) |
+| `delta layout: default` | `rule` | `src/nodes/predefined/delta/layouts/default.jl` | `node:Delta` | includes the known-inverse variant, which the original count missed |
+| `delta layout: cvi` | `rule` | `src/nodes/predefined/delta/layouts/cvi.jl` | `delete` | old `ProdCVI` |
+| `delta layout: cvi-projection` | `rule` | `ext/ReactiveMPProjectionExt/layout/cvi_projection.jl` | `node:Delta` | moves into the Delta package's extension once its engine half is gone |
+| `rules indexing raw messages[i]/marginals[i]` | `rule` | `src/rules/` | `standard` | ~15 rules; hand-migrated, not machine-translated |
+| `MessageMapping construction sites` | `rule` | `src/message.jl` | `engine` | 5 sites; engine wiring |
