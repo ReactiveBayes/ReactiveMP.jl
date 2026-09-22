@@ -21,7 +21,7 @@ Phase 0 answers the questions that cannot be walked back.
 
 | # | Phase | Status |
 |---|---|---|
-| — | Design discussion, `PLAN.md`, `DISCUSSION.md` | **done** |
+| — | Initial design documented in `PLAN.md`, `DISCUSSION.md` | **done; open decisions below** |
 | — | External design review; contradictions reconciled | **done** |
 | P | Prep: baselines + disposition inventory | **not started** |
 | 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **not started** |
@@ -29,9 +29,9 @@ Phase 0 answers the questions that cannot be walked back.
 | 2 | Tooling migration on ReactiveMP | not started *(parallel with 1)* |
 | 3 | `MessagePassingRulesBase` | not started |
 | 4 | `MessagePassingRulesTestUtils` | not started |
+| 4.5 | **Engine integration slice** — small end-to-end proof | not started |
 | 5 | `StandardMessagePassingRules` | not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | not started |
-| 4.5 | **Engine integration slice** — small end-to-end proof | not started |
 | 7 | ReactiveMP engine rewrite | not started *(under-planned — wants its own design session)* |
 | 8 | Release and downstream coordination | not started |
 
@@ -42,7 +42,8 @@ Phase 0 answers the questions that cannot be walked back.
 **Goal:** be able to measure regressions, and know what has to move.
 
 **Exit criteria**
-- [ ] contradictions across the three documents reconciled *(done)*
+- [x] contradictions across the three documents reconciled; technical decisions and gates
+      remain open as listed below
 - [ ] **performance baseline captured** on v6 via the existing `benchmark/` + PkgBenchmark
       suites (`make bench`): compile latency, allocations, one full inference workload
 - [ ] **current Aqua ambiguity count measured**, so its cleanup can be budgeted separately
@@ -59,30 +60,31 @@ Phase 0 answers the questions that cannot be walked back.
 
 ## Phase 0 — Spike (throwaway)
 
-**Goal:** answer the one question that cannot be walked back, before building anything.
+**Goal:** test dispatch and dependency assumptions before committing to the API.
 
 Hand-written, no macros: target types, algorithm, context, a keyed-input
 `message_passing_rule`, and three real rules — a simple BP rule, a structured VMP rule with
 mixed `m[]`/`q[]`, and one with a variadic group.
 
 **Exit criteria**
-- [ ] `@code_typed`/JET show rule dispatch is static, with no dynamic dispatch
-- [ ] **decide whether the ruleset axis exists at all** (open item #4) *before* writing a
-      gate for it — its main justification died when the piracy check turned out to be
-      vacuous for rules. If it stays: specify precedence, termination, and which failures
-      permit falling through. **An exception raised inside a selected rule must propagate,
-      never be treated as "try the next ruleset"**
+- [ ] `@code_typed`/JET show the new routing machinery has no dynamic dispatch; assess rule
+      bodies and user-supplied services separately
+- [ ] record whether to include the ruleset axis (open item #4) or defer it pending a
+      concrete use case. If included, specify precedence, termination and fallthrough
+- [ ] **specify existing rule-fallback behavior regardless of the ruleset decision**:
+      distinguish a missing rule from an exception inside a selected rule. Such an
+      exception must propagate, never trigger fallback
 - [ ] if the axis stays, a fallback chain adds no measurable routing overhead versus a
-      direct call (equivalent dispatch behaviour + measured overhead, not byte-identical
-      generated code — that is too brittle an acceptance criterion)
+      direct call within the stated benchmark tolerance (equivalent dispatch behaviour +
+      measured overhead, not byte-identical generated code)
 - [ ] ten representative rules written by hand in each candidate syntax, read side by side
 - [ ] outbound-edge spelling decided
 - [ ] where `algorithm` sits in the header decided
 - [ ] **test the dependency language against the delta-node layouts** — express all
       **four** (default, known-inverse, CVI, CVI-projection) as declarations and see what
-      does not fit. They are the
-      hardest case, and the answer decides whether `AbstractDeltaNodeDependenciesLayout`
-      collapses and whether `CVIProjection` can ship as an extension
+      does not fit. Old CVI is a migration reference, not a surviving implementation
+      requirement. These are the hardest cases, and the answer decides whether
+      `AbstractDeltaNodeDependenciesLayout` collapses and whether `CVIProjection` can ship as an extension
       (`PLAN.md` § CVI projection)
 - [ ] **test execution semantics, not just whether the dependency list can be expressed.**
       A declaration can name mathematically correct inputs and still produce a graph that
@@ -95,19 +97,20 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       cases — including a delayed static input and an initialized feedback loop — and check
       emissions *and* numbers. Note `Mixture`'s `RequireMarginal` path is dead code that
       would `MethodError`, so one documented dependency mode has never actually run
-- [ ] one worked `@allocate` example end to end
+- [ ] one worked allocation example end to end, using the intended `@allocate` lowering
+      written by hand (the spike does not implement macros)
 - [ ] the two hard context services as standalone calls (open item #12): the mixture switch
       rule with a product-and-log-scale service, and a delta rule using a captured function
       with fixed arguments — both with no graph construction and no Rocket
 - [ ] measure, do not just assert: cold first invocation, warm execution, allocations, and
       specialization growth across variadic group sizes and heterogeneous input types
-      (`NamedTuple` keys are invariant type parameters, so method-table pressure across many
-      key sets is the specific risk)
+      (many key sets and input types may increase compiled specializations)
 
-**Closes open items:** #1 (syntax final form).
+**Decision checkpoints:** #1 (syntax final form), #4 (include or defer rulesets), and
+evidence for #12 (context services; the final contract is due in Phase 3).
 
-**If the gate fails:** the keyed-input design is wrong and `PLAN.md` needs reworking before
-anything is built. That is the point of doing this first — cost is days, not months.
+**If a gate fails:** revise the affected dispatch, dependency or service design before
+freezing the API. That is the point of doing this first — cost is days, not months.
 
 ---
 
@@ -164,10 +167,12 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
 - [ ] **registry lifecycle test matrix**: fresh-process load after precompilation, both
       extension load orders, definitions in nested modules, supported interactive
       redefinition. Test duplicate signatures separately from ambiguous ones
+- [ ] purity and RNG ownership contracts specified, including permitted output/scratch
+      writes and the distinction between the audit policy and differentiation support
 - [ ] built test-first throughout
 
-**Closes open items:** #2, #3 (selector generality and factorisation keying — decide when
-the language is real).
+**Decision checkpoints:** #2 (keep generalization deferred unless needed), #3 (factorisation
+keying), and #9–#13 (resolve before the API freezes).
 
 ---
 
@@ -179,10 +184,14 @@ the language is real).
 - [ ] `@test_rules` successor: numerical output, type promotion (default on),
       `rule`/`rule!` agreement, optional non-allocating flag
 - [ ] **node-definition verification** — reference update computed from `nodefunction`
-      rather than from golden values
-- [ ] registry-backed coverage check: every `RuleSpec`/`NodeSpec` has a test
+      for a bounded initial subset, with separate shape and scale assertions
+- [ ] registry-backed coverage check: every `RuleSpec`/`NodeSpec` has a test; record the
+      actual selected rule so a fallback cannot conceal an untested specialization
 - [ ] **migration checker**: runs a v6 and a v7 rule on identical inputs and asserts they
       agree — the tool that makes downstream (and agent-driven) migration verifiable
+- [ ] disagreements with v6 investigated and recorded as migration bugs or deliberate
+      mathematical corrections; analytic/finite-difference derivative checks cover both
+      allocating and in-place paths
 
 Definition verification lands **before** Phase 5, not after: it is the difference between
 checking ported rules against v6's output and checking them against the mathematics. Expect
@@ -194,7 +203,7 @@ it to surface rules that were already wrong.
 
 **Goal:** prove the rule/engine *interface* before porting hundreds of rules against it.
 
-Phases 3–5 can be built without an engine because rules are pure functions. That does not
+Rule kernels and test utilities can be developed without an engine. That does not
 establish that their interface with the engine is correct — **this is the single largest
 planning risk**, and the cheapest insurance is a small end-to-end proof first.
 
@@ -244,11 +253,11 @@ Do not start Phase 5 until this passes.
 - [ ] remove the superseded `cvi.jl` (`ProdCVI`/`CVI`), `delta/layouts/cvi.jl`,
       `rules/delta/cvi/*`, and with them `ReactiveMPOptimisersExt`, the `Optimisers`
       weakdep and `DiffResults`
-- [ ] delta node's built-in method set is now `{Unscented, Linearization}` — **the only
-      capability regression in the plan**; accepted, but it needs (a) an explicit breaking
+- [ ] delta node's built-in method set is now `{Unscented, Linearization}` — **an accepted
+      capability regression**, alongside exported deletions; it needs (a) an explicit breaking
       entry in the release notes, not folded in with the renames, and (b) an error that
       names both the package to install and the method to switch to. First real customer
-      for the registry-backed diagnostics
+      for the diagnostics and host-side capability metadata (open item #11)
 - [ ] `CVIProjection` ships as a weakdep extension of the Delta node package (assumes the
       Phase 0 layout result; if layouts do not collapse, it needs its own package instead)
 - [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `smoothRTS`,
@@ -256,14 +265,15 @@ Do not start Phase 5 until this passes.
       `MessagePassingRulesBase`.** Utilities that algorithms use, not algorithms. Deps:
       `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` — no cubature package, no
       `DiffResults` (it leaves with `cvi.jl`), no `Optim`
-- [ ] API carried over as-is and prettified, **not redesigned**; `ctx` threaded where
-      `cholinv` is currently global
+- [ ] numerical API carried over without broader redesign; replace global `cholinv` calls
+      through the minimal numerical protocol settled in Phase 3 (open item #13)
 - [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
 - [ ] confirm `Optim` no longer appears anywhere
 - [ ] non-standard nodes spun out: Delta, Flow, Autoregressive, GP, BIFM, Pólya, …
 - [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
       becomes honest again (see `PLAN.md` § Licensing)
-- [ ] impure algorithms (BIFM, CVI) carry the `pure = false` marker
+- [ ] surviving impure algorithms (BIFM and stateful projection algorithms) carry the
+      `pure = false` marker under the agreed purity/RNG contract
 
 ## Phase 7 — ReactiveMP engine rewrite
 
@@ -280,20 +290,24 @@ Known scope, incomplete:
 - [ ] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
 - [ ] preserve edge order when building clusters (GraphPPL factorisation indexes the
       original flat list — the single biggest correctness trap)
+- [ ] plumb `EdgeLabel.index` through RxInfer instead of re-deriving group indices from
+      neighbor position (open item #7)
 - [ ] pin the unexplained `reverse(...)` in mixture marginal wiring with a regression test
       *before* touching it
 
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality
 
-**Closes open items:** none — the engine has no open item of its own; see the `PLAN.md`
-list for live items.
+**Closes open items:** #6 (mixture regression pinned before rewriting) and #7 (edge indices
+preserved through integration).
 
 ---
 
 ## Phase 8 — Release and downstream coordination
 
 A clean break removes compatibility shims; it does not remove release coordination.
+Start coordinated downstream CI as soon as compatible development revisions exist;
+this phase requires it to pass for release, rather than being its first execution.
 
 **Exit criteria**
 - [ ] **strict coordinated downstream CI**: a job pinning mutually compatible revisions of
@@ -310,12 +324,15 @@ A clean break removes compatibility shims; it does not remove release coordinati
 
 ## Open items
 
-Tracked in `PLAN.md` § Open items. 14 listed, #8 resolved, so 13 live.
-Items #9–#14 came from external review and are API decisions blocking Phase 3. Item #4 (ruleset axis) is the
-weakest-supported — its piracy argument died with the empirical finding in
-`DISCUSSION.md` §5.
+Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #8 is resolved;
+the remaining 13 are not all immediate blockers. #14 is Phase P inventory work. #1 is a
+spike decision; #3 and #9–#13 must be settled before Phase 3's API freezes. #6 and #7 are
+engine integration requirements. #2 remains deferred unless needed; #4 may be deferred
+pending a concrete ruleset use case. #5 (Reactant/StableCholesky) belongs to a separate
+effort and does not block this rewrite.
 
 ## Structural note
 
-Rules are pure functions of their inputs, so **Phases 3–5 need no engine at all**. A stall
-on Phase 7 does not block anything else.
+Rule kernels and test utilities can be developed independently of the engine. However,
+**Phase 5 bulk migration is gated on Phase 4.5**, and release is gated on full engine and
+downstream integration. Engine independence does not establish interface correctness.

@@ -145,11 +145,11 @@ dependency spec and the rule signature are two statements of the same fact and c
 **cross-checked at load time**. That closes a failure class that currently surfaces as a
 confusing runtime `RuleMethodError` with no hint that the *dependency spec* is what's wrong.
 
-**Pivot (user):** for custom algorithms, dependencies *imply* the factorisation rather than
-deriving from it — asking for `q[a,b]` is declaring that a and b share a cluster. Agreed,
-with one condition added: the marginals requested across all targets of a node must form a
-consistent partition, or the node's BFE entropy term is undefined and the algorithm must
-supply its own `score`.
+**Initial pivot (user):** custom dependencies could imply factorisation rather than derive
+from it. The original condition required all requested marginals to form a partition.
+**Review correction:** auxiliary beliefs need not be entropy clusters, so that condition
+conflated inputs with scoring. The precise relationship, ordering and conflict handling
+remain open in `PLAN.md` item #9 and must be settled before the API freezes.
 
 **Constraint discovered:** selectors must have **statically known output arity**, otherwise
 the `ManyOf` length becomes runtime-dependent and `ManyOf{N,T}` cannot specialise. The
@@ -200,15 +200,17 @@ Assistant conceded — then over-corrected to "purity is not testable, full stop
 
 **User's synthesis, which is the right answer:** you cannot *prove* purity, but you can
 **audit the declarations at run time**. Hence `check_everything_pure = true` on the
-inference engine, erroring with the name of the offending rule. Motivating case:
-differentiating through inference with ForwardDiff requires every rule on the path to be
-pure, and today there is no way to find the culprit. Generalised into a family of engine
-diagnostics alongside `check_everything_inplace` and checked buffers.
+inference engine, erroring with the name of the offending rule. The motivating case was
+investigating side effects while differentiating through inference. **Review correction:**
+purity is not a general prerequisite for ForwardDiff, and passing the audit does not prove
+gradient correctness. Requiring it in a checked workflow is a project policy; derivative
+tests are separate. The audit sits alongside `check_everything_inplace` and checked buffers.
 
 Inheritance model (user's): declared on the algorithm, inherited by its rules, overridable
-per rule. `BP` is pure so ~350 rules need no annotation; BIFM and CVI mark the algorithm
-once rather than each rule. Assistant added: narrowing is safe, **widening must taint the
-graph-level check** or the inheritance is unsound in the direction that matters.
+per rule. `BP` is pure so ~350 rules need no annotation; BIFM and, in the original design,
+old CVI mark the algorithm once rather than each rule. CVI is subsequently removed (§3.9b-ii).
+Assistant added: narrowing is safe, **widening must taint the graph-level check** or the
+inheritance is unsound in the direction that matters.
 
 ### 3.6 Threading — descoped, correctly
 
@@ -271,8 +273,9 @@ Good news: GraphPPL already supports multiple, non-trailing variadic groups, so
 
 ### 3.9 Packages
 
-Settled: `MessagePassingRulesBase` + `StandardMessagePassingRules` +
-`MessagePassingApproximations` + `MessagePassingRulesTestUtils` + the `ReactiveMP` engine.
+Current package names: `MessagePassingRulesBase` + `StandardMessagePassingRules` +
+`MessagePassingRulesApproximations` + `MessagePassingRulesTestUtils` + the `ReactiveMP`
+engine. The approximation package's contents and layering changed below.
 
 **Pivot (user):** test tooling is its own **package**, not part of the base. The assistant
 had proposed a `Test` package extension; the user pointed out testing deps belong in
@@ -281,8 +284,9 @@ was bad (an extension's deps must be weakdeps of its host, so cubature/Turing wo
 the base's `Project.toml`) but stated it confusingly. Outcome: separate package, listed
 under `[extras]` by consumers, no weakdeps or extensions involved anywhere.
 
-Consequence of the algorithm axis: approximation methods *are* algorithms, so they can live
-in their own package, which drags seven heavy numeric deps out of the core.
+**Superseded rationale:** the assistant initially treated approximation methods as
+algorithms and proposed moving seven numeric dependencies with them. The later decision
+separates numerical utilities from algorithms and deletes unused methods (§3.9b).
 
 **Hard constraint (user, stated twice, firmly): `MessagePassingRulesBase` must not depend on
 `ExponentialFamily`. BayesBase exists precisely for this.** If something is missing from
@@ -301,15 +305,17 @@ Checking actual usage changed the picture twice.
 First: `Unscented` and `Linearization` are used only by the delta and flow nodes, `CVI` only
 by delta, and `GaussHermite`, `SphericalRadial`, `GaussLaguerre`, `Laplace`,
 `ImportanceSampling`, `srcubature`, `glcubature` have **no consumer in `src/` outside
-`src/approximations/` itself** — tests but no users. So a large fraction was dead code, and
-the heavy deps could be removed by *deleting* rather than *repackaging*.
+`src/approximations/` itself**. This establishes no internal consumers, not no downstream
+users: several are exported API. The agreed deletions remove dependencies, but need explicit
+migration entries, including cases with no replacement (`PLAN.md` item #14).
 
 Second, a correction: the assistant reported `rts_smoother` as unused. **That name does not
 exist** — the function is `smoothRTS`, and it is load-bearing, used by
 `rules/delta/unscented/marginals.jl` and `rules/delta/linearization/marginals.jl`. A bad
 grep, not a real finding.
 
-**User's decision:** keep `Unscented`, `Linearization`, `CVI` (plus `smoothRTS`) in a
+**Decision at this stage (CVI subsequently removed in §3.9b-ii):** keep `Unscented`,
+`Linearization`, `CVI` (plus `smoothRTS`) in a
 `MessagePassingRulesApproximations` package that delta and flow depend on; delete the rest
 outright; `ghcubature` follows `multinomial_polya` into the Pólya node package.
 
@@ -321,8 +327,9 @@ user's framing is better: "how do I approximate this integral" is numerics; "whi
 scheme am I running" is an algorithm. The delta algorithm *uses* Unscented; it is not
 Unscented. Keeping them siblings leaves the numerics usable outside this ecosystem.
 
-API: explicitly **not** redesigned now. Carry the functional surface over as-is, prettify,
-thread `ctx` where `cholinv` is called globally.
+API: no broader numerical redesign. Replace global `cholinv` calls through a minimal
+numerical protocol without depending on the base package. Its representation remains open
+(`PLAN.md` item #13); the earlier wording simply said to thread `ctx` through.
 
 ### 3.9b-ii CVI is superseded; the delta-layout hypothesis
 
@@ -337,9 +344,9 @@ predates `CVIProjection` by more than a year and exists solely to supply those t
 it is deleted along with the `Optimisers` weakdep and `DiffResults` (`cvi.jl` is its only
 user). Anyone reasoning from those names will guess the wrong way round.
 
-One user-visible consequence, and it is **the only capability regression in the plan** —
-everything else is API churn where nothing is lost once the spelling is fixed. The delta
-node's out-of-the-box approximation set shrinks from `{Unscented, Linearization, ProdCVI}`
+One user-visible consequence is **an accepted capability regression**, alongside the
+exported approximation deletions. The delta node's out-of-the-box approximation set
+shrinks from `{Unscented, Linearization, ProdCVI}`
 to `{Unscented, Linearization}`, because `CVIProjection` requires
 `ExponentialFamilyProjection` to be loaded. So a model that runs today on a plain
 `add ReactiveMP` may afterwards need an extra install rather than an edit.
@@ -350,9 +357,9 @@ sampling-based in the default install; or treat it purely as a diagnostics probl
 
 **Decision: accept and document, plus fix the diagnostics** — an explicit breaking entry in
 the release notes rather than one line among the renames, and an error that names both the
-package to install and the method to switch to. This is the first real customer for the
-registry-backed error messages, and therefore a genuine test of whether they are as good as
-the design claims.
+package to install and the method to switch to. This tests the diagnostics, but loaded-rule
+discovery alone cannot identify an unloaded extension. Capability metadata must be available
+in the already-loaded host or a static table (`PLAN.md` item #11).
 
 **The layout hypothesis (open, moderate confidence).** `CVIProjection` currently spans the
 type (in `approximations/`), rules (in the extension) and a *layout* (also in the extension,
@@ -360,13 +367,14 @@ but engine code — it builds `MessageMapping`, calls `connect!`, wires Rocket s
 straddles two future packages, which is what made its placement awkward.
 
 The observation that may dissolve the problem: `AbstractDeltaNodeDependenciesLayout` looks
-like a bespoke version of the dependency language. Three layouts each implement
-`deltafn_apply_layout` for the same four targets, ~684 lines whose distinct content is
-twelve dependency declarations. The CVI-projection layout's docstring literally reads as a
-dependency spec.
+like a bespoke version of the dependency language. **The original count missed the
+known-inverse variant:** there are four layouts (default, known-inverse, CVI, CVI-projection),
+implementing or delegating the same four targets. The CVI-projection docstring reads like a
+dependency spec, but stream aliasing, static-input gating and initialization must also be
+preserved. The earlier claim that everything else was wiring boilerplate is unproven.
 
-**Path chosen: collapse layouts into dependency declarations first (C), then ship
-`CVIProjection` as a weakdep extension of the Delta node package (A).** An earlier draft
+**Conditional path: if Phase 0 validates the collapse, replace layouts with dependency
+declarations (C), then ship `CVIProjection` as a weakdep extension of Delta (A).** An earlier draft
 argued for a standalone package; that was over-engineering for a leaf component of a few
 hundred lines. The blocker for the extension was never fundamental — it was only that the
 layout half is engine code with nowhere to live in a node-package extension. Removing the
@@ -514,8 +522,9 @@ split is piracy-clean. **This also removed piracy as an argument for the ruleset
 **Licensing.** `PolyaGammaHybridSamplers` is GPL-3 and is a direct `[deps]` entry;
 ReactiveMP ships MIT. Real conflict, propagates to RxInfer, accepted and deferred (§3.9c).
 
-**Approximation usage.** Surviving approximations need only `ForwardDiff`, `DiffResults`,
-`Distributions`, `Random`, `LinearAlgebra` — **no cubature package at all**. `Optim` leaves
+**Approximation usage, updated after the CVI removal decision.** Surviving approximations
+need `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` — **no cubature package**;
+`DiffResults` leaves with old CVI. `Optim` leaves
 ReactiveMP entirely (only `laplace.jl` used it). `FastGaussQuadrature` follows `ghcubature`
 to the Pólya package. `DomainIntegrals` and `HCubature` go to the test-utils package — they
 are used by the rule-comparison quadrature at `src/rule.jl:1438,1514`, which is test
@@ -534,28 +543,39 @@ approximations package as originally written.
 
 ## 6. Still open, and why
 
-1. **Rule syntax final details** — `m[x]`/`q[x]` settled in principle; the outbound-edge
+`PLAN.md` owns the stable open-item numbers; `PHASES.md` assigns their decision gates.
+The original discussion left these questions:
+
+- **Rule syntax final details (#1)** — `m[x]`/`q[x]` settled in principle; the outbound-edge
    spelling and where `algorithm` sits in the header are not. Best resolved by hand-writing
    ten representative rules and reading them.
-2. **`aligned` selector generality** — everything in-tree is `k ↔ k`. `q[p[f(k)]]` extends
+- **`aligned` selector generality (#2)** — everything in-tree is `k ↔ k`. `q[p[f(k)]]` extends
    naturally; deliberately not built until something needs it.
-3. **Per-(target, factorisation) group selection** — assumed per-target. Works for all four
+- **Per-(target, factorisation) group selection (#3)** — assumed per-target. Works for all four
    in-tree cases because the mixtures pin their factorisation. A one-way door in the syntax.
-4. **The ruleset axis** — scoped rule tables (`Overlay(mine, standard)`). Introduced by the
+- **The ruleset axis (#4)** — scoped rule tables (`Overlay(mine, standard)`). Introduced by the
    assistant, never requested. Its piracy argument is now dead (see §5); `algorithm` may
-   already cover the "controllable dispatch" goal. Weakest-supported open item.
-5. **The engine step is under-planned.** The rule layer is designed in detail;
+   already cover the "controllable dispatch" goal. May remain deferred; existing rule-fallback
+   semantics still need a contract independently of this choice.
+- **The engine step is under-planned.** The rule layer is designed in detail;
    "rewrite ReactiveMP against the new base" hides the mixture `activate!` work, the
    dependency-to-stream wiring for variadic groups, and the `Message`/`DeferredMessage`
    envelope changes. Wants its own session.
+
+Review added #9–#13: belief/entropy separation, buffer ownership, capability metadata,
+context services and the numerical protocol. These block API freeze, not preparation or
+the spike. #14 is the preparation inventory. Purity/RNG contracts and derivative checks
+are separate requirements. Reactant/StableCholesky (#5) remain a separate effort; mixture
+regressions and edge identity (#6–#7) are engine integration requirements.
 
 ---
 
 ## 7. Recommended order
 
-Spike first (throwaway, no macros): prove devirtualization with `@code_typed`/JET, and
-settle the syntax by hand-writing ten rules in each candidate spelling. **This is the only
-genuine one-way door** — a negative result should cost days, not months.
+Use `PHASES.md` as the authoritative checklist. Preparation comes first: baselines,
+disposition inventory and pinned comparison environments. Then the throwaway spike checks
+dispatch overhead, syntax, allocation, hard context services and delta execution semantics.
+Finding a failure here should cost days, not months.
 
 Then circulate `PLAN.md` + spike results for external feedback, *before* building the macro,
 because the macro is where effort starts compounding.
@@ -564,10 +584,11 @@ In parallel with waiting: migrate ReactiveMP's tooling (Runic, Aqua, and name/ta
 in `runtests.jl` — **not** a runner swap). It is independent, low-risk, and compounds —
 every later session runs faster.
 
-Then base package → test utils (including node-definition verification, **before** the bulk
-migration, so rules are checked against mathematics rather than against v6's output) →
-standard rules → approximations and node packages → engine last.
+Then base package → test utils with a bounded numerical oracle → **Phase 4.5 engine
+integration slice** → bulk standard-rule migration → approximations and node packages →
+full engine integration → coordinated release. Start strict downstream CI as soon as
+compatible development revisions exist, rather than waiting until release.
 
-Structural property worth exploiting: **rules are pure functions, so the base, test utils
-and standard rules can be built and fully tested with no engine at all.** A stall on the
-engine does not block anything else.
+Rule kernels and test utilities can be developed independently of the engine, but that
+does not prove the interface correct. Phase 4.5 must pass before bulk migration, and full
+engine/downstream integration must pass before release.

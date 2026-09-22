@@ -69,10 +69,15 @@ Role lives in a container, not a name prefix. `m[...]` and `q[...]` are two cont
 **declaration and body use the same spelling**, so no name is ever derived and nothing is
 ever split. Interface names may contain `_` again.
 
-```julia
-@rule NormalMeanVariance(:out) (m[μ]::PointMass, m[v]::PointMass) = ...
+Macro names below are the real ones (see Naming): deliberately long, because they are typed
+once per definition. Invocation macros stay short.
 
-@rule Mixture(:switch, algorithm = BP, pure = false) (
+```julia
+@define_message_update_rule NormalMeanVariance(:out) (
+    m[μ]::PointMass, m[v]::PointMass
+) = ...
+
+@define_message_update_rule Mixture(:switch, algorithm = BP, pure = false) (
     m[out]::Any, m[inputs...]::Any
 ) = ...
 ```
@@ -83,7 +88,7 @@ ever split. Interface names may contain `_` again.
 - `m[inputs...]` is a variadic group, replacing `ManyOf{N,T}` plus its `where {N}`.
 - Options are keywords (`algorithm`, `pure`, `inplace`, `context`), the signature stays
   positional. Growth room without taxing the ~350 rules that use none of it.
-- `@marginalrule` and `@average_energy` keep their names and their distinct return
+- Message, marginal and average-energy definitions retain their distinct roles and return
   contracts. They lower onto **three separate generic functions** (see Naming) that share
   one registry, one error path, one ambiguity checker and one test macro — shared
   *infrastructure*, not a single dispatch function. `@average_energy` gains the `algorithm`
@@ -93,7 +98,7 @@ ever split. Interface names may contain `_` again.
 kwargs-in-disguise today):
 
 ```julia
-@node Mixture(type = Stochastic, interfaces = [out, switch, inputs...])
+@define_factor_node Mixture(type = Stochastic, interfaces = [out, switch, inputs...])
 ```
 
 ### Naming
@@ -172,7 +177,7 @@ Dependencies become a **property of the algorithm**, not the node; a node declar
 default algorithm. Written in the same `m[]`/`q[]` vocabulary as rules:
 
 ```julia
-@node NormalMixture(
+@define_factor_node NormalMixture(
     type = Stochastic,
     interfaces = [out, switch, m..., p...],
     dependencies = [
@@ -182,10 +187,11 @@ default algorithm. Written in the same `m[]`/`q[]` vocabulary as rules:
 )
 ```
 
-Two axes separate cleanly:
+For the default dependency scheme, two axes separate:
 
 - **Role** (message vs marginal) stays derived from the factorisation, as today.
-- **Group selection** is the new declarative axis, and the only thing needing declaration.
+- **Group selection** is the new declarative axis. Custom algorithms also need the belief
+  and scoring contract described below.
 
 A group selector maps the target index to a tuple of source indices. The four observed
 modes are four values of one type; a user lambda is a fifth:
@@ -204,21 +210,22 @@ destabilises downstream. A boundary-dependent lambda like `k -> (k-1,)` violates
 type for the boundary. Length-unions are unsupported.
 
 The default (same cluster → messages minus self; other clusters → marginals) already
-yields `allbutself` and `all` for free, so only narrowing needs declaring — `Mixture` needs
-one line, `DeltaFn` none. The default fails by *over*-supplying, which surfaces as "no rule
-matches" rather than a wrong answer.
+yields `allbutself` and `all` for free. Additional selection and execution semantics must
+be tested against the mixture and delta layouts in Phase 0; selector coverage alone does
+not establish that the layouts can be replaced.
 
-For custom algorithms, dependencies stand alone and imply the factorisation rather than
-deriving from it — requesting `q[a,b]` *is* declaring a and b share a cluster.
-**Well-formedness condition:** marginals requested across all targets of a node must form a
-consistent partition, or the node's BFE entropy term is undefined; an algorithm that
-violates it deliberately must supply its own `score`.
+For custom algorithms, dependencies may constrain the factorisation rather than derive
+from it. **The precise contract remains open (#9):** requesting `q[a,b]` identifies a
+joint belief, but an auxiliary belief need not be a separately counted entropy cluster.
+Define the consumed beliefs and the entropy partition separately, including ordering and
+conflicts with user-supplied factorisation, before freezing the macro surface. Algorithms
+outside the standard free-energy construction need an explicit scoring contract.
 
 ### Purity
 
 `pure` is declared on the **algorithm**, inherited by its rules, overridable per rule.
-`BP` is pure, so the ~350 already-pure rules need no annotation; `BIFM` and CVI carry the
-marker once on the algorithm rather than once per rule. Narrowing (pure rule under impure
+`BP` is pure, so the ~350 already-pure rules need no annotation; impure algorithms such as
+`BIFM` carry the marker once rather than once per rule. Narrowing (pure rule under impure
 algorithm) is always safe; **widening must taint the graph-level check**, or the
 inheritance is unsound in the direction that matters. Multithreading is not implemented —
 the flag exists so it can be, and so impure rules are diagnosable.
@@ -229,10 +236,9 @@ is the author's declared responsibility.
 
 **But the declarations can be audited at run time, and that is what matters in practice.**
 See Engine diagnostics: `check_everything_pure` walks the graph and errors naming any rule
-whose algorithm (or own override) declares impurity. Motivating case: differentiating
-through inference with ForwardDiff (as several RxInferExamples do) requires every rule on
-the path to be pure, and today someone getting wrong gradients has no way to find the
-culprit.
+whose algorithm (or own override) declares impurity. Motivating case: when differentiating
+through inference, this identifies declared side effects worth investigating. It does not
+establish whether a gradient is correct or whether a rule supports differentiation.
 
 Optionally, when that flag is on, a *mutation detector* can also run — `deepcopy` the
 algorithm, run, compare with `==` — catching the in-tree offender (BIFM mutating its meta).
@@ -247,7 +253,9 @@ permitted.* Without that sentence the label is ambiguous exactly where it matter
 
 **Purity does not establish gradient correctness**, and an earlier draft overstated this.
 Local mutation can be perfectly differentiable, and a pure rule can still drop derivative
-information or use an unsupported operation. Passing the audit is necessary, not sufficient.
+information or use an unsupported operation. Passing the audit is neither a general
+prerequisite for differentiation nor proof of correct gradients. Requiring it in a checked
+workflow is a project safety policy.
 Add a small set of derivative checks against analytic or finite-difference references,
 covering both the allocating and in-place paths.
 
@@ -267,7 +275,7 @@ and because rewriting a body to `copyto!(out.μ, mexpr)` defeats the purpose (`m
 already allocated), the shape must be declared:
 
 ```julia
-@rule NormalMixture(:out, inplace = true) (
+@define_message_update_rule NormalMixture(:out, inplace = true) (
     m[out]::MvNormalMeanPrecision, q[m...]::Any, q[p...]::Any
 ) = begin
     @allocate MvNormalMeanPrecision(buffer_like(...), buffer_like(...))
@@ -288,8 +296,9 @@ end
 - In-place requires writable output fields. `Diagonal`, `SMatrix`, `PDMat`-backed
   (`Wishart` caches a Cholesky), `PointMass`, `ProductOf` are not; a trait gates it and the
   engine falls back to allocating. ~30 entries in BayesBase covers the useful set.
-- Default is allocate; reuse is opt-in; a checked mode poisons recycled buffers so escapes
-  fail loudly in CI. Equality-chain caches hold messages across iterations, so edges
+- Default is allocate; reuse is opt-in; a checked mode poisons recycled buffers to expose
+  some stale reads. It cannot detect every escape; ownership and retained-value tests are
+  required (open item #10). Equality-chain caches hold messages across iterations, so edges
   feeding one need a buffer per cache slot or exclusion from reuse.
 
 Separately and with no ownership reasoning required: make `Message` immutable (all four
@@ -311,8 +320,9 @@ registry already knows every declaration.
   Purity).
 - **`check_everything_inplace`** — reports rules with no in-place implementation. A coverage
   audit for latency-sensitive use (robotics, real-time), not a correctness one.
-- **Checked buffers** — poisons recycled output buffers so any escape fails loudly rather
-  than silently corrupting. Run the full suite under this as a separate CI job.
+- **Checked buffers** — poisons recycled output buffers as a debugging aid. A stale
+  reference can still observe a valid later value, so pair this with retained-value tests
+  and the ownership contract. Run the full suite in checked mode as a separate CI job.
 
 These are also how a user *finds* what to fix: the answer to "why is my model allocating /
 why are my gradients wrong / why can't I thread this" should be a rule name, not a hunt.
@@ -345,7 +355,7 @@ algorithms out of the core. Sorting today's 28 deps:
 |---|---|---|
 | `MessagePassingRulesBase` | macros, `Message`/`Marginal`, targets, algorithms, context, registry, dependency language, `buffer_like` | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
 | `StandardMessagePassingRules` | standard distribution nodes + arithmetic (`+`, `-`, `*`, dot) | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
-| `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `CVI`, CVI projection, optimizers, `smoothRTS`. **Standalone — does *not* depend on the base package** | `ForwardDiff`, `DiffResults`, `Distributions`, `Random`, `LinearAlgebra` |
+| `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery. **Standalone — does *not* depend on the base package** | `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
 | `ReactiveMP` | engine | `Rocket`, `UUIDs` |
 
@@ -396,9 +406,8 @@ only* one. That was wrong: `srcubature`, `LaplaceApproximation` and
 `ImportanceSamplingApproximation` are **exported public API**, so deleting them is a
 regression too, even though nothing inside `src/` uses them. "No consumer in `src/`"
 establishes absence of *internal* use, not absence of downstream use — see Open item #14.)
-Everything else here is API churn: renamed macros, new syntax, relocated code. Migration is
-work, but no model loses a capability once the spelling is fixed. This one is different: the
-delta node's built-in method set (`is_delta_node_compatible`) shrinks from
+Alongside the exported deletions, this change needs specific migration guidance: the delta
+node's built-in method set (`is_delta_node_compatible`) shrinks from
 `{Unscented, Linearization, ProdCVI}` to `{Unscented, Linearization}`, so a model that runs
 today on a plain `add ReactiveMP` may afterwards need a second package installed before it
 runs at all. Note the two survivors are the same *kind* of method — moment propagation
@@ -409,14 +418,14 @@ supersedes it) but it moves behind an install.
 **Decision: accept it, and make the diagnostic carry the weight.**
 
 1. **Document it as a breaking change in the release notes**, called out explicitly rather
-   than folded into the general list of renames — it is the one entry that requires an
-   install, not an edit.
+   than folded into the general list of renames — users may need an additional install as
+   well as a code edit.
 2. **The error must be actionable.** Using a delta node with a non-conjugate factor, or
    naming `CVIProjection` without the package loaded, must produce a message that names the
    package to install *and* the method to switch to. A `MethodError`, or a generic "no rule
-   found", is a failure of this requirement. The registry has the information to do this
-   properly (see § Registry, errors, introspection) — this is a concrete first customer for
-   it, and a good test of whether those error messages are actually as good as claimed.
+   found", is a failure of this requirement. Discovery of loaded rules alone cannot supply
+   this information: capability metadata must be available without loading the extension
+   (open item #11). This is a concrete acceptance test for the diagnostics.
 
 ### CVI projection, and a hypothesis about delta layouts
 
@@ -425,10 +434,11 @@ rules and a *layout* live in `ReactiveMPProjectionExt`, and the layout is engine
 constructs `MessageMapping`, calls `connect!`, wires Rocket streams.
 
 **Hypothesis: `AbstractDeltaNodeDependenciesLayout` is a bespoke version of the dependency
-language.** Three layouts exist (default, CVI, CVI-projection), each implementing
-`deltafn_apply_layout` for the same four targets — `q_out`, `q_ins`, `m_out`, `m_in_k`.
-That is ~684 lines whose genuinely distinct content is **twelve dependency declarations**;
-the rest is identical wiring boilerplate. The CVI-projection layout's own docstring reads as
+language.** Four layouts exist (default, known-inverse, CVI, CVI-projection), implementing
+or delegating `deltafn_apply_layout` for the same four targets — `q_out`, `q_ins`, `m_out`,
+`m_in_k`. Much of their code is repeated wiring, but they also carry stream aliasing,
+static-input gating and initialization semantics. Old CVI is a migration reference, not a
+surviving implementation requirement. The CVI-projection layout's own docstring reads as
 a dependency spec: *"`m_in_k`: uses the inbound message on the `in_k` edge and `q_ins`"*.
 
 *Confidence: moderate.* This is inferred from docstrings and method shape, and the layout
@@ -451,8 +461,9 @@ separate package becomes necessary.
 
 **API: keep it, do not redesign.** The functional surface carries over as-is —
 `approximate_meancov`, `approximate_kernel_expectation`, `getpoints`/`getweights`,
-`unscented_statistics`, `smoothRTS` — with `ctx` threaded in where `cholinv` is currently
-called globally. Prettifying only; a redesign is explicitly out of scope for now.
+`unscented_statistics`, `smoothRTS` — with a minimal numerical protocol replacing global
+`cholinv` calls. That protocol is open item #13; it must not require a dependency on the
+base package. A broader numerical API redesign remains out of scope.
 
 **Deletions take their tests with them** (`test/approximations/{importance,laplace}_tests.jl`,
 parts of `getpoints_tests.jl`/`shared_tests.jl`). Skim them first — a test may be the only
@@ -498,20 +509,15 @@ to the table above follow: `DomainSets` does **not** move to the approximations 
 
 **Sequencing, to bound the blast radius:**
 
-1. `MessagePassingRulesBase` alone — macros, types, dispatch, registry. No rules. Ends with
-   the go/no-go gate below.
-2. `MessagePassingRulesTestUtils` alongside it, early enough that step 3 is written
-   test-first.
-3. `StandardMessagePassingRules` — standard distribution nodes plus arithmetic (`+`, `-`,
-   `*`, dot).
-4. `MessagePassingRulesApproximations`, then non-standard nodes spinning out into their own
-   packages — Delta, Flow, Autoregressive, GP, BIFM, Pólya (which also resolves the
-   licensing conflict), …
-5. ReactiveMP engine rewritten against the new base; tooling migrated (ReTestItems, Runic).
+Follow `PHASES.md` for the authoritative order and acceptance criteria: preparation and
+baselines → the throwaway dispatch/dependency spike → external feedback and tooling → base
+and test utilities → **Phase 4.5 engine integration before bulk migration** → standard
+rules → approximations and node packages → full engine integration → coordinated release.
+The tooling work retains TestItemRunner and adds name/tag filtering, Runic and Aqua checks.
 
 This work spans multiple sessions and wants external feedback. Carry it on a long-lived
-branch with a repo-level `PLAN.md`; step 1's go/no-go gate is the point where outside
-review is most valuable, because it is the one decision that cannot be walked back cheaply.
+branch with a repo-level `PLAN.md`; circulate the spike results before building the macros.
+The dispatch result, ownership contracts and early engine integration are separate gates.
 
 ## Files
 
@@ -546,6 +552,9 @@ review is most valuable, because it is the one decision that cannot be walked ba
 4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`) — separate from
    `algorithm`, would give scoped rule tables and stop downstream packages invalidating
    each other's inferred call sites. Not requested; `algorithm` may already suffice.
+   Phase 0 records whether to include it or defer it pending a concrete use case. Existing
+   rule-fallback behavior still needs a contract either way; exceptions inside a selected
+   rule must propagate rather than trigger fallback.
 5. **Reactant and StableCholesky** — deferred to their own effort. Per-rule compilation is
    an explicitly supported *research* path when it happens, not a rejected one; whole-sweep
    tracing and `vmap` are a superset of it, not a competing approach. Nothing to decide
@@ -554,9 +563,14 @@ review is most valuable, because it is the one decision that cannot be walked ba
    Pin current behaviour with a regression test before touching.
 7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
-9. **Beliefs consumed vs. the partition whose entropy is counted.** `PLAN.md` says custom
-   dependencies imply the factorisation and that requested marginals must form a consistent
-   partition. That conflates two things: a rule may consume an *auxiliary* belief that is
+8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as
+   `MessagePassingRulesApproximations`, holding `Unscented`/`Linearization`/`smoothRTS`
+   and shared point/weight machinery — **standalone numerical utilities that do not depend
+   on the base package**. Old CVI and unused methods are deleted; CVI projection belongs to
+   the Delta package and its extension. See § Approximations are utilities, not algorithms.
+9. **Beliefs consumed vs. the partition whose entropy is counted.** An earlier draft
+   required all requested marginals to form the entropy partition. That conflated two
+   things: a rule may consume an *auxiliary* belief that is
    not an entropy cluster — `RequireMarginalFunctionalDependencies` already does exactly
    this. Define separately: which beliefs a rule consumes, and which partition free energy
    is computed over. Also settle auxiliary marginals, unspecified interfaces, conflicting
@@ -575,35 +589,31 @@ review is most valuable, because it is the one decision that cannot be walked ba
     sufficient** — a stale reference can read a legitimately rewritten buffer and see
     plausible but wrong values. Test retention across multiple updates.
 
-11. **The missing-capability diagnostic cannot come from the registry.** A registry that
-    discovers *loaded* modules cannot know which *unloaded* package supplies a missing
-    capability — yet the CVI regression above is accepted on the condition that the error
-    names the package to install. Needs an explicit capability declaration carried by the
-    package that would provide it (or a static table), not discovery.
+11. **The missing-capability diagnostic needs metadata beyond loaded rules.** A registry
+    that only discovers *loaded* modules cannot know which *unloaded* package supplies a
+    missing capability — yet the CVI regression above is accepted on the condition that the error
+    names the package to install. Needs an explicit capability declaration available in
+    the already-loaded host (such as Delta), or a static table. Its representation remains
+    open; placing it only in the unloaded extension would not solve the problem.
 
 12. **Context service contracts are currently just names.** `mixture/switch.jl` needs
     normalised-product information *and* incoming log scales; delta rules need the node
     function *with captured parameters and fixed arguments* (`FixedArguments`), not a node
-    type. Before Phase 5, demonstrate both as standalone calls with no graph construction
+    type. In Phase 0, demonstrate both as standalone calls with no graph construction
     and no Rocket. Also clarify that "context is non-dispatching" means it does not select
     the mathematical rule — its concrete services may still specialise for efficiency.
 
-13. **Approximations must not depend on the base package, yet receive `ctx` — a flat
-    contradiction** introduced by an earlier draft. Resolve by defining the minimal
-    numerical protocol they accept (likely a factorisation strategy and a workspace, never
-    `RuleContext` itself), or the dependency is quietly recreated.
+13. **The approximation package's numerical protocol is unspecified.** Passing a context
+    value need not itself introduce a package dependency, but requiring Base-owned types
+    or services would violate the boundary. Define the minimal protocol it accepts, for
+    example a factorisation strategy and workspace, without depending on
+    `MessagePassingRulesBase`. The representation remains open until Phase 3.
 
 14. **A complete disposition inventory is missing.** Every node, rule, extension, exported
     helper and engine hook needs an assigned destination or a deliberate deletion —
     including aliases, form constraints, fallbacks, callbacks, stream postprocessors and
     scoring helpers, not just rule directories. Deletions of **exported** API need migration
     entries even where the answer is "no replacement".
-
-8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as
-   `MessagePassingRulesApproximations`, holding `Unscented`/`Linearization`/`CVI`/`smoothRTS`
-   — but as **standalone numerical utilities that do not depend on the base package**, not as
-   algorithms. The unused methods are deleted rather than packaged. See § Approximations are
-   utilities, not algorithms.
 
 ## Migration
 
@@ -702,9 +712,9 @@ Applies to **both** the new packages and ReactiveMP itself.
     whoever defines it. So enabling the check is worth doing, but **it must not be claimed
     as evidence that the rule-package split is piracy-clean**; it says nothing either way.
     This also removes piracy as an argument for the ruleset axis (open item 4).
-- **Expand JET well beyond its current two uses.** It is the tool that enforces the
-  devirtualization gate; a JET assertion that rule invocation is free of dynamic dispatch is
-  what catches a regression in the core design months later.
+- **Expand JET well beyond its current two uses.** It enforces the devirtualization gate
+  for the new routing machinery. Rule bodies and user-supplied services are assessed
+  separately; the routing assertion catches regressions in the core design.
 
 ### The `@test_rules` successor
 
@@ -819,16 +829,19 @@ half-maintained copies that drift.
 
 - `@test_rules` numerical regression per rule, unchanged semantics, run per directory
   during migration.
-- **Go/no-go gate before writing any rules:** assert with `@code_typed`/JET that the new
-  dispatch path compiles to the same code as a direct call, and that a rule invocation is
-  free of dynamic dispatch. If the indirection doesn't devirtualize, the design is wrong.
+- **Go/no-go gate before bulk rule migration:** use hand-written rules in Phase 0 to check
+  with `@code_typed`/JET that the new routing machinery devirtualizes. Require equivalent
+  dispatch behavior and no material measured routing overhead versus direct calls, not
+  identical generated code. Measure cold and warm execution, allocations and specialization
+  growth; assess rule bodies and user-supplied services separately.
 - `check_rules()` + `check_rule_ambiguities()` + registry/method-table consistency in CI.
 - Allocation regressions, where a rule opts into the non-allocating flag: kernel (`== 0`),
   rule with a provided buffer (`== 0`), full sweep (golden number + tolerance) — three
   distinct levels, never conflated, and none of them implied by `inplace`. Existing
   precedents: `test/annotations_tests.jl:107`,
   `test/rules/mv_normal_mean_scale_precision/out_tests.jl:129-136`.
-- Buffer-escape detection: run the full suite in checked mode as a separate CI job.
+- Buffer lifetime checks: run the full suite in checked mode as a separate CI job and test
+  retained results across multiple updates. Poisoning alone does not prove safe reuse.
 - Mixture rewrite: pin current behaviour (including the `reverse` quirk) with regression
   tests first, then delete.
 - **Annotation and product behaviour is its own acceptance gate, not a by-product of
@@ -844,5 +857,6 @@ half-maintained copies that drift.
   intentional breaking change. Reasonable for ordinary releases; **useless as the gate for a
   coordinated rewrite**, since incompatible versions would report green without running a
   single downstream test. Add a job pinning mutually compatible revisions of the new
-  packages and their consumers, in which resolution failure is a hard failure.
+  packages and their consumers, in which resolution failure is a hard failure. Start it as
+  soon as compatible development revisions exist; Phase 8 requires it to pass for release.
 - End-to-end: RxInfer's test suite and RxInferExamples against the new packages.
