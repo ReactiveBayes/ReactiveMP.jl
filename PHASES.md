@@ -38,7 +38,7 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
    `RuleContext`. Resolution is three functions (`find_message_rule`, `find_marginal_rule`,
    `find_average_energy`), each total; the engine's fallback sits on their `RuleNotFound`
    branch, and `execute_rule` never catches;
-4. the per-module registry and its lifecycle test matrix;
+4. **done** — the per-module registry and its lifecycle test matrix;
 5. `@define_factor_node`;
 6. the three rule-definition macros, checked against the spike's ten hand-lowered rules
    (`git show 81822c57:spike/dispatch/02_rules.jl`);
@@ -546,9 +546,11 @@ proposal. Citations are as of `545425a2`.
 - [ ] **#13 (approximations protocol)** — parked by the user; the `linalg` service stays
       unfrozen until it is settled
 - [ ] missing-input path semantics confirmed (proposed under #12, not yet signed off)
-- [ ] **registry lifecycle test matrix**: fresh-process load after precompilation, both
+- [x] **registry lifecycle test matrix**: fresh-process load after precompilation, both
       extension load orders, definitions in nested modules, supported interactive
-      redefinition. Test duplicate signatures separately from ambiguous ones
+      redefinition. Test duplicate signatures separately from ambiguous ones —
+      `registry:lifecycle` (`:slow`, fixture packages under `test/fixtures/`, each probe a
+      fresh process) and `registry:in-process`. Ambiguity is step 8's `check_rule_ambiguities`
 - [ ] purity and RNG ownership contracts specified, including permitted output/scratch
       writes and the distinction between the audit policy and differentiation support
 - [ ] built test-first throughout

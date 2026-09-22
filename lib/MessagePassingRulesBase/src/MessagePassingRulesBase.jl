@@ -12,5 +12,6 @@ include("annotations.jl")
 include("algorithms.jl")
 include("context.jl")
 include("rulespec.jl")
+include("registry.jl")
 
 end

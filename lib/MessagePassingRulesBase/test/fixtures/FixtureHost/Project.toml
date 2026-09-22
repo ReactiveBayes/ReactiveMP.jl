@@ -1,0 +1,12 @@
+name = "FixtureHost"
+uuid = "9b4d2e83-1f6c-4a7b-8e5d-3c2f1a0b9d64"
+version = "0.1.0"
+
+[deps]
+MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+
+[weakdeps]
+FixtureWeak = "7e3f9b21-6c4a-4d8e-b0f2-9a1c5e7d3b42"
+
+[extensions]
+FixtureHostWeakExt = "FixtureWeak"

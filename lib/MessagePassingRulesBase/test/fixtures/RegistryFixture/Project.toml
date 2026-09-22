@@ -1,0 +1,6 @@
+name = "RegistryFixture"
+uuid = "5a1c6f0e-3b2d-4e7a-9c1f-2d8e0b6a4c11"
+version = "0.1.0"
+
+[deps]
+MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
