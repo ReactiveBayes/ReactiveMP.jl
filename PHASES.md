@@ -28,7 +28,7 @@ answered, because every later decision assumes it passes.
 | 3 | `MessagePassingRulesBase` | not started |
 | 4 | `MessagePassingRulesTestUtils` | not started |
 | 5 | `StandardMessagePassingRules` | not started |
-| 6 | `MessagePassingApproximations` + node packages | not started |
+| 6 | Node packages (Delta incl. approximations, AR, GP, BIFM, Flow) | not started |
 | 7 | ReactiveMP engine rewrite | not started *(under-planned — wants its own design session)* |
 
 ---
@@ -74,7 +74,8 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
 **Goal:** make every later session faster. Independent of the redesign, low risk.
 
 **Exit criteria**
-- [ ] ReTestItems replaces TestItemRunner; filtering by name and tags works
+- [ ] `runtests.jl` filters by **name and tags**, not just filename (TestItemRunner already
+      passes `(filename, name, tags)` to the filter — no package swap needed)
 - [ ] tag taxonomy applied: `:rules`, `:nodes`, `:engine`, `:alloc`, `:slow`, `:quality`
 - [ ] `make test` = fast subset, `make test-all` = everything
 - [ ] Runic replaces JuliaFormatter
@@ -138,12 +139,15 @@ it to surface rules that were already wrong.
 
 ---
 
-## Phase 6 — Approximations and node packages
+## Phase 6 — Node packages
 
 **Exit criteria**
-- [ ] `MessagePassingApproximations` (Unscented, Linearization, GaussHermite,
-      SphericalRadial, CVI — all algorithms now)
-- [ ] non-standard nodes spun out: Autoregressive, GP, BIFM, Flow, …
+- [ ] **first: audit `src/approximations/` for dead code** — `GaussHermite`,
+      `SphericalRadial`, `GaussLaguerre`, `Laplace`, `ImportanceSampling`, `rts_smoother`,
+      `srcubature`, `glcubature` have no consumer in `src/` outside that directory
+- [ ] resolve Open item #8: standalone approximations package, or fold into `DeltaNode`
+      (measured evidence favours folding — they are used only by delta and flow)
+- [ ] non-standard nodes spun out: Delta, Autoregressive, GP, BIFM, Flow, …
 - [ ] impure algorithms (BIFM, CVI) carry the `pure = false` marker
 
 ---
@@ -172,7 +176,7 @@ Known scope, incomplete:
 
 ## Open items
 
-Tracked in `PLAN.md` § Open items. Current count: 5. Item #4 (ruleset axis) is the
+Tracked in `PLAN.md` § Open items. Current count: 8. Item #4 (ruleset axis) is the
 weakest-supported — its piracy argument died with the empirical finding in
 `DISCUSSION.md` §5.
 

@@ -327,7 +327,7 @@ algorithms out of the core. Sorting today's 28 deps:
 |---|---|---|
 | `MessagePassingRulesBase` | macros, `Message`/`Marginal`, targets, algorithms, context, registry, dependency language, `buffer_like` | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
 | `StandardMessagePassingRules` | standard distribution nodes + arithmetic (`+`, `-`, `*`, dot) | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
-| `MessagePassingApproximations` | `Unscented`, `Linearization`, `GaussHermite`, `SphericalRadial`, `CVI` — all *algorithms* now | `FastGaussQuadrature`, `HCubature`, `DomainIntegrals`, `DomainSets`, `Optim`, `ForwardDiff`, `DiffResults` |
+| ~~`MessagePassingApproximations`~~ | **questioned — see Open item #8; likely folds into a `DeltaNode` package** | `FastGaussQuadrature`, `HCubature`, `Optim`, `ForwardDiff`, `DiffResults` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
 | `ReactiveMP` | engine | `Rocket`, `UUIDs` |
 
@@ -369,8 +369,8 @@ to the table above follow: `DomainSets` does **not** move to the approximations 
    test-first.
 3. `StandardMessagePassingRules` — standard distribution nodes plus arithmetic (`+`, `-`,
    `*`, dot).
-4. `MessagePassingApproximations`, then non-standard nodes (Autoregressive, GP, BIFM,
-   Flow, …) spinning out into their own packages.
+4. Non-standard nodes spinning out into their own packages — Delta (which likely absorbs
+   the approximation methods, see Open item #8), Autoregressive, GP, BIFM, Flow, …
 5. ReactiveMP engine rewritten against the new base; tooling migrated (ReTestItems, Runic).
 
 This work spans multiple sessions and wants external feedback. Carry it on a long-lived
@@ -418,6 +418,15 @@ review is most valuable, because it is the one decision that cannot be walked ba
    Pin current behaviour with a regression test before touching.
 7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
+8. **Does `MessagePassingApproximations` exist at all?** Introduced by the assistant, never
+   explicitly agreed, and the measured evidence is against it as a *standalone* package.
+   `Unscented` and `Linearization` are used only by the delta and flow nodes; `CVI` only by
+   delta. And `GaussHermite`, `SphericalRadial`, `GaussLaguerre`, `Laplace`,
+   `ImportanceSampling`, `rts_smoother`, `srcubature`, `glcubature` have **no consumer in
+   `src/` outside `src/approximations/` itself** — tests but no users; `ghcubature` has
+   exactly one (`multinomial_polya`). So it looks like the delta node's implementation
+   detail rather than a general-purpose package. **Audit `src/approximations/` (~1922 lines)
+   for dead code before carrying any of it across** — this may be another `MomentMatching`.
 
 ## Migration
 
@@ -440,13 +449,19 @@ Applies to **both** the new packages and ReactiveMP itself.
 
 ### Tooling
 
-- **ReTestItems.jl** replaces TestItemRunner. Current runner filters by *path only*
-  (`ARGS` → `folder1:test1`); ReTestItems filters by name, tags and path, and runs parallel
-  workers. Needed for fast agent iteration: `runtests("test/rules/"; name = r"^normal_mean_variance")`.
-  Tag taxonomy: `:rules`, `:nodes`, `:engine`, `:alloc`, `:slow`, `:quality`. `make test` =
-  fast subset, `make test-all` = everything. Precompilation, not execution, is the real
-  latency cost in an agent loop — persistent workers and `--startup-file=no` matter more
-  than the filter.
+- **Stay on TestItemRunner; fix `runtests.jl` instead.** An earlier draft proposed moving to
+  ReTestItems for name/tag filtering. That was unnecessary: **TestItemRunner's filter already
+  receives `(filename, name, tags)`** — its own docstring example is
+  `filter = ti -> !(:skipci in ti.tags)`. Today's `runtests.jl` merely *chooses* to filter on
+  `filename` alone. Name and tag filtering is ~10 lines in `runtests.jl`, not a package swap.
+  TestItemRunner is also the julia-vscode-aligned runner, and `@testitem` itself comes from
+  TestItems.jl, with VS Code discovering items by scanning source rather than via any runner —
+  so the format is portable and this choice stays reversible.
+  Still do: tag taxonomy (`:rules`, `:nodes`, `:engine`, `:alloc`, `:slow`, `:quality`),
+  `make test` = fast subset / `make test-all` = everything. Precompilation, not execution, is
+  the real latency cost in an agent loop.
+  **Revisit ReTestItems only if CI wall-clock becomes the bottleneck** — its one real
+  advantage is distributed parallel workers, a CI argument rather than an iteration-speed one.
 - **Runic** replaces JuliaFormatter. Deterministic and zero-config, which eliminates by
   design the formatter-version drift the current `Makefile` comment documents (CI and
   contributors disagreeing with no code change). Already in use in StableCholesky.jl.
