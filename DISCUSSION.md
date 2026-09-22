@@ -930,6 +930,21 @@ Three more decisions were taken while planning Phase 3's execution:
   and the design had already said `q[:y, :x]` lowers to `getindex(q, Val((:y, :x)))`. The
   key is the member tuple carried in the type, resolved at compile time.
 
+  **Measured at Phase 3 step 2, on 1.10.12 and 1.13.0.** In a `const` lambda behind a
+  function barrier, `args.q[:y, :x]`, `args.q[:a, :b, :c]`, `args.q[:p][k]` and
+  `args.m[:μ]` all infer concretely, allocate 0 bytes and are JET-clean. The typed code for
+  the joint is three `getfield`s ending in `getfield(q.joints, 2)` — constant propagation
+  turns the literal symbols into a static `Val`, and the `@generated` lookup resolves it to a
+  position. The key-presence check on single keys folds away. The negative control, a
+  body receiving the symbols as runtime values, infers a non-concrete type, so the gate can
+  fail. The fallback spelling `args.q[Val((:y, :x))]` is therefore not needed.
+
+  One thing Aqua caught on the way: an outer `Messages(::NamedTuple)` constructor silently
+  overwrote Julia's implicit default one, which is an error under precompilation. The
+  in-process tests had passed regardless, because the package loaded without its image;
+  only `persistent_tasks`, which loads it in a fresh precompiling process, failed. Parametric
+  containers here declare an explicit inner constructor for that reason.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

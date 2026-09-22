@@ -528,9 +528,10 @@ proposal. Citations are as of `545425a2`.
 - [ ] `RuleContext`, `buffer_like`, and the `preallocate` keyword (**not** `@allocate` —
       the in-body macros are deleted, see Phase 0's rule-syntax entry)
 - [ ] registry-backed errors; `check_rules()`, `check_rule_ambiguities()`
-- [ ] argument containers: sorted single keys and type-level joint keys (`Val((:y, :x))`),
+- [x] argument containers: sorted single keys and type-level joint keys (`Val((:y, :x))`),
       measured `@inferred` and allocation-free on 1.10 with a negative control. **No
-      symbol is formed at run time**
+      symbol is formed at run time.** `gate:containers*` (tagged `:alloc`); on 1.10.12
+      `args.q[:y, :x]` compiles to `getfield(q.joints, 2)`, see `DISCUSSION.md` §3.16
 - [ ] interactive surface, in full: `@call_rule`/`@call_marginalrule` (+ function form),
       `rules(node[, target]; algorithm)`, `@which_rule` with source, the coverage matrix,
       `text/plain` and `text/html` display, and a visualisation entry point that fails with
