@@ -793,6 +793,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    `(:p)[f(k)]` — indexing a `Symbol`. See § Rule surface.)
 3. **Per-(target, factorisation) group selection** — assumed per-target; all four in-tree
    cases work because the mixtures pin their factorisation. One-way door in the syntax.
+   *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
 4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`). **DEFERRED in Phase 0.**
    A downstream package that wants its own rule for a standard node and edge declares its own
    algorithm and gets it, with no shadowing and no ambiguity, because the algorithm is part of
@@ -832,6 +833,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    user-supplied factorisation, and **whether `q[:a, :b]` and `q[:b, :a]` are distinct ordered
    inputs or require permuting the joint** — canonicalising the names is not sufficient.
    **Decide before the macro surface freezes.**
+   *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
 
 10. **Buffer ownership, as distinct from buffer allocation.** `preallocate` answers *how to
     create* storage, not *when it may be reused*. Retainers beyond the equality chain:
@@ -843,6 +845,7 @@ The dispatch result, ownership contracts and early engine integration are separa
     and behaviour when dimension or element type changes. Note **poisoning is not
     sufficient** — a stale reference can read a legitimately rewritten buffer and see
     plausible but wrong values. Test retention across multiple updates.
+    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
 
 11. **The missing-capability diagnostic needs metadata beyond loaded rules.** A registry
     that only discovers *loaded* modules cannot know which *unloaded* package supplies a
@@ -850,6 +853,7 @@ The dispatch result, ownership contracts and early engine integration are separa
     names the package to install. Needs an explicit capability declaration available in
     the already-loaded host (such as Delta), or a static table. Its representation remains
     open; placing it only in the unloaded extension would not solve the problem.
+    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
 
 12. **Context service contracts.** Phase 0 turned both hard cases into signatures, each
     demonstrated as a standalone call with no graph and no Rocket:
@@ -861,12 +865,14 @@ The dispatch result, ownership contracts and early engine integration are separa
     like `m` — `args.ann_in[:out]` — kept out of dispatch, because an annotation must never
     select the mathematics. Settle the representation before the macro surface freezes. Also clarify that "context is non-dispatching" means it does not select
     the mathematical rule — its concrete services may still specialise for efficiency.
+    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
 
 13. **The approximation package's numerical protocol is unspecified.** Passing a context
     value need not itself introduce a package dependency, but requiring Base-owned types
     or services would violate the boundary. Define the minimal protocol it accepts, for
     example a factorisation strategy and workspace, without depending on
     `MessagePassingRulesBase`. The representation remains open until Phase 3.
+    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
 
 14. ~~**A complete disposition inventory is missing.**~~ **RESOLVED in Phase P.**
     `INVENTORY.md` assigns a destination or a deliberate deletion to all **231** entities —

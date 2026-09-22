@@ -16,15 +16,16 @@ relying on one.
 
 ## Next action
 
-**Phase 3 — `MessagePassingRulesBase`.** Phases 0, 1 and 2 are closed. Phase 3 is the first
-one that writes the new package rather than measuring or tidying, and it is where the API
-freezes, so the open items it must settle first are the real content: **#9 (beliefs consumed
-vs the entropy partition), #10 (buffer ownership), #11 (capability metadata for
-missing-extension diagnostics), #12 (context service contracts) and #13 (the approximations
-protocol)** — plus #3 (factorisation keying), which is a one-way door in the syntax.
+**Phase 3 — `MessagePassingRulesBase`.** Phases 0, 1 and 2 are closed. Phase 3 is where the
+API freezes, so its gating open items come first: **#3, #9–#13 and the RNG contract**. Each now
+has evidence and a **proposed** position in § Phase 3 *Entry brief*.
 
-Phase 0 already supplied two of #12's four contracts and found that incoming annotations have
-no declared route; that gap should be closed as part of the same decision.
+1. **Sign off the entry brief**, item by item. Accepted items move to RESOLVED in `PLAN.md`
+   in the same commit; rejected ones go back to open with the reason.
+2. Then build the base package test-first, in this order: the `lib/` test harness and CI job,
+   then the registry and `RuleSpec`, then `find_rule` as a total resolution function, then
+   `@define_factor_node`, then the rule macros, then the dependency language, and last the
+   context and `buffer_like`.
 
 ---
 
@@ -399,6 +400,94 @@ omission.
 
 **Goal:** the base package. Macros, types, dispatch, registry, dependency language. No rules.
 
+### Entry brief — PROPOSED, awaiting sign-off
+
+Evidence gathered for the gating open items, each with a **proposed** position. **None of
+these is a decision.** An item becomes one when it is signed off, at which point its
+`PLAN.md` open item moves to RESOLVED in the same commit and the word PROPOSED goes.
+Citations are as of `545425a2`.
+
+**#3 — group selection keyed per target, or per (target, factorisation)?**
+- *Evidence.* Selection is keyed per target today; the only factorisation input is
+  `clusterindex` (`dependencies.jl`). No in-tree rule chooses group members from the
+  factorisation: `NormalMixture`/`GammaMixture` reject anything but mean-field
+  (`normal_mixture.jl:78-82`) and hard-code members by index, and `Mixture`'s `factornode`
+  ignores the factorisation entirely (`mixture.jl:73-96`).
+- *PROPOSED.* Keep it per target. Dependencies belong to the **algorithm**, so selection that
+  genuinely varies with factorisation is a distinct algorithm, not a new syntax axis. That
+  keeps the one-way door closed without building anything.
+
+**#9 — beliefs consumed vs. the partition whose entropy is counted**
+- *Evidence.* Free energy iterates only the cluster marginals
+  (`get_node_local_marginals`, `score/node.jl:92`). `RequireMarginal` already adds a consumed
+  marginal that is never a cluster (`FactorNodeLocalMarginal`, `dependencies.jl:300-320`), and
+  never checks whether the edge is already inside a joint cluster. `ContinuousTransition`'s
+  default dependencies (`continuous_transition.jl:97`) make `:a` consume `q_a` with no cluster.
+  Joint names follow the cluster tuple, which GraphPPL sorts ascending, so they are always in
+  interface-declaration order; `q_y_x` appears 16 times, `q_x_y` never, and no rule has a
+  reversed twin. There is no permutation logic anywhere.
+- *PROPOSED.* Two separate declarations: **consumed** (a dependency's right-hand side) and
+  **partition** (derived from the factorisation, or declared by the algorithm). An auxiliary
+  marginal is consumed and never scored. `q[:a, :b]` must list members in interface-declaration
+  order, and `check_rules()` rejects any other order at definition time rather than permuting
+  the joint. A user factorisation that conflicts with an algorithm's declared partition is an
+  activation-time error naming the algorithm.
+
+**#10 — buffer ownership**
+- *Evidence.* Every retainer holds a reference, never a copy: `DeferredMessage.cache`
+  (`message.jl:451,492`, never cleared), the `RecentSubject` behind every variable's streams,
+  equality-chain caches (`equality.jl:37-38,144`; invalidation flips a bit and keeps the old
+  message), `InputArgumentsAnnotations`, which stores inputs *and* result and grows through
+  products (`input_arguments.jl:74-108`), callback events a user handler may keep,
+  `PendingScheduler` queues, and `CVIProjection`'s mutable proposal container
+  (`ext/ReactiveMPProjectionExt/rules/marginals.jl:222`). v6 is safe only because rules
+  allocate fresh results.
+- *PROPOSED.* Phase 3 defines `preallocate` and `rule!` and nothing about reuse. Every result
+  the engine publishes is an **owned snapshot**; reusing a buffer is illegal until the engine
+  opts an edge in, and the eligibility rule — which must exclude any edge feeding a retainer
+  above — is specified in Phase 4.5/7. The base API freezes without committing the engine.
+
+**#11 — capability metadata for the missing-extension diagnostic**
+- *Evidence.* The only "load X" message today is a hand-written `error`
+  (`cvi_projection.jl:138-140`). The only registered error hint is a `MethodError` hint for
+  unsupported factor nodes and missing callback handlers (`ReactiveMP.jl:92`), not
+  extensions. The positional `DeltaMeta{M, I}(…)` constructor bypasses the compatibility check.
+- *PROPOSED.* The base package provides a static **capability declaration**,
+  `(node, algorithm type) → (package to install, alternative methods)`, emitted by the host
+  package (Delta), not by the extension. `find_rule` consults it on the `RuleNotFound` branch
+  to produce the actionable error. `CVIProjection` stays a type defined in the host, so the
+  declaration can name it before the extension loads.
+
+**#12 — context service contracts and incoming annotations**
+- *Evidence.* `rules/mixture/switch.jl` reaches the engine only for a product with log
+  scale, and it *requires* every incoming message to carry `:logscale` — a `KeyError`
+  otherwise (`logscale.jl:68-69`). The 12 `getnodefn` rules (plus 3 in `ext/`) only ever fetch
+  `f` or its inverse; nothing calls `getnode()`. There are 46 FastCholesky calls in `src/`
+  outside `approximations/`. On the missing-input path, pre-rule annotation processors run,
+  the body and post-rule processors do not (`message.jl:678-728`).
+- *PROPOSED.* Adopt `args.ann_in[:sym]`, keyed exactly like `m` and never dispatched on. Four
+  services — `product`, `nodefn`, `linalg`, `rng` — declared with `ctx = (...)`. The concrete
+  `ctx` type may be parameterised so services specialise; "non-dispatching" means it never
+  selects the mathematics. The missing-input path skips both the body and the post-rule
+  processors, as v6 does, and a test pins it.
+
+**#13 — the approximations package's numerical protocol**
+- *Evidence.* In the files that survive, only three linear-algebra sites remain:
+  `unscented.jl:318` (`cholsqrt`) and `rts.jl:20,21` (`cholinv`). `smoothRTS` and
+  `local_linearization` take no method argument, so nothing can be threaded through them today.
+- *PROPOSED.* A duck-typed protocol **owned by the approximations package**:
+  `approx_cholsqrt(strategy, A)` and `approx_cholinv(strategy, A)`, defaulting to FastCholesky.
+  The strategy travels as a field on `Unscented`/`Linearization`; `smoothRTS` gains a trailing
+  `strategy` argument. The base package's `linalg` service satisfies the protocol by defining
+  methods, never through a dependency in either direction.
+
+**RNG ownership (prerequisite for the purity contract)**
+- *Evidence.* RNGs live in method and meta objects (`cvi_projection.jl:117`,
+  `binomial_polya.jl:25`), are never reseeded or reset, and fall back to the global RNG
+  elsewhere.
+- *PROPOSED.* The RNG comes from `ctx.rng` and is owned by the caller. An algorithm that holds
+  its own RNG is `pure = false`.
+
 **Exit criteria**
 - [ ] `@define_factor_node` with variadic interface groups
 - [ ] `@define_message_update_rule` / `@define_marginal_update_rule` / `@define_average_energy`
@@ -419,6 +508,9 @@ omission.
 - [ ] purity and RNG ownership contracts specified, including permitted output/scratch
       writes and the distinction between the audit policy and differentiation support
 - [ ] built test-first throughout
+- [ ] `lib/MessagePassingRulesBase/test/` with its own `runtests.jl`, and **a CI job running it
+      on 1.10 and 1.13** — today nothing under `lib/` is tested or in CI. The
+      `ExponentialFamily`-absent assertion above lives in that job
 
 **Decision checkpoints:** #2 (keep generalization deferred unless needed), #3 (factorisation
 keying), and #9–#13 (resolve before the API freezes).
