@@ -337,11 +337,22 @@ predates `CVIProjection` by more than a year and exists solely to supply those t
 it is deleted along with the `Optimisers` weakdep and `DiffResults` (`cvi.jl` is its only
 user). Anyone reasoning from those names will guess the wrong way round.
 
-One user-visible consequence, accepted deliberately: the delta node's out-of-the-box
-approximation set shrinks from `{Unscented, Linearization, ProdCVI}` to
-`{Unscented, Linearization}`, because `CVIProjection` requires `ExponentialFamilyProjection`
-to be loaded. That makes the "did you load the package?" diagnostic load-bearing rather than
-cosmetic.
+One user-visible consequence, and it is **the only capability regression in the plan** —
+everything else is API churn where nothing is lost once the spelling is fixed. The delta
+node's out-of-the-box approximation set shrinks from `{Unscented, Linearization, ProdCVI}`
+to `{Unscented, Linearization}`, because `CVIProjection` requires
+`ExponentialFamilyProjection` to be loaded. So a model that runs today on a plain
+`add ReactiveMP` may afterwards need an extra install rather than an edit.
+
+Options weighed: accept and document; make RxInfer depend on `ExponentialFamilyProjection`
+so the capability never disappears at the level where users actually live; keep something
+sampling-based in the default install; or treat it purely as a diagnostics problem.
+
+**Decision: accept and document, plus fix the diagnostics** — an explicit breaking entry in
+the release notes rather than one line among the renames, and an error that names both the
+package to install and the method to switch to. This is the first real customer for the
+registry-backed error messages, and therefore a genuine test of whether they are as good as
+the design claims.
 
 **The layout hypothesis (open, moderate confidence).** `CVIProjection` currently spans the
 type (in `approximations/`), rules (in the extension) and a *layout* (also in the extension,

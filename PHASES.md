@@ -153,8 +153,11 @@ it to surface rules that were already wrong.
 - [ ] remove the superseded `cvi.jl` (`ProdCVI`/`CVI`), `delta/layouts/cvi.jl`,
       `rules/delta/cvi/*`, and with them `ReactiveMPOptimisersExt`, the `Optimisers`
       weakdep and `DiffResults`
-- [ ] delta node's built-in method set is now `{Unscented, Linearization}`; the
-      "did you load `ExponentialFamilyProjection`?" diagnostic must be good
+- [ ] delta node's built-in method set is now `{Unscented, Linearization}` — **the only
+      capability regression in the plan**; accepted, but it needs (a) an explicit breaking
+      entry in the release notes, not folded in with the renames, and (b) an error that
+      names both the package to install and the method to switch to. First real customer
+      for the registry-backed diagnostics
 - [ ] `CVIProjection` ships as a weakdep extension of the Delta node package (assumes the
       Phase 0 layout result; if layouts do not collapse, it needs its own package instead)
 - [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `CVI`, CVI

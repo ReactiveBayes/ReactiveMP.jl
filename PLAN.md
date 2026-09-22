@@ -373,14 +373,28 @@ What survives is small: `Unscented`, `Linearization`, `smoothRTS` and the shared
 point/weight machinery, needing only `ForwardDiff`, `Random`, `LinearAlgebra` and
 `Distributions` — **no cubature package at all**.
 
-**User-visible consequence of removing `CVI`, to be handled deliberately.** Today the delta
-node accepts `Unscented`, `Linearization` and `ProdCVI` out of the box, with `CVIProjection`
-alone requiring `ExponentialFamilyProjection` to be loaded
-(`is_delta_node_compatible`). After removal the built-in set is `Unscented` and
-`Linearization`; a non-conjugate delta node needs the extra package. Acceptable — those two
-cover the Gaussian and deterministic-transform cases — but it makes the diagnostic
-load-bearing: the registry must say *"no rule for this delta node under `CVIProjection` —
-did you `using ExponentialFamilyProjection`?"*, not raise a `MethodError`.
+**This is the only capability regression in the whole plan — accepted, with conditions.**
+Everything else here is API churn: renamed macros, new syntax, relocated code. Migration is
+work, but no model loses a capability once the spelling is fixed. This one is different: the
+delta node's built-in method set (`is_delta_node_compatible`) shrinks from
+`{Unscented, Linearization, ProdCVI}` to `{Unscented, Linearization}`, so a model that runs
+today on a plain `add ReactiveMP` may afterwards need a second package installed before it
+runs at all. Note the two survivors are the same *kind* of method — moment propagation
+through a deterministic function — while `ProdCVI` was the sampling-and-gradient one reached
+for when linearization is not good enough. The capability is not lost (`CVIProjection`
+supersedes it) but it moves behind an install.
+
+**Decision: accept it, and make the diagnostic carry the weight.**
+
+1. **Document it as a breaking change in the release notes**, called out explicitly rather
+   than folded into the general list of renames — it is the one entry that requires an
+   install, not an edit.
+2. **The error must be actionable.** Using a delta node with a non-conjugate factor, or
+   naming `CVIProjection` without the package loaded, must produce a message that names the
+   package to install *and* the method to switch to. A `MethodError`, or a generic "no rule
+   found", is a failure of this requirement. The registry has the information to do this
+   properly (see § Registry, errors, introspection) — this is a concrete first customer for
+   it, and a good test of whether those error messages are actually as good as claimed.
 
 ### CVI projection, and a hypothesis about delta layouts
 
