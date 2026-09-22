@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `scripts/inventory.jl` and `INVENTORY.md`, a disposition inventory recording where every node, exported symbol, engine hook, extension and rule-level exception is destined to live once the rule/node layer is split out of the engine. `--generate` enumerates from the live package and preserves decisions already recorded; `--check` fails on any entity that is missing, still `undecided`, given an invalid destination, stale, or deleted-while-exported without a migration note. Currently 230 entities enumerated.
+
 ### Removed
 - The `benchmark/` directory, `scripts/bench.jl` and the `make bench` target. The suite only ever covered `DiscreteTransition`; its `ContinuousTransition` half was never included by `benchmark/rules/rules.jl` and called `StableRNGs(42)` (a module, not a constructor); the comparison path called `BenchmarkTools.judge(::Module, ::String)`, a method that belongs to `PkgBenchmark`; no CI workflow ever ran it; and both `benchmark_logs/` and `benchmark/*.json` were gitignored, so no result was ever retained. Performance work is tracked in [RxInferBenchmarks.jl](https://github.com/ReactiveBayes/RxInferBenchmarks.jl) instead. `BenchmarkTools`, `PkgBenchmark` and `Dates` are dropped from `scripts/Project.toml`; `JuliaFormatter` remains pinned at `~2.12`.
 

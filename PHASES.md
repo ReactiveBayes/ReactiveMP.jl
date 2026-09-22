@@ -60,6 +60,16 @@ Phase 0 answers the questions that cannot be walked back.
       aliases, form constraints, fallbacks, callbacks, stream postprocessors, scoring
       helpers. Exported deletions get migration entries even when the answer is "no
       replacement"
+  - [x] tooling: `scripts/inventory.jl --generate | --check` and `INVENTORY.md`.
+        `--generate` enumerates from the live package and **preserves decisions already
+        made**, so it is re-runnable; `--check` fails on a missing entity, an `undecided`
+        destination, an invalid destination, a stale row, or an exported deletion with no
+        migration note
+  - [x] enumeration complete and located: **230 entities** — 49 nodes, 165 exported
+        symbols, 8 engine-hook families, 2 extensions, 6 rule-level exceptions. Rules
+        inherit their node's destination, so only the rules that cannot are listed
+  - [ ] **230 destinations decided** (currently 0; `--check` reports every one)
+  - [ ] `--check` wired into CI
 - [ ] environment strategy for the v6/v7 comparison harness and before/after doctests —
       separate pinned environments if old and new constraints cannot coexist
 
