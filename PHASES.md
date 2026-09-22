@@ -27,10 +27,24 @@ ownership are resolved. Two loose ends remain, and neither blocks starting:
 - The **missing-input path** (skip the body and post-rule processors, as v6) is still only
   proposed. Confirm it before the context contract is frozen.
 
-Build the base package test-first, in this order: the `lib/` test harness and CI job,
-   then the registry and `RuleSpec`, then `find_rule` as a total resolution function, then
-   `@define_factor_node`, then the rule macros, then the dependency language, and last the
-   context and `buffer_like`.
+Build the base package test-first, one commit per step, `PHASES.md` updated in each:
+
+1. the `lib/` test harness, CI job (`LibTests.yml`, same matrix as `ci.yml`) and the
+   subprocess check that `ExponentialFamily` is never loaded;
+2. argument/annotation containers and targets, **with the measurement gate for
+   `args.q[:y, :x]`** — type-level joint keys, sorted single keys, no symbol ever built at
+   run time (`PLAN.md` § Rule surface); on the 1.10 floor, with a negative control;
+3. algorithms, `RuleSpec`, total `find_rule`, the three generic functions, `RuleContext`;
+4. the per-module registry and its lifecycle test matrix;
+5. `@define_factor_node`;
+6. the three rule-definition macros, checked against the spike's ten hand-lowered rules
+   (`git show 81822c57:spike/dispatch/02_rules.jl`);
+7. the dependency language — **propose** the representation of static gating, the empty
+   group and `q_out` aliasing to the user before building it;
+8. errors and the two checkers;
+9. the full interactive surface;
+10. the in-place path and `buffer_like`;
+11. the devirtualization gate re-run through the real macros, and doctests.
 
 ---
 
@@ -514,6 +528,13 @@ proposal. Citations are as of `545425a2`.
 - [ ] `RuleContext`, `buffer_like`, and the `preallocate` keyword (**not** `@allocate` —
       the in-body macros are deleted, see Phase 0's rule-syntax entry)
 - [ ] registry-backed errors; `check_rules()`, `check_rule_ambiguities()`
+- [ ] argument containers: sorted single keys and type-level joint keys (`Val((:y, :x))`),
+      measured `@inferred` and allocation-free on 1.10 with a negative control. **No
+      symbol is formed at run time**
+- [ ] interactive surface, in full: `@call_rule`/`@call_marginalrule` (+ function form),
+      `rules(node[, target]; algorithm)`, `@which_rule` with source, the coverage matrix,
+      `text/plain` and `text/html` display, and a visualisation entry point that fails with
+      a "load X to enable" hint rather than a `MethodError`
 - [ ] CI assertion: `ExponentialFamily` absent from the dependency closure
 - [x] **resolve open items #3, #9, #10, #11, #12** — signed off 2026-09-22, see the entry
       brief and `PLAN.md` § Open items. Body slots are now `(output, algo, ctx, args, ann)`

@@ -9,7 +9,7 @@ each of the 231 entities in ReactiveMP is destined to land.
 
 | package | phase | role |
 |---|---|---|
-| `MessagePassingRulesBase` | 3 | macros, `Message`/`Marginal`, targets, algorithms, context, registry, dependency language, `buffer_like` |
+| `MessagePassingRulesBase` | 3 | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` (not `Message`/`Marginal` — those stay in the engine) |
 | `MessagePassingRulesTestUtils` | 4 | test tooling, consumed via `[extras]` |
 | `StandardMessagePassingRules` | 5 | distributions, arithmetic, logic, mixtures |
 | `MessagePassingRulesApproximations` | 6 | numerical utilities; **standalone, must not depend on the base** |

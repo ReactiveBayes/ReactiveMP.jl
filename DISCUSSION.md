@@ -916,6 +916,20 @@ reasons where the user changed or rejected the proposal:
 - **RNG accepted as proposed.** `ctx.rng`, owned by the caller; an algorithm holding its own
   RNG is `pure = false`.
 
+Three more decisions were taken while planning Phase 3's execution:
+
+- **`Message`/`Marginal` stay in the engine** (user's choice among engine / base / defer).
+  Once the node moved into `ctx.node` and annotations into `ann`, a rule no longer touches
+  the envelope at all: `args` holds raw distributions. Putting the envelope in the base
+  package would only move engine concepts down a layer.
+- **The full interactive surface is Phase 3 scope** (user's choice over minimal or none),
+  including the coverage matrix and HTML display.
+- **No symbol is formed at run time (user).** The assistant proposed keying a joint by an
+  internal `Symbol("y,x")`, on the argument that a comma cannot occur in an identifier. The
+  user rejected it: constructing a symbol at run time is slow and must never be relied on,
+  and the design had already said `q[:y, :x]` lowers to `getindex(q, Val((:y, :x)))`. The
+  key is the member tuple carried in the type, resolved at compile time.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -987,6 +1001,9 @@ Claims the assistant made that were **wrong** and should not be revived:
 18. **"#11 needs a static capability table in the base registry."** Redundant. The host
     already guards this with the `is_delta_node_compatible` trait, specialised in the host
     with an error naming the package, and flipped by the extension. See §3.16.
+19. **"Key a joint marginal by an internal `Symbol("y,x")`."** Collision-free, but it
+    forms a symbol at run time, which is slow and was never the design. The key is the
+    member tuple in the type, `Val((:y, :x))`. See §3.16.
 
 ---
 

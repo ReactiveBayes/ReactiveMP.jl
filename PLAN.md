@@ -128,6 +128,17 @@ NamedTuple-backed container is type-stable and allocation-free.
 - `m[:μ]` and `q[:μ]` in one signature is unremarkable — different containers.
 - `q[:y, :x]` is a structural cluster; `q[:p][k]` is a member of the group `p`. **Not**
   `q[:p[:k]]`, which parses as `(:p)[:k]` — indexing a `Symbol`.
+- **No symbol is ever built at run time.** A joint is keyed by the *tuple of member symbols
+  carried in the type*: `q[:y, :x]` is an `@inline` forwarder to `getindex(q, Val((:y, :x)))`,
+  constant propagation of the literal symbols makes that `Val` static, and a `@generated`
+  lookup on the container's key-tuple parameter resolves it to a `getfield` by position.
+  Forming `Symbol("y,x")` or similar is ruled out — it is slow and it is mangling again.
+  Members are listed in interface-declaration order (#9). Single keys sit in a NamedTuple
+  in **canonical sorted order**, applied by the macro to the dispatch signature and by a
+  `@generated` constructor to the arguments, so the key order is fixed at compile time and
+  needs no node lookup at macro expansion. Phase 3 step 2 must measure this on the 1.10
+  floor before anything is built on it; the fallback, if constant propagation does not
+  hold, is the explicit `args.q[Val((:y, :x))]` spelling, which goes back to the user first.
 - `m[:inputs...]` is a variadic group, replacing `ManyOf{N,T}` plus its `where {N}`.
   Verified to parse.
 - The outbound target is `towards = :out`, or `towards = (:m, k)` for a member of a group.
@@ -226,7 +237,9 @@ applies to once-per-definition macros inverts here. See Educational and interact
 
 ### Educational and interactive use
 
-A first-class goal, not a by-product. The system is taught with in the BMLIP course at
+A first-class goal, not a by-product, and **built in full in Phase 3** — invocation macros,
+registry queries, `@which_rule`, the coverage matrix and `text/plain`/`text/html` display
+(decided while planning Phase 3). The system is taught with in the BMLIP course at
 TU/e, where invoking rules by hand is a good way to show what message passing actually
 does. The registry is what makes all of this cheap — today's `print_rules_table()` scrapes
 `methods()` through `arg_decl_parts` string offsets, which is why nothing better was ever
@@ -535,7 +548,7 @@ algorithms out of the core. Sorting today's 28 deps:
 
 | package | contents | deps |
 |---|---|---|
-| `MessagePassingRulesBase` | macros, `Message`/`Marginal`, targets, algorithms, context, registry, dependency language, `buffer_like` | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
+| `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` — **not** `Message`/`Marginal`, which stay in the engine | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
 | `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
 | *(name deferred to Phase 6)* | domain-specific models: `GCV`, `Probit`, `SoftDot`, `GaussianCoupling` | light; `StatsFuns` and the standard rules |
 | `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery. **Standalone — does *not* depend on the base package** | `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` |
@@ -794,7 +807,10 @@ The dispatch result, ownership contracts and early engine integration are separa
   caller; ~130 lines incl. `collect_latest_*`), unreachable `@average_energy Mixture`.
 - `src/nodes/predefined/delta/` — heaviest engine coupling; its layout system is more
   custom than the mixtures'.
-- `src/message.jl`, `src/marginal.jl` — split value types (down) from observables (engine).
+- `src/message.jl`, `src/marginal.jl` — stay in the engine, value types included. Rules see
+  raw distributions in `args`, annotations in `ann` and the node in `ctx.node`, so the
+  envelope (`is_clamped`, `is_initial`, annotations) is unwrapped by the engine before a rule
+  is called and the base package never knows it (decided while planning Phase 3).
 - `src/nodes/equality.jl` — `BitVector` caches → `Vector{Bool}` (bit-packed writes are
   read-modify-write on a shared word; neighbouring indices race).
 
