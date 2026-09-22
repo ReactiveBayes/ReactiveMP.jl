@@ -54,7 +54,8 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
    and a rule declares its inputs in its dependencies' spelling (`q[:p][k]`, `m[:in][!k]`);
 9. **done** — the full interactive surface — rich `text/plain`/`text/html` display and a visualisation
    entry point for **all three specs**, `RuleSpec`, `NodeSpec` and `DependenciesSpec`;
-10. the in-place path and `buffer_like`;
+10. **done** — the in-place path and `buffer_like`, which is `similar` for arrays (a static
+    array stays static-sized and mutable, a device array stays on its device);
 11. the devirtualization gate re-run through the real macros, and doctests.
 
 ---
@@ -540,8 +541,10 @@ proposal. Citations are as of `545425a2`.
 - [x] dependency language with the four selectors + static-arity enforcement — plus custom
       selectors, consumed and scored declared separately (#9), and definition-time checks
       of targets, groups, joint order and partition coverage (`dependencies:*`)
-- [ ] `RuleContext`, `buffer_like`, and the `preallocate` keyword (**not** `@allocate` —
-      the in-body macros are deleted, see Phase 0's rule-syntax entry)
+- [x] `RuleContext`, `buffer_like`, and the `preallocate` keyword (**not** `@allocate` —
+      the in-body macros are deleted, see Phase 0's rule-syntax entry) — `inplace:*`: `rule`
+      and `rule!` agree, and the kernel with a provided buffer allocates 0 bytes. The
+      writable-output trait that falls back to allocating is engine behaviour, Phase 7
 - [x] registry-backed errors; `check_rules()`, `check_rule_ambiguities()` — the error tells
       *no rule of this shape* from *type mismatch* and lists near misses slot by slot; both
       checkers take modules to scope them (`diagnostics:*`)
@@ -566,8 +569,9 @@ proposal. Citations are as of `545425a2`.
       redefinition. Test duplicate signatures separately from ambiguous ones —
       `registry:lifecycle` (`:slow`, fixture packages under `test/fixtures/`, each probe a
       fresh process) and `registry:in-process`. Ambiguity is step 8's `check_rule_ambiguities`
-- [ ] purity and RNG ownership contracts specified, including permitted output/scratch
-      writes and the distinction between the audit policy and differentiation support
+- [x] purity and RNG ownership contracts specified, including permitted output/scratch
+      writes and the distinction between the audit policy and differentiation support — the
+      `ispure` and `RuleContext` docstrings
 - [ ] built test-first throughout
 - [x] `lib/MessagePassingRulesBase/test/` with its own `runtests.jl`, and **a CI job running it
       on 1.10, 1.11 and 1.12** (`LibTests.yml`, the same matrix as `ci.yml`). The
