@@ -553,6 +553,45 @@ review is most valuable, because it is the one decision that cannot be walked ba
 - Canary: `NormalMixture((:m, k))` — indexed target + `ManyOf` marginals + `where {N}` +
   aligned group dependency in one rule.
 
+## Migration guide (published, for downstream authors)
+
+Distinct from the internal transform above. That is a one-off tool we run over our own 390
+rules; **this is a durable, published document** for anyone maintaining their own nodes and
+rules — RxGP, and colleagues with custom rules in their own codebases. It must work for a
+human reading it *and* for an AI agent pointed at it, since that is how much of the
+downstream migration will actually happen.
+
+Lives as `MIGRATION.md` in `MessagePassingRulesBase`, surfaced in its docs and linked from
+ReactiveMP and RxInfer.
+
+**Requirements that make it usable by an agent, not just readable:**
+
+- **Mechanical before/after pairs, not prose.** Every v6 construct maps to its v7 form as a
+  concrete pair. An agent should not have to infer the rule from a description.
+- **Complete case coverage**, including the fiddly ones — `ManyOf` → variadic groups,
+  indexed edges `(:in, k)`, joint marginals `q_y_x` → `q[y, x]`, `meta` → `algorithm`,
+  `@logscale`, `getnode`/`getnodefn`, `Marginalisation` removal, the renamed macros.
+- **An explicit "cannot be translated mechanically" section.** Rules touching raw
+  `messages[i]`/`marginals[i]` tuples, rules constructing graph objects, anything relying on
+  `meta` as a mutable workspace (the RxGP `GPCache` pattern). An agent must be told to stop
+  and ask rather than guess — silently-wrong rules are the worst outcome here.
+- **A verification procedure, not just a rewrite procedure.** Ship a checker in
+  `MessagePassingRulesTestUtils` that runs the v6 and v7 rule on identical inputs and
+  asserts agreement. This is what makes agent-driven migration trustworthy rather than
+  hopeful: an agent that can check its own work is a different proposition from one that can
+  only pattern-match. Node-definition verification is the stronger form where it applies.
+- **Executable examples.** Every before/after pair is a doctest that CI runs. Migration
+  guides rot precisely because they are written once against a design that then moves;
+  `doctest = true` is already a decision, so this costs nothing and prevents drift.
+- **A short preamble addressed to an agent** — what to read first, what to never guess at,
+  how to verify, when to stop and ask.
+
+**Write it during the migration, not after.** The mechanical rules get discovered while
+porting our own rules; reconstructing them later from memory guarantees the guide is
+incomplete in exactly the places that were fiddly. **The tool and the guide should be
+derived from one source** — if the transform encodes a rule, the guide documents that same
+rule, with a test asserting they agree.
+
 ## Testing infrastructure
 
 Applies to **both** the new packages and ReactiveMP itself.

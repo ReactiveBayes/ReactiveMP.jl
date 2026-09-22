@@ -122,6 +122,8 @@ the language is real).
 - [ ] **node-definition verification** — reference update computed from `nodefunction`
       rather than from golden values
 - [ ] registry-backed coverage check: every `RuleSpec`/`NodeSpec` has a test
+- [ ] **migration checker**: runs a v6 and a v7 rule on identical inputs and asserts they
+      agree — the tool that makes downstream (and agent-driven) migration verifiable
 
 Definition verification lands **before** Phase 5, not after: it is the difference between
 checking ported rules against v6's output and checking them against the mathematics. Expect
@@ -139,6 +141,16 @@ it to surface rules that were already wrong.
 - [ ] migrated per rule directory, diffs reviewed per directory
 - [ ] canary passing: `NormalMixture((:m, k))` — indexed target + group + `where {N}` +
       aligned dependency
+- [ ] **`MIGRATION.md` written *during* this phase, not after** — the mechanical rules are
+      discovered while porting, and reconstructing them later leaves gaps exactly where the
+      work was fiddly. Derived from the same source as the transform tool, with a test
+      asserting the two agree
+- [ ] every before/after pair in the guide is an executable doctest run by CI
+- [ ] guide covers the untranslatable cases explicitly (raw `messages[i]` indexing, rules
+      constructing graph objects, `meta`-as-mutable-workspace) and tells the reader — human
+      or agent — to stop and ask rather than guess
+- [ ] guide opens with a short preamble addressed to an agent: what to read, what never to
+      guess, how to verify, when to stop
 - [ ] hand-written cases done: `mixture/switch.jl`, the ~15 rules touching raw
       `messages[i]`/`marginals[i]`
 
