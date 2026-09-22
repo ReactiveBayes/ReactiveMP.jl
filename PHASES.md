@@ -52,7 +52,7 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
 8. **done** — errors and the two checkers. Also settled with the user: a group argument is a
    full-length tuple in member order with `nothing` where the selection leaves a member out,
    and a rule declares its inputs in its dependencies' spelling (`q[:p][k]`, `m[:in][!k]`);
-9. the full interactive surface — rich `text/plain`/`text/html` display and a visualisation
+9. **done** — the full interactive surface — rich `text/plain`/`text/html` display and a visualisation
    entry point for **all three specs**, `RuleSpec`, `NodeSpec` and `DependenciesSpec`;
 10. the in-place path and `buffer_like`;
 11. the devirtualization gate re-run through the real macros, and doctests.
@@ -549,8 +549,9 @@ proposal. Citations are as of `545425a2`.
       measured `@inferred` and allocation-free on 1.10 with a negative control. **No
       symbol is formed at run time.** `gate:containers*` (tagged `:alloc`); on 1.10.12
       `args.q[:y, :x]` compiles to `getfield(q.joints, 2)`, see `DISCUSSION.md` §3.16
-- [ ] interactive surface, in full: `@call_rule`/`@call_marginalrule` (+ function form),
-      `rules(node[, target]; algorithm)`, `@which_rule` with source, the coverage matrix,
+- [x] interactive surface, in full: `@call_rule`/`@call_marginalrule`/`@call_average_energy`
+      (+ function forms), `list_rules(node[, edge]; algorithm)` (renamed from `rules`, per the
+      naming rule), `@which_rule` with source, `rule_coverage`, the coverage matrix,
       `text/plain` and `text/html` display, and a visualisation entry point that fails with
       a "load X to enable" hint rather than a `MethodError`
 - [x] CI assertion: `ExponentialFamily` absent from the dependency closure — `quality:closure`,

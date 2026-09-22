@@ -147,7 +147,7 @@ function define_rule_expr(kind, source, macroargs)
             inplace = $inplace,
             pure = $pure,
             services = $services,
-            source = $(string(MacroTools.striplines(body))),
+            source = $(string(MacroTools.prettify(body; alias = false))),
             file = $(QuoteNode(Symbol(something(source.file, :none)))),
             line = $(source.line),
         )
