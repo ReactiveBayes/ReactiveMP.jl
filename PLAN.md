@@ -953,17 +953,20 @@ The dispatch result, ownership contracts and early engine integration are separa
     - Services a rule may declare with `ctx = (...)`: `node`, `product`, `linalg`, `rng`.
       The concrete `ctx` type may be parameterised so services specialise.
     - The Cholesky side of `linalg` is not designed yet — it is parked together with #13.
-    - Still only *proposed*, not signed off: on the missing-input path, the body and the
-      post-rule annotation processors are both skipped, as in v6, pinned by a test.
+    - **Missing inputs behave exactly as in v6** (user, closing Phase 3): when any input is
+      `missing`, the rule body and the post-rule annotation processors are both skipped and
+      the result is `missing`. Written into the `execute_rule` docstring; pinned by an engine
+      test when the engine is rewritten.
 
 13. **The approximation package's numerical protocol is unspecified.** Passing a context
     value need not itself introduce a package dependency, but requiring Base-owned types
     or services would violate the boundary. Define the minimal protocol it accepts, for
     example a factorisation strategy and workspace, without depending on
     `MessagePassingRulesBase`. The representation remains open until Phase 3.
-    **Parked by the user at the Phase 3 sign-off** — no proposal is on the table. The entry
+    **Parked by the user until the late phases** — no proposal is on the table. The entry
     brief's `approx_cholinv`/`approx_cholsqrt` idea was set aside for further thought, not
-    rejected; do not treat it as the plan.
+    rejected; do not treat it as the plan. Until then the `linalg` context service stays
+    documented as unstable, and Phase 3 closed without it.
 
 14. ~~**A complete disposition inventory is missing.**~~ **RESOLVED in Phase P.**
     `INVENTORY.md` assigns a destination or a deliberate deletion to all **231** entities —

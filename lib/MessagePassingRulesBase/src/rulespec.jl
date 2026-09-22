@@ -109,6 +109,11 @@ end
 Run a resolved rule. For an in-place rule, `output` is the buffer to write into; `nothing`
 asks the rule to preallocate one. Nothing here catches exceptions: whatever a rule throws
 propagates to the caller.
+
+A rule never sees a missing input. When any input is `missing`, an engine does not call the
+rule at all, and does not run the annotation processors that follow a rule either; the
+result is `missing`, carrying only the annotations written before the call. This is v6's
+behaviour, kept unchanged.
 """
 @inline function execute_rule(spec::RuleSpec, output, algorithm, ctx, args, ann, target)
     if spec.inplace && output === nothing

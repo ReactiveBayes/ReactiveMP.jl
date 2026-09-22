@@ -16,46 +16,42 @@ relying on one.
 
 ## Next action
 
-**Phase 3's twelve steps are built** (`lib/MessagePassingRulesBase`, 310 test assertions on
-1.10 and 1.13, CI in `LibTests.yml`). Two decisions are still outstanding, and Phase 3 is
-not closed until both land, because each touches an API that would otherwise freeze without
-them:
+**Phase 4 — `MessagePassingRulesTestUtils`.** Phase 3 is closed: its last two decisions were
+answered — #13 parked until the late phases, missing inputs exactly as v6. The per-step record
+of Phase 3 is in the commits `0e2a8d92`..`ab60685e` and `DISCUSSION.md` §3.16.
 
-- **#13 is parked** by the user. It touches the base package only through the `linalg`
-  context service, which is documented unstable and not frozen.
-- The **missing-input path** — skip the body and the post-rule annotation processors when an
-  input is missing, as v6 does — is still only proposed. It is engine behaviour, but its
-  contract belongs in the base package's documentation.
+Decided with the user while planning Phase 4:
 
-Once they are settled, the next phase is **Phase 4 — `MessagePassingRulesTestUtils`**: the
-`@test_rules` successor, node-definition verification, registry-backed coverage, and the v6/v7
-migration checker in `compat/v6-comparison`.
+- **Test macros mirror the definitions**: `@test_message_update_rule`,
+  `@test_marginal_update_rule`, `@test_average_energy` — the definition's keywords plus
+  `cases = [inputs => expected, …]`. Type promotion on by default, `rule`/`rule!` agreement
+  automatic for in-place rules, `check_nonallocating` opt-in.
+- **Migration checker generic in TestUtils; the v6 adapter lives in `compat/v6-comparison`**,
+  so TestUtils never names ReactiveMP. Fixtures via Serialization, stamped with Julia and
+  package versions, read back only by the same Julia minor.
+- **Verification subset**: univariate BP and naive VMP, at most 2 integrated dimensions
+  (HCubature), exact enumeration for discrete inputs, PointMass inputs substituted. Shape and
+  scale as separate assertions.
+- **Wiring**: MessagePassingRulesBase is developed at test time; no Manifest is committed
+  under `lib/`.
 
-What was built, step by step (each a commit, `PHASES.md` updated in each):
+Build it test-first, one commit per step, `PHASES.md` updated in each:
 
-1. the `lib/` test harness, CI job (`LibTests.yml`, same matrix as `ci.yml`) and the
-   subprocess check that `ExponentialFamily` is never loaded;
-2. argument/annotation containers and targets, with the measurement gate for `args.q[:y, :x]`
-   — type-level joint keys, sorted single keys, no symbol ever built at run time;
-3. algorithms, `RuleSpec`, three total resolution functions, the three generic functions,
-   `RuleContext`; the engine's fallback sits on the `RuleNotFound` branch and `execute_rule`
-   never catches;
-4. the per-module registry and its lifecycle test matrix;
-5. `@define_factor_node`;
-6. the three rule-definition macros, checked against the spike's ten hand-lowered rules.
-   Finding: a rule that *omits* `algorithm` must load after its node; one that names it has
-   no ordering constraint;
-7. the dependency language — `[k]`, `[!k]`, `...`, omission, `select_group_members`;
-   `static_inputs = :fold`; empty selection as an empty tuple; `q_out` aliasing as an engine
-   invariant; `DependenciesSpec`;
-8. errors and the two checkers; a group argument is a full-length tuple with `nothing` where
-   the selection leaves a member out;
-9. the full interactive surface, with rich display for `RuleSpec`, `NodeSpec`,
-   `DependenciesSpec` and `RuleCoverage`; invocation macros later renamed after the
-   definitions they mirror (`@call_message_update_rule`, …);
-10. the in-place path and `buffer_like`;
-11. the devirtualization gate re-run through the real macros (`gate:routing-macros`), and
-    doctests run inside the suite (`quality:doctests`). Numbers in `DISCUSSION.md` §3.16.
+1. package wiring — dependencies, harness, `LibTests.yml` entry with a develop step,
+   `make test-testutils`, `lib/README.md`;
+2. the three table macros, each sugar over a function of the same name; `@test` runs inside
+   TestUtils, so v6's callback form is gone; self-tested through a recording testset;
+3. registry-backed coverage, recording the rule each check actually selected, and
+   `check_rule_coverage(modules...)`;
+4. node-definition verification from `nodefunction`, with shape and scale asserted
+   separately and a wrong rule and a wrong log scale as negative controls;
+5. derivative checks, ForwardDiff against a central finite difference, on the allocating and
+   the in-place path;
+6. the migration checker: generic records, fixtures and declared disagreements in TestUtils;
+   a `V6Oracle` adapter and a check script in `compat/v6-comparison`, comparing an inline port
+   of `NormalMeanVariance` against v6, and running step 4's verification on a first handful
+   of v6 rules; a 1.10 CI job;
+7. close-out. Real disagreement investigations happen per ported rule in Phase 5.
 ---
 
 ## Status at a glance
@@ -68,7 +64,7 @@ What was built, step by step (each a commit, `PHASES.md` updated in each):
 | 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **done** |
 | 1 | Circulate for external feedback | **done** *(internally)* |
 | 2 | Tooling migration on ReactiveMP | **done** |
-| 3 | `MessagePassingRulesBase` | **built; two decisions outstanding** (#13, missing-input path) |
+| 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | not started |
 | 4.5 | **Engine integration slice** — small end-to-end proof | not started |
 | 5 | `StandardMessagePassingRules` | not started |
@@ -560,9 +556,9 @@ proposal. Citations are as of `545425a2`.
       checked on the resolved graph *and* on what a fresh process loads
 - [x] **resolve open items #3, #9, #10, #11, #12** — signed off 2026-09-22, see the entry
       brief and `PLAN.md` § Open items. Body slots are now `(output, algo, ctx, args, ann)`
-- [ ] **#13 (approximations protocol)** — parked by the user; the `linalg` service stays
-      unfrozen until it is settled
-- [ ] missing-input path semantics confirmed (proposed under #12, not yet signed off)
+- [x] **#13 (approximations protocol)** — parked by the user until the late phases; the
+      `linalg` service stays documented unstable, which does not hold Phase 3 open
+- [x] missing-input path semantics confirmed — exactly as v6, in the `execute_rule` docstring
 - [x] **registry lifecycle test matrix**: fresh-process load after precompilation, both
       extension load orders, definitions in nested modules, supported interactive
       redefinition. Test duplicate signatures separately from ambiguous ones —
