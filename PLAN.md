@@ -84,8 +84,10 @@ ever split. Interface names may contain `_` again.
 - Options are keywords (`algorithm`, `pure`, `inplace`, `context`), the signature stays
   positional. Growth room without taxing the ~350 rules that use none of it.
 - `@marginalrule` and `@average_energy` keep their names and their distinct return
-  contracts, but lower onto the **same** generic function, registry, error path,
-  ambiguity checker and test macro. `@average_energy` gains the `algorithm` axis.
+  contracts. They lower onto **three separate generic functions** (see Naming) that share
+  one registry, one error path, one ambiguity checker and one test macro — shared
+  *infrastructure*, not a single dispatch function. `@average_energy` gains the `algorithm`
+  axis.
 
 `@node` goes keyword-based, since it has the most to grow into (aliases are already
 kwargs-in-disguise today):
@@ -615,9 +617,11 @@ Applies to **both** the new packages and ReactiveMP itself.
   design the formatter-version drift the current `Makefile` comment documents (CI and
   contributors disagreeing with no code change). Already in use in StableCholesky.jl.
 - **Re-enable the two disabled Aqua checks**, plus `deps_compat`'s `check_extras`.
-  - `ambiguities`: just turn it on. The key-set argument means rules with different input
-    sets provably can't be ambiguous, so the surface shrinks sharply versus 390 methods on
-    one function with `Any` fallbacks. Registry-based checker as primary, Aqua as backstop.
+  - `ambiguities`: turn it on, but budget it separately. The key-set argument (rules with
+    different input sets provably can't be ambiguous) only applies to the **new** design —
+    it cannot justify cleaning up v6's existing ambiguities. **Measure the current count
+    first** and treat resolving them as its own task with its own estimate. Registry-based
+    checker as primary, Aqua as backstop.
   - `piracies`: **measured — it can be switched on today.** `Aqua.Piracy.hunt(ReactiveMP)`
     reports exactly **3** pirate methods, none of them rules: `default_prod_rule` and
     `prod` for `Uniform`×`Beta` (`nodes/predefined/uniform.jl:6,9`, a deliberate

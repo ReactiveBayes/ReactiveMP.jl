@@ -43,12 +43,20 @@ mixed `m[]`/`q[]`, and one with a variadic group.
 
 **Exit criteria**
 - [ ] `@code_typed`/JET show rule dispatch is static, with no dynamic dispatch
-- [ ] a three-deep fallback chain compiles to the same code as a direct call
+- [ ] **decide whether the ruleset axis exists at all** (open item #4) *before* writing a
+      gate for it — its main justification died when the piracy check turned out to be
+      vacuous for rules. If it stays: specify precedence, termination, and which failures
+      permit falling through. **An exception raised inside a selected rule must propagate,
+      never be treated as "try the next ruleset"**
+- [ ] if the axis stays, a fallback chain adds no measurable routing overhead versus a
+      direct call (equivalent dispatch behaviour + measured overhead, not byte-identical
+      generated code — that is too brittle an acceptance criterion)
 - [ ] ten representative rules written by hand in each candidate syntax, read side by side
 - [ ] outbound-edge spelling decided
 - [ ] where `algorithm` sits in the header decided
-- [ ] **test the dependency language against the delta-node layouts** — express all three
-      (default, CVI-projection) as declarations and see what does not fit. They are the
+- [ ] **test the dependency language against the delta-node layouts** — express all
+      **four** (default, known-inverse, CVI, CVI-projection) as declarations and see what
+      does not fit. They are the
       hardest case, and the answer decides whether `AbstractDeltaNodeDependenciesLayout`
       (~684 lines) collapses and whether `CVIProjection` can ship as an extension
       (`PLAN.md` § CVI projection)
@@ -172,11 +180,11 @@ it to surface rules that were already wrong.
       for the registry-backed diagnostics
 - [ ] `CVIProjection` ships as a weakdep extension of the Delta node package (assumes the
       Phase 0 layout result; if layouts do not collapse, it needs its own package instead)
-- [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `CVI`, CVI
-      projection, optimizers, `smoothRTS`, `approximations.jl`, `shared.jl`.
-      **Standalone — must not depend on `MessagePassingRulesBase`.** Utilities that
-      algorithms use, not algorithms. Deps: `ForwardDiff`, `DiffResults`, `Distributions`,
-      `Random`, `LinearAlgebra` — no cubature package
+- [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `smoothRTS`,
+      `approximations.jl`, `shared.jl`. **Standalone — must not depend on
+      `MessagePassingRulesBase`.** Utilities that algorithms use, not algorithms. Deps:
+      `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` — no cubature package, no
+      `DiffResults` (it leaves with `cvi.jl`), no `Optim`
 - [ ] API carried over as-is and prettified, **not redesigned**; `ctx` threaded where
       `cholinv` is currently global
 - [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
@@ -204,7 +212,8 @@ Known scope, incomplete:
 - [ ] pin the unexplained `reverse(...)` in mixture marginal wiring with a regression test
       *before* touching it
 
-**Closes open items:** #5.
+**Closes open items:** none — the engine has no open item of its own; see the `PLAN.md`
+list for live items.
 
 ---
 

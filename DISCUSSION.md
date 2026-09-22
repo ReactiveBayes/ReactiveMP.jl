@@ -415,9 +415,11 @@ The leverage point: **because `@rule`/`@node` emit data, "every rule has a test"
 CI check** rather than a review norm. Nothing in the current system can do this, since rules
 exist only as methods and enumerating them means string-parsing `methods()`.
 
-Tooling: ReTestItems (filters by name/tags/path, unlike TestItemRunner's path-only `ARGS`),
-Runic (deterministic, kills the formatter-drift problem the current `Makefile` documents),
-Aqua checks re-enabled, JET expanded well beyond its current two uses.
+Tooling: **stay on TestItemRunner** and teach `runtests.jl` to filter by name and tags — it
+already receives them (this supersedes an earlier ReTestItems recommendation, see
+Corrections 7d); Runic (deterministic, kills the formatter-drift problem the current
+`Makefile` documents); Aqua checks re-enabled; JET expanded well beyond its current two
+uses.
 
 **Node-definition verification** — the idea the assistant rates highest and that was
 prompted by the user asking whether sampling could verify rules generically. The existing
@@ -558,8 +560,9 @@ genuine one-way door** — a negative result should cost days, not months.
 Then circulate `PLAN.md` + spike results for external feedback, *before* building the macro,
 because the macro is where effort starts compounding.
 
-In parallel with waiting: migrate ReactiveMP's tooling (Runic, ReTestItems, Aqua). It is
-independent, low-risk, and compounds — every later session runs faster.
+In parallel with waiting: migrate ReactiveMP's tooling (Runic, Aqua, and name/tag filtering
+in `runtests.jl` — **not** a runner swap). It is independent, low-risk, and compounds —
+every later session runs faster.
 
 Then base package → test utils (including node-definition verification, **before** the bulk
 migration, so rules are checked against mathematics rather than against v6's output) →
