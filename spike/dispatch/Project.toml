@@ -1,0 +1,20 @@
+# Phase 0 dispatch spike. Deliberately does NOT depend on ReactiveMP: the point is that the
+# rule layer needs only distribution maths, and an environment that cannot load the engine
+# proves it rather than asserting it.
+#
+# The dep set is `MessagePassingRulesBase`'s intended one (BayesBase, LinearAlgebra) plus
+# `ExponentialFamily`, which the *standard rules* layer is allowed to use and the base is
+# not -- the ten hand-written rules are standard rules, so they may reach for it.
+
+[deps]
+BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+julia = "1.10"

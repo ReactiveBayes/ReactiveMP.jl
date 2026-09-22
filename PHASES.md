@@ -31,7 +31,7 @@ nothing about the version this package supports.
 | — | Initial design documented in `PLAN.md`, `DISCUSSION.md` | **done; open decisions below** |
 | — | External design review; contradictions reconciled | **done** |
 | P | Prep: disposition inventory, layout and environment decisions | **done** |
-| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **in progress — 2/13** |
+| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **in progress — 5/13** |
 | 1 | Circulate for external feedback | not started |
 | 2 | Tooling migration on ReactiveMP | not started *(parallel with 1)* |
 | 3 | `MessagePassingRulesBase` | not started |
@@ -132,8 +132,10 @@ Hand-written, no macros: target types, algorithm, context, a keyed-input
 mixed `m[]`/`q[]`, and one with a variadic group.
 
 **Exit criteria**
-- [ ] `@code_typed`/JET show the new routing machinery has no dynamic dispatch; assess rule
-      bodies and user-supplied services separately
+- [x] `@code_typed`/JET show the new routing machinery has no dynamic dispatch; assess rule
+      bodies and user-supplied services separately. **Done** — `spike/dispatch/03_devirt.jl`
+      measures routing on a body that allocates nothing, so routing and body costs are never
+      mixed; JET reports nothing. Services are exercised separately in `06_services.jl`
 - [ ] record whether to include the ruleset axis (open item #4) or defer it pending a
       concrete use case. If included, specify precedence, termination and fallthrough
 - [ ] **specify existing rule-fallback behavior regardless of the ruleset decision**:
@@ -160,10 +162,18 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       than one type, and that degrades silently. The plain struct is type-stable by
       construction. The indirect call this costs is accepted and revisited later with real
       rules; Phase 0 supplies the number. See `DISCUSSION.md` §3.14
-- [ ] ten representative rules written by hand in the chosen syntax and read side by side —
-      now a validation of the decided form, not a choice between candidates. Write them
-      across the hard cases (variadic group, indexed target, in-place, structured cluster)
-- [ ] **the devirtualization gate must run through the `RuleSpec`**, not only through
+- [x] **ten representative rules written by hand** and read side by side —
+      `spike/dispatch/02_rules.jl`, each shown as the surface a user writes plus the form the
+      macro would emit. Covers the trivial BP case, an annotating rule, the `meta::Any`
+      arithmetic catch-all, the `NormalMixture((:m, k))` canary, a variadic group, the
+      mixture-switch context service, delta with and without a known inverse, a marginal rule
+      over a structural cluster, an in-place rule, and an average energy.
+      **One finding.** The canonical body slots `(output, algo, ctx, args, ann, node)` have no
+      target, but an indexed target `towards = (:m, k)` has to bind `k`, which is a runtime
+      value the lowered body cannot close over. Resolution: thread `target` to every body and
+      let the macro emit `k = index(target)` as an ordinary binding when the declaration names
+      an index. It stays out of the user-facing slot list — writing `k` is how you ask for it
+- [x] **the devirtualization gate must run through the `RuleSpec`**, not only through
       dispatch, and it must **report numbers rather than pass or fail**. `RuleSpec` carries no
       type parameters (`DISCUSSION.md` §3.14), so the body is reached through a `::Function`
       field and the indirect call is accepted by decision, to be revisited with real rules.
@@ -172,12 +182,27 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       - a call site that can reach several — where the indirect call actually appears;
       - the same two figures for the parameterised alternative, so the trade has a number
         attached if it is ever reopened.
-      **Two ways to measure this wrongly, both of which flatter whatever was built.** A spec
-      constructed inline inside an inlinable `find_rule` is constant-folded away and reports
-      zero for *every* representation; and a micro-benchmark whose call site can only reach
-      one rule measures the best case and hides the indirect call. Defeat the first with a
-      `@noinline` resolution returning a runtime-selected spec; avoid the second by reporting
-      both call-site shapes
+      **Measured** — `spike/dispatch/03_devirt.jl`, results under `spike/results/`:
+
+      | | 1.10.12 | 1.13.0 |
+      |---|---|---|
+      | `args.m[:sym]`, `args.q[:p][k]` | 0, inferred | 0, inferred |
+      | routing, call site reaching one rule | **0**, `Float64` | **0**, `Float64` |
+      | routing, call site reaching two rules | 48, `Any` | 0, `Any` |
+      | same, parameterised spec, two rules | 32, `Float64` | 0, `Float64` |
+      | `NormalMeanVariance(:out)` end to end | **0** | **0** |
+      | `typeof(+)(:in2)` end to end | **0** | **0** |
+
+      So the indirect call the decision accepts costs **nothing on the ordinary path** — a
+      factor node's form is fixed, so its call sites reach one rule — and 48 bytes on the
+      floor only where resolution is genuinely ambiguous, which is where type information has
+      already been lost upstream. On 1.13 even that is free. `find_rule` returns a concrete
+      `RuleSpec` in every case. JET reports nothing on the routing.
+      **Four ways to measure this wrongly, all of them hit while building the gate**: a
+      non-`const` global (+16), a varargs helper that splats (+48), a spec constructed inline
+      in an inlinable `find_rule` (constant-folded to 0 for *every* representation), and
+      closing over the node in a loop so it is a `DataType` rather than `Type{Node}` (goes
+      dynamic, reports `Any`). The gate caught two of them by failing
 - [ ] **test the dependency language against the delta-node layouts** — express all
       **four** (default, known-inverse, CVI, CVI-projection) as declarations and see what
       does not fit. Old CVI is a migration reference, not a surviving implementation
