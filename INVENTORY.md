@@ -103,9 +103,9 @@ replacement".
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
 | `@average_energy` | `macro` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
-| `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
-| `@call_rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
-| `@logscale` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
+| `@call_rule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
+| `@logscale` | `macro` | `src/rule.jl` | `base` | annotation mechanism retained; macro versus explicit context API reopened for Phase 0 |
 | `@marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
 | `@node` | `macro` | `src/nodes/nodes.jl` | `base` | renamed `@define_factor_node` |
 | `@rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
@@ -146,10 +146,10 @@ replacement".
 | `DefaultFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | replaced by the declarative dependency language; the default needs no declaration |
 | `DeferredMessage` | `type` | `src/message.jl` | `engine` | caches a stream result; belongs with the observables |
 | `DeltaFn` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
-| `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
+| `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | replace the graph object with an engine-independent node definition; runtime wiring stays in the engine, conditional on the layout spike |
 | `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
 | `Deterministic` | `type` | `src/nodes/nodes.jl` | `base` |  |
-| `DifferentialEntropy` | `type` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `DifferentialEntropy` | `type` | `src/score/score.jl` | `base` | entropy operation retained separately from average energy |
 | `DiscreteTransition` | `type` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` |  |
 | `FactorBoundFreeEnergy` | `type` | `src/score/node.jl` | `engine` | walks the graph |
 | `FactorNode` | `type` | `src/nodes/nodes.jl` | `engine` |  |
@@ -260,7 +260,7 @@ replacement".
 | `nr_params` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `randomvar` | `function` | `src/variables/random.jl` | `engine` |  |
 | `rule` | `function` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
-| `score` | `function` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `score` | `function` | `src/score/score.jl` | `base` | average-energy methods become `message_passing_average_energy`; entropy/KL helpers remain separate, graph score assembly stays in the engine |
 | `sdtype` | `function` | `src/nodes/nodes.jl` | `base` |  |
 | `skipindex` | `function` | `src/helpers/helpers.jl` | `base` |  |
 | `softdot` | `type` | `src/nodes/predefined/softdot.jl` | `models` |  |
@@ -294,7 +294,7 @@ replacement".
 
 ## Rule-level exceptions
 
-6 entries.
+7 entries.
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
@@ -302,5 +302,6 @@ replacement".
 | `delta layout: default` | `rule` | `src/nodes/predefined/delta/layouts/default.jl` | `node:Delta` | includes the known-inverse variant, which the original count missed |
 | `delta layout: cvi` | `rule` | `src/nodes/predefined/delta/layouts/cvi.jl` | `delete` | old `ProdCVI` |
 | `delta layout: cvi-projection` | `rule` | `ext/ReactiveMPProjectionExt/layout/cvi_projection.jl` | `node:Delta` | moves into the Delta package's extension once its engine half is gone |
-| `rules indexing raw messages[i]/marginals[i]` | `rule` | `src/rules/` | `standard` | ~15 rules; hand-migrated, not machine-translated |
+| `mixture rules indexing raw inputs` | `rule` | `src/rules/mixture/` | `standard` | raw message access in switch/out/inputs; hand-migrate with annotation checks |
+| `discrete_transition rules indexing raw inputs` | `rule` | `src/rules/discrete_transition/` | `node:DiscreteTransition` | raw message/marginal access in categoricals and marginals; hand-migrate with the node, not standard rules |
 | `MessageMapping construction sites` | `rule` | `src/message.jl` | `engine` | 5 sites; engine wiring |

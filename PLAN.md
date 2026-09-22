@@ -384,10 +384,10 @@ leaves for its own package only for a stated reason, and every such reason is re
 Pólya/GPL-3), impurity (`BIFM` mutates its meta from inside message rules), engine coupling
 (`Delta`), or an explicit decision (`ContinuousTransition`).
 
-**The full assignment lives in `INVENTORY.md`**, not here: 230 entities — 49 nodes, 165
-exported symbols, 8 engine-hook families, 2 extensions and 6 rule-level exceptions — each
+**The full assignment lives in `INVENTORY.md`**, not here: 231 entities — 49 nodes, 165
+exported symbols, 8 engine-hook families, 2 extensions and 7 rule-level exceptions — each
 with a destination, generated and checked by `scripts/inventory.jl` and gated in CI. This
-section states the policy; the inventory states the 230 decisions, and is the thing to
+section states the policy; the inventory states the 231 decisions, and is the thing to
 consult when moving code.
 
 ### Repository layout
@@ -685,12 +685,12 @@ The dispatch result, ownership contracts and early engine integration are separa
     `MessagePassingRulesBase`. The representation remains open until Phase 3.
 
 14. ~~**A complete disposition inventory is missing.**~~ **RESOLVED in Phase P.**
-    `INVENTORY.md` assigns a destination or a deliberate deletion to all **230** entities —
-    49 nodes, 165 exported symbols, 8 engine-hook families, 2 extensions and 6 rule-level
+    `INVENTORY.md` assigns a destination or a deliberate deletion to all **231** entities —
+    49 nodes, 165 exported symbols, 8 engine-hook families, 2 extensions and 7 rule-level
     exceptions — including the five hook families that export nothing yet are documented
     public API (callbacks, stream postprocessors, delta layouts, the CVI optimiser hooks,
     and the `@node`-generated traits). Rules inherit their node's destination; only the
-    ones that cannot are listed individually. All 21 deletions of exported API carry a
+    ones that cannot are listed individually. All 18 exported deletions (21 deletion rows overall) carry a
     migration note, including where the answer is "no replacement".
 
     Generated and validated by `scripts/inventory.jl`, gated in CI by

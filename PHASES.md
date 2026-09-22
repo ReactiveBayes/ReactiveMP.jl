@@ -56,7 +56,7 @@ comparison environment resolves. Phase 0 answers the questions that cannot be wa
       measure against
 - [x] **current Aqua ambiguity count measured**: **322**, so its cleanup can be budgeted
       separately from the new dispatch design. Breakdown recorded under Phase 2
-- [ ] **disposition inventory** (open item #14): every node, rule, extension, exported
+- [x] **disposition inventory** (open item #14): every node, rule, extension, exported
       helper and engine hook assigned a destination or a deliberate deletion — including
       aliases, form constraints, fallbacks, callbacks, stream postprocessors, scoring
       helpers. Exported deletions get migration entries even when the answer is "no
@@ -66,13 +66,13 @@ comparison environment resolves. Phase 0 answers the questions that cannot be wa
         made**, so it is re-runnable; `--check` fails on a missing entity, an `undecided`
         destination, an invalid destination, a stale row, or an exported deletion with no
         migration note
-  - [x] enumeration complete and located: **230 entities** — 49 nodes, 165 exported
-        symbols, 8 engine-hook families, 2 extensions, 6 rule-level exceptions. Rules
+  - [x] enumeration complete and located: **231 entities** — 49 nodes, 165 exported
+        symbols, 8 engine-hook families, 2 extensions, 7 rule-level exceptions. Rules
         inherit their node's destination, so only the rules that cannot are listed
-  - [x] **230 destinations decided**; `--check` passes. Totals: `standard` 58,
+  - [x] **231 destinations decided**; `--check` passes. Totals: `standard` 58,
         `base` 43, `engine` 32, `delete` 21, `node:Flow` 16, `node:Delta` 11,
         `models` 11, `node:Polya` 10, `node:Autoregressive` 9, `approximations` 7,
-        `node:ContinuousTransition` 5, `node:BIFM` 5, `node:DiscreteTransition` 2.
+        `node:ContinuousTransition` 5, `node:BIFM` 5, `node:DiscreteTransition` 3.
         `StandardMessagePassingRules` is distributions, arithmetic, logic and mixtures;
         domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) go to a separate
         package **that is not yet named**, so the token is `models`
@@ -86,21 +86,25 @@ comparison environment resolves. Phase 0 answers the questions that cannot be wa
       context is an ordinary object passed into the rules, most likely held by
       `MessageMapping`, and a plain default argument gives the same behaviour
 - [x] environment strategy for the v6/v7 comparison harness and before/after doctests
-  - [x] **established that one environment suffices.** The new rule packages are
-        differently named and do not depend on ReactiveMP, so `ReactiveMP@6.5.0` and
-        `StandardMessagePassingRules` co-resolve: the Phase 4 migration checker can call
-        both `ReactiveMP.rule` and `message_passing_rule` in one process. **Standing
-        constraint:** this holds only while BayesBase and ExponentialFamily additions stay
+  - [x] **one-process rule comparison strategy selected.** The new rule packages are
+        differently named and do not depend on ReactiveMP. The stubs can coexist with
+        `ReactiveMP@6.5.0`; Phase 3 must re-check resolution when real inter-package and
+        numerical dependencies are added. The committed comparison environment currently
+        pins v6 only. **Standing constraint:** the joint environment requires shared
+        BayesBase and ExponentialFamily additions to stay
         within their current caret bounds (`BayesBase = "1.5"`, `ExponentialFamily = "2.5.0"`),
         so BayesBase work for this rewrite must ship as non-breaking 1.x releases
-  - [x] **established what cannot co-resolve:** ReactiveMP v7 against v6, same package
-        name. Phase 4.5 and Phase 7 engine comparisons must therefore run against values
-        *recorded* by the Phase 4 checker, not a live side-by-side — which is why that
-        checker must capture results, not merely assert equality
+  - [x] **separate engine comparison strategy:** ReactiveMP v7 and v6 have the same UUID
+        and cannot be loaded as two versions in one process. Use separate pinned processes
+        or saved fixtures from full v6 inference runs. Phase 4's rule outputs alone cannot
+        establish engine scheduling, free-energy trajectories or retained-value behavior
   - [x] `compat/v6-comparison/` created and verified: it instantiates and resolves
         ReactiveMP **from the registry**, not from this checkout (checked via `pathof`),
         which is what keeps it valid once the local copy becomes v7. Its `Manifest.toml`
         is un-ignored so the pin is reproducible
+        **Review correction:** the original manifest was generated on Julia 1.13 and failed
+        to load on 1.10 (`PrecompileTools`: `StaticData` undefined). It has been regenerated
+        on Julia 1.10.12 and v6 loads successfully there; see `compat/v6-comparison/README.md`
   - [x] `lib/` skeleton created — four `Project.toml` stubs plus empty modules, all
         instantiating. Cross-package `[deps]` are deliberately left out for now: the
         packages are unregistered and `[sources]` needs Julia 1.11 while our floor is 1.10,
@@ -196,15 +200,17 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
 
       | count | source | character |
       |---|---|---|
-      | 253 | `src/helpers/algebra/{permutation_matrix,standard_basis_vector,companion_matrix}.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra`. **Unrelated to the rewrite** — these files are engine-side helpers and can be fixed at any time |
+      | 253 | `src/helpers/algebra/{permutation_matrix,standard_basis_vector,companion_matrix}.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra`. Cleanup is independent of rule dispatch; the inventory moves the used helpers with Flow/AR and deletes CompanionMatrix |
       | 27 | `rule`/`marginalrule` dispatch | **one single shape**, repeated: the delta catch-all `rule(::F<:Function, …, meta::DeltaMeta, …, node::DeltaFnNode)` (`delta.jl:78`, `:104`) against arithmetic-node rules `rule(fform::typeof(+), …, meta, …, node)` (`rule.jl:358`, `:392`). Neither is more specific — delta wins on `meta`/`node`, the arithmetic rule wins on `fform`/`on`/`messages`. This is the only category the new dispatch design is claiming to eliminate, and it is a useful Phase 0 target |
       | 23 | `src/fixes.jl` | the deliberate upstream hot-fixes; expected to disappear when upstream releases |
-      | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against `BayesBase`'s `PreserveTypeProd` methods — the same file as two of the three known piracies |
+      | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against `BayesBase`'s `PreserveTypeProd` methods; separate from the two known piracies in `uniform.jl` |
       | 8 | scattered | `gcv.jl`, `cvi.jl`, `message.jl`/`marginal.jl`, `nodes.jl` vs the mixtures |
 
-      Measured on Julia 1.13.0 against the committed `Manifest.toml`. The count is both
+      Originally reported on Julia 1.13.0 against a local root `Manifest.toml` (gitignored,
+      not committed). No machine-readable report or exact resolution was retained. The count is both
       Julia-version and resolution dependent, so re-measure before acting rather than
-      treating 322 as fixed. Zero pairs had neither side in ReactiveMP
+      treating 322 as fixed. Zero pairs were reported to have neither side in ReactiveMP.
+      Per-type counts in inventory notes may overlap and must not be added as disjoint totals
 - [ ] Aqua `piracies` enabled — 3 known methods fixed or in `treat_as_own`
       (`uniform.jl:6,9`, `fixes.jl:12`; see `DISCUSSION.md` §5)
 - [ ] `deps_compat`'s `check_extras` re-enabled
@@ -389,8 +395,8 @@ this phase requires it to pass for release, rather than being its first executio
 
 ## Open items
 
-Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #8 is resolved;
-the remaining 13 are not all immediate blockers. #14 is Phase P inventory work. #1 is a
+Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #8 and #14 are resolved;
+the remaining 12 are not all immediate blockers. #1 is a
 spike decision; #3 and #9–#13 must be settled before Phase 3's API freezes. #6 and #7 are
 engine integration requirements. #2 remains deferred unless needed; #4 may be deferred
 pending a concrete ruleset use case. #5 (Reactant/StableCholesky) belongs to a separate

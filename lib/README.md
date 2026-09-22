@@ -5,7 +5,7 @@ a `Project.toml` plus an empty module, created in Phase P so that Phase 3 onward
 with a working layout rather than inventing one under time pressure.
 
 Read `PLAN.md` for the design, `PHASES.md` for what is next, and `INVENTORY.md` for where
-each of the 230 entities in ReactiveMP is destined to land.
+each of the 231 entities in ReactiveMP is destined to land.
 
 | package | phase | role |
 |---|---|---|
@@ -38,11 +38,17 @@ is committed so everyone resolves the same way:
 ```julia
 julia> using Pkg
 julia> Pkg.activate("lib/StandardMessagePassingRules")
-julia> Pkg.develop(path = "../MessagePassingRulesBase")
+julia> Pkg.develop(path = "lib/MessagePassingRulesBase")
 ```
 
 Until that happens, the cross-package `[deps]` entries are left out and noted in each
 `Project.toml`, so that every package here instantiates on its own.
+
+Run this example from the repository root: `Pkg.activate` changes the active environment,
+not the working directory. After adding a link, commit both the changed `Project.toml` and
+the resulting manifest. Scratch manifests under `lib/` remain ignored; use
+`git add -f lib/StandardMessagePassingRules/Manifest.toml` to track the deliberate dev-link
+manifest when wiring the dependency, rather than accidentally committing today's stub resolutions.
 
 ## Promotion to separate repositories
 

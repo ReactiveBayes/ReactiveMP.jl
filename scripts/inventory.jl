@@ -219,9 +219,10 @@ const RULE_EXCEPTIONS = [
         symbol = "delta layout: cvi-projection",
         file = "ext/ReactiveMPProjectionExt/layout/cvi_projection.jl",
     ),
+    (symbol = "mixture rules indexing raw inputs", file = "src/rules/mixture/"),
     (
-        symbol = "rules indexing raw messages[i]/marginals[i]",
-        file = "src/rules/",
+        symbol = "discrete_transition rules indexing raw inputs",
+        file = "src/rules/discrete_transition/",
     ),
     (symbol = "MessageMapping construction sites", file = "src/message.jl"),
 ]

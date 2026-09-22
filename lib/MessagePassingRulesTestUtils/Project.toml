@@ -13,5 +13,6 @@ julia = "1.10"
 
 # Depends on MessagePassingRulesBase. Not declared yet: it is unregistered, and
 # [sources] -- the clean way to point at a sibling in a monorepo -- needs Julia 1.11 while
-# our floor is 1.10. Phase 3 onwards wires it with `Pkg.develop(path = "../MessagePassingRulesBase")`
+# our floor is 1.10. From the repository root, activate this project and use
+# `Pkg.develop(path = "lib/MessagePassingRulesBase")`
 # and commits the resulting Manifest. See lib/README.md.
