@@ -20,19 +20,19 @@ end
 IndexedTarget(edge::Symbol, index::Integer) = IndexedTarget{edge}(index)
 
 """
-    edge(target)
+    target_edge(target)
 
 The interface name a target points at.
 """
-edge(::Target{E}) where {E} = E
-edge(::IndexedTarget{E}) where {E} = E
+target_edge(::Target{E}) where {E} = E
+target_edge(::IndexedTarget{E}) where {E} = E
 
 """
-    index(target::IndexedTarget)
+    target_index(target::IndexedTarget)
 
 The group position an indexed target points at.
 """
-index(target::IndexedTarget) = target.index
+target_index(target::IndexedTarget) = target.index
 
 """
     ClusterTarget{K}
@@ -45,8 +45,8 @@ struct ClusterTarget{K} end
 ClusterTarget(members::Tuple{Vararg{Symbol}}) = ClusterTarget{members}()
 
 """
-    members(target::ClusterTarget)
+    cluster_members(target::ClusterTarget)
 
 The interface names of a cluster, in declaration order.
 """
-members(::ClusterTarget{K}) where {K} = K
+cluster_members(::ClusterTarget{K}) where {K} = K

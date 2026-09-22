@@ -110,7 +110,7 @@ propagates to the caller.
     return spec.body(output, algorithm, ctx, args, ann, target)
 end
 
-@inline function resolved(spec)
+@inline function throw_if_not_found(spec)
     spec isa RuleNotFound && throw(RuleNotFoundError(spec))
     return spec
 end
@@ -121,7 +121,7 @@ end
 Resolve the message rule towards `target` and run it, allocating its result.
 """
 @inline function message_passing_rule(node, target, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
-    spec = resolved(find_message_rule(node, target, algorithm, args))
+    spec = throw_if_not_found(find_message_rule(node, target, algorithm, args))
     return execute_rule(spec, nothing, algorithm, ctx, args, ann, target)
 end
 
@@ -131,7 +131,7 @@ end
 Resolve an in-place message rule and run it into `output`.
 """
 @inline function message_passing_rule!(output, node, target, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
-    spec = resolved(find_message_rule(node, target, algorithm, args))
+    spec = throw_if_not_found(find_message_rule(node, target, algorithm, args))
     spec.inplace || throw(ArgumentError("the rule for $node towards $target has no in-place form"))
     return execute_rule(spec, output, algorithm, ctx, args, ann, target)
 end
@@ -142,7 +142,7 @@ end
 Resolve the marginal rule for `cluster` and run it.
 """
 @inline function message_passing_marginalrule(node, cluster, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
-    spec = resolved(find_marginal_rule(node, cluster, algorithm, args))
+    spec = throw_if_not_found(find_marginal_rule(node, cluster, algorithm, args))
     return execute_rule(spec, nothing, algorithm, ctx, args, ann, cluster)
 end
 
@@ -150,7 +150,7 @@ end
     message_passing_marginalrule!(output, node, cluster, algorithm, args[, ctx, ann])
 """
 @inline function message_passing_marginalrule!(output, node, cluster, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
-    spec = resolved(find_marginal_rule(node, cluster, algorithm, args))
+    spec = throw_if_not_found(find_marginal_rule(node, cluster, algorithm, args))
     spec.inplace || throw(ArgumentError("the marginal rule for $node over $cluster has no in-place form"))
     return execute_rule(spec, output, algorithm, ctx, args, ann, cluster)
 end
@@ -161,7 +161,7 @@ end
 Resolve and compute a node's average energy.
 """
 @inline function message_passing_average_energy(node, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
-    spec = resolved(find_average_energy(node, algorithm, args))
+    spec = throw_if_not_found(find_average_energy(node, algorithm, args))
     return execute_rule(spec, nothing, algorithm, ctx, args, ann, nothing)
 end
 

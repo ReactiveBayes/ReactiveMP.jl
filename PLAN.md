@@ -377,12 +377,20 @@ For the default dependency scheme, two axes separate:
 A group selector maps the target index to a tuple of source indices. The four observed
 modes are four values of one type; a user lambda is a fifth:
 
-| selector | indices | arity | used by |
-|---|---|---|---|
-| `all` | `1:N` | `N` | `Mixture(:out)` |
-| `allbutself` | `1:N \ {k}` | `N-1` | `DeltaFn((:in,k))` (delta's `TupleTools.deleteat`) |
-| `aligned` | `{k}` | `1` | `NormalMixture((:m,k))` needs `p[k]` only |
-| `none` | `{}` | `0` | `Mixture((:inputs,k))` |
+| selector | written | indices | arity | used by |
+|---|---|---|---|---|
+| `AllGroupMembers` | `m[:in...]` | `1:N` | `N` | `Mixture(:out)` |
+| `AllGroupMembersButSelf` | `m[:in][!k]` | `1:N \ {k}` | `N-1` | `DeltaFn((:in,k))` (delta's `TupleTools.deleteat`) |
+| `AlignedGroupMember` | `q[:p][k]` | `{k}` | `1` | `NormalMixture((:m,k))` needs `p[k]` only |
+| none | not listed | `{}` | `0` | `Mixture((:inputs,k))` |
+| `CustomGroupSelector` | `m[:in][select_group_members(f; arity = n)]` | `f(k)` | `n` | — |
+
+(Syntax and names decided at Phase 3 step 7. Declared with `@define_dependencies(node, algorithm,
+dependencies, free_energy_partition)`, or with `dependencies = [...]` on the node for its default
+algorithm. Two engine contracts go with it: **a selection of no members is an empty tuple and
+is already satisfied** — the one-input delta case needs no special branch — and **a singleton
+cluster's marginal is the variable's marginal**, which is what delta's `q_out` aliasing was.
+Static gating is the node-level `static_inputs = :fold` policy.)
 
 **Hard constraint: selectors must have statically known output arity.** Otherwise the
 `ManyOf` length is runtime-dependent, `ManyOf{N,T}` can't specialise, and dispatch

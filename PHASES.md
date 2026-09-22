@@ -44,10 +44,14 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
    rules (`git show 81822c57:spike/dispatch/02_rules.jl`), plus an in-place indexed rule.
    Finding: a rule that *omits* `algorithm` must load after its node (see `DISCUSSION.md`
    §3.16); one that names it has no ordering constraint;
-7. the dependency language — **propose** the representation of static gating, the empty
-   group and `q_out` aliasing to the user before building it;
+7. **done** — the dependency language. Proposals signed off: selectors `[k]`, `[!k]`, `...`,
+   omission; static gating as the node policy `static_inputs = :fold`; an empty selection is
+   an empty tuple that never stalls; `q_out` aliasing is the engine invariant that a singleton
+   cluster's marginal is the variable's (`DISCUSSION.md` §3.16). The spec type is
+   `DependenciesSpec`;
 8. errors and the two checkers;
-9. the full interactive surface;
+9. the full interactive surface — rich `text/plain`/`text/html` display and a visualisation
+   entry point for **all three specs**, `RuleSpec`, `NodeSpec` and `DependenciesSpec`;
 10. the in-place path and `buffer_like`;
 11. the devirtualization gate re-run through the real macros, and doctests.
 
@@ -531,7 +535,9 @@ proposal. Citations are as of `545425a2`.
       — `rules:spike`, `rules:specs`, `rules:malformed`
 - [ ] `RuleSpec`/`NodeSpec` registry, per-module const + discovery (never `push!` into a
       shared global — precompilation hazard, see `PLAN.md`)
-- [ ] dependency language with the four selectors + static-arity enforcement
+- [x] dependency language with the four selectors + static-arity enforcement — plus custom
+      selectors, consumed and scored declared separately (#9), and definition-time checks
+      of targets, groups, joint order and partition coverage (`dependencies:*`)
 - [ ] `RuleContext`, `buffer_like`, and the `preallocate` keyword (**not** `@allocate` —
       the in-body macros are deleted, see Phase 0's rule-syntax entry)
 - [ ] registry-backed errors; `check_rules()`, `check_rule_ambiguities()`

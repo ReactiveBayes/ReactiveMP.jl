@@ -33,7 +33,7 @@ struct NodeSpec
     type::Union{Stochastic, Deterministic}
     interfaces::Tuple{Vararg{InterfaceSpec}}
     algorithm::AbstractAlgorithm
-    dependencies::Any
+    static_inputs::Symbol
     file::Symbol
     line::Int
 end
@@ -53,11 +53,11 @@ The interface names of `node`, in declaration order; a group appears once, by na
 interfaces(node) = map(i -> i.name, nodespec(node).interfaces)
 
 """
-    groups(node)
+    interface_groups(node)
 
 The names of the variadic interface groups of `node`.
 """
-groups(node) = map(i -> i.name, filter(i -> i.group, nodespec(node).interfaces))
+interface_groups(node) = map(i -> i.name, filter(i -> i.group, nodespec(node).interfaces))
 
 """
     sdtype(node)
@@ -72,6 +72,16 @@ sdtype(node) = nodespec(node).type
 The algorithm rules for `node` run under unless one is given.
 """
 default_algorithm(node) = nodespec(node).algorithm
+
+"""
+    static_inputs(node)
+
+How the node treats inputs connected to constants and data. `:none` treats them like any
+other input. `:fold` folds them into the node function, reached as `getnodefn(ctx.node, …)`,
+and every update waits until they are available. Which inputs are static is known only
+from the graph, so the engine does the folding and the waiting.
+"""
+static_inputs(node) = nodespec(node).static_inputs
 
 """
     alias_interface(node, name)

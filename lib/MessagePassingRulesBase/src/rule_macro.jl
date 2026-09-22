@@ -95,7 +95,7 @@ function define_rule_expr(kind, source, macroargs)
     adapter_args = [gensym(slot) for slot in BODY_SLOTS]
     target_arg = gensym(:target)
     passed = [adapter_args[findfirst(==(slot), BODY_SLOTS)] for slot in slots]
-    index_arg = index_name === nothing ? () : (:($index($target_arg)),)
+    index_arg = index_name === nothing ? () : (:($target_index($target_arg)),)
 
     prealloc_defs = []
     prealloc = nothing
@@ -106,7 +106,7 @@ function define_rule_expr(kind, source, macroargs)
         pre_args = [gensym(slot) for slot in PREALLOCATE_SLOTS]
         pre_passed = [pre_args[findfirst(==(slot), PREALLOCATE_SLOTS)] for slot in pre_slots]
         pre_target = gensym(:target)
-        pre_index = index_name === nothing ? () : (:($index($pre_target)),)
+        pre_index = index_name === nothing ? () : (:($target_index($pre_target)),)
         push!(prealloc_defs, :(const $user_pre = $(append_parameter(pre, index_name))))
         prealloc = :(($(pre_args...), $pre_target) -> $user_pre($(pre_passed...), $(pre_index...)))
     end

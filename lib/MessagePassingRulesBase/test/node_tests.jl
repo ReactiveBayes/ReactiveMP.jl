@@ -39,22 +39,22 @@
 end
 
 @testitem "nodes:traits" tags = [:base] setup = [ToyNodes] begin
-    using MessagePassingRulesBase: nodespec, interfaces, groups, sdtype, default_algorithm, alias_interface,
+    using MessagePassingRulesBase: nodespec, interfaces, interface_groups, sdtype, default_algorithm, alias_interface,
         nodefunction, Stochastic, Deterministic, BP, VMP, NodeSpec
     T = ToyNodes
 
     @test interfaces(T.Toy) === (:out, :μ, :τ)
-    @test groups(T.Toy) === ()
+    @test interface_groups(T.Toy) === ()
     @test sdtype(T.Toy) === Stochastic()
     @test default_algorithm(T.Toy) === BP()        # the default default
 
     @test interfaces(T.Mixture) === (:out, :switch, :inputs)
-    @test groups(T.Mixture) === (:inputs,)
+    @test interface_groups(T.Mixture) === (:inputs,)
     @test default_algorithm(T.Mixture) === VMP()
 
-    # Several non-trailing groups, an underscore in a name, an algorithm with parameters.
+    # Several non-trailing interface_groups, an underscore in a name, an algorithm with parameters.
     @test interfaces(T.TwoGroups) === (:out, :a, :b, :x_y)
-    @test groups(T.TwoGroups) === (:a, :b)
+    @test interface_groups(T.TwoGroups) === (:a, :b)
     @test default_algorithm(T.TwoGroups) === T.Params(3)
 
     @test interfaces(T.plus) === (:out, :in1, :in2)
@@ -76,7 +76,7 @@ end
     T = ToyNodes
     f = nodefunction(T.Toy)
     @test f(out = 1.0, μ = 0.5, τ = 2.0) == -2.0 * (1.0 - 0.5)^2
-    # Only stochastic nodes without groups have one; a group has no positional meaning.
+    # Only stochastic nodes without interface_groups have one; a group has no positional meaning.
     @test_throws MethodError nodefunction(T.Mixture)
     @test_throws MethodError nodefunction(T.plus)
 end

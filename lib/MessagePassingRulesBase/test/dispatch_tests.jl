@@ -3,7 +3,7 @@
     # tested before any macro exists.
     using MessagePassingRulesBase
     using MessagePassingRulesBase: RuleSpec, RuleArgs, Messages, Marginals, Target, IndexedTarget,
-        ClusterTarget, BP, VMP, AbstractAlgorithm, index
+        ClusterTarget, BP, VMP, AbstractAlgorithm, target_index
     import MessagePassingRulesBase: find_message_rule, find_marginal_rule, find_average_energy, ispure
 
     struct Gauss end
@@ -37,7 +37,7 @@
 
     const MIX_M = RuleSpec(
         kind = :message, node = Mix, target = IndexedTarget{:m}, algorithm = VMP, signature = RuleArgs,
-        body = (output, algo, ctx, args, ann, target) -> args.q[:p][index(target)],
+        body = (output, algo, ctx, args, ann, target) -> args.q[:p][target_index(target)],
     )
     find_message_rule(::Type{Mix}, ::IndexedTarget{:m}, ::VMP, ::RuleArgs) = MIX_M
 

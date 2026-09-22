@@ -4,7 +4,7 @@
 
 canonical_order(keys) = Tuple(sort!(collect(keys)))
 
-@generated function canonical(nt::NamedTuple{N}) where {N}
+@generated function canonical_keys(nt::NamedTuple{N}) where {N}
     sorted = canonical_order(N)
     return :(NamedTuple{$sorted}(($((:(getfield(nt, $(QuoteNode(k)))) for k in sorted)...),)))
 end
@@ -21,7 +21,7 @@ struct Messages{N, T <: Tuple}
 end
 
 function Messages(values::NamedTuple)
-    sorted = canonical(values)
+    sorted = canonical_keys(values)
     return Messages{keys(sorted), typeof(Tuple(sorted))}(sorted)
 end
 
@@ -58,7 +58,7 @@ Marginals(singles::NamedTuple = NamedTuple()) = Marginals(singles, Val(()), ())
     sortedkeys = Tuple(J[order])
     sortedvalues = Expr(:tuple, (:(joints[$i]) for i in order)...)
     return quote
-        sorted = canonical(singles)
+        sorted = canonical_keys(singles)
         values = $sortedvalues
         Marginals{keys(sorted), typeof(Tuple(sorted)), $sortedkeys, typeof(values)}(sorted, values)
     end

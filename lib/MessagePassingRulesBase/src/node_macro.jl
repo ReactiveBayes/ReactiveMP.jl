@@ -1,4 +1,4 @@
-const NODE_KEYWORDS = (:node, :type, :interfaces, :algorithm, :dependencies)
+const NODE_KEYWORDS = (:node, :type, :interfaces, :algorithm, :dependencies, :static_inputs)
 
 """
     @define_factor_node(node = ..., type = Stochastic | Deterministic, interfaces = [...], algorithm = ...)
@@ -9,6 +9,10 @@ Declare a factor node.
   as `(:μ, aliases = [:mean])`. Names may contain underscores.
 - `algorithm` is the default rules run under, `BP()` when omitted. A type is instantiated
   with no arguments.
+- `dependencies` declares what the rules consume under that default algorithm; see
+  [`@define_dependencies`](@ref) for the vocabulary.
+- `static_inputs = :fold` folds inputs connected to constants and data into the node function;
+  see [`static_inputs`](@ref).
 
 ```julia
 @define_factor_node(
@@ -25,8 +29,9 @@ end
 
 function define_factor_node_expr(mod, source, args)
     keywords = parse_keywords("define_factor_node", args, NODE_KEYWORDS, (:node, :type, :interfaces))
-    haskey(keywords, :dependencies) &&
-        error("@define_factor_node: `dependencies` is not supported yet")
+    static_inputs = get(keywords, :static_inputs, QuoteNode(:none))
+    (quoted_symbol(static_inputs) in (:none, :fold)) ||
+        error("@define_factor_node: `static_inputs` must be :none or :fold, got `$static_inputs`")
 
     node = keywords[:node]
     type = keywords[:type]
@@ -45,11 +50,19 @@ function define_factor_node_expr(mod, source, args)
         const $dispatch = $node_dispatch_type($node)
         const $spec = $NodeSpec(
             $node, $(type === :Stochastic ? Stochastic() : Deterministic()),
-            ($(interface_specs...),), $instantiate_algorithm($algorithm), nothing,
+            ($(interface_specs...),), $instantiate_algorithm($algorithm), $static_inputs,
             $(QuoteNode(Symbol(something(source.file, :none)))), $(source.line),
         )
         $base.nodespec(::$dispatch) = $spec
         $register!($REGISTRY_NAME, $spec)
+    end
+
+    if haskey(keywords, :dependencies)
+        decl = gensym(:dependencies)
+        declaration = dependency_declaration_expr("define_factor_node", node, :(typeof($spec.algorithm)), keywords[:dependencies], nothing)
+        push!(body.args, :(const $decl = $validate_dependencies($spec, $declaration)))
+        push!(body.args, :($base.dependencies_spec(::$dispatch, ::typeof($spec.algorithm)) = $decl))
+        push!(body.args, :($register!($REGISTRY_NAME, $decl)))
     end
 
     if type === :Stochastic && !any(i -> i.group, parsed)

@@ -13,9 +13,10 @@ The rules and nodes one module defines.
 struct Registry
     rules::Vector{RuleSpec}
     nodes::Vector{NodeSpec}
+    dependencies::Vector{DependenciesSpec}
 end
 
-Registry() = Registry(RuleSpec[], NodeSpec[])
+Registry() = Registry(RuleSpec[], NodeSpec[], DependenciesSpec[])
 
 """
     @define_registry
@@ -58,6 +59,18 @@ function register!(registry::Registry, spec::NodeSpec)
         registry.nodes[position] = spec
     end
     return spec
+end
+
+"""
+    register!(registry, declaration::DependenciesSpec)
+"""
+function register!(registry::Registry, declaration::DependenciesSpec)
+    position = findfirst(
+        existing -> existing.node === declaration.node && existing.algorithm === declaration.algorithm,
+        registry.dependencies,
+    )
+    position === nothing ? push!(registry.dependencies, declaration) : (registry.dependencies[position] = declaration)
+    return declaration
 end
 
 """

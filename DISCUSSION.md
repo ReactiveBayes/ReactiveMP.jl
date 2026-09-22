@@ -955,6 +955,25 @@ Three more decisions were taken while planning Phase 3's execution:
   extension loads after its host. A rule that names `algorithm` has no ordering constraint
   at all. PLAN's claim that definitions "may appear in any order" holds for the latter only,
   and is corrected here rather than in the plan's wording elsewhere.
+- **The dependency language, signed off at Phase 3 step 7** (the user's choices on the
+  assistant's proposals). Selectors are written `q[:p][k]` (aligned), `m[:in][!k]` (all but
+  self), `m[:in...]` (all) and by omission (none), with `select_group_members(f; arity)` for
+  a custom one whose arity is checked on every resolution. Static gating is a node-level
+  policy, `static_inputs = :fold`: which inputs are static is known only from the graph, so
+  the base package records the policy and the engine folds and waits. A selection of no
+  members is an empty tuple the engine must treat as satisfied, which removes delta's
+  `N === 1` branch. And `q_out` aliasing needs no representation at all: v6's generic
+  clusters already give a singleton cluster the variable's own marginal stream
+  (`clusters.jl:116`); delta needed its own copy only because its layout bypassed clusters.
+- **Naming (user).** The dependency declaration is `DependenciesSpec`, beside `RuleSpec` and
+  `NodeSpec`, and gets the same rich display in step 9. Generic names were replaced by
+  descriptive ones across the package — `select` became `select_group_members`, the selector
+  types `AllGroupMembers`/`AlignedGroupMember`/`AllGroupMembersButSelf`/`CustomGroupSelector`/
+  `SingleInterface`, and `edge`/`index`/`members`/`partition`/`statics`/`groups`/
+  `dependencies` became `target_edge`/`target_index`/`cluster_members`/
+  `free_energy_partition`/`static_inputs`/`interface_groups`/`dependencies_spec`. The trait
+  names GraphPPL and RxInfer already use — `interfaces`, `sdtype`, `nodefunction`,
+  `alias_interface` — are kept.
 - **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
   so an in-place rule towards a group member can size its buffer by `k` exactly as its
   body can. The first cut raised an error in that case instead; it was fixed before
