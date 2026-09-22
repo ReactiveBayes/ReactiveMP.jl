@@ -31,4 +31,7 @@ examples/*Compiled
 **/LocalPreferences.toml
 # Tracked so `make format` uses a reproducible JuliaFormatter version everywhere.
 !scripts/Manifest.toml
+# Tracked so the v6/v7 comparison resolves to the same versions for everyone. The whole
+# point of this environment is that it pins v6; an unpinned Manifest defeats it.
+!compat/v6-comparison/Manifest.toml
 

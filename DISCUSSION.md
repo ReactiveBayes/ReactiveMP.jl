@@ -31,8 +31,10 @@ was explicitly deferred. All the "bonus" goals were declared core, not nice-to-h
 
 ## 2. What the investigation found
 
-Numbers: 48 `@node`, 390 `@rule`, 108 `@marginalrule`, 57 `@average_energy`, ~24k SLOC,
-491 rule definitions total, 172 `@call_rule`/`@test_rules` sites in tests.
+Numbers: 45 `@node`, 384 `@rule`, 106 `@marginalrule`, 57 `@average_energy`, ~24k SLOC,
+490 rule definitions total, 50 rule directories, 172 `@call_rule`/`@test_rules` sites in
+tests. (Corrected in Phase P: the earlier 48/390/108/52 counted the docstring examples in
+`src/rule.jl` and `src/nodes/nodes.jl` as definitions.)
 
 Findings that shaped the design:
 
@@ -464,6 +466,80 @@ pedagogy — the near-miss display with per-slot diffs is a teaching tool.
 
 ---
 
+## 3.13 Phase P decisions
+
+Made while executing the preparation phase, all grounded in measurements taken at the time.
+
+### Benchmarks deleted rather than repaired
+
+The `benchmark/` suite was removed. It covered exactly one node, its `ContinuousTransition`
+half was never included by `benchmark/rules/rules.jl` (and called `StableRNGs(42)` — the
+module, not the constructor — so it would have errored if wired in), `scripts/bench.jl`
+called `BenchmarkTools.judge(::Module, ::String)` which is a **PkgBenchmark** method, no CI
+workflow ran it, and its output paths were gitignored so no result was ever retained.
+
+The user's call, and the right one: this is not a baseline, it is the appearance of one.
+Performance verification moves to **RxInferBenchmarks.jl** at implementation time, where
+there is a new engine to measure against. Phase P therefore captures no performance
+baseline, which is an honest gap rather than a hidden one.
+
+### Standard versus models
+
+`PLAN.md` defined `StandardMessagePassingRules` only as "standard distribution nodes +
+arithmetic", which left about a dozen nodes unclassified. **User's decision:** standard
+holds what is generic and model-agnostic — distributions, arithmetic, logic, mixtures —
+and domain-specific models (`GCV`, `Probit`, `SoftDot`, `GaussianCoupling`) go to a sibling
+package. `ContinuousTransition` gets its own package rather than joining them.
+
+The package's **name is deliberately deferred to Phase 6**, when it is built. The inventory
+records the placeholder token `models` and says so explicitly, rather than inventing a name
+to look finished.
+
+### The Julia floor stays at 1.10
+
+The assistant flagged that `PLAN.md`'s context design said "a `ScopedValue` supplies the
+default at the engine boundary", that `Base.ScopedValues` is 1.11+, and therefore that the
+floor had to rise. **The user rejected the premise:** there is no reason to use
+`ScopedValues` for that at all — the context is an ordinary object constructed once and
+passed into the rules, most likely held by `MessageMapping`.
+
+That is correct, and the assistant's framing was wrong in a specific way worth recording:
+it treated one sentence of a draft as a constraint on the whole project. A plain default
+argument gives the same behaviour on 1.10. The floor should move when something concrete
+needs it to, and nothing does. `PLAN.md` § Dispatch axes now says this directly.
+
+### Ambiguities are five problems, not one
+
+322 ambiguous pairs sounds like a redesign-scale problem. It is not: **253 of them come
+from three files in `src/helpers/algebra/`** — custom array types declaring `*` and `dot`
+against bare `AbstractMatrix`/`AbstractVector`, colliding with ArrayLayouts, PDMats,
+FillArrays and LinearAlgebra. That is engine-side helper code with nothing to do with the
+rewrite.
+
+Only **27** involve rule dispatch, and they are all one repeated shape: the delta catch-all
+`rule(::F<:Function, …, meta::DeltaMeta, …, node::DeltaFnNode)` against the arithmetic-node
+rules, where neither method is more specific. That is precisely the class the new dispatch
+design claims to eliminate, which turns a vague aspiration into a Phase 0 target with a
+number attached.
+
+### Two findings from building the inventory
+
+**`CompanionMatrix` is dead.** No reference in `src/` *or* `test/`. The user's instinct was
+that the autoregressive node must use it — reasonable, since AR genuinely does use a
+companion-matrix representation, but through its own `ARTransitionMatrix`
+(`autoregressive.jl:270`), which superseded the shared type and left it exported and
+untested. It accounts for 75 of the 322 ambiguities, so deleting it is worth more than its
+line count suggests.
+
+**One recorded claim was checked and survived.** §5 says `Optim` leaves ReactiveMP entirely
+because only `laplace.jl` uses it. A first grep appeared to contradict this by matching
+`continuous_transition.jl` and `approximations/optimizers.jl` — but those were the words
+"Optimized" and "Optimizer", not the package. The claim holds. Recorded because the
+near-miss is the kind of thing that gets published as a correction when it is simply a bad
+grep.
+
+---
+
 ## 4. Corrections — read this before re-proposing anything
 
 Claims the assistant made that were **wrong** and should not be revived:
@@ -497,9 +573,16 @@ Claims the assistant made that were **wrong** and should not be revived:
 9. **A `Test` package extension for test tooling.** Would force test-only deps into the
    base's `Project.toml`. Separate package in `[extras]` instead.
 10. **`@marginalrule` was never proposed for deletion** — but the question was asked badly
-    enough to cause confusion. To be unambiguous: **`@marginalrule` stays** (108 definitions,
+    enough to cause confusion. To be unambiguous: **`@marginalrule` stays** (106 definitions,
     called for every multi-variable cluster; deleting it would remove structured VMP).
     `Marginalisation`/`MomentMatching` — the dead `vconstraint` label — is what goes.
+11. **"The design needs `ScopedValues`, so the Julia floor must rise to 1.11."** It does
+    not. The context is an ordinary object passed into the rules; a default argument gives
+    the same behaviour on 1.10. One sentence of a draft was mistaken for a constraint.
+12. **"`CompanionMatrix` must be used by the autoregressive node."** It is not — AR has its
+    own `ARTransitionMatrix`. Plausible from the name and the concept, false in the code.
+13. **"`Optim` is used by `ContinuousTransition`."** No: that grep matched the words
+    "Optimized" and "Optimizer". Only `laplace.jl` uses the package.
 
 ---
 

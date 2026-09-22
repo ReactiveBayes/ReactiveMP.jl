@@ -1,0 +1,24 @@
+name = "MessagePassingRulesBase"
+uuid = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+version = "0.1.0-DEV"
+
+# Scaffolding only -- Phase 3 fills this in. See PLAN.md.
+#
+# HARD CONSTRAINT: this package must never depend on ExponentialFamily. BayesBase exists
+# to hold this machinery; if something is missing there, add it to BayesBase. A CI
+# assertion that ExponentialFamily is absent from the dependency closure enforces it.
+# Corollary: BayesBase additions must ship as non-breaking 1.x releases, or the
+# compat/v6-comparison environment stops resolving.
+
+[deps]
+BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
+
+[compat]
+BayesBase = "1.5"
+LinearAlgebra = "1.10"
+MacroTools = "0.5"
+TupleTools = "1.2.0"
+julia = "1.10"

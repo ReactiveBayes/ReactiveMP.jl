@@ -1,0 +1,24 @@
+# The v6/v7 comparison environment.
+#
+# Phase 4's migration checker runs a v6 rule and a v7 rule on identical inputs and asserts
+# they agree; MIGRATION.md's before/after doctests execute here too. Both work because the
+# new rule packages are differently named and do not depend on ReactiveMP, so v6 and they
+# coexist in one process.
+#
+# ReactiveMP is pinned to the exact released version the rewrite branches from. It comes
+# from the registry, NOT from this checkout -- the local copy becomes v7 and would then
+# collide by name.
+#
+# The new packages are added here by relative path as Phase 3 onwards creates them:
+#   ]dev ../../lib/MessagePassingRulesBase ../../lib/StandardMessagePassingRules
+#
+# This resolves only while shared dependencies stay within v6.5.0's caret bounds
+# (BayesBase = "1.5", ExponentialFamily = "2.5.0"). A breaking BayesBase release would make
+# it unresolvable and cost us the migration checker; see PLAN.md.
+
+[deps]
+ReactiveMP = "a194aa59-28ba-4574-a09c-4a745416d6e3"
+
+[compat]
+ReactiveMP = "=6.5.0"
+julia = "1.10"

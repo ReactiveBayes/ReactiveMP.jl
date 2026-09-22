@@ -1,0 +1,17 @@
+name = "StandardMessagePassingRules"
+uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
+version = "0.1.0-DEV"
+
+# Scaffolding only -- Phase 5 fills this in. See PLAN.md and INVENTORY.md.
+#
+# Scope: distribution nodes, arithmetic (+, -, *, dot), logic (AND, OR, NOT, IMPLY) and the
+# mixtures. Domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) belong to a
+# sibling package whose name is deferred to Phase 6; INVENTORY.md records them as `models`.
+
+[compat]
+julia = "1.10"
+
+# Depends on MessagePassingRulesBase. Not declared yet: it is unregistered, and
+# [sources] -- the clean way to point at a sibling in a monorepo -- needs Julia 1.11 while
+# our floor is 1.10. Phase 3 onwards wires it with `Pkg.develop(path = "../MessagePassingRulesBase")`
+# and commits the resulting Manifest. See lib/README.md.

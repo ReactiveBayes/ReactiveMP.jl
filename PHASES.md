@@ -12,8 +12,9 @@ Branch: `refactor/rule-node-system-rewrite`
 
 ## Next action
 
-**Phase P**, then **Phase 0**. Phase P is cheap and makes everything after it measurable;
-Phase 0 answers the questions that cannot be walked back.
+**Phase 0** — the throwaway spike. Phase P is complete: the disposition inventory is
+assigned and CI-gated, the repository layout and Julia floor are decided, and the
+comparison environment resolves. Phase 0 answers the questions that cannot be walked back.
 
 ---
 
@@ -23,7 +24,7 @@ Phase 0 answers the questions that cannot be walked back.
 |---|---|---|
 | — | Initial design documented in `PLAN.md`, `DISCUSSION.md` | **done; open decisions below** |
 | — | External design review; contradictions reconciled | **done** |
-| P | Prep: baselines + disposition inventory | **not started** |
+| P | Prep: disposition inventory, layout and environment decisions | **done** |
 | 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **not started** |
 | 1 | Circulate for external feedback | not started |
 | 2 | Tooling migration on ReactiveMP | not started *(parallel with 1)* |
@@ -76,8 +77,35 @@ Phase 0 answers the questions that cannot be walked back.
         domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) go to a separate
         package **that is not yet named**, so the token is `models`
   - [x] `--check` wired into CI as `test/inventory_tests.jl`, tagged `:quality`
-- [ ] environment strategy for the v6/v7 comparison harness and before/after doctests —
-      separate pinned environments if old and new constraints cannot coexist
+- [x] **repository layout decided: monorepo under `lib/`, split at Phase 6.** Boundaries
+      are still moving (#9–#13 are unresolved API decisions), and a cross-package change is
+      one commit in a monorepo versus two pull requests and a dev-pin across repositories.
+      Pay the split cost once, at a known gate. See `PLAN.md` § Repository layout
+- [x] **Julia floor decided: stays at 1.10.** Nothing in the design requires more. The
+      `ScopedValue` in an earlier draft of § Dispatch axes was never necessary — the
+      context is an ordinary object passed into the rules, most likely held by
+      `MessageMapping`, and a plain default argument gives the same behaviour
+- [x] environment strategy for the v6/v7 comparison harness and before/after doctests
+  - [x] **established that one environment suffices.** The new rule packages are
+        differently named and do not depend on ReactiveMP, so `ReactiveMP@6.5.0` and
+        `StandardMessagePassingRules` co-resolve: the Phase 4 migration checker can call
+        both `ReactiveMP.rule` and `message_passing_rule` in one process. **Standing
+        constraint:** this holds only while BayesBase and ExponentialFamily additions stay
+        within their current caret bounds (`BayesBase = "1.5"`, `ExponentialFamily = "2.5.0"`),
+        so BayesBase work for this rewrite must ship as non-breaking 1.x releases
+  - [x] **established what cannot co-resolve:** ReactiveMP v7 against v6, same package
+        name. Phase 4.5 and Phase 7 engine comparisons must therefore run against values
+        *recorded* by the Phase 4 checker, not a live side-by-side — which is why that
+        checker must capture results, not merely assert equality
+  - [x] `compat/v6-comparison/` created and verified: it instantiates and resolves
+        ReactiveMP **from the registry**, not from this checkout (checked via `pathof`),
+        which is what keeps it valid once the local copy becomes v7. Its `Manifest.toml`
+        is un-ignored so the pin is reproducible
+  - [x] `lib/` skeleton created — four `Project.toml` stubs plus empty modules, all
+        instantiating. Cross-package `[deps]` are deliberately left out for now: the
+        packages are unregistered and `[sources]` needs Julia 1.11 while our floor is 1.10,
+        so Phase 3 onwards wires them with `Pkg.develop(path = ...)` and commits the
+        Manifest. Documented in `lib/README.md`
 
 ---
 

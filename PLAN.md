@@ -3,13 +3,20 @@
 ## Context
 
 ReactiveMP.jl is currently "a can of everything": one package holding the message-passing
-engine, 48 node definitions, 390 `@rule`s, 108 `@marginalrule`s and 57 `@average_energy`s
+engine, 45 node definitions, 384 `@rule`s, 106 `@marginalrule`s and 57 `@average_energy`s
 (~24k SLOC). The rule/node layer is the oldest part of the codebase and it shows.
+
+(Earlier drafts said 48/390/108. Those figures counted the docstring examples inside
+`src/rule.jl` and `src/nodes/nodes.jl` alongside the real definitions. Harmless as prose,
+but Phase 4's registry-backed coverage check counts definitions, so the corrected numbers
+are used here. Likewise there are **50** rule directories, not 52.)
 
 Goals: extract the rule/node layer into standalone packages so `AutoregressiveNode`,
 `RxGP` etc. can exist independently of the engine; and, at the same time, redesign that
 layer from the ground up rather than porting it. Clean break, new major version of
-everything, no backwards compatibility, Julia floor may rise to 1.11+.
+everything, no backwards compatibility. **The Julia floor stays at 1.10** — nothing in
+this design requires a newer one (see Dispatch axes on why `ScopedValues` is not used),
+so the floor moves only when something concrete needs it to.
 
 Verified problems driving the redesign:
 
@@ -59,7 +66,11 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
 - **`context` is infrastructure, never dispatched on**: linear-algebra strategy (replacing
   48 global `cholinv` calls; `StableCholesky.jl` supplies strategies + workspace), RNG,
   output buffers, annotations, engine services. Explicit argument, never shared across
-  tasks. A `ScopedValue` supplies the default at the engine boundary only.
+  tasks. It is an ordinary object that is constructed once and passed down into the
+  rules — most likely held by `MessageMapping` — not a global and not a `ScopedValue`.
+  An earlier draft proposed a `ScopedValue` for the default; that was never necessary,
+  since a plain default argument does the same job, and it would have raised the Julia
+  floor to 1.11 for no gain.
 - Rules declare which context **services** they need (e.g. `context = (:linalg, :product)`)
   so the engine can check availability and diagnose missing services.
 
@@ -354,7 +365,8 @@ algorithms out of the core. Sorting today's 28 deps:
 | package | contents | deps |
 |---|---|---|
 | `MessagePassingRulesBase` | macros, `Message`/`Marginal`, targets, algorithms, context, registry, dependency language, `buffer_like` | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
-| `StandardMessagePassingRules` | standard distribution nodes + arithmetic (`+`, `-`, `*`, dot) | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
+| `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
+| *(name deferred to Phase 6)* | domain-specific models: `GCV`, `Probit`, `SoftDot`, `GaussianCoupling` | light; `StatsFuns` and the standard rules |
 | `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery. **Standalone — does *not* depend on the base package** | `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
 | `ReactiveMP` | engine | `Rocket`, `UUIDs` |
@@ -362,6 +374,60 @@ algorithms out of the core. Sorting today's 28 deps:
 The base package is genuinely thin. Two current deps are single-node-specific and should
 follow their nodes out: `Tullio` (only `DiscreteTransition`) and `PolyaGammaHybridSamplers`
 (only the Pólya nodes).
+
+**Where the line falls.** `StandardMessagePassingRules` holds what is generic and
+model-agnostic — distributions, arithmetic, logic, mixtures. Domain-specific models go to a
+sibling package whose **name is deliberately not fixed until Phase 6**, when it is actually
+built; `INVENTORY.md` records its destination as the placeholder token `models`. A node
+leaves for its own package only for a stated reason, and every such reason is recorded in
+`INVENTORY.md`: a heavy or licence-bearing dependency (`DiscreteTransition`/Tullio,
+Pólya/GPL-3), impurity (`BIFM` mutates its meta from inside message rules), engine coupling
+(`Delta`), or an explicit decision (`ContinuousTransition`).
+
+**The full assignment lives in `INVENTORY.md`**, not here: 230 entities — 49 nodes, 165
+exported symbols, 8 engine-hook families, 2 extensions and 6 rule-level exceptions — each
+with a destination, generated and checked by `scripts/inventory.jl` and gated in CI. This
+section states the policy; the inventory states the 230 decisions, and is the thing to
+consult when moving code.
+
+### Repository layout
+
+**Monorepo now, split at Phase 6.** The new packages live as subdirectories of this
+repository under `lib/` while the API is in flux, and are promoted to their own
+`ReactiveBayes/*` repositories once Phase 3 freezes the base API and Phase 4.5 proves the
+engine interface.
+
+```
+ReactiveMP.jl/
+  Project.toml              # the engine
+  src/
+  lib/
+    MessagePassingRulesBase/
+    MessagePassingRulesTestUtils/
+    StandardMessagePassingRules/
+    MessagePassingRulesApproximations/
+  compat/v6-comparison/     # ReactiveMP@6.5.0 + the new packages, for the migration checker
+```
+
+**One cost of the 1.10 floor, found while building this:** `[sources]`, the tidy way for a
+`Project.toml` to point at a sibling directory, requires Julia 1.11. On 1.10 an
+inter-package dependency inside `lib/` is wired with an explicit `Pkg.develop(path = ...)`
+and a committed `Manifest.toml` instead. Workable, and documented in `lib/README.md`, but
+it is the one concrete thing the floor decision costs.
+
+The reason is the open items. Boundaries are still moving — #9 through #13 are all API
+decisions that have not landed — and a change that spans two packages is one commit in a
+monorepo and two pull requests plus a dev-pin across repositories. Paying the split cost
+once, at a known gate, beats paying a coordination cost on every commit until then.
+
+**What can and cannot share an environment.** The new rule packages do not depend on
+ReactiveMP, and they are differently named, so `ReactiveMP@6.5.0` and
+`StandardMessagePassingRules` coexist happily: the Phase 4 migration checker can call
+`ReactiveMP.rule(...)` and `message_passing_rule(...)` in one process, and `MIGRATION.md`'s
+before/after doctests can both execute. What cannot coexist is ReactiveMP v7 against v6 —
+same package name. **So Phase 4.5 and Phase 7 engine comparisons must run against values
+recorded by the Phase 4 checker, not a live side-by-side**, which is why that checker must
+capture results rather than only assert equality.
 
 ### Approximations are utilities, not algorithms
 
@@ -488,6 +554,15 @@ assertion that `ExponentialFamily` is absent from the base's dependency closure,
 constraint survives contributors and sessions rather than eroding the first time someone
 wants one convenience function.
 
+**Corollary: those BayesBase additions must ship as non-breaking 1.x releases.** The
+v6/v7 comparison harness (see Repository layout) puts `ReactiveMP@6.5.0` and the new rule
+packages in one environment, which only resolves because v6.5.0 declares `BayesBase = "1.5"`
+and `ExponentialFamily = "2.5.0"` — caret bounds, so new *minor* versions are fine. A
+BayesBase 2.0 released for this rewrite would make that environment unresolvable and
+silently cost us the migration checker, which is the main instrument for verifying 490
+ported rules. If a breaking BayesBase change becomes unavoidable, the comparison harness
+needs redesigning first, not afterwards.
+
 **Measured — the constraint holds today.** Across every prospective base file
 (`message.jl`, `marginal.jl`, `rule.jl`, `nodes/nodes.jl`, `annotations.jl`,
 `constraints/form.jl`, `score/score.jl`, `helpers/*`, `variable.jl`) the only
@@ -609,21 +684,35 @@ The dispatch result, ownership contracts and early engine integration are separa
     example a factorisation strategy and workspace, without depending on
     `MessagePassingRulesBase`. The representation remains open until Phase 3.
 
-14. **A complete disposition inventory is missing.** Every node, rule, extension, exported
-    helper and engine hook needs an assigned destination or a deliberate deletion —
-    including aliases, form constraints, fallbacks, callbacks, stream postprocessors and
-    scoring helpers, not just rule directories. Deletions of **exported** API need migration
-    entries even where the answer is "no replacement".
+14. ~~**A complete disposition inventory is missing.**~~ **RESOLVED in Phase P.**
+    `INVENTORY.md` assigns a destination or a deliberate deletion to all **230** entities —
+    49 nodes, 165 exported symbols, 8 engine-hook families, 2 extensions and 6 rule-level
+    exceptions — including the five hook families that export nothing yet are documented
+    public API (callbacks, stream postprocessors, delta layouts, the CVI optimiser hooks,
+    and the `@node`-generated traits). Rules inherit their node's destination; only the
+    ones that cannot are listed individually. All 21 deletions of exported API carry a
+    migration note, including where the answer is "no replacement".
+
+    Generated and validated by `scripts/inventory.jl`, gated in CI by
+    `test/inventory_tests.jl` (tag `:quality`), so a node added upstream without a
+    destination fails the suite rather than being silently missed at split time.
+
+    Two findings came out of building it, both recorded in the inventory notes:
+    `CompanionMatrix`/`CompanionMatrixTransposed` have **no reference in `src/` or
+    `test/`** — the autoregressive node uses a companion-matrix representation but through
+    its own `ARTransitionMatrix` (`autoregressive.jl:270`), which superseded them — and the
+    three `src/helpers/algebra/` files between them account for **253 of the 322** Aqua
+    ambiguities, so that cleanup is entirely separable from the rewrite.
 
 ## Migration
 
-- 491 rules + 172 `@call_rule`/`@test_rules` sites in tests. Build the transform on
+- 490 rule definitions (384 + 106) + 172 `@call_rule`/`@test_rules` sites in tests. Build the transform on
   **JuliaSyntax** (source-preserving green tree), not regex and not MacroTools — bodies
   contain arbitrary code, `where` clauses and comments worth keeping.
 - Run the tool with ReactiveMP v6 loaded so it can call `interfaces(fform)` as an
   **oracle** to decide whether `y_x` is one interface or the cluster `(:y, :x)`. Without it
   you are regex-guessing on `_`, which is the exact bug class being deleted.
-- Migrate per rule directory (52 of them), reviewing diffs directory-by-directory.
+- Migrate per rule directory (50 of them), reviewing diffs directory-by-directory.
   `@test_rules` gives per-rule numerical regression coverage for free.
 - Hand-written: `mixture/switch.jl`, the ~15 rules touching raw `messages[i]`/`marginals[i]`
   tuples, the 5 `MessageMapping` construction sites and 4 delta layout files.

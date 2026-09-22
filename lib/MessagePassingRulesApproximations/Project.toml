@@ -1,0 +1,24 @@
+name = "MessagePassingRulesApproximations"
+uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
+version = "0.1.0-DEV"
+
+# Scaffolding only -- Phase 6 fills this in. See PLAN.md.
+#
+# Numerical utilities (Unscented, Linearization, smoothRTS), NOT algorithms.
+# HARD CONSTRAINT: this package must NOT depend on MessagePassingRulesBase. They are
+# siblings. "How do I approximate this integral" is numerics; "which update scheme am I
+# running" is an algorithm. Keeping them separate leaves the numerics usable outside this
+# ecosystem.
+
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[compat]
+Distributions = "0.25"
+ForwardDiff = "0.10, 1"
+LinearAlgebra = "1.10"
+Random = "1.10"
+julia = "1.10"
