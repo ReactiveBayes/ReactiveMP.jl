@@ -7,7 +7,7 @@ type parameters, so resolution returns one concrete type wherever it can be infe
 
 `kind` is `:message`, `:marginal` or `:average_energy`. The body takes the full slot list
 `(output, algo, ctx, args, ann, target)`; `prealloc`, when present, takes
-`(algo, ctx, args)`.
+`(algo, ctx, args, target)`.
 """
 struct RuleSpec
     kind::Symbol
@@ -105,7 +105,7 @@ propagates to the caller.
 """
 @inline function execute_rule(spec::RuleSpec, output, algorithm, ctx, args, ann, target)
     if spec.inplace && output === nothing
-        output = spec.prealloc(algorithm, ctx, args)
+        output = spec.prealloc(algorithm, ctx, args, target)
     end
     return spec.body(output, algorithm, ctx, args, ann, target)
 end

@@ -1,0 +1,282 @@
+const BODY_SLOTS = (:output, :algo, :ctx, :args, :ann)
+const PREALLOCATE_SLOTS = (:algo, :ctx, :args)
+
+const MESSAGE_KEYWORDS = (:node, :towards, :algorithm, :args, :body, :inplace, :preallocate, :pure, :ctx)
+const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
+
+"""
+    @define_message_update_rule(node = ..., towards = ..., args = (...), body = (...) -> ..., ...)
+
+Define the rule for the message a node sends towards one of its interfaces.
+
+- `towards`: `:out`, or `(:m, k)` for member `k` of the group `m`; writing `k` binds the
+  index in `body`.
+- `args`: the inputs the rule consumes, `m[:μ]::T` for a message, `q[:μ]::T` for a
+  marginal, `q[:y, :x]::T` for a structural cluster (members in interface order) and
+  `m[:inputs...]::T` for a whole group whose members are each `T`. An omitted type is `Any`.
+- `body`: an ordinary lambda over some of the slots `(output, algo, ctx, args, ann)`,
+  named in that order: `args` holds the inputs, `algo` the algorithm value, `ctx` the
+  [`RuleContext`](@ref), `ann` the annotations (read `ann.m[:out]`, write with
+  [`annotate!`](@ref)) and `output` the buffer of an in-place rule.
+- `algorithm`: the algorithm type the rule runs under. When omitted, the node's default
+  algorithm applies, which requires the node to be declared before the rule is loaded.
+- `inplace = true` with `preallocate = (args) -> buffer` and a body taking `output` first.
+- `pure = false` marks a rule that has side effects, whatever its algorithm declares.
+- `ctx = (:product, ...)`: the context services the rule needs.
+
+```julia
+@define_message_update_rule(
+    node    = NormalMeanVariance,
+    towards = :out,
+    args    = (m[:μ]::PointMass, m[:v]::PointMass),
+    body    = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
+)
+```
+"""
+macro define_message_update_rule(args...)
+    return esc(define_rule_expr(:message, __source__, args))
+end
+
+"""
+    @define_marginal_update_rule(node = ..., towards = (:y, :x), args = (...), body = ...)
+
+Define the rule for the marginal of a structural cluster. Takes the same keywords as
+[`@define_message_update_rule`](@ref); `towards` lists the cluster members in interface
+order.
+"""
+macro define_marginal_update_rule(args...)
+    return esc(define_rule_expr(:marginal, __source__, args))
+end
+
+"""
+    @define_average_energy(node = ..., args = (...), body = ...)
+
+Define a node's average energy. Takes the keywords of
+[`@define_message_update_rule`](@ref) except `towards`, `inplace` and `preallocate`.
+"""
+macro define_average_energy(args...)
+    return esc(define_rule_expr(:average_energy, __source__, args))
+end
+
+const RULE_MACRO_NAMES = Dict(
+    :message => "define_message_update_rule",
+    :marginal => "define_marginal_update_rule",
+    :average_energy => "define_average_energy",
+)
+
+function define_rule_expr(kind, source, macroargs)
+    name = RULE_MACRO_NAMES[kind]
+    allowed = kind === :average_energy ? AVERAGE_ENERGY_KEYWORDS : MESSAGE_KEYWORDS
+    required = kind === :average_energy ? (:node, :args, :body) : (:node, :towards, :args, :body)
+    keywords = parse_keywords(name, macroargs, allowed, required)
+
+    node = keywords[:node]
+    target, index_name = kind === :average_energy ? (nothing, nothing) : parse_towards(name, kind, keywords[:towards])
+    inputs = parse_rule_args(name, keywords[:args])
+    inplace = get(keywords, :inplace, false)
+    inplace isa Bool || error("@$name: `inplace` must be `true` or `false`")
+    pure = get(keywords, :pure, nothing)
+    pure === nothing || pure isa Bool || error("@$name: `pure` must be `true` or `false`")
+    services = parse_services(name, get(keywords, :ctx, :(())))
+
+    body = keywords[:body]
+    slots = parse_slots(name, body, BODY_SLOTS)
+    if inplace
+        haskey(keywords, :preallocate) || error("@$name: `preallocate` is required when `inplace = true`")
+        (!isempty(slots) && first(slots) === :output) ||
+            error("@$name: an in-place rule's body must take `output` first")
+    else
+        :output in slots && error("@$name: the `output` slot requires `inplace = true`")
+        haskey(keywords, :preallocate) && error("@$name: `preallocate` requires `inplace = true`")
+    end
+
+    base = MessagePassingRulesBase
+    user_body = gensym(:body)
+    adapter_args = [gensym(slot) for slot in BODY_SLOTS]
+    target_arg = gensym(:target)
+    passed = [adapter_args[findfirst(==(slot), BODY_SLOTS)] for slot in slots]
+    index_arg = index_name === nothing ? () : (:($index($target_arg)),)
+
+    prealloc_defs = []
+    prealloc = nothing
+    if inplace
+        pre = keywords[:preallocate]
+        pre_slots = parse_slots(name, pre, PREALLOCATE_SLOTS; what = "preallocate")
+        user_pre = gensym(:preallocate)
+        pre_args = [gensym(slot) for slot in PREALLOCATE_SLOTS]
+        pre_passed = [pre_args[findfirst(==(slot), PREALLOCATE_SLOTS)] for slot in pre_slots]
+        pre_target = gensym(:target)
+        pre_index = index_name === nothing ? () : (:($index($pre_target)),)
+        push!(prealloc_defs, :(const $user_pre = $(append_parameter(pre, index_name))))
+        prealloc = :(($(pre_args...), $pre_target) -> $user_pre($(pre_passed...), $(pre_index...)))
+    end
+
+    algorithm_type = haskey(keywords, :algorithm) ? :($algorithm_dispatch_type($(keywords[:algorithm]))) :
+        :(typeof($default_algorithm($node)))
+    signature = rule_signature(inputs)
+    algorithm_sym, signature_sym, spec_sym = gensym(:algorithm), gensym(:signature), gensym(:rulespec)
+    dispatch_sym = gensym(:dispatch)
+
+    method = if kind === :message
+        :($base.find_message_rule(::$dispatch_sym, ::$target, ::$algorithm_sym, ::$signature_sym) = $spec_sym)
+    elseif kind === :marginal
+        :($base.find_marginal_rule(::$dispatch_sym, ::$target, ::$algorithm_sym, ::$signature_sym) = $spec_sym)
+    else
+        :($base.find_average_energy(::$dispatch_sym, ::$algorithm_sym, ::$signature_sym) = $spec_sym)
+    end
+
+    return quote
+        $base.@define_registry
+        const $dispatch_sym = $node_dispatch_type($node)
+        const $algorithm_sym = $algorithm_type
+        const $signature_sym = $signature
+        const $user_body = $(append_parameter(body, index_name))
+        $(prealloc_defs...)
+        const $spec_sym = $RuleSpec(
+            kind = $(QuoteNode(kind)),
+            node = $node,
+            target = $(target === nothing ? :Nothing : target),
+            algorithm = $algorithm_sym,
+            signature = $signature_sym,
+            body = ($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...)),
+            prealloc = $prealloc,
+            inplace = $inplace,
+            pure = $pure,
+            services = $services,
+            source = $(string(MacroTools.striplines(body))),
+            file = $(QuoteNode(Symbol(something(source.file, :none)))),
+            line = $(source.line),
+        )
+        $method
+        $register!($REGISTRY_NAME, $spec_sym)
+        nothing
+    end
+end
+
+algorithm_dispatch_type(algorithm::Type) = algorithm
+algorithm_dispatch_type(algorithm) = typeof(algorithm)
+
+function parse_towards(name, kind, ex)
+    symbol = quoted_symbol(ex)
+    if symbol !== nothing
+        kind === :marginal &&
+            error("@$name: `towards` of a marginal rule is a cluster like `(:y, :x)`, got `$ex`")
+        return (:($Target{$(QuoteNode(symbol))}), nothing)
+    end
+    if ex isa Expr && ex.head === :tuple && length(ex.args) >= 1 && all(a -> quoted_symbol(a) !== nothing, ex.args)
+        kind === :marginal ||
+            error("@$name: `towards` of a message rule is `:out` or `(:m, k)`, got `$ex`")
+        members = Tuple(quoted_symbol.(ex.args))
+        return (:($ClusterTarget{$members}), nothing)
+    end
+    if kind === :message && ex isa Expr && ex.head === :tuple && length(ex.args) == 2 &&
+            quoted_symbol(ex.args[1]) !== nothing && ex.args[2] isa Symbol
+        return (:($IndexedTarget{$(QuoteNode(quoted_symbol(ex.args[1])))}), ex.args[2])
+    end
+    shapes = kind === :marginal ? "a cluster like `(:y, :x)`" : "`:out` or `(:m, k)`"
+    return error("@$name: `towards` must be $shapes, got `$ex`")
+end
+
+function parse_services(name, ex)
+    entries = ex isa Expr && ex.head === :tuple ? ex.args : [ex]
+    services = Symbol[]
+    for entry in entries
+        symbol = quoted_symbol(entry)
+        symbol === nothing && error("@$name: `ctx` lists services as symbols, like `ctx = (:product,)`; got `$entry`")
+        symbol in CONTEXT_SERVICES ||
+            error("@$name: unknown context service `$symbol`; valid services are $(join(("`$s`" for s in CONTEXT_SERVICES), ", "))")
+        push!(services, symbol)
+    end
+    return Tuple(services)
+end
+
+# One entry of `args`, e.g. `m[:μ]::T`, `q[:y, :x]::T`, `m[:inputs...]::T`.
+function parse_rule_args(name, ex)
+    entries = ex isa Expr && ex.head === :tuple ? ex.args : [ex]
+    inputs = []
+    for entry in entries
+        ref, type = entry isa Expr && entry.head === :(::) && length(entry.args) == 2 ?
+            (entry.args[1], entry.args[2]) : (entry, :Any)
+        (ref isa Expr && ref.head === :ref && ref.args[1] in (:m, :q)) ||
+            error("@$name: each entry of `args` is `m[...]` or `q[...]`, like `m[:μ]::T`; got `$entry`")
+        container, keys = ref.args[1], ref.args[2:end]
+        isempty(keys) && error("@$name: `$ref` names no interface")
+        if length(keys) == 1
+            key = keys[1]
+            if key isa Expr && key.head === :ref
+                error("@$name: `$ref` indexes a Symbol; declare a group as `$(container)[:p...]` and reach member `k` in the body as `args.$(container)[:p][k]`")
+            end
+            group = key isa Expr && key.head === :... && length(key.args) == 1
+            symbol = quoted_symbol(group ? key.args[1] : key)
+            symbol === nothing && error("@$name: an interface in `args` is a symbol like `:μ`, got `$key`")
+            push!(inputs, (container = container, key = symbol, joint = false, group = group, type = type))
+        else
+            container === :q || error("@$name: `$ref`: only marginals have structural clusters; use `q[...]`")
+            members = map(keys) do key
+                symbol = quoted_symbol(key)
+                symbol === nothing && error("@$name: a cluster member is a symbol like `:y`, got `$key`")
+                symbol
+            end
+            push!(inputs, (container = container, key = Tuple(members), joint = true, group = false, type = type))
+        end
+    end
+    seen = Set()
+    for input in inputs
+        id = (input.container, input.key)
+        id in seen && error("@$name: `$(input.container)[$(input.key)]` is given twice in `args`")
+        push!(seen, id)
+    end
+    return inputs
+end
+
+# The `RuleArgs` type a rule dispatches on, with keys in the containers' canonical order.
+function rule_signature(inputs)
+    element(input) = input.group ? :(Tuple{Vararg{$(input.type)}}) : input.type
+    function named(selected)
+        sorted = sort(selected; by = input -> input.key)
+        return Tuple(input.key for input in sorted), [element(input) for input in sorted]
+    end
+    mkeys, mtypes = named([i for i in inputs if i.container === :m])
+    qkeys, qtypes = named([i for i in inputs if i.container === :q && !i.joint])
+    jkeys, jtypes = named([i for i in inputs if i.joint])
+    return :(
+        $RuleArgs{
+            <:$Messages{$mkeys, <:Tuple{$(mtypes...)}},
+            <:$Marginals{$qkeys, <:Tuple{$(qtypes...)}, $jkeys, <:Tuple{$(jtypes...)}},
+        }
+    )
+end
+
+function lambda_parameters(name, ex; what = "body")
+    (ex isa Expr && ex.head === :->) ||
+        error("@$name: `$what` must be a lambda like `(args) -> ...`, got `$ex`")
+    params = ex.args[1]
+    params isa Symbol && return [params]
+    (params isa Expr && params.head === :tuple) || return [params]
+    return params.args
+end
+
+parameter_name(param) = param isa Symbol ? param :
+    param isa Expr && param.head === :(::) ? param.args[1] : nothing
+
+function parse_slots(name, ex, valid; what = "body")
+    slots = Symbol[]
+    for param in lambda_parameters(name, ex; what = what)
+        slot = parameter_name(param)
+        (slot isa Symbol && slot in valid) ||
+            error("@$name: unknown $what slot `$param`; valid slots are $(join(("`$s`" for s in valid), ", ")), in that order")
+        slot in slots && error("@$name: $what slot `$slot` is named twice")
+        push!(slots, slot)
+    end
+    positions = [findfirst(==(slot), valid) for slot in slots]
+    issorted(positions) ||
+        error("@$name: $what slots must follow the canonical order $(join(valid, ", ")); got $(join(slots, ", "))")
+    return slots
+end
+
+function append_parameter(lambda, parameter)
+    parameter === nothing && return lambda
+    params = lambda.args[1]
+    list = params isa Symbol ? [params] : params isa Expr && params.head === :tuple ? copy(params.args) : [params]
+    return Expr(:->, Expr(:tuple, list..., parameter), lambda.args[2])
+end

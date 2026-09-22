@@ -945,6 +945,21 @@ Three more decisions were taken while planning Phase 3's execution:
   only `persistent_tasks`, which loads it in a fresh precompiling process, failed. Parametric
   containers here declare an explicit inner constructor for that reason.
 
+- **Found at Phase 3 step 6: default-algorithm inheritance reintroduces a load-order
+  constraint, but only for the rules that use it.** A rule that omits `algorithm` must
+  dispatch on the node's default algorithm type, and that type exists only once the node is
+  declared. The macro no longer queries anything at expansion, so the constraint is the
+  ordinary one of evaluation order — the signature evaluates `typeof(default_algorithm(node))`
+  when the method is defined — and it is satisfied naturally in every package layout that
+  occurs: a node's own package declares it before its rules, and a downstream package or
+  extension loads after its host. A rule that names `algorithm` has no ordering constraint
+  at all. PLAN's claim that definitions "may appear in any order" holds for the latter only,
+  and is corrected here rather than in the plan's wording elsewhere.
+- **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
+  so an in-place rule towards a group member can size its buffer by `k` exactly as its
+  body can. The first cut raised an error in that case instead; it was fixed before
+  commit.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

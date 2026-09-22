@@ -56,7 +56,7 @@
     const INPLACE = RuleSpec(
         kind = :message, node = Gauss, target = Target{:v}, algorithm = BP, signature = RuleArgs,
         inplace = true,
-        prealloc = (algo, ctx, args) -> similar(args.m[:x]),
+        prealloc = (algo, ctx, args, target) -> similar(args.m[:x]),
         body = (output, algo, ctx, args, ann, target) -> (output .= 2 .* args.m[:x]; output),
     )
     find_message_rule(::Type{Gauss}, ::Target{:v}, ::BP, ::RuleArgs) = INPLACE

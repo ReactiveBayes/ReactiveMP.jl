@@ -40,8 +40,10 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
    branch, and `execute_rule` never catches;
 4. **done** — the per-module registry and its lifecycle test matrix;
 5. **done** — `@define_factor_node`. `dependencies` is rejected until step 7;
-6. the three rule-definition macros, checked against the spike's ten hand-lowered rules
-   (`git show 81822c57:spike/dispatch/02_rules.jl`);
+6. **done** — the three rule-definition macros, checked against the spike's ten hand-lowered
+   rules (`git show 81822c57:spike/dispatch/02_rules.jl`), plus an in-place indexed rule.
+   Finding: a rule that *omits* `algorithm` must load after its node (see `DISCUSSION.md`
+   §3.16); one that names it has no ordering constraint;
 7. the dependency language — **propose** the representation of static gating, the empty
    group and `q_out` aliasing to the user before building it;
 8. errors and the two checkers;
@@ -525,7 +527,8 @@ proposal. Citations are as of `545425a2`.
 **Exit criteria**
 - [x] `@define_factor_node` with variadic interface groups — several, non-trailing, and
       interface names containing underscores (`nodes:*` tests)
-- [ ] `@define_message_update_rule` / `@define_marginal_update_rule` / `@define_average_energy`
+- [x] `@define_message_update_rule` / `@define_marginal_update_rule` / `@define_average_energy`
+      — `rules:spike`, `rules:specs`, `rules:malformed`
 - [ ] `RuleSpec`/`NodeSpec` registry, per-module const + discovery (never `push!` into a
       shared global — precompilation hazard, see `PLAN.md`)
 - [ ] dependency language with the four selectors + static-arity enforcement
