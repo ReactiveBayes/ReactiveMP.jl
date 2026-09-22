@@ -75,7 +75,7 @@ Phase 0 answers the questions that cannot be walked back.
         `StandardMessagePassingRules` is distributions, arithmetic, logic and mixtures;
         domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) go to a separate
         package **that is not yet named**, so the token is `models`
-  - [ ] `--check` wired into CI
+  - [x] `--check` wired into CI as `test/inventory_tests.jl`, tagged `:quality`
 - [ ] environment strategy for the v6/v7 comparison harness and before/after doctests —
       separate pinned environments if old and new constraints cannot coexist
 
