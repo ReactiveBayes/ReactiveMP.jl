@@ -6,6 +6,9 @@ ReactiveMP.jl is currently "a can of everything": one package holding the messag
 engine, 45 node definitions, 384 `@rule`s, 106 `@marginalrule`s and 57 `@average_energy`s
 (~24k SLOC). The rule/node layer is the oldest part of the codebase and it shows.
 
+These counts cover `src/` only; the 4 `CVIProjection` rules in `ext/ReactiveMPProjectionExt`
+(2 `@rule`, 2 `@marginalrule`) are counted with that extension, not in the 490.
+
 (Earlier drafts said 48/390/108. Those figures counted the docstring examples inside
 `src/rule.jl` and `src/nodes/nodes.jl` alongside the real definitions. Harmless as prose,
 but Phase 4's registry-backed coverage check counts definitions, so the corrected numbers
@@ -611,7 +614,7 @@ Dependency consequences: **`Optim` leaves ReactiveMP entirely** (only `laplace.j
 `cvi_setup!`/`cvi_update!` for the removed method. `FastGaussQuadrature` follows
 `ghcubature` to the Pólya package; `DomainIntegrals` and `HCubature` go to
 `MessagePassingRulesTestUtils` (they serve the rule-comparison quadrature in
-`src/rule.jl:1438`, which is test machinery); `DomainSets` stays with
+`src/rule.jl:1464`, which is test machinery); `DomainSets` stays with
 `StandardMessagePassingRules` (`normal_mean_variance/var.jl`, `gamma_shape_rate/a.jl`).
 
 What survives is small: `Unscented`, `Linearization`, `smoothRTS` and the shared
@@ -757,8 +760,8 @@ The dispatch result, ownership contracts and early engine integration are separa
 
 ## Files
 
-- `src/rule.jl` (1958 lines) — replaced. Macros, generic functions, error machinery,
-  `@test_rules`. Delete `showerror` string decoding (`:1609-1737`, `:1836-1930`).
+- `src/rule.jl` (1984 lines) — replaced. Macros, generic functions, error machinery,
+  `@test_rules`. Delete `showerror` string decoding (`:1635-1763`, `:1862-1956`).
 - `src/nodes/nodes.jl` — split: traits/registry/`@node` go down, `FactorNode`/`activate!`
   stay in the engine. Relax `prepare_interfaces_check_adjacent_duplicates` (`:241-256`)
   and `prepare_interfaces_check_num_inputarguments` (`:264-270`) for group members while
@@ -807,7 +810,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    here beyond keeping `buffer_like` extensible.
 6. **`reverse(...)` in the mixture marginal wiring** — undocumented, and the two groups are
    additionally swapped relative to the payload. Located: it is **not** in `mixture.jl` but in
-   `normal_mixture.jl:170,177` and `gamma_mixture.jl:160,167`. Measured to be
+   `normal_mixture.jl:176,183` and `gamma_mixture.jl:166,173`. Measured to be
    **observationally inert**: the `reverse` applies only to the `combineLatest` *trigger*
    tuple, while the emitted payload comes from `map_to` with the groups un-reversed, and
    `combineLatest` gates on the *set* of streams rather than their order. So the regression to
@@ -959,11 +962,15 @@ Applies to **both** the new packages and ReactiveMP itself.
   the real latency cost in an agent loop.
   **Revisit ReTestItems only if CI wall-clock becomes the bottleneck** — its one real
   advantage is distributed parallel workers, a CI argument rather than an iteration-speed one.
-- **Runic** replaces JuliaFormatter. Deterministic and zero-config, which eliminates by
-  design the formatter-version drift the current `Makefile` comment documents (CI and
-  contributors disagreeing with no code change). Already in use in StableCholesky.jl.
-- **Re-enable the two disabled Aqua checks**, plus `deps_compat`'s `check_extras`.
-  - `ambiguities`: turn it on, but budget it separately. The key-set argument (rules with
+- **Runic** replaces JuliaFormatter — **done in Phase 2**. Deterministic and zero-config,
+  which eliminates by design the formatter-version drift CI and contributors used to hit;
+  measured byte-identical on 1.10 and 1.13. Already in use in StableCholesky.jl.
+- **Aqua checks — done in Phase 2, with one deliberate exception.** `piracies` and
+  `deps_compat`'s `check_extras` are on. `ambiguities` stays **off until after the split**:
+  322 pairs, of which 253 come from `src/helpers/algebra/` (leaving with Flow/AR) and only 27
+  from rule dispatch (removed by construction). The count to beat and the per-file breakdown
+  are in `PHASES.md` § Phase 2. The reasoning below is what led there.
+  - `ambiguities`: budget it separately. The key-set argument (rules with
     different input sets provably can't be ambiguous) only applies to the **new** design —
     it cannot justify cleaning up v6's existing ambiguities. **Measure the current count
     first** and treat resolving them as its own task with its own estimate. Registry-based

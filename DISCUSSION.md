@@ -960,7 +960,7 @@ need `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` — **no cubature
 `DiffResults` leaves with old CVI. `Optim` leaves
 ReactiveMP entirely (only `laplace.jl` used it). `FastGaussQuadrature` follows `ghcubature`
 to the Pólya package. `DomainIntegrals` and `HCubature` go to the test-utils package — they
-are used by the rule-comparison quadrature at `src/rule.jl:1438,1514`, which is test
+are used by the rule-comparison quadrature at `src/rule.jl:1464,1540`, which is test
 machinery. `DomainSets` stays with the standard rules (`normal_mean_variance/var.jl`,
 `gamma_shape_rate/a.jl`).
 
@@ -983,22 +983,22 @@ the difference.
 
 **Every generated rule method reports the same source location.** `@rule` splices its method
 into a `quote` block in `src/rule.jl`, so all ~490 generated methods carry
-`Method.file == "rule.jl"` and `Method.line == 358` (`marginalrule`: `:392`). Consequences:
-an ambiguity report that cites `rule.jl:358` is naming the *template*, not a rule — an earlier
+`Method.file == "rule.jl"` and `Method.line == 372` (`marginalrule`: `:406`; `358`/`392` before the Runic reformat). Consequences:
+an ambiguity report that cites `rule.jl:372` (or `:406` for `marginalrule`) is naming the *template*, not a rule — an earlier
 version of `PHASES.md`'s ambiguity table read it as the arithmetic catch-alls, which actually
 live in `src/rules/addition/in2.jl:1`, `src/rules/subtraction/{out,in1,in2}.jl:1` and
 `src/rules/multiplication/marginals.jl:31`. And `Method.file`/`line` cannot identify a rule at
 all today, which is why v6 recovers names from the *signature* instead
-(`get_node_from_rule_method`, `src/rule.jl:1664-1690`). An independent argument for the
+(`get_node_from_rule_method`, `src/rule.jl:1690-1716`). An independent argument for the
 registry.
 
 **The mixture `reverse(...)` is observationally inert.** It is not in `mixture.jl` — it is
-`normal_mixture.jl:170,177` and `gamma_mixture.jl:160,167`, and it reorders only the
+`normal_mixture.jl:176,183` and `gamma_mixture.jl:166,173`, and it reorders only the
 `combineLatest` *trigger* tuple while the emitted payload comes from `map_to` with the groups
 un-reversed. `combineLatest` gates on the set of streams, not their order, so nothing
 observable depends on it. Open item #6 is therefore a scheduling pin, not a numerical one.
 
-**`Mixture`'s `RequireMarginal` path is unreachable, mechanically.** `mixture.jl:142` defines
+**`Mixture`'s `RequireMarginal` path is unreachable, mechanically.** `mixture.jl:146` defines
 `functional_dependencies` with three positional arguments; its only caller
 `with_functional_dependencies` (`dependencies.jl:119-126`) passes four. Dispatch falls through
 to the generic method, whose first statement is `getlocalclusters(factornode)` — and
@@ -1023,8 +1023,8 @@ The original discussion left these questions:
    in-tree cases because the mixtures pin their factorisation. A one-way door in the syntax.
 - **The ruleset axis (#4)** — scoped rule tables (`Overlay(mine, standard)`). Introduced by the
    assistant, never requested. Its piracy argument is now dead (see §5); `algorithm` may
-   already cover the "controllable dispatch" goal. May remain deferred; existing rule-fallback
-   semantics still need a contract independently of this choice.
+   already cover the "controllable dispatch" goal. **DEFERRED in Phase 0**, and the
+   rule-fallback contract it was holding up was specified independently there (§3.15).
 - **The engine step is under-planned.** The rule layer is designed in detail;
    "rewrite ReactiveMP against the new base" hides the mixture `activate!` work, the
    dependency-to-stream wiring for variadic groups, and the `Message`/`DeferredMessage`

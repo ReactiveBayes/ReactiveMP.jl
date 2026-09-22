@@ -108,7 +108,11 @@ imported by the caller.
   parse joint-marginal names like `q_y_x` back into a cluster.
 - `Marginalisation` in every `@rule` signature is a dead dispatch axis; it is hardcoded
   everywhere and `MomentMatching` is never dispatched on.
-- Aqua's `ambiguities` and `piracies` checks are currently **disabled** in `test/runtests.jl`.
+- Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (322 pairs,
+  revisited after the split — see `PHASES.md` § Phase 2). `piracies` is on, with two owners
+  declared through `treat_as_own`, and `deps_compat` checks `[extras]` too.
+- `lib/` holds the new packages as empty stubs. **Nothing under `lib/` has tests or a CI job
+  yet**; Phase 3 adds both.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 

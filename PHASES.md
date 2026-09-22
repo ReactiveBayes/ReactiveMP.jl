@@ -8,6 +8,10 @@ without a diff alongside it is how a tracking file starts lying.
 
 Branch: `refactor/rule-node-system-rewrite`
 
+`file:line` citations in the three documents were re-verified against the code after the
+Runic reformat (`3e3adae6`). A later reformat or edit moves them again, so re-check before
+relying on one.
+
 ---
 
 ## Next action
@@ -86,7 +90,9 @@ no declared route; that gap should be closed as part of the same decision.
         **Caveat:** no CI job *names* it — `julia-actions/julia-runtest` calls `Pkg.test()`
         with empty `ARGS`, so `runtests.jl` applies no filter and the item rides along inside
         the general test job. That is sufficient today and becomes load-bearing at Phase 2:
-        a `make test` fast subset that drops `:quality` would silently un-gate the inventory
+        a `make test` fast subset that drops `:quality` would silently un-gate the inventory.
+        **Closed in Phase 2:** the fast subset drops only `:slow`, and CI sets `TEST_ALL=true`,
+        so the inventory gate runs everywhere
 - [x] **repository layout decided: monorepo under `lib/`, split at Phase 6.** Boundaries
       are still moving (#9–#13 are unresolved API decisions), and a cross-package change is
       one commit in a monorepo versus two pull requests and a dev-pin across repositories.
@@ -260,7 +266,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       cases — including a delayed static input and an initialized feedback loop — and check
       emissions *and* numbers. Note `Mixture`'s `RequireMarginal` path is dead code that
       would `MethodError`, so one documented dependency mode has never actually run —
-      confirmed: `mixture.jl:142` takes three positional arguments while its only caller
+      confirmed: `mixture.jl:146` takes three positional arguments while its only caller
       `with_functional_dependencies` (`dependencies.jl:119-126`) passes four, so dispatch
       falls through to the generic method, whose first statement is
       `getlocalclusters(factornode)` — and `MixtureNode` has no such method.
@@ -362,7 +368,7 @@ omission.
       | 119 | `src/helpers/algebra/permutation_matrix.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra` |
       | 85 | `src/helpers/algebra/standard_basis_vector.jl` | same shape |
       | 71 | `src/helpers/algebra/companion_matrix.jl` | same shape — and `CompanionMatrix` has **zero references anywhere in `src/` or `test/`**, so this is entirely dead weight |
-      | 27 / 25 | `delta.jl` / `rule.jl` | **one** repeated shape: the delta catch-all against the `meta::Any` arithmetic rules. The only category the new dispatch design claims to eliminate |
+      | 27 / 25 | `delta.jl` / `rule.jl` | **one** repeated shape: the delta catch-all against the `meta::Any` arithmetic rules. The only category the new dispatch design claims to eliminate. **27 distinct pairs, not 52** — 25 of them touch both files. And `rule.jl` here is the `@marginalrule` *template* (`rule.jl:406`), where every generated method reports its location, so it names the arithmetic rules in `src/rules/{addition,subtraction,multiplication}/`, not code in `rule.jl` (see `DISCUSSION.md` §5) |
       | 23 | `src/fixes.jl` | deliberate upstream hot-fixes; they leave when upstream releases |
       | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against BayesBase's `PreserveTypeProd` |
 
@@ -370,7 +376,7 @@ omission.
 
       **Why not now.** Three files account for the large majority, `INVENTORY.md` already
       sends all three out of this package with Flow/AR and marks `CompanionMatrix` for
-      deletion, and the 52 rule-dispatch pairs are what the rewrite removes by construction.
+      deletion, and the 27 rule-dispatch pairs are what the rewrite removes by construction.
       Cleaning them here is work on code that is leaving, and a ratchet on a number that is
       about to move on its own would mostly measure the split rather than any regression.
       Revisit once Phases 5–6 have moved the rules and the algebra helpers out; the count to
@@ -568,11 +574,10 @@ this phase requires it to pass for release, rather than being its first executio
 ## Open items
 
 Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #8 and #14 are
-resolved; the remaining 11 are not all immediate blockers. #3 and #9–#13 must be settled
-before Phase 3's API freezes. #6 and #7 are
-engine integration requirements. #2 remains deferred unless needed; #4 may be deferred
-pending a concrete ruleset use case. #5 (Reactant/StableCholesky) belongs to a separate
-effort and does not block this rewrite.
+resolved and #4 is **deferred by decision** (Phase 0; reopened only by a concrete ruleset use
+case). Of the remaining 10, #3 and #9–#13 must be settled before Phase 3's API freezes, and #6
+and #7 are engine integration requirements. #2 remains deferred unless needed. #5
+(Reactant/StableCholesky) belongs to a separate effort and does not block this rewrite.
 
 ## Structural note
 
