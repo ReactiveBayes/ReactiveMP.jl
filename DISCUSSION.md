@@ -989,6 +989,20 @@ Three more decisions were taken while planning Phase 3's execution:
   which v6 never had — and the three `@which_*` queries. This reverses PLAN's earlier "keep
   invocation names short for the REPL"; the user preferred that nothing be generic and that
   each invocation read as the counterpart of its `@define_*`.
+- **The devirtualization gate, re-run through the real macros at Phase 3 step 11**
+  (`gate:routing-macros`), inside functions with `const` inputs:
+
+  | | 1.10.12 | 1.13.0 |
+  |---|---|---|
+  | call site reaching one rule | **0**, `Float64` | **0**, `Float64` |
+  | indexed target, `k` bound | **0**, `Float64` | **0**, `Float64` |
+  | call site reaching two rules (algorithm chosen at run time) | 16, `Float64` | 0, `Float64` |
+  | negative control, a body that allocates | 96 | 96 |
+
+  Better than the spike on the two-rule site, which measured 48 bytes and `Any` on 1.10: a
+  run-time choice between two algorithm *values* is a small union, which Julia splits, and
+  each branch then resolves to one rule statically. JET reports nothing on the one-rule and
+  indexed routes. The generated adapters — slot selection, the `k` binding — cost nothing.
 - **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
   so an in-place rule towards a group member can size its buffer by `k` exactly as its
   body can. The first cut raised an error in that case instead; it was fixed before

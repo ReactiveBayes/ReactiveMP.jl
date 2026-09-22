@@ -8,6 +8,13 @@ device array on its device; elementwise for tuples and named tuples. Array types
 devices that need something else extend this function.
 
 A number has no storage to write into, so it has no buffer.
+
+```jldoctest
+julia> using MessagePassingRulesBase: buffer_like
+
+julia> b = buffer_like([1.0, 2.0]); (typeof(b), size(b))
+(Vector{Float64}, (2,))
+```
 """
 buffer_like(x::AbstractArray) = similar(x)
 buffer_like(x::AbstractArray, ::Type{T}) where {T} = similar(x, T)

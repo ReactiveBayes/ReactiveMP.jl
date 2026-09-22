@@ -16,48 +16,46 @@ relying on one.
 
 ## Next action
 
-**Phase 3 — `MessagePassingRulesBase`.** Phases 0, 1 and 2 are closed. Phase 3 is where the
-API freezes, so its gating open items came first. **They were signed off on 2026-09-22**
-(§ Phase 3 *Entry brief*; decisions in `PLAN.md` § Open items): #3, #9, #10, #11, #12 and RNG
-ownership are resolved. Two loose ends remain, and neither blocks starting:
+**Phase 3's twelve steps are built** (`lib/MessagePassingRulesBase`, 310 test assertions on
+1.10 and 1.13, CI in `LibTests.yml`). Two decisions are still outstanding, and Phase 3 is
+not closed until both land, because each touches an API that would otherwise freeze without
+them:
 
 - **#13 is parked** by the user. It touches the base package only through the `linalg`
-  context service, so build everything else and **do not freeze `linalg`** until #13 lands.
-  Adding a service later is additive.
-- The **missing-input path** (skip the body and post-rule processors, as v6) is still only
-  proposed. Confirm it before the context contract is frozen.
+  context service, which is documented unstable and not frozen.
+- The **missing-input path** — skip the body and the post-rule annotation processors when an
+  input is missing, as v6 does — is still only proposed. It is engine behaviour, but its
+  contract belongs in the base package's documentation.
 
-Build the base package test-first, one commit per step, `PHASES.md` updated in each:
+Once they are settled, the next phase is **Phase 4 — `MessagePassingRulesTestUtils`**: the
+`@test_rules` successor, node-definition verification, registry-backed coverage, and the v6/v7
+migration checker in `compat/v6-comparison`.
 
-1. **done** — the `lib/` test harness, CI job (`LibTests.yml`, same matrix as `ci.yml`) and the
+What was built, step by step (each a commit, `PHASES.md` updated in each):
+
+1. the `lib/` test harness, CI job (`LibTests.yml`, same matrix as `ci.yml`) and the
    subprocess check that `ExponentialFamily` is never loaded;
-2. **done** — argument/annotation containers and targets, **with the measurement gate for
-   `args.q[:y, :x]`** — type-level joint keys, sorted single keys, no symbol ever built at
-   run time (`PLAN.md` § Rule surface); on the 1.10 floor, with a negative control;
-3. **done** — algorithms, `RuleSpec`, total `find_rule`, the three generic functions,
-   `RuleContext`. Resolution is three functions (`find_message_rule`, `find_marginal_rule`,
-   `find_average_energy`), each total; the engine's fallback sits on their `RuleNotFound`
-   branch, and `execute_rule` never catches;
-4. **done** — the per-module registry and its lifecycle test matrix;
-5. **done** — `@define_factor_node`. `dependencies` is rejected until step 7;
-6. **done** — the three rule-definition macros, checked against the spike's ten hand-lowered
-   rules (`git show 81822c57:spike/dispatch/02_rules.jl`), plus an in-place indexed rule.
-   Finding: a rule that *omits* `algorithm` must load after its node (see `DISCUSSION.md`
-   §3.16); one that names it has no ordering constraint;
-7. **done** — the dependency language. Proposals signed off: selectors `[k]`, `[!k]`, `...`,
-   omission; static gating as the node policy `static_inputs = :fold`; an empty selection is
-   an empty tuple that never stalls; `q_out` aliasing is the engine invariant that a singleton
-   cluster's marginal is the variable's (`DISCUSSION.md` §3.16). The spec type is
-   `DependenciesSpec`;
-8. **done** — errors and the two checkers. Also settled with the user: a group argument is a
-   full-length tuple in member order with `nothing` where the selection leaves a member out,
-   and a rule declares its inputs in its dependencies' spelling (`q[:p][k]`, `m[:in][!k]`);
-9. **done** — the full interactive surface — rich `text/plain`/`text/html` display and a visualisation
-   entry point for **all three specs**, `RuleSpec`, `NodeSpec` and `DependenciesSpec`;
-10. **done** — the in-place path and `buffer_like`, which is `similar` for arrays (a static
-    array stays static-sized and mutable, a device array stays on its device);
-11. the devirtualization gate re-run through the real macros, and doctests.
-
+2. argument/annotation containers and targets, with the measurement gate for `args.q[:y, :x]`
+   — type-level joint keys, sorted single keys, no symbol ever built at run time;
+3. algorithms, `RuleSpec`, three total resolution functions, the three generic functions,
+   `RuleContext`; the engine's fallback sits on the `RuleNotFound` branch and `execute_rule`
+   never catches;
+4. the per-module registry and its lifecycle test matrix;
+5. `@define_factor_node`;
+6. the three rule-definition macros, checked against the spike's ten hand-lowered rules.
+   Finding: a rule that *omits* `algorithm` must load after its node; one that names it has
+   no ordering constraint;
+7. the dependency language — `[k]`, `[!k]`, `...`, omission, `select_group_members`;
+   `static_inputs = :fold`; empty selection as an empty tuple; `q_out` aliasing as an engine
+   invariant; `DependenciesSpec`;
+8. errors and the two checkers; a group argument is a full-length tuple with `nothing` where
+   the selection leaves a member out;
+9. the full interactive surface, with rich display for `RuleSpec`, `NodeSpec`,
+   `DependenciesSpec` and `RuleCoverage`; invocation macros later renamed after the
+   definitions they mirror (`@call_message_update_rule`, …);
+10. the in-place path and `buffer_like`;
+11. the devirtualization gate re-run through the real macros (`gate:routing-macros`), and
+    doctests run inside the suite (`quality:doctests`). Numbers in `DISCUSSION.md` §3.16.
 ---
 
 ## Status at a glance
@@ -70,7 +68,7 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
 | 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **done** |
 | 1 | Circulate for external feedback | **done** *(internally)* |
 | 2 | Tooling migration on ReactiveMP | **done** |
-| 3 | `MessagePassingRulesBase` | not started |
+| 3 | `MessagePassingRulesBase` | **built; two decisions outstanding** (#13, missing-input path) |
 | 4 | `MessagePassingRulesTestUtils` | not started |
 | 4.5 | **Engine integration slice** — small end-to-end proof | not started |
 | 5 | `StandardMessagePassingRules` | not started |
@@ -573,7 +571,8 @@ proposal. Citations are as of `545425a2`.
 - [x] purity and RNG ownership contracts specified, including permitted output/scratch
       writes and the distinction between the audit policy and differentiation support — the
       `ispure` and `RuleContext` docstrings
-- [ ] built test-first throughout
+- [x] built test-first throughout — each step's tests were written ahead of its
+      implementation and landed in the same commit
 - [x] `lib/MessagePassingRulesBase/test/` with its own `runtests.jl`, and **a CI job running it
       on 1.10, 1.11 and 1.12** (`LibTests.yml`, the same matrix as `ci.yml`). The
       `ExponentialFamily`-absent assertion above lives in that job

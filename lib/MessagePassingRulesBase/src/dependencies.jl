@@ -41,6 +41,19 @@ select_group_members(f; arity::Integer) = CustomGroupSelector(f, Int(arity))
 
 The member indices `selector` picks from a group of `n` for target index `k`. A selection
 of no members is an empty tuple; an engine must treat it as satisfied, never wait on it.
+
+```jldoctest
+julia> using MessagePassingRulesBase: selected_indices, AllGroupMembersButSelf, select_group_members
+
+julia> selected_indices(AllGroupMembersButSelf(), 2, 4)
+(1, 3, 4)
+
+julia> selected_indices(AllGroupMembersButSelf(), 1, 1)
+()
+
+julia> selected_indices(select_group_members(k -> (mod1(k - 1, 3),); arity = 1), 1, 3)
+(3,)
+```
 """
 selected_indices(::AllGroupMembers, k, n) = ntuple(identity, n)
 selected_indices(::AlignedGroupMember, k, n) = (k,)

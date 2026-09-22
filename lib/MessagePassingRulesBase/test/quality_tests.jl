@@ -29,3 +29,9 @@ end
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$(Base.active_project()) -e $probe`
     @test readchomp(cmd) == "true false"
 end
+
+@testitem "quality:doctests" tags = [:quality] begin
+    using Documenter, MessagePassingRulesBase
+    DocMeta.setdocmeta!(MessagePassingRulesBase, :DocTestSetup, :(using MessagePassingRulesBase); recursive = true)
+    doctest(MessagePassingRulesBase; manual = false)
+end

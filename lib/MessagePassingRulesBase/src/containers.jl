@@ -41,6 +41,15 @@ The marginals a rule receives. Single interfaces and groups are reached like mes
 
 A cluster's key is the tuple of its member names, carried in the type (`J`). It is never
 turned into a symbol, so no name is ever derived and none can collide.
+
+```jldoctest
+julia> using MessagePassingRulesBase: Marginals
+
+julia> q = Marginals((τ = 2.0, y_x = 1.0), Val(((:y, :x),)), (0.5,));
+
+julia> q[:τ], q[:y, :x], q[:y_x]
+(2.0, 0.5, 1.0)
+```
 """
 struct Marginals{N, T <: Tuple, J, JT <: Tuple}
     singles::NamedTuple{N, T}
