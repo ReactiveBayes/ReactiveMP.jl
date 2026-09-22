@@ -65,6 +65,7 @@ RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
 make docs                                  # build documentation
+make test-base                             # lib/MessagePassingRulesBase's own suite
 ```
 
 `test_args` takes three kinds of entry, and they compose:
@@ -111,8 +112,9 @@ imported by the caller.
 - Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (322 pairs,
   revisited after the split — see `PHASES.md` § Phase 2). `piracies` is on, with two owners
   declared through `treat_as_own`, and `deps_compat` checks `[extras]` too.
-- `lib/` holds the new packages as empty stubs. **Nothing under `lib/` has tests or a CI job
-  yet**; Phase 3 adds both.
+- `lib/` holds the new packages. `MessagePassingRulesBase` has its own test suite
+  (`make test-base`, same `test_args` syntax) and CI job (`LibTests.yml`); the other three
+  are still empty stubs with no tests.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 

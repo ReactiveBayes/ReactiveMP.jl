@@ -1,0 +1,45 @@
+name: Lib
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [review_requested, reopened, synchronize]
+    paths:
+      - 'lib/**'
+      - '.github/workflows/LibTests.yml'
+  push:
+    branches:
+      - 'main'
+      - 'refactor/rule-node-system-rewrite'
+    paths:
+      - 'lib/**'
+      - '.github/workflows/LibTests.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.package }} - Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.10'
+          - '1.11'
+          - '1.12'
+        package:
+          - MessagePassingRulesBase
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      - name: Test
+        env:
+          TEST_ALL: true
+        run: julia --startup-file=no --project=lib/${{ matrix.package }} -e 'using Pkg; Pkg.test()'

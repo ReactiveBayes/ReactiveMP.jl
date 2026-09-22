@@ -535,7 +535,8 @@ proposal. Citations are as of `545425a2`.
       `rules(node[, target]; algorithm)`, `@which_rule` with source, the coverage matrix,
       `text/plain` and `text/html` display, and a visualisation entry point that fails with
       a "load X to enable" hint rather than a `MethodError`
-- [ ] CI assertion: `ExponentialFamily` absent from the dependency closure
+- [x] CI assertion: `ExponentialFamily` absent from the dependency closure — `quality:closure`,
+      checked on the resolved graph *and* on what a fresh process loads
 - [x] **resolve open items #3, #9, #10, #11, #12** — signed off 2026-09-22, see the entry
       brief and `PLAN.md` § Open items. Body slots are now `(output, algo, ctx, args, ann)`
 - [ ] **#13 (approximations protocol)** — parked by the user; the `linalg` service stays
@@ -547,8 +548,8 @@ proposal. Citations are as of `545425a2`.
 - [ ] purity and RNG ownership contracts specified, including permitted output/scratch
       writes and the distinction between the audit policy and differentiation support
 - [ ] built test-first throughout
-- [ ] `lib/MessagePassingRulesBase/test/` with its own `runtests.jl`, and **a CI job running it
-      on 1.10 and 1.13** — today nothing under `lib/` is tested or in CI. The
+- [x] `lib/MessagePassingRulesBase/test/` with its own `runtests.jl`, and **a CI job running it
+      on 1.10, 1.11 and 1.12** (`LibTests.yml`, the same matrix as `ci.yml`). The
       `ExponentialFamily`-absent assertion above lives in that job
 
 **Decision checkpoints:** #2 (keep generalization deferred unless needed), #3 (factorisation
