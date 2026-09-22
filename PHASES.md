@@ -53,8 +53,8 @@ Phase 0 answers the questions that cannot be walked back.
       result was ever retained. Performance verification belongs to
       **RxInferBenchmarks.jl** at implementation time, where there is a new engine to
       measure against
-- [ ] **current Aqua ambiguity count measured**, so its cleanup can be budgeted separately
-      from the new dispatch design
+- [x] **current Aqua ambiguity count measured**: **322**, so its cleanup can be budgeted
+      separately from the new dispatch design. Breakdown recorded under Phase 2
 - [ ] **disposition inventory** (open item #14): every node, rule, extension, exported
       helper and engine hook assigned a destination or a deliberate deletion — including
       aliases, form constraints, fallbacks, callbacks, stream postprocessors, scoring
@@ -146,7 +146,21 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
 - [ ] `make test` = fast subset, `make test-all` = everything — **the fast local default
       must not weaken full CI coverage**; CI runs everything
 - [ ] Runic replaces JuliaFormatter
-- [ ] Aqua `ambiguities` enabled
+- [ ] Aqua `ambiguities` enabled. **Measured in Phase P: 322 ambiguous pairs**
+      (`Aqua.detect_ambiguities(ReactiveMP; recursive = true)`), which split into five
+      unrelated problems that should be budgeted and fixed independently:
+
+      | count | source | character |
+      |---|---|---|
+      | 253 | `src/helpers/algebra/{permutation_matrix,standard_basis_vector,companion_matrix}.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra`. **Unrelated to the rewrite** — these files are engine-side helpers and can be fixed at any time |
+      | 27 | `rule`/`marginalrule` dispatch | **one single shape**, repeated: the delta catch-all `rule(::F<:Function, …, meta::DeltaMeta, …, node::DeltaFnNode)` (`delta.jl:78`, `:104`) against arithmetic-node rules `rule(fform::typeof(+), …, meta, …, node)` (`rule.jl:358`, `:392`). Neither is more specific — delta wins on `meta`/`node`, the arithmetic rule wins on `fform`/`on`/`messages`. This is the only category the new dispatch design is claiming to eliminate, and it is a useful Phase 0 target |
+      | 23 | `src/fixes.jl` | the deliberate upstream hot-fixes; expected to disappear when upstream releases |
+      | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against `BayesBase`'s `PreserveTypeProd` methods — the same file as two of the three known piracies |
+      | 8 | scattered | `gcv.jl`, `cvi.jl`, `message.jl`/`marginal.jl`, `nodes.jl` vs the mixtures |
+
+      Measured on Julia 1.13.0 against the committed `Manifest.toml`. The count is both
+      Julia-version and resolution dependent, so re-measure before acting rather than
+      treating 322 as fixed. Zero pairs had neither side in ReactiveMP
 - [ ] Aqua `piracies` enabled — 3 known methods fixed or in `treat_as_own`
       (`uniform.jl:6,9`, `fixes.jl:12`; see `DISCUSSION.md` §5)
 - [ ] `deps_compat`'s `check_extras` re-enabled
