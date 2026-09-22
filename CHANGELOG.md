@@ -5,6 +5,14 @@ All notable changes to ReactiveMP.jl will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- The `benchmark/` directory, `scripts/bench.jl` and the `make bench` target. The suite only ever covered `DiscreteTransition`; its `ContinuousTransition` half was never included by `benchmark/rules/rules.jl` and called `StableRNGs(42)` (a module, not a constructor); the comparison path called `BenchmarkTools.judge(::Module, ::String)`, a method that belongs to `PkgBenchmark`; no CI workflow ever ran it; and both `benchmark_logs/` and `benchmark/*.json` were gitignored, so no result was ever retained. Performance work is tracked in [RxInferBenchmarks.jl](https://github.com/ReactiveBayes/RxInferBenchmarks.jl) instead. `BenchmarkTools`, `PkgBenchmark` and `Dates` are dropped from `scripts/Project.toml`; `JuliaFormatter` remains pinned at `~2.12`.
+
+### Fixed
+- Stale documentation in `docs/src/extra/contributing.md`: it referred to a `/demo/` directory that does not exist, to `make benchmark` and `make lint` targets that were never defined, and to `test_args` paths from a previous test layout. The `.PHONY` declaration in the `Makefile` also listed a `lint` target with no rule.
+
 ## [6.5.0] - 2026-09-03
 
 ### Added

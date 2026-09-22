@@ -43,7 +43,6 @@ src/
   score/               free energy: AverageEnergy, DifferentialEntropy
 ext/                   weakdep extensions (Optimisers, ExponentialFamilyProjection)
 test/                  mirrors src/ exactly
-benchmark/             PkgBenchmark suites
 ```
 
 Include order in `src/ReactiveMP.jl` is load-bearing: `nodes/equality.jl` must precede
@@ -62,7 +61,6 @@ RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
 make docs                                  # build documentation
-make bench                                 # benchmarks; `make bench branch=main` to compare
 ```
 
 `test_args` entries are **path filters**: `a:b` maps to `test/a/b` and matches by

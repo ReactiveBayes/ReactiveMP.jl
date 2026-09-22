@@ -35,7 +35,8 @@ changes to ReactiveMP code will be reflected in imported code.
 We use the standard [GitHub Flow](https://guides.github.com/introduction/flow/) workflow where all contributions are added through pull requests. In order to contribute, first [fork](https://guides.github.com/activities/forking/) the repository, then commit your contributions to your fork, and then create a pull request on the `master` branch of the ReactiveMP.jl repository.
 
 Before opening a pull request, please make sure that all tests pass without
-failing! All demos (can be found in `/demo/` directory) and benchmarks (can be found in `/benchmark/` directory) have to run without errors as well.
+failing, that `make check-format` reports no changes, and that `CHANGELOG.md` has an entry
+describing your change (CI enforces all three).
 
 ### Style conventions
 
@@ -81,9 +82,9 @@ a new release of the broken dependecy is available.
 
 - `make help`: Shows help snippet
 - `make test`: Run tests, supports extra arguments
-  - `make test test_args="distributions:normal_mean_variance"` would run tests only from `distributions/test_normal_mean_variance.jl`
-  - `make test test_args="distributions:normal_mean_variance models:lgssm"` would run tests both from `distributions/test_normal_mean_variance.jl` and `models/test_lgssm.jl`
+  - `make test test_args="rules:normal_mean_variance"` would run tests only from `test/rules/normal_mean_variance/`
+  - `make test test_args="rules:beta:out"` would run tests only from `test/rules/beta/out_tests.jl`
+  - `RUN_AQUA=false make test` skips the slow Aqua checks, which are enabled by default
 - `make docs`: Compile documentation
-- `make benchmark`: Run simple benchmark
-- `make lint`: Check codestyle
-- `make format`: Check and fix codestyle 
+- `make check-format`: Check codestyle, without modifying files
+- `make format`: Fix codestyle; this overwrites files 

@@ -29,12 +29,6 @@ examples/*Compiled
 
 **/Manifest.toml
 **/LocalPreferences.toml
-!benchmark/Manifest.toml
 # Tracked so `make format` uses a reproducible JuliaFormatter version everywhere.
 !scripts/Manifest.toml
-
-**/.benchmarkci
-benchmark/*.json
-
-benchmark_logs/*
 

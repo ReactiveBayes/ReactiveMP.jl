@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 .DEFAULT_GOAL = help
 
-.PHONY: lint format
+.PHONY: format check-format
 
 # No `Pkg.update()` in `scripts_init` on purpose: it defeated `scripts/Manifest.toml` by
 # re-resolving JuliaFormatter to the newest allowed version on every `make format` /
@@ -19,11 +19,6 @@ format: scripts_init ## Format Julia code
 
 check-format: scripts_init ## Check Julia code formatting (does not modify files)
 	julia --project=scripts/ scripts/formatter.jl
-
-.PHONY: benchmark
-
-bench: ## Run benchmark, use `make bench branch=...` to test against a specific branch
-	julia --startup-file=no --project=scripts/ scripts/bench.jl $(branch)
 
 .PHONY: docs
 

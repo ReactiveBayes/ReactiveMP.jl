@@ -39,13 +39,20 @@ Phase 0 answers the questions that cannot be walked back.
 
 ## Phase P — Prep
 
-**Goal:** be able to measure regressions, and know what has to move.
+**Goal:** know what has to move, and clear the rot that would otherwise be carried along.
 
 **Exit criteria**
 - [x] contradictions across the three documents reconciled; technical decisions and gates
       remain open as listed below
-- [ ] **performance baseline captured** on v6 via the existing `benchmark/` + PkgBenchmark
-      suites (`make bench`): compile latency, allocations, one full inference workload
+- [x] **performance baselining dropped from this phase.** The `benchmark/` suite,
+      `scripts/bench.jl` and `make bench` are deleted rather than repaired: the suite only
+      ever covered `DiscreteTransition`, its `ContinuousTransition` half was never included
+      by `benchmark/rules/rules.jl` (and called `StableRNGs(42)`, a module rather than a
+      constructor), its comparison path called a `PkgBenchmark` method through
+      `BenchmarkTools`, no CI workflow ran it, and its output paths were gitignored so no
+      result was ever retained. Performance verification belongs to
+      **RxInferBenchmarks.jl** at implementation time, where there is a new engine to
+      measure against
 - [ ] **current Aqua ambiguity count measured**, so its cleanup can be budgeted separately
       from the new dispatch design
 - [ ] **disposition inventory** (open item #14): every node, rule, extension, exported
