@@ -33,3 +33,20 @@ edge(::IndexedTarget{E}) where {E} = E
 The group position an indexed target points at.
 """
 index(target::IndexedTarget) = target.index
+
+"""
+    ClusterTarget{K}
+
+The structural cluster a marginal rule computes, written `towards = (:y, :x)` with the
+members in interface-declaration order.
+"""
+struct ClusterTarget{K} end
+
+ClusterTarget(members::Tuple{Vararg{Symbol}}) = ClusterTarget{members}()
+
+"""
+    members(target::ClusterTarget)
+
+The interface names of a cluster, in declaration order.
+"""
+members(::ClusterTarget{K}) where {K} = K

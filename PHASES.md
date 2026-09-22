@@ -29,12 +29,15 @@ ownership are resolved. Two loose ends remain, and neither blocks starting:
 
 Build the base package test-first, one commit per step, `PHASES.md` updated in each:
 
-1. the `lib/` test harness, CI job (`LibTests.yml`, same matrix as `ci.yml`) and the
+1. **done** — the `lib/` test harness, CI job (`LibTests.yml`, same matrix as `ci.yml`) and the
    subprocess check that `ExponentialFamily` is never loaded;
-2. argument/annotation containers and targets, **with the measurement gate for
+2. **done** — argument/annotation containers and targets, **with the measurement gate for
    `args.q[:y, :x]`** — type-level joint keys, sorted single keys, no symbol ever built at
    run time (`PLAN.md` § Rule surface); on the 1.10 floor, with a negative control;
-3. algorithms, `RuleSpec`, total `find_rule`, the three generic functions, `RuleContext`;
+3. **done** — algorithms, `RuleSpec`, total `find_rule`, the three generic functions,
+   `RuleContext`. Resolution is three functions (`find_message_rule`, `find_marginal_rule`,
+   `find_average_energy`), each total; the engine's fallback sits on their `RuleNotFound`
+   branch, and `execute_rule` never catches;
 4. the per-module registry and its lifecycle test matrix;
 5. `@define_factor_node`;
 6. the three rule-definition macros, checked against the spike's ten hand-lowered rules
