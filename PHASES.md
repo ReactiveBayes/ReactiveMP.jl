@@ -12,9 +12,15 @@ Branch: `refactor/rule-node-system-rewrite`
 
 ## Next action
 
-**Phase 0** — the throwaway spike. Phase P is complete: the disposition inventory is
-assigned and CI-gated, the repository layout and Julia floor are decided, and the
-comparison environment resolves. Phase 0 answers the questions that cannot be walked back.
+**Phase 0** — the throwaway spike, in `spike/`. Phase P is complete and was re-verified
+against the working tree, not just against this file: the disposition inventory is assigned
+and CI-gated, the repository layout and Julia floor are decided, and the comparison
+environment resolves. Phase 0 answers the questions that cannot be walked back.
+
+The spike is committed as it is built, so its measurements are reproducible, and **deleted
+in the commit that closes Phase 0** — the findings survive in `DISCUSSION.md`. Measurements
+run on the **1.10 floor** and on 1.13; a gate that passes only on the newest Julia says
+nothing about the version this package supports.
 
 ---
 
@@ -25,7 +31,7 @@ comparison environment resolves. Phase 0 answers the questions that cannot be wa
 | — | Initial design documented in `PLAN.md`, `DISCUSSION.md` | **done; open decisions below** |
 | — | External design review; contradictions reconciled | **done** |
 | P | Prep: disposition inventory, layout and environment decisions | **done** |
-| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **not started** |
+| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **in progress — 2/13** |
 | 1 | Circulate for external feedback | not started |
 | 2 | Tooling migration on ReactiveMP | not started *(parallel with 1)* |
 | 3 | `MessagePassingRulesBase` | not started |
@@ -76,7 +82,11 @@ comparison environment resolves. Phase 0 answers the questions that cannot be wa
         `StandardMessagePassingRules` is distributions, arithmetic, logic and mixtures;
         domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) go to a separate
         package **that is not yet named**, so the token is `models`
-  - [x] `--check` wired into CI as `test/inventory_tests.jl`, tagged `:quality`
+  - [x] `--check` wired into CI as `test/inventory_tests.jl`, tagged `:quality`.
+        **Caveat:** no CI job *names* it — `julia-actions/julia-runtest` calls `Pkg.test()`
+        with empty `ARGS`, so `runtests.jl` applies no filter and the item rides along inside
+        the general test job. That is sufficient today and becomes load-bearing at Phase 2:
+        a `make test` fast subset that drops `:quality` would silently un-gate the inventory
 - [x] **repository layout decided: monorepo under `lib/`, split at Phase 6.** Boundaries
       are still moving (#9–#13 are unresolved API decisions), and a cross-package change is
       one commit in a monorepo versus two pull requests and a dev-pin across repositories.
@@ -130,8 +140,11 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       distinguish a missing rule from an exception inside a selected rule. Such an
       exception must propagate, never trigger fallback
 - [ ] if the axis stays, a fallback chain adds no measurable routing overhead versus a
-      direct call within the stated benchmark tolerance (equivalent dispatch behaviour +
-      measured overhead, not byte-identical generated code)
+      direct call. **No fixed tolerance is set, deliberately**: record cold, warm and
+      allocation figures for both paths and judge them side by side. The requirement is
+      equivalent dispatch behaviour plus measured overhead, not byte-identical generated
+      code — and an earlier wording appealed to "the stated benchmark tolerance", which no
+      document ever stated
 - [x] **rule syntax decided** (open item #1, resolved ahead of the spike): fully
       keyword-based macro, body an ordinary lambda over a real `args` object, symbols
       throughout (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members
@@ -139,21 +152,51 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       `(output, algo, ctx, args, ann, node)` in canonical order, dispatch carried by the
       `algorithm` keyword, `@allocate`/`@logscale` deleted. See `PLAN.md` § Rule surface and
       `DISCUSSION.md` §3.14
+- [x] **`RuleSpec` representation decided** (resolved ahead of the spike): **no type
+      parameters at all** — `body::Function`, `prealloc::Function`, `inplace::Bool`,
+      `pure::Bool`, source/file/line and the registry metadata, all ordinary fields. The
+      deciding argument is `find_rule`: a parameterised spec makes every rule a distinct type,
+      so a lookup that cannot statically pin down which rule fires returns a *union* rather
+      than one type, and that degrades silently. The plain struct is type-stable by
+      construction. The indirect call this costs is accepted and revisited later with real
+      rules; Phase 0 supplies the number. See `DISCUSSION.md` §3.14
 - [ ] ten representative rules written by hand in the chosen syntax and read side by side —
       now a validation of the decided form, not a choice between candidates. Write them
       across the hard cases (variadic group, indexed target, in-place, structured cluster)
 - [ ] **the devirtualization gate must run through the `RuleSpec`**, not only through
-      dispatch. A spec whose body lives in a `::Function` field passes a naive dispatch check
-      and still allocates on every message; measured, the type-parameterised representation
-      is fully inferred with zero allocations while the `::Function` one infers `Any` and
-      allocates 48 bytes. `DISCUSSION.md` §3.14 carries a runnable reproduction — re-run it
-      against the real spec, not the toy
+      dispatch, and it must **report numbers rather than pass or fail**. `RuleSpec` carries no
+      type parameters (`DISCUSSION.md` §3.14), so the body is reached through a `::Function`
+      field and the indirect call is accepted by decision, to be revisited with real rules.
+      What Phase 0 owes is the cost, measured under the real spec:
+      - a call site that can reach exactly one rule — expected to fold away entirely;
+      - a call site that can reach several — where the indirect call actually appears;
+      - the same two figures for the parameterised alternative, so the trade has a number
+        attached if it is ever reopened.
+      **Two ways to measure this wrongly, both of which flatter whatever was built.** A spec
+      constructed inline inside an inlinable `find_rule` is constant-folded away and reports
+      zero for *every* representation; and a micro-benchmark whose call site can only reach
+      one rule measures the best case and hides the indirect call. Defeat the first with a
+      `@noinline` resolution returning a runtime-selected spec; avoid the second by reporting
+      both call-site shapes
 - [ ] **test the dependency language against the delta-node layouts** — express all
       **four** (default, known-inverse, CVI, CVI-projection) as declarations and see what
       does not fit. Old CVI is a migration reference, not a surviving implementation
       requirement. These are the hardest cases, and the answer decides whether
       `AbstractDeltaNodeDependenciesLayout` collapses and whether `CVIProjection` can ship as an extension
-      (`PLAN.md` § CVI projection)
+      (`PLAN.md` § CVI projection).
+      Located: `DeltaFnDefaultRuleLayout` (`delta/layouts/default.jl:18`),
+      `DeltaFnDefaultKnownInverseRuleLayout` (`default.jl:234`),
+      `CVIApproximationDeltaFnRuleLayout` (`delta/layouts/cvi.jl:16`) and
+      `CVIProjectionApproximationDeltaFnRuleLayout`
+      (`ext/ReactiveMPProjectionExt/layout/cvi_projection.jl:35`), each implementing or
+      delegating `deltafn_apply_layout` over the four slots `q_out`, `q_ins`, `m_out`,
+      `m_in`. Read across them, the layouts differ *only* in which messages and marginals
+      each slot consumes — which is the hypothesis holding. Two things in the same files are
+      **not** dependency choices, and are where it breaks if it breaks: `with_statics`
+      (`default.jl:22-44`), which gates execution on const/data inputs whose values arrive
+      out-of-band through the function proxy, and the `N === 1` compile-time branch
+      (`default.jl:321-327`). `q_out` "mirrors the variable marginal" (`default.jl:47-64`) is
+      stream aliasing — topology, not a rule input
 - [ ] **test execution semantics, not just whether the dependency list can be expressed.**
       A declaration can name mathematically correct inputs and still produce a graph that
       stalls or updates in a different order. Layouts carry behaviour beyond input choice:
@@ -164,8 +207,12 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       FE-monotonicity**. So: execute minimal default, known-inverse and CVI-projection
       cases — including a delayed static input and an initialized feedback loop — and check
       emissions *and* numbers. Note `Mixture`'s `RequireMarginal` path is dead code that
-      would `MethodError`, so one documented dependency mode has never actually run
-- [ ] one worked allocation example end to end, using the intended `@allocate` lowering
+      would `MethodError`, so one documented dependency mode has never actually run —
+      confirmed: `mixture.jl:142` takes three positional arguments while its only caller
+      `with_functional_dependencies` (`dependencies.jl:119-126`) passes four, so dispatch
+      falls through to the generic method, whose first statement is
+      `getlocalclusters(factornode)` — and `MixtureNode` has no such method
+- [ ] one worked allocation example end to end, using the intended `preallocate` lowering
       written by hand (the spike does not implement macros)
 - [ ] the two hard context services as standalone calls (open item #12): the mixture switch
       rule with a product-and-log-scale service, and a delta rule using a captured function
@@ -214,10 +261,19 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
       | count | source | character |
       |---|---|---|
       | 253 | `src/helpers/algebra/{permutation_matrix,standard_basis_vector,companion_matrix}.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra`. Cleanup is independent of rule dispatch; the inventory moves the used helpers with Flow/AR and deletes CompanionMatrix |
-      | 27 | `rule`/`marginalrule` dispatch | **one single shape**, repeated: the delta catch-all `rule(::F<:Function, …, meta::DeltaMeta, …, node::DeltaFnNode)` (`delta.jl:78`, `:104`) against arithmetic-node rules `rule(fform::typeof(+), …, meta, …, node)` (`rule.jl:358`, `:392`). Neither is more specific — delta wins on `meta`/`node`, the arithmetic rule wins on `fform`/`on`/`messages`. This is the only category the new dispatch design is claiming to eliminate, and it is a useful Phase 0 target |
+      | 27 | `rule`/`marginalrule` dispatch | **one single shape**, repeated: the delta catch-all `rule(::F<:Function, …, meta::DeltaMeta, …, node::DeltaFnNode)` (`delta.jl:78`, `:104`) against the `meta::Any` arithmetic rules — `src/rules/addition/in2.jl:1`, `src/rules/subtraction/{out,in1,in2}.jl:1` and `src/rules/multiplication/marginals.jl:31`. Neither is more specific — delta wins on `meta`/`node`, the arithmetic rule wins on `fform`/`on`/`messages`. This is the only category the new dispatch design is claiming to eliminate, and it is a useful Phase 0 target |
       | 23 | `src/fixes.jl` | the deliberate upstream hot-fixes; expected to disappear when upstream releases |
       | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against `BayesBase`'s `PreserveTypeProd` methods; separate from the two known piracies in `uniform.jl` |
       | 8 | scattered | `gcv.jl`, `cvi.jl`, `message.jl`/`marginal.jl`, `nodes.jl` vs the mixtures |
+
+      **Read ambiguity reports with care.** An earlier version of this table cited the
+      arithmetic rules as `rule.jl:358`/`:392`. Those two lines are the
+      `function ReactiveMP.rule(` and `function ReactiveMP.marginalrule(` headers *inside the
+      macro's `quote` block*, so **every one of the ~490 generated rule methods reports that
+      same source location**. `Method.file`/`Method.line` therefore cannot identify a rule
+      today; v6 recovers the node and interface names from the *signature* instead
+      (`get_node_from_rule_method`, `src/rule.jl:1664-1690`). That is an argument for the
+      registry independent of the ambiguity count.
 
       Originally reported on Julia 1.13.0 against a local root `Manifest.toml` (gitignored,
       not committed). No machine-readable report or exact resolution was retained. The count is both
@@ -241,7 +297,8 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
 - [ ] `RuleSpec`/`NodeSpec` registry, per-module const + discovery (never `push!` into a
       shared global — precompilation hazard, see `PLAN.md`)
 - [ ] dependency language with the four selectors + static-arity enforcement
-- [ ] `RuleContext`, `buffer_like`, `@allocate`
+- [ ] `RuleContext`, `buffer_like`, and the `preallocate` keyword (**not** `@allocate` —
+      the in-body macros are deleted, see Phase 0's rule-syntax entry)
 - [ ] registry-backed errors; `check_rules()`, `check_rule_ambiguities()`
 - [ ] CI assertion: `ExponentialFamily` absent from the dependency closure
 - [ ] **resolve open items #9 (beliefs consumed vs entropy partition), #10 (buffer

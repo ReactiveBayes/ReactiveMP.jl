@@ -113,13 +113,13 @@ This took the longest and went through three positions.
    binding problem does not get solved, it disappears.
 
 Consequences that fell out for free:
-- `m[μ]` and `q[μ]` in one signature is unremarkable — two separate containers. An earlier
+- `m[:μ]` and `q[:μ]` in one signature is unremarkable — two separate containers. An earlier
   design (from a subagent) had invented a `Both{...}` wrapper type and a
   "key a cluster by its lexicographically smallest member" rule to handle this in one
   merged container; all of that evaporated.
-- `q[y, x]` is a structural cluster (lowers to `getindex(q, Val((:y,:x)))`), so nothing is
+- `q[:y, :x]` is a structural cluster (lowers to `getindex(q, Val((:y,:x)))`), so nothing is
   ever split on `_` and interface names may contain underscores again.
-- `m[inputs...]` expresses a variadic group, replacing `ManyOf{N,T}` and its `where {N}`.
+- `m[:inputs...]` expresses a variadic group, replacing `ManyOf{N,T}` and its `where {N}`.
 
 Also considered and rejected: a `where { q(a,b) <: T, m(x) <: S }` block (user's proposal).
 It parses fine — verified with `Meta.parse`, including mixed type-parameters and slots in
@@ -127,6 +127,10 @@ one brace list — and `<:` is more *honest* than `::` (the macro already conver
 `Message{<:T}`). Rejected because `where` already means type parameters to every Julia
 reader, and rules genuinely need the original meaning (delta rules carry
 `where {N, M <: Unscented, L, I <: NTuple{L, Function}}`).
+
+*(Superseded by §3.14, which adopts the full-keyword form for rules too — `args = (...)`
+with the body as an ordinary lambda. The paragraph below records the position that was held
+first; the reason it was reversed is in §3.14, not here.)*
 
 Keyword options (`algorithm`, `pure`, `inplace`) go in the header; the signature stays
 positional. Full-keyword form (`arguments = (...)`) was considered and rejected for `@rule`
@@ -243,7 +247,7 @@ architectural verdict.
 
 The technically useful outcome: **in-place discipline and traceability discipline are
 nearly the same discipline** — both forbid materialising intermediates, both need static
-shapes, both need the output container declared up front. So `@allocate` +
+shapes, both need the output container declared up front. So `preallocate` +
 destination-passing is already the right shape, and `buffer_like` dispatching on array type
 *is* the device seam. Reactant is not a second path; it is the same path with a different
 array type.
@@ -314,7 +318,8 @@ by delta, and `GaussHermite`, `SphericalRadial`, `GaussLaguerre`, `Laplace`,
 `ImportanceSampling`, `srcubature`, `glcubature` have **no consumer in `src/` outside
 `src/approximations/` itself**. This establishes no internal consumers, not no downstream
 users: several are exported API. The agreed deletions remove dependencies, but need explicit
-migration entries, including cases with no replacement (`PLAN.md` item #14).
+migration entries, including cases with no replacement (`PLAN.md` item #14, since resolved
+in Phase P — `INVENTORY.md` carries a migration note for all 18 exported deletions).
 
 Second, a correction: the assistant reported `rts_smoother` as unused. **That name does not
 exist** — the function is `smoothRTS`, and it is load-bearing, used by
@@ -428,7 +433,7 @@ names invite collisions when downstream packages add methods.
 
 Strict TDD, failing test first in PRs unless justified.
 
-The leverage point: **because `@rule`/`@node` emit data, "every rule has a test" becomes a
+The leverage point: **because the definition macros emit data, "every rule has a test" becomes a
 CI check** rather than a review norm. Nothing in the current system can do this, since rules
 exist only as methods and enumerating them means string-parsing `methods()`.
 
@@ -473,11 +478,11 @@ pedagogy — the near-miss display with per-slot diffs is a teaching tool.
 
 ---
 
-## 3.13 Phase P decisions
+### 3.13 Phase P decisions
 
 Made while executing the preparation phase, all grounded in measurements taken at the time.
 
-### Benchmarks deleted rather than repaired
+#### Benchmarks deleted rather than repaired
 
 The `benchmark/` suite was removed. It covered exactly one node, its `ContinuousTransition`
 half was never included by `benchmark/rules/rules.jl` (and called `StableRNGs(42)` — the
@@ -490,7 +495,7 @@ Performance verification moves to **RxInferBenchmarks.jl** at implementation tim
 there is a new engine to measure against. Phase P therefore captures no performance
 baseline, which is an honest gap rather than a hidden one.
 
-### Standard versus models
+#### Standard versus models
 
 `PLAN.md` defined `StandardMessagePassingRules` only as "standard distribution nodes +
 arithmetic", which left about a dozen nodes unclassified. **User's decision:** standard
@@ -502,7 +507,7 @@ The package's **name is deliberately deferred to Phase 6**, when it is built. Th
 records the placeholder token `models` and says so explicitly, rather than inventing a name
 to look finished.
 
-### The Julia floor stays at 1.10
+#### The Julia floor stays at 1.10
 
 The assistant flagged that `PLAN.md`'s context design said "a `ScopedValue` supplies the
 default at the engine boundary", that `Base.ScopedValues` is 1.11+, and therefore that the
@@ -515,7 +520,7 @@ it treated one sentence of a draft as a constraint on the whole project. A plain
 argument gives the same behaviour on 1.10. The floor should move when something concrete
 needs it to, and nothing does. `PLAN.md` § Dispatch axes now says this directly.
 
-### Ambiguities are five problems, not one
+#### Ambiguities are five problems, not one
 
 322 ambiguous pairs sounds like a redesign-scale problem. It is not: **253 of them come
 from three files in `src/helpers/algebra/`** — custom array types declaring `*` and `dot`
@@ -529,7 +534,7 @@ rules, where neither method is more specific. That is precisely the class the ne
 design claims to eliminate, which turns a vague aspiration into a Phase 0 target with a
 number attached.
 
-### Two findings from building the inventory
+#### Two findings from building the inventory
 
 **`CompanionMatrix` is dead.** No reference in `src/` *or* `test/`. The user's instinct was
 that the autoregressive node must use it — reasonable, since AR genuinely does use a
@@ -547,14 +552,14 @@ grep.
 
 ---
 
-## 3.14 The macro surface becomes keyword-based
+### 3.14 The macro surface becomes keyword-based
 
 Prompted by a small observation with a large consequence: why does
 `NormalMeanVariance(:out)` carry a colon when `m[mu]` does not? The inconsistency was real.
 The user's first instinct was to drop the colon from the outbound edge; pulling the thread
 produced a different and better answer.
 
-### The design
+#### The design
 
 Everything becomes a keyword, and the body becomes **an ordinary Julia lambda over a real
 arguments object** rather than a body the macro rewrites:
@@ -568,7 +573,7 @@ arguments object** rather than a body the macro rewrites:
 )
 ```
 
-### Why this forces symbols rather than permitting them
+#### Why this forces symbols rather than permitting them
 
 This is the part worth remembering, because the conclusion is the opposite of the intuition
 that started it. In a real lambda, `args.m[μ]` is an `UndefVarError` — `μ` is not a
@@ -584,7 +589,7 @@ Under the old macro-rewritten body, bare names were fine and the colon really wa
 decoration — which is exactly why it looked inconsistent. Choosing a real lambda body makes
 the colon load-bearing. The right observation, the opposite conclusion.
 
-### Parsing facts, checked rather than assumed
+#### Parsing facts, checked rather than assumed
 
 - `m[:inputs...]` **parses** (`head = ref`). The worry that it would not was unfounded.
 - `q[:p[:k]]` parses, but as `(:p)[:k]` — *indexing a Symbol*. So a group member is spelled
@@ -594,7 +599,7 @@ the colon load-bearing. The right observation, the opposite conclusion.
 - Keyword macro arguments arrive as `Expr(:(=), name, value)`, order-independent.
 - Body parameter names extract reliably from the lambda, including typed ones.
 
-### What it deletes
+#### What it deletes
 
 Both "in-body macros" disappear rather than being renamed. They were never really macros —
 they were tokens the enclosing macro rewrote, which is why using one outside a rule body
@@ -611,7 +616,7 @@ benefit is preserved by a better mechanism: the ordinary typed lambda parameter
 `(output::MvNormalMeanPrecision, args) -> ...`, which **Julia itself** enforces
 (`MethodError` on mismatch) and infers, rather than macro-side analysis.
 
-### The `RuleSpec` is the execution vehicle — and it is free
+#### The `RuleSpec` is the execution vehicle, and carries no type parameters
 
 The user's design: dispatch resolves to a `RuleSpec` which **stores the body and the
 `preallocate` lambda** and knows how to call itself, so the engine never branches on
@@ -620,67 +625,96 @@ The user's design: dispatch resolves to a `RuleSpec` which **stores the body and
 **source text**, which is what lets `@which_rule` show a rule rather than merely name it.
 
 The assistant initially warned that storing the body in the spec would make every invocation
-a dynamic call. **That warning was too strong and is withdrawn.** Measured:
+a dynamic call. That warning was too strong — it is true only where the compiler cannot see
+which body is in the field, and the first measurements that seemed to prove it were
+contaminated by constant folding.
 
-| representation | inferred | allocations |
-|---|---|---|
-| body/allocator as **type parameters**, `inplace` as a type parameter | `Float64` | **0** |
-| body field typed `::Function`, `inplace` as a `Bool` field | `Any` | 48 |
+**The user's decision: no type parameters at all.** `RuleSpec` is a plain immutable struct —
+`body::Function`, `prealloc::Function`, `inplace::Bool`, `pure::Bool`, source text, file,
+line, plus the registry metadata. *"It's much easier for Julia to do something like
+`find_rule(args)` that returns a type-stable `RuleSpec` and then use it, instead of
+`find_rule(args)` returning an abstract type."*
 
-In the first case the optimised code is:
+That is the right axis to optimise. The parameterised alternative makes every rule a distinct
+`RuleSpec{B, P}`, so a lookup that cannot statically pin down which rule fires returns a
+*union* of spec types — the thing that is not type-stable is the parameterised version, not
+the plain one. Booleans hoisted into signatures are a known downstream-instability trap, and
+the same objection applies to hoisting a closure's type.
 
-```
-Base.getfield(args, :a)
-Base.getfield(args, :b)
-Base.add_float(%2, %3)
-return %4
-```
+**Measured, for the record** — on 1.13, with resolution held inferable but *not*
+constant-foldable, at a call site that can reach two different rules:
 
-No call survives, the in-place branch folds away, and the spec disappears entirely at
-compile time — **even while carrying a `String` of source text, file, line and `pure`**,
-because inference only needs the *types* of the body and allocator fields, and an anonymous
-function that captures nothing has a singleton type.
+| representation | `find_rule` returns | inferred | allocations |
+|---|---|---|---|
+| no type parameters, body called through the field | `RuleSpec` — concrete | `Any` | 48 |
+| `RuleSpec{B, P}`, body called through the field | `Union{RuleSpec{…}, RuleSpec{…}}` | `Float64` | 32 |
+| no type parameters, spec as data + generated execution method | `RuleSpec` — concrete | `Float64` | 0 |
 
-So the constraint is narrow but strict, and it is the whole design: **body and allocator
-must be type parameters, never `::Function`; `inplace` must be a type parameter, never a
-`Bool` field.** A spec built the wrong way passes a naive "does dispatch devirtualize" check
-and still allocates on every message, which is why Phase 0's gate must test *through the
-spec*.
+Two separate findings fell out of getting this measurement right:
 
-Reproduce with:
+- **`inplace` as a type parameter buys nothing.** Measured identical to a plain `Bool` field —
+  zero allocations either way, including with the split body shapes this design uses, where
+  an allocating body takes `(args)` and an in-place body takes `(output, args)`. The arm that
+  does not apply typechecks harmlessly. It also adds no distinct spec types, since `B` is
+  already unique per rule and the flag is functionally determined by it. Pure cost.
+- **The published reproduction below was one-sided and would mislead.** Run as written, the
+  good case reports 0 — but so does an obvious `::Function`-field counterpart, because a spec
+  constructed inline inside an inlinable `resolve` is constant-folded away entirely. Any
+  comparison must defeat constant folding (`@noinline` resolution returning a
+  runtime-selected spec) and must report a call site that can reach more than one rule, or it
+  measures the best case and calls it the design.
+
+**Decision: the indirect call is accepted and revisited later**, with real rules rather than a
+toy. The two alternatives above stay on the table, and neither changes the macro surface,
+which is what would actually be expensive to move. Phase 0 reports the number; a number is
+something to act on, pre-optimising the struct is not.
+
+**What holds regardless:** resolution must not go through a runtime container. A spec fetched
+from a `Dict` keyed on runtime values infers as `Any` whatever the spec's own type — so the
+per-module `const` plus dispatch in § Registry is a requirement, not a preference.
+
+Reproduce (adapt `find_rule` per row of the table; as written this is the parameter-free
+representation the design adopts):
 
 ```julia
-struct RuleSpec{B, P, IP}
-    body::B
-    prealloc::P
-    source::String          # introspection payload does not affect the above
+struct RuleSpec
+    body::Function
+    prealloc::Function
+    source::String          # introspection payload
     pure::Bool
+    inplace::Bool
 end
-isinplace(::RuleSpec{B, P, IP}) where {B, P, IP} = IP
 
 const body1 = (args) -> args.a + args.b
+const body2 = (args) -> args.a * args.b
 const pre1  = (args) -> zeros(2)
-@inline resolve(::Val{:N}, ::Val{:out}) =
-    RuleSpec{typeof(body1), typeof(pre1), false}(body1, pre1, "(args) -> args.a + args.b", true)
 
-function call_rule(node, towards, args)
-    spec = resolve(node, towards)
-    return isinplace(spec) ? spec.body(spec.prealloc(args), args) : spec.body(args)
+# `@noinline` + a runtime-selected spec: defeats constant folding, so the figure below is
+# the one that can actually appear in an engine. An `@inline` resolve returning one literal
+# spec folds the whole thing away and reports 0 for every representation.
+@noinline find_rule(::Val{:N}, ::Val{:out}, flag::Bool) =
+    flag ? RuleSpec(body1, pre1, "(args) -> args.a + args.b", true, false)
+         : RuleSpec(body2, pre1, "(args) -> args.a * args.b", true, false)
+
+function call_rule(node, towards, args, flag)
+    spec = find_rule(node, towards, flag)
+    return spec.inplace ? spec.body(spec.prealloc(args), args) : spec.body(args)
 end
 
-function bench()                       # measure inside a function: a non-const global
+function bench(flag)                   # measure inside a function: a non-const global
     a = (a = 1.0, b = 2.0)             # would box and report a spurious 16 bytes
-    call_rule(Val(:N), Val(:out), a)
-    return @allocated call_rule(Val(:N), Val(:out), a)
+    call_rule(Val(:N), Val(:out), a, flag)
+    return @allocated call_rule(Val(:N), Val(:out), a, flag)
 end
 
-bench()                                                       # 0
-code_typed(call_rule, (Val{:N}, Val{:out}, NamedTuple{(:a, :b), Tuple{Float64, Float64}}))
+bench(time() > 0)                      # 48 -- and 0 if the call site can reach only one rule
+code_typed(call_rule, (Val{:N}, Val{:out}, NamedTuple{(:a, :b), Tuple{Float64, Float64}}, Bool))
 ```
 
-### Accepted costs, stated plainly
+#### Accepted costs, stated plainly
 
-- **Verbosity.** One line becomes roughly six, across ~490 definitions. Chosen deliberately:
+- **Verbosity.** One line becomes roughly six, across ~490 rule definitions — nearer ~590
+  once the 57 `@average_energy` and 45 node definitions take the same surface. Chosen deliberately:
   one uniform surface, no positional shorthand, no second grammar to document or migrate.
 - **The `m` collision.** Containers stay `m` and `q`, and `NormalMixture` has an interface
   group named `m`, so `args.q[:m][k]` uses `m` in two senses. Accepted in exchange for one
@@ -710,15 +744,15 @@ Claims the assistant made that were **wrong** and should not be revived:
     and it *is* used by the delta unscented and linearization marginal rules. A bad grep.
 7c. **"Approximation methods should be algorithms and depend on the base package."** They
     are utilities that algorithms use; the package stays standalone. See §3.9b.
+7d. **"ReTestItems is needed for name/tag filtering."** TestItemRunner's filter already
+    receives `(filename, name, tags)` — its own docstring example filters on tags. The
+    change is ~10 lines in `runtests.jl`, not a package swap. Its only real advantage is
+    distributed parallel workers, which is a CI wall-clock argument.
 7e. **"`CVIProjection` needs its own package."** Over-engineering for a leaf component. Once
     the layout half stops being engine code, a weakdep extension of the Delta node package
     is enough. See §3.9b-ii.
 7f. **"`cvi_setup!`/`cvi_update!` indicate the newer CVI work."** They belong to the **old**
     `ProdCVI`; `ReactiveMPOptimisersExt` predates `CVIProjection` by over a year.
-7d. **"ReTestItems is needed for name/tag filtering."** TestItemRunner's filter already
-    receives `(filename, name, tags)` — its own docstring example filters on tags. The
-    change is ~10 lines in `runtests.jl`, not a package swap. Its only real advantage is
-    distributed parallel workers, which is a CI wall-clock argument.
 8. **Threading needs an explicit schedule IR with layered fork-join.** Over-engineered for
    what was asked; purity is the actual requirement.
 9. **A `Test` package extension for test tooling.** Would force test-only deps into the
@@ -743,18 +777,26 @@ Claims the assistant made that were **wrong** and should not be revived:
     infrastructure the rule *reads*; annotations are a mutable sink the rule *writes*, and
     they are separate body slots. The mistake came from `PLAN.md` itself, whose context
     bullet listed "annotations" among the context contents — now corrected there too.
-16. **"Storing the rule body inside the `RuleSpec` forces a dynamic call."** Withdrawn. With
-    the body and allocator as **type parameters** and `inplace` as a type parameter, the
-    whole spec is erased at compile time: fully inferred, zero allocations, no surviving
-    call, even while carrying source text for introspection. The claim is only true for the
-    `::Function`-field representation, which allocates 48 bytes per call. Measurement and a
-    runnable reproduction are in §3.14.
+16. **"Storing the rule body inside the `RuleSpec` forces a dynamic call."** Half right, and
+    the half that is right was measured badly. It forces one **only where the compiler cannot
+    see which body is in the field** — at a call site that can reach a single rule the whole
+    spec is erased, whatever its representation. The early measurements that appeared to
+    settle this were contaminated by constant folding: a spec constructed inline inside an
+    inlinable `resolve` folds away entirely and reports zero allocations for *every*
+    representation, including the one the table called bad. See §3.14 for the corrected
+    three-way comparison and the adopted design (no type parameters).
+17. **"`inplace` should be a type parameter."** No. Measured indistinguishable from a plain
+    `Bool` field — zero allocations either way, including with the split body shapes where an
+    allocating body takes `(args)` and an in-place body takes `(output, args)`. It adds no
+    distinct spec types either, since the body type is already unique per rule. A flag hoisted
+    into a signature is pure cost and a downstream-instability trap.
 
 ---
 
 ## 5. Empirical results
 
-Two open questions were checked against the real packages (commit `8aa85ea2`).
+Two open questions were checked against the real packages (commit `8aa85ea2`). Four more were
+checked during the pre-Phase-0 audit (commit `d0f45cea`) and are recorded at the end.
 
 **Aqua piracy.** `Aqua.Piracy.hunt(ReactiveMP)` reports exactly **3** pirate methods, none
 of them rules: `default_prod_rule` and `prod` for `Uniform`×`Beta`
@@ -788,6 +830,39 @@ unexported). Caveat: "thin" means thin in *direct* deps — BayesBase transitive
 `SpecialFunctions`, `TinyHugeNumbers`. So `DomainSets` does not move out to the
 approximations package as originally written.
 
+### Checked during the pre-Phase-0 audit
+
+**`RuleSpec` representation.** Three representations measured on Julia 1.13, at a call site
+that can reach more than one rule, with resolution held inferable but not constant-foldable.
+Results and the adopted design are in §3.14. Two things were established that no earlier
+measurement had: `inplace` as a type parameter is worth nothing, and the previously published
+reproduction could not distinguish the representations at all, because constant folding erased
+the difference.
+
+**Every generated rule method reports the same source location.** `@rule` splices its method
+into a `quote` block in `src/rule.jl`, so all ~490 generated methods carry
+`Method.file == "rule.jl"` and `Method.line == 358` (`marginalrule`: `:392`). Consequences:
+an ambiguity report that cites `rule.jl:358` is naming the *template*, not a rule — an earlier
+version of `PHASES.md`'s ambiguity table read it as the arithmetic catch-alls, which actually
+live in `src/rules/addition/in2.jl:1`, `src/rules/subtraction/{out,in1,in2}.jl:1` and
+`src/rules/multiplication/marginals.jl:31`. And `Method.file`/`line` cannot identify a rule at
+all today, which is why v6 recovers names from the *signature* instead
+(`get_node_from_rule_method`, `src/rule.jl:1664-1690`). An independent argument for the
+registry.
+
+**The mixture `reverse(...)` is observationally inert.** It is not in `mixture.jl` — it is
+`normal_mixture.jl:170,177` and `gamma_mixture.jl:160,167`, and it reorders only the
+`combineLatest` *trigger* tuple while the emitted payload comes from `map_to` with the groups
+un-reversed. `combineLatest` gates on the set of streams, not their order, so nothing
+observable depends on it. Open item #6 is therefore a scheduling pin, not a numerical one.
+
+**`Mixture`'s `RequireMarginal` path is unreachable, mechanically.** `mixture.jl:142` defines
+`functional_dependencies` with three positional arguments; its only caller
+`with_functional_dependencies` (`dependencies.jl:119-126`) passes four. Dispatch falls through
+to the generic method, whose first statement is `getlocalclusters(factornode)` — and
+`MixtureNode` has no such method, so the policy that `collect_functional_dependencies`
+explicitly accepts `MethodError`s at activation time.
+
 ---
 
 ## 6. Still open, and why
@@ -795,11 +870,13 @@ approximations package as originally written.
 `PLAN.md` owns the stable open-item numbers; `PHASES.md` assigns their decision gates.
 The original discussion left these questions:
 
-- **Rule syntax final details (#1)** — `m[x]`/`q[x]` settled in principle; the outbound-edge
-   spelling and where `algorithm` sits in the header are not. Best resolved by hand-writing
-   ten representative rules and reading them.
-- **`aligned` selector generality (#2)** — everything in-tree is `k ↔ k`. `q[p[f(k)]]` extends
-   naturally; deliberately not built until something needs it.
+- ~~**Rule syntax final details (#1)**~~ — **RESOLVED**, see §3.14. The outbound-edge
+   spelling is `towards = :out`, and `algorithm` is a top-level keyword on both the rule and
+   the node. Ten representative rules are still written by hand in Phase 0, but now as
+   validation of a decided form rather than as a way of choosing one.
+- **`aligned` selector generality (#2)** — everything in-tree is `k ↔ k`. `q[:p][f(k)]`
+   extends naturally; deliberately not built until something needs it. (Not `q[:p[f(k)]]`,
+   which parses as `(:p)[f(k)]` — indexing a `Symbol`. See §3.14.)
 - **Per-(target, factorisation) group selection (#3)** — assumed per-target. Works for all four
    in-tree cases because the mixtures pin their factorisation. A one-way door in the syntax.
 - **The ruleset axis (#4)** — scoped rule tables (`Overlay(mine, standard)`). Introduced by the
@@ -813,7 +890,7 @@ The original discussion left these questions:
 
 Review added #9–#13: belief/entropy separation, buffer ownership, capability metadata,
 context services and the numerical protocol. These block API freeze, not preparation or
-the spike. #14 is the preparation inventory. Purity/RNG contracts and derivative checks
+the spike. #14 was the preparation inventory, resolved in Phase P. Purity/RNG contracts and derivative checks
 are separate requirements. Reactant/StableCholesky (#5) remain a separate effort; mixture
 regressions and edge identity (#6–#7) are engine integration requirements.
 

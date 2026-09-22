@@ -229,8 +229,8 @@ built on it.
 
 ### Registry, errors, introspection
 
-`@rule`/`@node` emit **data** (a `RuleSpec`/`NodeSpec`) alongside the method, stored as a
-per-module `const` and discovered by scanning loaded modules. Do **not** `push!` into a
+`@define_message_update_rule`/`@define_factor_node` emit **data** (a `RuleSpec`/`NodeSpec`)
+alongside the method, stored as a per-module `const` and discovered by scanning loaded modules. Do **not** `push!` into a
 ReactiveMP-owned global — a downstream package's top-level `push!` runs during *its*
 precompile and lands only in its own image.
 
@@ -258,28 +258,54 @@ apart. It can also carry **the body's source text, file and line**, which is wha
 `@which_rule` able to *show you the rule* rather than merely name it — directly serving the
 educational and introspection goals above.
 
-**Measured: this costs nothing at run time.** A spec parameterised on its body and
-allocator types, carrying `inplace` as a type parameter and introspection payload
-(source `String`, file, line, `pure`) in ordinary fields, resolved through a function and
-invoked through, compiles to:
+**`RuleSpec` carries no type parameters.** It is a plain immutable struct, every field
+ordinary:
 
+```julia
+struct RuleSpec
+    body::Function         # the lambda from `body = ...`
+    prealloc::Function     # the lambda from `preallocate = ...`, or `nothing`
+    inplace::Bool
+    pure::Bool
+    source::String         # body text, for `@which_rule`
+    file::Symbol
+    line::Int
+    # + node, target, algorithm, argument spec, dependency spec, required services
+end
 ```
-Base.getfield(args, :a)
-Base.getfield(args, :b)
-Base.add_float(%2, %3)
-return %4
-```
 
-Fully inferred, **zero allocations**, no call surviving, and the in-place branch folded away.
-The whole spec disappears at compile time.
+**The decision is deliberate, and its point is `find_rule`.** A spec parameterised on its
+body and allocator types would make every rule a distinct `RuleSpec{B, P}`, so a lookup that
+cannot statically pin down which rule fires returns a *union* of spec types rather than one
+type. Julia union-splits small unions and gives up past a handful of arms, and the failure is
+silent. With no parameters there is exactly one `RuleSpec` type, `find_rule` is type-stable by
+construction, and nothing downstream has to predict a `Bool` or a closure type in order to
+name the type it is holding. Flags in signatures are a well-known source of downstream
+instability, and the same objection applies to hoisting the body's type.
 
-**The one constraint this places on the representation** is narrow but strict: the body and
-allocator fields must be **type parameters**, not declared `::Function`, and `inplace` must
-be a type parameter rather than a `Bool` field. Measured for comparison: a spec whose body
-field is typed `::Function` with a `Bool` `inplace` field infers as `Any` and allocates 48
-bytes per call — dynamic dispatch on every message. The difference between the two
-representations is the entire design, so **Phase 0's devirtualization gate must test through
-the spec**, not merely through dispatch.
+The cost is one indirect call per invocation where the compiler cannot see which body is in
+the field. **Accepted for now, to be revisited with real rules rather than a toy**: the
+alternatives — parameterising on the body, or emitting a separate generated method for
+execution and keeping the spec as pure data — are both recorded in `DISCUSSION.md` §3.14 with
+their measurements, and either can be adopted later without changing the macro surface, which
+is what actually matters. Phase 0 measures the parameter-free representation under the real
+spec and reports what it costs; that is a number to act on, not a reason to pre-optimise the
+design now.
+
+**What stays true regardless of the representation:** resolution must not go through a
+runtime container. A spec fetched from a `Dict` keyed on runtime values infers as `Any`
+whatever the spec's own type, so § Registry's per-module `const` plus dispatch is a
+requirement, not a preference.
+
+**Measuring this is easy to get wrong, in the direction that flatters whatever you built.**
+If the spec is constructed inline inside an inlinable `find_rule`, the compiler constant-folds
+the whole expression and *every* representation reports zero allocations — so an implementer
+can "confirm" a gate and learn nothing. Equally, a micro-benchmark where a call site can only
+ever reach one rule measures the best case and hides the indirect call entirely. So **Phase
+0's devirtualization gate must test through the spec**, not merely through dispatch, and must
+report the figure for a call site that can reach more than one rule as well as one that
+cannot. Record both numbers rather than a verdict. `DISCUSSION.md` §3.14 carries the runnable
+comparison across representations.
 
 ### Dependencies as a language
 
@@ -331,7 +357,7 @@ be tested against the mixture and delta layouts in Phase 0; selector coverage al
 not establish that the layouts can be replaced.
 
 For custom algorithms, dependencies may constrain the factorisation rather than derive
-from it. **The precise contract remains open (#9):** requesting `q[a,b]` identifies a
+from it. **The precise contract remains open (#9):** requesting `q[:a, :b]` identifies a
 joint belief, but an auxiliary belief need not be a separately counted entropy cluster.
 Define the consumed beliefs and the entropy partition separately, including ordering and
 conflicts with user-supplied factorisation, before freezing the macro surface. Algorithms
@@ -742,8 +768,9 @@ The dispatch result, ownership contracts and early engine integration are separa
    indexed targets as `(:m, k)`, body slots `(output, algo, ctx, args, ann, node)` in
    canonical order, and dispatch carried by the `algorithm` keyword. `@allocate` and
    `@logscale` are deleted rather than renamed. See § Rule surface.
-2. **`aligned` generality** — everything in-tree is `k ↔ k`. `q[p[f(k)]]` extends
-   naturally; don't build until something needs it.
+2. **`aligned` generality** — everything in-tree is `k ↔ k`. `q[:p][f(k)]` extends
+   naturally; don't build until something needs it. (Not `q[:p[f(k)]]`, which parses as
+   `(:p)[f(k)]` — indexing a `Symbol`. See § Rule surface.)
 3. **Per-(target, factorisation) group selection** — assumed per-target; all four in-tree
    cases work because the mixtures pin their factorisation. One-way door in the syntax.
 4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`) — separate from
@@ -756,8 +783,14 @@ The dispatch result, ownership contracts and early engine integration are separa
    an explicitly supported *research* path when it happens, not a rejected one; whole-sweep
    tracing and `vmap` are a superset of it, not a competing approach. Nothing to decide
    here beyond keeping `buffer_like` extensible.
-6. **`reverse(...)` in the mixture marginal wiring** — undocumented, means/precs swapped.
-   Pin current behaviour with a regression test before touching.
+6. **`reverse(...)` in the mixture marginal wiring** — undocumented, and the two groups are
+   additionally swapped relative to the payload. Located: it is **not** in `mixture.jl` but in
+   `normal_mixture.jl:170,177` and `gamma_mixture.jl:160,167`. Measured to be
+   **observationally inert**: the `reverse` applies only to the `combineLatest` *trigger*
+   tuple, while the emitted payload comes from `map_to` with the groups un-reversed, and
+   `combineLatest` gates on the *set* of streams rather than their order. So the regression to
+   pin is **scheduling, not values** — cheaper than this entry originally implied, but still
+   pin it before touching, because bit-identical scheduling is what Phase 4.5 compares.
 7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
 8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as
@@ -771,7 +804,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    not an entropy cluster — `RequireMarginalFunctionalDependencies` already does exactly
    this. Define separately: which beliefs a rule consumes, and which partition free energy
    is computed over. Also settle auxiliary marginals, unspecified interfaces, conflicting
-   user-supplied factorisation, and **whether `q[a,b]` and `q[b,a]` are distinct ordered
+   user-supplied factorisation, and **whether `q[:a, :b]` and `q[:b, :a]` are distinct ordered
    inputs or require permuting the joint** — canonicalising the names is not sufficient.
    **Decide before the macro surface freezes.**
 
@@ -843,8 +876,8 @@ The dispatch result, ownership contracts and early engine integration are separa
 
 ## Migration guide (published, for downstream authors)
 
-Distinct from the internal transform above. That is a one-off tool we run over our own 390
-rules; **this is a durable, published document** for anyone maintaining their own nodes and
+Distinct from the internal transform above. That is a one-off tool we run over our own 490
+rule definitions; **this is a durable, published document** for anyone maintaining their own nodes and
 rules — RxGP, and colleagues with custom rules in their own codebases. It must work for a
 human reading it *and* for an AI agent pointed at it, since that is how much of the
 downstream migration will actually happen.
@@ -857,7 +890,7 @@ ReactiveMP and RxInfer.
 - **Mechanical before/after pairs, not prose.** Every v6 construct maps to its v7 form as a
   concrete pair. An agent should not have to infer the rule from a description.
 - **Complete case coverage**, including the fiddly ones — `ManyOf` → variadic groups,
-  indexed edges `(:in, k)`, joint marginals `q_y_x` → `q[y, x]`, `meta` → `algorithm`,
+  indexed edges `(:in, k)`, joint marginals `q_y_x` → `q[:y, :x]`, `meta` → `algorithm`,
   `@logscale` becoming `annotate!(ann, ...)`, `getnode`/`getnodefn`, `Marginalisation`
   removal, the renamed macros and the move to the keyword form.
 - **An explicit "cannot be translated mechanically" section.** Rules touching raw
@@ -963,7 +996,7 @@ The machinery already exists. `@node` generates `nodefunction` (the node's logpd
 reference update can be computed numerically from the node definition — BP as
 `∫ f(x) ∏_{j≠i} m_j dx_{≠i}`, naive VMP as `exp(E_{q(¬i)}[log f])` — and compared to the
 analytic rule. This tests the *maths*, not a regression table, and is what makes porting
-390 rules credible.
+490 rule definitions credible.
 
 A sampling-based variant (e.g. building the local factor as a Turing model) is an **idea,
 opt-in behind its own flag**, not a default. It has one subtlety that must be deliberate or
@@ -998,7 +1031,7 @@ need special handling. A property test complementing the tables, tagged `:slow`.
 
 - **Failing test first in every PR**, unless explicitly justified in the PR why it is not
   possible or not required.
-- **Registry-backed coverage, mechanically enforced:** because `@rule`/`@node` emit data,
+- **Registry-backed coverage, mechanically enforced:** because the definition macros emit data,
   "every rule has a test" becomes a CI check — cross-reference the registry against tested
   rules and fail on any `RuleSpec`/`NodeSpec` with no test entry. Nothing in the current
   system can do this, since rules exist only as methods.
