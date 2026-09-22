@@ -18,41 +18,59 @@ as_annotations(ann::RuleAnnotations) = ann
 as_annotations(store) = RuleAnnotations(out = store)
 
 """
-    call_rule(node, towards; m = (;), q = (;), clusters = (), algorithm, ctx, ann)
+    call_message_update_rule(node, towards; m = (;), q = (;), clusters = (), algorithm, ctx, ann)
 
 Run the message rule of `node` towards `towards` (`:out`, or `(:m, 2)` for a group member)
 on the given inputs. `clusters` gives structural clusters as `(:y, :x) => value` pairs.
 `algorithm` defaults to the node's; pass an `AnnotationStore` as `ann` to collect what the
 rule annotates.
 """
-call_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
+call_message_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
     message_passing_rule(node, as_target(towards), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
 
 """
-    call_marginalrule(node, towards; m, q, clusters, algorithm, ctx, ann)
+    call_marginal_update_rule(node, towards; m, q, clusters, algorithm, ctx, ann)
 
-As [`call_rule`](@ref), for the marginal of the cluster `towards`, e.g. `(:out, :μ)`.
+As [`call_message_update_rule`](@ref), for the marginal of the cluster `towards`, e.g. `(:out, :μ)`.
 """
-call_marginalrule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
+call_marginal_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
     message_passing_marginalrule(node, as_cluster(towards), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
 
 """
     call_average_energy(node; q, clusters, algorithm, ctx)
 
-As [`call_rule`](@ref), for a node's average energy.
+As [`call_message_update_rule`](@ref), for a node's average energy.
 """
 call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
     message_passing_average_energy(node, algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
 
 """
-    which_rule(node, towards; m, q, clusters, algorithm)
+    which_message_update_rule(node, towards; m, q, clusters, algorithm)
 
-The [`RuleSpec`](@ref) that `call_rule` would run for these inputs; its display shows the
+The [`RuleSpec`](@ref) that `call_message_update_rule` would run for these inputs; its display shows the
 rule's source.
 """
-function which_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+function which_message_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
     target = as_target(towards)
     return throw_if_not_found(find_message_rule(node, target, algorithm, interactive_args(m, q, clusters)))
+end
+
+"""
+    which_marginal_update_rule(node, towards; m, q, clusters, algorithm)
+
+The [`RuleSpec`](@ref) that [`call_marginal_update_rule`](@ref) would run for these inputs.
+"""
+function which_marginal_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+    return throw_if_not_found(find_marginal_rule(node, as_cluster(towards), algorithm, interactive_args(m, q, clusters)))
+end
+
+"""
+    which_average_energy(node; m, q, clusters, algorithm)
+
+The [`RuleSpec`](@ref) that [`call_average_energy`](@ref) would run for these inputs.
+"""
+function which_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+    return throw_if_not_found(find_average_energy(node, algorithm, interactive_args(m, q, clusters)))
 end
 
 function keyword_call(name, f, positional, args)
@@ -74,25 +92,37 @@ function keyword_call(name, f, positional, args)
 end
 
 """
-    @call_rule(node = ..., towards = ..., m = (...), q = (...), ...)
+    @call_message_update_rule(node = ..., towards = ..., m = (...), q = (...), ...)
 
-[`call_rule`](@ref), written with keywords.
+[`call_message_update_rule`](@ref), written with keywords.
 
-```julia
-@call_rule(node = NormalMeanVariance, towards = :out, m = (μ = PointMass(0.0), v = PointMass(1.0)))
+```jldoctest
+julia> struct Shift end
+
+julia> @define_factor_node(node = Shift, type = Deterministic, interfaces = [:out, :in])
+
+julia> @define_message_update_rule(
+           node = Shift,
+           towards = :out,
+           args = (m[:in]::Real,),
+           body = (args) -> args.m[:in] + 1,
+       )
+
+julia> @call_message_update_rule(node = Shift, towards = :out, m = (in = 1.0,))
+2.0
 ```
 """
-macro call_rule(args...)
-    return esc(keyword_call("call_rule", call_rule, (:node, :towards), args))
+macro call_message_update_rule(args...)
+    return esc(keyword_call("call_message_update_rule", call_message_update_rule, (:node, :towards), args))
 end
 
 """
-    @call_marginalrule(node = ..., towards = (:y, :x), ...)
+    @call_marginal_update_rule(node = ..., towards = (:y, :x), ...)
 
-[`call_marginalrule`](@ref), written with keywords.
+[`call_marginal_update_rule`](@ref), written with keywords.
 """
-macro call_marginalrule(args...)
-    return esc(keyword_call("call_marginalrule", call_marginalrule, (:node, :towards), args))
+macro call_marginal_update_rule(args...)
+    return esc(keyword_call("call_marginal_update_rule", call_marginal_update_rule, (:node, :towards), args))
 end
 
 """
@@ -105,12 +135,12 @@ macro call_average_energy(args...)
 end
 
 """
-    @which_rule(node = ..., towards = ..., m = (...), ...)
+    @which_message_update_rule(node = ..., towards = ..., m = (...), ...)
 
-[`which_rule`](@ref), written with keywords.
+[`which_message_update_rule`](@ref), written with keywords.
 """
-macro which_rule(args...)
-    return esc(keyword_call("which_rule", which_rule, (:node, :towards), args))
+macro which_message_update_rule(args...)
+    return esc(keyword_call("which_message_update_rule", which_message_update_rule, (:node, :towards), args))
 end
 
 target_edge_of(::Type{Target{E}}) where {E} = E
@@ -189,3 +219,21 @@ Draw a [`NodeSpec`](@ref), [`RuleSpec`](@ref), [`DependenciesSpec`](@ref) or
 extensions; without one loaded this is a `MethodError` that says so.
 """
 function visualize_spec end
+
+"""
+    @which_marginal_update_rule(node = ..., towards = (:y, :x), ...)
+
+[`which_marginal_update_rule`](@ref), written with keywords.
+"""
+macro which_marginal_update_rule(args...)
+    return esc(keyword_call("which_marginal_update_rule", which_marginal_update_rule, (:node, :towards), args))
+end
+
+"""
+    @which_average_energy(node = ..., q = (...), ...)
+
+[`which_average_energy`](@ref), written with keywords.
+"""
+macro which_average_energy(args...)
+    return esc(keyword_call("which_average_energy", which_average_energy, (:node,), args))
+end

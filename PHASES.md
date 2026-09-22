@@ -552,9 +552,10 @@ proposal. Citations are as of `545425a2`.
       measured `@inferred` and allocation-free on 1.10 with a negative control. **No
       symbol is formed at run time.** `gate:containers*` (tagged `:alloc`); on 1.10.12
       `args.q[:y, :x]` compiles to `getfield(q.joints, 2)`, see `DISCUSSION.md` §3.16
-- [x] interactive surface, in full: `@call_rule`/`@call_marginalrule`/`@call_average_energy`
-      (+ function forms), `list_rules(node[, edge]; algorithm)` (renamed from `rules`, per the
-      naming rule), `@which_rule` with source, `rule_coverage`, the coverage matrix,
+- [x] interactive surface, in full: `@call_message_update_rule`/`@call_marginal_update_rule`/
+      `@call_average_energy` and their `@which_*` counterparts (+ function forms, all named after
+      the definition macros they mirror), `list_rules(node[, edge]; algorithm)` (renamed from
+      `rules`, per the naming rule), rule source on display, `rule_coverage`, the coverage matrix,
       `text/plain` and `text/html` display, and a visualisation entry point that fails with
       a "load X to enable" hint rather than a `MethodError`
 - [x] CI assertion: `ExponentialFamily` absent from the dependency closure — `quality:closure`,

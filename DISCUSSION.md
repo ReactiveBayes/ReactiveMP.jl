@@ -984,6 +984,11 @@ Three more decisions were taken while planning Phase 3's execution:
   did not wait on may be stale. `!k` cannot be written as a runtime index in a body — `!` is
   not defined on integers, and defining it would be piracy — so an all-but-self body reads
   the tuple with its `nothing` in place.
+- **Invocation names mirror definitions (user).** `@call_rule`/`@call_marginalrule` became
+  `@call_message_update_rule`/`@call_marginal_update_rule`, beside `@call_average_energy` —
+  which v6 never had — and the three `@which_*` queries. This reverses PLAN's earlier "keep
+  invocation names short for the REPL"; the user preferred that nothing be generic and that
+  each invocation read as the counterpart of its `@define_*`.
 - **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
   so an in-place rule towards a group member can size its buffer by `k` exactly as its
   body can. The first cut raised an error in that case instead; it was fixed before

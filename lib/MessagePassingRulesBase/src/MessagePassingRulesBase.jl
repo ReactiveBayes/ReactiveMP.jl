@@ -8,8 +8,10 @@ export message_passing_average_energy
 export @define_factor_node, Stochastic, Deterministic
 export @define_message_update_rule, @define_marginal_update_rule, @define_average_energy
 export @define_dependencies
-export @call_rule, @call_marginalrule, @call_average_energy, @which_rule
-export call_rule, call_marginalrule, call_average_energy, which_rule
+export @call_message_update_rule, @call_marginal_update_rule, @call_average_energy
+export @which_message_update_rule, @which_marginal_update_rule, @which_average_energy
+export call_message_update_rule, call_marginal_update_rule, call_average_energy
+export which_message_update_rule, which_marginal_update_rule, which_average_energy
 
 include("targets.jl")
 include("containers.jl")

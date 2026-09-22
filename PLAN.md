@@ -231,26 +231,27 @@ failed confusingly. The keyword form removes the category rather than renaming i
 `@allocate` is the `preallocate` keyword, and `@logscale` is `annotate!(ann, :logscale, v)`,
 an ordinary function call on the annotations sink the body requested as a slot.
 
-**Invocation macros — short, exported.** `@call_rule`/`@call_marginalrule` are typed
-constantly in interactive and teaching use, so the "long but unambiguous" argument that
-applies to once-per-definition macros inverts here. See Educational and interactive use.
+**Invocation macros — exported, and named after what they invoke** (user, Phase 3):
+`@call_message_update_rule`, `@call_marginal_update_rule`, `@call_average_energy`, with
+`@which_*` counterparts and function forms of the same names. An earlier draft kept them
+short (`@call_rule`) because they are typed often at a REPL; the user reversed that, so that
+each invocation mirrors its definition macro and nothing is left generic.
 
 ### Educational and interactive use
 
 A first-class goal, not a by-product, and **built in full in Phase 3** — invocation macros,
-registry queries, `@which_rule`, the coverage matrix and `text/plain`/`text/html` display
+registry queries, `@which_message_update_rule` and its siblings, the coverage matrix and `text/plain`/`text/html` display
 (decided while planning Phase 3). The system is taught with in the BMLIP course at
 TU/e, where invoking rules by hand is a good way to show what message passing actually
 does. The registry is what makes all of this cheap — today's `print_rules_table()` scrapes
 `methods()` through `arg_decl_parts` string offsets, which is why nothing better was ever
 built on it.
 
-- **Manual rule invocation stays first-class.** `@call_rule`/`@call_marginalrule` keep
-  working and keep **short names** — unlike the definition macros they are typed constantly
-  at a REPL, so the `@define_*` verbosity argument runs the other way here. Consider a
-  function-style entry point alongside the macro for interactive use.
-- **Querying the registry**: `rules(NormalMeanVariance)`, `rules(NormalMeanVariance, :out)`,
-  filtering by algorithm, and `@which_rule` (which `RuleSpec` fires for these inputs, with
+- **Manual rule invocation stays first-class.** `@call_message_update_rule`,
+  `@call_marginal_update_rule` and `@call_average_energy` (v6 could not call an average
+  energy by hand at all), each with a function form of the same name.
+- **Querying the registry**: `list_rules(NormalMeanVariance)`, `list_rules(NormalMeanVariance, :out)`,
+  filtering by algorithm, and `@which_message_update_rule` (which `RuleSpec` fires for these inputs, with
   source location). "Does this node support VMP or only structured?" becomes a query,
   because the algorithm axis and the dependency spec are now data.
 - **Rule coverage matrix** — edges × algorithms for a node, cells showing which rules exist.
@@ -291,10 +292,10 @@ it is pure, and which context services it needs. The engine does not branch on `
 it hands the spec its arguments and the spec resolves the path. `rule(...)` is "resolve,
 preallocate, run"; `rule!(buffer, ...)` is "resolve, run".
 
-One object then serves both purposes: what the registry stores for `@which_rule`, the
+One object then serves both purposes: what the registry stores for `@which_message_update_rule`, the
 coverage matrix and `check_rules()` is the same thing that runs, so the two cannot drift
 apart. It can also carry **the body's source text, file and line**, which is what makes
-`@which_rule` able to *show you the rule* rather than merely name it — directly serving the
+`@which_message_update_rule` able to *show you the rule* rather than merely name it — directly serving the
 educational and introspection goals above.
 
 **`RuleSpec` carries no type parameters.** It is a plain immutable struct, every field
@@ -306,7 +307,7 @@ struct RuleSpec
     prealloc::Function     # the lambda from `preallocate = ...`, or `nothing`
     inplace::Bool
     pure::Bool
-    source::String         # body text, for `@which_rule`
+    source::String         # body text, for `@which_message_update_rule`
     file::Symbol
     line::Int
     # + node, target, algorithm, argument spec, dependency spec, required services
