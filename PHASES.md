@@ -17,12 +17,17 @@ relying on one.
 ## Next action
 
 **Phase 3 — `MessagePassingRulesBase`.** Phases 0, 1 and 2 are closed. Phase 3 is where the
-API freezes, so its gating open items come first: **#3, #9–#13 and the RNG contract**. Each now
-has evidence and a **proposed** position in § Phase 3 *Entry brief*.
+API freezes, so its gating open items came first. **They were signed off on 2026-09-22**
+(§ Phase 3 *Entry brief*; decisions in `PLAN.md` § Open items): #3, #9, #10, #11, #12 and RNG
+ownership are resolved. Two loose ends remain, and neither blocks starting:
 
-1. **Sign off the entry brief**, item by item. Accepted items move to RESOLVED in `PLAN.md`
-   in the same commit; rejected ones go back to open with the reason.
-2. Then build the base package test-first, in this order: the `lib/` test harness and CI job,
+- **#13 is parked** by the user. It touches the base package only through the `linalg`
+  context service, so build everything else and **do not freeze `linalg`** until #13 lands.
+  Adding a service later is additive.
+- The **missing-input path** (skip the body and post-rule processors, as v6) is still only
+  proposed. Confirm it before the context contract is frozen.
+
+Build the base package test-first, in this order: the `lib/` test harness and CI job,
    then the registry and `RuleSpec`, then `find_rule` as a total resolution function, then
    `@define_factor_node`, then the rule macros, then the dependency language, and last the
    context and `buffer_like`.
@@ -177,7 +182,8 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       keyword-based macro, body an ordinary lambda over a real `args` object, symbols
       throughout (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members
       `q[:p][k]`, indexed targets `(:m, k)`, body slots
-      `(output, algo, ctx, args, ann, node)` in canonical order, dispatch carried by the
+      `(output, algo, ctx, args, ann, node)` in canonical order *(later reduced to five: the
+      node moved into `ctx.node` at the Phase 3 sign-off, #12)*, dispatch carried by the
       `algorithm` keyword, `@allocate`/`@logscale` deleted. See `PLAN.md` § Rule surface and
       `DISCUSSION.md` §3.14
 - [x] **`RuleSpec` representation decided** (resolved ahead of the spike): **no type
@@ -291,7 +297,8 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       type. **One finding: incoming annotations have no declared route.** The switch rule
       needs the log scales that *arrived* with its messages, but `args` holds message data and
       `ann` is an output sink. Recommend a parallel accessor keyed like `m` —
-      `args.ann_in[:out]` — kept out of dispatch, since an annotation must not select the
+      `args.ann_in[:out]` *(not adopted: at the Phase 3 sign-off `ann` became two-way instead,
+      #12)* — kept out of dispatch, since an annotation must not select the
       mathematics
 - [x] measure, do not just assert: cold first invocation, warm execution, allocations, and
       specialization growth across variadic group sizes and heterogeneous input types.
@@ -400,12 +407,22 @@ omission.
 
 **Goal:** the base package. Macros, types, dispatch, registry, dependency language. No rules.
 
-### Entry brief — PROPOSED, awaiting sign-off
+### Entry brief — signed off 2026-09-22
 
-Evidence gathered for the gating open items, each with a **proposed** position. **None of
-these is a decision.** An item becomes one when it is signed off, at which point its
-`PLAN.md` open item moves to RESOLVED in the same commit and the word PROPOSED goes.
-Citations are as of `545425a2`.
+The items gating the API freeze, each with the evidence gathered from the code and the
+outcome of the sign-off. **The decisions are recorded in `PLAN.md` § Open items**, which is
+the document of record; this section keeps the evidence and says what changed from the
+proposal. Citations are as of `545425a2`.
+
+| item | outcome |
+|---|---|
+| #3 group selection keying | **accepted** as proposed |
+| #9 consumed vs. partition | **accepted** as proposed |
+| #10 buffer ownership | **accepted, strengthened**: storage reuse is unspecified engine-internal behaviour; outsiders copy, outsider getters copy by default, `InputArgumentsAnnotations` deep-copies |
+| #11 capability diagnostic | **proposal rejected**: keep the existing `is_delta_node_compatible` guard, no static table |
+| #12 context services | **changed**: `ann` carries incoming annotations too (no `args.ann_in`); the node moves into `ctx.node` and the `node` slot is dropped; `nodefn` is not a service. The missing-input sub-point is still only proposed |
+| #13 approximations protocol | **parked** by the user; no proposal stands |
+| RNG ownership | **accepted** as proposed |
 
 **#3 — group selection keyed per target, or per (target, factorisation)?**
 - *Evidence.* Selection is keyed per target today; the only factorisation input is
@@ -413,7 +430,7 @@ Citations are as of `545425a2`.
   factorisation: `NormalMixture`/`GammaMixture` reject anything but mean-field
   (`normal_mixture.jl:78-82`) and hard-code members by index, and `Mixture`'s `factornode`
   ignores the factorisation entirely (`mixture.jl:73-96`).
-- *PROPOSED.* Keep it per target. Dependencies belong to the **algorithm**, so selection that
+- *Proposed.* Keep it per target. Dependencies belong to the **algorithm**, so selection that
   genuinely varies with factorisation is a distinct algorithm, not a new syntax axis. That
   keeps the one-way door closed without building anything.
 
@@ -426,7 +443,7 @@ Citations are as of `545425a2`.
   Joint names follow the cluster tuple, which GraphPPL sorts ascending, so they are always in
   interface-declaration order; `q_y_x` appears 16 times, `q_x_y` never, and no rule has a
   reversed twin. There is no permutation logic anywhere.
-- *PROPOSED.* Two separate declarations: **consumed** (a dependency's right-hand side) and
+- *Proposed.* Two separate declarations: **consumed** (a dependency's right-hand side) and
   **partition** (derived from the factorisation, or declared by the algorithm). An auxiliary
   marginal is consumed and never scored. `q[:a, :b]` must list members in interface-declaration
   order, and `check_rules()` rejects any other order at definition time rather than permuting
@@ -442,7 +459,7 @@ Citations are as of `545425a2`.
   `PendingScheduler` queues, and `CVIProjection`'s mutable proposal container
   (`ext/ReactiveMPProjectionExt/rules/marginals.jl:222`). v6 is safe only because rules
   allocate fresh results.
-- *PROPOSED.* Phase 3 defines `preallocate` and `rule!` and nothing about reuse. Every result
+- *Proposed.* Phase 3 defines `preallocate` and `rule!` and nothing about reuse. Every result
   the engine publishes is an **owned snapshot**; reusing a buffer is illegal until the engine
   opts an edge in, and the eligibility rule — which must exclude any edge feeding a retainer
   above — is specified in Phase 4.5/7. The base API freezes without committing the engine.
@@ -452,7 +469,7 @@ Citations are as of `545425a2`.
   (`cvi_projection.jl:138-140`). The only registered error hint is a `MethodError` hint for
   unsupported factor nodes and missing callback handlers (`ReactiveMP.jl:92`), not
   extensions. The positional `DeltaMeta{M, I}(…)` constructor bypasses the compatibility check.
-- *PROPOSED.* The base package provides a static **capability declaration**,
+- *Proposed.* The base package provides a static **capability declaration**,
   `(node, algorithm type) → (package to install, alternative methods)`, emitted by the host
   package (Delta), not by the extension. `find_rule` consults it on the `RuleNotFound` branch
   to produce the actionable error. `CVIProjection` stays a type defined in the host, so the
@@ -465,7 +482,7 @@ Citations are as of `545425a2`.
   `f` or its inverse; nothing calls `getnode()`. There are 46 FastCholesky calls in `src/`
   outside `approximations/`. On the missing-input path, pre-rule annotation processors run,
   the body and post-rule processors do not (`message.jl:678-728`).
-- *PROPOSED.* Adopt `args.ann_in[:sym]`, keyed exactly like `m` and never dispatched on. Four
+- *Proposed.* Adopt `args.ann_in[:sym]`, keyed exactly like `m` and never dispatched on. Four
   services — `product`, `nodefn`, `linalg`, `rng` — declared with `ctx = (...)`. The concrete
   `ctx` type may be parameterised so services specialise; "non-dispatching" means it never
   selects the mathematics. The missing-input path skips both the body and the post-rule
@@ -475,7 +492,7 @@ Citations are as of `545425a2`.
 - *Evidence.* In the files that survive, only three linear-algebra sites remain:
   `unscented.jl:318` (`cholsqrt`) and `rts.jl:20,21` (`cholinv`). `smoothRTS` and
   `local_linearization` take no method argument, so nothing can be threaded through them today.
-- *PROPOSED.* A duck-typed protocol **owned by the approximations package**:
+- *Proposed.* A duck-typed protocol **owned by the approximations package**:
   `approx_cholsqrt(strategy, A)` and `approx_cholinv(strategy, A)`, defaulting to FastCholesky.
   The strategy travels as a field on `Unscented`/`Linearization`; `smoothRTS` gains a trailing
   `strategy` argument. The base package's `linalg` service satisfies the protocol by defining
@@ -485,7 +502,7 @@ Citations are as of `545425a2`.
 - *Evidence.* RNGs live in method and meta objects (`cvi_projection.jl:117`,
   `binomial_polya.jl:25`), are never reseeded or reset, and fall back to the global RNG
   elsewhere.
-- *PROPOSED.* The RNG comes from `ctx.rng` and is owned by the caller. An algorithm that holds
+- *Proposed.* The RNG comes from `ctx.rng` and is owned by the caller. An algorithm that holds
   its own RNG is `pure = false`.
 
 **Exit criteria**
@@ -498,10 +515,11 @@ Citations are as of `545425a2`.
       the in-body macros are deleted, see Phase 0's rule-syntax entry)
 - [ ] registry-backed errors; `check_rules()`, `check_rule_ambiguities()`
 - [ ] CI assertion: `ExponentialFamily` absent from the dependency closure
-- [ ] **resolve open items #9 (beliefs consumed vs entropy partition), #10 (buffer
-      ownership), #11 (capability declaration for missing-extension diagnostics), #12
-      (context service contracts), #13 (approximations protocol)** — all are API decisions
-      that must land before the macro surface freezes
+- [x] **resolve open items #3, #9, #10, #11, #12** — signed off 2026-09-22, see the entry
+      brief and `PLAN.md` § Open items. Body slots are now `(output, algo, ctx, args, ann)`
+- [ ] **#13 (approximations protocol)** — parked by the user; the `linalg` service stays
+      unfrozen until it is settled
+- [ ] missing-input path semantics confirmed (proposed under #12, not yet signed off)
 - [ ] **registry lifecycle test matrix**: fresh-process load after precompilation, both
       extension load orders, definitions in nested modules, supported interactive
       redefinition. Test duplicate signatures separately from ambiguous ones
@@ -598,7 +616,8 @@ Do not start Phase 5 until this passes.
       capability regression**, alongside exported deletions; it needs (a) an explicit breaking
       entry in the release notes, not folded in with the renames, and (b) an error that
       names both the package to install and the method to switch to. First real customer
-      for the diagnostics and host-side capability metadata (open item #11)
+      for the diagnostics. Per #11, that is the host's `is_delta_node_compatible` guard
+      carried over, with the error extended to name the alternative method
 - [ ] `CVIProjection` ships as a weakdep extension of the Delta node package (assumes the
       Phase 0 layout result; if layouts do not collapse, it needs its own package instead)
 - [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `smoothRTS`,
@@ -665,10 +684,11 @@ this phase requires it to pass for release, rather than being its first executio
 
 ## Open items
 
-Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #8 and #14 are
-resolved and #4 is **deferred by decision** (Phase 0; reopened only by a concrete ruleset use
-case). Of the remaining 10, #3 and #9–#13 must be settled before Phase 3's API freezes, and #6
-and #7 are engine integration requirements. #2 remains deferred unless needed. #5
+Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #3, #8, #9, #10,
+#11, #12 and #14 are resolved (#3 and #9–#12 at the Phase 3 sign-off), and #4 is **deferred by
+decision** (Phase 0; reopened only by a concrete ruleset use case). #13 is **parked** by the
+user and holds back only the `linalg` context service. #6 and #7 are engine integration
+requirements. #2 remains deferred unless needed. #5
 (Reactant/StableCholesky) belongs to a separate effort and does not block this rewrite.
 
 ## Structural note

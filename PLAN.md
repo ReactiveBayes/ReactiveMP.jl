@@ -66,16 +66,16 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   absorbs `Marginalisation`/`MomentMatching` — that axis disappears rather than being
   deleted separately. It also absorbs `RequireMessage`/`RequireMarginal`/
   `RequireEverythingFunctionalDependencies` (see Dependencies).
-- **`context` (`ctx`) is infrastructure, never dispatched on**: linear-algebra strategy
-  (replacing 48 global `cholinv` calls; `StableCholesky.jl` supplies strategies +
-  workspace), RNG, output buffers, engine services. Explicit argument, never shared across
-  tasks.
+- **`context` (`ctx`) is infrastructure, never dispatched on**: a reference to the node
+  itself (`ctx.node`), linear-algebra strategy (replacing 48 global `cholinv` calls;
+  `StableCholesky.jl` supplies strategies + workspace), RNG, output buffers, engine
+  services. Explicit argument, never shared across tasks.
 
-  **`ctx` is read-only infrastructure and does not carry annotations.** Annotations are a
-  *mutable output sink* the rule writes to (`AnnotationDict` is a `mutable struct` with
-  `annotate!`); context is immutable state the rule reads. They are separate body slots,
-  `ctx` and `ann`, and merging them is a category error — an earlier draft of this section
-  listed annotations among the context contents, which was wrong. It is an ordinary object that is constructed once and passed down into the
+  **`ctx` is read-only infrastructure and does not carry annotations.** Annotations are
+  their own body slot, `ann`, which the rule both reads (the annotations that *arrived* with
+  its inputs) and writes (`annotate!`); context is immutable state the rule only reads. They
+  are separate slots, and merging them is a category error — an earlier draft of this
+  section listed annotations among the context contents, which was wrong. It is an ordinary object that is constructed once and passed down into the
   rules — most likely held by `MessageMapping` — not a global and not a `ScopedValue`.
   An earlier draft proposed a `ScopedValue` for the default; that was never necessary,
   since a plain default argument does the same job, and it would have raised the Julia
@@ -141,8 +141,12 @@ NamedTuple-backed container is type-stable and allocation-free.
 order:
 
 ```
-(output, algo, ctx, args, ann, node)
+(output, algo, ctx, args, ann)
 ```
+
+(An earlier form had a sixth slot, `node`. It was dropped at the Phase 3 sign-off: nothing
+dispatches on the node, so it lives in the context as `ctx.node`, and a delta rule reaches
+its function as `getnodefn(ctx.node, …)`. See open item #12.)
 
 The macro reads the names written in the lambda and fills the rest. Order is enforced, so
 every rule reads the same way down a file; relaxing that later is easy, tightening it would
@@ -162,7 +166,19 @@ parameter-bag half of the old `meta`). It is *not* the dispatch mechanism: dispa
 omits `algorithm` inherits the node's declared default.
 
 `ctx` and `ann` are deliberately separate: `ctx` is immutable infrastructure the rule
-*reads*, `ann` is a mutable sink the rule *writes*. Merging them is a category error.
+*reads*; `ann` carries annotations in **both** directions — the incoming ones, keyed exactly
+like the inputs (`ann.m[:out]`, `ann.q[:μ]`), and the outgoing sink the rule writes with
+`annotate!(ann, :logscale, v)`. Annotations never take part in dispatch: they must not select
+the mathematics. Merging `ann` into `ctx` is a category error.
+
+```julia
+body = (args, ann) -> begin
+    ls_in = getlogscale(ann.m[:out])   # incoming, arrived with m[:out]
+    ...
+    annotate!(ann, :logscale, ls)      # outgoing
+    result
+end
+```
 
 `@define_factor_node` uses the same vocabulary:
 
@@ -411,9 +427,10 @@ workflow is a project safety policy.
 Add a small set of derivative checks against analytic or finite-difference references,
 covering both the allocating and in-place paths.
 
-**RNG ownership needs its own rule.** `CVIProjection` carries its own RNG and mutable
-proposal state, which sits badly with "carry the API over unchanged". Define who owns the
-RNG, whether it is reset between sweeps, and whether it lives in `ctx` or the algorithm.
+**RNG ownership — decided at the Phase 3 sign-off.** The RNG comes from `ctx.rng` and is
+owned by the caller. An algorithm that carries its own RNG — today `CVIProjection` defaults to
+`MersenneTwister(42)` and `BinomialPolyaMeta` to `default_rng()`, neither ever reset — is
+`pure = false`. `CVIProjection`'s mutable proposal state makes it impure independently.
 
 ### In-place rules
 
@@ -644,8 +661,9 @@ supersedes it) but it moves behind an install.
    naming `CVIProjection` without the package loaded, must produce a message that names the
    package to install *and* the method to switch to. A `MethodError`, or a generic "no rule
    found", is a failure of this requirement. Discovery of loaded rules alone cannot supply
-   this information: capability metadata must be available without loading the extension
-   (open item #11). This is a concrete acceptance test for the diagnostics.
+   this information, which is why the host guards it explicitly with the
+   `is_delta_node_compatible` trait, as v6 already does (open item #11). This is a concrete
+   acceptance test for the diagnostics.
 
 ### CVI projection, and a hypothesis about delta layouts
 
@@ -785,15 +803,18 @@ The dispatch result, ownership contracts and early engine integration are separa
 1. ~~**Rule syntax final form.**~~ **RESOLVED.** The surface is fully keyword-based with an
    ordinary lambda body over a real arguments object, symbols throughout
    (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members as `q[:p][k]`,
-   indexed targets as `(:m, k)`, body slots `(output, algo, ctx, args, ann, node)` in
+   indexed targets as `(:m, k)`, body slots `(output, algo, ctx, args, ann)` (originally
+   with a sixth, `node`, dropped by #12) in
    canonical order, and dispatch carried by the `algorithm` keyword. `@allocate` and
    `@logscale` are deleted rather than renamed. See § Rule surface.
 2. **`aligned` generality** — everything in-tree is `k ↔ k`. `q[:p][f(k)]` extends
    naturally; don't build until something needs it. (Not `q[:p[f(k)]]`, which parses as
    `(:p)[f(k)]` — indexing a `Symbol`. See § Rule surface.)
-3. **Per-(target, factorisation) group selection** — assumed per-target; all four in-tree
-   cases work because the mixtures pin their factorisation. One-way door in the syntax.
-   *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
+3. ~~**Per-(target, factorisation) group selection.**~~ **RESOLVED at the Phase 3
+   sign-off: per target.** No in-tree rule chooses group members from the factorisation —
+   the mixtures reject anything but mean-field, and `Mixture` ignores the factorisation. Since
+   dependencies belong to the algorithm, selection that genuinely varies with factorisation is
+   written as a distinct algorithm. The door stays open without a syntax axis.
 4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`). **DEFERRED in Phase 0.**
    A downstream package that wants its own rule for a standard node and edge declares its own
    algorithm and gets it, with no shadowing and no ambiguity, because the algorithm is part of
@@ -824,7 +845,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    and shared point/weight machinery — **standalone numerical utilities that do not depend
    on the base package**. Old CVI and unused methods are deleted; CVI projection belongs to
    the Delta package and its extension. See § Approximations are utilities, not algorithms.
-9. **Beliefs consumed vs. the partition whose entropy is counted.** An earlier draft
+9. ~~**Beliefs consumed vs. the partition whose entropy is counted.**~~ An earlier draft
    required all requested marginals to form the entropy partition. That conflated two
    things: a rule may consume an *auxiliary* belief that is
    not an entropy cluster — `RequireMarginalFunctionalDependencies` already does exactly
@@ -833,9 +854,16 @@ The dispatch result, ownership contracts and early engine integration are separa
    user-supplied factorisation, and **whether `q[:a, :b]` and `q[:b, :a]` are distinct ordered
    inputs or require permuting the joint** — canonicalising the names is not sufficient.
    **Decide before the macro surface freezes.**
-   *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
+   **RESOLVED at the Phase 3 sign-off.** Two separate declarations: **consumed** (a
+   dependency's right-hand side) and **partition** (derived from the factorisation, or
+   declared by the algorithm). An auxiliary marginal is consumed and never scored — as v6's
+   `RequireMarginal` and `ContinuousTransition(:a)` already behave. A joint lists its members in
+   interface-declaration order (`q[:y, :x]` when `y` is declared first); `check_rules()` rejects
+   any other order at definition time and nothing is ever permuted. Every in-tree joint already
+   follows that order. A user factorisation that conflicts with an algorithm's declared
+   partition is an activation-time error naming the algorithm.
 
-10. **Buffer ownership, as distinct from buffer allocation.** `preallocate` answers *how to
+10. ~~**Buffer ownership, as distinct from buffer allocation.**~~ `preallocate` answers *how to
     create* storage, not *when it may be reused*. Retainers beyond the equality chain:
     `DeferredMessage` caches its result, subjects retain recent messages, and
     `InputArgumentsAnnotations` stores references to inputs *and* results — so recording a
@@ -845,17 +873,35 @@ The dispatch result, ownership contracts and early engine integration are separa
     and behaviour when dimension or element type changes. Note **poisoning is not
     sufficient** — a stale reference can read a legitimately rewritten buffer and see
     plausible but wrong values. Test retention across multiple updates.
-    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
+    **RESOLVED at the Phase 3 sign-off.** Buffers and published messages are **engine
+    internals**. Whether the engine reuses the storage behind a message, and when, is
+    decided by the engine alone and is **deliberately unspecified** — it may or may not
+    happen, and may change between releases. Anything outside the engine (callbacks,
+    subscribers, user code) must copy what it wants to keep; any getter the engine offers to
+    outsiders **copies by default**. `InputArgumentsAnnotations` records **deep copies** of
+    its inputs and result. Phase 3's base package defines only `preallocate`/`rule!`; the
+    engine-internal retainers (`DeferredMessage` cache, equality-chain caches, subjects) are
+    the engine's own eligibility problem, settled in Phases 4.5/7.
 
-11. **The missing-capability diagnostic needs metadata beyond loaded rules.** A registry
+11. ~~**The missing-capability diagnostic needs metadata beyond loaded rules.**~~ A registry
     that only discovers *loaded* modules cannot know which *unloaded* package supplies a
     missing capability — yet the CVI regression above is accepted on the condition that the error
     names the package to install. Needs an explicit capability declaration available in
     the already-loaded host (such as Delta), or a static table. Its representation remains
     open; placing it only in the unloaded extension would not solve the problem.
-    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
+    **RESOLVED at the Phase 3 sign-off: no new mechanism.** v6 already solves this with an
+    explicit guard, and the design keeps it. The host (Delta) defines a trait
+    `is_delta_node_compatible(method)`, `Val(false)` by default, and checks it when the
+    method is attached (`DeltaMeta(; method)`, `delta.jl:19-32`). A method the host knows
+    about but whose implementation lives in an extension gets a specialised error in the host
+    — `cvi_projection.jl:138-140` names `ExponentialFamilyProjection` — and the extension
+    flips the trait to `Val(true)` (`ReactiveMPProjectionExt.jl:64`). The static capability
+    table proposed in the entry brief was rejected as redundant. Two small follow-ups when it
+    moves: the error must also name the method to switch to (today it names only the
+    package), and the check belongs in an inner constructor, since the positional
+    `DeltaMeta{M, I}(…)` bypasses it (nothing in-tree calls it that way).
 
-12. **Context service contracts.** Phase 0 turned both hard cases into signatures, each
+12. ~~**Context service contracts.**~~ Phase 0 turned both hard cases into signatures, each
     demonstrated as a standalone call with no graph and no Rocket:
     `product : (left, right) -> (dist, logscale::Real)` and
     `nodefn : (ctx, target) -> a callable of the free arguments only`. Neither carries an
@@ -865,14 +911,27 @@ The dispatch result, ownership contracts and early engine integration are separa
     like `m` — `args.ann_in[:out]` — kept out of dispatch, because an annotation must never
     select the mathematics. Settle the representation before the macro surface freezes. Also clarify that "context is non-dispatching" means it does not select
     the mathematical rule — its concrete services may still specialise for efficiency.
-    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
+    **RESOLVED at the Phase 3 sign-off.**
+    - Incoming annotations go through the existing `ann` slot, which now carries both
+      directions: read `ann.m[:out]` / `ann.q[:μ]`, write `annotate!(ann, …)`. The separate
+      `args.ann_in` accessor is not adopted. See § Rule surface.
+    - The context holds a reference to the node, `ctx.node`, so the `node` body slot is
+      dropped: slots are `(output, algo, ctx, args, ann)`. Nothing dispatches on the node.
+    - `nodefn` is therefore not a service: a delta rule calls `getnodefn(ctx.node, …)`.
+    - Services a rule may declare with `ctx = (...)`: `node`, `product`, `linalg`, `rng`.
+      The concrete `ctx` type may be parameterised so services specialise.
+    - The Cholesky side of `linalg` is not designed yet — it is parked together with #13.
+    - Still only *proposed*, not signed off: on the missing-input path, the body and the
+      post-rule annotation processors are both skipped, as in v6, pinned by a test.
 
 13. **The approximation package's numerical protocol is unspecified.** Passing a context
     value need not itself introduce a package dependency, but requiring Base-owned types
     or services would violate the boundary. Define the minimal protocol it accepts, for
     example a factorisation strategy and workspace, without depending on
     `MessagePassingRulesBase`. The representation remains open until Phase 3.
-    *PROPOSED position with evidence: `PHASES.md` § Phase 3 Entry brief — not yet decided.*
+    **Parked by the user at the Phase 3 sign-off** — no proposal is on the table. The entry
+    brief's `approx_cholinv`/`approx_cholsqrt` idea was set aside for further thought, not
+    rejected; do not treat it as the plan.
 
 14. ~~**A complete disposition inventory is missing.**~~ **RESOLVED in Phase P.**
     `INVENTORY.md` assigns a destination or a deliberate deletion to all **231** entities —

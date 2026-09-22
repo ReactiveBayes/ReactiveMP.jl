@@ -371,7 +371,9 @@ sampling-based in the default install; or treat it purely as a diagnostics probl
 the release notes rather than one line among the renames, and an error that names both the
 package to install and the method to switch to. This tests the diagnostics, but loaded-rule
 discovery alone cannot identify an unloaded extension. Capability metadata must be available
-in the already-loaded host or a static table (`PLAN.md` item #11).
+in the already-loaded host or a static table (`PLAN.md` item #11). *(Settled at the Phase 3
+sign-off, §3.16: the host's existing `is_delta_node_compatible` guard already is that
+metadata; no table.)*
 
 **The layout hypothesis (open, moderate confidence).** `CVIProjection` currently spans the
 type (in `approximations/`), rules (in the extension) and a *layout* (also in the extension,
@@ -790,7 +792,8 @@ scales that *arrived* with its messages. But `args` holds message **data** — t
 `ann` is an output sink the rule writes to. So an annotation that arrives with a message has
 nowhere to go. Recommendation: a parallel accessor keyed exactly like `m`,
 `args.ann_in[:out]`, kept out of dispatch, because an annotation must never select the
-mathematics. Open item #12 should carry this.
+mathematics. Open item #12 should carry this. *(Not adopted: at the Phase 3 sign-off `ann`
+became a two-way slot instead, and the node moved into `ctx.node`, §3.16.)*
 
 **3. The delta-layout collapse is real but partial.** See below.
 
@@ -865,6 +868,54 @@ reaches into the engine for today — the single leak in the rules tree. `nodefn
 delta backward rule towards `in_k` needs: every other input pinned to its current value, one
 free argument left, delivered as a callable rather than a node type.
 
+*(Revised at the Phase 3 sign-off, §3.16: `nodefn` is not a service. The node itself sits in
+the context as `ctx.node` and the rule calls `getnodefn(ctx.node, …)`; the callable-of-free-
+arguments shape is what that call returns.)*
+
+### 3.16 The Phase 3 sign-off
+
+The open items gating the API freeze were brought to the user as an entry brief (evidence
+from the code, plus a proposed position each — `PHASES.md` § Phase 3). Outcomes, and the
+reasons where the user changed or rejected the proposal:
+
+- **#3 and #9 accepted as proposed.** Group selection is keyed per target; factorisation-
+  dependent selection is a distinct algorithm. Consumed beliefs and the scored partition are
+  separate declarations, and a joint must list its members in interface-declaration order,
+  rejected otherwise rather than permuted.
+- **#10 accepted and made stricter (user).** The proposal said published results are owned
+  snapshots and reuse is opt-in per edge. The user's framing is sharper: preallocated
+  buffers and messages are **engine internals**, and whether the engine reuses the storage
+  behind a message is its own business, **deliberately unspecified** — it may or may not
+  happen. So the contract is placed on the *outsider*: anything outside the engine that keeps
+  a message must copy it, and a getter the engine offers to outsiders copies by default.
+  `InputArgumentsAnnotations`, which today stores references to inputs and results, must
+  deep-copy them. This is simpler than specifying eligibility, because it promises nothing
+  that would later constrain the engine.
+- **#11: the static capability table was rejected (user).** v6 already solves this. The host
+  defines `is_delta_node_compatible(method)`, `Val(false)` by default, checked when the method
+  is attached (`DeltaMeta(; method)`); a method whose implementation lives in an extension
+  gets a specialised error in the host naming the package (`cvi_projection.jl:138-140`), and
+  the extension flips the trait. That *is* capability metadata available in the loaded host —
+  a registry-level table would duplicate it. Two follow-ups carried into the move: the error
+  must also name the method to switch to, and the check belongs in an inner constructor,
+  since the positional `DeltaMeta{M, I}(…)` bypasses it.
+- **#12 changed (user).** Two simplifications:
+  - Incoming annotations do not get a parallel `args.ann_in` accessor. The existing `ann`
+    slot carries both directions — read `ann.m[:out]`, write `annotate!(ann, …)` — which
+    was the user's choice among three options (one two-way slot; a read-only `ann` plus a
+    separate writable sink; a read-only `ann` with outgoing annotations returned alongside
+    the result).
+  - The **node moves into the context** as `ctx.node`. Nothing dispatches on it, so a slot
+    was never needed; the body slots shrink to `(output, algo, ctx, args, ann)`. It follows
+    that `nodefn` is not a service at all: `getnodefn(ctx.node, …)`.
+  The remaining services are `node`, `product`, `linalg`, `rng`. The missing-input path
+  (skip body and post-rule processors, as v6) is still only proposed.
+- **#13 parked (user)** — "I will sleep over it". The brief's `approx_cholinv`/
+  `approx_cholsqrt` protocol owned by the approximations package is neither accepted nor
+  rejected. Until it is settled, the `linalg` context service is not frozen.
+- **RNG accepted as proposed.** `ctx.rng`, owned by the caller; an algorithm holding its own
+  RNG is `pure = false`.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -932,6 +983,10 @@ Claims the assistant made that were **wrong** and should not be revived:
     allocating body takes `(args)` and an in-place body takes `(output, args)`. It adds no
     distinct spec types either, since the body type is already unique per rule. A flag hoisted
     into a signature is pure cost and a downstream-instability trap.
+
+18. **"#11 needs a static capability table in the base registry."** Redundant. The host
+    already guards this with the `is_delta_node_compatible` trait, specialised in the host
+    with an error naming the package, and flipped by the extension. See §3.16.
 
 ---
 
@@ -1030,7 +1085,7 @@ The original discussion left these questions:
    dependency-to-stream wiring for variadic groups, and the `Message`/`DeferredMessage`
    envelope changes. Wants its own session.
 
-Review added #9–#13: belief/entropy separation, buffer ownership, capability metadata,
+Review added #9–#13 (all but #13 settled at the Phase 3 sign-off, §3.16): belief/entropy separation, buffer ownership, capability metadata,
 context services and the numerical protocol. These block API freeze, not preparation or
 the spike. #14 was the preparation inventory, resolved in Phase P. Purity/RNG contracts and derivative checks
 are separate requirements. Reactant/StableCholesky (#5) remain a separate effort; mixture
