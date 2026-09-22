@@ -1,0 +1,23 @@
+# Phase 0 -- worked allocation example
+julia = 1.10.12
+
+## 1. `rule` and `rule!` agree
+  rule(...)  mean = [1.0, 2.0]  precision diag = [2.0, 2.0]
+  rule!(...) mean = [1.0, 2.0]  precision diag = [2.0, 2.0]
+  identical: true
+
+## 2. in-place is not the same property as non-allocating
+  rule(...)          allocates  176 bytes  <- it builds the buffer, by definition
+  rule!(buffer, ...) allocates    0 bytes  <- the kernel itself
+
+  PLAN.md § Verification asks for three distinct levels, never conflated:
+  kernel (== 0), rule with a provided buffer (== 0), full sweep (golden + tol).
+  The first two are the two numbers above; the third belongs to the engine.
+
+## 3. `output` and `args.m[:out]` coexist
+  the body reads the inbound message on its own edge while writing the buffer;
+  result depends on both: mean(prev)=[0.0, 0.0] mean(μ)=[2.0, 4.0] -> [1.0, 2.0]
+
+## 4. The output type is pinned by the lambda parameter, not by macro analysis
+  passing a wrong `output` gives MethodError -- Julia's own check
+

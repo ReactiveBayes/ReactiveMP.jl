@@ -1,0 +1,38 @@
+# Phase 0 -- cold, warm, allocations, specialization growth
+julia = 1.13.0  (arm64-apple-darwin25.6.0)
+
+## 1. Cold first invocation (compile time for one rule, seconds)
+   first call, including compilation : 0.0076 s
+   second call                       : 0.00000388 s
+   Node, rule and call site are all created at run time, so the first call pays
+   for compilation rather than having it absorbed by `main`.
+
+## 2. Warm execution
+   minimum     1.92 ns   median     2.00 ns   allocations 0
+
+## 3. Heterogeneous input types -- does the rule still specialise cleanly?
+   Float64  -> NormalMeanVariance{Float64}        alloc=0
+   Float32  -> NormalMeanVariance{Float32}        alloc=0
+   BigFloat -> NormalMeanVariance{BigFloat}       alloc=0
+   Number types propagate through without a widening. That is the property that
+   makes ForwardDiff.Dual work through a rule, which PLAN.md § Testing makes the
+   default-on `check_type_promotion`.
+
+## 4. Specialization growth across variadic group sizes
+   group sizes exercised            : [2, 3, 4, 5, 8, 16]
+   message_passing_rule specializations before : 26
+   message_passing_rule specializations after  : 46
+   added                                       : 20
+
+   Each distinct group size is a distinct tuple type, so it is a distinct
+   specialization -- exactly as `ManyOf{N,T}` is today. This is a property of
+   the tuple, not of the new design, and it is the price of a statically known
+   group arity. PLAN.md § Dependencies already requires that arity be static for
+   the same reason.
+
+## 5. Combined: group size x element type
+   combinations exercised : 4
+   specializations now    : 54
+   The growth is multiplicative in (group size x element type), which is worth
+   knowing before Phase 5 ports 490 rules. It is not new -- v6 has it too -- but
+   it is the number to watch if compile time becomes the complaint.

@@ -1,0 +1,25 @@
+# Phase 0 -- fallback contract and the ruleset axis
+julia = 1.10.12
+
+## 1. Missing rule vs broken rule are distinguishable
+  no rule       -> Main.Rules.Machinery.RuleNotFoundError
+  broken rule   -> ErrorException: this rule is broken, but it WAS found
+
+## 2. A fallback catches the missing rule and NOT the broken one
+  fallback invocations after a MISSING rule : 1
+  fallback invocations after a BROKEN rule  : 0
+  the broken rule's exception propagated    : true
+
+## 3. Open item #4 -- the ruleset axis
+  same node, same edge, under BP                   : NormalMeanVariance{Float64}(μ=0.0, v=1.0)
+  same node, same edge, under a downstream algorithm: PointMass{Float64}(-42.0)
+
+  DECISION: defer. A downstream package that wants its own rules for a standard
+  node and edge declares its own algorithm and gets them, with no shadowing and
+  no ambiguity, because the algorithm is part of the signature. The piracy
+  argument for the axis is already dead (DISCUSSION.md §5: the check is
+  permanently vacuous for rules). Nothing in tree needs scoped rule tables, and
+  the fallback contract above is specified independently of the axis, as
+  PHASES.md requires. Revisit only on a concrete use case -- the cost of adding
+  an axis later is a new keyword, not a resurfacing.
+

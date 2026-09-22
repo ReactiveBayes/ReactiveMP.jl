@@ -31,7 +31,7 @@ nothing about the version this package supports.
 | — | Initial design documented in `PLAN.md`, `DISCUSSION.md` | **done; open decisions below** |
 | — | External design review; contradictions reconciled | **done** |
 | P | Prep: disposition inventory, layout and environment decisions | **done** |
-| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **in progress — 5/13** |
+| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **in progress — 11/13** |
 | 1 | Circulate for external feedback | not started |
 | 2 | Tooling migration on ReactiveMP | not started *(parallel with 1)* |
 | 3 | `MessagePassingRulesBase` | not started |
@@ -136,17 +136,31 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       bodies and user-supplied services separately. **Done** — `spike/dispatch/03_devirt.jl`
       measures routing on a body that allocates nothing, so routing and body costs are never
       mixed; JET reports nothing. Services are exercised separately in `06_services.jl`
-- [ ] record whether to include the ruleset axis (open item #4) or defer it pending a
-      concrete use case. If included, specify precedence, termination and fallthrough
-- [ ] **specify existing rule-fallback behavior regardless of the ruleset decision**:
+- [x] record whether to include the ruleset axis (open item #4) or defer it pending a
+      concrete use case. **DEFER** — `spike/dispatch/04_fallback.jl` shows a downstream
+      package defining its own algorithm and getting its own rule for a *standard* node and
+      edge, with no shadowing and no ambiguity, because the algorithm is part of the
+      signature. The piracy argument for the axis was already dead (`DISCUSSION.md` §5).
+      Nothing in tree needs scoped rule tables, and adding the axis later is a new keyword
+      rather than a resurfacing
+- [x] **specify existing rule-fallback behavior regardless of the ruleset decision**:
       distinguish a missing rule from an exception inside a selected rule. Such an
-      exception must propagate, never trigger fallback
-- [ ] if the axis stays, a fallback chain adds no measurable routing overhead versus a
-      direct call. **No fixed tolerance is set, deliberately**: record cold, warm and
-      allocation figures for both paths and judge them side by side. The requirement is
-      equivalent dispatch behaviour plus measured overhead, not byte-identical generated
-      code — and an earlier wording appealed to "the stated benchmark tolerance", which no
-      document ever stated
+      exception must propagate, never trigger fallback.
+      **Contract: resolution is a separate, total function.** `find_rule` returns a
+      `RuleSpec` or a `RuleNotFound`; it never throws and never runs anything. The fallback
+      is consulted on the `RuleNotFound` branch only, which is decided *before* any body
+      runs, so there is no `try` anywhere near the body and an exception from a selected rule
+      cannot reach the fallback even deliberately. A `try`/`catch` around execution would get
+      this wrong silently, by turning a broken rule into a missing one. Applies uniformly to
+      message rules, marginal rules and average energy — **v6's asymmetry is removed**, where
+      `rule` returns a sentinel and `marginalrule` throws, so marginal rules cannot have a
+      fallback at all for no stated reason. Verified in `spike/dispatch/04_fallback.jl`
+- [x] if the axis stays, a fallback chain adds no measurable routing overhead versus a
+      direct call. **Moot — the axis is deferred**, so there is no chain to measure. Recorded
+      rather than silently dropped: if #4 is ever reopened, this gate comes with it, and the
+      requirement is equivalent dispatch behaviour plus measured overhead, not
+      byte-identical generated code. **No fixed tolerance is set, deliberately** — an earlier
+      wording appealed to "the stated benchmark tolerance", which no document ever stated
 - [x] **rule syntax decided** (open item #1, resolved ahead of the spike): fully
       keyword-based macro, body an ordinary lambda over a real `args` object, symbols
       throughout (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members
@@ -237,14 +251,33 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       `with_functional_dependencies` (`dependencies.jl:119-126`) passes four, so dispatch
       falls through to the generic method, whose first statement is
       `getlocalclusters(factornode)` — and `MixtureNode` has no such method
-- [ ] one worked allocation example end to end, using the intended `preallocate` lowering
-      written by hand (the spike does not implement macros)
-- [ ] the two hard context services as standalone calls (open item #12): the mixture switch
+- [x] one worked allocation example end to end, using the intended `preallocate` lowering
+      written by hand (the spike does not implement macros). `spike/dispatch/05_allocate.jl`:
+      `rule` and `rule!` agree numerically, the kernel with a provided buffer allocates
+      **0 bytes** while the allocating form allocates 176 (its buffer — in-place is not the
+      same property as non-allocating), the body uses `output` and `args.m[:out]` together,
+      and a wrong `output` is a `MethodError` from Julia rather than from macro analysis
+- [x] the two hard context services as standalone calls (open item #12): the mixture switch
       rule with a product-and-log-scale service, and a delta rule using a captured function
-      with fixed arguments — both with no graph construction and no Rocket
-- [ ] measure, do not just assert: cold first invocation, warm execution, allocations, and
-      specialization growth across variadic group sizes and heterogeneous input types
-      (many key sets and input types may increase compiled specializations)
+      with fixed arguments — both with no graph construction and no Rocket.
+      `spike/dispatch/06_services.jl` turns both into signatures:
+      `product : (left, right) -> (dist, logscale::Real)` and
+      `nodefn : (ctx, target) -> callable of the free arguments`, neither carrying an engine
+      type. **One finding: incoming annotations have no declared route.** The switch rule
+      needs the log scales that *arrived* with its messages, but `args` holds message data and
+      `ann` is an output sink. Recommend a parallel accessor keyed like `m` —
+      `args.ann_in[:out]` — kept out of dispatch, since an annotation must not select the
+      mathematics
+- [x] measure, do not just assert: cold first invocation, warm execution, allocations, and
+      specialization growth across variadic group sizes and heterogeneous input types.
+      `spike/dispatch/07_measure.jl`, on the 1.10 floor: cold **5.8 ms** to compile one rule,
+      warm **1.33 ns** at 0 allocations, and `Float64`/`Float32`/`BigFloat` all propagate
+      without widening or allocation — the property that makes `ForwardDiff.Dual` work
+      through a rule. Specialization growth: six group sizes add 20 specializations, and
+      growth is **multiplicative in (group size × element type)**. That is a property of the
+      tuple rather than of the new design — `ManyOf{N,T}` has it today — and it is the price
+      of the statically known group arity `PLAN.md` § Dependencies already requires. It is
+      the number to watch if compile time becomes the complaint in Phase 5
 
 **Decision checkpoints:** #4 (include or defer rulesets) and
 evidence for #12 (context services; the final contract is due in Phase 3).
