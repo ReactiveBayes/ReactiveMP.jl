@@ -327,13 +327,64 @@ algorithms out of the core. Sorting today's 28 deps:
 |---|---|---|
 | `MessagePassingRulesBase` | macros, `Message`/`Marginal`, targets, algorithms, context, registry, dependency language, `buffer_like` | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
 | `StandardMessagePassingRules` | standard distribution nodes + arithmetic (`+`, `-`, `*`, dot) | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
-| ~~`MessagePassingApproximations`~~ | **questioned — see Open item #8; likely folds into a `DeltaNode` package** | `FastGaussQuadrature`, `HCubature`, `Optim`, `ForwardDiff`, `DiffResults` |
+| `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `CVI`, CVI projection, optimizers, `smoothRTS`. **Standalone — does *not* depend on the base package** | `ForwardDiff`, `DiffResults`, `Distributions`, `Random`, `LinearAlgebra` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
 | `ReactiveMP` | engine | `Rocket`, `UUIDs` |
 
 The base package is genuinely thin. Two current deps are single-node-specific and should
 follow their nodes out: `Tullio` (only `DiscreteTransition`) and `PolyaGammaHybridSamplers`
 (only the Pólya nodes).
+
+### Approximations are utilities, not algorithms
+
+`MessagePassingRulesApproximations` is **not** part of the algorithm hierarchy and does not
+depend on `MessagePassingRulesBase`. They are siblings. "How do I approximate this integral"
+is a numerical utility; "which message update scheme am I running" is an algorithm. The
+delta node's algorithm *uses* `Unscented`; it is not `Unscented`. Keeping them separate
+leaves the numerics usable outside this ecosystem and keeps the dependency graph flat.
+
+Node packages (Delta, Flow) depend on both.
+
+**Measured disposition of `src/approximations/` (~1922 lines).** Deleting the unused parts
+is what actually removes the heavy cubature dependencies — repackaging them would not have.
+
+| file / symbol | fate | evidence |
+|---|---|---|
+| `unscented.jl`, `linearization.jl`, `cvi.jl`, `cvi_projection.jl`, `optimizers*`, `approximations.jl`, `shared.jl` | → `MessagePassingRulesApproximations` | used by delta + flow |
+| `rts.jl` (`smoothRTS`) | → same package | `rules/delta/unscented/marginals.jl:25`, `rules/delta/linearization/marginals.jl:27` |
+| `gausshermite.jl` (`ghcubature`) | → Pólya node package | only user is `multinomial_polya` |
+| `sphericalradial.jl` (`srcubature`) | **delete** | no consumer |
+| `gausslaguerre.jl` (`glcubature`) | **delete** | no consumer |
+| `importance.jl` | **delete** | no consumer |
+| `laplace.jl` | **delete** | no consumer |
+
+Dependency consequences: **`Optim` leaves ReactiveMP entirely** (only `laplace.jl` used it);
+`FastGaussQuadrature` follows `ghcubature` to the Pólya package; `DomainIntegrals` and
+`HCubature` go to `MessagePassingRulesTestUtils` (they are used by the rule-comparison
+quadrature in `src/rule.jl:1438`, which is test machinery); `DomainSets` stays with
+`StandardMessagePassingRules` (two rules use it: `normal_mean_variance/var.jl`,
+`gamma_shape_rate/a.jl`). The surviving approximations need **no cubature package at all**.
+
+**API: keep it, do not redesign.** The functional surface carries over as-is —
+`approximate_meancov`, `approximate_kernel_expectation`, `getpoints`/`getweights`,
+`unscented_statistics`, `smoothRTS` — with `ctx` threaded in where `cholinv` is currently
+called globally. Prettifying only; a redesign is explicitly out of scope for now.
+
+**Deletions take their tests with them** (`test/approximations/{importance,laplace}_tests.jl`,
+parts of `getpoints_tests.jl`/`shared_tests.jl`). Skim them first — a test may be the only
+record of intended behaviour if anyone ever wants these back.
+
+### Licensing — known, accepted, deferred
+
+`PolyaGammaHybridSamplers` is **GPL-3** and is a plain `[deps]` entry, while ReactiveMP
+ships an MIT `LICENSE`. Two nodes use it: `multinomial_polya.jl` and
+`rules/binomial_polya/beta.jl`. This is a real conflict on `main` today and it propagates
+downstream to RxInfer.
+
+**Decision: live with it.** It has been the situation for over a year; this rewrite resolves
+it rather than a separate fix. The resolution is a side effect of the split — the Pólya
+nodes move to their own package, which may be GPL-3, and ReactiveMP goes back to being
+honestly MIT.
 
 **Hard constraint: `MessagePassingRulesBase` must not depend on `ExponentialFamily`.**
 BayesBase exists precisely to hold this machinery. Where a needed piece is missing from
@@ -369,8 +420,9 @@ to the table above follow: `DomainSets` does **not** move to the approximations 
    test-first.
 3. `StandardMessagePassingRules` — standard distribution nodes plus arithmetic (`+`, `-`,
    `*`, dot).
-4. Non-standard nodes spinning out into their own packages — Delta (which likely absorbs
-   the approximation methods, see Open item #8), Autoregressive, GP, BIFM, Flow, …
+4. `MessagePassingRulesApproximations`, then non-standard nodes spinning out into their own
+   packages — Delta, Flow, Autoregressive, GP, BIFM, Pólya (which also resolves the
+   licensing conflict), …
 5. ReactiveMP engine rewritten against the new base; tooling migrated (ReTestItems, Runic).
 
 This work spans multiple sessions and wants external feedback. Carry it on a long-lived
@@ -418,15 +470,11 @@ review is most valuable, because it is the one decision that cannot be walked ba
    Pin current behaviour with a regression test before touching.
 7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
-8. **Does `MessagePassingApproximations` exist at all?** Introduced by the assistant, never
-   explicitly agreed, and the measured evidence is against it as a *standalone* package.
-   `Unscented` and `Linearization` are used only by the delta and flow nodes; `CVI` only by
-   delta. And `GaussHermite`, `SphericalRadial`, `GaussLaguerre`, `Laplace`,
-   `ImportanceSampling`, `rts_smoother`, `srcubature`, `glcubature` have **no consumer in
-   `src/` outside `src/approximations/` itself** — tests but no users; `ghcubature` has
-   exactly one (`multinomial_polya`). So it looks like the delta node's implementation
-   detail rather than a general-purpose package. **Audit `src/approximations/` (~1922 lines)
-   for dead code before carrying any of it across** — this may be another `MomentMatching`.
+8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as
+   `MessagePassingRulesApproximations`, holding `Unscented`/`Linearization`/`CVI`/`smoothRTS`
+   — but as **standalone numerical utilities that do not depend on the base package**, not as
+   algorithms. The unused methods are deleted rather than packaged. See § Approximations are
+   utilities, not algorithms.
 
 ## Migration
 

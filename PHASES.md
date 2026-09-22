@@ -28,7 +28,7 @@ answered, because every later decision assumes it passes.
 | 3 | `MessagePassingRulesBase` | not started |
 | 4 | `MessagePassingRulesTestUtils` | not started |
 | 5 | `StandardMessagePassingRules` | not started |
-| 6 | Node packages (Delta incl. approximations, AR, GP, BIFM, Flow) | not started |
+| 6 | `MessagePassingRulesApproximations` + node packages | not started |
 | 7 | ReactiveMP engine rewrite | not started *(under-planned — wants its own design session)* |
 
 ---
@@ -139,18 +139,25 @@ it to surface rules that were already wrong.
 
 ---
 
-## Phase 6 — Node packages
+## Phase 6 — Approximations and node packages
 
 **Exit criteria**
-- [ ] **first: audit `src/approximations/` for dead code** — `GaussHermite`,
-      `SphericalRadial`, `GaussLaguerre`, `Laplace`, `ImportanceSampling`, `rts_smoother`,
-      `srcubature`, `glcubature` have no consumer in `src/` outside that directory
-- [ ] resolve Open item #8: standalone approximations package, or fold into `DeltaNode`
-      (measured evidence favours folding — they are used only by delta and flow)
-- [ ] non-standard nodes spun out: Delta, Autoregressive, GP, BIFM, Flow, …
+- [ ] **delete first, package second** — `sphericalradial.jl`, `gausslaguerre.jl`,
+      `importance.jl`, `laplace.jl` have no consumer in `src/`; remove them and their tests
+      (skim the tests first, they may be the only record of intended behaviour)
+- [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `CVI`, CVI
+      projection, optimizers, `smoothRTS`, `approximations.jl`, `shared.jl`.
+      **Standalone — must not depend on `MessagePassingRulesBase`.** Utilities that
+      algorithms use, not algorithms. Deps: `ForwardDiff`, `DiffResults`, `Distributions`,
+      `Random`, `LinearAlgebra` — no cubature package
+- [ ] API carried over as-is and prettified, **not redesigned**; `ctx` threaded where
+      `cholinv` is currently global
+- [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
+- [ ] confirm `Optim` no longer appears anywhere
+- [ ] non-standard nodes spun out: Delta, Flow, Autoregressive, GP, BIFM, Pólya, …
+- [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
+      becomes honest again (see `PLAN.md` § Licensing)
 - [ ] impure algorithms (BIFM, CVI) carry the `pure = false` marker
-
----
 
 ## Phase 7 — ReactiveMP engine rewrite
 
@@ -176,7 +183,7 @@ Known scope, incomplete:
 
 ## Open items
 
-Tracked in `PLAN.md` § Open items. Current count: 8. Item #4 (ruleset axis) is the
+Tracked in `PLAN.md` § Open items. 8 listed, #8 resolved, so 7 live. Item #4 (ruleset axis) is the
 weakest-supported — its piracy argument died with the empirical finding in
 `DISCUSSION.md` §5.
 

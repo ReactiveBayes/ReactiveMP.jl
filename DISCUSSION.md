@@ -288,6 +288,54 @@ in their own package, which drags seven heavy numeric deps out of the core.
 `ExponentialFamily`. BayesBase exists precisely for this.** If something is missing from
 BayesBase, add it to BayesBase.
 
+### 3.9b Approximations — a package that changed shape twice
+
+The assistant proposed `MessagePassingApproximations` off the back of the user's unease
+about depending on cubature packages ("old… huge… only create extra dependencies"). Since
+`algorithm` makes approximation methods first-class values, the inference was that they
+could be lifted out wholesale, taking seven heavy numeric deps with them. **This was never
+explicitly agreed and was presented in the package table as if settled — an overstatement.**
+
+Checking actual usage changed the picture twice.
+
+First: `Unscented` and `Linearization` are used only by the delta and flow nodes, `CVI` only
+by delta, and `GaussHermite`, `SphericalRadial`, `GaussLaguerre`, `Laplace`,
+`ImportanceSampling`, `srcubature`, `glcubature` have **no consumer in `src/` outside
+`src/approximations/` itself** — tests but no users. So a large fraction was dead code, and
+the heavy deps could be removed by *deleting* rather than *repackaging*.
+
+Second, a correction: the assistant reported `rts_smoother` as unused. **That name does not
+exist** — the function is `smoothRTS`, and it is load-bearing, used by
+`rules/delta/unscented/marginals.jl` and `rules/delta/linearization/marginals.jl`. A bad
+grep, not a real finding.
+
+**User's decision:** keep `Unscented`, `Linearization`, `CVI` (plus `smoothRTS`) in a
+`MessagePassingRulesApproximations` package that delta and flow depend on; delete the rest
+outright; `ghcubature` follows `multinomial_polya` into the Pólya node package.
+
+**User's decision on layering, correcting the assistant:** these are **not** algorithms and
+the package **must not** depend on `MessagePassingRulesBase`. They are a utility API that
+algorithms use under the hood. The assistant had argued the opposite (make them algorithms,
+depend on base) on the grounds that they are already shaped like the algorithm axis. The
+user's framing is better: "how do I approximate this integral" is numerics; "which update
+scheme am I running" is an algorithm. The delta algorithm *uses* Unscented; it is not
+Unscented. Keeping them siblings leaves the numerics usable outside this ecosystem.
+
+API: explicitly **not** redesigned now. Carry the functional surface over as-is, prettify,
+thread `ctx` where `cholinv` is called globally.
+
+### 3.9c Licensing — found, accepted, deferred
+
+The user recalled a licensing problem and it checked out, though more directly than
+remembered: it is not one of Pólya's dependencies, it is **`PolyaGammaHybridSamplers`
+itself, which is GPL-3**, entered as a plain `[deps]` entry while ReactiveMP ships MIT. Two
+nodes use it (`multinomial_polya.jl`, `rules/binomial_polya/beta.jl`), and it propagates
+downstream to RxInfer.
+
+**User's decision: live with it.** The discrepancy has existed for over a year; this rewrite
+resolves it rather than a separate fix, because the Pólya nodes move to their own package
+which may be GPL-3, leaving ReactiveMP honestly MIT.
+
 ### 3.10 Naming
 
 **User's decision:** rename everything, since the redesign is total anyway and generic
@@ -367,6 +415,14 @@ Claims the assistant made that were **wrong** and should not be revived:
    over-generalised into an architectural verdict. It is a research path.
 6. **"Generation-direction name mangling is safe."** `q(a, b_c)` and `q(a_b, c)` collide.
 7. **"No `prod!` exists."** `BayesBase` exports `prod!` already; it is merely unused.
+7b. **"`rts_smoother` is unused."** That name does not exist; the function is `smoothRTS`
+    and it *is* used by the delta unscented and linearization marginal rules. A bad grep.
+7c. **"Approximation methods should be algorithms and depend on the base package."** They
+    are utilities that algorithms use; the package stays standalone. See §3.9b.
+7d. **"ReTestItems is needed for name/tag filtering."** TestItemRunner's filter already
+    receives `(filename, name, tags)` — its own docstring example filters on tags. The
+    change is ~10 lines in `runtests.jl`, not a package swap. Its only real advantage is
+    distributed parallel workers, which is a CI wall-clock argument.
 8. **Threading needs an explicit schedule IR with layered fork-join.** Over-engineered for
    what was asked; purity is the actual requirement.
 9. **A `Test` package extension for test tooling.** Would force test-only deps into the
@@ -393,6 +449,17 @@ the type *and every parameter* is foreign, and `is_foreign(::Symbol)` is uncondi
 rule target carries the edge name as a `Symbol` type parameter, so no rule can ever be
 flagged, whoever defines it. Enable the check, but do not cite it as evidence the package
 split is piracy-clean. **This also removed piracy as an argument for the ruleset axis.**
+
+**Licensing.** `PolyaGammaHybridSamplers` is GPL-3 and is a direct `[deps]` entry;
+ReactiveMP ships MIT. Real conflict, propagates to RxInfer, accepted and deferred (§3.9c).
+
+**Approximation usage.** Surviving approximations need only `ForwardDiff`, `DiffResults`,
+`Distributions`, `Random`, `LinearAlgebra` — **no cubature package at all**. `Optim` leaves
+ReactiveMP entirely (only `laplace.jl` used it). `FastGaussQuadrature` follows `ghcubature`
+to the Pólya package. `DomainIntegrals` and `HCubature` go to the test-utils package — they
+are used by the rule-comparison quadrature at `src/rule.jl:1438,1514`, which is test
+machinery. `DomainSets` stays with the standard rules (`normal_mean_variance/var.jl`,
+`gamma_shape_rate/a.jl`).
 
 **BayesBase coverage.** The `ExponentialFamily` ban holds. Across every prospective base
 file the only `ExponentialFamily` mentions are inside docstring examples. All 37 names the
