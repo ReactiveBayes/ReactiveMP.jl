@@ -1,0 +1,48 @@
+# Phase 0 -- delta execution semantics against the live v6 engine
+julia = 1.10.12
+
+## 1. DEFAULT layout (Linearization, no inverse)
+   layout = ReactiveMP.DeltaFnDefaultRuleLayout
+   emissions in engine order:
+     1. out  -> NormalMeanVariance{Float64}(μ=3.0, v=4.0)
+     2. in   -> NormalWeightedMeanPrecision{Float64}(xi=2.000000000000001, w=2.000000000000001)
+   `out` depends on the `ins` messages only; `in` additionally consumes the
+   joint marginal q_ins. Both fire, and the order is out-then-in.
+
+## 2. KNOWN-INVERSE layout -- same node, same edges, different dependencies
+   layout = ReactiveMP.DeltaFnDefaultKnownInverseRuleLayout
+   emissions in engine order:
+     1. out  -> NormalMeanVariance{Float64}(μ=3.0, v=4.0)
+     2. in   -> NormalMeanVariance{Float64}(μ=1.0, v=0.5)
+   The backward message is computed from the inbound message on `out` and the
+   other `ins` -- NO marginals at all, where the default layout needed q_ins.
+   Same node, same edges, same four slots: only the dependency sets differ.
+
+## 3. STATIC INPUT, delivered late -- the part that is NOT a dependency choice
+   layout = ReactiveMP.DeltaFnDefaultRuleLayout
+   emissions BEFORE the static input arrives : 0
+   emissions AFTER  the static input arrives : 2
+     1. out  -> NormalMeanVariance{Float64}(μ=6.0, v=25.0)
+     2. in   -> NormalWeightedMeanPrecision{Float64}(xi=5.000000000000009, w=12.500000000000021)
+
+   This is `with_statics` (delta/layouts/default.jl:22-44) doing its job: the
+   node WAITS, and the static's value reaches the rule out-of-band through the
+   function proxy rather than as a declared input. A dependency declaration that
+   only names inputs cannot express this -- it is execution gating, and the new
+   design has to carry it explicitly.
+
+## 4. UNSCENTED on the same graph -- the algorithm value alone changes the rule
+   layout = ReactiveMP.DeltaFnDefaultRuleLayout
+     1. out  -> NormalMeanVariance{Float64}(μ=3.0, v=3.9999999999995595)
+     2. in   -> NormalWeightedMeanPrecision{Float64}(xi=1.9999999999991194, w=1.9999999999991194)
+   Same layout as the default case, different rules. Confirms that `method` and
+   `layout` are two axes in v6, and that only one of them is the algorithm.
+
+## 5. FIXTURES -- what the declarative form must reproduce
+   Not just the values: the emission ORDER and the COUNT. A declaration that
+   names the right inputs and emits twice where v6 emits once is wrong.
+   default         => (count = 2, order = [:out, :in])
+   known-inverse   => (count = 2, order = [:out, :in])
+   statics         => (count = 2, before_static = 0, order = [:out, :in])
+   unscented       => (count = 2, order = [:out, :in])
+

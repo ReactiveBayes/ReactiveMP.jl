@@ -31,7 +31,7 @@ nothing about the version this package supports.
 | — | Initial design documented in `PLAN.md`, `DISCUSSION.md` | **done; open decisions below** |
 | — | External design review; contradictions reconciled | **done** |
 | P | Prep: disposition inventory, layout and environment decisions | **done** |
-| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **in progress — 11/13** |
+| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **done — 13/13** |
 | 1 | Circulate for external feedback | not started |
 | 2 | Tooling migration on ReactiveMP | not started *(parallel with 1)* |
 | 3 | `MessagePassingRulesBase` | not started |
@@ -217,7 +217,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       in an inlinable `find_rule` (constant-folded to 0 for *every* representation), and
       closing over the node in a loop so it is a `DataType` rather than `Type{Node}` (goes
       dynamic, reports `Any`). The gate caught two of them by failing
-- [ ] **test the dependency language against the delta-node layouts** — express all
+- [x] **test the dependency language against the delta-node layouts** — express all
       **four** (default, known-inverse, CVI, CVI-projection) as declarations and see what
       does not fit. Old CVI is a migration reference, not a surviving implementation
       requirement. These are the hardest cases, and the answer decides whether
@@ -235,8 +235,16 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       (`default.jl:22-44`), which gates execution on const/data inputs whose values arrive
       out-of-band through the function proxy, and the `N === 1` compile-time branch
       (`default.jl:321-327`). `q_out` "mirrors the variable marginal" (`default.jl:47-64`) is
-      stream aliasing — topology, not a rule input
-- [ ] **test execution semantics, not just whether the dependency list can be expressed.**
+      stream aliasing — topology, not a rule input.
+      **VERDICT: the hypothesis holds for input selection, and only for that.**
+      `spike/semantics/08_layouts.jl` writes all four out as declarations and they differ in
+      exactly one respect — which messages and marginals each slot consumes. Three things do
+      not fit and are not dependency choices: static gating, the `N === 1` empty-group
+      branch, and `q_out` aliasing. So the collapse is **real but partial**: dependencies
+      absorb the input selection, and those three need explicit support in
+      `MessagePassingRulesBase` or they land back in the engine. `CVIProjection` can ship as
+      a Delta-package extension on that condition
+- [x] **test execution semantics, not just whether the dependency list can be expressed.**
       A declaration can name mathematically correct inputs and still produce a graph that
       stalls or updates in a different order. Layouts carry behaviour beyond input choice:
       `q_out` *aliases* the connected variable's marginal; static arguments gate execution
@@ -250,7 +258,12 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       confirmed: `mixture.jl:142` takes three positional arguments while its only caller
       `with_functional_dependencies` (`dependencies.jl:119-126`) passes four, so dispatch
       falls through to the generic method, whose first statement is
-      `getlocalclusters(factornode)` — and `MixtureNode` has no such method
+      `getlocalclusters(factornode)` — and `MixtureNode` has no such method.
+      **Done** — `spike/semantics/09_execution.jl` runs the live v6 engine on minimal
+      default, known-inverse, static-input and Unscented cases and captures emission order
+      *and* numbers as fixtures. The decisive result is the static one: **0 emissions before
+      the static input arrives, 2 after**, which is `with_statics` gating execution rather
+      than selecting inputs — a declaration that only names inputs cannot express it
 - [x] one worked allocation example end to end, using the intended `preallocate` lowering
       written by hand (the spike does not implement macros). `spike/dispatch/05_allocate.jl`:
       `rule` and `rule!` agree numerically, the kernel with a provided buffer allocates
