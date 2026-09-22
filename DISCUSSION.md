@@ -324,6 +324,49 @@ Unscented. Keeping them siblings leaves the numerics usable outside this ecosyst
 API: explicitly **not** redesigned now. Carry the functional surface over as-is, prettify,
 thread `ctx` where `cholinv` is called globally.
 
+### 3.9b-ii CVI is superseded; the delta-layout hypothesis
+
+Follow-up to the approximations discussion. The old CVI method (`ProdCVI`, aliased `CVI`,
+~2022) is **superseded by `CVIProjection`** (~2024) and gets removed. This is not a
+judgement call — `ProdCVI`'s own docstring already carries the note *"`ProdCVI` is
+deprecated in favor of `CVIProjection`"*.
+
+Worth recording because it is counter-intuitive: `cvi_setup!` / `cvi_update!` and the whole
+`ReactiveMPOptimisersExt` belong to the **old** method, not the new one. That extension
+predates `CVIProjection` by more than a year and exists solely to supply those two hooks, so
+it is deleted along with the `Optimisers` weakdep and `DiffResults` (`cvi.jl` is its only
+user). Anyone reasoning from those names will guess the wrong way round.
+
+One user-visible consequence, accepted deliberately: the delta node's out-of-the-box
+approximation set shrinks from `{Unscented, Linearization, ProdCVI}` to
+`{Unscented, Linearization}`, because `CVIProjection` requires `ExponentialFamilyProjection`
+to be loaded. That makes the "did you load the package?" diagnostic load-bearing rather than
+cosmetic.
+
+**The layout hypothesis (open, moderate confidence).** `CVIProjection` currently spans the
+type (in `approximations/`), rules (in the extension) and a *layout* (also in the extension,
+but engine code — it builds `MessageMapping`, calls `connect!`, wires Rocket streams). That
+straddles two future packages, which is what made its placement awkward.
+
+The observation that may dissolve the problem: `AbstractDeltaNodeDependenciesLayout` looks
+like a bespoke version of the dependency language. Three layouts each implement
+`deltafn_apply_layout` for the same four targets, ~684 lines whose distinct content is
+twelve dependency declarations. The CVI-projection layout's docstring literally reads as a
+dependency spec.
+
+**Path chosen: collapse layouts into dependency declarations first (C), then ship
+`CVIProjection` as a weakdep extension of the Delta node package (A).** An earlier draft
+argued for a standalone package; that was over-engineering for a leaf component of a few
+hundred lines. The blocker for the extension was never fundamental — it was only that the
+layout half is engine code with nowhere to live in a node-package extension. Removing the
+engine half removes the blocker. A standalone package remains a cheap later upgrade if
+anyone needs to depend on the rules, if compat coupling forces awkward releases, or if it
+grows its own CI; promoting an extension to a package is much easier than the reverse.
+
+**Test the hypothesis in Phase 0**, not at Phase 6. The delta layouts are the hardest thing
+the dependency language would have to express, and finding its limits on the hard case is
+exactly what the spike is for.
+
 ### 3.9c Licensing — found, accepted, deferred
 
 The user recalled a licensing problem and it checked out, though more directly than
@@ -419,6 +462,11 @@ Claims the assistant made that were **wrong** and should not be revived:
     and it *is* used by the delta unscented and linearization marginal rules. A bad grep.
 7c. **"Approximation methods should be algorithms and depend on the base package."** They
     are utilities that algorithms use; the package stays standalone. See §3.9b.
+7e. **"`CVIProjection` needs its own package."** Over-engineering for a leaf component. Once
+    the layout half stops being engine code, a weakdep extension of the Delta node package
+    is enough. See §3.9b-ii.
+7f. **"`cvi_setup!`/`cvi_update!` indicate the newer CVI work."** They belong to the **old**
+    `ProdCVI`; `ReactiveMPOptimisersExt` predates `CVIProjection` by over a year.
 7d. **"ReTestItems is needed for name/tag filtering."** TestItemRunner's filter already
     receives `(filename, name, tags)` — its own docstring example filters on tags. The
     change is ~10 lines in `runtests.jl`, not a package swap. Its only real advantage is

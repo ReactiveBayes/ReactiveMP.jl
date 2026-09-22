@@ -350,8 +350,10 @@ is what actually removes the heavy cubature dependencies — repackaging them wo
 
 | file / symbol | fate | evidence |
 |---|---|---|
-| `unscented.jl`, `linearization.jl`, `cvi.jl`, `cvi_projection.jl`, `optimizers*`, `approximations.jl`, `shared.jl` | → `MessagePassingRulesApproximations` | used by delta + flow |
+| `unscented.jl`, `linearization.jl`, `approximations.jl`, `shared.jl` | → `MessagePassingRulesApproximations` | used by delta + flow |
 | `rts.jl` (`smoothRTS`) | → same package | `rules/delta/unscented/marginals.jl:25`, `rules/delta/linearization/marginals.jl:27` |
+| `cvi.jl` (`ProdCVI`, aliased `CVI`), `optimizers*` | **delete** | superseded — its own docstring reads *"`ProdCVI` is deprecated in favor of `CVIProjection`"* |
+| `cvi_projection.jl` (`CVIProjection`, sampling strategies) | → Delta node package, implementation in its extension | see *CVI projection* below |
 | `gausshermite.jl` (`ghcubature`) | → Pólya node package | only user is `multinomial_polya` |
 | `sphericalradial.jl` (`srcubature`) | **delete** | no consumer |
 | `gausslaguerre.jl` (`glcubature`) | **delete** | no consumer |
@@ -359,11 +361,57 @@ is what actually removes the heavy cubature dependencies — repackaging them wo
 | `laplace.jl` | **delete** | no consumer |
 
 Dependency consequences: **`Optim` leaves ReactiveMP entirely** (only `laplace.jl` used it);
-`FastGaussQuadrature` follows `ghcubature` to the Pólya package; `DomainIntegrals` and
-`HCubature` go to `MessagePassingRulesTestUtils` (they are used by the rule-comparison
-quadrature in `src/rule.jl:1438`, which is test machinery); `DomainSets` stays with
-`StandardMessagePassingRules` (two rules use it: `normal_mean_variance/var.jl`,
-`gamma_shape_rate/a.jl`). The surviving approximations need **no cubature package at all**.
+**`DiffResults` leaves with `cvi.jl`**, its only user; **`ReactiveMPOptimisersExt` and the
+`Optimisers` weakdep are deleted outright** — that extension exists solely to supply
+`cvi_setup!`/`cvi_update!` for the removed method. `FastGaussQuadrature` follows
+`ghcubature` to the Pólya package; `DomainIntegrals` and `HCubature` go to
+`MessagePassingRulesTestUtils` (they serve the rule-comparison quadrature in
+`src/rule.jl:1438`, which is test machinery); `DomainSets` stays with
+`StandardMessagePassingRules` (`normal_mean_variance/var.jl`, `gamma_shape_rate/a.jl`).
+
+What survives is small: `Unscented`, `Linearization`, `smoothRTS` and the shared
+point/weight machinery, needing only `ForwardDiff`, `Random`, `LinearAlgebra` and
+`Distributions` — **no cubature package at all**.
+
+**User-visible consequence of removing `CVI`, to be handled deliberately.** Today the delta
+node accepts `Unscented`, `Linearization` and `ProdCVI` out of the box, with `CVIProjection`
+alone requiring `ExponentialFamilyProjection` to be loaded
+(`is_delta_node_compatible`). After removal the built-in set is `Unscented` and
+`Linearization`; a non-conjugate delta node needs the extra package. Acceptable — those two
+cover the Gaussian and deterministic-transform cases — but it makes the diagnostic
+load-bearing: the registry must say *"no rule for this delta node under `CVIProjection` —
+did you `using ExponentialFamilyProjection`?"*, not raise a `MethodError`.
+
+### CVI projection, and a hypothesis about delta layouts
+
+`CVIProjection` spans awkward territory today: the type lives in `src/approximations/`, the
+rules and a *layout* live in `ReactiveMPProjectionExt`, and the layout is engine code — it
+constructs `MessageMapping`, calls `connect!`, wires Rocket streams.
+
+**Hypothesis: `AbstractDeltaNodeDependenciesLayout` is a bespoke version of the dependency
+language.** Three layouts exist (default, CVI, CVI-projection), each implementing
+`deltafn_apply_layout` for the same four targets — `q_out`, `q_ins`, `m_out`, `m_in_k`.
+That is ~684 lines whose genuinely distinct content is **twelve dependency declarations**;
+the rest is identical wiring boilerplate. The CVI-projection layout's own docstring reads as
+a dependency spec: *"`m_in_k`: uses the inbound message on the `in_k` edge and `q_ins`"*.
+
+*Confidence: moderate.* This is inferred from docstrings and method shape, and the layout
+does make ~10 real engine calls — some may be genuine topology rather than dependency
+choice (`q_out` "mirrors the posterior marginal" sounds like stream aliasing, not a rule).
+**Test it in Phase 0**, where the delta layouts are the hardest thing the dependency
+language would have to express. Finding its limits on the hard case is the point.
+
+**If the hypothesis holds**, the plan is: collapse layouts into dependency declarations
+first, after which `CVIProjection` has no engine half at all — just an algorithm struct, a
+dependency declaration, and rules. It then ships as a **weakdep extension of the Delta node
+package**, keeping today's pattern, and no separate package is needed. A standalone package
+stays the cheap upgrade later if anyone needs to depend on the projection rules, if compat
+coupling to `ExponentialFamilyProjection` starts forcing awkward releases, or if it grows
+its own CI. Promoting an extension to a package is far easier than the reverse.
+
+**If it does not hold**, the layout half cannot live in a Delta-node extension — engine
+internals belong to ReactiveMP and node packages must not depend on the engine — and a
+separate package becomes necessary.
 
 **API: keep it, do not redesign.** The functional surface carries over as-is —
 `approximate_meancov`, `approximate_kernel_expectation`, `getpoints`/`getweights`,

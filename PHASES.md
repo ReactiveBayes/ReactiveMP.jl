@@ -47,6 +47,11 @@ mixed `m[]`/`q[]`, and one with a variadic group.
 - [ ] ten representative rules written by hand in each candidate syntax, read side by side
 - [ ] outbound-edge spelling decided
 - [ ] where `algorithm` sits in the header decided
+- [ ] **test the dependency language against the delta-node layouts** — express all three
+      (default, CVI-projection) as declarations and see what does not fit. They are the
+      hardest case, and the answer decides whether `AbstractDeltaNodeDependenciesLayout`
+      (~684 lines) collapses and whether `CVIProjection` can ship as an extension
+      (`PLAN.md` § CVI projection)
 
 **Closes open items:** #1 (syntax final form).
 
@@ -145,6 +150,13 @@ it to surface rules that were already wrong.
 - [ ] **delete first, package second** — `sphericalradial.jl`, `gausslaguerre.jl`,
       `importance.jl`, `laplace.jl` have no consumer in `src/`; remove them and their tests
       (skim the tests first, they may be the only record of intended behaviour)
+- [ ] remove the superseded `cvi.jl` (`ProdCVI`/`CVI`), `delta/layouts/cvi.jl`,
+      `rules/delta/cvi/*`, and with them `ReactiveMPOptimisersExt`, the `Optimisers`
+      weakdep and `DiffResults`
+- [ ] delta node's built-in method set is now `{Unscented, Linearization}`; the
+      "did you load `ExponentialFamilyProjection`?" diagnostic must be good
+- [ ] `CVIProjection` ships as a weakdep extension of the Delta node package (assumes the
+      Phase 0 layout result; if layouts do not collapse, it needs its own package instead)
 - [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `CVI`, CVI
       projection, optimizers, `smoothRTS`, `approximations.jl`, `shared.jl`.
       **Standalone — must not depend on `MessagePassingRulesBase`.** Utilities that
