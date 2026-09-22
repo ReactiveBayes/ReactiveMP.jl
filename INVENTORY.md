@@ -105,7 +105,7 @@ replacement".
 | `@average_energy` | `macro` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
 | `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
 | `@call_rule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
-| `@logscale` | `macro` | `src/rule.jl` | `base` | annotation mechanism retained; macro versus explicit context API reopened for Phase 0 |
+| `@logscale` | `macro` | `src/rule.jl` | `base` | deleted as a macro; becomes `annotate!(ann, :logscale, v)` on the annotations body slot |
 | `@marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
 | `@node` | `macro` | `src/nodes/nodes.jl` | `base` | renamed `@define_factor_node` |
 | `@rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |

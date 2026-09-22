@@ -132,9 +132,22 @@ mixed `m[]`/`q[]`, and one with a variadic group.
 - [ ] if the axis stays, a fallback chain adds no measurable routing overhead versus a
       direct call within the stated benchmark tolerance (equivalent dispatch behaviour +
       measured overhead, not byte-identical generated code)
-- [ ] ten representative rules written by hand in each candidate syntax, read side by side
-- [ ] outbound-edge spelling decided
-- [ ] where `algorithm` sits in the header decided
+- [x] **rule syntax decided** (open item #1, resolved ahead of the spike): fully
+      keyword-based macro, body an ordinary lambda over a real `args` object, symbols
+      throughout (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members
+      `q[:p][k]`, indexed targets `(:m, k)`, body slots
+      `(output, algo, ctx, args, ann, node)` in canonical order, dispatch carried by the
+      `algorithm` keyword, `@allocate`/`@logscale` deleted. See `PLAN.md` § Rule surface and
+      `DISCUSSION.md` §3.14
+- [ ] ten representative rules written by hand in the chosen syntax and read side by side —
+      now a validation of the decided form, not a choice between candidates. Write them
+      across the hard cases (variadic group, indexed target, in-place, structured cluster)
+- [ ] **the devirtualization gate must run through the `RuleSpec`**, not only through
+      dispatch. A spec whose body lives in a `::Function` field passes a naive dispatch check
+      and still allocates on every message; measured, the type-parameterised representation
+      is fully inferred with zero allocations while the `::Function` one infers `Any` and
+      allocates 48 bytes. `DISCUSSION.md` §3.14 carries a runnable reproduction — re-run it
+      against the real spec, not the toy
 - [ ] **test the dependency language against the delta-node layouts** — express all
       **four** (default, known-inverse, CVI, CVI-projection) as declarations and see what
       does not fit. Old CVI is a migration reference, not a surviving implementation
@@ -161,7 +174,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       specialization growth across variadic group sizes and heterogeneous input types
       (many key sets and input types may increase compiled specializations)
 
-**Decision checkpoints:** #1 (syntax final form), #4 (include or defer rulesets), and
+**Decision checkpoints:** #4 (include or defer rulesets) and
 evidence for #12 (context services; the final contract is due in Phase 3).
 
 **If a gate fails:** revise the affected dispatch, dependency or service design before
@@ -395,9 +408,9 @@ this phase requires it to pass for release, rather than being its first executio
 
 ## Open items
 
-Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #8 and #14 are resolved;
-the remaining 12 are not all immediate blockers. #1 is a
-spike decision; #3 and #9–#13 must be settled before Phase 3's API freezes. #6 and #7 are
+Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #8 and #14 are
+resolved; the remaining 11 are not all immediate blockers. #3 and #9–#13 must be settled
+before Phase 3's API freezes. #6 and #7 are
 engine integration requirements. #2 remains deferred unless needed; #4 may be deferred
 pending a concrete ruleset use case. #5 (Reactant/StableCholesky) belongs to a separate
 effort and does not block this rewrite.

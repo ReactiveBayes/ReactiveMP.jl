@@ -106,7 +106,9 @@ This took the longest and went through three positions.
    bug. **Killed by the user with a counterexample:** `q(a, b_c)` and `q(a_b, c)` both
    generate `q_a_b_c`. Generation is only unambiguous if names contain no underscores —
    which is the restriction the change was supposed to lift. The idea was circular.
-3. **`m[x]` / `q[x]` — adopted.** The decisive property is that **declaration and body use
+3. **`m[x]` / `q[x]` — adopted**, and still the design; §3.14 later adds the colon
+   (`m[:x]`) and moves the whole surface to keywords, but the container idea and its
+   justification below are unchanged. The decisive property is that **declaration and body use
    the same spelling**. There is no derived name, so there is nothing to collide. The
    binding problem does not get solved, it disappears.
 
@@ -171,7 +173,9 @@ rule exists, there is nothing to run.
 allocated by the time you copy it. In-place exists precisely so the intermediate never
 exists.
 
-**Landing point (user's `@allocate` idea):** the buffer shape must be *declared*, because
+**Landing point (user's `@allocate` idea):** *(the reasoning below stands; the spelling is
+superseded — `@allocate` became the `preallocate` keyword in §3.14)* the buffer shape must
+be *declared*, because
 it is derivable from the input types and nothing else can supply it. This is exactly the
 `rand`/`rand!` relationship in Distributions.jl — `rand` can delegate to `_rand!` only
 because it knows how to build the container. `@allocate` is that knowledge.
@@ -186,7 +190,8 @@ type** (`buffer_like(x)`), not allocate a default and post-process. Post-process
 `SVector` case into an `MVector` would repeat the `copyto!` mistake one level up.
 `buffer_like` then doubles as the device seam (see 3.7).
 
-User's semantic for naming the buffer: in an `inplace` rule, `m[<target edge>]` **is** the
+User's semantic for naming the buffer *(superseded by §3.14: `output` is now its own body
+slot, so the restriction is lifted)*: in an `inplace` rule, `m[<target edge>]` **is** the
 output buffer, and such a rule may not also require the inbound message on that edge. This
 resolves an ambiguity the assistant had flagged as a bug, and has a bonus: it pins the
 output type in the signature, making `@allocate` type-checkable.
@@ -410,7 +415,9 @@ names invite collisions when downstream packages add methods.
 - Definition macros, exported, deliberately long (typed once per definition):
   `@define_message_update_rule`, `@define_marginal_update_rule`, `@define_factor_node`,
   `@define_average_energy`.
-- Assistant's addition: **in-body macros need not be exported at all.** `@allocate` and
+- Assistant's addition: **in-body macros need not be exported at all.** *(Superseded by
+  §3.14, which deletes the category entirely rather than choosing how to export it.)*
+  `@allocate` and
   `@logscale` only appear inside a rule body, so the enclosing definition macro can
   recognise and rewrite them. Short names, zero namespace footprint, and using one outside
   a rule body becomes a clean error.
@@ -540,6 +547,150 @@ grep.
 
 ---
 
+## 3.14 The macro surface becomes keyword-based
+
+Prompted by a small observation with a large consequence: why does
+`NormalMeanVariance(:out)` carry a colon when `m[mu]` does not? The inconsistency was real.
+The user's first instinct was to drop the colon from the outbound edge; pulling the thread
+produced a different and better answer.
+
+### The design
+
+Everything becomes a keyword, and the body becomes **an ordinary Julia lambda over a real
+arguments object** rather than a body the macro rewrites:
+
+```julia
+@define_message_update_rule(
+    node    = NormalMeanVariance,
+    towards = :out,
+    args    = (m[:μ]::PointMass, m[:v]::PointMass),
+    body    = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
+)
+```
+
+### Why this forces symbols rather than permitting them
+
+This is the part worth remembering, because the conclusion is the opposite of the intuition
+that started it. In a real lambda, `args.m[μ]` is an `UndefVarError` — `μ` is not a
+variable. Only `args.m[:μ]` works. So:
+
+1. the body is *forced* to symbols;
+2. the declaration must match, because declaration/body agreement is the entire reason
+   `m[]`/`q[]` was adopted over name mangling (§3.2);
+3. consistency then carries symbols into `towards = :out` and into
+   `@define_factor_node(interfaces = [:out, ...])`.
+
+Under the old macro-rewritten body, bare names were fine and the colon really was
+decoration — which is exactly why it looked inconsistent. Choosing a real lambda body makes
+the colon load-bearing. The right observation, the opposite conclusion.
+
+### Parsing facts, checked rather than assumed
+
+- `m[:inputs...]` **parses** (`head = ref`). The worry that it would not was unfounded.
+- `q[:p[:k]]` parses, but as `(:p)[:k]` — *indexing a Symbol*. So a group member is spelled
+  **`q[:p][k]`**, which parses as `(q[:p])[k]` and matches runtime access exactly. This is
+  better than the previous `q[p[k]]` regardless of the colon question.
+- An indexed target is `towards = (:m, k)`, matching today's `@rule NormalMixture((:m, k))`.
+- Keyword macro arguments arrive as `Expr(:(=), name, value)`, order-independent.
+- Body parameter names extract reliably from the lambda, including typed ones.
+
+### What it deletes
+
+Both "in-body macros" disappear rather than being renamed. They were never really macros —
+they were tokens the enclosing macro rewrote, which is why using one outside a rule body
+failed confusingly. `@allocate` becomes the `preallocate` keyword; `@logscale` becomes
+`annotate!(ann, :logscale, v)`.
+
+**The in-place/inbound-message restriction is also dropped** (user's observation). It existed
+only because `m[target]` had to mean either the output buffer or the inbound message and
+could not mean both. With `output` as its own body slot, `output` and `args.m[:out]` are
+distinct bindings and a rule may use both.
+
+The old restriction had a stated benefit — it pinned the output type in the signature. That
+benefit is preserved by a better mechanism: the ordinary typed lambda parameter
+`(output::MvNormalMeanPrecision, args) -> ...`, which **Julia itself** enforces
+(`MethodError` on mismatch) and infers, rather than macro-side analysis.
+
+### The `RuleSpec` is the execution vehicle — and it is free
+
+The user's design: dispatch resolves to a `RuleSpec` which **stores the body and the
+`preallocate` lambda** and knows how to call itself, so the engine never branches on
+`inplace`. The same object the registry holds for `@which_rule`, the coverage matrix and
+`check_rules()` is the one that runs, so the two cannot drift. It can also carry the body's
+**source text**, which is what lets `@which_rule` show a rule rather than merely name it.
+
+The assistant initially warned that storing the body in the spec would make every invocation
+a dynamic call. **That warning was too strong and is withdrawn.** Measured:
+
+| representation | inferred | allocations |
+|---|---|---|
+| body/allocator as **type parameters**, `inplace` as a type parameter | `Float64` | **0** |
+| body field typed `::Function`, `inplace` as a `Bool` field | `Any` | 48 |
+
+In the first case the optimised code is:
+
+```
+Base.getfield(args, :a)
+Base.getfield(args, :b)
+Base.add_float(%2, %3)
+return %4
+```
+
+No call survives, the in-place branch folds away, and the spec disappears entirely at
+compile time — **even while carrying a `String` of source text, file, line and `pure`**,
+because inference only needs the *types* of the body and allocator fields, and an anonymous
+function that captures nothing has a singleton type.
+
+So the constraint is narrow but strict, and it is the whole design: **body and allocator
+must be type parameters, never `::Function`; `inplace` must be a type parameter, never a
+`Bool` field.** A spec built the wrong way passes a naive "does dispatch devirtualize" check
+and still allocates on every message, which is why Phase 0's gate must test *through the
+spec*.
+
+Reproduce with:
+
+```julia
+struct RuleSpec{B, P, IP}
+    body::B
+    prealloc::P
+    source::String          # introspection payload does not affect the above
+    pure::Bool
+end
+isinplace(::RuleSpec{B, P, IP}) where {B, P, IP} = IP
+
+const body1 = (args) -> args.a + args.b
+const pre1  = (args) -> zeros(2)
+@inline resolve(::Val{:N}, ::Val{:out}) =
+    RuleSpec{typeof(body1), typeof(pre1), false}(body1, pre1, "(args) -> args.a + args.b", true)
+
+function call_rule(node, towards, args)
+    spec = resolve(node, towards)
+    return isinplace(spec) ? spec.body(spec.prealloc(args), args) : spec.body(args)
+end
+
+function bench()                       # measure inside a function: a non-const global
+    a = (a = 1.0, b = 2.0)             # would box and report a spurious 16 bytes
+    call_rule(Val(:N), Val(:out), a)
+    return @allocated call_rule(Val(:N), Val(:out), a)
+end
+
+bench()                                                       # 0
+code_typed(call_rule, (Val{:N}, Val{:out}, NamedTuple{(:a, :b), Tuple{Float64, Float64}}))
+```
+
+### Accepted costs, stated plainly
+
+- **Verbosity.** One line becomes roughly six, across ~490 definitions. Chosen deliberately:
+  one uniform surface, no positional shorthand, no second grammar to document or migrate.
+- **The `m` collision.** Containers stay `m` and `q`, and `NormalMixture` has an interface
+  group named `m`, so `args.q[:m][k]` uses `m` in two senses. Accepted in exchange for one
+  short vocabulary.
+- **The `args = (...)` declaration is still a mini-language** the macro parses. It is a
+  signature, so this is unavoidable. "No magic" holds in the *body*, not everywhere. Saying
+  otherwise would overstate what changed.
+
+---
+
 ## 4. Corrections — read this before re-proposing anything
 
 Claims the assistant made that were **wrong** and should not be revived:
@@ -583,6 +734,21 @@ Claims the assistant made that were **wrong** and should not be revived:
     own `ARTransitionMatrix`. Plausible from the name and the concept, false in the code.
 13. **"`Optim` is used by `ContinuousTransition`."** No: that grep matched the words
     "Optimized" and "Optimizer". Only `laplace.jl` uses the package.
+14. **"The `:` in `NormalMeanVariance(:out)` is inconsistent decoration, so drop it."** The
+    observation was right and the conclusion backwards. Once the body is a real lambda over a
+    real object, `args.m[μ]` is an `UndefVarError` and only `args.m[:μ]` works, so the colon
+    becomes load-bearing and spreads *into* the declarations rather than out of them. See
+    §3.14.
+15. **"`@logscale` becomes `annotate!(ctx, :logscale, v)`."** No. `ctx` is immutable
+    infrastructure the rule *reads*; annotations are a mutable sink the rule *writes*, and
+    they are separate body slots. The mistake came from `PLAN.md` itself, whose context
+    bullet listed "annotations" among the context contents — now corrected there too.
+16. **"Storing the rule body inside the `RuleSpec` forces a dynamic call."** Withdrawn. With
+    the body and allocator as **type parameters** and `inplace` as a type parameter, the
+    whole spec is erased at compile time: fully inferred, zero allocations, no surviving
+    call, even while carrying source text for introspection. The claim is only true for the
+    `::Function`-field representation, which allocates 48 bytes per call. Measurement and a
+    runnable reproduction are in §3.14.
 
 ---
 

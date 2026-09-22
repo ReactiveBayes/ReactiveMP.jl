@@ -63,54 +63,115 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   absorbs `Marginalisation`/`MomentMatching` — that axis disappears rather than being
   deleted separately. It also absorbs `RequireMessage`/`RequireMarginal`/
   `RequireEverythingFunctionalDependencies` (see Dependencies).
-- **`context` is infrastructure, never dispatched on**: linear-algebra strategy (replacing
-  48 global `cholinv` calls; `StableCholesky.jl` supplies strategies + workspace), RNG,
-  output buffers, annotations, engine services. Explicit argument, never shared across
-  tasks. It is an ordinary object that is constructed once and passed down into the
+- **`context` (`ctx`) is infrastructure, never dispatched on**: linear-algebra strategy
+  (replacing 48 global `cholinv` calls; `StableCholesky.jl` supplies strategies +
+  workspace), RNG, output buffers, engine services. Explicit argument, never shared across
+  tasks.
+
+  **`ctx` is read-only infrastructure and does not carry annotations.** Annotations are a
+  *mutable output sink* the rule writes to (`AnnotationDict` is a `mutable struct` with
+  `annotate!`); context is immutable state the rule reads. They are separate body slots,
+  `ctx` and `ann`, and merging them is a category error — an earlier draft of this section
+  listed annotations among the context contents, which was wrong. It is an ordinary object that is constructed once and passed down into the
   rules — most likely held by `MessageMapping` — not a global and not a `ScopedValue`.
   An earlier draft proposed a `ScopedValue` for the default; that was never necessary,
   since a plain default argument does the same job, and it would have raised the Julia
   floor to 1.11 for no gain.
-- Rules declare which context **services** they need (e.g. `context = (:linalg, :product)`)
+- Rules declare which context **services** they need (e.g. `ctx = (:linalg, :product)`)
   so the engine can check availability and diagnose missing services.
 
 ### Rule surface
 
 Role lives in a container, not a name prefix. `m[...]` and `q[...]` are two containers;
-**declaration and body use the same spelling**, so no name is ever derived and nothing is
-ever split. Interface names may contain `_` again.
+**declaration and body use the same key**, so no name is ever derived and nothing is ever
+split. Interface names may contain `_` again.
 
-Macro names below are the real ones (see Naming): deliberately long, because they are typed
-once per definition. Invocation macros stay short.
+Everything is a **keyword**, and the body is an **ordinary Julia lambda over a real
+arguments object** — not a body the macro rewrites. One form, used by every rule.
 
 ```julia
-@define_message_update_rule NormalMeanVariance(:out) (
-    m[μ]::PointMass, m[v]::PointMass
-) = ...
-
-@define_message_update_rule Mixture(:switch, algorithm = BP, pure = false) (
-    m[out]::Any, m[inputs...]::Any
-) = ...
+@define_message_update_rule(
+    node    = NormalMeanVariance,
+    towards = :out,
+    args    = (m[:μ]::PointMass, m[:v]::PointMass),
+    body    = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
+)
 ```
 
-- `m[μ]` and `q[μ]` in one signature is unremarkable — different containers. No wrapper
-  type, no key-collision rule.
-- `q[y, x]` is a structural cluster; lowers to `getindex(q, Val((:y, :x)))`.
-- `m[inputs...]` is a variadic group, replacing `ManyOf{N,T}` plus its `where {N}`.
-- Options are keywords (`algorithm`, `pure`, `inplace`, `context`), the signature stays
-  positional. Growth room without taxing the ~350 rules that use none of it.
+With an algorithm, a variadic group and a log scale:
+
+```julia
+@define_message_update_rule(
+    node      = Mixture,
+    towards   = :switch,
+    algorithm = BP,
+    pure      = false,
+    args      = (m[:out]::Any, m[:inputs...]::Any),
+    body      = (ctx, args, ann) -> begin
+        ...
+        annotate!(ann, :logscale, ls)
+        ...
+    end,
+)
+```
+
+**Why symbols.** In a real lambda, `args.m[μ]` is an `UndefVarError` — `μ` is not a
+variable. Only `args.m[:μ]` works, so the body is *forced* to symbols; the declaration
+follows, because declaration/body agreement is the whole reason `m[]`/`q[]` was adopted over
+name mangling; and consistency carries symbols into `towards` and into `@define_factor_node`.
+The colon is therefore load-bearing, not decoration. Measured: `args.m[:μ]` on a
+NamedTuple-backed container is type-stable and allocation-free.
+
+- `m[:μ]` and `q[:μ]` in one signature is unremarkable — different containers.
+- `q[:y, :x]` is a structural cluster; `q[:p][k]` is a member of the group `p`. **Not**
+  `q[:p[:k]]`, which parses as `(:p)[:k]` — indexing a `Symbol`.
+- `m[:inputs...]` is a variadic group, replacing `ManyOf{N,T}` plus its `where {N}`.
+  Verified to parse.
+- The outbound target is `towards = :out`, or `towards = (:m, k)` for a member of a group.
 - Message, marginal and average-energy definitions retain their distinct roles and return
   contracts. They lower onto **three separate generic functions** (see Naming) that share
   one registry, one error path, one ambiguity checker and one test macro — shared
-  *infrastructure*, not a single dispatch function. `@average_energy` gains the `algorithm`
-  axis.
+  *infrastructure*, not a single dispatch function. `@define_average_energy` gains the
+  `algorithm` axis.
 
-`@node` goes keyword-based, since it has the most to grow into (aliases are already
-kwargs-in-disguise today):
+**Body slots.** The body declares only the parameters it needs, by name, in this canonical
+order:
+
+```
+(output, algo, ctx, args, ann, node)
+```
+
+The macro reads the names written in the lambda and fills the rest. Order is enforced, so
+every rule reads the same way down a file; relaxing that later is easy, tightening it would
+be breaking. An unrecognised name is an error naming the valid set. `output` appears exactly
+when `inplace = true`.
+
+`algo` is **read access to the algorithm value** (AR order, kernels, inducing points — the
+parameter-bag half of the old `meta`). It is *not* the dispatch mechanism: dispatch is the
+`algorithm` keyword, which types the generated method's algorithm argument. A rule that
+omits `algorithm` inherits the node's declared default.
+
+`ctx` and `ann` are deliberately separate: `ctx` is immutable infrastructure the rule
+*reads*, `ann` is a mutable sink the rule *writes*. Merging them is a category error.
+
+`@define_factor_node` uses the same vocabulary:
 
 ```julia
-@define_factor_node Mixture(type = Stochastic, interfaces = [out, switch, inputs...])
+@define_factor_node(
+    node       = Mixture,
+    type       = Stochastic,
+    interfaces = [:out, :switch, :inputs...],
+    algorithm  = BP,
+)
 ```
+
+The node declares the default algorithm, so the ~350 rules running under it omit
+`algorithm` entirely and only the ones that deviate name it.
+
+**The cost, stated plainly.** A one-line rule becomes roughly six, across ~490 definitions.
+That is accepted deliberately in exchange for one uniform surface with no in-body macros.
+And the `args = (...)` declaration is still a mini-language the macro parses — it is a
+signature, so that is unavoidable. "No magic" holds **in the body**, not everywhere.
 
 ### Naming
 
@@ -126,11 +187,12 @@ Reached qualified.
 typed once per definition: `@define_message_update_rule`, `@define_marginal_update_rule`,
 `@define_factor_node`, `@define_average_energy`.
 
-**In-body macros — short and *not* exported.** `@allocate` and `@logscale` only ever appear
-inside a rule body, so the enclosing definition macro recognises and rewrites them during
-its own expansion. They keep short names with zero namespace footprint (`@allocate` is
-otherwise extremely collision-prone), and using one outside a rule body becomes a clean
-error rather than a confusing one.
+**In-body macros — gone entirely.** An earlier design had `@allocate` and `@logscale` as
+short, unexported macros that only worked inside a rule body. They were not really macros:
+they were tokens the enclosing definition macro rewrote, which is why using one elsewhere
+failed confusingly. The keyword form removes the category rather than renaming it —
+`@allocate` is the `preallocate` keyword, and `@logscale` is `annotate!(ann, :logscale, v)`,
+an ordinary function call on the annotations sink the body requested as a slot.
 
 **Invocation macros — short, exported.** `@call_rule`/`@call_marginalrule` are typed
 constantly in interactive and teaching use, so the "long but unambiguous" argument that
@@ -179,8 +241,45 @@ vs *type mismatch* (rule exists, arguments don't fit). Add `check_rules()` (vali
 specs against node specs, and dependency specs against rule signatures) and
 `check_rule_ambiguities()` (group by input-name set, `typeintersect` within groups only).
 
-Removing the macro-expansion-time registry query means `@node` and `@rule` may appear in
-any order, in any package, including weak-dep extensions.
+Removing the macro-expansion-time registry query means `@define_factor_node` and the rule
+definition macros may appear in any order, in any package, including weak-dep extensions.
+
+**The `RuleSpec` is the execution vehicle, not only registry data.** Dispatch at the call
+site resolves `(node, target, algorithm, args)` to a `RuleSpec`, and the spec knows how to
+invoke itself: it **stores the body and the `preallocate` lambda**, knows whether it is
+in-place and therefore whether to preallocate, which body slots the body requested, whether
+it is pure, and which context services it needs. The engine does not branch on `inplace` —
+it hands the spec its arguments and the spec resolves the path. `rule(...)` is "resolve,
+preallocate, run"; `rule!(buffer, ...)` is "resolve, run".
+
+One object then serves both purposes: what the registry stores for `@which_rule`, the
+coverage matrix and `check_rules()` is the same thing that runs, so the two cannot drift
+apart. It can also carry **the body's source text, file and line**, which is what makes
+`@which_rule` able to *show you the rule* rather than merely name it — directly serving the
+educational and introspection goals above.
+
+**Measured: this costs nothing at run time.** A spec parameterised on its body and
+allocator types, carrying `inplace` as a type parameter and introspection payload
+(source `String`, file, line, `pure`) in ordinary fields, resolved through a function and
+invoked through, compiles to:
+
+```
+Base.getfield(args, :a)
+Base.getfield(args, :b)
+Base.add_float(%2, %3)
+return %4
+```
+
+Fully inferred, **zero allocations**, no call surviving, and the in-place branch folded away.
+The whole spec disappears at compile time.
+
+**The one constraint this places on the representation** is narrow but strict: the body and
+allocator fields must be **type parameters**, not declared `::Function`, and `inplace` must
+be a type parameter rather than a `Bool` field. Measured for comparison: a spec whose body
+field is typed `::Function` with a `Bool` `inplace` field infers as `Any` and allocates 48
+bytes per call — dynamic dispatch on every message. The difference between the two
+representations is the entire design, so **Phase 0's devirtualization gate must test through
+the spec**, not merely through dispatch.
 
 ### Dependencies as a language
 
@@ -188,15 +287,21 @@ Dependencies become a **property of the algorithm**, not the node; a node declar
 default algorithm. Written in the same `m[]`/`q[]` vocabulary as rules:
 
 ```julia
-@define_factor_node NormalMixture(
-    type = Stochastic,
-    interfaces = [out, switch, m..., p...],
+@define_factor_node(
+    node       = NormalMixture,
+    type       = Stochastic,
+    interfaces = [:out, :switch, :m..., :p...],
+    algorithm  = VMP,
     dependencies = [
-        m[k] => (q[out], q[switch], q[p[k]]),
-        p[k] => (q[out], q[switch], q[m[k]]),
-    ]
+        (:m, k) => (q[:out], q[:switch], q[:p][k]),
+        (:p, k) => (q[:out], q[:switch], q[:m][k]),
+    ],
 )
 ```
+
+The left-hand side is a **target** — `:out`, or `(:m, k)` for a member of a group — spelled
+exactly as `towards` spells it. The right-hand side is a tuple of container lookups, spelled
+exactly as a rule's `args` spells them.
 
 For the default dependency scheme, two axes separate:
 
@@ -286,19 +391,32 @@ and because rewriting a body to `copyto!(out.μ, mexpr)` defeats the purpose (`m
 already allocated), the shape must be declared:
 
 ```julia
-@define_message_update_rule NormalMixture(:out, inplace = true) (
-    m[out]::MvNormalMeanPrecision, q[m...]::Any, q[p...]::Any
-) = begin
-    @allocate MvNormalMeanPrecision(buffer_like(...), buffer_like(...))
-    mul!(m[out].Λ, ...)   # writes straight into the buffer, no temporaries
-end
+@define_message_update_rule(
+    node        = NormalMixture,
+    towards     = :out,
+    inplace     = true,
+    args        = (m[:out]::MvNormalMeanPrecision, q[:m...]::Any, q[:p...]::Any),
+    preallocate = (args) -> MvNormalMeanPrecision(
+        buffer_like(mean(first(args.q[:m]))),
+        buffer_like(cov(first(args.q[:p]))),
+    ),
+    body = (output::MvNormalMeanPrecision, args) -> begin
+        mul!(output.Λ, ...)   # writes straight into the buffer, no temporaries
+        output
+    end,
+)
 ```
 
-- `@allocate` lowers to `allocate_result(rule, inputs, ctx)`; the body lowers to
-  `rule!(buffer, inputs, ctx)`; `rule(args...) = rule!(allocate_result(args...), args...)`.
-- In an `inplace` rule, `m[<target edge>]` **is the output buffer**. Such a rule may not
-  also require the inbound message on that edge. This pins the output type in the
-  signature, making `@allocate` type-checkable and the buffer type statically known.
+- `preallocate` lowers to `allocate_result(...)`; `body` lowers to `rule!(buffer, ...)`;
+  the allocating form is `rule(args...) = rule!(allocate_result(args...), args...)`.
+- **The output type is pinned by the ordinary typed lambda parameter** `output::T`, which
+  Julia itself enforces (a mismatch is a `MethodError`) and infers. That is stronger than
+  the macro-side analysis it replaces.
+- **An in-place rule may also request the inbound message on the target edge.** An earlier
+  design forbade it, because `m[target]` had to mean either the buffer or the inbound
+  message and could not mean both. With `output` as a separate body slot the ambiguity does
+  not arise: `output` is the buffer and `args.m[:out]` is the inbound message, and a rule
+  may use both.
 - `buffer_like(x)` — allocation primitives that **dispatch on the source** (`Vector`→
   `Vector`, `SVector`→`MVector`, `ConcreteRArray`→on-device, …) rather than allocating a
   default and converting, which would repeat the same mistake one level up. Lives in and is
@@ -347,8 +465,8 @@ plan.** What this plan must not foreclose is the seam, which costs nothing now:
 runs on `Vector`, on `SVector`, and on device arrays with no rule-side change. And in-place
 discipline and traceability discipline are nearly the same discipline: both forbid
 materialising intermediates, both need static shapes, both need the output container
-declared up front rather than discovered from a return value. So `@allocate` +
-destination-passing is already the right shape, and `@allocate` is where device placement
+declared up front rather than discovered from a return value. So `preallocate` +
+destination-passing is already the right shape, and `preallocate` is where device placement
 would later belong. Keep `buffer_like` extensible and documented; build nothing else.
 
 ### Package split
@@ -618,8 +736,12 @@ The dispatch result, ownership contracts and early engine integration are separa
 
 ## Open items
 
-1. **Rule syntax final form** — `m[x]`/`q[x]` settled in principle; outbound-edge spelling
-   and where `algorithm` sits in the header are not.
+1. ~~**Rule syntax final form.**~~ **RESOLVED.** The surface is fully keyword-based with an
+   ordinary lambda body over a real arguments object, symbols throughout
+   (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members as `q[:p][k]`,
+   indexed targets as `(:m, k)`, body slots `(output, algo, ctx, args, ann, node)` in
+   canonical order, and dispatch carried by the `algorithm` keyword. `@allocate` and
+   `@logscale` are deleted rather than renamed. See § Rule surface.
 2. **`aligned` generality** — everything in-tree is `k ↔ k`. `q[p[f(k)]]` extends
    naturally; don't build until something needs it.
 3. **Per-(target, factorisation) group selection** — assumed per-target; all four in-tree
@@ -653,7 +775,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    inputs or require permuting the joint** — canonicalising the names is not sufficient.
    **Decide before the macro surface freezes.**
 
-10. **Buffer ownership, as distinct from buffer allocation.** `@allocate` answers *how to
+10. **Buffer ownership, as distinct from buffer allocation.** `preallocate` answers *how to
     create* storage, not *when it may be reused*. Retainers beyond the equality chain:
     `DeferredMessage` caches its result, subjects retain recent messages, and
     `InputArgumentsAnnotations` stores references to inputs *and* results — so recording a
@@ -736,7 +858,8 @@ ReactiveMP and RxInfer.
   concrete pair. An agent should not have to infer the rule from a description.
 - **Complete case coverage**, including the fiddly ones — `ManyOf` → variadic groups,
   indexed edges `(:in, k)`, joint marginals `q_y_x` → `q[y, x]`, `meta` → `algorithm`,
-  `@logscale`, `getnode`/`getnodefn`, `Marginalisation` removal, the renamed macros.
+  `@logscale` becoming `annotate!(ann, ...)`, `getnode`/`getnodefn`, `Marginalisation`
+  removal, the renamed macros and the move to the keyword form.
 - **An explicit "cannot be translated mechanically" section.** Rules touching raw
   `messages[i]`/`marginals[i]` tuples, rules constructing graph objects, anything relying on
   `meta` as a mutable workspace (the RxGP `GPCache` pattern). An agent must be told to stop
@@ -919,7 +1042,10 @@ half-maintained copies that drift.
 - `@test_rules` numerical regression per rule, unchanged semantics, run per directory
   during migration.
 - **Go/no-go gate before bulk rule migration:** use hand-written rules in Phase 0 to check
-  with `@code_typed`/JET that the new routing machinery devirtualizes. Require equivalent
+  with `@code_typed`/JET that the new routing machinery devirtualizes — specifically
+  **through the `RuleSpec`**, including the in-place branch the spec owns, since a spec whose
+  body lives in a `::Function` field would pass a naive dispatch check and still allocate on
+  every message (see § Registry for the measurement). Require equivalent
   dispatch behavior and no material measured routing overhead versus direct calls, not
   identical generated code. Measure cold and warm execution, allocations and specialization
   growth; assess rule bodies and user-supplied services separately.
