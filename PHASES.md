@@ -12,15 +12,20 @@ Branch: `refactor/rule-node-system-rewrite`
 
 ## Next action
 
-**Phase 0** — the throwaway spike, in `spike/`. Phase P is complete and was re-verified
-against the working tree, not just against this file: the disposition inventory is assigned
-and CI-gated, the repository layout and Julia floor are decided, and the comparison
-environment resolves. Phase 0 answers the questions that cannot be walked back.
+**Phase 1 (circulate) and Phase 2 (tooling), which run in parallel.** Phase 0 is complete:
+all thirteen criteria are met, the results are in `DISCUSSION.md` §3.15, and the spike that
+produced them has been deleted as planned — it is in the history at `81822c57` and its
+parents.
 
-The spike is committed as it is built, so its measurements are reproducible, and **deleted
-in the commit that closes Phase 0** — the findings survive in `DISCUSSION.md`. Measurements
-run on the **1.10 floor** and on 1.13; a gate that passes only on the newest Julia says
-nothing about the version this package supports.
+What Phase 0 settled, in one line each: the routing devirtualizes on the ordinary path at
+zero allocations; the rule surface survives ten hand-written rules including the canary; the
+fallback contract is structural rather than a discipline; the ruleset axis is deferred; the
+delta-layout collapse is real but partial, and the three things that do not collapse are
+named. Three findings changed the design — the target is threaded to every body, incoming
+annotations need their own accessor, and static gating is a first-class concept rather than a
+dependency.
+
+Phase 1 needs a human audience, so it is a GitHub issue rather than a file.
 
 ---
 
@@ -31,9 +36,9 @@ nothing about the version this package supports.
 | — | Initial design documented in `PLAN.md`, `DISCUSSION.md` | **done; open decisions below** |
 | — | External design review; contradictions reconciled | **done** |
 | P | Prep: disposition inventory, layout and environment decisions | **done** |
-| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **done — 13/13** |
-| 1 | Circulate for external feedback | not started |
-| 2 | Tooling migration on ReactiveMP | not started *(parallel with 1)* |
+| 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **done** |
+| 1 | Circulate for external feedback | **next** |
+| 2 | Tooling migration on ReactiveMP | **next** *(parallel with 1)* |
 | 3 | `MessagePassingRulesBase` | not started |
 | 4 | `MessagePassingRulesTestUtils` | not started |
 | 4.5 | **Engine integration slice** — small end-to-end proof | not started |

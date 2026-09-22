@@ -146,6 +146,13 @@ every rule reads the same way down a file; relaxing that later is easy, tighteni
 be breaking. An unrecognised name is an error naming the valid set. `output` appears exactly
 when `inplace = true`.
 
+**The target is threaded to every body, but is not one of the slots.** An indexed target
+`towards = (:m, k)` binds `k` in the body, and `k` is a runtime value the lowered body cannot
+close over — so the call carries the target and the macro emits `k = index(target)` as an
+ordinary binding when the declaration names an index. Writing `k` is how you ask for it;
+there is no `target` slot to request. This mirrors v6, which injects `k = on[2]` at macro
+expansion. Found in Phase 0.
+
 `algo` is **read access to the algorithm value** (AR order, kernels, inducing points — the
 parameter-bag half of the old `meta`). It is *not* the dispatch mechanism: dispatch is the
 `algorithm` keyword, which types the generated method's algorithm argument. A rule that
@@ -657,7 +664,17 @@ choice (`q_out` "mirrors the posterior marginal" sounds like stream aliasing, no
 **Test it in Phase 0**, where the delta layouts are the hardest thing the dependency
 language would have to express. Finding its limits on the hard case is the point.
 
-**If the hypothesis holds**, the plan is: collapse layouts into dependency declarations
+**Phase 0 tested it: the hypothesis holds for input selection, and only for that.** Written
+out as declarations, the four layouts differ in exactly one respect — which messages and
+marginals each of the four slots consumes. But three things in the same files are *not*
+dependency choices and do not collapse: **static gating** (`with_statics`,
+`default.jl:22-44`, measured as 0 emissions before a static input arrives and 2 after), the
+**`N === 1` empty-group branch** (`default.jl:321-327`), and **`q_out` aliasing**
+(`default.jl:47-64`), which is topology rather than a rule input. Each needs explicit support
+in `MessagePassingRulesBase`, or it lands back in the engine and takes the layout with it.
+See `DISCUSSION.md` §3.15.
+
+**On that condition the plan is**: collapse layouts into dependency declarations
 first, after which `CVIProjection` has no engine half at all — just an algorithm struct, a
 dependency declaration, and rules. It then ships as a **weakdep extension of the Delta node
 package**, keeping today's pattern, and no separate package is needed. A standalone package
@@ -773,12 +790,17 @@ The dispatch result, ownership contracts and early engine integration are separa
    `(:p)[f(k)]` — indexing a `Symbol`. See § Rule surface.)
 3. **Per-(target, factorisation) group selection** — assumed per-target; all four in-tree
    cases work because the mixtures pin their factorisation. One-way door in the syntax.
-4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`) — separate from
-   `algorithm`, would give scoped rule tables and stop downstream packages invalidating
-   each other's inferred call sites. Not requested; `algorithm` may already suffice.
-   Phase 0 records whether to include it or defer it pending a concrete use case. Existing
-   rule-fallback behavior still needs a contract either way; exceptions inside a selected
-   rule must propagate rather than trigger fallback.
+4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`). **DEFERRED in Phase 0.**
+   A downstream package that wants its own rule for a standard node and edge declares its own
+   algorithm and gets it, with no shadowing and no ambiguity, because the algorithm is part of
+   the signature. The piracy argument for the axis was already dead (see § Testing). Adding
+   the axis later is a new keyword rather than a resurfacing, so it waits for a concrete use
+   case. The rule-fallback contract was specified independently, as required:
+   **resolution is a separate, total function** — `find_rule` returns a spec or a
+   `RuleNotFound`, never throws and never runs anything, and the fallback is consulted on the
+   not-found branch only, which is decided before any body runs. An exception from inside a
+   selected rule therefore cannot reach the fallback, structurally rather than by discipline.
+   This removes v6's asymmetry, where `rule` returns a sentinel and `marginalrule` throws.
 5. **Reactant and StableCholesky** — deferred to their own effort. Per-rule compilation is
    an explicitly supported *research* path when it happens, not a rejected one; whole-sweep
    tracing and `vmap` are a superset of it, not a competing approach. Nothing to decide
@@ -826,11 +848,15 @@ The dispatch result, ownership contracts and early engine integration are separa
     the already-loaded host (such as Delta), or a static table. Its representation remains
     open; placing it only in the unloaded extension would not solve the problem.
 
-12. **Context service contracts are currently just names.** `mixture/switch.jl` needs
-    normalised-product information *and* incoming log scales; delta rules need the node
-    function *with captured parameters and fixed arguments* (`FixedArguments`), not a node
-    type. In Phase 0, demonstrate both as standalone calls with no graph construction
-    and no Rocket. Also clarify that "context is non-dispatching" means it does not select
+12. **Context service contracts.** Phase 0 turned both hard cases into signatures, each
+    demonstrated as a standalone call with no graph and no Rocket:
+    `product : (left, right) -> (dist, logscale::Real)` and
+    `nodefn : (ctx, target) -> a callable of the free arguments only`. Neither carries an
+    engine type. **Still open: incoming annotations have no declared route.** The switch rule
+    needs the log scales that *arrived* with its messages, but `args` holds message data and
+    `ann` is an output sink the rule writes to. Recommended: a parallel accessor keyed exactly
+    like `m` — `args.ann_in[:out]` — kept out of dispatch, because an annotation must never
+    select the mathematics. Settle the representation before the macro surface freezes. Also clarify that "context is non-dispatching" means it does not select
     the mathematical rule — its concrete services may still specialise for efficiency.
 
 13. **The approximation package's numerical protocol is unspecified.** Passing a context

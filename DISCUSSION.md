@@ -725,6 +725,148 @@ code_typed(call_rule, (Val{:N}, Val{:out}, NamedTuple{(:a, :b), Tuple{Float64, F
 
 ---
 
+### 3.15 Phase 0 — what the spike found
+
+The spike lived in `spike/` and was deleted when Phase 0 closed; it is in the history at
+`81822c57` and its parents. Everything worth keeping is here.
+
+#### The representation gate
+
+Measured on the **1.10 floor** and on 1.13, with the adopted parameter-free `RuleSpec`:
+
+| | 1.10.12 | 1.13.0 |
+|---|---|---|
+| `args.m[:sym]`, `args.q[:p][k]` | 0, inferred | 0, inferred |
+| routing, call site reaching one rule | **0**, `Float64` | **0**, `Float64` |
+| routing, call site reaching two rules | 48, `Any` | 0, `Any` |
+| same, parameterised spec, two rules | 32, `Float64` | 0, `Float64` |
+| `NormalMeanVariance(:out)` end to end | **0** | **0** |
+| in-place kernel with a provided buffer | **0** | **0** |
+| cold compile, one rule | 5.8 ms | — |
+| warm execution | 1.33 ns | — |
+
+So the indirect call the parameter-free decision accepts **costs nothing on the ordinary
+path**: a factor node's functional form is fixed, so its call sites reach exactly one rule.
+It costs 48 bytes on the floor only where resolution is genuinely ambiguous, which is where
+type information has already been lost upstream. `find_rule` returns a concrete `RuleSpec`
+in every case, which was the point of dropping the parameters. JET reports nothing on the
+routing. `Float64`/`Float32`/`BigFloat` all propagate without widening or allocation — the
+property that makes `ForwardDiff.Dual` work through a rule.
+
+Specialization growth is **multiplicative in (group size × element type)**: six group sizes
+added 20 specializations. That is a property of the tuple rather than of this design —
+`ManyOf{N,T}` has it today — and it is the number to watch if compile time becomes the
+complaint during Phase 5.
+
+#### Measuring this is easy to get wrong — five ways, all hit in practice
+
+Recorded because every one of them silently changes the answer, and two of them were caught
+only because a gate failed:
+
+| mistake | effect |
+|---|---|
+| measuring against a non-`const` global | `+16` bytes of boxing |
+| a varargs helper that splats, `f(xs...)` | `+48` bytes of its own, in every figure |
+| constructing the spec inline in an inlinable `find_rule` | constant-folded away — `0` for *every* representation |
+| closing over the node in a loop, so it is a `DataType` rather than `Type{Node}` | the call goes dynamic and reports `Any` |
+| defining the rule before the timing function | the caller's own compilation absorbs it; cold time reads as zero |
+
+A gate that asserts only the flattering direction is vacuous. The rule taken: report both
+call-site shapes, and include a negative control that must allocate.
+
+#### Three findings that change the design
+
+**1. The body slots need the target threaded through.** `PLAN.md` lists six slots
+`(output, algo, ctx, args, ann, node)` and no target — but an indexed target
+`towards = (:m, k)` has to bind `k`, which is a runtime value the lowered body cannot close
+over. Resolution: thread `target` to every body and let the macro emit `k = index(target)`
+as an ordinary binding when the declaration names an index. It stays out of the user-facing
+slot list; writing `k` is how you ask for it. This mirrors v6, which injects `k = on[2]` at
+macro expansion.
+
+**2. Incoming annotations have no declared route.** The mixture switch rule needs the log
+scales that *arrived* with its messages. But `args` holds message **data** — the declaration
+`m[:μ]::PointMass` is about the distribution, and the body calls `mean(args.m[:μ])` — while
+`ann` is an output sink the rule writes to. So an annotation that arrives with a message has
+nowhere to go. Recommendation: a parallel accessor keyed exactly like `m`,
+`args.ann_in[:out]`, kept out of dispatch, because an annotation must never select the
+mathematics. Open item #12 should carry this.
+
+**3. The delta-layout collapse is real but partial.** See below.
+
+#### The fallback contract
+
+Resolution becomes a **separate, total function**. `find_rule` returns a `RuleSpec` or a
+`RuleNotFound`; it never throws and never runs anything. The fallback is consulted on the
+`RuleNotFound` branch only — which is decided *before* any body runs. There is therefore no
+`try` anywhere near the body, and an exception from inside a selected rule cannot reach the
+fallback even deliberately. A `try`/`catch` around execution would get this wrong, and get it
+wrong silently, by turning a broken rule into a missing one.
+
+This applies uniformly to message rules, marginal rules and average energy, which **removes
+v6's asymmetry**: today `rule` returns a `RuleMethodError` sentinel while `marginalrule`
+throws, so marginal rules cannot have a fallback at all, for no stated reason.
+
+#### Open item #4 — the ruleset axis: DEFER
+
+A downstream package that wants its own rule for a *standard* node and edge declares its own
+algorithm and gets it, with no shadowing and no ambiguity, because the algorithm is part of
+the signature. Demonstrated in the spike. The piracy argument for the axis was already dead
+(§5). Nothing in tree needs scoped rule tables, the fallback contract above is specified
+independently of the axis as `PHASES.md` required, and adding the axis later is a new
+keyword rather than a resurfacing.
+
+#### The delta layouts — hypothesis holds for input selection, and only for that
+
+Written out as declarations, the four layouts differ in exactly one respect: which messages
+and marginals each of the four slots (`q_out`, `q_ins`, `m_out`, `m_in`) consumes. The ~10
+engine calls each layout makes are the same calls with different arguments — repeated
+wiring, as the hypothesis guessed.
+
+**Three things do not fit, and none is a dependency choice:**
+
+- **Static gating.** `with_statics` (`delta/layouts/default.jl:22-44`) wraps every outbound
+  stream in a `combineLatest` against const/data inputs, so the node *waits*, while their
+  values reach the rule out-of-band through the function proxy (`FixedArguments.fix`,
+  `delta.jl:184`). Measured on the live engine: **0 emissions before the static input
+  arrives, 2 after.** A declaration that only names inputs cannot express this.
+- **The `N === 1` compile-time branch** (`default.jl:321-327`), substituting
+  `of(Message(nothing, true, true))` for an empty group. A statically-arity'd group selector
+  covers it only if the zero-arity case is a declared value rather than an empty tuple that
+  stalls the `combineLatest`.
+- **`q_out` aliasing** (`default.jl:47-64`), which connects the local marginal straight to
+  the connected variable's marginal stream. Topology, not a rule input — nothing computes it.
+
+**Consequence.** The collapse is real but partial: dependencies absorb the input selection,
+and those three need explicit support in `MessagePassingRulesBase` or they land back in the
+engine. `PLAN.md` § CVI projection made `CVIProjection`-as-an-extension conditional on the
+collapse; the condition is met for the rules half, provided the three are lifted out of the
+layout and into the language.
+
+One more thing the runs settled: **layout in v6 is a function of `(method, inverse)`, not of
+`method` alone**, so `method` and `layout` are already two axes. The new design collapses
+both into one algorithm *value* with the inverse as a field, after which
+`Linearization{Nothing}` and `Linearization{<:Function}` select different rules by ordinary
+dispatch — which the hand-written rules 7 and 8 confirm.
+
+#### Context service contracts (open item #12)
+
+Both hard cases were demonstrated as standalone calls, with no graph and no Rocket:
+
+```
+product : (left, right) -> (dist, logscale::Real)
+nodefn  : (ctx, target) -> a callable of the FREE arguments only
+linalg  : (matrix)      -> a factorisation object (replaces the 48 global cholinv calls)
+rng     : ()            -> an AbstractRNG owned by the caller
+```
+
+Neither carries an engine type. `product` is the whole of what `rules/mixture/switch.jl`
+reaches into the engine for today — the single leak in the rules tree. `nodefn` is what a
+delta backward rule towards `in_k` needs: every other input pinned to its current value, one
+free argument left, delivered as a callable rather than a node type.
+
+---
+
 ## 4. Corrections — read this before re-proposing anything
 
 Claims the assistant made that were **wrong** and should not be revived:
