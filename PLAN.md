@@ -239,6 +239,22 @@ algorithm, run, compare with `==` — catching the in-tree offender (BIFM mutati
 It only sees state reachable from that object, so it is a debug aid on top of the audit,
 not a proof.
 
+**What `pure = true` actually permits must be written down**, because `ctx` deliberately
+carries mutable buffers, scratch storage, annotations and RNG state — so "no mutation" would
+outlaw the in-place rules the design exists to enable. Intended contract: *no mutation of
+caller inputs or of shared algorithm state; writes to owned output and scratch storage are
+permitted.* Without that sentence the label is ambiguous exactly where it matters.
+
+**Purity does not establish gradient correctness**, and an earlier draft overstated this.
+Local mutation can be perfectly differentiable, and a pure rule can still drop derivative
+information or use an unsupported operation. Passing the audit is necessary, not sufficient.
+Add a small set of derivative checks against analytic or finite-difference references,
+covering both the allocating and in-place paths.
+
+**RNG ownership needs its own rule.** `CVIProjection` carries its own RNG and mutable
+proposal state, which sits badly with "carry the API over unchanged". Define who owns the
+RNG, whether it is reset between sweeps, and whether it lives in `ctx` or the algorithm.
+
 ### In-place rules
 
 **`inplace` means the result is written into a provided container. It does *not* mean
@@ -375,7 +391,11 @@ What survives is small: `Unscented`, `Linearization`, `smoothRTS` and the shared
 point/weight machinery, needing only `ForwardDiff`, `Random`, `LinearAlgebra` and
 `Distributions` — **no cubature package at all**.
 
-**This is the only capability regression in the whole plan — accepted, with conditions.**
+**A capability regression — accepted, with conditions.** (An earlier draft called it *the
+only* one. That was wrong: `srcubature`, `LaplaceApproximation` and
+`ImportanceSamplingApproximation` are **exported public API**, so deleting them is a
+regression too, even though nothing inside `src/` uses them. "No consumer in `src/`"
+establishes absence of *internal* use, not absence of downstream use — see Open item #14.)
 Everything else here is API churn: renamed macros, new syntax, relocated code. Migration is
 work, but no model loses a capability once the spelling is fixed. This one is different: the
 delta node's built-in method set (`is_delta_node_compatible`) shrinks from
@@ -534,6 +554,51 @@ review is most valuable, because it is the one decision that cannot be walked ba
    Pin current behaviour with a regression test before touching.
 7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
+9. **Beliefs consumed vs. the partition whose entropy is counted.** `PLAN.md` says custom
+   dependencies imply the factorisation and that requested marginals must form a consistent
+   partition. That conflates two things: a rule may consume an *auxiliary* belief that is
+   not an entropy cluster — `RequireMarginalFunctionalDependencies` already does exactly
+   this. Define separately: which beliefs a rule consumes, and which partition free energy
+   is computed over. Also settle auxiliary marginals, unspecified interfaces, conflicting
+   user-supplied factorisation, and **whether `q[a,b]` and `q[b,a]` are distinct ordered
+   inputs or require permuting the joint** — canonicalising the names is not sufficient.
+   **Decide before the macro surface freezes.**
+
+10. **Buffer ownership, as distinct from buffer allocation.** `@allocate` answers *how to
+    create* storage, not *when it may be reused*. Retainers beyond the equality chain:
+    `DeferredMessage` caches its result, subjects retain recent messages, and
+    `InputArgumentsAnnotations` stores references to inputs *and* results — so recording a
+    rule, running another iteration into the same storage, then inspecting the record shows
+    the new values. Specify: whether published results are snapshots or borrowed; when reuse
+    becomes legal; how retained annotations, callbacks and subscribers affect eligibility;
+    and behaviour when dimension or element type changes. Note **poisoning is not
+    sufficient** — a stale reference can read a legitimately rewritten buffer and see
+    plausible but wrong values. Test retention across multiple updates.
+
+11. **The missing-capability diagnostic cannot come from the registry.** A registry that
+    discovers *loaded* modules cannot know which *unloaded* package supplies a missing
+    capability — yet the CVI regression above is accepted on the condition that the error
+    names the package to install. Needs an explicit capability declaration carried by the
+    package that would provide it (or a static table), not discovery.
+
+12. **Context service contracts are currently just names.** `mixture/switch.jl` needs
+    normalised-product information *and* incoming log scales; delta rules need the node
+    function *with captured parameters and fixed arguments* (`FixedArguments`), not a node
+    type. Before Phase 5, demonstrate both as standalone calls with no graph construction
+    and no Rocket. Also clarify that "context is non-dispatching" means it does not select
+    the mathematical rule — its concrete services may still specialise for efficiency.
+
+13. **Approximations must not depend on the base package, yet receive `ctx` — a flat
+    contradiction** introduced by an earlier draft. Resolve by defining the minimal
+    numerical protocol they accept (likely a factorisation strategy and a workspace, never
+    `RuleContext` itself), or the dependency is quietly recreated.
+
+14. **A complete disposition inventory is missing.** Every node, rule, extension, exported
+    helper and engine hook needs an assigned destination or a deliberate deletion —
+    including aliases, form constraints, fallbacks, callbacks, stream postprocessors and
+    scoring helpers, not just rule directories. Deletions of **exported** API need migration
+    entries even where the answer is "no replacement".
+
 8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as
    `MessagePassingRulesApproximations`, holding `Unscented`/`Linearization`/`CVI`/`smoothRTS`
    — but as **standalone numerical utilities that do not depend on the base package**, not as
@@ -686,9 +751,24 @@ target edge. So the comparison must be: rule message × a known proper test prio
 target edge, against the MCMC marginal obtained under that same prior. Done naively it
 appears to work on symmetric conjugate cases and fails confusingly elsewhere.
 
+**The test-prior trick validates shape, not scale.** Multiplying by a proper prior and
+comparing against the MCMC/quadrature marginal checks the *normalised* posterior shape — it
+will happily pass a message whose normalisation constant is wrong. Since log scales feed
+free energy and the `Mixture` rules, test distribution shape and normalisation constant as
+**separate assertions**.
+
+**Define a bounded minimum subset before building it**, or this becomes an open-ended
+numerical project: low-dimensional stochastic nodes, exact enumeration for discrete cases,
+controlled quadrature elsewhere, explicit normalisation handling. Grow from there.
+
+**Define the reconciliation procedure when the oracle disagrees with v6.** "Preserve v6
+output" and "fix old mathematical errors" are contradictory instructions. Required
+response: investigate independently, then record the outcome as either a migration bug or a
+deliberate correction with its reasoning — never silently adopt either side.
+
 Scope honestly: stochastic nodes only (`nodefunction` is not generated for deterministic
 ones); MC error forces loose tolerances and quadrature hits dimensionality fast; rules that
-are themselves approximations (delta, CVI, projection) have no exact reference; improper or
+are themselves approximations (delta, projection) have no exact reference; improper or
 unnormalised messages, `PointMass` inputs, and rules returning `ProductOf`/`FactorizedJoint`
 need special handling. A property test complementing the tables, tagged `:slow`.
 
@@ -700,6 +780,9 @@ need special handling. A property test complementing the tables, tagged `:slow`.
   "every rule has a test" becomes a CI check — cross-reference the registry against tested
   rules and fail on any `RuleSpec`/`NodeSpec` with no test entry. Nothing in the current
   system can do this, since rules exist only as methods.
+  **Coverage must record the rule actually selected**, not merely that a test mentions some
+  node and edge. Otherwise a broad fallback satisfies the check while the specialised rule
+  it was meant to cover never executes.
 - Coverage floor, fail on decrease.
 
 ## Documentation
@@ -748,4 +831,18 @@ half-maintained copies that drift.
 - Buffer-escape detection: run the full suite in checked mode as a separate CI job.
 - Mixture rewrite: pin current behaviour (including the `reverse` quirk) with regression
   tests first, then delete.
+- **Annotation and product behaviour is its own acceptance gate, not a by-product of
+  numerical rule tests.** Folding products over raw distributions also touches form
+  constraints, fold order, callbacks, and the `is_clamped`/`is_initial` flags — and
+  `Message ==` deliberately ignores annotations, so numerical equality can pass while log
+  scale bookkeeping is silently wrong. Compare observable behaviour explicitly: annotations,
+  log scales, flags, callback order where contractual, and free-energy results. Include the
+  missing-input path, where today a missing input bypasses rule execution *and* the
+  post-rule annotation processors.
+- **A dedicated rewrite integration environment.** `.github/workflows/IntegrationTest.yml`
+  catches `Pkg.Resolve.ResolverError` and calls `exit(0)`, treating resolution failure as an
+  intentional breaking change. Reasonable for ordinary releases; **useless as the gate for a
+  coordinated rewrite**, since incompatible versions would report green without running a
+  single downstream test. Add a job pinning mutually compatible revisions of the new
+  packages and their consumers, in which resolution failure is a hard failure.
 - End-to-end: RxInfer's test suite and RxInferExamples against the new packages.
