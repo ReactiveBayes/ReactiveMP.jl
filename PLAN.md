@@ -385,6 +385,13 @@ modes are four values of one type; a user lambda is a fifth:
 | none | not listed | `{}` | `0` | `Mixture((:inputs,k))` |
 | `CustomGroupSelector` | `m[:in][select_group_members(f; arity = n)]` | `f(k)` | `n` | — |
 
+**What a rule receives for a group** (decided at Phase 3 step 8): a tuple in member order,
+full length, with `nothing` in every position the selection leaves out. So `args.q[:p][k]`
+is member `k` whatever the selector, positions keep their meaning, and each placement of
+`nothing` is its own concrete tuple type. A rule declares its inputs in the spelling of its
+dependencies — `q[:p][k]::T`, `m[:in][!k]::T`, `m[:in...]::T` — and `check_rules()` checks
+the two agree.
+
 (Syntax and names decided at Phase 3 step 7. Declared with `@define_dependencies(node, algorithm,
 dependencies, free_energy_partition)`, or with `dependencies = [...]` on the node for its default
 algorithm. Two engine contracts go with it: **a selection of no members is an empty tuple and

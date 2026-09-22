@@ -11,9 +11,12 @@ Define the rule for the message a node sends towards one of its interfaces.
 
 - `towards`: `:out`, or `(:m, k)` for member `k` of the group `m`; writing `k` binds the
   index in `body`.
-- `args`: the inputs the rule consumes, `m[:μ]::T` for a message, `q[:μ]::T` for a
-  marginal, `q[:y, :x]::T` for a structural cluster (members in interface order) and
-  `m[:inputs...]::T` for a whole group whose members are each `T`. An omitted type is `Any`.
+- `args`: the inputs the rule consumes, in the spelling of its dependencies: `m[:μ]::T` for
+  a message, `q[:μ]::T` for a marginal, `q[:y, :x]::T` for a structural cluster (members in
+  interface order), and for a group `m[:in...]::T` (all members), `m[:in][k]::T` (the
+  target's own member) or `m[:in][!k]::T` (all but it). A group arrives as a tuple in member
+  order with `nothing` where the selection leaves a member out, so `args.m[:in][k]` means
+  member `k` whatever was selected. An omitted type is `Any`.
 - `body`: an ordinary lambda over some of the slots `(output, algo, ctx, args, ann)`,
   named in that order: `args` holds the inputs, `algo` the algorithm value, `ctx` the
   [`RuleContext`](@ref), `ann` the annotations (read `ann.m[:out]`, write with
@@ -72,7 +75,7 @@ function define_rule_expr(kind, source, macroargs)
 
     node = keywords[:node]
     target, index_name = kind === :average_energy ? (nothing, nothing) : parse_towards(name, kind, keywords[:towards])
-    inputs = parse_rule_args(name, keywords[:args])
+    inputs = parse_rule_args(name, keywords[:args], index_name)
     inplace = get(keywords, :inplace, false)
     inplace isa Bool || error("@$name: `inplace` must be `true` or `false`")
     pure = get(keywords, :pure, nothing)
@@ -138,6 +141,7 @@ function define_rule_expr(kind, source, macroargs)
             target = $(target === nothing ? :Nothing : target),
             algorithm = $algorithm_sym,
             signature = $signature_sym,
+            inputs = $(input_specs(inputs)),
             body = ($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...)),
             prealloc = $prealloc,
             inplace = $inplace,
@@ -190,26 +194,33 @@ function parse_services(name, ex)
     return Tuple(services)
 end
 
-# One entry of `args`, e.g. `m[:μ]::T`, `q[:y, :x]::T`, `m[:inputs...]::T`.
-function parse_rule_args(name, ex)
+# One entry of `args`: `m[:μ]::T`, `q[:y, :x]::T`, and for a group `m[:in...]::T` (all
+# members), `m[:in][k]::T` (the target's own member) or `m[:in][!k]::T` (all but it).
+function parse_rule_args(name, ex, index_name)
     entries = ex isa Expr && ex.head === :tuple ? ex.args : [ex]
     inputs = []
     for entry in entries
         ref, type = entry isa Expr && entry.head === :(::) && length(entry.args) == 2 ?
             (entry.args[1], entry.args[2]) : (entry, :Any)
-        (ref isa Expr && ref.head === :ref && ref.args[1] in (:m, :q)) ||
+        (ref isa Expr && ref.head === :ref) ||
+            error("@$name: each entry of `args` is `m[...]` or `q[...]`, like `m[:μ]::T`; got `$entry`")
+        if ref.args[1] isa Expr && ref.args[1].head === :ref && length(ref.args) == 2
+            push!(inputs, parse_member_selection(name, ref, type, index_name))
+            continue
+        end
+        ref.args[1] in (:m, :q) ||
             error("@$name: each entry of `args` is `m[...]` or `q[...]`, like `m[:μ]::T`; got `$entry`")
         container, keys = ref.args[1], ref.args[2:end]
         isempty(keys) && error("@$name: `$ref` names no interface")
         if length(keys) == 1
             key = keys[1]
             if key isa Expr && key.head === :ref
-                error("@$name: `$ref` indexes a Symbol; declare a group as `$(container)[:p...]` and reach member `k` in the body as `args.$(container)[:p][k]`")
+                error("@$name: `$ref` indexes a Symbol; select member `k` of a group as `$(container)[:p][k]`")
             end
             group = key isa Expr && key.head === :... && length(key.args) == 1
             symbol = quoted_symbol(group ? key.args[1] : key)
             symbol === nothing && error("@$name: an interface in `args` is a symbol like `:μ`, got `$key`")
-            push!(inputs, (container = container, key = symbol, joint = false, group = group, type = type))
+            push!(inputs, (container = container, key = symbol, selection = group ? :all : :single, type = type))
         else
             container === :q || error("@$name: `$ref`: only marginals have structural clusters; use `q[...]`")
             members = map(keys) do key
@@ -217,7 +228,7 @@ function parse_rule_args(name, ex)
                 symbol === nothing && error("@$name: a cluster member is a symbol like `:y`, got `$key`")
                 symbol
             end
-            push!(inputs, (container = container, key = Tuple(members), joint = true, group = false, type = type))
+            push!(inputs, (container = container, key = Tuple(members), selection = :cluster, type = type))
         end
     end
     seen = Set()
@@ -229,16 +240,38 @@ function parse_rule_args(name, ex)
     return inputs
 end
 
-# The `RuleArgs` type a rule dispatches on, with keys in the containers' canonical order.
+function parse_member_selection(name, ref, type, index_name)
+    inner, selector = ref.args[1], ref.args[2]
+    container, key = inner.args[1], length(inner.args) == 2 ? quoted_symbol(inner.args[2]) : nothing
+    (container in (:m, :q) && key !== nothing) ||
+        error("@$name: a group member is selected as `m[:p][k]`, got `$ref`")
+    index_name === nothing &&
+        error("@$name: `$ref` selects by the target's index, which needs an indexed target like `towards = (:$key, k)`")
+    selection = if selector === index_name
+        :aligned
+    elseif selector isa Expr && selector.head === :call && selector.args == [:!, index_name]
+        :allbutself
+    else
+        error("@$name: in `$ref`, a group member is selected by the target's index `$index_name`, as `[$index_name]` or `[!$index_name]`")
+    end
+    return (container = container, key = key, selection = selection, type = type)
+end
+
+# The `RuleArgs` type a rule dispatches on, with keys in the containers' canonical order. A
+# group is a tuple in member order; members a selection leaves out are `nothing`.
 function rule_signature(inputs)
-    element(input) = input.group ? :(Tuple{Vararg{$(input.type)}}) : input.type
+    function element(input)
+        input.selection === :all && return :(Tuple{Vararg{$(input.type)}})
+        input.selection in (:aligned, :allbutself) && return :(Tuple{Vararg{Union{Nothing, $(input.type)}}})
+        return input.type
+    end
     function named(selected)
         sorted = sort(selected; by = input -> input.key)
         return Tuple(input.key for input in sorted), [element(input) for input in sorted]
     end
     mkeys, mtypes = named([i for i in inputs if i.container === :m])
-    qkeys, qtypes = named([i for i in inputs if i.container === :q && !i.joint])
-    jkeys, jtypes = named([i for i in inputs if i.joint])
+    qkeys, qtypes = named([i for i in inputs if i.container === :q && i.selection !== :cluster])
+    jkeys, jtypes = named([i for i in inputs if i.selection === :cluster])
     return :(
         $RuleArgs{
             <:$Messages{$mkeys, <:Tuple{$(mtypes...)}},
@@ -246,6 +279,11 @@ function rule_signature(inputs)
         }
     )
 end
+
+input_specs(inputs) = Expr(
+    :tuple,
+    (:($InputSpec($(QuoteNode(i.container)), $(QuoteNode(i.key)), $(QuoteNode(i.selection)), $(i.type))) for i in inputs)...,
+)
 
 function lambda_parameters(name, ex; what = "body")
     (ex isa Expr && ex.head === :->) ||

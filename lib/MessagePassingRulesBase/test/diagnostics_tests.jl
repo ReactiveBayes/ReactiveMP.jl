@@ -1,0 +1,101 @@
+@testmodule BrokenRules begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: BP, VMP
+
+    struct Gauss end
+    @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :τ, :p...])
+
+    @define_message_update_rule(node = Gauss, towards = :out, args = (m[:μ]::Real, m[:τ]::Real), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, towards = :nope, args = (m[:μ]::Real,), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, towards = :p, args = (m[:μ]::Real,), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, towards = :μ, args = (q[:τ, :out]::Any,), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, towards = :τ, args = (m[:p]::Any, m[:μ...]::Any), body = (args) -> 1)
+    @define_marginal_update_rule(node = Gauss, towards = (:μ, :out), args = (m[:out]::Any,), body = (args) -> 1)
+
+    struct Undeclared end
+    @define_message_update_rule(node = Undeclared, towards = :out, algorithm = BP, args = (), body = () -> 1)
+
+    # Consistent with dependencies, and then not.
+    struct Mix end
+    @define_factor_node(
+        node = Mix, type = Stochastic, interfaces = [:out, :m..., :p...], algorithm = VMP,
+        dependencies = [(:m, k) => (q[:out], q[:p][k]), :out => (q[:m...], q[:p...])],
+    )
+    @define_message_update_rule(node = Mix, towards = (:m, k), args = (q[:out]::Any, q[:p][k]::Any), body = (args) -> 1)
+    @define_message_update_rule(node = Mix, towards = :out, args = (q[:m...]::Any,), body = (args) -> 1)
+
+    # Two rules some call matches equally well.
+    struct Amb end
+    @define_factor_node(node = Amb, type = Stochastic, interfaces = [:out, :a, :b])
+    @define_message_update_rule(node = Amb, towards = :out, args = (m[:a]::Float64, m[:b]::Real), body = (args) -> 1)
+    @define_message_update_rule(node = Amb, towards = :out, args = (m[:a]::Real, m[:b]::Float64), body = (args) -> 2)
+    # Nested, not ambiguous: one is more specific.
+    @define_message_update_rule(node = Amb, towards = :a, args = (m[:out]::Real,), body = (args) -> 1)
+    @define_message_update_rule(node = Amb, towards = :a, args = (m[:out]::Float64,), body = (args) -> 2)
+end
+
+@testitem "diagnostics:check_rules" tags = [:base] setup = [BrokenRules] begin
+    using MessagePassingRulesBase: check_rules
+    B = BrokenRules
+    messages = [issue.message for issue in check_rules(B)]
+    has(text) = any(m -> contains(m, text), messages)
+
+    @test has("has no interface `nope`")
+    @test has("`p` is a group; its targets are written `(:p, k)`")
+    @test has("`q[:τ, :out]`: a cluster lists existing, non-group interfaces in interface order")
+    @test has("`m[:p]`: `p` is a group")
+    @test has("`m[:μ...]`: `μ` is not a group")
+    @test has("`towards = (:μ, :out)`: a cluster lists existing interfaces in interface order")
+    @test has("has no declaration")
+    @test has("consumes (q[:m...]) but the dependencies of")
+    @test length(messages) == 8
+end
+
+@testitem "diagnostics:clean" tags = [:base] setup = [SpikeRules, DependencyNodes, ToyNodes] begin
+    using MessagePassingRulesBase: check_rules, check_rule_ambiguities
+    @test isempty(check_rules(SpikeRules))
+    @test isempty(check_rules(DependencyNodes))
+    @test isempty(check_rule_ambiguities(SpikeRules))
+end
+
+@testitem "diagnostics:ambiguities" tags = [:base] setup = [BrokenRules] begin
+    using MessagePassingRulesBase: check_rule_ambiguities, Target
+    pairs = check_rule_ambiguities(BrokenRules)
+    @test length(pairs) == 1
+    a, b = only(pairs)
+    @test a.node === BrokenRules.Amb && b.node === BrokenRules.Amb
+    @test a.target === Target{:out}
+end
+
+@testitem "diagnostics:rule-not-found" tags = [:base] setup = [BrokenRules] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: RuleArgs, Target, BP, VMP, RuleNotFoundError
+    B = BrokenRules
+    text(f) = try
+        f()
+        ""
+    catch err
+        err isa RuleNotFoundError ? sprint(showerror, err) : rethrow()
+    end
+
+    # The shape fits, a type does not.
+    mismatch = text(() -> message_passing_rule(B.Gauss, Target(:out), BP(), RuleArgs(m = (μ = 1.0, τ = "x"))))
+    @test contains(mismatch, "type mismatch")
+    @test contains(mismatch, "✓ m[:μ]::Real  got Float64")
+    @test contains(mismatch, "✗ m[:τ]::Real  got String")
+    @test contains(mismatch, "✓ algorithm")
+
+    # Wrong inputs altogether.
+    shape = text(() -> message_passing_rule(B.Gauss, Target(:out), BP(), RuleArgs(m = (μ = 1.0,), q = (τ = 1.0,))))
+    @test contains(shape, "no rule of this shape")
+    @test contains(shape, "✗ m[:τ]::Real  not provided")
+    @test contains(shape, "✗ q[:τ]::Float64  provided but not consumed")
+
+    # Right inputs, wrong algorithm.
+    algorithm = text(() -> message_passing_rule(B.Gauss, Target(:out), VMP(), RuleArgs(m = (μ = 1.0, τ = 2.0))))
+    @test contains(algorithm, "no rule of this shape")
+    @test contains(algorithm, "✗ algorithm")
+
+    none = text(() -> message_passing_rule(B.Gauss, Target(:nothing_here), BP(), RuleArgs()))
+    @test contains(none, "no rule exists for this node and target")
+end

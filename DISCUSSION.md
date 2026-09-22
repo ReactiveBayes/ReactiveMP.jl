@@ -974,6 +974,16 @@ Three more decisions were taken while planning Phase 3's execution:
   `free_energy_partition`/`static_inputs`/`interface_groups`/`dependencies_spec`. The trait
   names GraphPPL and RxInfer already use — `interfaces`, `sdtype`, `nodefunction`,
   `alias_interface` — are kept.
+- **What `args` holds for a partly selected group (user, Phase 3 step 8).** The spike's canary
+  declared `q[:p...]` and read `args.q[:p][k]` while its dependency selected only `q[:p][k]` —
+  a contradiction nobody had noticed, because the spike built its own inputs. The decision: a
+  rule declares exactly what its dependency selects, in the same spelling, and the group
+  arrives as a full-length tuple in member order with `nothing` where the selection leaves a
+  member out. The alternatives were a compacted tuple, where `[k]` stops meaning member `k`,
+  and passing the whole group while the selector only schedules, where members the update
+  did not wait on may be stale. `!k` cannot be written as a runtime index in a body — `!` is
+  not defined on integers, and defining it would be piracy — so an all-but-self body reads
+  the tuple with its `nothing` in place.
 - **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
   so an in-place rule towards a group member can size its buffer by `k` exactly as its
   body can. The first cut raised an error in that case instead; it was fixed before

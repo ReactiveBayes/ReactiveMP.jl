@@ -74,14 +74,15 @@ function register!(registry::Registry, declaration::DependenciesSpec)
 end
 
 """
-    registries()
+    registries([modules...])
 
-Every registry in the loaded modules and their submodules, including `Main`.
+Every registry in `modules` and their submodules; by default in every loaded module and
+`Main`.
 """
-function registries()
+function registries(modules::Module...)
     found = Pair{Module, Registry}[]
     visited = Set{Module}()
-    roots = Module[Main; collect(values(Base.loaded_modules))]
+    roots = isempty(modules) ? Module[Main; collect(values(Base.loaded_modules))] : collect(modules)
     for root in roots
         collect_registries!(found, visited, root)
     end
@@ -106,18 +107,26 @@ function collect_registries!(found, visited, mod::Module)
 end
 
 """
-    registered_rules()
+    registered_rules([modules...])
 
-Every rule defined in the loaded modules.
+Every rule defined in `modules`, by default in every loaded module.
 """
-registered_rules() = RuleSpec[spec for (_, registry) in registries() for spec in registry.rules]
+registered_rules(modules::Module...) = RuleSpec[spec for (_, registry) in registries(modules...) for spec in registry.rules]
 
 """
-    registered_nodes()
+    registered_nodes([modules...])
 
-Every node declared in the loaded modules.
+Every node declared in `modules`, by default in every loaded module.
 """
-registered_nodes() = NodeSpec[spec for (_, registry) in registries() for spec in registry.nodes]
+registered_nodes(modules::Module...) = NodeSpec[spec for (_, registry) in registries(modules...) for spec in registry.nodes]
+
+"""
+    registered_dependencies([modules...])
+
+Every [`DependenciesSpec`](@ref) declared in `modules`, by default in every loaded module.
+"""
+registered_dependencies(modules::Module...) =
+    DependenciesSpec[spec for (_, registry) in registries(modules...) for spec in registry.dependencies]
 
 """
     duplicate_rules()

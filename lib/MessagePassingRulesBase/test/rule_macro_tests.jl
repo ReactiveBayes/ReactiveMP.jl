@@ -65,7 +65,7 @@
     @define_message_update_rule(
         node = NormalMixture,
         towards = (:m, k),
-        args = (q[:out]::Normal, q[:switch]::Categorical, q[:p...]::Point),
+        args = (q[:out]::Normal, q[:switch]::Categorical, q[:p][k]::Point),
         body = (args) -> Normal(mean(args.q[:out]), mean(args.q[:p][k])),
     )
 
@@ -96,8 +96,8 @@
         node = DeltaFn,
         towards = (:in, k),
         algorithm = Linearization{Nothing},
-        args = (m[:in]::Normal, q[:ins]::Any),
-        body = (args) -> Normal(mean(args.m[:in]), var(args.m[:in]) + k),
+        args = (m[:in][k]::Normal, q[:in...]::Any),
+        body = (args) -> Normal(mean(args.m[:in][k]), var(args.m[:in][k]) + k),
     )
     @define_message_update_rule(
         node = DeltaFn,
@@ -177,7 +177,8 @@ end
 
     @test message_passing_rule(+, Target(:in2), BP(), RuleArgs(m = (out = P(5.0), in1 = P(2.0)))) == P(3.0)
 
-    canary = RuleArgs(q = (out = N(0.5, 1.0), switch = C([0.5, 0.5]), p = (P(10.0), P(20.0))))
+    # Only member 2 is selected; the rest of the group is `nothing`.
+    canary = RuleArgs(q = (out = N(0.5, 1.0), switch = C([0.5, 0.5]), p = (nothing, P(20.0))))
     @test message_passing_rule(S.NormalMixture, IndexedTarget(:m, 2), VMP(), canary) == N(0.5, 20.0)
 
     mix = RuleArgs(m = (switch = C([0.25, 0.75]), inputs = (N(1.0, 1.0), N(3.0, 1.0))))
@@ -187,7 +188,7 @@ end
     switch = RuleArgs(m = (out = N(0.0, 1.0), inputs = (N(1.0, 1.0), N(2.0, 1.0))))
     @test message_passing_rule(S.Mixture, Target(:switch), BP(), switch, RuleContext(product = product)).p == [-1.0, -4.0]
 
-    lin = RuleArgs(m = (in = N(1.0, 2.0),), q = (ins = nothing,))
+    lin = RuleArgs(m = (in = (nothing, nothing, N(1.0, 2.0)),), q = (in = (1, 2, 3),))
     @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 3), S.Linearization(nothing), lin) == N(1.0, 5.0)
     inv = RuleArgs(m = (out = P(4.0),))
     @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 1), S.Linearization(sqrt), inv) == P(2.0)

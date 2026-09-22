@@ -49,7 +49,9 @@ Build the base package test-first, one commit per step, `PHASES.md` updated in e
    an empty tuple that never stalls; `q_out` aliasing is the engine invariant that a singleton
    cluster's marginal is the variable's (`DISCUSSION.md` §3.16). The spec type is
    `DependenciesSpec`;
-8. errors and the two checkers;
+8. **done** — errors and the two checkers. Also settled with the user: a group argument is a
+   full-length tuple in member order with `nothing` where the selection leaves a member out,
+   and a rule declares its inputs in its dependencies' spelling (`q[:p][k]`, `m[:in][!k]`);
 9. the full interactive surface — rich `text/plain`/`text/html` display and a visualisation
    entry point for **all three specs**, `RuleSpec`, `NodeSpec` and `DependenciesSpec`;
 10. the in-place path and `buffer_like`;
@@ -540,7 +542,9 @@ proposal. Citations are as of `545425a2`.
       of targets, groups, joint order and partition coverage (`dependencies:*`)
 - [ ] `RuleContext`, `buffer_like`, and the `preallocate` keyword (**not** `@allocate` —
       the in-body macros are deleted, see Phase 0's rule-syntax entry)
-- [ ] registry-backed errors; `check_rules()`, `check_rule_ambiguities()`
+- [x] registry-backed errors; `check_rules()`, `check_rule_ambiguities()` — the error tells
+      *no rule of this shape* from *type mismatch* and lists near misses slot by slot; both
+      checkers take modules to scope them (`diagnostics:*`)
 - [x] argument containers: sorted single keys and type-level joint keys (`Val((:y, :x))`),
       measured `@inferred` and allocation-free on 1.10 with a negative control. **No
       symbol is formed at run time.** `gate:containers*` (tagged `:alloc`); on 1.10.12

@@ -1,4 +1,17 @@
 """
+    InputSpec
+
+One declared input of a rule: container `:m` or `:q`, the interface or cluster `key`, and
+the `selection` — `:single`, `:cluster`, or for a group `:all`, `:aligned` or `:allbutself`.
+"""
+struct InputSpec
+    container::Symbol
+    key::Union{Symbol, Tuple{Vararg{Symbol}}}
+    selection::Symbol
+    type::Any
+end
+
+"""
     RuleSpec
 
 A rule as data, and the thing that runs. Dispatch resolves a call to a `RuleSpec`, which
@@ -15,6 +28,7 @@ struct RuleSpec
     target::Any
     algorithm::Type
     signature::Type
+    inputs::Tuple{Vararg{InputSpec}}
     body::Function
     prealloc::Union{Nothing, Function}
     inplace::Bool
@@ -27,6 +41,7 @@ end
 
 function RuleSpec(;
         kind::Symbol, node, target, algorithm::Type, signature::Type, body::Function,
+        inputs::Tuple{Vararg{InputSpec}} = (),
         prealloc = nothing, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
         services::Tuple{Vararg{Symbol}} = (), source::AbstractString = "",
         file::Symbol = :none, line::Integer = 0,
@@ -41,7 +56,7 @@ function RuleSpec(;
     end
     effective = something(pure, algorithm <: AbstractAlgorithm ? ispure(algorithm) : true)
     return RuleSpec(
-        kind, node, target, algorithm, signature, body, prealloc, inplace, effective,
+        kind, node, target, algorithm, signature, inputs, body, prealloc, inplace, effective,
         services, String(source), file, Int(line),
     )
 end
@@ -86,14 +101,6 @@ find_average_energy(node, algorithm, args) = RuleNotFound(:average_energy, node,
 """
 struct RuleNotFoundError <: Exception
     notfound::RuleNotFound
-end
-
-function Base.showerror(io::IO, err::RuleNotFoundError)
-    nf = err.notfound
-    print(io, "no ", nf.kind, " rule found for ", nf.node)
-    nf.target === nothing || print(io, " towards ", nf.target)
-    print(io, " under ", nf.algorithm)
-    return nothing
 end
 
 """

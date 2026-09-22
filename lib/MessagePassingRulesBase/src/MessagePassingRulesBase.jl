@@ -21,5 +21,6 @@ include("dependencies.jl")
 include("registry.jl")
 include("node_macro.jl")
 include("rule_macro.jl")
+include("diagnostics.jl")
 
 end
