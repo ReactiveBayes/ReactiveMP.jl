@@ -102,171 +102,171 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `@average_energy` | `macro` | `src/score/score.jl` | `undecided` |  |
-| `@call_marginalrule` | `macro` | `src/rule.jl` | `undecided` |  |
-| `@call_rule` | `macro` | `src/rule.jl` | `undecided` |  |
-| `@logscale` | `macro` | `src/rule.jl` | `undecided` |  |
-| `@marginalrule` | `macro` | `src/rule.jl` | `undecided` |  |
-| `@node` | `macro` | `src/nodes/nodes.jl` | `undecided` |  |
-| `@rule` | `macro` | `src/rule.jl` | `undecided` |  |
-| `AND` | `type` | `src/nodes/predefined/and.jl` | `undecided` |  |
-| `AR` | `type` | `src/nodes/predefined/autoregressive.jl` | `undecided` |  |
-| `ARMeta` | `type` | `src/nodes/predefined/autoregressive.jl` | `undecided` |  |
-| `ARsafe` | `type` | `src/nodes/predefined/autoregressive.jl` | `undecided` |  |
-| `ARunsafe` | `type` | `src/nodes/predefined/autoregressive.jl` | `undecided` |  |
-| `AbstractApproximationMethod` | `type` | `src/approximations/approximations.jl` | `undecided` |  |
-| `AbstractFormConstraint` | `type` | `src/constraints/form.jl` | `undecided` |  |
-| `AbstractMessage` | `type` | `src/message.jl` | `undecided` |  |
-| `Adam` | `type` | `src/approximations/optimizers/adam.jl` | `undecided` |  |
-| `AdditiveCouplingLayer` | `type` | `src/nodes/predefined/flow/layers/additive_coupling_layer.jl` | `undecided` |  |
-| `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `undecided` |  |
-| `AddonMemory` | `function` | `src/annotations/input_arguments.jl` | `undecided` |  |
-| `Autoregressive` | `type` | `src/nodes/predefined/autoregressive.jl` | `undecided` |  |
-| `AverageEnergy` | `type` | `src/score/score.jl` | `undecided` |  |
-| `BIFM` | `type` | `src/nodes/predefined/bifm.jl` | `undecided` |  |
-| `BIFMHelper` | `type` | `src/nodes/predefined/bifm_helper.jl` | `undecided` |  |
-| `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `undecided` |  |
-| `BinomialPolya` | `type` | `src/nodes/predefined/binomial_polya.jl` | `undecided` |  |
-| `BinomialPolyaMeta` | `type` | `src/nodes/predefined/binomial_polya.jl` | `undecided` |  |
-| `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `undecided` |  |
-| `CTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `undecided` |  |
-| `CVI` | `type` | `src/approximations/cvi.jl` | `undecided` |  |
-| `CVIProjection` | `type` | `src/approximations/cvi_projection.jl` | `undecided` |  |
-| `CVISamplingStrategy` | `type` | `src/approximations/cvi_projection.jl` | `undecided` |  |
-| `CompanionMatrix` | `type` | `src/helpers/algebra/companion_matrix.jl` | `undecided` |  |
-| `CompanionMatrixTransposed` | `type` | `src/helpers/algebra/companion_matrix.jl` | `undecided` |  |
-| `CompiledFlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `undecided` |  |
-| `CompositeFormConstraint` | `type` | `src/constraints/form.jl` | `undecided` |  |
-| `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `undecided` |  |
-| `ConstVariable` | `type` | `src/variables/constant.jl` | `undecided` |  |
-| `ContinuousTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `undecided` |  |
-| `ContinuousTransitionMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `undecided` |  |
-| `DataVariable` | `type` | `src/variables/data.jl` | `undecided` |  |
-| `DataVariableActivationOptions` | `type` | `src/variables/data.jl` | `undecided` |  |
-| `DefaultFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `undecided` |  |
-| `DeferredMessage` | `type` | `src/message.jl` | `undecided` |  |
-| `DeltaFn` | `type` | `src/nodes/predefined/delta/delta.jl` | `undecided` |  |
-| `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `undecided` |  |
-| `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `undecided` |  |
-| `Deterministic` | `type` | `src/nodes/nodes.jl` | `undecided` |  |
-| `DifferentialEntropy` | `type` | `src/score/score.jl` | `undecided` |  |
-| `DiscreteTransition` | `type` | `src/nodes/predefined/discrete_transition.jl` | `undecided` |  |
-| `FactorBoundFreeEnergy` | `type` | `src/score/node.jl` | `undecided` |  |
-| `FactorNode` | `type` | `src/nodes/nodes.jl` | `undecided` |  |
-| `Flow` | `type` | `src/nodes/predefined/flow/flow.jl` | `undecided` |  |
-| `FlowMeta` | `type` | `src/nodes/predefined/flow/flow.jl` | `undecided` |  |
-| `FlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `undecided` |  |
-| `FormConstraintCheckEach` | `type` | `src/constraints/form.jl` | `undecided` |  |
-| `FormConstraintCheckLast` | `type` | `src/constraints/form.jl` | `undecided` |  |
-| `FormConstraintCheckPickDefault` | `type` | `src/constraints/form.jl` | `undecided` |  |
-| `ForwardDiffGrad` | `type` | `src/approximations/cvi.jl` | `undecided` |  |
-| `FullSampling` | `type` | `src/approximations/cvi_projection.jl` | `undecided` |  |
-| `GCV` | `type` | `src/nodes/predefined/gcv.jl` | `undecided` |  |
-| `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `undecided` |  |
-| `GammaMixture` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `undecided` |  |
-| `GammaMixtureNode` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `undecided` |  |
-| `GaussHermiteCubature` | `type` | `src/approximations/gausshermite.jl` | `undecided` |  |
-| `GaussLaguerreQuadrature` | `type` | `src/approximations/gausslaguerre.jl` | `undecided` |  |
-| `GaussianCoupling` | `type` | `src/nodes/predefined/gaussian_coupling.jl` | `undecided` |  |
-| `GaussianMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `undecided` |  |
-| `GaussianMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `undecided` |  |
-| `HalfNormal` | `type` | `src/nodes/predefined/half_normal.jl` | `undecided` |  |
-| `IMPLY` | `type` | `src/nodes/predefined/implication.jl` | `undecided` |  |
-| `ImportanceSamplingApproximation` | `type` | `src/approximations/importance.jl` | `undecided` |  |
-| `InputArgumentsAnnotations` | `type` | `src/annotations/input_arguments.jl` | `undecided` |  |
-| `InputLayer` | `type` | `src/nodes/predefined/flow/layers/input_layer.jl` | `undecided` |  |
-| `InverseWishart` | `type` | `src/nodes/predefined/wishart_inverse.jl` | `undecided` |  |
-| `LaplaceApproximation` | `type` | `src/approximations/laplace.jl` | `undecided` |  |
-| `Linearization` | `type` | `src/approximations/linearization.jl` | `undecided` |  |
-| `LogScaleAnnotations` | `type` | `src/annotations/logscale.jl` | `undecided` |  |
-| `Marginal` | `type` | `src/marginal.jl` | `undecided` |  |
-| `Marginalisation` | `type` | `src/nodes/nodes.jl` | `undecided` |  |
-| `MeanBased` | `type` | `src/approximations/cvi_projection.jl` | `undecided` |  |
-| `Message` | `type` | `src/message.jl` | `undecided` |  |
-| `Mixture` | `type` | `src/nodes/predefined/mixture.jl` | `undecided` |  |
-| `MixtureNode` | `type` | `src/nodes/predefined/mixture.jl` | `undecided` |  |
-| `MomentMatching` | `type` | `src/nodes/nodes.jl` | `undecided` |  |
-| `MultinomialPolya` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `undecided` |  |
-| `MultinomialPolyaMeta` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `undecided` |  |
-| `MvNormalGamma` | `type` | `src/nodes/predefined/mv_normal_gamma.jl` | `undecided` |  |
-| `MvNormalMeanScaleMatrixPrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `undecided` |  |
-| `MvNormalMeanScalePrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `undecided` |  |
-| `NOT` | `type` | `src/nodes/predefined/not.jl` | `undecided` |  |
-| `NodeFunctionRuleFallback` | `type` | `src/rules/fallbacks.jl` | `undecided` |  |
-| `NormalMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `undecided` |  |
-| `NormalMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `undecided` |  |
-| `OR` | `type` | `src/nodes/predefined/or.jl` | `undecided` |  |
-| `PermutationLayer` | `type` | `src/nodes/predefined/flow/layers/permutation_layer.jl` | `undecided` |  |
-| `PermutationMatrix` | `type` | `src/helpers/algebra/permutation_matrix.jl` | `undecided` |  |
-| `PlanarFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/planar_flow.jl` | `undecided` |  |
-| `Poisson` | `type` | `src/nodes/predefined/poisson.jl` | `undecided` |  |
-| `Probit` | `type` | `src/nodes/predefined/probit.jl` | `undecided` |  |
-| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `undecided` |  |
-| `ProdCVI` | `type` | `src/approximations/cvi.jl` | `undecided` |  |
-| `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `undecided` |  |
-| `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `undecided` |  |
-| `RandomVariable` | `type` | `src/variables/random.jl` | `undecided` |  |
-| `RandomVariableActivationOptions` | `type` | `src/variables/random.jl` | `undecided` |  |
-| `RequireEverythingFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `undecided` |  |
-| `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `undecided` |  |
-| `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `undecided` |  |
-| `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `undecided` |  |
-| `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `undecided` |  |
-| `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `undecided` |  |
-| `Stochastic` | `type` | `src/nodes/nodes.jl` | `undecided` |  |
-| `UT` | `type` | `src/approximations/unscented.jl` | `undecided` |  |
-| `Uninformative` | `type` | `src/nodes/predefined/uninformative.jl` | `undecided` |  |
-| `Unscented` | `type` | `src/approximations/unscented.jl` | `undecided` |  |
-| `UnscentedTransform` | `type` | `src/approximations/unscented.jl` | `undecided` |  |
-| `UnspecifiedFormConstraint` | `type` | `src/constraints/form.jl` | `undecided` |  |
-| `VariableBoundEntropy` | `type` | `src/score/variable.jl` | `undecided` |  |
-| `approximation_name` | `function` | `src/approximations/approximations.jl` | `undecided` |  |
-| `approximation_short_name` | `function` | `src/approximations/approximations.jl` | `undecided` |  |
-| `as_marginal` | `function` | `src/marginal.jl` | `undecided` |  |
-| `as_message` | `function` | `src/message.jl` | `undecided` |  |
-| `compile` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `undecided` |  |
-| `compose_Nks` | `function` | `src/nodes/predefined/multinomial_polya.jl` | `undecided` |  |
-| `constrain_form` | `function` | `src/constraints/form.jl` | `undecided` |  |
-| `constvar` | `function` | `src/variables/constant.jl` | `undecided` |  |
-| `datavar` | `function` | `src/variables/data.jl` | `undecided` |  |
-| `default_form_check_strategy` | `function` | `src/constraints/form.jl` | `undecided` |  |
-| `default_prod_constraint` | `function` | `src/constraints/form.jl` | `undecided` |  |
-| `diageye` | `function` | `src/helpers/algebra/common.jl` | `undecided` |  |
-| `dot` | `function` | `src/nodes/predefined/dot_product.jl` | `undecided` |  |
-| `factorisation` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `factornode` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `functional_dependencies` | `function` | `src/nodes/predefined/bifm.jl` | `undecided` |  |
-| `functionalform` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `get_rule_input_arguments` | `function` | `src/annotations/input_arguments.jl` | `undecided` |  |
-| `getannotations` | `function` | `src/annotations.jl` | `undecided` |  |
-| `getapproximation` | `function` | `src/nodes/predefined/flow/flow.jl` | `undecided` |  |
-| `getdata` | `function` | `src/marginal.jl` | `undecided` |  |
-| `getinterfaces` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `getlayers` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `undecided` |  |
-| `getlogscale` | `function` | `src/annotations/logscale.jl` | `undecided` |  |
-| `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `undecided` |  |
-| `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `undecided` |  |
-| `huge` | `const` | `src/ReactiveMP.jl` | `undecided` |  |
-| `is_clamped` | `function` | `src/marginal.jl` | `undecided` |  |
-| `is_initial` | `function` | `src/marginal.jl` | `undecided` |  |
-| `isdeterministic` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `isstochastic` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `laplace` | `function` | `src/approximations/laplace.jl` | `undecided` |  |
-| `localmarginalnames` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `localmarginals` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `logistic_stick_breaking` | `function` | `src/nodes/predefined/multinomial_polya.jl` | `undecided` |  |
-| `marginalrule` | `function` | `src/rule.jl` | `undecided` |  |
-| `new_observation!` | `function` | `src/variables/data.jl` | `undecided` |  |
-| `nr_params` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `undecided` |  |
-| `randomvar` | `function` | `src/variables/random.jl` | `undecided` |  |
-| `rule` | `function` | `src/rule.jl` | `undecided` |  |
-| `score` | `function` | `src/score/score.jl` | `undecided` |  |
-| `sdtype` | `function` | `src/nodes/nodes.jl` | `undecided` |  |
-| `skipindex` | `function` | `src/helpers/helpers.jl` | `undecided` |  |
-| `softdot` | `type` | `src/nodes/predefined/softdot.jl` | `undecided` |  |
-| `srcubature` | `function` | `src/approximations/sphericalradial.jl` | `undecided` |  |
-| `tiny` | `const` | `src/ReactiveMP.jl` | `undecided` |  |
-| `update!` | `function` | `src/approximations/optimizers/adam.jl` | `undecided` |  |
+| `@average_energy` | `macro` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `@call_rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `@logscale` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `@marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `@node` | `macro` | `src/nodes/nodes.jl` | `base` | renamed `@define_factor_node` |
+| `@rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `AND` | `type` | `src/nodes/predefined/and.jl` | `standard` |  |
+| `AR` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
+| `ARMeta` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
+| `ARsafe` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
+| `ARunsafe` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
+| `AbstractApproximationMethod` | `type` | `src/approximations/approximations.jl` | `approximations` |  |
+| `AbstractFormConstraint` | `type` | `src/constraints/form.jl` | `engine` |  |
+| `AbstractMessage` | `type` | `src/message.jl` | `base` | value type; the observable half stays in the engine |
+| `Adam` | `type` | `src/approximations/optimizers/adam.jl` | `delete` | optimiser for the old `ProdCVI` path; use Optimisers.jl directly |
+| `AdditiveCouplingLayer` | `type` | `src/nodes/predefined/flow/layers/additive_coupling_layer.jl` | `node:Flow` |  |
+| `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `base` |  |
+| `AddonMemory` | `function` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `Autoregressive` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` | alias |
+| `AverageEnergy` | `type` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `BIFM` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
+| `BIFMHelper` | `type` | `src/nodes/predefined/bifm_helper.jl` | `node:BIFM` |  |
+| `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
+| `BinomialPolya` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
+| `BinomialPolyaMeta` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
+| `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias |
+| `CTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias |
+| `CVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection`; `ProdCVI`'s own docstring already says so |
+| `CVIProjection` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
+| `CVISamplingStrategy` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
+| `CompanionMatrix` | `type` | `src/helpers/algebra/companion_matrix.jl` | `delete` | **no reference in `src/` or `test/`.** AR uses a companion-matrix representation but via its own `ARTransitionMatrix` (`autoregressive.jl:270`), which superseded this. Contributes 75 Aqua ambiguities. No replacement |
+| `CompanionMatrixTransposed` | `type` | `src/helpers/algebra/companion_matrix.jl` | `delete` | **no reference in `src/` or `test/`.** AR uses a companion-matrix representation but via its own `ARTransitionMatrix` (`autoregressive.jl:270`), which superseded this. Contributes 75 Aqua ambiguities. No replacement |
+| `CompiledFlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
+| `CompositeFormConstraint` | `type` | `src/constraints/form.jl` | `engine` |  |
+| `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` |  |
+| `ConstVariable` | `type` | `src/variables/constant.jl` | `engine` |  |
+| `ContinuousTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` |  |
+| `ContinuousTransitionMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` |  |
+| `DataVariable` | `type` | `src/variables/data.jl` | `engine` |  |
+| `DataVariableActivationOptions` | `type` | `src/variables/data.jl` | `engine` |  |
+| `DefaultFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | replaced by the declarative dependency language; the default needs no declaration |
+| `DeferredMessage` | `type` | `src/message.jl` | `engine` | caches a stream result; belongs with the observables |
+| `DeltaFn` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
+| `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
+| `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
+| `Deterministic` | `type` | `src/nodes/nodes.jl` | `base` |  |
+| `DifferentialEntropy` | `type` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `DiscreteTransition` | `type` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` |  |
+| `FactorBoundFreeEnergy` | `type` | `src/score/node.jl` | `engine` | walks the graph |
+| `FactorNode` | `type` | `src/nodes/nodes.jl` | `engine` |  |
+| `Flow` | `type` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `FlowMeta` | `type` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `FlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
+| `FormConstraintCheckEach` | `type` | `src/constraints/form.jl` | `engine` |  |
+| `FormConstraintCheckLast` | `type` | `src/constraints/form.jl` | `engine` |  |
+| `FormConstraintCheckPickDefault` | `type` | `src/constraints/form.jl` | `engine` |  |
+| `ForwardDiffGrad` | `type` | `src/approximations/cvi.jl` | `delete` | gradient strategy belonging to the old `ProdCVI`; no replacement |
+| `FullSampling` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
+| `GCV` | `type` | `src/nodes/predefined/gcv.jl` | `models` |  |
+| `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `models` |  |
+| `GammaMixture` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
+| `GammaMixtureNode` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
+| `GaussHermiteCubature` | `type` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
+| `GaussLaguerreQuadrature` | `type` | `src/approximations/gausslaguerre.jl` | `delete` | no in-tree consumer; takes DomainIntegrals with it; no replacement |
+| `GaussianCoupling` | `type` | `src/nodes/predefined/gaussian_coupling.jl` | `models` |  |
+| `GaussianMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` | alias |
+| `GaussianMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` | alias |
+| `HalfNormal` | `type` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
+| `IMPLY` | `type` | `src/nodes/predefined/implication.jl` | `standard` |  |
+| `ImportanceSamplingApproximation` | `type` | `src/approximations/importance.jl` | `delete` | no in-tree consumer; no replacement |
+| `InputArgumentsAnnotations` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `InputLayer` | `type` | `src/nodes/predefined/flow/layers/input_layer.jl` | `node:Flow` |  |
+| `InverseWishart` | `type` | `src/nodes/predefined/wishart_inverse.jl` | `standard` |  |
+| `LaplaceApproximation` | `type` | `src/approximations/laplace.jl` | `delete` | no in-tree consumer; takes Optim with it; no replacement |
+| `Linearization` | `type` | `src/approximations/linearization.jl` | `approximations` |  |
+| `LogScaleAnnotations` | `type` | `src/annotations/logscale.jl` | `base` |  |
+| `Marginal` | `type` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `Marginalisation` | `type` | `src/nodes/nodes.jl` | `delete` | dead dispatch axis, hardcoded at all 5 construction sites; absorbed by the algorithm axis |
+| `MeanBased` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
+| `Message` | `type` | `src/message.jl` | `base` | value type; the observable half stays in the engine |
+| `Mixture` | `type` | `src/nodes/predefined/mixture.jl` | `standard` |  |
+| `MixtureNode` | `type` | `src/nodes/predefined/mixture.jl` | `standard` |  |
+| `MomentMatching` | `type` | `src/nodes/nodes.jl` | `delete` | defined and exported but dispatched on nowhere; absorbed by the algorithm axis |
+| `MultinomialPolya` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
+| `MultinomialPolyaMeta` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
+| `MvNormalGamma` | `type` | `src/nodes/predefined/mv_normal_gamma.jl` | `standard` |  |
+| `MvNormalMeanScaleMatrixPrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `standard` |  |
+| `MvNormalMeanScalePrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `standard` |  |
+| `NOT` | `type` | `src/nodes/predefined/not.jl` | `standard` |  |
+| `NodeFunctionRuleFallback` | `type` | `src/rules/fallbacks.jl` | `base` |  |
+| `NormalMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` |  |
+| `NormalMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` |  |
+| `OR` | `type` | `src/nodes/predefined/or.jl` | `standard` |  |
+| `PermutationLayer` | `type` | `src/nodes/predefined/flow/layers/permutation_layer.jl` | `node:Flow` |  |
+| `PermutationMatrix` | `type` | `src/helpers/algebra/permutation_matrix.jl` | `node:Flow` | only consumer is Flow's `permutation_layer.jl`; its over-broad `*` methods cause 137 Aqua ambiguities and should be narrowed first |
+| `PlanarFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/planar_flow.jl` | `node:Flow` |  |
+| `Poisson` | `type` | `src/nodes/predefined/poisson.jl` | `standard` |  |
+| `Probit` | `type` | `src/nodes/predefined/probit.jl` | `models` |  |
+| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `models` |  |
+| `ProdCVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection` |
+| `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
+| `RandomVariable` | `type` | `src/variables/random.jl` | `engine` |  |
+| `RandomVariableActivationOptions` | `type` | `src/variables/random.jl` | `engine` |  |
+| `RequireEverythingFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes an ordinary algorithm with a dependency declaration |
+| `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes an ordinary algorithm with a dependency declaration |
+| `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes an ordinary algorithm with a dependency declaration |
+| `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `models` |  |
+| `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; 85 Aqua ambiguities, narrow first |
+| `Stochastic` | `type` | `src/nodes/nodes.jl` | `base` |  |
+| `UT` | `type` | `src/approximations/unscented.jl` | `approximations` | alias |
+| `Uninformative` | `type` | `src/nodes/predefined/uninformative.jl` | `standard` |  |
+| `Unscented` | `type` | `src/approximations/unscented.jl` | `approximations` |  |
+| `UnscentedTransform` | `type` | `src/approximations/unscented.jl` | `approximations` | alias |
+| `UnspecifiedFormConstraint` | `type` | `src/constraints/form.jl` | `engine` |  |
+| `VariableBoundEntropy` | `type` | `src/score/variable.jl` | `engine` | walks the graph |
+| `approximation_name` | `function` | `src/approximations/approximations.jl` | `approximations` |  |
+| `approximation_short_name` | `function` | `src/approximations/approximations.jl` | `approximations` |  |
+| `as_marginal` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `as_message` | `function` | `src/message.jl` | `base` | value type; the observable half stays in the engine |
+| `compile` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
+| `compose_Nks` | `function` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
+| `constrain_form` | `function` | `src/constraints/form.jl` | `engine` |  |
+| `constvar` | `function` | `src/variables/constant.jl` | `engine` |  |
+| `datavar` | `function` | `src/variables/data.jl` | `engine` |  |
+| `default_form_check_strategy` | `function` | `src/constraints/form.jl` | `engine` |  |
+| `default_prod_constraint` | `function` | `src/constraints/form.jl` | `engine` |  |
+| `diageye` | `function` | `src/helpers/algebra/common.jl` | `base` |  |
+| `dot` | `function` | `src/nodes/predefined/dot_product.jl` | `standard` |  |
+| `factorisation` | `function` | `src/nodes/nodes.jl` | `engine` |  |
+| `factornode` | `function` | `src/nodes/nodes.jl` | `engine` |  |
+| `functional_dependencies` | `function` | `src/nodes/predefined/bifm.jl` | `base` | the dependency protocol itself |
+| `functionalform` | `function` | `src/nodes/nodes.jl` | `engine` |  |
+| `get_rule_input_arguments` | `function` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `getannotations` | `function` | `src/annotations.jl` | `base` |  |
+| `getapproximation` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `getdata` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `getinterfaces` | `function` | `src/nodes/nodes.jl` | `engine` |  |
+| `getlayers` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
+| `getlogscale` | `function` | `src/annotations/logscale.jl` | `base` |  |
+| `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
+| `huge` | `const` | `src/ReactiveMP.jl` | `base` | re-exported from TinyHugeNumbers |
+| `is_clamped` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `is_initial` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `isdeterministic` | `function` | `src/nodes/nodes.jl` | `base` |  |
+| `isstochastic` | `function` | `src/nodes/nodes.jl` | `base` |  |
+| `laplace` | `function` | `src/approximations/laplace.jl` | `delete` | no in-tree consumer; no replacement |
+| `localmarginalnames` | `function` | `src/nodes/nodes.jl` | `engine` |  |
+| `localmarginals` | `function` | `src/nodes/nodes.jl` | `engine` |  |
+| `logistic_stick_breaking` | `function` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
+| `marginalrule` | `function` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `new_observation!` | `function` | `src/variables/data.jl` | `engine` |  |
+| `nr_params` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
+| `randomvar` | `function` | `src/variables/random.jl` | `engine` |  |
+| `rule` | `function` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
+| `score` | `function` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `sdtype` | `function` | `src/nodes/nodes.jl` | `base` |  |
+| `skipindex` | `function` | `src/helpers/helpers.jl` | `base` |  |
+| `softdot` | `type` | `src/nodes/predefined/softdot.jl` | `models` |  |
+| `srcubature` | `function` | `src/approximations/sphericalradial.jl` | `delete` | no in-tree consumer; no replacement |
+| `tiny` | `const` | `src/ReactiveMP.jl` | `base` | re-exported from TinyHugeNumbers |
+| `update!` | `function` | `src/approximations/optimizers/adam.jl` | `delete` | `Adam`'s step function; no replacement |
 
 ## Engine hooks
 

@@ -68,7 +68,13 @@ Phase 0 answers the questions that cannot be walked back.
   - [x] enumeration complete and located: **230 entities** — 49 nodes, 165 exported
         symbols, 8 engine-hook families, 2 extensions, 6 rule-level exceptions. Rules
         inherit their node's destination, so only the rules that cannot are listed
-  - [ ] **230 destinations decided** (currently 0; `--check` reports every one)
+  - [x] **230 destinations decided**; `--check` passes. Totals: `standard` 58,
+        `base` 43, `engine` 32, `delete` 21, `node:Flow` 16, `node:Delta` 11,
+        `models` 11, `node:Polya` 10, `node:Autoregressive` 9, `approximations` 7,
+        `node:ContinuousTransition` 5, `node:BIFM` 5, `node:DiscreteTransition` 2.
+        `StandardMessagePassingRules` is distributions, arithmetic, logic and mixtures;
+        domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) go to a separate
+        package **that is not yet named**, so the token is `models`
   - [ ] `--check` wired into CI
 - [ ] environment strategy for the v6/v7 comparison harness and before/after doctests —
       separate pinned environments if old and new constraints cannot coexist
