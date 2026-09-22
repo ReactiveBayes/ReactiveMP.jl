@@ -32,7 +32,8 @@ Verified problems driving the redesign:
 - **Rules are not pure.** `BIFMMeta` is mutated from inside message rules (`setH!`,
   `setΛz!`, `setμu!`, `setΣu!`); CVI stores `ForwardDiff` scratch in its meta; RxGP's meta
   holds a `counter` and a `Dict` cache. This blocks multithreading outright.
-- **No in-place anything.** No `prod!`, no preallocation. Per message, steady state:
+- **No in-place anything.** No preallocation, and `BayesBase.prod!` is exported but never
+  used. Per message, steady state:
   `DeferredMessage` + `AnnotationDict` + `Message` + the rule's result; per degree-`d`
   variable, ~`2(d-1)` more.
 - **Missing concept: variadic interface groups.** `Mixture` escapes `@node` entirely and
@@ -335,13 +336,30 @@ follow their nodes out: `Tullio` (only `DiscreteTransition`) and `PolyaGammaHybr
 (only the Pólya nodes).
 
 **Hard constraint: `MessagePassingRulesBase` must not depend on `ExponentialFamily`.**
-BayesBase exists precisely to hold this machinery, and anything the base needs — statistics
-proxying for `Message`/`Marginal`, `paramfloattype`/`convert_paramfloattype` for type
-promotion, `prod` and its strategies, the `writability` trait — belongs there. Where a
-needed piece is missing from BayesBase, **add it to BayesBase**; do not reach for
-`ExponentialFamily`. Enforce with a CI assertion that `ExponentialFamily` is absent from
-the base's dependency closure, so the constraint survives contributors and sessions rather
-than eroding the first time someone wants one convenience function.
+BayesBase exists precisely to hold this machinery. Where a needed piece is missing from
+BayesBase, **add it to BayesBase**; do not reach for `ExponentialFamily`. Enforce with a CI
+assertion that `ExponentialFamily` is absent from the base's dependency closure, so the
+constraint survives contributors and sessions rather than eroding the first time someone
+wants one convenience function.
+
+**Measured — the constraint holds today.** Across every prospective base file
+(`message.jl`, `marginal.jl`, `rule.jl`, `nodes/nodes.jl`, `annotations.jl`,
+`constraints/form.jl`, `score/score.jl`, `helpers/*`, `variable.jl`) the only
+`ExponentialFamily` mentions are inside *docstring examples*, not code. And all 37 names
+the base needs are available from BayesBase — 36 exported, `kldivergence` defined but
+unexported (`BayesBase.kldivergence`). Nothing is missing: the full `Message`/`Marginal`
+statistics proxy list, `pdf`/`logpdf`, `paramfloattype`/`convert_paramfloattype`,
+`PointMass`, `prod`/`prod!`, `GenericProd`/`ClosedProd`/`PreserveTypeProd`/`ProductOf`,
+`default_prod_rule`, `deep_eltype`.
+
+**Caveat on "thin": that is thin in *direct* dependencies only.** BayesBase itself pulls in
+`Distributions`, `DomainSets`, `SpecialFunctions`, `StaticArrays`, `StatsAPI`, `StatsBase`,
+`StatsFuns`, `TinyHugeNumbers`, `LinearAlgebra`, `Random`, `Statistics`. So the base's
+transitive closure is not small — it just contains no `ExponentialFamily`. Two corrections
+to the table above follow: `DomainSets` does **not** move to the approximations package
+(BayesBase brings it regardless), and `StatsFuns`/`StatsBase`/`SpecialFunctions`/
+`TinyHugeNumbers`/`Distributions` are already in the closure rather than being new
+`StandardMessagePassingRules` dependencies.
 
 **Sequencing, to bound the blast radius:**
 
@@ -436,15 +454,21 @@ Applies to **both** the new packages and ReactiveMP itself.
   - `ambiguities`: just turn it on. The key-set argument means rules with different input
     sets provably can't be ambiguous, so the surface shrinks sharply versus 390 methods on
     one function with `Any` fallbacks. Registry-based checker as primary, Aqua as backstop.
-  - `piracies`: enable with `Aqua.test_piracies(m; treat_as_own = [...])` rather than
-    blanket-off. `StandardMessagePassingRules` defining rules for `NormalMeanVariance` is
-    piracy by definition (every type in the signature is foreign) — either the ruleset axis
-    puts an owned type in argument position, or the intended foreign distribution types go
-    in `treat_as_own`. The win is that accidental piracy stops hiding behind intentional
-    piracy. **Verify empirically in step 1** whether Aqua counts ownership through *type
-    parameters* — if `MessageTarget{<:Type{<:AR}, :out}` counts as owned by the package
-    defining `AR`, node packages are clean for free. Five-line experiment; the answer
-    matters.
+  - `piracies`: **measured — it can be switched on today.** `Aqua.Piracy.hunt(ReactiveMP)`
+    reports exactly **3** pirate methods, none of them rules: `default_prod_rule` and
+    `prod` for `Uniform`×`Beta` (`nodes/predefined/uniform.jl:6,9`, a deliberate
+    mathematical special case that arguably belongs in ExponentialFamily) and a `dot`
+    overload for `ForwardDiff.Dual` (`fixes.jl:12`, an explicit upstream hotfix with issue
+    links). Move them or list them in `treat_as_own`, and turn the check on.
+  - **Caveat, also measured: the piracy check is vacuous for rules, and always will be.**
+    Aqua's rule is that a `DataType` is foreign only if the type *and every one of its
+    parameters* is foreign, and `is_foreign(::Symbol) = false` unconditionally. Verified:
+    `is_foreign(Val{:out}, pkg) == false` while `is_foreign(Val{1}, pkg) == true`. Since
+    every rule target carries the edge name as a `Symbol` type parameter — `Val{:out}`
+    today, `MessageTarget{F, :out, …}` in the new design — no rule can ever be flagged,
+    whoever defines it. So enabling the check is worth doing, but **it must not be claimed
+    as evidence that the rule-package split is piracy-clean**; it says nothing either way.
+    This also removes piracy as an argument for the ruleset axis (open item 4).
 - **Expand JET well beyond its current two uses.** It is the tool that enforces the
   devirtualization gate; a JET assertion that rule invocation is free of dynamic dispatch is
   what catches a regression in the core design months later.
