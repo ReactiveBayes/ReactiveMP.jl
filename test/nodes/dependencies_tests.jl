@@ -1,4 +1,4 @@
-@testitem "collect_latest_messages" begin
+@testitem "collect_latest_messages" tags = [:nodes] begin
     include("../testutilities.jl")
     using BayesBase
 
@@ -66,7 +66,7 @@
     end
 end
 
-@testitem "collect_latest_marginals" begin
+@testitem "collect_latest_marginals" tags = [:nodes] begin
     include("../testutilities.jl")
     using BayesBase
 
@@ -138,7 +138,9 @@ end
     end
 end
 
-@testitem "collect_latest_marginals should re-fire while all dependencies are initial (deadlock guard, RxInfer#344)" begin
+@testitem "collect_latest_marginals should re-fire while all dependencies are initial (deadlock guard, RxInfer#344)" tags = [
+    :nodes
+] begin
     # Regression test for https://github.com/ReactiveBayes/RxInfer.jl/issues/344
     # With plain `PushNew()` semantics every marginal dependency must refresh before the
     # combined stream may fire again. If the first firing consumed only provisional
@@ -216,7 +218,9 @@ end
     unsubscribe!(subscription)
 end
 
-@testitem "collect_latest_messages should keep strict PushNew semantics even for initial messages" begin
+@testitem "collect_latest_messages should keep strict PushNew semantics even for initial messages" tags = [
+    :nodes
+] begin
     # Guards the scoping of the RxInfer#344 deadlock fix: the `is_initial` vstatus reset is
     # deliberately applied to marginal dependencies only. Applying it to message dependencies
     # as well changes the message-update schedule in models unaffected by the deadlock
@@ -288,7 +292,7 @@ end
     unsubscribe!(subscription)
 end
 
-@testitem "Various functional dependencies" begin
+@testitem "Various functional dependencies" tags = [:nodes] begin
     include("../testutilities.jl")
 
     import ReactiveMP:
@@ -746,7 +750,9 @@ end
     end
 end
 
-@testitem "Functional dependencies may change depending on the metadata from options" begin
+@testitem "Functional dependencies may change depending on the metadata from options" tags = [
+    :nodes
+] begin
     # This test demonstrates how functional dependencies can be customized based on metadata
     # passed during node activation. This is useful when:
     # 1. The same node type needs different message passing behaviors in different contexts

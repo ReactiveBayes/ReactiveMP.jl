@@ -1,4 +1,4 @@
-@testitem "cvi:prod - fisher information" begin
+@testitem "cvi:prod - fisher information" tags = [:engine] begin
     using ReactiveMP, BayesBase, ExponentialFamily
     import SpecialFunctions: polygamma
 
@@ -21,7 +21,7 @@
     end
 end
 
-@testitem "cvi:prod - noop optimiser" begin
+@testitem "cvi:prod - noop optimiser" tags = [:engine] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     struct NoopOptimiser end
@@ -69,7 +69,7 @@ end
     end
 end
 
-@testitem "cvi:prod - counting optimiser" begin
+@testitem "cvi:prod - counting optimiser" tags = [:engine] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     mutable struct CountingOptimizer
@@ -118,7 +118,7 @@ end
     end
 end
 
-@testitem "cvi:prod - lambda based counting optimiser" begin
+@testitem "cvi:prod - lambda based counting optimiser" tags = [:engine] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     @testset "Checking that the procedure runs for different parameters (with a lambda based counting-optimiser)" begin
@@ -162,7 +162,7 @@ end
     end
 end
 
-@testitem "cvi:prod - simple products vs analytical solutions" begin
+@testitem "cvi:prod - simple products vs analytical solutions" tags = [:engine] begin
     using ReactiveMP,
         Random,
         StableRNGs,
@@ -252,7 +252,7 @@ end
     end
 end
 
-@testitem "cvi:prod - Normal x Normal" begin
+@testitem "cvi:prod - Normal x Normal" tags = [:engine] begin
     using ReactiveMP, StableRNGs, BayesBase, ExponentialFamily, Optimisers
 
     @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
@@ -279,7 +279,7 @@ end
     end
 end
 
-@testitem "cvi:prod - MvNormal x MvNormal" begin
+@testitem "cvi:prod - MvNormal x MvNormal" tags = [:engine] begin
     using ReactiveMP,
         StableRNGs, BayesBase, ExponentialFamily, Optimisers, LinearAlgebra
 

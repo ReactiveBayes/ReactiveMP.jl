@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:Autoregressive" begin
+@testitem "marginalrules:Autoregressive" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_marginalrules

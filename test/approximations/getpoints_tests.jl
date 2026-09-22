@@ -1,5 +1,7 @@
 
-@testitem "getpoints: the multivariate generators reuse one buffer, by design" begin
+@testitem "getpoints: the multivariate generators reuse one buffer, by design" tags = [
+    :engine
+] begin
     using ReactiveMP, BayesBase, LinearAlgebra
 
     import ReactiveMP:

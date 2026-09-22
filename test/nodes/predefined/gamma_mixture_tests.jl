@@ -1,4 +1,4 @@
-@testitem "GammaShapeLikelihood insupport" begin
+@testitem "GammaShapeLikelihood insupport" tags = [:nodes] begin
     using BayesBase
     import ReactiveMP: GammaShapeLikelihood
 
@@ -8,7 +8,7 @@
     end
 end
 
-@testitem "nodes:GammaMixtureNode" begin
+@testitem "nodes:GammaMixtureNode" tags = [:nodes] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Rocket, Test
 
     import ReactiveMP:
@@ -181,7 +181,7 @@ end
     end
 end
 
-@testitem "AverageEnergy" begin
+@testitem "AverageEnergy" tags = [:nodes] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Random, Test
 
     import ReactiveMP: ManyOf, GammaMixture
@@ -229,7 +229,7 @@ end
     end
 end
 
-@testitem "GammaMixture: type-level utilities" begin
+@testitem "GammaMixture: type-level utilities" tags = [:nodes] begin
     using ReactiveMP, Test
     import ReactiveMP:
         GammaMixture,
@@ -250,7 +250,9 @@ end
     @test fact isa GammaMixtureNodeFactorisation
 end
 
-@testitem "GammaMixtureNode: interfaceindices and unknown interface" begin
+@testitem "GammaMixtureNode: interfaceindices and unknown interface" tags = [
+    :nodes
+] begin
     using ReactiveMP, Test
     import ReactiveMP:
         GammaMixtureNode,
@@ -295,7 +297,7 @@ end
     @test_throws ErrorException interfaceindex(node, :nonexistent)
 end
 
-@testitem "GammaMixture: mismatch count error message" begin
+@testitem "GammaMixture: mismatch count error message" tags = [:nodes] begin
     using ReactiveMP, Test
     import ReactiveMP: factornode, GammaMixture
 
@@ -320,7 +322,9 @@ end
     )
 end
 
-@testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" begin
+@testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" tags = [
+    :nodes
+] begin
     using ReactiveMP, Rocket, Test
     import ReactiveMP:
         GammaMixtureNodeFunctionalDependencies,
@@ -360,7 +364,7 @@ end
     @test emitted == [nothing]
 end
 
-@testitem "GammaShapeLikelihood: support and prod rule" begin
+@testitem "GammaShapeLikelihood: support and prod rule" tags = [:nodes] begin
     using ReactiveMP, BayesBase, Distributions, Test
     import ReactiveMP: GammaShapeLikelihood
 

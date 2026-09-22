@@ -1,5 +1,5 @@
 
-@testitem "RandomVariable: uninitialized" begin
+@testitem "RandomVariable: uninitialized" tags = [:engine] begin
     import ReactiveMP:
         get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
@@ -12,7 +12,7 @@
     end
 end
 
-@testitem "RandomVariable: getget_stream_of_inbound_messages!" begin
+@testitem "RandomVariable: getget_stream_of_inbound_messages!" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         create_new_stream_of_inbound_messages!,
@@ -35,7 +35,7 @@ end
     end
 end
 
-@testitem "RandomVariable: get_stream_of_marginals" begin
+@testitem "RandomVariable: get_stream_of_marginals" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
@@ -92,7 +92,7 @@ end
     end
 end
 
-@testitem "RandomVariable: get_stream_of_outbound_messages" begin
+@testitem "RandomVariable: get_stream_of_outbound_messages" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
@@ -158,7 +158,9 @@ end
     end
 end
 
-@testitem "RandomVariable: before/after marginal computation callbacks" begin
+@testitem "RandomVariable: before/after marginal computation callbacks" tags = [
+    :engine
+] begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
@@ -293,7 +295,9 @@ end
     end
 end
 
-@testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" begin
+@testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" tags = [
+    :engine
+] begin
     import ReactiveMP:
         RandomVariableActivationOptions,
         activate!,

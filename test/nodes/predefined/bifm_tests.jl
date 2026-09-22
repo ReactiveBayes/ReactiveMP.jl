@@ -1,4 +1,4 @@
-@testitem "BIFM Node" begin
+@testitem "BIFM Node" tags = [:nodes] begin
     using ReactiveMP, Distributions, LinearAlgebra, Random, Test
     import ReactiveMP:
         getA,

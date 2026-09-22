@@ -1,5 +1,5 @@
 
-@testitem "rules:GCV:ω" begin
+@testitem "rules:GCV:ω" tags = [:rules] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions, Random
 
     import ReactiveMP:

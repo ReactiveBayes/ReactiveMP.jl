@@ -1,5 +1,5 @@
 
-@testitem "node:MvNormalGamma average energy" begin
+@testitem "node:MvNormalGamma average energy" tags = [:nodes] begin
     using ReactiveMP,
         BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
 

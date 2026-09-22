@@ -10,9 +10,9 @@
     end
 end
 
-@testitem "post_rule_annotations! stores a RuleInputArgumentsRecord" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_rule_annotations! stores a RuleInputArgumentsRecord" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         post_rule_annotations!,
@@ -38,9 +38,9 @@ end
     @test record.result === result
 end
 
-@testitem "post_product_annotations! merges two RuleInputArgumentsRecord into ProductInputArgumentsRecord" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_product_annotations! merges two RuleInputArgumentsRecord into ProductInputArgumentsRecord" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -74,9 +74,9 @@ end
     @test prod.mappings[2] === right_record
 end
 
-@testitem "post_product_annotations! merges record (left) and prod (right)" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_product_annotations! merges record (left) and prod (right)" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -120,9 +120,9 @@ end
     @test prod.mappings[3] === r3
 end
 
-@testitem "post_product_annotations! merges prod (left) and record (right)" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_product_annotations! merges prod (left) and record (right)" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -166,9 +166,9 @@ end
     @test prod.mappings[3] === r3
 end
 
-@testitem "post_product_annotations! merges two ProductInputArgumentsRecord" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_product_annotations! merges two ProductInputArgumentsRecord" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -218,9 +218,9 @@ end
     @test prod.mappings[4] === r4
 end
 
-@testitem "post_product_annotations! copies the right record through when the left side never ran a rule (e.g. a clamped constant)" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_product_annotations! copies the right record through when the left side never ran a rule (e.g. a clamped constant)" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -254,9 +254,9 @@ end
     @test get_rule_input_arguments(merged) === right_record
 end
 
-@testitem "post_product_annotations! copies the left record through when the right side never ran a rule (e.g. a clamped constant)" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_product_annotations! copies the left record through when the right side never ran a rule (e.g. a clamped constant)" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -290,9 +290,9 @@ end
     @test get_rule_input_arguments(merged) === left_record
 end
 
-@testitem "post_product_annotations! leaves the merged annotation empty when neither side ran a rule (product of two clamped constants)" setup=[
-    RuleInputArgumentsTestUtils
-] begin
+@testitem "post_product_annotations! leaves the merged annotation empty when neither side ran a rule (product of two clamped constants)" tags = [
+    :engine
+] setup=[RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         post_product_annotations!,
@@ -314,7 +314,7 @@ end
     @test !has_annotation(merged, :rule_input_arguments)
 end
 
-@testitem "Base.show for RuleInputArgumentsRecord" begin
+@testitem "Base.show for RuleInputArgumentsRecord" tags = [:engine] begin
     import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
     import BayesBase: PointMass
 
@@ -355,7 +355,9 @@ end
     @test occursin("42.0", output)
 end
 
-@testitem "Base.show for RuleInputArgumentsRecord skips meta when nothing" begin
+@testitem "Base.show for RuleInputArgumentsRecord skips meta when nothing" tags = [
+    :engine
+] begin
     import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
 
     struct ShowRecordNoMetaNode end
@@ -380,7 +382,9 @@ end
     @test occursin("msg(in) = 1.0", output)
 end
 
-@testitem "Base.show for RuleInputArgumentsRecord skips messages/marginals when nothing" begin
+@testitem "Base.show for RuleInputArgumentsRecord skips messages/marginals when nothing" tags = [
+    :engine
+] begin
     import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
 
     struct ShowRecordEmptyInputsNode end
@@ -407,7 +411,7 @@ end
     @test occursin("the_result", output)
 end
 
-@testitem "Base.show for ProductInputArgumentsRecord" begin
+@testitem "Base.show for ProductInputArgumentsRecord" tags = [:engine] begin
     import ReactiveMP:
         RuleInputArgumentsRecord,
         ProductInputArgumentsRecord,
@@ -458,7 +462,7 @@ end
     @test occursin("res_b", output)
 end
 
-@testitem "merging does not mutate the operand records" setup = [
+@testitem "merging does not mutate the operand records" tags = [:engine] setup = [
     RuleInputArgumentsTestUtils
 ] begin
     # `EqualityChain` hands the *same* cached `Message` -- and therefore the same
@@ -565,7 +569,7 @@ end
     end
 end
 
-@testitem "AddonMemory throws an error" begin
+@testitem "AddonMemory throws an error" tags = [:engine] begin
     import ReactiveMP: AddonMemory
 
     @test_throws "AddonMemory` has been removed" AddonMemory()

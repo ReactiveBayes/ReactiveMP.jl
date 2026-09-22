@@ -1,5 +1,5 @@
 
-@testitem "rule:typeof(*):A" begin
+@testitem "rule:typeof(*):A" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, StableRNGs
 

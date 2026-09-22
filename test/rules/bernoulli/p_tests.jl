@@ -1,5 +1,5 @@
 
-@testitem "rules:Bernoulli:p" begin
+@testitem "rules:Bernoulli:p" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

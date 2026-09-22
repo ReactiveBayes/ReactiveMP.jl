@@ -1,5 +1,5 @@
 
-@testitem "rules:NormalMeanPrecision:mean" begin
+@testitem "rules:NormalMeanPrecision:mean" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

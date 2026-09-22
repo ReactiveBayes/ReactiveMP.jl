@@ -1,4 +1,4 @@
-@testitem "UniformNode" begin
+@testitem "UniformNode" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
 
     @testset "Average energy" begin

@@ -1,4 +1,4 @@
-@testitem "Basic check for in rule" begin
+@testitem "Basic check for in rule" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     meta = DeltaMeta(method = CVIProjection(), inverse = nothing)

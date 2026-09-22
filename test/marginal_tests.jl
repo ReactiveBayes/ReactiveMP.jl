@@ -1,4 +1,4 @@
-@testitem "Marginal" begin
+@testitem "Marginal" tags = [:engine] begin
     using Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     import InteractiveUtils: methodswith

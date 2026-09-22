@@ -1,5 +1,7 @@
 
-@testitem "LaplaceApproximation: recovers the exact Gaussian product" begin
+@testitem "LaplaceApproximation: recovers the exact Gaussian product" tags = [
+    :engine
+] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, LinearAlgebra
 
     import ReactiveMP: LaplaceApproximation, approximate_meancov
@@ -72,7 +74,9 @@
     end
 end
 
-@testitem "LaplaceApproximation: rejects a stationary point that is not a maximum" begin
+@testitem "LaplaceApproximation: rejects a stationary point that is not a maximum" tags = [
+    :engine
+] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, LinearAlgebra
 
     import ReactiveMP: LaplaceApproximation, approximate_meancov

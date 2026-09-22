@@ -1,5 +1,5 @@
 
-@testitem "rules:typeof(dot):out" begin
+@testitem "rules:typeof(dot):out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

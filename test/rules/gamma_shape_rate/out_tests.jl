@@ -1,5 +1,5 @@
 
-@testitem "rules:GammaShapeRate:out" begin
+@testitem "rules:GammaShapeRate:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

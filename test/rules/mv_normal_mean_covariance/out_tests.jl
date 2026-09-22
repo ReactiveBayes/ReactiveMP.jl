@@ -1,5 +1,5 @@
 
-@testitem "rules:MvNormalMeanCovariance:out" begin
+@testitem "rules:MvNormalMeanCovariance:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

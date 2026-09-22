@@ -1,5 +1,5 @@
 
-@testitem "rule:typeof(*):in" begin
+@testitem "rule:typeof(*):in" tags = [:rules] begin
     using ReactiveMP,
         BayesBase,
         Random,

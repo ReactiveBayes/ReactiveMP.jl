@@ -1,5 +1,5 @@
 
-@testitem "rule" begin
+@testitem "rule" tags = [:engine] begin
     using ReactiveMP,
         MacroTools, Logging, BayesBase, Distributions, ExponentialFamily
 

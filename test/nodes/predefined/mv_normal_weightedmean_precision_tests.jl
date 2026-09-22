@@ -1,5 +1,5 @@
 
-@testitem "MvNormalWeightedMeanPrecisionNodeTest" begin
+@testitem "MvNormalWeightedMeanPrecisionNodeTest" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
     @testset "AverageEnergy" begin

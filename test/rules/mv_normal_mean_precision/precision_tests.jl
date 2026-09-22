@@ -1,5 +1,5 @@
 
-@testitem "rules:MvNormalMeanPrecision:precision" begin
+@testitem "rules:MvNormalMeanPrecision:precision" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     using FastCholesky
 

@@ -1,5 +1,5 @@
 
-@testitem "AutoregressiveNode" begin
+@testitem "AutoregressiveNode" tags = [:nodes] begin
     using ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
     import ReactiveMP: getvform, getorder, getstype
@@ -95,7 +95,9 @@
 
 end
 
-@testitem "AutoregressiveNode: is_univariate, is_safe, is_unsafe, default_meta, is_multivariate cases, ar_unit, ARPrecisionMatrix" begin
+@testitem "AutoregressiveNode: is_univariate, is_safe, is_unsafe, default_meta, is_multivariate cases, ar_unit, ARPrecisionMatrix" tags = [
+    :nodes
+] begin
     using ReactiveMP,
         Distributions, ExponentialFamily, LazyArrays, LinearAlgebra, Test
     import ReactiveMP:

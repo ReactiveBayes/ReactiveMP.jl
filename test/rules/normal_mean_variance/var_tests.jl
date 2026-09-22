@@ -1,5 +1,5 @@
 
-@testitem "rules:NormalMeanVariance:var" begin
+@testitem "rules:NormalMeanVariance:var" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import DomainSets

@@ -1,5 +1,5 @@
 
-@testitem "Planar Flow" begin
+@testitem "Planar Flow" tags = [:nodes] begin
     using ReactiveMP
     using ReactiveMP: getdim, getu, getb, getw, getall, setu!, setb!, setw!
     using ReactiveMP:

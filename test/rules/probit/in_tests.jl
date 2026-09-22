@@ -1,5 +1,5 @@
 
-@testitem "rules:Probit:in" begin
+@testitem "rules:Probit:in" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     using StatsFuns:
         normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf

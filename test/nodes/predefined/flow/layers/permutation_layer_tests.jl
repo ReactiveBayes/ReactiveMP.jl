@@ -1,5 +1,5 @@
 
-@testitem "Permutation Layer" begin
+@testitem "Permutation Layer" tags = [:nodes] begin
     using ReactiveMP
     using LinearAlgebra
 

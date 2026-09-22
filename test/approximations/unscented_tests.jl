@@ -1,5 +1,5 @@
 
-@testitem "Unscented approximation method" begin
+@testitem "Unscented approximation method" tags = [:engine] begin
     using ReactiveMP
 
     import ReactiveMP: Unscented, unscented_statistics, approximate

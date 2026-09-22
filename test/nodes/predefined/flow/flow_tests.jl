@@ -1,5 +1,5 @@
 
-@testitem "FlowNode" begin
+@testitem "FlowNode" tags = [:nodes] begin
     using ReactiveMP
     using ReactiveMP: getL, getα, getβ, getκ, getλ
 

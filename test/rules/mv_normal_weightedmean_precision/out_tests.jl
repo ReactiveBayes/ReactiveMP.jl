@@ -1,5 +1,5 @@
 
-@testitem "rules:MvNormalWeightedMeanPrecision:out" begin
+@testitem "rules:MvNormalWeightedMeanPrecision:out" tags = [:rules] begin
     module RulesMvNormalWeightedMeanPrecisionOutTest
 
     using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions

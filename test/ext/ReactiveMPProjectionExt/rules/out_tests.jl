@@ -1,4 +1,4 @@
-@testitem "Basic out rule tests #1" begin
+@testitem "Basic out rule tests #1" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     @testset "f(x) = x, x ~ EF" begin
@@ -48,7 +48,7 @@ end
 # and compute an outbound (multivariate) message. 
 # We use a simple node function f(x) = [x; y] and we test the following assumptions:
 # - `mean(m_out) ≈ [ mean(m_x), mean(m_y) ]`
-@testitem "Basic out rule tests #2" begin
+@testitem "Basic out rule tests #2" tags = [:engine] begin
     using ExponentialFamily,
         ExponentialFamilyProjection, BayesBase, LinearAlgebra
 
@@ -108,7 +108,7 @@ end
     end
 end
 
-@testitem "Basic out rule tests #3" begin
+@testitem "Basic out rule tests #3" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     @testset "f(x) = a*x + b, x ~ Normal (Univariate)" begin
@@ -156,7 +156,7 @@ end
     end
 end
 
-@testitem "Basic out rule tests #4" begin
+@testitem "Basic out rule tests #4" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     @testset "f(x) = x + constant, x ~ Normal (Multivariate)" begin
@@ -198,7 +198,7 @@ end
 ## Exp(λ), f(x) = sqrt(x) results in Rayleigh(1/sqrt(2λ))
 ## Exp(λ), f(x) = kexp(x) results in Pareto(k,λ) ## EFP errors
 ## Exp(λ), f(x) = exp(-x) results in Beta(λ, 1) ## EFP errors with NaN
-@testitem "Basic out rule tests #5" begin
+@testitem "Basic out rule tests #5" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     @testset "Differen set of non-linearities x ~ NonNormal EF (Univariate)" begin
@@ -251,7 +251,7 @@ end
     end
 end
 
-@testitem "ProjectionForm target tests" begin
+@testitem "ProjectionForm target tests" tags = [:engine] begin
     using ExponentialFamily,
         ExponentialFamilyProjection, BayesBase, LinearAlgebra
 

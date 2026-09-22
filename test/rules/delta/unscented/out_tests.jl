@@ -1,7 +1,7 @@
 
 # g provided in a similar syntax like the N parameter in normal_mixture/test_out.jl
 # normal_mixture is the only example with this syntax (that has a test; gamma_mixture is another candidate but ∄ test)
-@testitem "rules:Delta:unscented:out" begin
+@testitem "rules:Delta:unscented:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     import ReactiveMP: @test_rules
 

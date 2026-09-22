@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:ContinuousTransition" begin
+@testitem "marginalrules:ContinuousTransition" tags = [:rules] begin
     using Test,
         ReactiveMP,
         BayesBase,

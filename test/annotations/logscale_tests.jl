@@ -12,7 +12,7 @@
     ) = 10.0
 end
 
-@testitem "getlogscale reads from AnnotationDict" begin
+@testitem "getlogscale reads from AnnotationDict" tags = [:engine] begin
     import ReactiveMP: AnnotationDict, annotate!, getlogscale
 
     ann = AnnotationDict()
@@ -21,7 +21,7 @@ end
     @test getlogscale(ann) == 3.0
 end
 
-@testitem "getlogscale throws when logscale is not set" begin
+@testitem "getlogscale throws when logscale is not set" tags = [:engine] begin
     import ReactiveMP: AnnotationDict, getlogscale
 
     ann = AnnotationDict()
@@ -29,7 +29,9 @@ end
     @test_throws KeyError getlogscale(ann)
 end
 
-@testitem "@logscale macro sets logscale annotation via getannotations" begin
+@testitem "@logscale macro sets logscale annotation via getannotations" tags = [
+    :engine
+] begin
     import ReactiveMP: AnnotationDict, getlogscale, @logscale
 
     _annotations = AnnotationDict()
@@ -39,9 +41,9 @@ end
     @test getlogscale(_annotations) == 2.5
 end
 
-@testitem "post_rule_annotations! is no-op when logscale already annotated" setup = [
-    LogScaleAnnotationsTestUtils
-] begin
+@testitem "post_rule_annotations! is no-op when logscale already annotated" tags = [
+    :engine
+] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -59,9 +61,9 @@ end
     @test getlogscale(ann) == 7.0
 end
 
-@testitem "post_rule_annotations! sets logscale to 0 when all messages are PointMass" setup = [
-    LogScaleAnnotationsTestUtils
-] begin
+@testitem "post_rule_annotations! sets logscale to 0 when all messages are PointMass" tags = [
+    :engine
+] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         getlogscale,
@@ -80,9 +82,9 @@ end
     @test getlogscale(ann) == 0
 end
 
-@testitem "post_rule_annotations! sets logscale to 0 when all marginals are PointMass" setup = [
-    LogScaleAnnotationsTestUtils
-] begin
+@testitem "post_rule_annotations! sets logscale to 0 when all marginals are PointMass" tags = [
+    :engine
+] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         getlogscale,
@@ -101,9 +103,9 @@ end
     @test getlogscale(ann) == 0
 end
 
-@testitem "post_rule_annotations! errors when logscale not set and inputs are not all PointMass" setup = [
-    LogScaleAnnotationsTestUtils
-] begin
+@testitem "post_rule_annotations! errors when logscale not set and inputs are not all PointMass" tags = [
+    :engine
+] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict, post_rule_annotations!, LogScaleAnnotations
 
@@ -115,9 +117,9 @@ end
     )
 end
 
-@testitem "post_product_annotations! with LogScaleAnnotations sums logscales and adds compute_logscale" setup = [
-    LogScaleAnnotationsTestUtils
-] begin
+@testitem "post_product_annotations! with LogScaleAnnotations sums logscales and adds compute_logscale" tags = [
+    :engine
+] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -137,7 +139,9 @@ end
     @test getlogscale(merged) == 13.0
 end
 
-@testitem "A `missing` message stays deferred under LogScaleAnnotations" begin
+@testitem "A `missing` message stays deferred under LogScaleAnnotations" tags = [
+    :engine
+] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     import ReactiveMP:
@@ -225,7 +229,7 @@ end
     end
 end
 
-@testitem "AddonLogScale throws an error" begin
+@testitem "AddonLogScale throws an error" tags = [:engine] begin
     import ReactiveMP: AddonLogScale
 
     @test_throws "AddonLogScale` has been removed" AddonLogScale()

@@ -1,4 +1,4 @@
-@testitem "CVI Projection Extension Tests" begin
+@testitem "CVI Projection Extension Tests" tags = [:engine] begin
     using ExponentialFamily
     using ExponentialFamilyProjection
     using BayesBase
@@ -100,7 +100,7 @@
     end
 end
 
-@testitem "optimize_parameters: with specified form" begin
+@testitem "optimize_parameters: with specified form" tags = [:engine] begin
     using ExponentialFamily
     using ExponentialFamilyProjection
     using BayesBase

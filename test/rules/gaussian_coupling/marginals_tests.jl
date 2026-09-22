@@ -1,4 +1,4 @@
-@testitem "rules:GaussianCoupling:marginals" begin
+@testitem "rules:GaussianCoupling:marginals" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     using LinearAlgebra
 

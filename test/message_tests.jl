@@ -1,4 +1,4 @@
-@testitem "Message/Marginal equality ignores annotations" begin
+@testitem "Message/Marginal equality ignores annotations" tags = [:engine] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     import ReactiveMP:
@@ -50,7 +50,7 @@
     end
 end
 
-@testitem "Message" begin
+@testitem "Message" tags = [:engine] begin
     using Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     import InteractiveUtils: methodswith
@@ -295,7 +295,7 @@ end
     end
 end
 
-@testitem "Deferred message" begin
+@testitem "Deferred message" tags = [:engine] begin
     using Rocket
     import ReactiveMP: DeferredMessage, as_message, getdata
 
@@ -332,7 +332,9 @@ end
     end
 end
 
-@testitem "MessageMapping should call `rulefallback` is no rule is available" begin
+@testitem "MessageMapping should call `rulefallback` is no rule is available" tags = [
+    :engine
+] begin
     import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
     struct SomeArbitraryNodeForRuleFallback end
@@ -393,7 +395,9 @@ end
     )
 end
 
-@testitem "MessageMapping should call provided callbacks handler" begin
+@testitem "MessageMapping should call provided callbacks handler" tags = [
+    :engine
+] begin
     import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
     struct SomeArbitraryNodeCallbacksTests end
@@ -494,9 +498,9 @@ end
         testvar, AddOneToMeanConstraint, SaveOrderOfComputationCallbacks
 end
 
-@testitem "MessageProductContext should compute product of two messages" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "MessageProductContext should compute product of two messages" tags = [
+    :engine
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         Message, MessageProductContext, compute_product_of_two_messages, getdata
 
@@ -513,9 +517,9 @@ end
     @test getdata(result) === Normal(0, 1 / 2)
 end
 
-@testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" tags = [
+    :engine
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         Message,
         MessageProductContext,
@@ -549,9 +553,9 @@ end
     end
 end
 
-@testitem "compute_message_product should support different folding strategies" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "compute_message_product should support different folding strategies" tags = [
+    :engine
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
         Message,
@@ -718,9 +722,9 @@ end
     end
 end
 
-@testitem "Form constraint callbacks with FormConstraintCheckEach" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "Form constraint callbacks with FormConstraintCheckEach" tags = [
+    :engine
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
         Message,
@@ -779,9 +783,9 @@ end
     end
 end
 
-@testitem "Form constraint callbacks with FormConstraintCheckLast" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "Form constraint callbacks with FormConstraintCheckLast" tags = [
+    :engine
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
         Message,
@@ -860,7 +864,7 @@ end
     end
 end
 
-@testitem "Before/after product of messages callbacks" setup = [
+@testitem "Before/after product of messages callbacks" tags = [:engine] setup = [
     MessageProductContextUtils
 ] begin
     import ReactiveMP:

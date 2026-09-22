@@ -1,5 +1,5 @@
 
-@testitem "rules:Delta:linearization:in" begin
+@testitem "rules:Delta:linearization:in" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     import ReactiveMP: @test_rules
 

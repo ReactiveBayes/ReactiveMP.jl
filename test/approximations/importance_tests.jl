@@ -1,5 +1,7 @@
 
-@testitem "ImportanceSamplingApproximation: effective sample size is scale-invariant" begin
+@testitem "ImportanceSamplingApproximation: effective sample size is scale-invariant" tags = [
+    :engine
+] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, StableRNGs
 
     import ReactiveMP: ImportanceSamplingApproximation, approximate_meancov
@@ -73,7 +75,9 @@
     end
 end
 
-@testitem "ImportanceSamplingApproximation: degenerate estimates warn instead of substituting silently" begin
+@testitem "ImportanceSamplingApproximation: degenerate estimates warn instead of substituting silently" tags = [
+    :engine
+] begin
     using ReactiveMP,
         BayesBase, Distributions, ExponentialFamily, StableRNGs, Logging
 
@@ -140,7 +144,9 @@ end
     end
 end
 
-@testitem "ImportanceSamplingApproximation: recovers a known posterior" begin
+@testitem "ImportanceSamplingApproximation: recovers a known posterior" tags = [
+    :engine
+] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, StableRNGs
 
     import ReactiveMP: ImportanceSamplingApproximation, approximate_meancov

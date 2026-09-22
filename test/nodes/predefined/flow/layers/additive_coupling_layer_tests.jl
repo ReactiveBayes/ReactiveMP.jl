@@ -1,5 +1,5 @@
 
-@testitem "Additive Coupling Layer" begin
+@testitem "Additive Coupling Layer" tags = [:nodes] begin
     using ReactiveMP
     using ReactiveMP:
         getf,

@@ -1,5 +1,5 @@
 
-@testitem "PoissonNode" begin
+@testitem "PoissonNode" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
     @testset "Average energy" begin

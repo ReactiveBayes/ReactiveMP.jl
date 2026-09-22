@@ -12,20 +12,11 @@ Branch: `refactor/rule-node-system-rewrite`
 
 ## Next action
 
-**Phase 1 (circulate) and Phase 2 (tooling), which run in parallel.** Phase 0 is complete:
-all thirteen criteria are met, the results are in `DISCUSSION.md` §3.15, and the spike that
-produced them has been deleted as planned — it is in the history at `81822c57` and its
-parents.
+**Phase 2 — tooling migration.** Phase 0 is complete (results in `DISCUSSION.md` §3.15) and
+Phase 1 was closed internally, so nothing is waiting on external feedback.
 
-What Phase 0 settled, in one line each: the routing devirtualizes on the ordinary path at
-zero allocations; the rule surface survives ten hand-written rules including the canary; the
-fallback contract is structural rather than a discipline; the ruleset axis is deferred; the
-delta-layout collapse is real but partial, and the three things that do not collapse are
-named. Three findings changed the design — the target is threaded to every body, incoming
-annotations need their own accessor, and static gating is a first-class concept rather than a
-dependency.
-
-Phase 1 needs a human audience, so it is a GitHub issue rather than a file.
+Phase 2 is independent of the redesign and low risk, and it is the first phase on this branch
+that touches real code rather than documents.
 
 ---
 
@@ -37,8 +28,8 @@ Phase 1 needs a human audience, so it is a GitHub issue rather than a file.
 | — | External design review; contradictions reconciled | **done** |
 | P | Prep: disposition inventory, layout and environment decisions | **done** |
 | 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **done** |
-| 1 | Circulate for external feedback | **next** |
-| 2 | Tooling migration on ReactiveMP | **next** *(parallel with 1)* |
+| 1 | Circulate for external feedback | **done** *(internally)* |
+| 2 | Tooling migration on ReactiveMP | **in progress** |
 | 3 | `MessagePassingRulesBase` | not started |
 | 4 | `MessagePassingRulesTestUtils` | not started |
 | 4.5 | **Engine integration slice** — small end-to-end proof | not started |
@@ -310,17 +301,19 @@ freezing the API. That is the point of doing this first — cost is days, not mo
 
 ---
 
-## Phase 1 — Circulate
+## Phase 1 — Circulate — **DONE**
 
 **Goal:** external feedback *before* the macro exists, because the macro is where effort
 starts compounding and changing the surface afterwards means touching everything again.
 
-**Exit criteria**
-- [ ] `PLAN.md` + `DISCUSSION.md` + spike results shared
-- [ ] go/no-go gate result posted as a GitHub issue for comment
-- [ ] feedback triaged into `PLAN.md` edits or new open items
+**Closed internally.** The review happened directly rather than through a GitHub issue, so
+there is no issue to link and none is needed. The corrections it produced are already in the
+documents — `DISCUSSION.md` §4 *Corrections* is largely the record of it, and the
+review-driven open items #9–#13 came out of it.
 
-Use GitHub issues here, not files — humans comment on issues, agents read files.
+- [x] `PLAN.md` + `DISCUSSION.md` + spike results shared
+- [x] go/no-go gate result reviewed *(internally, not as an issue)*
+- [x] feedback triaged into `PLAN.md` edits or new open items
 
 ---
 
@@ -329,11 +322,19 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
 **Goal:** make every later session faster. Independent of the redesign, low risk.
 
 **Exit criteria**
-- [ ] `runtests.jl` filters by **name and tags**, not just filename (TestItemRunner already
-      passes `(filename, name, tags)` to the filter — no package swap needed)
-- [ ] tag taxonomy applied: `:rules`, `:nodes`, `:engine`, `:alloc`, `:slow`, `:quality`
-- [ ] `make test` = fast subset, `make test-all` = everything — **the fast local default
-      must not weaken full CI coverage**; CI runs everything
+- [x] `runtests.jl` filters by **name and tags**, not just filename (TestItemRunner already
+      passes `(filename, name, tags)` to the filter — no package swap needed). Three kinds of
+      `test_args` entry, composable: a path (`rules:beta:out`, unchanged), `tag:<name>` and
+      `name:<text>`. Same kind OR'ed, different kinds AND'ed
+- [x] tag taxonomy applied: `:rules` (194), `:nodes` (83), `:engine` (130 — everything that
+      is not a rule or node test), `:alloc` (6, the items asserting allocation counts),
+      `:quality` (1, the inventory gate). **All 414 items carry a tag; none is `:slow` yet** —
+      nothing has been measured as slow, so nothing claims to be. Tagging one later removes it
+      from `make test` and leaves it in `make test-all` and CI
+- [x] `make test` = fast subset, `make test-all` = everything — **the fast local default
+      must not weaken full CI coverage**; CI runs everything. Enforced rather than intended:
+      `ci.yml` sets `TEST_ALL=true`, so a `:slow` tag changes what a developer runs locally
+      and never what CI runs
 - [ ] Runic replaces JuliaFormatter
 - [ ] Aqua `ambiguities` enabled. **Measured in Phase P: 322 ambiguous pairs**
       (`Aqua.detect_ambiguities(ReactiveMP; recursive = true)`), which split into five
@@ -361,10 +362,17 @@ Use GitHub issues here, not files — humans comment on issues, agents read file
       Julia-version and resolution dependent, so re-measure before acting rather than
       treating 322 as fixed. Zero pairs were reported to have neither side in ReactiveMP.
       Per-type counts in inventory notes may overlap and must not be added as disjoint totals
-- [ ] Aqua `piracies` enabled — 3 known methods fixed or in `treat_as_own`
-      (`uniform.jl:6,9`, `fixes.jl:12`; see `DISCUSSION.md` §5)
-- [ ] `deps_compat`'s `check_extras` re-enabled
-- [ ] `CLAUDE.md` "Running things" updated to match
+- [x] Aqua `piracies` enabled — the 3 known methods declared via
+      `treat_as_own = [Distributions.Uniform, ForwardDiff.Dual]`, after which **zero pirates
+      remain** (measured). Both are documented where they are defined: the `Uniform`×`Beta`
+      product (`uniform.jl:6,9`) is a mathematical special case that arguably belongs in
+      ExponentialFamily, and the `dot` overload (`fixes.jl:12`) leaves when `src/fixes.jl`
+      does
+- [x] `deps_compat`'s `check_extras` re-enabled. It required two things: **compat bounds for
+      every `[extras]` entry**, not only the runtime deps, and dropping three extras that
+      nothing used — `Coverage`, `Dates` and `Distributed` (`Logging` looked unused too, but a
+      multi-line import hid it; it stays)
+- [x] `CLAUDE.md` "Running things" updated to match
 
 ---
 

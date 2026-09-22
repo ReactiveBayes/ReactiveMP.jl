@@ -1,5 +1,5 @@
 
-@testitem "rules:MatrixNormalWishart:out" begin
+@testitem "rules:MatrixNormalWishart:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

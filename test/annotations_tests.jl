@@ -31,7 +31,7 @@
     end
 end
 
-@testitem "AnnotationDict can be created" begin
+@testitem "AnnotationDict can be created" tags = [:engine] begin
     import ReactiveMP: AnnotationDict, annotate!, get_annotation, has_annotation
 
     ann = AnnotationDict()
@@ -45,7 +45,7 @@ end
     @test @inferred(get_annotation(ann, Float64, :logscale)) == 1.0
 end
 
-@testitem "AnnotationDict can be copied with copy constructor" begin
+@testitem "AnnotationDict can be copied with copy constructor" tags = [:engine] begin
     import ReactiveMP: AnnotationDict, annotate!, get_annotation, has_annotation
 
     original = AnnotationDict()
@@ -64,7 +64,7 @@ end
     @test get_annotation(original, :foo) == 1
 end
 
-@testitem "AnnotationDict isempty" begin
+@testitem "AnnotationDict isempty" tags = [:engine] begin
     import ReactiveMP: AnnotationDict, annotate!
 
     ann = AnnotationDict()
@@ -74,7 +74,7 @@ end
     @test !isempty(ann)
 end
 
-@testitem "AnnotationDict show" begin
+@testitem "AnnotationDict show" tags = [:engine] begin
     import ReactiveMP: AnnotationDict, annotate!
 
     ann = AnnotationDict()
@@ -94,7 +94,9 @@ end
     @test sprint(show, ann; context = :compact => true) == "AnnotationDict(n=2)"
 end
 
-@testitem "AnnotationDict does not allocate on simple creation" begin
+@testitem "AnnotationDict does not allocate on simple creation" tags = [
+    :engine, :alloc
+] begin
     import ReactiveMP: AnnotationDict, has_annotation
 
     function foo()
@@ -107,9 +109,9 @@ end
     @test @allocated(foo()) === 0
 end
 
-@testitem "post_product_annotations! with no processors returns empty AnnotationDict" setup=[
-    AnnotationsTestUtils
-] begin
+@testitem "post_product_annotations! with no processors returns empty AnnotationDict" tags = [
+    :engine
+] setup=[AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict, annotate!, has_annotation, post_product_annotations!
 
@@ -129,9 +131,9 @@ end
     end
 end
 
-@testitem "post_product_annotations! calls per-processor post_product_annotations! for each processor" setup=[
-    AnnotationsTestUtils
-] begin
+@testitem "post_product_annotations! calls per-processor post_product_annotations! for each processor" tags = [
+    :engine
+] setup=[AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -158,9 +160,9 @@ end
     @test get_annotation(result, :sum) == 10
 end
 
-@testitem "post_product_annotations! with missing left_dist copies right_ann" setup=[
-    AnnotationsTestUtils
-] begin
+@testitem "post_product_annotations! with missing left_dist copies right_ann" tags = [
+    :engine
+] setup=[AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -181,9 +183,9 @@ end
     @test get_annotation(result, :logscale) == 5.0
 end
 
-@testitem "post_product_annotations! with missing right_dist copies left_ann" setup=[
-    AnnotationsTestUtils
-] begin
+@testitem "post_product_annotations! with missing right_dist copies left_ann" tags = [
+    :engine
+] setup=[AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -204,9 +206,9 @@ end
     @test get_annotation(result, :logscale) == 3.0
 end
 
-@testitem "post_product_annotations! with both dists missing returns empty AnnotationDict" setup=[
-    AnnotationsTestUtils
-] begin
+@testitem "post_product_annotations! with both dists missing returns empty AnnotationDict" tags = [
+    :engine
+] setup=[AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict, annotate!, has_annotation, post_product_annotations!
 

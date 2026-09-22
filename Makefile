@@ -28,10 +28,13 @@ doc_init:
 docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl
 
-.PHONY: test
+.PHONY: test test-all
 
-test: ## Run tests (make test test_args="folder1:test1 folder2:test2" to run reduced testsets. RUN_AQUA=false make test ... to skip slow Aqua checks enabled by default)
-	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'	
+test: ## Run the fast subset (skips `:slow`). test_args="rules:beta:out", "tag:rules", "name:Beta" all work; RUN_AQUA=false skips the slow Aqua checks
+	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
+
+test-all: ## Run everything, including `:slow`. This is what CI runs
+	TEST_ALL=true julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
 	
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

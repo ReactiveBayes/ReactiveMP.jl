@@ -1,5 +1,5 @@
 
-@testitem "rules:Categorical:p" begin
+@testitem "rules:Categorical:p" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

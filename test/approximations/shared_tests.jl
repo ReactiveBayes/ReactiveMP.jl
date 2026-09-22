@@ -1,5 +1,5 @@
 
-@testitem "Shared approximation methods" begin
+@testitem "Shared approximation methods" tags = [:engine] begin
     using ReactiveMP
 
     @testset "__starts_at tests" begin

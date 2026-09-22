@@ -1,5 +1,5 @@
 
-@testitem "rules:Dirichlet:out" begin
+@testitem "rules:Dirichlet:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

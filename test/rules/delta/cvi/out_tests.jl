@@ -1,6 +1,6 @@
 
 # test this set with $ make test testset='rules:gamma_inverse:out'
-@testitem "rules:Delta:cvi:out" begin
+@testitem "rules:Delta:cvi:out" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, StableRNGs
     import ReactiveMP: @test_rules

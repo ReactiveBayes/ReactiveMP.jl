@@ -1,5 +1,7 @@
 
-@testitem "rules:DiscreteTransition:marginals:out_in: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -22,7 +24,9 @@
     )]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_in: (m_out::PointMass, m_in::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in: (m_out::PointMass, m_in::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -80,7 +84,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_in_T1: (m_out::Categorical, m_in::Categorical, m_T1::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in_T1: (m_out::Categorical, m_in::Categorical, m_T1::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -154,7 +160,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_in: (m_out::Categorical, m_in::Categorical,  q_a::DirichletCollection, q_T1::PointMass)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in: (m_out::Categorical, m_in::Categorical,  q_a::DirichletCollection, q_T1::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -216,7 +224,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_in_T1: (m_out::PointMass, m_in::Categorical, m_T1::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in_T1: (m_out::PointMass, m_in::Categorical, m_T1::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -275,7 +285,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_in_T1: (m_out::Categorical, m_in::PointMass, m_T1::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in_T1: (m_out::Categorical, m_in::PointMass, m_T1::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -334,7 +346,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_in_T1_T2: (m_out::Categorical, m_in::Categorical, m_T1::Categorical, m_T2::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in_T1_T2: (m_out::Categorical, m_in::Categorical, m_T1::Categorical, m_T2::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -367,7 +381,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_T1_T2: (m_out::Categorical,  m_T1::Categorical, m_T2::Categorical, q_in::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_T1_T2: (m_out::Categorical,  m_T1::Categorical, m_T2::Categorical, q_in::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -400,7 +416,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:marginals:out_in_T1_T2: (m_out::PointMass, m_in::Categorical, m_T1::PointMass, m_T2::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:out_in_T1_T2: (m_out::PointMass, m_in::Categorical, m_T1::PointMass, m_T2::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -436,7 +454,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:marginals:T1_T2: (q_out_in::Contingency, m_T1::Categorical, m_T2::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:T1_T2: (q_out_in::Contingency, m_T1::Categorical, m_T2::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -467,7 +487,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:marginals:T1_T2: (q_out_in::Contingency, m_T1::PointMass, m_T2::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:marginals:T1_T2: (q_out_in::Contingency, m_T1::PointMass, m_T2::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 

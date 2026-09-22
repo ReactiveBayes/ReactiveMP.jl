@@ -1,4 +1,4 @@
-@testitem "GaussianCouplingNode" begin
+@testitem "GaussianCouplingNode" tags = [:nodes] begin
     using ReactiveMP, BayesBase, ExponentialFamily
     using LinearAlgebra
 

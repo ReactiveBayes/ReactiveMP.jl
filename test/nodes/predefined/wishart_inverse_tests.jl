@@ -1,5 +1,5 @@
 
-@testitem "InverseWishartNode" begin
+@testitem "InverseWishartNode" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
     import ExponentialFamily: InverseWishartFast
     import ReactiveMP: to_marginal

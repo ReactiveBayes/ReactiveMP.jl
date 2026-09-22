@@ -1,5 +1,5 @@
 
-@testitem "MvNormalMeanScaleMatrixPrecision" begin
+@testitem "MvNormalMeanScaleMatrixPrecision" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily, LinearAlgebra
 
     @testset "AverageEnergy" begin

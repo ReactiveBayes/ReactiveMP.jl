@@ -1,5 +1,5 @@
 
-@testitem "rules:Delta:linearization:marginals" begin
+@testitem "rules:Delta:linearization:marginals" tags = [:rules] begin
     using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     import ReactiveMP: @test_marginalrules
 

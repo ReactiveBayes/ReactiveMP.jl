@@ -1,5 +1,7 @@
 
-@testitem "rules:DiscreteTransition:in:Variational Bayes: (q_out::Any, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:in:Variational Bayes: (q_out::Any, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -27,7 +29,9 @@
     ]
 end
 
-@testitem "rules:DiscreteTransition:in:Variational Bayes: (q_out::Any, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:in:Variational Bayes: (q_out::Any, q_a::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -44,7 +48,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:in: 2-interface PointMass rule matches exp-then-normalise" begin
+@testitem "rules:DiscreteTransition:in: 2-interface PointMass rule matches exp-then-normalise" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     # This rule computes `eloga' * probvec(q_out)` -- a vector of unnormalised *log*
@@ -86,7 +92,9 @@ end
     end
 end
 
-@testitem "rules:DiscreteTransition:in:Variational Bayes: (m_out::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:in:Variational Bayes: (m_out::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -116,7 +124,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -142,7 +152,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical)" begin
+@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -254,7 +266,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, q_T1::PointMass)" begin
+@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, q_T1::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -356,7 +370,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical, m_t2::Categorical)" begin
+@testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical, m_t2::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -501,7 +517,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:in:Structured Variational Message Passing: (m_out::Categorical, q_a::DirichletCollection, q_t1_t2::Contingency)" begin
+@testitem "rules:DiscreteTransition:in:Structured Variational Message Passing: (m_out::Categorical, q_a::DirichletCollection, q_t1_t2::Contingency)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -532,7 +550,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:in:Structured VMP: Higher orders (q_out::Pointmass, q_a::DirichletCollection, m_T*::Categorical)" begin
+@testitem "rules:DiscreteTransition:in:Structured VMP: Higher orders (q_out::Pointmass, q_a::DirichletCollection, m_T*::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

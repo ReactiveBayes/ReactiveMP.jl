@@ -1,4 +1,4 @@
-@testitem "DiscreteTransitionNode" begin
+@testitem "DiscreteTransitionNode" tags = [:nodes] begin
     using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
     import Base.Broadcast: BroadcastFunction

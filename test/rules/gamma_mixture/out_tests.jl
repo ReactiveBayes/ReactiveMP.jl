@@ -1,4 +1,4 @@
-@testitem "rules:GammaMixture:out" begin
+@testitem "rules:GammaMixture:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     import ReactiveMP: @test_rules
     # Tests for rule: GammaMixture(:out, Marginalisation)

@@ -1,5 +1,5 @@
 
-@testitem "SoftDotNode" begin
+@testitem "SoftDotNode" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily, LinearAlgebra
 
     # Closed-form mean-field average energy for `softdot`, written out explicitly from

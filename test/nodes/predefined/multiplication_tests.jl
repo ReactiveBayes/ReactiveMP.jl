@@ -1,4 +1,4 @@
-@testitem "multiplication node: default_meta" begin
+@testitem "multiplication node: default_meta" tags = [:nodes] begin
     using ReactiveMP
     using MatrixCorrectionTools
     import ReactiveMP: default_meta

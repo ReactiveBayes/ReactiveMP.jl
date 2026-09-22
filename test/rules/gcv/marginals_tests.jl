@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:GCV:y_x" setup = [GCVRulesTestUtils] begin
+@testitem "marginalrules:GCV:y_x" tags = [:rules] setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
 
     import ReactiveMP:

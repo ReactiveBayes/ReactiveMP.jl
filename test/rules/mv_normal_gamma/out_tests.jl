@@ -1,5 +1,5 @@
 
-@testitem "rules:MvNormalGamma:out" begin
+@testitem "rules:MvNormalGamma:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
 
     import ReactiveMP: @call_rule

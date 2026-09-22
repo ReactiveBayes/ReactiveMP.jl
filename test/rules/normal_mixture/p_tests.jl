@@ -1,5 +1,5 @@
 
-@testitem "rules:NormalMixture:p" begin
+@testitem "rules:NormalMixture:p" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

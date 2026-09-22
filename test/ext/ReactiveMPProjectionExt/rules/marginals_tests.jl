@@ -1,4 +1,4 @@
-@testitem "Basic checks for marginal rule" begin
+@testitem "Basic checks for marginal rule" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
     import ReactiveMP: @test_rules, @test_marginalrules
 
@@ -115,7 +115,7 @@
     end
 end
 
-@testitem "CVIProjection form access tests" begin
+@testitem "CVIProjection form access tests" tags = [:engine] begin
     using ExponentialFamily,
         ExponentialFamilyProjection, BayesBase, LinearAlgebra
     import ReactiveMP: get_kth_in_form
@@ -165,7 +165,9 @@ end
     end
 end
 
-@testitem "CVIProjection proposal distribution convergence tests" begin
+@testitem "CVIProjection proposal distribution convergence tests" tags = [
+    :engine
+] begin
     using ExponentialFamily,
         ExponentialFamilyProjection, BayesBase, LinearAlgebra
     using Random, Distributions
@@ -220,7 +222,9 @@ end
     end
 end
 
-@testitem "Basic checks for marginal rule with mean based approximation" begin
+@testitem "Basic checks for marginal rule with mean based approximation" tags = [
+    :engine
+] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
     import ReactiveMP: @test_rules, @test_marginalrules
 
@@ -249,7 +253,9 @@ end
     end
 end
 
-@testitem "DeltaNode - CVI sampling strategy performance comparison" begin
+@testitem "DeltaNode - CVI sampling strategy performance comparison" tags = [
+    :engine
+] begin
     using Test
     using BenchmarkTools
     using BayesBase, ExponentialFamily, ExponentialFamilyProjection

@@ -1,5 +1,5 @@
 
-@testitem "Variable" begin
+@testitem "Variable" tags = [:engine] begin
     using ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
 
     import ReactiveMP:

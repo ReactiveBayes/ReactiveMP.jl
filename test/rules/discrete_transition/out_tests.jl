@@ -1,5 +1,7 @@
 
-@testitem "rules:DiscreteTransition:out:Belief Propagation: (q_in::PointMass, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (q_in::PointMass, q_a::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -34,7 +36,9 @@
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Variational Bayes: (q_in::Categorical, q_a::Any)" begin
+@testitem "rules:DiscreteTransition:out:Variational Bayes: (q_in::Categorical, q_a::Any)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -51,7 +55,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:out:Variational Bayes: (q_in::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:out:Variational Bayes: (q_in::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -79,7 +85,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::DiscreteNonParametric, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::DiscreteNonParametric, q_a::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -103,7 +111,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::DiscreteNonParametric, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::DiscreteNonParametric, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -135,7 +145,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Variational Bayes: (m_in::PointMass, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:out:Variational Bayes: (m_in::PointMass, q_a::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -173,7 +185,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, m_t1::Categorical)" begin
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, m_t1::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -283,7 +297,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, q_T1::PointMass)" begin
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, q_T1::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -383,7 +399,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, m_t1::Categorical, m_t2::Categorical)" begin
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, m_t1::Categorical, m_t2::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -528,7 +546,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Belief propagation: higher orders" begin
+@testitem "rules:DiscreteTransition:out:Belief propagation: higher orders" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

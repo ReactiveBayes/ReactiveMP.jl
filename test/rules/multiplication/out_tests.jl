@@ -1,5 +1,5 @@
 
-@testitem "rule:typeof(*):out" begin
+@testitem "rule:typeof(*):out" tags = [:rules] begin
     using ReactiveMP,
         BayesBase,
         Random,

@@ -1,4 +1,6 @@
-@testitem "`UnspecifiedFormConstraint` should not error on `Distribution` objects" begin
+@testitem "`UnspecifiedFormConstraint` should not error on `Distribution` objects" tags = [
+    :engine
+] begin
     using Distributions
     import ReactiveMP: constrain_form
 
@@ -9,7 +11,9 @@
         MvNormal([0.0, 0.0])
 end
 
-@testitem "`CompositeFormConstraint` should call the constraints in the specified order" begin
+@testitem "`CompositeFormConstraint` should call the constraints in the specified order" tags = [
+    :engine
+] begin
     import ReactiveMP: constrain_form
 
     struct FormConstraint1 end
@@ -25,7 +29,9 @@ end
     @test constrain_form(composite, 1) == 3
 end
 
-@testitem "`preprocess_form_constraints` should create `CompositeFormConstraint` from a tuple of constraints" begin
+@testitem "`preprocess_form_constraints` should create `CompositeFormConstraint` from a tuple of constraints" tags = [
+    :engine
+] begin
     import ReactiveMP: preprocess_form_constraints, AbstractFormConstraint
 
     struct FormConstraint1 <: AbstractFormConstraint end
@@ -38,7 +44,9 @@ end
     @test preprocess_form_constraints(FormConstraint2()) == FormConstraint2()
 end
 
-@testitem "`preprocess_form_constraints` should wrap unknown form constraints into a `WrappedFormConstraint`" begin
+@testitem "`preprocess_form_constraints` should wrap unknown form constraints into a `WrappedFormConstraint`" tags = [
+    :engine
+] begin
     import ReactiveMP:
         preprocess_form_constraints,
         AbstractFormConstraint,
@@ -111,7 +119,9 @@ end
     )
 end
 
-@testitem "`WrappedFormConstraint` should simply redirect all the important functions to the underlying object" begin
+@testitem "`WrappedFormConstraint` should simply redirect all the important functions to the underlying object" tags = [
+    :engine
+] begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 
     struct FormConstraint end
@@ -127,7 +137,9 @@ end
     @test default_prod_constraint(constraint) == "world"
 end
 
-@testitem "`WrappedFormConstraint` should not pass empty context to the `constrain_form` call" begin
+@testitem "`WrappedFormConstraint` should not pass empty context to the `constrain_form` call" tags = [
+    :engine
+] begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 
     struct FormConstraintWithoutContext end
@@ -147,7 +159,9 @@ end
     @test constrain_form(constraint, 7) == 8
 end
 
-@testitem "`WrappedFormConstraint` should be able to reuse the context between multiple `constrain_form` calls" begin
+@testitem "`WrappedFormConstraint` should be able to reuse the context between multiple `constrain_form` calls" tags = [
+    :engine
+] begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 
     struct FormConstraintWithContext end

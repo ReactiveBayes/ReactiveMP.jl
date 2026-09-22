@@ -1,5 +1,5 @@
 
-@testitem "rules:Delta:unscented:in" begin
+@testitem "rules:Delta:unscented:in" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     import ReactiveMP: @test_rules
 

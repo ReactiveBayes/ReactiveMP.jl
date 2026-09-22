@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:Flow" begin
+@testitem "marginalrules:Flow" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 

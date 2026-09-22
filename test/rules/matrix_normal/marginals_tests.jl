@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:MatrixNormal" begin
+@testitem "marginalrules:MatrixNormal" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_marginalrules

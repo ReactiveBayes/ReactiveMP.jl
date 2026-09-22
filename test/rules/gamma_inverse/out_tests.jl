@@ -1,5 +1,5 @@
 
-@testitem "rules:GammaInverse:out" begin
+@testitem "rules:GammaInverse:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

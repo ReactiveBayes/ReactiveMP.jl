@@ -1,5 +1,5 @@
 
-@testitem "ExponentialLinearQuadratic" begin
+@testitem "ExponentialLinearQuadratic" tags = [:nodes] begin
     using ReactiveMP,
         Distributions, Random, DomainIntegrals, BayesBase, ExponentialFamily
 
@@ -84,7 +84,7 @@
     end
 end
 
-@testitem "GCV: average energy" begin
+@testitem "GCV: average energy" tags = [:nodes] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, StableRNGs
 
     import ReactiveMP: GCVMetadata, GaussHermiteCubature

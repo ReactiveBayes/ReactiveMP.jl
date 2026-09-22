@@ -1,5 +1,5 @@
 
-@testitem "UninformativeNode" begin
+@testitem "UninformativeNode" tags = [:nodes] begin
     using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
     using BayesBase: TerminalProdArgument
 

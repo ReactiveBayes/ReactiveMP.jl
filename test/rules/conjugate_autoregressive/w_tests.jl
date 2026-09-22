@@ -1,5 +1,5 @@
 
-@testitem "rules:ConjugateAR:w (message)" begin
+@testitem "rules:ConjugateAR:w (message)" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
 

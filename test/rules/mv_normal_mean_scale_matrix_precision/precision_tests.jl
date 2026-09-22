@@ -1,5 +1,5 @@
 
-@testitem "rules:MvNormalMeanScaleMatrixPrecision:precision" begin
+@testitem "rules:MvNormalMeanScaleMatrixPrecision:precision" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: GammaShapeRate, @test_rules

@@ -1,5 +1,5 @@
 
-@testitem "MatrixNormalWishartNode" begin
+@testitem "MatrixNormalWishartNode" tags = [:nodes] begin
     using ReactiveMP,
         Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
     using FastCholesky, StableRNGs

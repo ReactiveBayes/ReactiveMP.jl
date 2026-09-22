@@ -21,9 +21,9 @@
     export CustomEvent, MutableCustomEvent
 end
 
-@testitem "Callbacks handler should do absolutely nothing if no handler exists" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "Callbacks handler should do absolutely nothing if no handler exists" tags = [
+    :engine, :alloc
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback, Event, generate_span_id
     using UUIDs
 
@@ -125,7 +125,9 @@ end
     end
 end
 
-@testitem "invoke_callback should return the event" setup = [CallbacksTestUtils] begin
+@testitem "invoke_callback should return the event" tags = [:engine] setup = [
+    CallbacksTestUtils
+] begin
     import ReactiveMP: invoke_callback
 
     event = CustomEvent(:event1, 1, 2)
@@ -146,7 +148,7 @@ end
         CustomEvent(:other, 1)
 end
 
-@testitem "event_name should work on both types and instances" setup = [
+@testitem "event_name should work on both types and instances" tags = [:engine] setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: event_name, Event
@@ -170,9 +172,9 @@ end
         :after_product_of_two_messages
 end
 
-@testitem "It should be possible to define custom callback handlers via handle_event" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "It should be possible to define custom callback handlers via handle_event" tags = [
+    :engine
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback, handle_event, Event
 
     struct MyCallbackHandler
@@ -204,7 +206,7 @@ end
     )
 end
 
-@testitem "Custom callback handler can mutate event state" setup = [
+@testitem "Custom callback handler can mutate event state" tags = [:engine] setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback, handle_event, Event
@@ -227,7 +229,7 @@ end
     @test event.state === :modified
 end
 
-@testitem "NamedTuple callback can mutate event state" setup = [
+@testitem "NamedTuple callback can mutate event state" tags = [:engine] setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback
@@ -243,7 +245,9 @@ end
     @test event.state === 7
 end
 
-@testitem "Dict callback can mutate event state" setup = [CallbacksTestUtils] begin
+@testitem "Dict callback can mutate event state" tags = [:engine] setup = [
+    CallbacksTestUtils
+] begin
     import ReactiveMP: invoke_callback
 
     callbacks = Dict{Symbol, Any}(
@@ -259,9 +263,9 @@ end
     @test event.state === 15
 end
 
-@testitem "invoke_callback error hint for forgotten trailing comma in NamedTuple" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "invoke_callback error hint for forgotten trailing comma in NamedTuple" tags = [
+    :engine
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback
 
     # This simulates the common mistake: `(before_product_of_messages = fn)` without trailing comma.
@@ -285,9 +289,9 @@ end
     @test occursin("trailing comma", hint_message)
 end
 
-@testitem "invoke_callback error hint for custom handler with missing method" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "invoke_callback error hint for custom handler with missing method" tags = [
+    :engine
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback
 
     # Custom handler that only implements handle_event for :event1 but not :event2
@@ -321,7 +325,7 @@ end
     )
 end
 
-@testitem "NamedTuple should be a supported event handler" setup = [
+@testitem "NamedTuple should be a supported event handler" tags = [:engine] setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback
@@ -340,7 +344,7 @@ end
     ) isa CustomEvent{:other_event}
 end
 
-@testitem "Dict{Symbol} should be a supported event handler" setup = [
+@testitem "Dict{Symbol} should be a supported event handler" tags = [:engine] setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback
@@ -358,7 +362,7 @@ end
     ) === CustomEvent(:other_event, 1, 2, 3)
 end
 
-@testitem "It should be possible to merge callback handlers" setup = [
+@testitem "It should be possible to merge callback handlers" tags = [:engine] setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback, merge_callbacks, handle_event, Event
@@ -406,7 +410,7 @@ end
     @test Set(custom_handler.events) == Set([:event2])
 end
 
-@testitem "Merged callbacks should return the event" setup = [
+@testitem "Merged callbacks should return the event" tags = [:engine] setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback, merge_callbacks
@@ -420,9 +424,9 @@ end
     @test invoke_callback(merged_handler, event) === event
 end
 
-@testitem "Merged callbacks can mutate event state across handlers" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "Merged callbacks can mutate event state across handlers" tags = [
+    :engine
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback, merge_callbacks
 
     # First handler sets state to 1
@@ -509,9 +513,9 @@ end
     export MockVariable, fixed_span, mapping, msg, annotated_dict, compact
 end
 
-@testitem "Base.show for Tier C supporting types — compact vs full" setup = [
-    EventShowTestUtils
-] begin
+@testitem "Base.show for Tier C supporting types — compact vs full" tags = [
+    :engine
+] setup = [EventShowTestUtils] begin
     import ReactiveMP:
         MessageMapping,
         MessageProductContext,
@@ -553,9 +557,9 @@ end
     @test repr(FormConstraintCheckLast()) == "FormConstraintCheckLast()"
 end
 
-@testitem "Base.show for Before/After event pairs — compact form" setup = [
-    EventShowTestUtils
-] begin
+@testitem "Base.show for Before/After event pairs — compact form" tags = [
+    :engine
+] setup = [EventShowTestUtils] begin
     import ReactiveMP:
         BeforeMessageRuleCallEvent,
         AfterMessageRuleCallEvent,
@@ -650,7 +654,7 @@ end
     end
 end
 
-@testitem "Base.show for Before/After event pairs — full form" setup = [
+@testitem "Base.show for Before/After event pairs — full form" tags = [:engine] setup = [
     EventShowTestUtils
 ] begin
     import ReactiveMP:
@@ -686,7 +690,7 @@ end
     @test occursin("Message(0.1)", rendered_marg)
 end
 
-@testitem "Base.show omits span field when span_id is nothing" setup = [
+@testitem "Base.show omits span field when span_id is nothing" tags = [:engine] setup = [
     EventShowTestUtils
 ] begin
     import ReactiveMP:

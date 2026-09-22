@@ -1,5 +1,5 @@
 
-@testitem "rules:ContinuousTransition:y" begin
+@testitem "rules:ContinuousTransition:y" tags = [:rules] begin
     using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians

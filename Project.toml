@@ -72,13 +72,25 @@ TupleTools = "1.2.0"
 UUIDs = "1"
 julia = "1.10"
 
+# Test-target dependencies. Aqua's `deps_compat` check_extras requires a bound on every
+# `[extras]` entry, not only on the runtime deps. Stdlibs are pinned to the Julia floor.
+Aqua = "0.8"
+BenchmarkTools = "1"
+Documenter = "1"
+InteractiveUtils = "1.10"
+JET = "0.9, 0.10, 0.11, 0.12"
+Logging = "1.10"
+Manopt = "0.5, 0.6"
+Pkg = "1.10"
+REPL = "1.10"
+StableRNGs = "1"
+Test = "1.10"
+TestItemRunner = "1"
+
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
-Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
-Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -93,4 +105,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "TestItemRunner", "Test", "Pkg", "Logging", "InteractiveUtils", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkTools", "JET", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection", "REPL", "Manopt"]
+test = ["Aqua", "TestItemRunner", "Test", "Pkg", "Logging", "InteractiveUtils", "Documenter", "BenchmarkTools", "JET", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection", "REPL", "Manopt"]

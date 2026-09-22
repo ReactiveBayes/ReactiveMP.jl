@@ -1,4 +1,4 @@
-@testitem "DirichletCollectionNode" begin
+@testitem "DirichletCollectionNode" tags = [:nodes] begin
     using ReactiveMP,
         Random, BayesBase, ExponentialFamily, Distributions, StableRNGs
 

@@ -1,5 +1,5 @@
 
-@testitem "ProbitNode" begin
+@testitem "ProbitNode" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
     @testset "Average energy" begin

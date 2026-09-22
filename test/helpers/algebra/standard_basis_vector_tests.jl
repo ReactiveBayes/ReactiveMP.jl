@@ -1,4 +1,4 @@
-@testitem "StandardBasisVector" begin
+@testitem "StandardBasisVector" tags = [:engine] begin
     using ReactiveMP
     using Random
 

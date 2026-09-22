@@ -1,4 +1,4 @@
-@testitem "MultinomialPolya average energy" begin
+@testitem "MultinomialPolya average energy" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
 
     for ncubaturepoints in [21, 42, 100]

@@ -1,4 +1,4 @@
-@testitem "rules:MultinomialPolya:psi" begin
+@testitem "rules:MultinomialPolya:psi" tags = [:rules] begin
     using ReactiveMP,
         BayesBase,
         Random,

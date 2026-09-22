@@ -1,5 +1,5 @@
 
-@testitem "BIFMHelperNode" begin
+@testitem "BIFMHelperNode" tags = [:nodes] begin
     using ReactiveMP, Random, ExponentialFamily, BayesBase
 
     @testset "Average energy" begin

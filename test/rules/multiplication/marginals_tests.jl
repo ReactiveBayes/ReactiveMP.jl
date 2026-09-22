@@ -1,4 +1,4 @@
-@testitem "marginalrules:Multiplication" begin
+@testitem "marginalrules:Multiplication" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_marginalrules

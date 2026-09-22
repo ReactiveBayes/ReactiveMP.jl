@@ -1,4 +1,4 @@
-@testitem "Generic nodefunction fallback rule" begin
+@testitem "Generic nodefunction fallback rule" tags = [:rules] begin
     using Distributions, BayesBase
 
     struct MyBeta{A, B} <: ContinuousUnivariateDistribution

@@ -1,4 +1,4 @@
-@testitem "rules:MultinomialPolya:x" begin
+@testitem "rules:MultinomialPolya:x" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, Distributions, ExponentialFamily
     import ReactiveMP: @test_rules
 

@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:ConjugateAR:w" begin
+@testitem "marginalrules:ConjugateAR:w" tags = [:rules] begin
     using ReactiveMP,
         BayesBase,
         Random,
@@ -146,7 +146,7 @@
     end
 end
 
-@testitem "marginalrules:ConjugateAR:y_x (delegates to AR)" begin
+@testitem "marginalrules:ConjugateAR:y_x (delegates to AR)" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
 

@@ -1,5 +1,7 @@
 
-@testitem "rules:DiscreteTransition:T:Belief Propagation (m_out::Categorical, m_in::Categorical, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:T:Belief Propagation (m_out::Categorical, m_in::Categorical, q_a::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -51,7 +53,9 @@
     ]
 end
 
-@testitem "rules:DiscreteTransition:T:Belief Propagation (q_out::PointMass, m_in::Categorical, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:T:Belief Propagation (q_out::PointMass, m_in::Categorical, q_a::PointMass)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -107,7 +111,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -227,7 +233,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_t2::Categorical)" begin
+@testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_t2::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -372,7 +380,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_T1::Categorical)" begin
+@testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_T1::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -517,7 +527,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:T:Additional T-interface tests for Belief Propagation" begin
+@testitem "rules:DiscreteTransition:T:Additional T-interface tests for Belief Propagation" tags = [
+    :rules
+] begin
     # Test T1 interface with 3 interfaces (BP with DirichletCollection q_a)
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
@@ -1063,7 +1075,9 @@ end
         ]
     end
 end
-@testitem "rules:DiscreteTransition:T:Additional T-interface tests for structured VMP" begin
+@testitem "rules:DiscreteTransition:T:Additional T-interface tests for structured VMP" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules, normalize!

@@ -1,4 +1,6 @@
-@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out::Any, q_in::Categorical)" begin
+@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out::Any, q_in::Categorical)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -30,7 +32,9 @@
     ]
 end
 
-@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency)" begin
+@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -48,7 +52,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in_T1::Contingency)" begin
+@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in_T1::Contingency)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -60,7 +66,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in_T1_t2::Contingency)" begin
+@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in_T1_t2::Contingency)" tags = [
+    :rules
+] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -72,7 +80,9 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency, q_T1::Categorical)" begin
+@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency, q_T1::Categorical)" tags = [
+    :rules
+] begin
     # This should be the normalized outer product of the marginals, along the decoded dimensions
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
@@ -109,7 +119,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency, q_T1::PointMass)" begin
+@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency, q_T1::PointMass)" tags = [
+    :rules
+] begin
     # This should be the normalized outer product of the marginals, along the decoded dimensions
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
@@ -146,7 +158,9 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_T1::Contingency, q_in::Categorical)" begin
+@testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_T1::Contingency, q_in::Categorical)" tags = [
+    :rules
+] begin
     # This should be the normalized outer product of the marginals, along the decoded dimensions
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 

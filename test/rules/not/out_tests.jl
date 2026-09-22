@@ -1,5 +1,5 @@
 
-@testitem "rules:NOT:out" begin
+@testitem "rules:NOT:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

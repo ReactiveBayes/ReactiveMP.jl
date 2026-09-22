@@ -1,5 +1,5 @@
 
-@testitem "DataVariable: uninitialized" begin
+@testitem "DataVariable: uninitialized" tags = [:engine] begin
     import ReactiveMP:
         get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
@@ -13,7 +13,7 @@
     end
 end
 
-@testitem "DataVariable: get_stream_of_inbound_messages" begin
+@testitem "DataVariable: get_stream_of_inbound_messages" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         create_new_stream_of_inbound_messages!,
@@ -36,7 +36,7 @@ end
     end
 end
 
-@testitem "DataVariable: getmarginal" begin
+@testitem "DataVariable: getmarginal" tags = [:engine] begin
     using BayesBase
 
     import ReactiveMP:
@@ -92,7 +92,9 @@ end
     end
 end
 
-@testitem "DataVariable: linking to a non-PointMass marginal gives an informative error" begin
+@testitem "DataVariable: linking to a non-PointMass marginal gives an informative error" tags = [
+    :engine
+] begin
     using BayesBase, Distributions, ExponentialFamily
     import ReactiveMP:
         DataVariable,
@@ -183,7 +185,9 @@ end
     end
 end
 
-@testitem "DataVariable: invalid observation types are rejected with a clear error" begin
+@testitem "DataVariable: invalid observation types are rejected with a clear error" tags = [
+    :engine
+] begin
     using BayesBase, Distributions, ExponentialFamily, LinearAlgebra
     import ReactiveMP: DataVariable, datavar, new_observation!, Uninformative
 
@@ -289,7 +293,9 @@ end
     end
 end
 
-@testitem "DataVariable: an explicitly wrapped non-numeric observation reaches the nodes" begin
+@testitem "DataVariable: an explicitly wrapped non-numeric observation reaches the nodes" tags = [
+    :engine
+] begin
     using BayesBase, Rocket
 
     import BayesBase: getpointmass
@@ -328,7 +334,7 @@ end
     @test getdata(marginals[1]) === PointMass("some observed text")
 end
 
-@testitem "DataVariable: linked variable" begin
+@testitem "DataVariable: linked variable" tags = [:engine] begin
     using BayesBase
     import ReactiveMP:
         DataVariable,

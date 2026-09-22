@@ -1,5 +1,5 @@
 
-@testitem "rules:MvNormalMeanCovariance:covariance" begin
+@testitem "rules:MvNormalMeanCovariance:covariance" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ExponentialFamily: InverseWishartFast

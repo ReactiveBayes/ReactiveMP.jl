@@ -1,5 +1,5 @@
 
-@testitem "Input Layer" begin
+@testitem "Input Layer" tags = [:nodes] begin
     using ReactiveMP
     using LinearAlgebra
 

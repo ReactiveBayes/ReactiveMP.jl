@@ -1,5 +1,5 @@
 
-@testitem "NormalMixtureNode" begin
+@testitem "NormalMixtureNode" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
     import ReactiveMP: ManyOf
@@ -186,7 +186,7 @@
     end
 end
 
-@testitem "nodes:NormalMixtureNode" begin
+@testitem "nodes:NormalMixtureNode" tags = [:nodes] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Rocket, Test
 
     import ReactiveMP:

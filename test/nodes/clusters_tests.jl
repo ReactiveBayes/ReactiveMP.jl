@@ -1,4 +1,4 @@
-@testitem "FactorNodeLocalMarginal" begin
+@testitem "FactorNodeLocalMarginal" tags = [:nodes] begin
     import Rocket: of, subscribe!, unsubscribe!
     import ReactiveMP:
         FactorNodeLocalMarginal,
@@ -50,7 +50,7 @@
     end
 end
 
-@testitem "FactorNodeLocalClusters constructor" begin
+@testitem "FactorNodeLocalClusters constructor" tags = [:nodes] begin
     import ReactiveMP:
         NodeInterface,
         FactorNodeLocalClusters,
@@ -110,7 +110,7 @@ end
     end
 end
 
-@testitem "clusterindex" begin
+@testitem "clusterindex" tags = [:nodes] begin
     import ReactiveMP: FactorNodeLocalClusters, clusterindex
 
     @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2, 3),)), 1) === 1
@@ -184,7 +184,7 @@ end
     ) === 3
 end
 
-@testitem "clustername" begin
+@testitem "clustername" tags = [:nodes] begin
     import ReactiveMP: NodeInterface, FactorNodeLocalClusters, clustername
 
     a = NodeInterface(:a, randomvar())
@@ -210,7 +210,7 @@ end
     @test clustername((1, 2, 3), interfaces) === :a_b_c
 end
 
-@testitem "Correct initialization of clusters" begin
+@testitem "Correct initialization of clusters" tags = [:nodes] begin
     import ReactiveMP:
         NodeInterface,
         FactorNodeLocalClusters,

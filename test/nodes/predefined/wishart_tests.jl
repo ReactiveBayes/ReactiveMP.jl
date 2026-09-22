@@ -1,4 +1,4 @@
-@testitem "WishartNode" begin
+@testitem "WishartNode" tags = [:nodes] begin
     using ReactiveMP,
         Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Test
     import ReactiveMP: to_marginal

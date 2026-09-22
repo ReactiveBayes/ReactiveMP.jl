@@ -1,5 +1,5 @@
 
-@testitem "rules:Flow:in" begin
+@testitem "rules:Flow:in" tags = [:rules] begin
     using Test,
         ReactiveMP,
         BayesBase,

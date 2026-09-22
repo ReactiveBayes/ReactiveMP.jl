@@ -1,5 +1,5 @@
 
-@testitem "Flow Model" begin
+@testitem "Flow Model" tags = [:nodes] begin
     using ReactiveMP
     using ReactiveMP: getforward, getbackward, getjacobian, getinv_jacobian
     using ReactiveMP:

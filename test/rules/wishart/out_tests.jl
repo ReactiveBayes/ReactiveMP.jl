@@ -1,5 +1,5 @@
 
-@testitem "rules:Wishart:out" begin
+@testitem "rules:Wishart:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
     using FastCholesky
 

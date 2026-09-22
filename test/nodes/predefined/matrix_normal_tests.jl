@@ -1,5 +1,5 @@
 
-@testitem "MatrixNormalNode" begin
+@testitem "MatrixNormalNode" tags = [:nodes] begin
     using ReactiveMP,
         Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
     using FastCholesky

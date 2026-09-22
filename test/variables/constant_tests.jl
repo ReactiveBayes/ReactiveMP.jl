@@ -1,5 +1,5 @@
 
-@testitem "ConstVariable: uninitialized" begin
+@testitem "ConstVariable: uninitialized" tags = [:engine] begin
     import ReactiveMP:
         get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
@@ -13,7 +13,7 @@
     end
 end
 
-@testitem "ConstVariable: get_stream_of_inbound_messages" begin
+@testitem "ConstVariable: get_stream_of_inbound_messages" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         create_new_stream_of_inbound_messages!,
@@ -36,7 +36,7 @@ end
     end
 end
 
-@testitem "ConstVariable: get_stream_of_marginals" begin
+@testitem "ConstVariable: get_stream_of_marginals" tags = [:engine] begin
     using BayesBase
 
     import ReactiveMP:

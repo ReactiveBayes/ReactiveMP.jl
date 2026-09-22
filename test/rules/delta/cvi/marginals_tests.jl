@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:CVI" begin
+@testitem "marginalrules:CVI" tags = [:rules] begin
     using ReactiveMP,
         BayesBase,
         Random,

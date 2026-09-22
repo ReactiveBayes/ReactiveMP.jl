@@ -1,4 +1,4 @@
-@testitem "NodeInterface" begin
+@testitem "NodeInterface" tags = [:nodes] begin
     using Rocket
 
     import ReactiveMP:
@@ -64,7 +64,7 @@
     ]
 end
 
-@testitem "NodeInterface israndom/isdata/isconst" begin
+@testitem "NodeInterface israndom/isdata/isconst" tags = [:nodes] begin
     import ReactiveMP:
         AbstractVariable, NodeInterface, israndom, isdata, isconst
 

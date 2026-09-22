@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:InverseWishart" begin
+@testitem "marginalrules:InverseWishart" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ExponentialFamily: InverseWishartFast

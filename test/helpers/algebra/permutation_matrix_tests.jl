@@ -1,4 +1,4 @@
-@testitem "Permutation Matrix" begin
+@testitem "Permutation Matrix" tags = [:engine] begin
     using ReactiveMP
     using ReactiveMP: getind, PT_X_P
     using Random

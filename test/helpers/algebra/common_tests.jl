@@ -1,5 +1,5 @@
 
-@testitem "AlgebraCommonTest" begin
+@testitem "AlgebraCommonTest" tags = [:engine] begin
     using ReactiveMP
     using Random
     using LinearAlgebra
@@ -103,7 +103,7 @@
     end
 end
 
-@testitem "isonehot" begin
+@testitem "isonehot" tags = [:engine, :alloc] begin
     import ReactiveMP: isonehot
 
     for T in [Float64, Float32, Float16, BigFloat]
@@ -125,7 +125,7 @@ end
     end
 end
 
-@testitem "isonehot approx" begin
+@testitem "isonehot approx" tags = [:engine] begin
     import ReactiveMP: isonehot
 
     @test isonehot([

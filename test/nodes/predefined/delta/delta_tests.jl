@@ -1,5 +1,7 @@
 
-@testitem "DeltaNode - creation with static inputs (simple case) #1" begin
+@testitem "DeltaNode - creation with static inputs (simple case) #1" tags = [
+    :nodes
+] begin
     using Rocket
     import ReactiveMP:
         nodefunction,
@@ -35,7 +37,9 @@
     end
 end
 
-@testitem "DeltaNode - Creation with static inputs (all permutations) #2" begin
+@testitem "DeltaNode - Creation with static inputs (all permutations) #2" tags = [
+    :nodes
+] begin
     using Rocket
     import ReactiveMP:
         nodefunction,
@@ -107,7 +111,7 @@ end
     end
 end
 
-@testitem "Unssupported methods should throw in DeltaMeta" begin
+@testitem "Unssupported methods should throw in DeltaMeta" tags = [:nodes] begin
     struct UnsupportedApproximationMethod end
 
     @test_throws "Method `$(UnsupportedApproximationMethod())` is not compatible with delta nodes" DeltaMeta(
@@ -115,7 +119,7 @@ end
     )
 end
 
-@testitem "Supported methods should not throw in DeltaMeta" begin
+@testitem "Supported methods should not throw in DeltaMeta" tags = [:nodes] begin
     struct SupportedApproximationMetßhod end
 
     ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) =
@@ -124,7 +128,7 @@ end
     @test DeltaMeta(; method = SupportedApproximationMetßhod()) isa DeltaMeta
 end
 
-@testitem "DeltaNode - CVI layout functionality" begin
+@testitem "DeltaNode - CVI layout functionality" tags = [:nodes] begin
     using Rocket
     import BayesBase
     using ExponentialFamilyProjection

@@ -1,5 +1,5 @@
 
-@testitem "rules:MatrixNormal:M" begin
+@testitem "rules:MatrixNormal:M" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 

@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:SoftDot" begin
+@testitem "marginalrules:SoftDot" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_marginalrules

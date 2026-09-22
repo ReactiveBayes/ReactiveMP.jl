@@ -1,5 +1,7 @@
 
-@testitem "node:ConjugateAR effective marginals + average energy" begin
+@testitem "node:ConjugateAR effective marginals + average energy" tags = [
+    :nodes
+] begin
     using ReactiveMP,
         BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
 

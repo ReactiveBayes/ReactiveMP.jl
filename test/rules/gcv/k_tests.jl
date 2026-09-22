@@ -1,5 +1,5 @@
 
-@testitem "rules:GCV:κ" setup = [GCVRulesTestUtils] begin
+@testitem "rules:GCV:κ" tags = [:rules] setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
 
     import ReactiveMP: ExponentialLinearQuadratic

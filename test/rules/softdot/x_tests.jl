@@ -1,5 +1,5 @@
 
-@testitem "rules:SoftDot:x" begin
+@testitem "rules:SoftDot:x" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

@@ -1,5 +1,5 @@
 
-@testitem "rules:ConjugateAR:y (delegates to AR)" begin
+@testitem "rules:ConjugateAR:y (delegates to AR)" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
 

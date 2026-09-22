@@ -1,4 +1,4 @@
-@testitem "Helpers" begin
+@testitem "Helpers" tags = [:engine] begin
     using ReactiveMP
 
     import ReactiveMP: SkipIndexIterator, skipindex

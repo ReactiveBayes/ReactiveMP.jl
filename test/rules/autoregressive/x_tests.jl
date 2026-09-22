@@ -1,5 +1,5 @@
 
-@testitem "rules:Autoregressive:x" begin
+@testitem "rules:Autoregressive:x" tags = [:rules] begin
     using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

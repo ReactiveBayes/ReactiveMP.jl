@@ -1,5 +1,5 @@
 
-@testitem "InverseGammaNode" begin
+@testitem "InverseGammaNode" tags = [:nodes] begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
     # g(a,b,x) = -a * log(b) + loggamma(a) + (a+1) * (log(scale(x)) - digamma(shape(x))) + b/mean(x)

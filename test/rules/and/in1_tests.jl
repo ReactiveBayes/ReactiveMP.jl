@@ -1,5 +1,5 @@
 
-@testitem "rules:AND:in1" begin
+@testitem "rules:AND:in1" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

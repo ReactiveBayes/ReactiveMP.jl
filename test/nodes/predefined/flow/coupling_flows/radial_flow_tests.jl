@@ -1,5 +1,5 @@
 
-@testitem "Radial Flow" begin
+@testitem "Radial Flow" tags = [:nodes] begin
     using ReactiveMP
     using ReactiveMP: getdim, getz0, getα, getβ, getall, setz0!, setα!, setβ!
     using ReactiveMP:

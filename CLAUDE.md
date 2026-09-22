@@ -54,21 +54,38 @@ macro queries the node registry at *macro expansion time*).
 All via `make` (run `make help` for the list).
 
 ```bash
-make test                                  # everything (slow; Aqua enabled by default)
+make test                                  # the fast subset: everything except `:slow`
+make test-all                              # everything, which is what CI runs
 make test test_args="rules:normal_mean_variance"   # one directory
 make test test_args="rules:beta:out"               # one file
+make test test_args="tag:rules"                    # by tag
+make test test_args="name:NormalMixture"           # by test-item name
+make test test_args="tag:rules name:Beta"          # combined
 RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
 make docs                                  # build documentation
 ```
 
-`test_args` entries are **path filters**: `a:b` maps to `test/a/b` and matches by
-`occursin`, so prefixes work. There is currently **no way to filter by test name** — the
-runner is `TestItemRunner` and `runtests.jl` only filters on filename.
+`test_args` takes three kinds of entry, and they compose:
 
-Tests are `@testitem` blocks (~413 of them across ~231 files), each self-contained and
+- **path** — `a:b` maps to `test/a/b`, matched with `occursin`, so prefixes work
+- **`tag:<name>`** — only items carrying that tag
+- **`name:<text>`** — only items whose name contains that text
+
+Entries of the same kind are OR'ed; different kinds are AND'ed.
+
+Tests are `@testitem` blocks (414 of them across ~231 files), each self-contained and
 independently runnable. Naming convention is `"rules:<Node>:<edge>"` for rule tests.
+
+**Every test item carries a tag.** The taxonomy is `:rules` (194), `:nodes` (83), `:engine`
+(130 — everything that is not a rule or node test), plus `:alloc` on the six items that
+assert allocation counts and `:quality` on the inventory gate. `:slow` exists and is
+**currently unused**: nothing has been measured as slow yet, so nothing claims to be. When
+items are tagged `:slow` they disappear from `make test` and stay in `make test-all` and CI.
+
+The fast default must never become a coverage reduction — CI sets `TEST_ALL=true`, so a
+`:slow` tag changes what *you* run locally, never what CI runs.
 
 Rule tests are table-driven via `@test_rules`, which is defined in `src/rule.jl` (not in
 `test/`) and is unexported — tests do `import ReactiveMP: @test_rules`. `Test` must be

@@ -1,5 +1,5 @@
 
-@testitem "rules:BIFMHelper:out" begin
+@testitem "rules:BIFMHelper:out" tags = [:rules] begin
     using ReactiveMP, Random, ExponentialFamily, BayesBase
 
     import ReactiveMP: @test_rules

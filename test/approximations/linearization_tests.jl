@@ -1,5 +1,5 @@
 
-@testitem "Linearization approximation method" begin
+@testitem "Linearization approximation method" tags = [:engine] begin
     using ReactiveMP
 
     import ReactiveMP: Linearization

@@ -1,5 +1,7 @@
 
-@testitem "rules:GCV: effective noise moments" setup = [GCVRulesTestUtils] begin
+@testitem "rules:GCV: effective noise moments" tags = [:rules] setup = [
+    GCVRulesTestUtils
+] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions, StableRNGs
 
     expected_A     = GCVRulesTestUtils.expected_A
@@ -54,9 +56,9 @@
     end
 end
 
-@testitem "rules:GCV: mean-field and structured variants agree at zero y-x covariance" setup = [
-    GCVRulesTestUtils
-] begin
+@testitem "rules:GCV: mean-field and structured variants agree at zero y-x covariance" tags = [
+    :rules
+] setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
 
     coefficients         = GCVRulesTestUtils.coefficients
@@ -108,9 +110,9 @@ end
     end
 end
 
-@testitem "rules:GCV: the three ExponentialLinearQuadratic rules are mutually distinct" setup = [
-    GCVRulesTestUtils
-] begin
+@testitem "rules:GCV: the three ExponentialLinearQuadratic rules are mutually distinct" tags = [
+    :rules
+] setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
 
     default_meta = GCVRulesTestUtils.default_meta

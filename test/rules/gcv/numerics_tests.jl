@@ -1,5 +1,5 @@
 
-@testitem "rules:GCV: extreme exponents do not produce NaN" setup = [
+@testitem "rules:GCV: extreme exponents do not produce NaN" tags = [:rules] setup = [
     GCVRulesTestUtils
 ] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions, LinearAlgebra

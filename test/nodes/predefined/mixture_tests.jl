@@ -1,4 +1,4 @@
-@testitem "nodes:MixtureNode" begin
+@testitem "nodes:MixtureNode" tags = [:nodes] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Rocket, Test
     import ReactiveMP:
         Mixture,

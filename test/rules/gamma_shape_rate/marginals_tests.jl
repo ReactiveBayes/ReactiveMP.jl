@@ -1,4 +1,4 @@
-@testitem "marginalrules:GammaShapeRate" begin
+@testitem "marginalrules:GammaShapeRate" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_marginalrules

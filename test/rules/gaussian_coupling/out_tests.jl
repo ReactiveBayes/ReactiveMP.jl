@@ -1,4 +1,4 @@
-@testitem "rules:GaussianCoupling:out" begin
+@testitem "rules:GaussianCoupling:out" tags = [:rules] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules

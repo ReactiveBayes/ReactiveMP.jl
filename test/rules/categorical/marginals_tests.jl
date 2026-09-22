@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:Categorical" begin
+@testitem "marginalrules:Categorical" tags = [:rules] begin
     using ReactiveMP,
         BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 

@@ -1,4 +1,4 @@
-@testitem "DivisionOf" begin
+@testitem "DivisionOf" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     # `DivisionOf` is internal to the extension
@@ -17,7 +17,7 @@
         prod(GenericProd(), missing, ext.DivisionOf(d1, d2))
 end
 
-@testitem "create_project_to_ins type stability" begin
+@testitem "create_project_to_ins type stability" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, Test
     using ReactiveMP: CVIProjection
     using JET
@@ -86,7 +86,7 @@ end
     end
 end
 
-@testitem "create_project_to type stability" begin
+@testitem "create_project_to type stability" tags = [:engine] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, Test
     using ReactiveMP: CVIProjection
     using JET

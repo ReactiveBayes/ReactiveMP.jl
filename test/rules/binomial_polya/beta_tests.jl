@@ -1,5 +1,5 @@
 
-@testitem "rules:BinomialPolya:beta" begin
+@testitem "rules:BinomialPolya:beta" tags = [:rules] begin
     using ReactiveMP,
         BayesBase,
         Random,

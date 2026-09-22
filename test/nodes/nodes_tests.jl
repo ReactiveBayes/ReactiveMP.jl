@@ -1,4 +1,4 @@
-@testitem "GenericFactorNode constructor" begin
+@testitem "GenericFactorNode constructor" tags = [:nodes] begin
     import ReactiveMP: functionalform, getinterfaces, getinterface, name
 
     struct ArbitraryNodeType end
@@ -38,7 +38,7 @@
     end
 end
 
-@testitem "sdtype" begin
+@testitem "sdtype" tags = [:nodes] begin
     using Distributions
 
     @test isdeterministic(Deterministic()) === true
@@ -64,7 +64,7 @@ end
     )
 end
 
-@testitem "is_predefined_node" begin
+@testitem "is_predefined_node" tags = [:nodes] begin
     import ReactiveMP:
         is_predefined_node,
         PredefinedNodeFunctionalForm,
@@ -81,7 +81,7 @@ end
         PredefinedNodeFunctionalForm()
 end
 
-@testitem "@node macro" begin
+@testitem "@node macro" tags = [:nodes] begin
     import ReactiveMP: alias_interface
 
     struct CustomStochasticNode end
@@ -149,7 +149,7 @@ end
     @test_throws Exception eval(:(@node DummyStruct Stochastic []))
 end
 
-@testitem "sdtype of an arbitrary distribution is Stochastic" begin
+@testitem "sdtype of an arbitrary distribution is Stochastic" tags = [:nodes] begin
     using Distributions
 
     struct DummyDistribution <: Distribution{Univariate, Continuous} end
@@ -158,7 +158,9 @@ end
 end
 
 # This is a limitation of the current implementation, which can be removed in the future
-@testitem "@node macro (in the current implementation) should not support interface names with underscores" begin
+@testitem "@node macro (in the current implementation) should not support interface names with underscores" tags = [
+    :nodes
+] begin
     @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
         quote
             struct DummyNode1 end
@@ -182,7 +184,9 @@ end
     )
 end
 
-@testitem "@node macro should generate a documentation entry for a newly specified node" begin
+@testitem "@node macro should generate a documentation entry for a newly specified node" tags = [
+    :nodes
+] begin
     using REPL # `REPL` changes the docstring output format
 
     struct DummyNodeForDocumentationStochastic end
@@ -210,7 +214,7 @@ end
     )
 end
 
-@testitem "Predefined nodes should check the arguments supplied" begin
+@testitem "Predefined nodes should check the arguments supplied" tags = [:nodes] begin
     struct StochasticNodeWithThreeArguments end
     struct DeterministicNodeWithFourArguments end
 
@@ -279,7 +283,9 @@ end
     )
 end
 
-@testitem "Generic node construction checks should not allocate" begin
+@testitem "Generic node construction checks should not allocate" tags = [
+    :nodes, :alloc
+] begin
     import ReactiveMP:
         prepare_interfaces_check_adjacent_duplicates,
         prepare_interfaces_check_nonempty,
@@ -311,7 +317,9 @@ end
     @test (@allocations(foo(interfaces)) == 0)
 end
 
-@testitem "`@node` macro should generate the node function in all directions for `Stochastic` nodes" begin
+@testitem "`@node` macro should generate the node function in all directions for `Stochastic` nodes" tags = [
+    :nodes
+] begin
     @testset "For a regular node a user needs to define a node function" begin
         struct DummyNodeForNodeFunction end
 
@@ -394,7 +402,9 @@ end
     end
 end
 
-@testitem "`factornode` should throw an error if the functional form is not defined with the `@node` macro" begin
+@testitem "`factornode` should throw an error if the functional form is not defined with the `@node` macro" tags = [
+    :nodes
+] begin
     struct UnknownDistribution end
 
     out = randomvar()
@@ -408,7 +418,9 @@ end
     )
 end
 
-@testitem "new node defined with `@node` macro should define Symbol -> Node function mapping" begin
+@testitem "new node defined with `@node` macro should define Symbol -> Node function mapping" tags = [
+    :nodes
+] begin
     struct DummyNodeToTestSymbolToNodeFunctionMapping end
 
     @node DummyNodeToTestSymbolToNodeFunctionMapping Stochastic [out, x, y, z]
@@ -418,11 +430,15 @@ end
     ) == DummyNodeToTestSymbolToNodeFunctionMapping
 end
 
-@testitem "nodesymbol_to_nodefform returns nothing for an unknown node symbol" begin
+@testitem "nodesymbol_to_nodefform returns nothing for an unknown node symbol" tags = [
+    :nodes
+] begin
     @test ReactiveMP.nodesymbol_to_nodefform(Val(:UnknownNode)) === nothing
 end
 
-@testitem "`@node` macro should error if defined a rule for undefined interface" begin
+@testitem "`@node` macro should error if defined a rule for undefined interface" tags = [
+    :nodes
+] begin
     struct DummyNodeToTestRuleForUndefinedInterface end
 
     @node DummyNodeToTestRuleForUndefinedInterface Stochastic [out, x]
