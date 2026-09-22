@@ -28,6 +28,12 @@ Validate with `julia --project=. scripts/inventory.jl --check`.
 **Rules inherit their node's destination.** Only the rules that cannot are listed, under
 *Rule-level exceptions*.
 
+**`DeltaFn` is deliberately absent from *Nodes*.** It is not registered through
+`is_predefined_node` — it is a special node carrying its own layout system rather than a
+predefined one — so the registry cannot report it. It is covered instead by its exported
+types (`DeltaFn`, `DeltaFnNode`, `DeltaMeta`) and by the three delta layout rows under
+*Rule-level exceptions*.
+
 A row whose `destination` is `delete` and which is exported **must** carry a `note`: it
 becomes an entry in the migration guide, including when the honest answer is "no
 replacement".
