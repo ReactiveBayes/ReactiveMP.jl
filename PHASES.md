@@ -128,9 +128,14 @@ Phase 1 needs a human audience, so it is a GitHub issue rather than a file.
 
 ---
 
-## Phase 0 — Spike (throwaway)
+## Phase 0 — Spike (throwaway) — **DONE**
 
 **Goal:** test dispatch and dependency assumptions before committing to the API.
+
+**The spike has been deleted, as planned.** The `spike/...` paths cited below are historical:
+the whole tree is present at `81822c57`, so `git show 81822c57:spike/README.md` is the
+way in. Findings, measurements and verdicts are in `DISCUSSION.md` §3.15 — that is the
+document to read, not this one, which only records that the criteria were met.
 
 Hand-written, no macros: target types, algorithm, context, a keyed-input
 `message_passing_rule`, and three real rules — a simple BP rule, a structured VMP rule with

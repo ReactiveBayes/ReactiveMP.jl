@@ -727,8 +727,8 @@ code_typed(call_rule, (Val{:N}, Val{:out}, NamedTuple{(:a, :b), Tuple{Float64, F
 
 ### 3.15 Phase 0 — what the spike found
 
-The spike lived in `spike/` and was deleted when Phase 0 closed; it is in the history at
-`81822c57` and its parents. Everything worth keeping is here.
+The spike lived in `spike/` and was deleted when Phase 0 closed. The whole tree is present
+at `81822c57` (`git show 81822c57:spike/README.md`). Everything worth keeping is here.
 
 #### The representation gate
 
