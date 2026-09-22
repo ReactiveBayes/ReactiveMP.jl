@@ -1,7 +1,7 @@
 # More tests are available in the `test/ext/ReactiveMPProjectionExt`
 
 @testitem "Extension availability with `ExponentialFamilyProjection`" tags = [
-    :engine
+    :engine,
 ] begin
     using ExponentialFamilyProjection
 
@@ -12,7 +12,7 @@
 end
 
 @testitem "Extension should not be available without `ExponentialFamilyProjection`" tags = [
-    :engine
+    :engine,
 ] begin
     @test_throws "CVI projection requires `using ExponentialFamilyProjection` in the current session." ReactiveMP.check_delta_node_compatibility(
         Val(false), CVIProjection()

@@ -37,11 +37,11 @@
 
             B = randn(rng, order, order)
             μ0, Λ0, α0, β0 = randn(rng, order),
-            B * B' + diageye(order), 2.0 + rand(rng),
-            1.0 + rand(rng)
+                B * B' + diageye(order), 2.0 + rand(rng),
+                1.0 + rand(rng)
             U = avgE(q, μ0, Λ0, α0, β0)
             @test isfinite(U)
-            @test U ≥ entropy(q) - 1e-8   # cross-entropy ≥ entropy
+            @test U ≥ entropy(q) - 1.0e-8   # cross-entropy ≥ entropy
         end
     end
 end

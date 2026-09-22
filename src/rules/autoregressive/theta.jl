@@ -1,14 +1,14 @@
 
 @rule AR(:θ, Marginalisation) (
-    q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any, meta::ARMeta
+    q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any, meta::ARMeta,
 ) = begin
     order = getorder(meta)
-    F     = getvform(meta)
+    F = getvform(meta)
 
     myx, Vyx = mean_cov(q_y_x)
-    my, Vy   = ar_slice(F, myx, 1:order), ar_slice(F, Vyx, 1:order, 1:order)
-    mx, Vx   = ar_slice(F, myx, (order + 1):(2order)), ar_slice(F, Vyx, (order + 1):(2order), (order + 1):(2order))
-    Vyx      = ar_slice(F, Vyx, (order + 1):(2order), 1:order)
+    my, Vy = ar_slice(F, myx, 1:order), ar_slice(F, Vyx, 1:order, 1:order)
+    mx, Vx = ar_slice(F, myx, (order + 1):(2order)), ar_slice(F, Vyx, (order + 1):(2order), (order + 1):(2order))
+    Vyx = ar_slice(F, Vyx, (order + 1):(2order), 1:order)
 
     mγ = mean(q_γ)
 
@@ -28,21 +28,21 @@ end
 
 @rule AR(:θ, Marginalisation) (q_y::Any, q_x::Any, q_γ::Any, meta::ARMeta) =
     begin
-        order = getorder(meta)
+    order = getorder(meta)
 
-        mx, Vx = mean_cov(q_x)
+    mx, Vx = mean_cov(q_x)
 
-        my, mγ = mean(q_y), mean(q_γ)
+    my, mγ = mean(q_y), mean(q_γ)
 
-        mV = ar_transition(getvform(meta), getorder(meta), mγ)
-        T = promote_paramfloattype(q_y, q_x, q_γ)
-        c = ar_unit(T, getvform(meta), order)
+    mV = ar_transition(getvform(meta), getorder(meta), mγ)
+    T = promote_paramfloattype(q_y, q_x, q_γ)
+    c = ar_unit(T, getvform(meta), order)
 
-        ξ = mx * c' * pinv(mV) * my
-        W = mγ * (Vx + mx * mx')
-        return convert(
-            promote_variate_type(getvform(meta), NormalWeightedMeanPrecision),
-            ξ,
-            W,
-        )
-    end
+    ξ = mx * c' * pinv(mV) * my
+    W = mγ * (Vx + mx * mx')
+    return convert(
+        promote_variate_type(getvform(meta), NormalWeightedMeanPrecision),
+        ξ,
+        W,
+    )
+end

@@ -2,8 +2,8 @@
 RTS smoother update for inbound marginal; based on (Petersen et al. 2018; On Approximate Delta Gaussian Message Passing on Factor Graphs)
 """
 function smoothRTS(
-    m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out
-)
+        m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out
+    )
     # A singular forward output covariance means the transformed input is deterministic: the
     # node's output carries no uncertainty, so the backward message cannot revise the input and
     # the smoothed inbound marginal is exactly the forward one. This happens whenever an inbound

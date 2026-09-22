@@ -206,7 +206,7 @@
                     meta = AddToDiagonalEntries(tiny),
                 ),
                 output = MvNormalWeightedMeanPrecision(
-                    [-1.0, 1.0], [0.5+tiny -0.5; -0.5 0.5+tiny]
+                    [-1.0, 1.0], [0.5 + tiny -0.5; -0.5 0.5 + tiny]
                 ),
             ),
             (
@@ -216,7 +216,7 @@
                     meta = AddToDiagonalEntries(tiny),
                 ),
                 output = MvNormalWeightedMeanPrecision(
-                    [1.0, 0.5], [2.0+tiny 1.0; 1.0 0.5+tiny]
+                    [1.0, 0.5], [2.0 + tiny 1.0; 1.0 0.5 + tiny]
                 ),
             ),
             (
@@ -226,7 +226,7 @@
                     meta = AddToDiagonalEntries(tiny),
                 ),
                 output = MvNormalWeightedMeanPrecision(
-                    [-1.0, 3.0], [1.0+tiny -3.0; -3.0 9.0+tiny]
+                    [-1.0, 3.0], [1.0 + tiny -3.0; -3.0 9.0 + tiny]
                 ),
             ),
         ]

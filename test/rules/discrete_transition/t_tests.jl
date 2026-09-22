@@ -1,12 +1,12 @@
 
 @testitem "rules:DiscreteTransition:T:Belief Propagation (m_out::Categorical, m_in::Categorical, q_a::PointMass)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [
-        check_type_promotion = true, extra_float_types = [Float64, Float32]
+        check_type_promotion = true, extra_float_types = [Float64, Float32],
     ] DiscreteTransition(:T1, Marginalisation) [
         (
             input = (
@@ -54,13 +54,13 @@
 end
 
 @testitem "rules:DiscreteTransition:T:Belief Propagation (q_out::PointMass, m_in::Categorical, q_a::PointMass)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [
-        check_type_promotion = true, extra_float_types = [Float64, Float32]
+        check_type_promotion = true, extra_float_types = [Float64, Float32],
     ] DiscreteTransition(:T1, Marginalisation) [
         (
             input = (
@@ -74,9 +74,11 @@ end
                     ],
                 ),
             ),
-            output = Categorical([
-                0.5565217391304348, 0.2652173913043478, 0.17826086956521736
-            ]),
+            output = Categorical(
+                [
+                    0.5565217391304348, 0.2652173913043478, 0.17826086956521736,
+                ]
+            ),
         ),
         (
             input = (
@@ -95,41 +97,47 @@ end
     ]
     @test_rules [check_type_promotion = false] DiscreteTransition(
         :T1, Marginalisation
-    ) [(
-        input = (
-            q_out = PointMass([1.0, 0.0, 0.0]),
-            m_in = Categorical([0.2, 0.5, 0.3]),
-            q_a = PointMass(
-                [
-                    1 0 0; 0 1 0; 0 0 1;;;
-                    1 0 0; 0 1 0; 0 0 1;;;
-                    1 0 0; 0 1 0; 0 0 1
-                ],
+    ) [
+        (
+            input = (
+                q_out = PointMass([1.0, 0.0, 0.0]),
+                m_in = Categorical([0.2, 0.5, 0.3]),
+                q_a = PointMass(
+                    [
+                        1 0 0; 0 1 0; 0 0 1;;;
+                        1 0 0; 0 1 0; 0 0 1;;;
+                        1 0 0; 0 1 0; 0 0 1
+                    ],
+                ),
             ),
+            output = Categorical([1 / 3, 1 / 3, 1 / 3]),
         ),
-        output = Categorical([1 / 3, 1 / 3, 1 / 3]),
-    )]
+    ]
 end
 
 @testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [
-        check_type_promotion = true, extra_float_types = [Float64, Float32]
+        check_type_promotion = true, extra_float_types = [Float64, Float32],
     ] DiscreteTransition(:T1, Marginalisation) [
         (
             input = (
-                m_out = Categorical([
-                    0.0510559014089735, 0.05387178800920238, 0.8950723105818241
-                ]),
-                m_in = Categorical([
-                    0.054929868794045565,
-                    0.04163049496789134,
-                    0.9034396362380631,
-                ]),
+                m_out = Categorical(
+                    [
+                        0.0510559014089735, 0.05387178800920238, 0.8950723105818241,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.054929868794045565,
+                        0.04163049496789134,
+                        0.9034396362380631,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         1.0 6.0 32.0; 2.0 2.0 9.0; 5.0 5.0 6.0;;;
@@ -138,18 +146,24 @@ end
                     ],
                 ),
             ),
-            output = Categorical([
-                0.16071994681128632, 0.5608867375006992, 0.27839331568801456
-            ]),
+            output = Categorical(
+                [
+                    0.16071994681128632, 0.5608867375006992, 0.27839331568801456,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.03485782178222314, 0.01245130553310446, 0.9526908726846723
-                ]),
-                m_in = Categorical([
-                    0.06468167584028221, 0.0649680496982824, 0.8703502744614353
-                ]),
+                m_out = Categorical(
+                    [
+                        0.03485782178222314, 0.01245130553310446, 0.9526908726846723,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.06468167584028221, 0.0649680496982824, 0.8703502744614353,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         8.0 9.0 37.0; 5.0 9.0 8.0; 6.0 9.0 3.0;;;
@@ -158,20 +172,26 @@ end
                     ],
                 ),
             ),
-            output = Categorical([
-                0.08216104573408281, 0.5240321267913837, 0.3938068274745334
-            ]),
+            output = Categorical(
+                [
+                    0.08216104573408281, 0.5240321267913837, 0.3938068274745334,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.013906945163896326,
-                    0.014657675872327216,
-                    0.9714353789637764,
-                ]),
-                m_in = Categorical([
-                    0.06213023407554826, 0.07345989690934168, 0.8644098690151101
-                ]),
+                m_out = Categorical(
+                    [
+                        0.013906945163896326,
+                        0.014657675872327216,
+                        0.9714353789637764,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.06213023407554826, 0.07345989690934168, 0.8644098690151101,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         10.0 1.0 36.0; 1.0 1.0 7.0; 2.0 9.0 4.0;;;
@@ -180,20 +200,26 @@ end
                     ],
                 ),
             ),
-            output = Categorical([
-                0.10371781881719036, 0.5257747986340537, 0.37050738254875604
-            ]),
+            output = Categorical(
+                [
+                    0.10371781881719036, 0.5257747986340537, 0.37050738254875604,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.061610939826165154, 0.06994219293747578, 0.868446867236359
-                ]),
-                m_in = Categorical([
-                    0.038785774762193144,
-                    0.017316838524837008,
-                    0.9438973867129699,
-                ]),
+                m_out = Categorical(
+                    [
+                        0.061610939826165154, 0.06994219293747578, 0.868446867236359,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.038785774762193144,
+                        0.017316838524837008,
+                        0.9438973867129699,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         9.0 1.0 37.0; 9.0 9.0 8.0; 10.0 2.0 7.0;;;
@@ -202,22 +228,28 @@ end
                     ],
                 ),
             ),
-            output = Categorical([
-                0.1524663903301974, 0.5879220226683617, 0.2596115870014409
-            ]),
+            output = Categorical(
+                [
+                    0.1524663903301974, 0.5879220226683617, 0.2596115870014409,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.059854086369599824,
-                    0.044893636911381464,
-                    0.8952522767190187,
-                ]),
-                m_in = Categorical([
-                    0.0056135853425655965,
-                    0.03575690970940535,
-                    0.958629504948029,
-                ]),
+                m_out = Categorical(
+                    [
+                        0.059854086369599824,
+                        0.044893636911381464,
+                        0.8952522767190187,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.0056135853425655965,
+                        0.03575690970940535,
+                        0.958629504948029,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         6.0 1.0 32.0; 8.0 7.0 1.0; 9.0 1.0 9.0;;;
@@ -226,30 +258,36 @@ end
                     ],
                 ),
             ),
-            output = Categorical([
-                0.22345398380365966, 0.6247689354236513, 0.1517770807726892
-            ]),
+            output = Categorical(
+                [
+                    0.22345398380365966, 0.6247689354236513, 0.1517770807726892,
+                ]
+            ),
         ),
     ]
 end
 
 @testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_t2::Categorical)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [
-        check_type_promotion = true, extra_float_types = [Float64, Float32]
+        check_type_promotion = true, extra_float_types = [Float64, Float32],
     ] DiscreteTransition(:T1, Marginalisation) [
         (
             input = (
-                m_out = Categorical([
-                    0.08799332630703943, 0.29132551818215013, 0.6206811555108104
-                ]),
-                m_in = Categorical([
-                    0.11240998953463174, 0.5372891244719414, 0.35030088599342685
-                ]),
+                m_out = Categorical(
+                    [
+                        0.08799332630703943, 0.29132551818215013, 0.6206811555108104,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.11240998953463174, 0.5372891244719414, 0.35030088599342685,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         14.0 10.0 1.0; 6.0 8.0 1.0; 3.0 10.0 7.0;;; 14.0 3.0 3.0; 4.0 9.0 3.0; 5.0 5.0 14.0;;; 9.0 10.0 1.0; 3.0 7.0 4.0; 8.0 2.0 12.0;;;;
@@ -258,25 +296,33 @@ end
                         13.0 4.0 8.0; 4.0 8.0 2.0; 5.0 10.0 11.0;;; 15.0 4.0 8.0; 9.0 15.0 2.0; 5.0 2.0 12.0;;; 14.0 1.0 8.0; 10.0 6.0 5.0; 5.0 6.0 13.0
                     ],
                 ),
-                m_T2 = Categorical([
-                    0.09240952821382971,
-                    0.3184996197469503,
-                    0.3995918737894391,
-                    0.18949897824978093,
-                ]),
+                m_T2 = Categorical(
+                    [
+                        0.09240952821382971,
+                        0.3184996197469503,
+                        0.3995918737894391,
+                        0.18949897824978093,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.3204124841029019, 0.34442455887321344, 0.3351629570238847
-            ]),
+            output = Categorical(
+                [
+                    0.3204124841029019, 0.34442455887321344, 0.3351629570238847,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.41399930903334414, 0.2569572285438312, 0.32904346242282473
-                ]),
-                m_in = Categorical([
-                    0.2712971200834005, 0.3827161804909996, 0.3459866994255999
-                ]),
+                m_out = Categorical(
+                    [
+                        0.41399930903334414, 0.2569572285438312, 0.32904346242282473,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.2712971200834005, 0.3827161804909996, 0.3459866994255999,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         15.0 4.0 4.0; 6.0 11.0 5.0; 1.0 1.0 14.0;;; 6.0 9.0 8.0; 10.0 10.0 5.0; 6.0 2.0 13.0;;; 13.0 2.0 7.0; 3.0 9.0 6.0; 5.0 5.0 7.0;;;;
@@ -285,25 +331,33 @@ end
                         9.0 6.0 8.0; 3.0 7.0 9.0; 8.0 4.0 11.0;;; 12.0 3.0 4.0; 2.0 11.0 9.0; 6.0 7.0 11.0;;; 13.0 6.0 10.0; 3.0 9.0 9.0; 10.0 10.0 6.0
                     ],
                 ),
-                m_T2 = Categorical([
-                    0.2284278504147311,
-                    0.1734009515489395,
-                    0.1685400610240271,
-                    0.4296311370123022,
-                ]),
+                m_T2 = Categorical(
+                    [
+                        0.2284278504147311,
+                        0.1734009515489395,
+                        0.1685400610240271,
+                        0.4296311370123022,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.33252217570544323, 0.3303090112079051, 0.33716881308665164
-            ]),
+            output = Categorical(
+                [
+                    0.33252217570544323, 0.3303090112079051, 0.33716881308665164,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.28007415705382577, 0.362168131823555, 0.35775771112261917
-                ]),
-                m_in = Categorical([
-                    0.24450475682493267, 0.4963764838006123, 0.25911875937445494
-                ]),
+                m_out = Categorical(
+                    [
+                        0.28007415705382577, 0.362168131823555, 0.35775771112261917,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.24450475682493267, 0.4963764838006123, 0.25911875937445494,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         12.0 9.0 1.0; 2.0 8.0 7.0; 10.0 1.0 13.0;;; 11.0 8.0 7.0; 10.0 14.0 7.0; 5.0 2.0 15.0;;; 8.0 4.0 4.0; 7.0 11.0 5.0; 4.0 10.0 6.0;;;;
@@ -312,25 +366,33 @@ end
                         14.0 10.0 3.0; 8.0 15.0 9.0; 8.0 2.0 13.0;;; 14.0 10.0 5.0; 2.0 11.0 4.0; 6.0 3.0 11.0;;; 9.0 8.0 10.0; 9.0 6.0 8.0; 5.0 3.0 6.0
                     ],
                 ),
-                m_T2 = Categorical([
-                    0.013289905256330505,
-                    0.03916840092344259,
-                    0.6158904501712571,
-                    0.3316512436489697,
-                ]),
+                m_T2 = Categorical(
+                    [
+                        0.013289905256330505,
+                        0.03916840092344259,
+                        0.6158904501712571,
+                        0.3316512436489697,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.33852639912537374, 0.3291567669590365, 0.3323168339155897
-            ]),
+            output = Categorical(
+                [
+                    0.33852639912537374, 0.3291567669590365, 0.3323168339155897,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.231721871481526, 0.43974647264393085, 0.3285316558745432
-                ]),
-                m_in = Categorical([
-                    0.16173494859799328, 0.5444108919070189, 0.2938541594949879
-                ]),
+                m_out = Categorical(
+                    [
+                        0.231721871481526, 0.43974647264393085, 0.3285316558745432,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.16173494859799328, 0.5444108919070189, 0.2938541594949879,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         11.0 8.0 5.0; 5.0 7.0 10.0; 2.0 1.0 11.0;;; 15.0 8.0 4.0; 8.0 12.0 3.0; 6.0 6.0 14.0;;; 13.0 10.0 8.0; 1.0 8.0 7.0; 8.0 8.0 14.0;;;;
@@ -339,25 +401,33 @@ end
                         14.0 7.0 2.0; 3.0 7.0 6.0; 4.0 9.0 15.0;;; 13.0 1.0 7.0; 3.0 12.0 4.0; 1.0 7.0 14.0;;; 7.0 7.0 3.0; 2.0 7.0 4.0; 8.0 9.0 10.0
                     ],
                 ),
-                m_T2 = Categorical([
-                    0.3924160844603588,
-                    0.34208347405766765,
-                    0.0742389939993073,
-                    0.19126144748266627,
-                ]),
+                m_T2 = Categorical(
+                    [
+                        0.3924160844603588,
+                        0.34208347405766765,
+                        0.0742389939993073,
+                        0.19126144748266627,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.3336500717081419, 0.33405984098175184, 0.33229008731010634
-            ]),
+            output = Categorical(
+                [
+                    0.3336500717081419, 0.33405984098175184, 0.33229008731010634,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.3438709572699468, 0.327896945058581, 0.3282320976714722
-                ]),
-                m_in = Categorical([
-                    0.08064616359815222, 0.3016652714857759, 0.6176885649160718
-                ]),
+                m_out = Categorical(
+                    [
+                        0.3438709572699468, 0.327896945058581, 0.3282320976714722,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.08064616359815222, 0.3016652714857759, 0.6176885649160718,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         10.0 9.0 2.0; 6.0 8.0 10.0; 7.0 1.0 11.0;;; 8.0 5.0 2.0; 5.0 7.0 3.0; 8.0 1.0 8.0;;; 15.0 5.0 7.0; 4.0 13.0 6.0; 3.0 8.0 7.0;;;;
@@ -366,37 +436,45 @@ end
                         14.0 2.0 2.0; 10.0 10.0 2.0; 1.0 4.0 9.0;;; 10.0 1.0 7.0; 1.0 6.0 3.0; 1.0 10.0 13.0;;; 6.0 8.0 4.0; 4.0 9.0 3.0; 3.0 2.0 9.0
                     ],
                 ),
-                m_T2 = Categorical([
-                    0.11248216922354308,
-                    0.026994470113754852,
-                    0.4375353107069617,
-                    0.4229880499557404,
-                ]),
+                m_T2 = Categorical(
+                    [
+                        0.11248216922354308,
+                        0.026994470113754852,
+                        0.4375353107069617,
+                        0.4229880499557404,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.3314741303273284, 0.33435785748140795, 0.3341680121912637
-            ]),
+            output = Categorical(
+                [
+                    0.3314741303273284, 0.33435785748140795, 0.3341680121912637,
+                ]
+            ),
         ),
     ]
 end
 
 @testitem "rules:DiscreteTransition:T:Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_T1::Categorical)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [
-        check_type_promotion = true, extra_float_types = [Float64, Float32]
+        check_type_promotion = true, extra_float_types = [Float64, Float32],
     ] DiscreteTransition(:t2, Marginalisation) [
         (
             input = (
-                m_out = Categorical([
-                    0.08799332630703943, 0.29132551818215013, 0.6206811555108104
-                ]),
-                m_in = Categorical([
-                    0.2516472953196383, 0.3420258883005958, 0.40632681637976575
-                ]),
+                m_out = Categorical(
+                    [
+                        0.08799332630703943, 0.29132551818215013, 0.6206811555108104,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.2516472953196383, 0.3420258883005958, 0.40632681637976575,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         14.0 10.0 1.0; 6.0 8.0 1.0; 3.0 10.0 7.0;;; 14.0 3.0 3.0; 4.0 9.0 3.0; 5.0 5.0 14.0;;; 9.0 10.0 1.0; 3.0 7.0 4.0; 8.0 2.0 12.0;;;;
@@ -405,25 +483,33 @@ end
                         13.0 4.0 8.0; 4.0 8.0 2.0; 5.0 10.0 11.0;;; 15.0 4.0 8.0; 9.0 15.0 2.0; 5.0 2.0 12.0;;; 14.0 1.0 8.0; 10.0 6.0 5.0; 5.0 6.0 13.0
                     ],
                 ),
-                m_T1 = Categorical([
-                    0.11240998953463174, 0.5372891244719414, 0.35030088599342685
-                ]),
+                m_T1 = Categorical(
+                    [
+                        0.11240998953463174, 0.5372891244719414, 0.35030088599342685,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.2736744772456484,
-                0.23881821104809484,
-                0.2388250291499574,
-                0.2486822825562994,
-            ]),
+            output = Categorical(
+                [
+                    0.2736744772456484,
+                    0.23881821104809484,
+                    0.2388250291499574,
+                    0.2486822825562994,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.41399930903334414, 0.2569572285438312, 0.32904346242282473
-                ]),
-                m_in = Categorical([
-                    0.3580424644840306, 0.31051652805186924, 0.3314410074641002
-                ]),
+                m_out = Categorical(
+                    [
+                        0.41399930903334414, 0.2569572285438312, 0.32904346242282473,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.3580424644840306, 0.31051652805186924, 0.3314410074641002,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         15.0 4.0 4.0; 6.0 11.0 5.0; 1.0 1.0 14.0;;; 6.0 9.0 8.0; 10.0 10.0 5.0; 6.0 2.0 13.0;;; 13.0 2.0 7.0; 3.0 9.0 6.0; 5.0 5.0 7.0;;;;
@@ -432,25 +518,33 @@ end
                         9.0 6.0 8.0; 3.0 7.0 9.0; 8.0 4.0 11.0;;; 12.0 3.0 4.0; 2.0 11.0 9.0; 6.0 7.0 11.0;;; 13.0 6.0 10.0; 3.0 9.0 9.0; 10.0 10.0 6.0
                     ],
                 ),
-                m_T1 = Categorical([
-                    0.2712971200834005, 0.3827161804909996, 0.3459866994255999
-                ]),
+                m_T1 = Categorical(
+                    [
+                        0.2712971200834005, 0.3827161804909996, 0.3459866994255999,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.2456412839560082,
-                0.25071835307616863,
-                0.25386159128651975,
-                0.24977877168130333,
-            ]),
+            output = Categorical(
+                [
+                    0.2456412839560082,
+                    0.25071835307616863,
+                    0.25386159128651975,
+                    0.24977877168130333,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.28007415705382577, 0.362168131823555, 0.35775771112261917
-                ]),
-                m_in = Categorical([
-                    0.31784517029280823, 0.34141019417661717, 0.3407446355305746
-                ]),
+                m_out = Categorical(
+                    [
+                        0.28007415705382577, 0.362168131823555, 0.35775771112261917,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.31784517029280823, 0.34141019417661717, 0.3407446355305746,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         12.0 9.0 1.0; 2.0 8.0 7.0; 10.0 1.0 13.0;;; 11.0 8.0 7.0; 10.0 14.0 7.0; 5.0 2.0 15.0;;; 8.0 4.0 4.0; 7.0 11.0 5.0; 4.0 10.0 6.0;;;;
@@ -459,25 +553,33 @@ end
                         14.0 10.0 3.0; 8.0 15.0 9.0; 8.0 2.0 13.0;;; 14.0 10.0 5.0; 2.0 11.0 4.0; 6.0 3.0 11.0;;; 9.0 8.0 10.0; 9.0 6.0 8.0; 5.0 3.0 6.0
                     ],
                 ),
-                m_T1 = Categorical([
-                    0.24450475682493267, 0.4963764838006123, 0.25911875937445494
-                ]),
+                m_T1 = Categorical(
+                    [
+                        0.24450475682493267, 0.4963764838006123, 0.25911875937445494,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.2521503739599087,
-                0.25077911660660274,
-                0.25010306073581035,
-                0.24696744869767814,
-            ]),
+            output = Categorical(
+                [
+                    0.2521503739599087,
+                    0.25077911660660274,
+                    0.25010306073581035,
+                    0.24696744869767814,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.231721871481526, 0.43974647264393085, 0.3285316558745432
-                ]),
-                m_in = Categorical([
-                    0.305396640756791, 0.36076561844428456, 0.3338377407989245
-                ]),
+                m_out = Categorical(
+                    [
+                        0.231721871481526, 0.43974647264393085, 0.3285316558745432,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.305396640756791, 0.36076561844428456, 0.3338377407989245,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         11.0 8.0 5.0; 5.0 7.0 10.0; 2.0 1.0 11.0;;; 15.0 8.0 4.0; 8.0 12.0 3.0; 6.0 6.0 14.0;;; 13.0 10.0 8.0; 1.0 8.0 7.0; 8.0 8.0 14.0;;;;
@@ -486,25 +588,33 @@ end
                         14.0 7.0 2.0; 3.0 7.0 6.0; 4.0 9.0 15.0;;; 13.0 1.0 7.0; 3.0 12.0 4.0; 1.0 7.0 14.0;;; 7.0 7.0 3.0; 2.0 7.0 4.0; 8.0 9.0 10.0
                     ],
                 ),
-                m_T1 = Categorical([
-                    0.16173494859799328, 0.5444108919070189, 0.2938541594949879
-                ]),
+                m_T1 = Categorical(
+                    [
+                        0.16173494859799328, 0.5444108919070189, 0.2938541594949879,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.24769360939236879,
-                0.2570979400410685,
-                0.24636800327908906,
-                0.24884044728747362,
-            ]),
+            output = Categorical(
+                [
+                    0.24769360939236879,
+                    0.2570979400410685,
+                    0.24636800327908906,
+                    0.24884044728747362,
+                ]
+            ),
         ),
         (
             input = (
-                m_out = Categorical([
-                    0.3438709572699468, 0.327896945058581, 0.3282320976714722
-                ]),
-                m_in = Categorical([
-                    0.33437642195805395, 0.3321767052616158, 0.33344687278033025
-                ]),
+                m_out = Categorical(
+                    [
+                        0.3438709572699468, 0.327896945058581, 0.3282320976714722,
+                    ]
+                ),
+                m_in = Categorical(
+                    [
+                        0.33437642195805395, 0.3321767052616158, 0.33344687278033025,
+                    ]
+                ),
                 q_a = DirichletCollection(
                     [
                         10.0 9.0 2.0; 6.0 8.0 10.0; 7.0 1.0 11.0;;; 8.0 5.0 2.0; 5.0 7.0 3.0; 8.0 1.0 8.0;;; 15.0 5.0 7.0; 4.0 13.0 6.0; 3.0 8.0 7.0;;;;
@@ -513,22 +623,26 @@ end
                         14.0 2.0 2.0; 10.0 10.0 2.0; 1.0 4.0 9.0;;; 10.0 1.0 7.0; 1.0 6.0 3.0; 1.0 10.0 13.0;;; 6.0 8.0 4.0; 4.0 9.0 3.0; 3.0 2.0 9.0
                     ],
                 ),
-                m_T1 = Categorical([
-                    0.08064616359815222, 0.3016652714857759, 0.6176885649160718
-                ]),
+                m_T1 = Categorical(
+                    [
+                        0.08064616359815222, 0.3016652714857759, 0.6176885649160718,
+                    ]
+                ),
             ),
-            output = Categorical([
-                0.2505213451093424,
-                0.25068976800157844,
-                0.25100559750160933,
-                0.2477832893874698,
-            ]),
+            output = Categorical(
+                [
+                    0.2505213451093424,
+                    0.25068976800157844,
+                    0.25100559750160933,
+                    0.2477832893874698,
+                ]
+            ),
         ),
     ]
 end
 
 @testitem "rules:DiscreteTransition:T:Additional T-interface tests for Belief Propagation" tags = [
-    :rules
+    :rules,
 ] begin
     # Test T1 interface with 3 interfaces (BP with DirichletCollection q_a)
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
@@ -536,7 +650,7 @@ end
     import ReactiveMP: @test_rules, normalize!
     @testset "Belief Propagation: T1 with 3 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -550,9 +664,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3225303238396506, 0.3371283233297158, 0.34034135283063355
-                ]),
+                output = Categorical(
+                    [
+                        0.3225303238396506, 0.3371283233297158, 0.34034135283063355,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -566,9 +682,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.33286298505659456, 0.3432827250726305, 0.3238542898707749
-                ]),
+                output = Categorical(
+                    [
+                        0.33286298505659456, 0.3432827250726305, 0.3238542898707749,
+                    ]
+                ),
             ),
         ]
     end
@@ -576,7 +694,7 @@ end
     # Test T1 interface with 3 interfaces (BP with PointMass q_a)
     @testset "Belief Propagation: T1 with 3 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -593,9 +711,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.12056737588652484, 0.3333333333333333, 0.546099290780142
-                ]),
+                output = Categorical(
+                    [
+                        0.12056737588652484, 0.3333333333333333, 0.546099290780142,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -612,9 +732,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.2163742690058479, 0.4210526315789473, 0.3625730994152047
-                ]),
+                output = Categorical(
+                    [
+                        0.2163742690058479, 0.4210526315789473, 0.3625730994152047,
+                    ]
+                ),
             ),
         ]
     end
@@ -622,7 +744,7 @@ end
     # Test T1 interface with 4 interfaces (BP with DirichletCollection q_a)
     @testset "Belief Propagation: T1 with 4 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -637,9 +759,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.33560986817109284, 0.33211844702810667, 0.3322716848008006
-                ]),
+                output = Categorical(
+                    [
+                        0.33560986817109284, 0.33211844702810667, 0.3322716848008006,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -654,9 +778,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3414528537163908, 0.33999747769720556, 0.3185496685864036
-                ]),
+                output = Categorical(
+                    [
+                        0.3414528537163908, 0.33999747769720556, 0.3185496685864036,
+                    ]
+                ),
             ),
         ]
     end
@@ -664,7 +790,7 @@ end
     # Test T1 interface with 4 interfaces (BP with PointMass q_a)
     @testset "Belief Propagation: T1 with 4 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -682,9 +808,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.348472379384837, 0.3413229091657237, 0.31020471144943934
-                ]),
+                output = Categorical(
+                    [
+                        0.348472379384837, 0.3413229091657237, 0.31020471144943934,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -702,11 +830,13 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.38575359948949073,
-                    0.30857894946755476,
-                    0.30566745104295456,
-                ]),
+                output = Categorical(
+                    [
+                        0.38575359948949073,
+                        0.30857894946755476,
+                        0.30566745104295456,
+                    ]
+                ),
             ),
         ]
     end
@@ -714,7 +844,7 @@ end
     # Test T2 interface with 4 interfaces (BP with DirichletCollection q_a)
     @testset "Belief Propagation: T2 with 4 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -729,9 +859,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.338625179073202, 0.337082980142494, 0.3242918407843041
-                ]),
+                output = Categorical(
+                    [
+                        0.338625179073202, 0.337082980142494, 0.3242918407843041,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -746,9 +878,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3192292332473711, 0.32977701725750214, 0.35099374949512663
-                ]),
+                output = Categorical(
+                    [
+                        0.3192292332473711, 0.32977701725750214, 0.35099374949512663,
+                    ]
+                ),
             ),
         ]
     end
@@ -756,7 +890,7 @@ end
     # Test T2 interface with 4 interfaces (BP with PointMass q_a)
     @testset "Belief Propagation: T2 with 4 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -774,9 +908,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.3300037591966059, 0.3779066645185543, 0.29208957628483967
-                ]),
+                output = Categorical(
+                    [
+                        0.3300037591966059, 0.3779066645185543, 0.29208957628483967,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -794,9 +930,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.33546815449294726, 0.3245059133236415, 0.3400259321834113
-                ]),
+                output = Categorical(
+                    [
+                        0.33546815449294726, 0.3245059133236415, 0.3400259321834113,
+                    ]
+                ),
             ),
         ]
     end
@@ -804,7 +942,7 @@ end
     # Test T1 interface with 5 interfaces (BP with DirichletCollection q_a)
     @testset "Belief Propagation: T1 with 5 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -820,9 +958,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.33779166326287985, 0.32974470651939675, 0.3324636302177235
-                ]),
+                output = Categorical(
+                    [
+                        0.33779166326287985, 0.32974470651939675, 0.3324636302177235,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -838,9 +978,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3232907245817735, 0.3235162570642591, 0.3531930183539675
-                ]),
+                output = Categorical(
+                    [
+                        0.3232907245817735, 0.3235162570642591, 0.3531930183539675,
+                    ]
+                ),
             ),
         ]
     end
@@ -848,7 +990,7 @@ end
     # Test T1 interface with 5 interfaces (BP with PointMass q_a)
     @testset "Belief Propagation: T1 with 5 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -867,9 +1009,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.34048365920174845, 0.3200594007157279, 0.33945694008252375
-                ]),
+                output = Categorical(
+                    [
+                        0.34048365920174845, 0.3200594007157279, 0.33945694008252375,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -888,9 +1032,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.3191507064239812, 0.3234732446374377, 0.35737604893858116
-                ]),
+                output = Categorical(
+                    [
+                        0.3191507064239812, 0.3234732446374377, 0.35737604893858116,
+                    ]
+                ),
             ),
         ]
     end
@@ -898,7 +1044,7 @@ end
     # Test T2 interface with 5 interfaces (BP with DirichletCollection q_a)
     @testset "Belief Propagation: T2 with 5 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -914,9 +1060,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3349038229698072, 0.3323952220297803, 0.33270095500041247
-                ]),
+                output = Categorical(
+                    [
+                        0.3349038229698072, 0.3323952220297803, 0.33270095500041247,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -932,9 +1080,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.33221680581853985, 0.32131725863865607, 0.346465935542804
-                ]),
+                output = Categorical(
+                    [
+                        0.33221680581853985, 0.32131725863865607, 0.346465935542804,
+                    ]
+                ),
             ),
         ]
     end
@@ -942,7 +1092,7 @@ end
     # Test T2 interface with 5 interfaces (BP with PointMass q_a)
     @testset "Belief Propagation: T2 with 5 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -961,9 +1111,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.3314510207078866, 0.3506351887208107, 0.31791379057130265
-                ]),
+                output = Categorical(
+                    [
+                        0.3314510207078866, 0.3506351887208107, 0.31791379057130265,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -982,9 +1134,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.31465933370261934, 0.3276568805887473, 0.3576837857086334
-                ]),
+                output = Categorical(
+                    [
+                        0.31465933370261934, 0.3276568805887473, 0.3576837857086334,
+                    ]
+                ),
             ),
         ]
     end
@@ -992,7 +1146,7 @@ end
     # Test T3 interface with 5 interfaces (BP with DirichletCollection q_a)
     @testset "Belief Propagation: T3 with 5 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T3, Marginalisation) [
             (
                 input = (
@@ -1008,9 +1162,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3327791834414443, 0.33479029996811277, 0.332430516590443
-                ]),
+                output = Categorical(
+                    [
+                        0.3327791834414443, 0.33479029996811277, 0.332430516590443,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1026,9 +1182,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3405707102171213, 0.32860320985809627, 0.3308260799247824
-                ]),
+                output = Categorical(
+                    [
+                        0.3405707102171213, 0.32860320985809627, 0.3308260799247824,
+                    ]
+                ),
             ),
         ]
     end
@@ -1036,7 +1194,7 @@ end
     # Test T3 interface with 5 interfaces (BP with PointMass q_a)
     @testset "Belief Propagation: T3 with 5 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T3, Marginalisation) [
             (
                 input = (
@@ -1052,9 +1210,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.33284552594585337, 0.3347077171525566, 0.33244675690159
-                ]),
+                output = Categorical(
+                    [
+                        0.33284552594585337, 0.3347077171525566, 0.33244675690159,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1076,7 +1236,7 @@ end
     end
 end
 @testitem "rules:DiscreteTransition:T:Additional T-interface tests for structured VMP" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
@@ -1084,7 +1244,7 @@ end
     # Test T1 interface with 3 interfaces (BP with DirichletCollection q_a)
     @testset "Structured VMP: T1 with 3 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -1098,9 +1258,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3222497683237624, 0.33726688762463153, 0.340483344051606
-                ]),
+                output = Categorical(
+                    [
+                        0.3222497683237624, 0.33726688762463153, 0.340483344051606,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1114,9 +1276,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.38691253148106663, 0.30713613034182974, 0.3059513381771036
-                ]),
+                output = Categorical(
+                    [
+                        0.38691253148106663, 0.30713613034182974, 0.3059513381771036,
+                    ]
+                ),
             ),
         ]
     end
@@ -1124,7 +1288,7 @@ end
     # Test T1 interface with 3 interfaces (BP with PointMass q_a)
     @testset "Structured VMP: T1 with 3 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -1141,9 +1305,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.12056737588652484, 0.3333333333333333, 0.546099290780142
-                ]),
+                output = Categorical(
+                    [
+                        0.12056737588652484, 0.3333333333333333, 0.546099290780142,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1160,9 +1326,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.2567049808429118, 0.39080459770114945, 0.35249042145593873
-                ]),
+                output = Categorical(
+                    [
+                        0.2567049808429118, 0.39080459770114945, 0.35249042145593873,
+                    ]
+                ),
             ),
         ]
     end
@@ -1170,7 +1338,7 @@ end
     # Test T1 interface with 4 interfaces (BP with DirichletCollection q_a)
     @testset "Structured VMP: T1 with 4 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -1185,9 +1353,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3497555290286515, 0.3243332739931893, 0.3259111969781592
-                ]),
+                output = Categorical(
+                    [
+                        0.3497555290286515, 0.3243332739931893, 0.3259111969781592,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1202,9 +1372,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.286528392833518, 0.37874041975160827, 0.33473118741487373
-                ]),
+                output = Categorical(
+                    [
+                        0.286528392833518, 0.37874041975160827, 0.33473118741487373,
+                    ]
+                ),
             ),
         ]
     end
@@ -1212,7 +1384,7 @@ end
     # Test T1 interface with 4 interfaces (BP with PointMass q_a)
     @testset "Structured VMP: T1 with 4 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -1230,9 +1402,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.35081081081081084, 0.3389189189189189, 0.3102702702702703
-                ]),
+                output = Categorical(
+                    [
+                        0.35081081081081084, 0.3389189189189189, 0.3102702702702703,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1250,11 +1424,13 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.35682119205298013,
-                    0.33536423841059604,
-                    0.30781456953642383,
-                ]),
+                output = Categorical(
+                    [
+                        0.35682119205298013,
+                        0.33536423841059604,
+                        0.30781456953642383,
+                    ]
+                ),
             ),
         ]
     end
@@ -1262,7 +1438,7 @@ end
     # Test T2 interface with 4 interfaces (BP with DirichletCollection q_a)
     @testset "Structured VMP: T2 with 4 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -1277,9 +1453,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3849880269015263, 0.3451508297760113, 0.2698611433224625
-                ]),
+                output = Categorical(
+                    [
+                        0.3849880269015263, 0.3451508297760113, 0.2698611433224625,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1294,9 +1472,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.2822442158041096, 0.35479077885708316, 0.36296500533880727
-                ]),
+                output = Categorical(
+                    [
+                        0.2822442158041096, 0.35479077885708316, 0.36296500533880727,
+                    ]
+                ),
             ),
         ]
     end
@@ -1304,7 +1484,7 @@ end
     # Test T2 interface with 4 interfaces (BP with PointMass q_a)
     @testset "Structured VMP: T2 with 4 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -1322,9 +1502,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.3681015452538632, 0.3736203090507726, 0.2582781456953642
-                ]),
+                output = Categorical(
+                    [
+                        0.3681015452538632, 0.3736203090507726, 0.2582781456953642,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1342,9 +1524,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.31640931693274016, 0.343103899502748, 0.3404867835645119
-                ]),
+                output = Categorical(
+                    [
+                        0.31640931693274016, 0.343103899502748, 0.3404867835645119,
+                    ]
+                ),
             ),
         ]
     end
@@ -1352,7 +1536,7 @@ end
     # Test T1 interface with 5 interfaces (BP with DirichletCollection q_a)
     @testset "Structured VMP: T1 with 5 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -1368,11 +1552,13 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.36870768331118214,
-                    0.30633841980829635,
-                    0.32495389688052134,
-                ]),
+                output = Categorical(
+                    [
+                        0.36870768331118214,
+                        0.30633841980829635,
+                        0.32495389688052134,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1388,9 +1574,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.37257899898381897, 0.30786025080685453, 0.3195607502093266
-                ]),
+                output = Categorical(
+                    [
+                        0.37257899898381897, 0.30786025080685453, 0.3195607502093266,
+                    ]
+                ),
             ),
         ]
     end
@@ -1398,7 +1586,7 @@ end
     # Test T1 interface with 5 interfaces (BP with PointMass q_a)
     @testset "Structured VMP: T1 with 5 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
@@ -1417,9 +1605,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.3682781916337425, 0.3036462888681123, 0.3280755194981452
-                ]),
+                output = Categorical(
+                    [
+                        0.3682781916337425, 0.3036462888681123, 0.3280755194981452,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1438,9 +1628,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.3456193186527781, 0.3381040532699693, 0.3162766280772525
-                ]),
+                output = Categorical(
+                    [
+                        0.3456193186527781, 0.3381040532699693, 0.3162766280772525,
+                    ]
+                ),
             ),
         ]
     end
@@ -1448,7 +1640,7 @@ end
     # Test T2 interface with 5 interfaces (BP with DirichletCollection q_a)
     @testset "Structured VMP: T2 with 5 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -1464,9 +1656,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3479342603718732, 0.31997760011358223, 0.33208813951454447
-                ]),
+                output = Categorical(
+                    [
+                        0.3479342603718732, 0.31997760011358223, 0.33208813951454447,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1482,9 +1676,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3312582126371244, 0.3473116701850784, 0.32143011717779724
-                ]),
+                output = Categorical(
+                    [
+                        0.3312582126371244, 0.3473116701850784, 0.32143011717779724,
+                    ]
+                ),
             ),
         ]
     end
@@ -1492,7 +1688,7 @@ end
     # Test T2 interface with 5 interfaces (BP with PointMass q_a)
     @testset "Structured VMP: T2 with 5 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T2, Marginalisation) [
             (
                 input = (
@@ -1511,9 +1707,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.3307771289225438, 0.3462427003786177, 0.32298017069883844
-                ]),
+                output = Categorical(
+                    [
+                        0.3307771289225438, 0.3462427003786177, 0.32298017069883844,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1532,9 +1730,11 @@ end
                         ),
                     ),
                 ),
-                output = Categorical([
-                    0.29589809194588856, 0.3530580581942895, 0.35104384985982195
-                ]),
+                output = Categorical(
+                    [
+                        0.29589809194588856, 0.3530580581942895, 0.35104384985982195,
+                    ]
+                ),
             ),
         ]
     end
@@ -1542,7 +1742,7 @@ end
     # Test T3 interface with 5 interfaces (BP with DirichletCollection q_a)
     @testset "Structured VMP: T3 with 5 interfaces (DirichletCollection q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T3, Marginalisation) [
             (
                 input = (
@@ -1558,9 +1758,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3279949804990311, 0.34665622524067496, 0.32534879426029395
-                ]),
+                output = Categorical(
+                    [
+                        0.3279949804990311, 0.34665622524067496, 0.32534879426029395,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1576,9 +1778,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3381045653050833, 0.31357571033595166, 0.3483197243589649
-                ]),
+                output = Categorical(
+                    [
+                        0.3381045653050833, 0.31357571033595166, 0.3483197243589649,
+                    ]
+                ),
             ),
         ]
     end
@@ -1586,7 +1790,7 @@ end
     # Test T3 interface with 5 interfaces (BP with PointMass q_a)
     @testset "Structured VMP: T3 with 5 interfaces (PointMass q_a)" begin
         @test_rules [
-            check_type_promotion = true, extra_float_types = [Float64, Float32]
+            check_type_promotion = true, extra_float_types = [Float64, Float32],
         ] DiscreteTransition(:T3, Marginalisation) [
             (
                 input = (
@@ -1602,9 +1806,11 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.3196164859560503, 0.35845050030565295, 0.3219330137382968
-                ]),
+                output = Categorical(
+                    [
+                        0.3196164859560503, 0.35845050030565295, 0.3219330137382968,
+                    ]
+                ),
             ),
             (
                 input = (
@@ -1620,11 +1826,13 @@ end
                         ],
                     ),
                 ),
-                output = Categorical([
-                    0.35032390044323214,
-                    0.31992271849073756,
-                    0.32975338106603025,
-                ]),
+                output = Categorical(
+                    [
+                        0.35032390044323214,
+                        0.31992271849073756,
+                        0.32975338106603025,
+                    ]
+                ),
             ),
         ]
     end

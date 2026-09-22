@@ -22,7 +22,7 @@
 
                 # check whether the getmodel function works
                 @test typeof(getmodel(meta)) <:
-                    ReactiveMP.AbstractCompiledFlowModel
+                ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
                 @test getapproximation(meta) isa Linearization
@@ -43,7 +43,7 @@
 
                 # check whether the getmodel function works
                 @test typeof(getmodel(meta)) <:
-                    ReactiveMP.AbstractCompiledFlowModel
+                ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
                 @test getapproximation(meta) isa Linearization
@@ -64,15 +64,15 @@
 
                 # check whether the getmodel function works
                 @test typeof(getmodel(meta)) <:
-                    ReactiveMP.AbstractCompiledFlowModel
+                ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
                 @test getapproximation(meta) isa Unscented
                 @test getL(getapproximation(meta)) == 3
-                @test getα(getapproximation(meta)) == 1e-3
+                @test getα(getapproximation(meta)) == 1.0e-3
                 @test getβ(getapproximation(meta)) == 2.0
                 @test getκ(getapproximation(meta)) == 0.0
-                @test getλ(getapproximation(meta)) == 3e-6 - 3
+                @test getλ(getapproximation(meta)) == 3.0e-6 - 3
             end
         end
     end

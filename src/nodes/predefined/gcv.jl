@@ -3,8 +3,8 @@ export GCV, GCVMetadata
 import StatsFuns: log2π
 
 struct ExponentialLinearQuadratic{
-    A <: AbstractApproximationMethod, T <: Real
-} <: ContinuousUnivariateDistribution
+        A <: AbstractApproximationMethod, T <: Real,
+    } <: ContinuousUnivariateDistribution
     approximation::A
     a::T
     b::T
@@ -12,7 +12,7 @@ struct ExponentialLinearQuadratic{
     d::T
 end
 
-ExponentialLinearQuadratic(approximation, a::Real, b::Real, c::Real, d::Real)             = ExponentialLinearQuadratic(approximation, promote(a, b, c, d)...)
+ExponentialLinearQuadratic(approximation, a::Real, b::Real, c::Real, d::Real) = ExponentialLinearQuadratic(approximation, promote(a, b, c, d)...)
 ExponentialLinearQuadratic(approximation, a::Integer, b::Integer, c::Integer, d::Integer) = ExponentialLinearQuadratic(approximation, float(a), float(b), float(c), float(d))
 
 Base.eltype(::Type{<:ExponentialLinearQuadratic{A, T}}) where {A, T} = T
@@ -33,8 +33,8 @@ function BayesBase.mean_var(dist::ExponentialLinearQuadratic)
     )
 end
 
-BayesBase.mean_invcov(dist::ExponentialLinearQuadratic)      = mean_cov(dist) .|> (identity, inv)
-BayesBase.mean_std(dist::ExponentialLinearQuadratic)         = mean_var(dist) .|> (identity, sqrt)
+BayesBase.mean_invcov(dist::ExponentialLinearQuadratic) = mean_cov(dist) .|> (identity, inv)
+BayesBase.mean_std(dist::ExponentialLinearQuadratic) = mean_var(dist) .|> (identity, sqrt)
 BayesBase.weightedmean_cov(dist::ExponentialLinearQuadratic) = weightedmean_var(dist)
 BayesBase.weightedmean_std(dist::ExponentialLinearQuadratic) = weightedmean_var(dist) .|> (identity, sqrt)
 
@@ -48,14 +48,14 @@ function BayesBase.weightedmean_invcov(dist::ExponentialLinearQuadratic)
     return (w * m, w)
 end
 
-BayesBase.pdf(dist::ExponentialLinearQuadratic, x::Real)    = exp(logpdf(dist, x))
+BayesBase.pdf(dist::ExponentialLinearQuadratic, x::Real) = exp(logpdf(dist, x))
 BayesBase.logpdf(dist::ExponentialLinearQuadratic, x::Real) = -(dist.a * x + dist.b * exp(dist.c * x + dist.d * x^2 / 2)) / 2
-BayesBase.mean(dist::ExponentialLinearQuadratic)            = mean_var(dist)[1]
-BayesBase.var(dist::ExponentialLinearQuadratic)             = mean_var(dist)[2]
-BayesBase.std(dist::ExponentialLinearQuadratic)             = mean_std(dist)[2]
-BayesBase.cov(dist::ExponentialLinearQuadratic)             = var(dist)
+BayesBase.mean(dist::ExponentialLinearQuadratic) = mean_var(dist)[1]
+BayesBase.var(dist::ExponentialLinearQuadratic) = mean_var(dist)[2]
+BayesBase.std(dist::ExponentialLinearQuadratic) = mean_std(dist)[2]
+BayesBase.cov(dist::ExponentialLinearQuadratic) = var(dist)
 
-BayesBase.invcov(dist::ExponentialLinearQuadratic)       = mean_invcov(dist)[2]
+BayesBase.invcov(dist::ExponentialLinearQuadratic) = mean_invcov(dist)[2]
 BayesBase.weightedmean(dist::ExponentialLinearQuadratic) = weightedmean_invcov(dist)[1]
 
 BayesBase.default_prod_rule(
@@ -64,10 +64,10 @@ BayesBase.default_prod_rule(
 ) = PreserveTypeProd(NormalMeanVariance)
 
 function prod(
-    ::PreserveTypeProd{NormalMeanVariance},
-    left::UnivariateNormalDistributionsFamily,
-    right::ExponentialLinearQuadratic,
-)
+        ::PreserveTypeProd{NormalMeanVariance},
+        left::UnivariateNormalDistributionsFamily,
+        right::ExponentialLinearQuadratic,
+    )
     mean, variance = approximate_meancov(
         right.approximation, (z) -> pdf(right, z), left
     )
@@ -75,7 +75,7 @@ function prod(
 end
 
 const UniNormalOrExpLinQuad = Union{
-    UnivariateGaussianDistributionsFamily, ExponentialLinearQuadratic
+    UnivariateGaussianDistributionsFamily, ExponentialLinearQuadratic,
 }
 
 struct GCVMetadata{A <: AbstractApproximationMethod}
@@ -133,13 +133,13 @@ end
     meta::Union{<:GCVMetadata, Nothing},
 ) = begin
     y_x_mean, y_x_cov = mean_cov(q_y_x)
-    z_mean, z_var     = mean_var(q_z)
-    κ_mean, κ_var     = mean_var(q_κ)
-    ω_mean, ω_var     = mean_var(q_ω)
+    z_mean, z_var = mean_var(q_z)
+    κ_mean, κ_var = mean_var(q_κ)
+    ω_mean, ω_var = mean_var(q_ω)
 
     psi = @inbounds (y_x_mean[2] - y_x_mean[1])^2 +
-                    y_x_cov[1, 1] +
-                    y_x_cov[2, 2] - y_x_cov[1, 2] - y_x_cov[2, 1]
+        y_x_cov[1, 1] +
+        y_x_cov[2, 2] - y_x_cov[1, 2] - y_x_cov[2, 1]
 
     # `⟨e^{-(κz+ω)}⟩` via the summed log-exponents rather than `A * B`, which is `NaN` whenever
     # one factor overflows and the other underflows. See `__gcv_log_noise_precision`.

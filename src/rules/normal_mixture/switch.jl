@@ -9,7 +9,7 @@ export rule
 # end
 
 @rule NormalMixture{N}(:switch, Marginalisation) (
-    q_out::Any, q_m::ManyOf{N, Any}, q_p::ManyOf{N, Any}
+    q_out::Any, q_m::ManyOf{N, Any}, q_p::ManyOf{N, Any},
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
         rule_nm_switch_k(variate_form(typeof(m)), q_out, m, p)

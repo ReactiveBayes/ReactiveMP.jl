@@ -3,13 +3,13 @@ import Distributions: MatrixNormal, MatrixTDist
 import ExponentialFamily: InverseWishartDistributionsFamily
 
 @rule MatrixNormal(:out, Marginalisation) (
-    m_M::PointMass, m_U::PointMass, m_V::PointMass
+    m_M::PointMass, m_U::PointMass, m_V::PointMass,
 ) = begin
     return MatrixNormal(mean(m_M), mean(m_U), mean(m_V))
 end
 
 @rule MatrixNormal(:out, Marginalisation) (
-    m_M::MatrixNormal, m_U::PointMass, m_V::PointMass
+    m_M::MatrixNormal, m_U::PointMass, m_V::PointMass,
 ) = begin
     M = mean(m_M)
     U = mean(m_U)
@@ -18,7 +18,7 @@ end
 end
 
 @rule MatrixNormal(:out, Marginalisation) (
-    m_M::PointMass, m_U::InverseWishartDistributionsFamily, m_V::PointMass
+    m_M::PointMass, m_U::InverseWishartDistributionsFamily, m_V::PointMass,
 ) = begin
     M = mean(m_M)
     ν_U, Ψ_U = params(m_U)
@@ -28,7 +28,7 @@ end
 end
 
 @rule MatrixNormal(:out, Marginalisation) (
-    m_M::PointMass, m_U::PointMass, m_V::InverseWishartDistributionsFamily
+    m_M::PointMass, m_U::PointMass, m_V::InverseWishartDistributionsFamily,
 ) = begin
     M = mean(m_M)
     U = mean(m_U)

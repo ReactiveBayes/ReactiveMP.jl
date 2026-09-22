@@ -1,5 +1,5 @@
 @rule Mixture(:out, Marginalisation) (
-    m_switch::Any, m_inputs::ManyOf{N, Any}
+    m_switch::Any, m_inputs::ManyOf{N, Any},
 ) where {N} = begin
 
     # get logscales of different inputs
@@ -20,12 +20,12 @@
     # compute weights
     w = softmax(collect(logscales))
 
-    # return mixture 
+    # return mixture
     return MixtureDistribution(collect(m_inputs), w)
 end
 
 @rule Mixture(:out, Marginalisation) (
-    m_inputs::ManyOf{N, Any}, q_switch::PointMass
+    m_inputs::ManyOf{N, Any}, q_switch::PointMass,
 ) where {N} = begin
 
     # check whether mean is one-hot

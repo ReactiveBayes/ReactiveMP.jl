@@ -1,6 +1,6 @@
 
 @testitem "getpoints: the multivariate generators reuse one buffer, by design" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP, BayesBase, LinearAlgebra
 
@@ -28,7 +28,7 @@
     # noticing the consumer depends on it.
 
     mean_vector = [1.0, 2.0]
-    covariance  = [1.0 0.2; 0.2 2.0]
+    covariance = [1.0 0.2; 0.2 2.0]
 
     @testset "collect() yields repeats of the last point -- do not do this" begin
         for method in (GaussHermiteCubature(3), srcubature())
@@ -60,23 +60,23 @@
         # the buffer reuse acceptable: consumed lazily, the points are right.
         for method in (GaussHermiteCubature(21), srcubature())
             weights = getweights(method, mean_vector, covariance)
-            points  = getpoints(method, mean_vector, covariance)
+            points = getpoints(method, mean_vector, covariance)
 
             m̂ = zeros(2)
             for (w, p) in zip(weights, points)
                 m̂ .+= w .* p
             end
-            @test m̂ ≈ mean_vector atol = 1e-8
+            @test m̂ ≈ mean_vector atol = 1.0e-8
 
             # Recompute (the generator is single-pass over a shared buffer) for the covariance.
             weights = getweights(method, mean_vector, covariance)
-            points  = getpoints(method, mean_vector, covariance)
-            P̂       = zeros(2, 2)
+            points = getpoints(method, mean_vector, covariance)
+            P̂ = zeros(2, 2)
             for (w, p) in zip(weights, points)
                 d = p - mean_vector
                 P̂ .+= w .* (d * d')
             end
-            @test P̂ ≈ covariance atol = 1e-8
+            @test P̂ ≈ covariance atol = 1.0e-8
         end
     end
 
@@ -93,8 +93,8 @@
             m, P = approximate_meancov(
                 method, (x) -> 1.0, mean_vector, covariance
             )
-            @test m ≈ mean_vector atol = 1e-8
-            @test P ≈ covariance atol = 1e-8
+            @test m ≈ mean_vector atol = 1.0e-8
+            @test P ≈ covariance atol = 1.0e-8
         end
     end
 end

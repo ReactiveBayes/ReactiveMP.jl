@@ -19,13 +19,13 @@
         return (μ, C, (3 - order) / 2, (a - dot(b, μ)) / 2)
     end
 
-    function params_approx(d::MvNormalGamma, ref; atol = 1e-8)
+    function params_approx(d::MvNormalGamma, ref; atol = 1.0e-8)
         μ, Λ, α, β = params(d)
         μr, Λr, αr, βr = ref
         return isapprox(μ, μr; atol = atol) &&
-               isapprox(Λ, Λr; atol = atol) &&
-               isapprox(α, αr; atol = atol) &&
-               isapprox(β, βr; atol = atol)
+            isapprox(Λ, Λr; atol = atol) &&
+            isapprox(α, αr; atol = atol) &&
+            isapprox(β, βr; atol = atol)
     end
 
     @testset "likelihood factor parameters (orders 1, 2)" begin
@@ -38,7 +38,7 @@
             )
 
             msg = @call_rule ConjugateAR(:w, Marginalisation) (
-                q_y_x = q_y_x, meta = meta
+                q_y_x = q_y_x, meta = meta,
             )
             @test msg isa MvNormalGamma
             @test params_approx(msg, lik_reference(q_y_x, order))
@@ -64,11 +64,11 @@
             )
 
             msg = @call_rule ConjugateAR(:w, Marginalisation) (
-                q_y_x = q_y_x, meta = meta
+                q_y_x = q_y_x, meta = meta,
             )
             post_prod = prod(PreserveTypeProd(Distribution), prior, msg)
             post_marg = @call_marginalrule ConjugateAR(:w) (
-                m_w = prior, q_y_x = q_y_x, meta = meta
+                m_w = prior, q_y_x = q_y_x, meta = meta,
             )
 
             @test params_approx(post_prod, params(post_marg))

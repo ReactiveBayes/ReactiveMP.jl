@@ -33,9 +33,11 @@
     ) [
         (
             input = (
-                q_ins = FactorizedJoint((
-                    GammaShapeRate(2, 2), NormalMeanVariance()
-                )),
+                q_ins = FactorizedJoint(
+                    (
+                        GammaShapeRate(2, 2), NormalMeanVariance(),
+                    )
+                ),
                 m_in = NormalMeanVariance(1, 2),
                 meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer())),
             ),
@@ -43,9 +45,11 @@
         ),
         (
             input = (
-                q_ins = FactorizedJoint((
-                    NormalMeanVariance(), GammaShapeRate(2, 2)
-                )),
+                q_ins = FactorizedJoint(
+                    (
+                        NormalMeanVariance(), GammaShapeRate(2, 2),
+                    )
+                ),
                 m_in = GammaShapeRate(1, 1),
                 meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer())),
             ),

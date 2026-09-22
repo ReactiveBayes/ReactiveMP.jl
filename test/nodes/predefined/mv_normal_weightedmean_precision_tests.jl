@@ -17,10 +17,10 @@
                 q_ξ = PointMass(mean(q_Λ) * mean(q_μ))
 
                 for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                )
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    )
                     marginalsξ = (
                         Marginal(q_out, false, false),
                         Marginal(q_ξ, false, false),

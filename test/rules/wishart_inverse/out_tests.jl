@@ -11,13 +11,13 @@
         ) [
             (
                 input = (
-                    m_ν = PointMass(2.0), m_S = PointMass([1.0 0.0; 0.0 1.0])
+                    m_ν = PointMass(2.0), m_S = PointMass([1.0 0.0; 0.0 1.0]),
                 ),
                 output = InverseWishartFast(2.0, [1.0 0.0; 0.0 1.0]),
             ),
             (
                 input = (
-                    m_ν = PointMass(3.0), m_S = PointMass([10.0 -1.0; -1.0 3.0])
+                    m_ν = PointMass(3.0), m_S = PointMass([10.0 -1.0; -1.0 3.0]),
                 ),
                 output = InverseWishartFast(3.0, [10.0 -1.0; -1.0 3.0]),
             ),
@@ -39,13 +39,13 @@
         ) [
             (
                 input = (
-                    m_ν = PointMass(2.0), q_S = PointMass([1.0 0.0; 0.0 1.0])
+                    m_ν = PointMass(2.0), q_S = PointMass([1.0 0.0; 0.0 1.0]),
                 ),
                 output = InverseWishartFast(2.0, [1.0 0.0; 0.0 1.0]),
             ),
             (
                 input = (
-                    m_ν = PointMass(3.0), q_S = PointMass([10.0 -1.0; -1.0 3.0])
+                    m_ν = PointMass(3.0), q_S = PointMass([10.0 -1.0; -1.0 3.0]),
                 ),
                 output = InverseWishartFast(3.0, [10.0 -1.0; -1.0 3.0]),
             ),
@@ -67,13 +67,13 @@
         ) [
             (
                 input = (
-                    q_ν = PointMass(2.0), m_S = PointMass([1.0 0.0; 0.0 1.0])
+                    q_ν = PointMass(2.0), m_S = PointMass([1.0 0.0; 0.0 1.0]),
                 ),
                 output = InverseWishartFast(2.0, [1.0 0.0; 0.0 1.0]),
             ),
             (
                 input = (
-                    q_ν = PointMass(3.0), m_S = PointMass([10.0 -1.0; -1.0 3.0])
+                    q_ν = PointMass(3.0), m_S = PointMass([10.0 -1.0; -1.0 3.0]),
                 ),
                 output = InverseWishartFast(3.0, [10.0 -1.0; -1.0 3.0]),
             ),
@@ -95,13 +95,13 @@
         ) [
             (
                 input = (
-                    q_ν = PointMass(2.0), q_S = PointMass([1.0 0.0; 0.0 1.0])
+                    q_ν = PointMass(2.0), q_S = PointMass([1.0 0.0; 0.0 1.0]),
                 ),
                 output = InverseWishartFast(2.0, [1.0 0.0; 0.0 1.0]),
             ),
             (
                 input = (
-                    q_ν = PointMass(3.0), q_S = PointMass([10.0 -1.0; -1.0 3.0])
+                    q_ν = PointMass(3.0), q_S = PointMass([10.0 -1.0; -1.0 3.0]),
                 ),
                 output = InverseWishartFast(3.0, [10.0 -1.0; -1.0 3.0]),
             ),

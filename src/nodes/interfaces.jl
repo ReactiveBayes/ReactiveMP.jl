@@ -30,8 +30,8 @@ Base.show(io::IO, interface::NodeInterface) =
     print(io, "Interface(", name(interface), ")")
 
 israndom(interface::NodeInterface) = israndom(interface.variable)
-isdata(interface::NodeInterface)   = isdata(interface.variable)
-isconst(interface::NodeInterface)  = isconst(interface.variable)
+isdata(interface::NodeInterface) = isdata(interface.variable)
+isconst(interface::NodeInterface) = isconst(interface.variable)
 
 """
     name(interface)
@@ -88,8 +88,8 @@ A thin wrapper around [`ReactiveMP.NodeInterface`](@ref) that adds a positional 
 See also: [`ReactiveMP.NodeInterface`](@ref), [`ReactiveMP.ManyOf`](@ref)
 """
 struct IndexedNodeInterface
-    index     :: Int
-    interface :: NodeInterface
+    index::Int
+    interface::NodeInterface
 end
 
 Base.show(io::IO, interface::IndexedNodeInterface) = print(
@@ -98,8 +98,8 @@ Base.show(io::IO, interface::IndexedNodeInterface) = print(
 )
 
 index(interface::IndexedNodeInterface) = interface.index
-name(interface::IndexedNodeInterface)  = name(interface.interface)
-tag(interface::IndexedNodeInterface)   = (tag(interface.interface), index(interface))
+name(interface::IndexedNodeInterface) = name(interface.interface)
+tag(interface::IndexedNodeInterface) = (tag(interface.interface), index(interface))
 
 get_stream_of_outbound_messages(interface::IndexedNodeInterface) =
     get_stream_of_outbound_messages(interface.interface)
@@ -110,8 +110,8 @@ get_stream_of_inbound_messages(interface::IndexedNodeInterface) =
 getvariable(interface::IndexedNodeInterface) = getvariable(interface.interface)
 
 israndom(interface::IndexedNodeInterface) = israndom(interface.interface)
-isdata(interface::IndexedNodeInterface)   = isdata(interface.interface)
-isconst(interface::IndexedNodeInterface)  = isconst(interface.interface)
+isdata(interface::IndexedNodeInterface) = isdata(interface.interface)
+isconst(interface::IndexedNodeInterface) = isconst(interface.interface)
 
 """
 Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s. `@rule` macro 
@@ -126,7 +126,7 @@ Base.show(io::IO, manyof::ManyOf) =
 
 Rocket.getrecent(many::ManyOf) = ManyOf(getrecent(many.collection))
 
-getdata(many::ManyOf)    = getdata(many.collection)
+getdata(many::ManyOf) = getdata(many.collection)
 is_clamped(many::ManyOf) = is_clamped(many.collection)
 is_initial(many::ManyOf) = is_initial(many.collection)
 typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
@@ -157,7 +157,7 @@ rule_method_error_type_nameof(::Type{T}) where {V, T <: ManyOf{V}} = begin
     return string("ManyOf{", N, ", Union{", unions, "}}")
 end
 
-Base.iterate(many::ManyOf)        = iterate(many.collection)
+Base.iterate(many::ManyOf) = iterate(many.collection)
 Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
 
 Base.length(many::ManyOf) = length(many.collection)
@@ -174,8 +174,8 @@ Rocket.getrecent(observable::ManyOfObservable) =
 end
 
 function combineLatestMessagesInUpdates(
-    indexed::NTuple{N, <:IndexedNodeInterface}
-) where {N}
+        indexed::NTuple{N, <:IndexedNodeInterface}
+    ) where {N}
     return ManyOfObservable(
         combineLatestUpdates(
             map((in) -> get_stream_of_inbound_messages(in), indexed), PushNew()

@@ -7,15 +7,15 @@
         p1 = 0.7
         γ1 =
             0.7 * (
-                mean(log, GammaShapeRate(2.0, 1.0)) +
+            mean(log, GammaShapeRate(2.0, 1.0)) +
                 mean(log, GammaShapeRate(1.0, 2.0))
-            )
+        )
         p2 = 0.5
         γ2 =
             0.5 * (
-                mean(log, GammaShapeRate(3.0, 2.0)) +
+            mean(log, GammaShapeRate(3.0, 2.0)) +
                 mean(log, GammaShapeRate(1.0, 3.0))
-            )
+        )
         @test_rules [check_type_promotion = false] GammaMixture{2}(
             (:a, k = 1), Marginalisation
         ) [

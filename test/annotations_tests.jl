@@ -15,14 +15,14 @@
     struct SumAnnotations <: AbstractAnnotations end
 
     function ReactiveMP.post_product_annotations!(
-        ::SumAnnotations,
-        merged,
-        left_ann,
-        right_ann,
-        new_dist,
-        left_dist,
-        right_dist,
-    )
+            ::SumAnnotations,
+            merged,
+            left_ann,
+            right_ann,
+            new_dist,
+            left_dist,
+            right_dist,
+        )
         annotate!(
             merged,
             :sum,
@@ -95,7 +95,7 @@ end
 end
 
 @testitem "AnnotationDict does not allocate on simple creation" tags = [
-    :engine, :alloc
+    :engine, :alloc,
 ] begin
     import ReactiveMP: AnnotationDict, has_annotation
 
@@ -110,12 +110,12 @@ end
 end
 
 @testitem "post_product_annotations! with no processors returns empty AnnotationDict" tags = [
-    :engine
-] setup=[AnnotationsTestUtils] begin
+    :engine,
+] setup = [AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict, annotate!, has_annotation, post_product_annotations!
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(left_ann, :foo, 1)
     annotate!(right_ann, :foo, 2)
@@ -132,8 +132,8 @@ end
 end
 
 @testitem "post_product_annotations! calls per-processor post_product_annotations! for each processor" tags = [
-    :engine
-] setup=[AnnotationsTestUtils] begin
+    :engine,
+] setup = [AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -141,7 +141,7 @@ end
         has_annotation,
         post_product_annotations!
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(left_ann, :val, 3)
     annotate!(right_ann, :val, 7)
@@ -161,8 +161,8 @@ end
 end
 
 @testitem "post_product_annotations! with missing left_dist copies right_ann" tags = [
-    :engine
-] setup=[AnnotationsTestUtils] begin
+    :engine,
+] setup = [AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -170,7 +170,7 @@ end
         has_annotation,
         post_product_annotations!
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(right_ann, :logscale, 5.0)
 
@@ -184,8 +184,8 @@ end
 end
 
 @testitem "post_product_annotations! with missing right_dist copies left_ann" tags = [
-    :engine
-] setup=[AnnotationsTestUtils] begin
+    :engine,
+] setup = [AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -193,7 +193,7 @@ end
         has_annotation,
         post_product_annotations!
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(left_ann, :logscale, 3.0)
 
@@ -207,12 +207,12 @@ end
 end
 
 @testitem "post_product_annotations! with both dists missing returns empty AnnotationDict" tags = [
-    :engine
-] setup=[AnnotationsTestUtils] begin
+    :engine,
+] setup = [AnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict, annotate!, has_annotation, post_product_annotations!
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(left_ann, :logscale, 1.0)
     annotate!(right_ann, :logscale, 2.0)

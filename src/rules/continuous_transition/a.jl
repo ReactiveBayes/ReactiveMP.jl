@@ -16,10 +16,10 @@
 
     mx, Vx = @views myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
     my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
-    Vyx    = @view Vyx[1:dy, (dy + 1):end]
+    Vyx = @view Vyx[1:dy, (dy + 1):end]
 
     xi, W = zeros(eltype(ma), length(ma)),
-    zeros(eltype(ma), length(ma), length(ma))
+        zeros(eltype(ma), length(ma), length(ma))
 
     Vxymxy = rank1update(Vyx', mx, my)
     Vxmx = rank1update(Vx, mx)
@@ -39,7 +39,7 @@ end
 
 # VMP: Mean-field
 @rule ContinuousTransition(:a, Marginalisation) (
-    q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta
+    q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta,
 ) = begin
     mx, Vx = mean_cov(q_x)
     mW = mean(q_W)
@@ -50,7 +50,7 @@ end
     dy = length(Fs)
 
     xi, W = zeros(eltype(ma), length(ma)),
-    zeros(eltype(ma), length(ma), length(ma))
+        zeros(eltype(ma), length(ma), length(ma))
 
     mxmy = mx * my'
     Vxmx = rank1update(Vx, mx)

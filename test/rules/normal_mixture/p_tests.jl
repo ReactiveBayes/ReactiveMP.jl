@@ -29,7 +29,7 @@
     end
 
     @testset "Variational : (m_out::MultivariateNormalDistributionsFamily..., m_μ::MultivariateNormalDistributionsFamily...) k=1" begin
-        @test_rules [check_type_promotion = true, atol = 1e-4] NormalMixture{2}(
+        @test_rules [check_type_promotion = true, atol = 1.0e-4] NormalMixture{2}(
             (:p, k = 1), Marginalisation
         ) [
             (
@@ -47,7 +47,7 @@
                     q_m = MvNormalMeanPrecision([3.0, 10], [0.1 0.2; 0.2 -0.3]),
                 ),
                 output = WishartFast(
-                    3.2, [7.181260 -5.553096; -5.553096 5.094238]
+                    3.2, [7.18126 -5.553096; -5.553096 5.094238]
                 ),
             ),
             (
@@ -58,7 +58,7 @@
                         [2.0, -3.0], [2.1 -1.0; -1.0 3.0]
                     ),
                 ),
-                output = WishartFast(3.25, [2.53919 8.28558; 8.28558 30.38920]),
+                output = WishartFast(3.25, [2.53919 8.28558; 8.28558 30.3892]),
             ),
             (
                 input = (

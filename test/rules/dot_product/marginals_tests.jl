@@ -323,7 +323,7 @@
             ),
         ]
 
-        ## ## 
+        ## ##
 
         @test_marginalrules [check_type_promotion = true] typeof(dot)(:in1_in2) [
             (

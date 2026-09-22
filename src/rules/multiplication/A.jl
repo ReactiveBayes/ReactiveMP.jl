@@ -24,7 +24,7 @@ end
 end
 
 # if A is a vector, then the result is univariate
-# this rule links to the special case (AbstractVector * Univariate) for forward (:out) rule 
+# this rule links to the special case (AbstractVector * Univariate) for forward (:out) rule
 @rule typeof(*)(:A, Marginalisation) (
     m_out::MultivariateNormalDistributionsFamily,
     m_in::PointMass{<:AbstractVector},
@@ -90,8 +90,8 @@ end
     μ_out, var_out = mean_var(m_out)
     log_backwardpass =
         (x) ->
-            -log(abs(x)) - 0.5 * log(2π * (var_in + var_out / x^2)) -
-            1 / 2 * (μ_out - x * μ_in)^2 / (var_in * x^2 + var_out)
+    -log(abs(x)) - 0.5 * log(2π * (var_in + var_out / x^2)) -
+        1 / 2 * (μ_out - x * μ_in)^2 / (var_in * x^2 + var_out)
     return ContinuousUnivariateLogPdf(log_backwardpass)
 end
 

@@ -1,6 +1,6 @@
 
 @testitem "smoothRTS: a singular forward covariance yields the forward marginal unchanged" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, LinearAlgebra
 
@@ -88,7 +88,7 @@
 end
 
 @testitem "Unscented: a zero-covariance input gives a zero cross-covariance, not `nothing`" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP,
         BayesBase, Distributions, ExponentialFamily, LinearAlgebra, Logging
@@ -143,7 +143,7 @@ end
 end
 
 @testitem "DeltaFn(:ins) marginal completes for a zero-variance inbound" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP,
         BayesBase, Distributions, ExponentialFamily, LinearAlgebra, Logging

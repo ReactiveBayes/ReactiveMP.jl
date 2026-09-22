@@ -1,7 +1,7 @@
 # This is an GCV extension for automatic rules transition with Gaussian Nodes
 
 @rule NormalMeanVariance(:μ, Marginalisation) (
-    m_out::ExponentialLinearQuadratic, m_v::PointMass, meta::Any
+    m_out::ExponentialLinearQuadratic, m_v::PointMass, meta::Any,
 ) = begin
     m_out_mean, m_out_var = mean_var(m_out)
     return @call_rule NormalMeanVariance(:μ, Marginalisation) (
@@ -12,7 +12,7 @@
 end
 
 @rule NormalMeanVariance(:μ, Marginalisation) (
-    m_out::ExponentialLinearQuadratic, q_v::Any, meta::Any
+    m_out::ExponentialLinearQuadratic, q_v::Any, meta::Any,
 ) = begin
     m_out_mean, m_out_var = mean_var(m_out)
     return @call_rule NormalMeanVariance(:μ, Marginalisation) (
@@ -23,7 +23,7 @@ end
 end
 
 @rule NormalMeanPrecision(:μ, Marginalisation) (
-    m_out::ExponentialLinearQuadratic, m_τ::PointMass, meta::Any
+    m_out::ExponentialLinearQuadratic, m_τ::PointMass, meta::Any,
 ) = begin
     m_out_mean, m_out_var = mean_var(m_out)
     return @call_rule NormalMeanPrecision(:μ, Marginalisation) (
@@ -34,7 +34,7 @@ end
 end
 
 @rule NormalMeanPrecision(:μ, Marginalisation) (
-    m_out::ExponentialLinearQuadratic, q_τ::Any, meta::Any
+    m_out::ExponentialLinearQuadratic, q_τ::Any, meta::Any,
 ) = begin
     m_out_mean, m_out_var = mean_var(m_out)
     return @call_rule NormalMeanPrecision(:μ, Marginalisation) (

@@ -54,23 +54,23 @@ get_rule_input_arguments(ann::AnnotationDict) =
     get_annotation(ann, :rule_input_arguments)
 
 function pre_rule_annotations!(
-    ::InputArgumentsAnnotations,
-    ann::AnnotationDict,
-    mapping,
-    messages,
-    marginals,
-)
+        ::InputArgumentsAnnotations,
+        ann::AnnotationDict,
+        mapping,
+        messages,
+        marginals,
+    )
     return nothing
 end
 
 function post_rule_annotations!(
-    ::InputArgumentsAnnotations,
-    ann::AnnotationDict,
-    mapping,
-    messages,
-    marginals,
-    result,
-)
+        ::InputArgumentsAnnotations,
+        ann::AnnotationDict,
+        mapping,
+        messages,
+        marginals,
+        result,
+    )
     annotate!(
         ann,
         :rule_input_arguments,
@@ -80,46 +80,46 @@ function post_rule_annotations!(
 end
 
 function _merge_input_arguments(
-    left::RuleInputArgumentsRecord, right::RuleInputArgumentsRecord
-)
+        left::RuleInputArgumentsRecord, right::RuleInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(RuleInputArgumentsRecord[left, right])
 end
 
 function _merge_input_arguments(
-    left::RuleInputArgumentsRecord, right::ProductInputArgumentsRecord
-)
+        left::RuleInputArgumentsRecord, right::ProductInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(
         vcat(RuleInputArgumentsRecord[left], right.mappings)
     )
 end
 
 function _merge_input_arguments(
-    left::ProductInputArgumentsRecord, right::RuleInputArgumentsRecord
-)
+        left::ProductInputArgumentsRecord, right::RuleInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(
         vcat(left.mappings, RuleInputArgumentsRecord[right])
     )
 end
 
 function _merge_input_arguments(
-    left::ProductInputArgumentsRecord, right::ProductInputArgumentsRecord
-)
+        left::ProductInputArgumentsRecord, right::ProductInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(vcat(left.mappings, right.mappings))
 end
 
 function post_product_annotations!(
-    ::InputArgumentsAnnotations,
-    merged::AnnotationDict,
-    left_ann::AnnotationDict,
-    right_ann::AnnotationDict,
-    new_dist,
-    left_dist,
-    right_dist,
-)
-    has_left  = has_annotation(left_ann, :rule_input_arguments)
+        ::InputArgumentsAnnotations,
+        merged::AnnotationDict,
+        left_ann::AnnotationDict,
+        right_ann::AnnotationDict,
+        new_dist,
+        left_dist,
+        right_dist,
+    )
+    has_left = has_annotation(left_ann, :rule_input_arguments)
     has_right = has_annotation(right_ann, :rule_input_arguments)
     if has_left && has_right
-        left_record  = get_rule_input_arguments(left_ann)
+        left_record = get_rule_input_arguments(left_ann)
         right_record = get_rule_input_arguments(right_ann)
         annotate!(
             merged,
@@ -161,12 +161,12 @@ function Base.show(io::IO, record::RuleInputArgumentsRecord)
             println(io, pad, "  q(", name, ") = ", mar)
         end
     end
-    print(io, pad, "  result:     ", record.result)
+    return print(io, pad, "  result:     ", record.result)
 end
 
 function Base.show(io::IO, record::ProductInputArgumentsRecord)
     indent = get(io, :indent, 0)
-    pad    = ' '^indent
+    pad = ' '^indent
     println(
         io,
         pad,
@@ -180,6 +180,7 @@ function Base.show(io::IO, record::ProductInputArgumentsRecord)
         show(inner, r)
         i < length(record.mappings) && println(io)
     end
+    return
 end
 
 """
@@ -191,11 +192,11 @@ Use [`InputArgumentsAnnotations`](@ref) instead. See the migration guide in the 
 function AddonMemory(args...; kwargs...)
     error(
         """`AddonMemory` has been removed in ReactiveMP v6 """ *
-        """and replaced by `InputArgumentsAnnotations`.\n""" *
-        """To migrate, replace:\n""" *
-        """  addons = (AddonMemory(),)\n""" *
-        """with:\n""" *
-        """  annotations = (InputArgumentsAnnotations(),)\n""" *
-        """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
+            """and replaced by `InputArgumentsAnnotations`.\n""" *
+            """To migrate, replace:\n""" *
+            """  addons = (AddonMemory(),)\n""" *
+            """with:\n""" *
+            """  annotations = (InputArgumentsAnnotations(),)\n""" *
+            """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
     )
 end

@@ -22,7 +22,7 @@
 
             U = Wx + tr(mW * ΣA) * UA
 
-            Wq = [Wy+mW -mW*mA; -mA'*mW U+mA' * mW * mA]
+            Wq = [Wy + mW -mW * mA; -mA' * mW U + mA' * mW * mA]
             return MvNormalWeightedMeanPrecision([xiy; xix], Wq)
         end
         @testset "y_x: (m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_a::NormalDistributionsFamily, q_W::Any)" begin
@@ -43,14 +43,16 @@
 
                 metal = CTMeta(transformation)
 
-                @test_marginalrules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                @test_marginalrules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
                     :y_x
-                ) [(
-                    input = (
-                        m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metal
+                ) [
+                    (
+                        input = (
+                            m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metal,
+                        ),
+                        output = benchmark_rule(mx, my, qW, qA),
                     ),
-                    output = benchmark_rule(mx, my, qW, qA),
-                )]
+                ]
             end
         end
     end
@@ -70,18 +72,20 @@
 
             metanl = CTMeta(transformation)
 
-            @test_marginalrules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+            @test_marginalrules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
                 :y_x
-            ) [(
-                input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metanl),
-                output = MvNormalWeightedMeanPrecision(
-                    zeros(4),
-                    [
-                        (dy + qW.df - 1)*diageye(dy) -(qW.df)diageye(dx);
-                        -(qW.df)diageye(dx) (dy + qW.df - 1)diageye(dy)
-                    ],
+            ) [
+                (
+                    input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metanl),
+                    output = MvNormalWeightedMeanPrecision(
+                        zeros(4),
+                        [
+                            (dy + qW.df - 1) * diageye(dy) -(qW.df)diageye(dx);
+                            -(qW.df)diageye(dx) (dy + qW.df - 1)diageye(dy)
+                        ],
+                    ),
                 ),
-            )]
+            ]
         end
     end
 end

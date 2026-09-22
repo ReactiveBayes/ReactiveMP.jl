@@ -21,7 +21,7 @@
             q_in_component = first(components(q_in))
             q_out = q_in_component
             msg = @call_rule DeltaFn{identity}(:out, Marginalisation) (
-                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta
+                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta,
             )
 
             prj = ProjectedTo(
@@ -34,18 +34,18 @@
                 (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x);
                 initialpoint = q_out,
             )
-            @test mean(q_out_projected) ≈ mean(q_out) atol = 5e-1
+            @test mean(q_out_projected) ≈ mean(q_out) atol = 5.0e-1
             @test var(q_out_projected) ≈ var(q_out) atol = 2.0
-            @test mode(q_out_projected) ≈ mode(q_out) atol = 5e-1
+            @test mode(q_out_projected) ≈ mode(q_out) atol = 5.0e-1
             if typeof(q_out) <: Union{Exponential, Beta, Gamma}
-                @test mean(log, q_out_projected) ≈ mean(log, q_out) atol = 5e-1
+                @test mean(log, q_out_projected) ≈ mean(log, q_out) atol = 5.0e-1
             end
         end
     end
 end
 
-# In this test we are trying to check that `DeltaFn` node can accept arbitrary (univariate) inputs 
-# and compute an outbound (multivariate) message. 
+# In this test we are trying to check that `DeltaFn` node can accept arbitrary (univariate) inputs
+# and compute an outbound (multivariate) message.
 # We use a simple node function f(x) = [x; y] and we test the following assumptions:
 # - `mean(m_out) ≈ [ mean(m_x), mean(m_y) ]`
 @testitem "Basic out rule tests #2" tags = [:engine] begin
@@ -58,28 +58,34 @@ end
     f(x, y) = [x; y]
     q_ins_m_out_incomings = [
         (
-            FactorizedJoint((
-                NormalMeanVariance(3.0, 1.0),
-                MvNormalMeanCovariance([2.0, 5.2], 3diageye(2)),
-            )),
+            FactorizedJoint(
+                (
+                    NormalMeanVariance(3.0, 1.0),
+                    MvNormalMeanCovariance([2.0, 5.2], 3diageye(2)),
+                )
+            ),
             MvNormalMeanCovariance(
                 [2.0, 3.4, -1.0], Diagonal([0.2, 0.01, 4.0])
             ),
         ),
         (
-            FactorizedJoint((
-                MvNormalMeanCovariance([0.3, 0.9], diageye(2)),
-                MvNormalMeanCovariance([2.0, 5.2], 3diageye(2)),
-            )),
+            FactorizedJoint(
+                (
+                    MvNormalMeanCovariance([0.3, 0.9], diageye(2)),
+                    MvNormalMeanCovariance([2.0, 5.2], 3diageye(2)),
+                )
+            ),
             MvNormalMeanCovariance(
                 [2.0, 3.4, -1.0, 5.0], Diagonal([0.2, 2.0, 0.01, 4.0])
             ),
         ),
         (
-            FactorizedJoint((
-                MvNormalMeanCovariance([2.0, 3.0, 0.1, 0.9], diageye(4)),
-                MvNormalMeanCovariance([3.4, 7.6], 0.1diageye(2)),
-            )),
+            FactorizedJoint(
+                (
+                    MvNormalMeanCovariance([2.0, 3.0, 0.1, 0.9], diageye(4)),
+                    MvNormalMeanCovariance([3.4, 7.6], 0.1diageye(2)),
+                )
+            ),
             MvNormalMeanCovariance(
                 [2.0, 3.4, -1.0, 5.0, 3.0, -10.0],
                 Diagonal([0.2, 2.0, 0.01, 4.0, 1.0, 0.5]),
@@ -87,11 +93,11 @@ end
         ),
     ]
     for (q_in, m_out_incoming) in q_ins_m_out_incomings
-        q_in_components    = components(q_in)
+        q_in_components = components(q_in)
         mean_in_components = mapreduce(mean, vcat, q_in_components)
-        cov_in_components  = Diagonal(mapreduce(var, vcat, q_in_components))
-        q_out              = MvNormalMeanCovariance(mean_in_components, cov_in_components)
-        msg                = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta)
+        cov_in_components = Diagonal(mapreduce(var, vcat, q_in_components))
+        q_out = MvNormalMeanCovariance(mean_in_components, cov_in_components)
+        msg = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta)
 
         prj = ProjectedTo(
             ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...
@@ -102,9 +108,9 @@ end
             (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x);
             initialpoint = q_out,
         )
-        @test mean(q_out_projected) ≈ mean(q_out) rtol = 5e-1
+        @test mean(q_out_projected) ≈ mean(q_out) rtol = 5.0e-1
         @test var(q_out_projected) ≈ var(q_out) rtol = 1.0
-        @test mode(q_out_projected) ≈ mode(q_out) rtol = 5e-1
+        @test mode(q_out_projected) ≈ mode(q_out) rtol = 5.0e-1
     end
 end
 
@@ -129,8 +135,8 @@ end
         constants_b = [-3, -2, -1, 0, 1, 2, 3]
         constants_a = [1, 1.1]
         for q_in in q_ins,
-            a in constants_a, b in constants_b,
-            m_out_incoming in m_out_incomings
+                a in constants_a, b in constants_b,
+                m_out_incoming in m_out_incomings
 
             f = (x) -> a * x + b
             q_in_component = first(components(q_in))
@@ -139,7 +145,7 @@ end
             )
 
             msg = @call_rule DeltaFn{f}(:out, Marginalisation) (
-                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta
+                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta,
             )
 
             prj = ProjectedTo(
@@ -150,8 +156,8 @@ end
             q_out_projected = project_to(
                 prj, (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x)
             )
-            @test mean(q_out_projected) ≈ mean(q_out) atol = 5e-1
-            @test var(q_out_projected) ≈ var(q_out) atol = 7e-1
+            @test mean(q_out_projected) ≈ mean(q_out) atol = 5.0e-1
+            @test var(q_out_projected) ≈ var(q_out) atol = 7.0e-1
         end
     end
 end
@@ -162,14 +168,18 @@ end
     @testset "f(x) = x + constant, x ~ Normal (Multivariate)" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
 
-        q_ins_m_out_incomings_fs_constants = [(
-            FactorizedJoint((
-                MvNormalMeanCovariance([0.3, 0.7, 10.0], 0.1 * diageye(3)),
-            )),
-            MvNormalMeanCovariance(ones(3), 0.9 * diageye(3)),
-            x -> x + [0.2, -9.0, 3.0],
-            [0.2, -9.0, 3.0],
-        )]
+        q_ins_m_out_incomings_fs_constants = [
+            (
+                FactorizedJoint(
+                    (
+                        MvNormalMeanCovariance([0.3, 0.7, 10.0], 0.1 * diageye(3)),
+                    )
+                ),
+                MvNormalMeanCovariance(ones(3), 0.9 * diageye(3)),
+                x -> x + [0.2, -9.0, 3.0],
+                [0.2, -9.0, 3.0],
+            ),
+        ]
         for (q_in, m_out_incoming, f, c) in q_ins_m_out_incomings_fs_constants
             q_in_component = first(components(q_in))
             q_out = MvNormalMeanCovariance(
@@ -177,7 +187,7 @@ end
             )
 
             msg = @call_rule DeltaFn{f}(:out, Marginalisation) (
-                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta
+                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta,
             )
             prj = ProjectedTo(
                 ExponentialFamily.exponential_family_typetag(q_out),
@@ -186,8 +196,8 @@ end
             q_out_projected = project_to(
                 prj, (x) -> logpdf(msg, x), m_out_incoming, initialpoint = q_out
             )
-            @test mean(q_out_projected) ≈ mean(q_out) rtol = 5e-1
-            @test var(q_out_projected) ≈ var(q_out) rtol = 5e-1
+            @test mean(q_out_projected) ≈ mean(q_out) rtol = 5.0e-1
+            @test var(q_out_projected) ≈ var(q_out) rtol = 5.0e-1
         end
     end
 end
@@ -234,7 +244,7 @@ end
             q_ins_m_out_incomings_q_outs_non_linearities
 
             msg = @call_rule DeltaFn{f}(:out, Marginalisation) (
-                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta
+                m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta,
             )
 
             prj = ProjectedTo(
@@ -245,8 +255,8 @@ end
             q_out_projected = project_to(
                 prj, (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x)
             )
-            @test mean(q_out_projected) ≈ mean(q_out) atol = 5e-1
-            @test var(q_out_projected) ≈ var(q_out) atol = 1e-1
+            @test mean(q_out_projected) ≈ mean(q_out) atol = 5.0e-1
+            @test var(q_out_projected) ≈ var(q_out) atol = 1.0e-1
         end
     end
 end
@@ -268,7 +278,7 @@ end
         q_out = Gamma(2.0, 2.0)
 
         msg = @call_rule DeltaFn{exp}(:out, Marginalisation) (
-            m_out = m_out, q_out = q_out, q_ins = q_in, meta = meta
+            m_out = m_out, q_out = q_out, q_ins = q_in, meta = meta,
         )
 
         result_dist = msg.numerator
@@ -306,7 +316,7 @@ end
         square_components(x) = x .^ 2
 
         msg = @call_rule DeltaFn{square_components}(:out, Marginalisation) (
-            m_out = m_out, q_out = q_out, q_ins = q_in, meta = meta
+            m_out = m_out, q_out = q_out, q_ins = q_in, meta = meta,
         )
 
         result_dist = msg.numerator
@@ -321,7 +331,7 @@ end
         q_in2 = FactorizedJoint((MvNormalMeanCovariance(μ2, Σ),))
 
         msg2 = @call_rule DeltaFn{square_components}(:out, Marginalisation) (
-            m_out = m_out, q_out = q_out, q_ins = q_in2, meta = meta
+            m_out = m_out, q_out = q_out, q_ins = q_in2, meta = meta,
         )
 
         result_dist2 = msg2.numerator

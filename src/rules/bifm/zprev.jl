@@ -12,8 +12,8 @@
     C = getC(meta)
 
     # fetch statistics from messages
-    ξ_in, Λ_in       = weightedmean_precision(m_in)
-    ξ_out, Λ_out     = weightedmean_precision(m_out)
+    ξ_in, Λ_in = weightedmean_precision(m_in)
+    ξ_out, Λ_out = weightedmean_precision(m_out)
     ξ_znext, Λ_znext = weightedmean_precision(m_znext)
 
     # calculate intermediate quantities

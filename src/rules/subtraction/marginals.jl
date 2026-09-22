@@ -5,14 +5,16 @@
     m_in2::PointMass,
 ) = begin
     mout, vout = mean_var(m_out)
-    return convert_paramfloattype((
-        in1 = prod(
-            ClosedProd(),
-            NormalMeanVariance(mout + mean(m_in2), vout),
-            m_in1,
-        ),
-        in2 = m_in2,
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = prod(
+                ClosedProd(),
+                NormalMeanVariance(mout + mean(m_in2), vout),
+                m_in1,
+            ),
+            in2 = m_in2,
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -21,14 +23,16 @@ end
     m_in2::UnivariateNormalDistributionsFamily,
 ) = begin
     mout, vout = mean_var(m_out)
-    return convert_paramfloattype((
-        in1 = m_in1,
-        in2 = prod(
-            ClosedProd(),
-            NormalMeanVariance(mout - mean(m_in1), vout),
-            m_in2,
-        ),
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = m_in1,
+            in2 = prod(
+                ClosedProd(),
+                NormalMeanVariance(mout - mean(m_in1), vout),
+                m_in2,
+            ),
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -37,14 +41,16 @@ end
     m_in2::PointMass,
 ) = begin
     mout, Vout = mean_cov(m_out)
-    return convert_paramfloattype((
-        in1 = prod(
-            ClosedProd(),
-            MvNormalMeanCovariance(mout + mean(m_in2), Vout),
-            m_in1,
-        ),
-        in2 = m_in2,
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = prod(
+                ClosedProd(),
+                MvNormalMeanCovariance(mout + mean(m_in2), Vout),
+                m_in1,
+            ),
+            in2 = m_in2,
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -53,14 +59,16 @@ end
     m_in2::PointMass,
 ) = begin
     mout, Wout = mean_precision(m_out)
-    return convert_paramfloattype((
-        in1 = prod(
-            ClosedProd(),
-            MvNormalMeanPrecision(mout + mean(m_in2), Wout),
-            m_in1,
-        ),
-        in2 = m_in2,
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = prod(
+                ClosedProd(),
+                MvNormalMeanPrecision(mout + mean(m_in2), Wout),
+                m_in1,
+            ),
+            in2 = m_in2,
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -71,12 +79,14 @@ end
     xiout, Wout = weightedmean_precision(m_out)
     tmp = Wout * mean(m_in2)
     tmp .+= xiout
-    return convert_paramfloattype((
-        in1 = prod(
-            ClosedProd(), MvNormalWeightedMeanPrecision(tmp, Wout), m_in1
-        ),
-        in2 = m_in2,
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = prod(
+                ClosedProd(), MvNormalWeightedMeanPrecision(tmp, Wout), m_in1
+            ),
+            in2 = m_in2,
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -85,14 +95,16 @@ end
     m_in2::MultivariateNormalDistributionsFamily,
 ) = begin
     mout, Vout = mean_cov(m_out)
-    return convert_paramfloattype((
-        in1 = m_in1,
-        in2 = prod(
-            ClosedProd(),
-            MvNormalMeanCovariance(mout - mean(m_in1), Vout),
-            m_in2,
-        ),
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = m_in1,
+            in2 = prod(
+                ClosedProd(),
+                MvNormalMeanCovariance(mout - mean(m_in1), Vout),
+                m_in2,
+            ),
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -101,14 +113,16 @@ end
     m_in2::MultivariateNormalDistributionsFamily,
 ) = begin
     mout, Wout = mean_precision(m_out)
-    return convert_paramfloattype((
-        in1 = m_in1,
-        in2 = prod(
-            ClosedProd(),
-            MvNormalMeanPrecision(mout - mean(m_in1), Wout),
-            m_in2,
-        ),
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = m_in1,
+            in2 = prod(
+                ClosedProd(),
+                MvNormalMeanPrecision(mout - mean(m_in1), Wout),
+                m_in2,
+            ),
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -119,12 +133,14 @@ end
     xiout, Wout = weightedmean_precision(m_out)
     tmp = -Wout * mean(m_in1)
     tmp .+= xiout
-    return convert_paramfloattype((
-        in1 = m_in1,
-        in2 = prod(
-            ClosedProd(), MvNormalWeightedMeanPrecision(tmp, Wout), m_in2
-        ),
-    ))
+    return convert_paramfloattype(
+        (
+            in1 = m_in1,
+            in2 = prod(
+                ClosedProd(), MvNormalWeightedMeanPrecision(tmp, Wout), m_in2
+            ),
+        )
+    )
 end
 
 @marginalrule typeof(-)(:in1_in2) (
@@ -138,7 +154,7 @@ end
 
     return MvNormalWeightedMeanPrecision(
         [xi_in1 + xi_out; xi_in2 - xi_out],
-        [W_in1+W_out -W_out; -W_out W_in2+W_out],
+        [W_in1 + W_out -W_out; -W_out W_in2 + W_out],
     )
 end
 
@@ -169,8 +185,8 @@ end
 
     xi = Vector{T}(undef, 2 * d)
     @inbounds for k in 1:d
-        tmp       = xi_out[k]
-        xi[k]     = tmp + xi_in1[k]
+        tmp = xi_out[k]
+        xi[k] = tmp + xi_in1[k]
         xi[k + d] = xi_in2[k] - tmp
     end
 

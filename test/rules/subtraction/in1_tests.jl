@@ -32,7 +32,7 @@
         ) [
             (
                 input = (
-                    m_out = NormalMeanVariance(1.0, 2.0), m_in2 = PointMass(2.0)
+                    m_out = NormalMeanVariance(1.0, 2.0), m_in2 = PointMass(2.0),
                 ),
                 output = NormalMeanVariance(3.0, 2.0),
             ),
@@ -80,7 +80,7 @@
         ) [
             (
                 input = (
-                    m_out = PointMass(1.0), m_in2 = NormalMeanVariance(1.0, 2.0)
+                    m_out = PointMass(1.0), m_in2 = NormalMeanVariance(1.0, 2.0),
                 ),
                 output = NormalMeanVariance(2.0, 2.0),
             ),
@@ -348,7 +348,7 @@
                     ),
                 ),
                 output = MvNormalMeanCovariance(
-                    [2.0, -7.0], [1.0 0.0; 0.0 4/3]
+                    [2.0, -7.0], [1.0 0.0; 0.0 4 / 3]
                 ),
             ),
             (
@@ -361,7 +361,7 @@
                     ),
                 ),
                 output = MvNormalMeanCovariance(
-                    [2.0, 3.0], [36/10 4/5; 4/5 44/10]
+                    [2.0, 3.0], [36 / 10 4 / 5; 4 / 5 44 / 10]
                 ),
             ),
             (
@@ -374,7 +374,7 @@
                     ),
                 ),
                 output = MvNormalMeanCovariance(
-                    [3 / 2, -7 / 3], [1.0 0.0; 0.0 4/3]
+                    [3 / 2, -7 / 3], [1.0 0.0; 0.0 4 / 3]
                 ),
             ),
             (
@@ -387,7 +387,7 @@
                     ),
                 ),
                 output = MvNormalMeanCovariance(
-                    [4 / 5, 12 / 5], [36/10 4/5; 4/5 44/10]
+                    [4 / 5, 12 / 5], [36 / 10 4 / 5; 4 / 5 44 / 10]
                 ),
             ),
             (
@@ -400,7 +400,7 @@
                     ),
                 ),
                 output = MvNormalMeanCovariance(
-                    [3 / 2, -7 / 3], [1.0 0.0; 0.0 4/3]
+                    [3 / 2, -7 / 3], [1.0 0.0; 0.0 4 / 3]
                 ),
             ),
             (
@@ -413,7 +413,7 @@
                     ),
                 ),
                 output = MvNormalMeanCovariance(
-                    [4 / 5, 12 / 5], [36/10 4/5; 4/5 44/10]
+                    [4 / 5, 12 / 5], [36 / 10 4 / 5; 4 / 5 44 / 10]
                 ),
             ),
         ]

@@ -16,13 +16,13 @@ collect_factorisation(::Type{<:NormalMixture}, factorization) =
 struct NormalMixtureNodeFactorisation end
 
 struct NormalMixtureNode{N} <: AbstractFactorNode
-    out    :: NodeInterface
-    switch :: NodeInterface
-    means  :: NTuple{N, IndexedNodeInterface}
-    precs  :: NTuple{N, IndexedNodeInterface}
+    out::NodeInterface
+    switch::NodeInterface
+    means::NTuple{N, IndexedNodeInterface}
+    precs::NTuple{N, IndexedNodeInterface}
 end
 
-const GaussianMixture     = NormalMixture
+const GaussianMixture = NormalMixture
 const GaussianMixtureNode = NormalMixtureNode
 
 functionalform(factornode::NormalMixtureNode{N}) where {N} = NormalMixture{N}
@@ -34,7 +34,7 @@ getinterfaces(factornode::NormalMixtureNode) = (
 )
 sdtype(factornode::NormalMixtureNode) = Stochastic()
 
-interfaceindices(factornode::NormalMixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
+interfaceindices(factornode::NormalMixtureNode, iname::Symbol) = (interfaceindex(factornode, iname),)
 interfaceindices(factornode::NormalMixtureNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
@@ -54,12 +54,16 @@ function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
 end
 
 function factornode(::Type{<:NormalMixture}, interfaces, factorization)
-    outinterface = interfaces[findfirst(
-        ((name, variable),) -> name == :out, interfaces
-    )]
-    switchinterface = interfaces[findfirst(
-        ((name, variable),) -> name == :switch, interfaces
-    )]
+    outinterface = interfaces[
+        findfirst(
+            ((name, variable),) -> name == :out, interfaces
+        ),
+    ]
+    switchinterface = interfaces[
+        findfirst(
+            ((name, variable),) -> name == :switch, interfaces
+        ),
+    ]
     meansinterfaces = filter(((name, variable),) -> name == :m, interfaces)
     precsinterfaces = filter(((name, variable),) -> name == :p, interfaces)
 
@@ -105,8 +109,8 @@ collect_functional_dependencies(::NormalMixtureNode, ::Any) = error(
 )
 
 function activate!(
-    factornode::NormalMixtureNode, options::FactorNodeActivationOptions
-)
+        factornode::NormalMixtureNode, options::FactorNodeActivationOptions
+    )
     dependecies = collect_functional_dependencies(
         factornode, getdependecies(options)
     )
@@ -114,11 +118,11 @@ function activate!(
 end
 
 function functional_dependencies(
-    ::NormalMixtureNodeFunctionalDependencies,
-    factornode::NormalMixtureNode{N},
-    interface,
-    iindex::Int,
-) where {N}
+        ::NormalMixtureNodeFunctionalDependencies,
+        factornode::NormalMixtureNode{N},
+        interface,
+        iindex::Int,
+    ) where {N}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -137,50 +141,53 @@ function functional_dependencies(
 end
 
 function collect_latest_messages(
-    ::NormalMixtureNodeFunctionalDependencies,
-    factornode::NormalMixtureNode{N},
-    message_dependencies::Tuple{},
-) where {N}
+        ::NormalMixtureNodeFunctionalDependencies,
+        factornode::NormalMixtureNode{N},
+        message_dependencies::Tuple{},
+    ) where {N}
     return nothing, of(nothing)
 end
 
 function collect_latest_marginals(
-    ::NormalMixtureNodeFunctionalDependencies,
-    factornode::NormalMixtureNode{N},
-    marginal_dependencies::Tuple{
-        NodeInterface,
-        NTuple{N, IndexedNodeInterface},
-        NTuple{N, IndexedNodeInterface},
-    },
-) where {N}
-    varinterface    = marginal_dependencies[1]
+        ::NormalMixtureNodeFunctionalDependencies,
+        factornode::NormalMixtureNode{N},
+        marginal_dependencies::Tuple{
+            NodeInterface,
+            NTuple{N, IndexedNodeInterface},
+            NTuple{N, IndexedNodeInterface},
+        },
+    ) where {N}
+    varinterface = marginal_dependencies[1]
     meansinterfaces = marginal_dependencies[2]
     precsinterfaces = marginal_dependencies[3]
 
-    marginal_names = Val{(
-        name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1])
-    )}()
+    marginal_names = Val{
+        (
+            name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1]),
+        ),
+    }()
     marginals_observable =
         combineLatest(
-            (
-                get_stream_of_marginals(getvariable(varinterface)),
-                combineLatest(
-                    map(
-                        (prec) -> get_stream_of_marginals(getvariable(prec)),
-                        reverse(precsinterfaces),
-                    ),
-                    PushNew(),
+        (
+            get_stream_of_marginals(getvariable(varinterface)),
+            combineLatest(
+                map(
+                    (prec) -> get_stream_of_marginals(getvariable(prec)),
+                    reverse(precsinterfaces),
                 ),
-                combineLatest(
-                    map(
-                        (mean) -> get_stream_of_marginals(getvariable(mean)),
-                        reverse(meansinterfaces),
-                    ),
-                    PushNew(),
-                ),
+                PushNew(),
             ),
-            PushNew(),
-        ) |> map_to((
+            combineLatest(
+                map(
+                    (mean) -> get_stream_of_marginals(getvariable(mean)),
+                    reverse(meansinterfaces),
+                ),
+                PushNew(),
+            ),
+        ),
+        PushNew(),
+    ) |> map_to(
+        (
             get_stream_of_marginals(getvariable(varinterface)),
             ManyOf(
                 map(
@@ -194,23 +201,24 @@ function collect_latest_marginals(
                     precsinterfaces,
                 ),
             ),
-        ))
+        )
+    )
 
     return marginal_names, marginals_observable
 end
 
 function collect_latest_marginals(
-    ::NormalMixtureNodeFunctionalDependencies,
-    factornode::NormalMixtureNode{N},
-    marginal_dependencies::Tuple{
-        NodeInterface, NodeInterface, IndexedNodeInterface
-    },
-) where {N}
-    outinterface    = marginal_dependencies[1]
+        ::NormalMixtureNodeFunctionalDependencies,
+        factornode::NormalMixtureNode{N},
+        marginal_dependencies::Tuple{
+            NodeInterface, NodeInterface, IndexedNodeInterface,
+        },
+    ) where {N}
+    outinterface = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
-    varinterface    = marginal_dependencies[3]
+    varinterface = marginal_dependencies[3]
 
-    marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
+    marginal_names = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
     marginals_observable = combineLatestUpdates((get_stream_of_marginals(getvariable(outinterface)), get_stream_of_marginals(getvariable(switchinterface)), get_stream_of_marginals(getvariable(varinterface))), PushNew())
 
     return marginal_names, marginals_observable
@@ -219,7 +227,7 @@ end
 # FreeEnergy related functions
 
 @average_energy NormalMixture (
-    q_out::Any, q_switch::Any, q_m::ManyOf{N, Any}, q_p::ManyOf{N, Any}
+    q_out::Any, q_switch::Any, q_m::ManyOf{N, Any}, q_p::ManyOf{N, Any},
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
@@ -248,13 +256,13 @@ function avg_energy_nm(::Type{Multivariate}, q_out, q_m, q_p, z_bar, i)
 end
 
 function score(
-    ::Type{T},
-    ::FactorBoundFreeEnergy,
-    ::Stochastic,
-    node::NormalMixtureNode{N},
-    meta,
-    stream_postprocessors,
-) where {T <: CountingReal, N}
+        ::Type{T},
+        ::FactorBoundFreeEnergy,
+        ::Stochastic,
+        node::NormalMixtureNode{N},
+        meta,
+        stream_postprocessors,
+    ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
             get_stream_of_marginals(getvariable(node.out)) |> skip_initial(),
@@ -263,7 +271,7 @@ function score(
                 combineLatest(
                     map(
                         (mean) ->
-                            get_stream_of_marginals(getvariable(mean)) |>
+                        get_stream_of_marginals(getvariable(mean)) |>
                             skip_initial(),
                         node.means,
                     ),
@@ -274,7 +282,7 @@ function score(
                 combineLatest(
                     map(
                         (prec) ->
-                            get_stream_of_marginals(getvariable(prec)) |>
+                        get_stream_of_marginals(getvariable(prec)) |>
                             skip_initial(),
                         node.precs,
                     ),
@@ -295,8 +303,8 @@ function score(
                 meta,
             )
 
-            out_entropy     = score(DifferentialEntropy(), marginals[1])
-            switch_entropy  = score(DifferentialEntropy(), marginals[2])
+            out_entropy = score(DifferentialEntropy(), marginals[1])
+            switch_entropy = score(DifferentialEntropy(), marginals[2])
             means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
             precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
 
@@ -304,9 +312,9 @@ function score(
                 T,
                 average_energy - (
                     out_entropy +
-                    switch_entropy +
-                    means_entropies +
-                    precs_entropies
+                        switch_entropy +
+                        means_entropies +
+                        precs_entropies
                 ),
             )
         end

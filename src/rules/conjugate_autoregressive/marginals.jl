@@ -29,10 +29,10 @@
 
     x_idx = (order + 1):(2order)
 
-    mx       = myx[x_idx]
-    my1      = first(myx)
-    Vx       = Vyx[x_idx, x_idx]
-    Vy1      = Vyx[1, 1]
+    mx = myx[x_idx]
+    my1 = first(myx)
+    Vx = Vyx[x_idx, x_idx]
+    Vy1 = Vyx[1, 1]
     cov_x_y1 = Vyx[x_idx, 1]
 
     # Expected sufficient statistics of the AR likelihood under q(y, x).
@@ -61,6 +61,6 @@ end
 ) = begin
     q_θ, q_γ = conjugatear_effective_marginals(q_w)
     return @call_marginalrule AR(:y_x) (
-        m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta
+        m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta,
     )
 end

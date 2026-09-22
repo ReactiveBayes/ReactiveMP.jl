@@ -1,5 +1,5 @@
 @marginalrule GammaInverse(:out_α_θ) (
-    m_out::GammaInverse, m_α::PointMass, m_θ::PointMass
+    m_out::GammaInverse, m_α::PointMass, m_θ::PointMass,
 ) = begin
     return (
         out = prod(ClosedProd(), GammaInverse(mean(m_α), mean(m_θ)), m_out),

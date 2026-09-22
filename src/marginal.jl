@@ -67,10 +67,10 @@ not part of the belief it represents. Compare `getannotations` explicitly when y
 annotation-sensitive equality.
 """
 mutable struct Marginal{D}      # `mutable` structure here appears to be more performance
-    const data        :: D      # in `RxInfer` benchmarks
-    const is_clamped  :: Bool   # could be revised at some point though
-    const is_initial  :: Bool
-    const annotations :: AnnotationDict
+    const data::D      # in `RxInfer` benchmarks
+    const is_clamped::Bool   # could be revised at some point though
+    const is_initial::Bool
+    const annotations::AnnotationDict
 end
 
 Marginal(data, is_clamped::Bool, is_initial::Bool) =
@@ -79,7 +79,7 @@ Marginal(data, is_clamped::Bool, is_initial::Bool) =
 function Base.show(io::IO, marginal::Marginal)
     print(io, "Marginal(", getdata(marginal), ")")
     ann = getannotations(marginal)
-    if !isempty(ann)
+    return if !isempty(ann)
         print(io, " with ", ann)
     end
 end
@@ -88,8 +88,8 @@ function Base.:(==)(left::Marginal, right::Marginal)
     # We need this dummy method as Julia is not smart enough to
     # do that automatically if `data` is mutable
     return left.is_clamped == right.is_clamped &&
-           left.is_initial == right.is_initial &&
-           left.data == right.data
+        left.is_initial == right.is_initial &&
+        left.data == right.data
 end
 
 """
@@ -127,15 +127,15 @@ getannotations(marginal::Marginal) = marginal.annotations
 typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
-getdata(marginals::AbstractArray{<:Marginal})       = map(getdata, marginals)
+getdata(marginals::AbstractArray{<:Marginal}) = map(getdata, marginals)
 
 ispointmass(marginal::Marginal) = ispointmass(marginal, getdata(marginal))
 ispointmass(marginal::Marginal, data::PointMass) = true
 ispointmass(marginal::Marginal, data) = false
 
-## Statistics 
+## Statistics
 
-Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)
+Distributions.pdf(marginal::Marginal, x) = Distributions.pdf(getdata(marginal), x)
 Distributions.logpdf(marginal::Marginal, x) = Distributions.logpdf(getdata(marginal), x)
 
 MacroHelpers.@proxy_methods Marginal getdata [
@@ -208,8 +208,8 @@ Internally combines two Rocket.jl primitives:
 See also: [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref), [`ReactiveMP.set_initial_marginal!`](@ref)
 """
 struct MarginalObservable <: Subscribable{Marginal}
-    subject :: Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
-    stream  :: LazyObservable{Marginal}
+    subject::Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
+    stream::LazyObservable{Marginal}
 end
 
 MarginalObservable() =
@@ -221,16 +221,16 @@ Rocket.getrecent(observable::MarginalObservable) =
 @inline Rocket.on_subscribe!(observable::MarginalObservable, actor) =
     subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{<:Marginal})           = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.NextActor{<:Marginal})       = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ErrorActor{<:Marginal})      = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.NextActor{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ErrorActor{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.CompletionActor{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Subject{<:Marginal})                 = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Subject{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.BehaviorSubjectInstance{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.PendingSubjectInstance{<:Marginal})  = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.RecentSubjectInstance{<:Marginal})   = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ReplaySubjectInstance{<:Marginal})   = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.PendingSubjectInstance{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.RecentSubjectInstance{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ReplaySubjectInstance{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
 
 function connect!(marginal::MarginalObservable, source)
     set!(marginal.stream, source |> multicast(marginal.subject) |> ref_count())
@@ -249,39 +249,39 @@ end
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 
 struct MarginalMapping{F, T, N, M, A, R}
-    vtag            :: T
-    msgs_names      :: N
-    marginals_names :: M
-    meta            :: A
-    factornode      :: R
+    vtag::T
+    msgs_names::N
+    marginals_names::M
+    meta::A
+    factornode::R
 end
 
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
 marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
 function MarginalMapping(
-    ::Type{F},
-    vtag::T,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    factornode::R,
-) where {F, T, N, M, A, R}
+        ::Type{F},
+        vtag::T,
+        msgs_names::N,
+        marginals_names::M,
+        meta::A,
+        factornode::R,
+    ) where {F, T, N, M, A, R}
     return MarginalMapping{F, T, N, M, A, R}(
         vtag, msgs_names, marginals_names, meta, factornode
     )
 end
 
 function MarginalMapping(
-    ::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R
-) where {F <: Function, T, N, M, A, R}
+        ::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R
+    ) where {F <: Function, T, N, M, A, R}
     return MarginalMapping{F, T, N, M, A, R}(
         vtag, msgs_names, marginals_names, meta, factornode
     )
 end
 
 function (mapping::MarginalMapping)(dependencies)
-    messages  = getrecent(dependencies[1])
+    messages = getrecent(dependencies[1])
     marginals = getrecent(dependencies[2])
 
     # Marginal is clamped if all of the inputs are clamped
@@ -291,29 +291,29 @@ function (mapping::MarginalMapping)(dependencies)
     # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
     is_marginal_initial =
         !is_marginal_clamped && (
-            __check_all(is_clamped_or_initial, messages) &&
+        __check_all(is_clamped_or_initial, messages) &&
             __check_all(is_clamped_or_initial, marginals)
-        )
+    )
 
     marginal =
-        if !isnothing(messages) &&
+    if !isnothing(messages) &&
             any(ismissing, TupleTools.flatten(getdata.(messages)))
-            missing
-        elseif !isnothing(marginals) &&
+        missing
+    elseif !isnothing(marginals) &&
             any(ismissing, TupleTools.flatten(getdata.(marginals)))
-            missing
-        else
-            marginalrule(
-                marginal_mapping_fform(mapping),
-                mapping.vtag,
-                mapping.msgs_names,
-                messages,
-                mapping.marginals_names,
-                marginals,
-                mapping.meta,
-                mapping.factornode,
-            )
-        end
+        missing
+    else
+        marginalrule(
+            marginal_mapping_fform(mapping),
+            mapping.vtag,
+            mapping.msgs_names,
+            messages,
+            mapping.marginals_names,
+            marginals,
+            mapping.meta,
+            mapping.factornode,
+        )
+    end
 
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
 end

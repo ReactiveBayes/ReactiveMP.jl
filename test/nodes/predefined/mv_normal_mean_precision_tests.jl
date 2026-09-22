@@ -9,11 +9,11 @@
             q_Λ = Wishart(3, [2.0 0.0; 0.0 2.0])
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (Wishart,)
 
                 marginals = (
                     Marginal(q_out, false, false),
@@ -31,9 +31,11 @@
         end
 
         begin
-            q_out = PointMass([
-                0.3873049736301686, 0.6250550344669505, 0.9865681758036855
-            ])
+            q_out = PointMass(
+                [
+                    0.3873049736301686, 0.6250550344669505, 0.9865681758036855,
+                ]
+            )
             q_μ = MvNormalMeanPrecision(
                 [
                     0.21393068431529905,
@@ -56,11 +58,11 @@
             )
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (Wishart,)
 
                 marginals = (
                     Marginal(q_out, false, false),
@@ -101,16 +103,16 @@
             )
 
             for N1 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                N2 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    N2 in (
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (Wishart,)
 
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
@@ -154,16 +156,16 @@
             )
 
             for N1 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                N2 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    N2 in (
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (Wishart,)
 
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
@@ -206,15 +208,15 @@
             )
 
             for N1 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                N2 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                )
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    N2 in (
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    )
 
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
@@ -254,10 +256,10 @@
             )
 
             for N in (
-                MvNormalMeanPrecision,
-                MvNormalMeanCovariance,
-                MvNormalWeightedMeanPrecision,
-            )
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision,
+                )
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
                     Marginal(q_Λ, false, false),
@@ -295,10 +297,10 @@
             )
 
             for N in (
-                MvNormalMeanPrecision,
-                MvNormalMeanCovariance,
-                MvNormalWeightedMeanPrecision,
-            )
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision,
+                )
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
                     Marginal(q_Λ, false, false),
@@ -337,11 +339,11 @@
             )
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (Wishart,)
 
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
@@ -381,11 +383,11 @@
             )
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (Wishart,)
 
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),

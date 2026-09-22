@@ -11,7 +11,7 @@ struct DifferentialEntropy end
 
 struct KLDivergence end
 
-## We have a special case of marginals, that are represented as NamedTuple, 
+## We have a special case of marginals, that are represented as NamedTuple,
 ## in this case we need to decompose it into separate marginals and inject them into the score function recursively
 ## This function is used to extract the index of the named tuple-based marginal (if it exists)
 scan_marginals_for_named_tuple(
@@ -29,8 +29,8 @@ scan_marginals_for_named_tuple(
 ) where {Index} = (nothing, nothing, nothing)
 
 function score(
-    ::AverageEnergy, fform, ::Val{Names}, marginals::Tuple, meta
-) where {Names}
+        ::AverageEnergy, fform, ::Val{Names}, marginals::Tuple, meta
+    ) where {Names}
     # Generic method for the Average Score computation tries to scan the marginals for:
     # NamedTuple-based marginals
     # - If found, it decomposes the joint marginal into separate marginals and injects them into the score function recursively
@@ -40,11 +40,11 @@ function score(
 
     if !isnothing(valIndex)
         transform =
-            let is_joint_clamped = is_clamped(joint),
+        let is_joint_clamped = is_clamped(joint),
                 is_joint_initial = is_initial(joint)
 
-                (data) -> Marginal(data, is_joint_clamped, is_joint_initial)
-            end
+            (data) -> Marginal(data, is_joint_clamped, is_joint_initial)
+        end
 
         mod_marginals = TupleTools.insertat(
             marginals, unval(valIndex), map(transform, values(getdata(joint)))
@@ -56,7 +56,7 @@ function score(
         )
     end
 
-    # - If not found, the method throws an error suggesting to use 
+    # - If not found, the method throws an error suggesting to use
     # the `@average_energy` macro to define the method for the provided marginals
     error_names = map(n -> string(:q_, n), Names)
     error_types = map(m -> typeofdata(m), marginals)
@@ -67,14 +67,14 @@ function score(
 
     error(
         """ 
-  Cannot compute Average Energy for the $(fform) node, the method does not exist for the provided marginals.
-  Use the `@average_energy` macro to define the method for the provided marginals, e.g.
+        Cannot compute Average Energy for the $(fform) node, the method does not exist for the provided marginals.
+        Use the `@average_energy` macro to define the method for the provided marginals, e.g.
 
-      @average_energy $(fform) ($error_suggestion_args, $(ifelse(isnothing(meta), "", "meta::$(typeof(meta))"))) begin
-          # ...
-      end
+            @average_energy $(fform) ($error_suggestion_args, $(ifelse(isnothing(meta), "", "meta::$(typeof(meta))"))) begin
+                # ...
+            end
 
-  """,
+        """,
     )
 end
 
@@ -84,14 +84,14 @@ score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
 
 function score(::DifferentialEntropy, marginal::Marginal{<:NamedTuple})
     compute_score =
-        let is_marginal_clamped = is_clamped(marginal),
+    let is_marginal_clamped = is_clamped(marginal),
             is_marginal_initial = is_initial(marginal)
 
-            (data) -> score(
-                DifferentialEntropy(),
-                Marginal(data, is_marginal_clamped, is_marginal_initial),
-            )
-        end
+        (data) -> score(
+            DifferentialEntropy(),
+            Marginal(data, is_marginal_clamped, is_marginal_initial),
+        )
+    end
 
     return mapreduce(compute_score, +, values(getdata(marginal)))
 end
@@ -156,12 +156,12 @@ macro average_energy(fformtype, lambda)
 
     result = quote
         function ReactiveMP.score(
-            ::AverageEnergy,
-            fform::$(fuppertype),
-            marginals_names::$(q_names),
-            marginals::$(q_types),
-            meta::$(metatype),
-        ) where {$(whereargs...)}
+                ::AverageEnergy,
+                fform::$(fuppertype),
+                marginals_names::$(q_names),
+                marginals::$(q_types),
+                meta::$(metatype),
+            ) where {$(whereargs...)}
             $(q_init_block...)
             $(body)
         end

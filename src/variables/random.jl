@@ -11,10 +11,10 @@ from connected factor nodes and maintain a marginal belief. Use [`randomvar`](@r
 See also: [`ReactiveMP.ConstVariable`](@ref), [`ReactiveMP.DataVariable`](@ref)
 """
 mutable struct RandomVariable <: AbstractVariable
-    input_messages  :: Vector{MessageObservable{AbstractMessage}}
-    output_messages :: Vector{MessageObservable{Message}}
-    marginal        :: MarginalObservable
-    label           :: Any
+    input_messages::Vector{MessageObservable{AbstractMessage}}
+    output_messages::Vector{MessageObservable{Message}}
+    marginal::MarginalObservable
+    label::Any
 end
 
 """
@@ -80,8 +80,8 @@ Fields:
 - `prod_context_for_marginal_computation` — a [`ReactiveMP.MessageProductContext`](@ref) used when computing the marginal (product of all inbound messages)
 """
 struct RandomVariableActivationOptions{
-    S, F <: MessageProductContext, M <: MessageProductContext
-}
+        S, F <: MessageProductContext, M <: MessageProductContext,
+    }
     stream_postprocessor::S
     prod_context_for_message_computation::F
     prod_context_for_marginal_computation::M
@@ -105,8 +105,8 @@ Activation proceeds in two steps:
 See also: [`ReactiveMP.RandomVariableActivationOptions`](@ref), [`ReactiveMP.activate!(::DataVariable, ::DataVariableActivationOptions)`](@ref)
 """
 function activate!(
-    randomvar::RandomVariable, options::RandomVariableActivationOptions
-)
+        randomvar::RandomVariable, options::RandomVariableActivationOptions
+    )
     d = length(randomvar.input_messages)
     outputmsgs = randomvar.output_messages
     resize!(outputmsgs, d)
@@ -143,7 +143,7 @@ function activate!(
         Marginal,
         randomvar.input_messages,
         (messages) ->
-            _compute_marginal_from_messages(randomvar, options, messages),
+        _compute_marginal_from_messages(randomvar, options, messages),
         reset_vstatus,
     )
     stream_of_marginals = postprocess_stream_of_marginals(
@@ -156,10 +156,10 @@ function activate!(
 end
 
 function _compute_marginal_from_messages(
-    randomvar::RandomVariable,
-    options::RandomVariableActivationOptions,
-    messages,
-)
+        randomvar::RandomVariable,
+        options::RandomVariableActivationOptions,
+        messages,
+    )
     context = options.prod_context_for_marginal_computation
     span_id = generate_span_id(context.callbacks)
     invoke_callback(
@@ -187,7 +187,7 @@ function reset_vstatus(wrapper, value)
     # This may happen, when we initialize messages on the graph, which in turn also initializes marginals (implicitly)
     # if this happens, the inference cannot proceed further, since the initial messages have been consumed
     # This also prevents weird FE behaviour, when it "maximizes" the FE value, but converges to a minimum value
-    if is_initial(value)
+    return if is_initial(value)
         Rocket.fill_vstatus!(wrapper, true)
     end
 end

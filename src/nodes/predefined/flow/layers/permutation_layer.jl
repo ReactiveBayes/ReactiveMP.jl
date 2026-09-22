@@ -6,8 +6,8 @@ import Base: eltype
 The permutation layer specifies an invertible mapping ``{\bf{y}} = g({\bf{x}}) = P{\bf{x}}`` where ``P`` is a permutation matrix.
 """
 struct PermutationLayer{T} <: AbstractLayer
-    dim :: Int
-    P   :: PermutationMatrix{T}
+    dim::Int
+    P::PermutationMatrix{T}
 end
 
 function PermutationLayer(dim::T) where {T <: Integer}
@@ -32,7 +32,7 @@ struct PermutationLayerPlaceholder <: AbstractLayerPlaceholder end
 """
 PermutationLayer() = PermutationLayerPlaceholder() # the function creates a placeholder, of which the dimensionality is set later on.
 
-# prepare placeholder 
+# prepare placeholder
 _prepare(dim::Int, layer::PermutationLayerPlaceholder) =
     (PermutationLayer(dim),)
 function _prepare(dim::Int, layer::PermutationLayer)
@@ -42,18 +42,18 @@ end
 
 # compile layer
 compile(layer::PermutationLayer, params) = throw(ArgumentError("The permutation matrix does not have any parameters."))
-compile(layer::PermutationLayer)         = layer
+compile(layer::PermutationLayer) = layer
 
 # fetch number of parameters of layer
 nr_params(layer::PermutationLayer) = 0
 
 # get-functions for the PermutationLayer structure
-getP(layer::PermutationLayer)   = layer.P
+getP(layer::PermutationLayer) = layer.P
 getmat(layer::PermutationLayer) = layer.P
 getdim(layer::PermutationLayer) = layer.dim
 
 # custom Base function for the PermutationLayer structure
-eltype(layer::PermutationLayer{T}) where {T}  = eltype(T)
+eltype(layer::PermutationLayer{T}) where {T} = eltype(T)
 eltype(::Type{PermutationLayer{T}}) where {T} = eltype(T)
 
 # forward pass through the permutation layer
@@ -78,16 +78,16 @@ Broadcast.broadcasted(
 
 # inplace forward pass through the permutation layer
 function forward!(
-    output::AbstractVector{<:Real},
-    layer::PermutationLayer,
-    input::AbstractVector{<:Real},
-)
+        output::AbstractVector{<:Real},
+        layer::PermutationLayer,
+        input::AbstractVector{<:Real},
+    )
 
     # fetch variables
     P = getP(layer)
 
     # determine result
-    mul!(output, P, input)
+    return mul!(output, P, input)
 end
 
 # backward pass through the permutation layer
@@ -112,16 +112,16 @@ Broadcast.broadcasted(
 
 # inplace backward pass through the additive coupling layer
 function backward!(
-    input::AbstractVector{<:Real},
-    layer::PermutationLayer,
-    output::AbstractVector{<:Real},
-)
+        input::AbstractVector{<:Real},
+        layer::PermutationLayer,
+        output::AbstractVector{<:Real},
+    )
 
     # fetch variables
     P = getP(layer)
 
     # determine result
-    mul!(input, P', output)
+    return mul!(input, P', output)
 end
 
 # jacobian of the additive coupling layer
@@ -152,21 +152,21 @@ Broadcast.broadcasted(
     output::AbstractVector{<:AbstractVector{<:Real}},
 ) = broadcast(_inv_jacobian, Ref(layer), output)
 
-# extra utility functions 
-det_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})       = det(getP(layer))
-det_jacobian(layer::PermutationLayer)                                      = det(getP(layer))
-absdet_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})    = 1.0
-absdet_jacobian(layer::PermutationLayer)                                   = 1.0
-logdet_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})    = 0.0
-logdet_jacobian(layer::PermutationLayer)                                   = 0.0
+# extra utility functions
+det_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) = det(getP(layer))
+det_jacobian(layer::PermutationLayer) = det(getP(layer))
+absdet_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) = 1.0
+absdet_jacobian(layer::PermutationLayer) = 1.0
+logdet_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) = 0.0
+logdet_jacobian(layer::PermutationLayer) = 0.0
 logabsdet_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) = 0.0
-logabsdet_jacobian(layer::PermutationLayer)                                = 0.0
+logabsdet_jacobian(layer::PermutationLayer) = 0.0
 
-detinv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})       = det(getP(layer)')
-detinv_jacobian(layer::PermutationLayer)                                       = det(getP(layer)')
-absdetinv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})    = 1.0
-absdetinv_jacobian(layer::PermutationLayer)                                    = 1.0
-logdetinv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})    = 0.0
-logdetinv_jacobian(layer::PermutationLayer)                                    = 0.0
+detinv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) = det(getP(layer)')
+detinv_jacobian(layer::PermutationLayer) = det(getP(layer)')
+absdetinv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) = 1.0
+absdetinv_jacobian(layer::PermutationLayer) = 1.0
+logdetinv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) = 0.0
+logdetinv_jacobian(layer::PermutationLayer) = 0.0
 logabsdetinv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) = 0.0
-logabsdetinv_jacobian(layer::PermutationLayer)                                 = 0.0
+logabsdetinv_jacobian(layer::PermutationLayer) = 0.0

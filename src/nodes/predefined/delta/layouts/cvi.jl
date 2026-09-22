@@ -17,15 +17,15 @@ struct CVIApproximationDeltaFnRuleLayout <: AbstractDeltaNodeDependenciesLayout 
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
 function deltafn_apply_layout(
-    ::CVIApproximationDeltaFnRuleLayout,
-    ::Val{:q_out},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
+        ::CVIApproximationDeltaFnRuleLayout,
+        ::Val{:q_out},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:q_out),
@@ -40,15 +40,15 @@ end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
 function deltafn_apply_layout(
-    ::CVIApproximationDeltaFnRuleLayout,
-    ::Val{:q_ins},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
+        ::CVIApproximationDeltaFnRuleLayout,
+        ::Val{:q_ins},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:q_ins),
@@ -61,29 +61,29 @@ function deltafn_apply_layout(
     )
 end
 
-# This function declares how to compute `m_out` 
+# This function declares how to compute `m_out`
 function deltafn_apply_layout(
-    ::CVIApproximationDeltaFnRuleLayout,
-    ::Val{:m_out},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
-    let interface = factornode.out
+        ::CVIApproximationDeltaFnRuleLayout,
+        ::Val{:m_out},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
+    return let interface = factornode.out
 
-        # CVI does not need an inbound message 
-        msgs_names      = nothing
+        # CVI does not need an inbound message
+        msgs_names = nothing
         msgs_observable = of(nothing)
 
         # CVI requires `q_ins`
-        marginal_names       = Val{(:ins,)}()
+        marginal_names = Val{(:ins,)}()
         marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[2]),), PushNew())
 
-        fform       = functionalform(factornode)
-        vtag        = tag(interface)
+        fform = functionalform(factornode)
+        vtag = tag(interface)
         vconstraint = Marginalisation()
 
         stream_of_outbound_messages = combineLatest(
@@ -91,22 +91,22 @@ function deltafn_apply_layout(
         )
 
         mapping =
-            let messagemap = MessageMapping(
-                    fform,
-                    vtag,
-                    vconstraint,
-                    msgs_names,
-                    marginal_names,
-                    meta,
-                    annotations,
-                    factornode,
-                    rulefallback,
-                    callbacks,
-                )
-                (dependencies) -> DeferredMessage(
-                    dependencies[1], dependencies[2], messagemap
-                )
-            end
+        let messagemap = MessageMapping(
+                fform,
+                vtag,
+                vconstraint,
+                msgs_names,
+                marginal_names,
+                meta,
+                annotations,
+                factornode,
+                rulefallback,
+                callbacks,
+            )
+            (dependencies) -> DeferredMessage(
+                dependencies[1], dependencies[2], messagemap
+            )
+        end
 
         stream_of_outbound_messages = with_statics(
             factornode, stream_of_outbound_messages
@@ -120,17 +120,17 @@ function deltafn_apply_layout(
     end
 end
 
-# This function declares how to compute `m_in` for each `k` 
+# This function declares how to compute `m_in` for each `k`
 function deltafn_apply_layout(
-    ::CVIApproximationDeltaFnRuleLayout,
-    ::Val{:m_in},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
+        ::CVIApproximationDeltaFnRuleLayout,
+        ::Val{:m_in},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:m_in),

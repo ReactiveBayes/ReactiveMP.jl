@@ -1,6 +1,6 @@
 export Unscented, UT, UnscentedTransform
 
-const default_alpha = 1e-3 # Default value for the spread parameter
+const default_alpha = 1.0e-3 # Default value for the spread parameter
 const default_beta = 2.0
 const default_kappa = 0.0
 
@@ -39,17 +39,17 @@ end
 
 # Structure constructor
 function Unscented(;
-    alpha::A = default_alpha, beta::B = default_beta, kappa::K = default_kappa
-) where {A <: Real, B <: Real, K <: Real}
+        alpha::A = default_alpha, beta::B = default_beta, kappa::K = default_kappa
+    ) where {A <: Real, B <: Real, K <: Real}
     return Unscented{A, B, K, Nothing}(alpha, beta, kappa, nothing)
 end
 
 function Unscented(
-    dim::Int64;
-    alpha::Real = default_alpha,
-    beta::Real = default_beta,
-    kappa::Real = default_kappa,
-)
+        dim::Int64;
+        alpha::Real = default_alpha,
+        beta::Real = default_beta,
+        kappa::Real = default_kappa,
+    )
     α = alpha
     β = beta
     κ = kappa
@@ -92,23 +92,23 @@ getWc(extra::UnscentedExtra) = extra.Wc
 # Copied and refactored from ForneyLab.jl
 
 function approximate(
-    method::Unscented, f::F, means::Tuple, covs::Tuple
-) where {F}
+        method::Unscented, f::F, means::Tuple, covs::Tuple
+    ) where {F}
     # `Val(false)` indicates that we do not compute the `C` component
     (m, V, _) = unscented_statistics(method, Val(false), f, means, covs)
     return (m, V)
 end
 
 function unscented_statistics(
-    method::Unscented, g::G, means::Tuple, covs::Tuple
-) where {G}
+        method::Unscented, g::G, means::Tuple, covs::Tuple
+    ) where {G}
     # By default we compute the `C` component, thus `Val(true)`
     return unscented_statistics(method, Val(true), g, means, covs)
 end
 
 function statistic_estimation(
-    ::Val{C}, first_element::T, g_sigma, sigma_points, m, weights_m, weights_c
-) where {C, T <: Real}
+        ::Val{C}, first_element::T, g_sigma, sigma_points, m, weights_m, weights_c
+    ) where {C, T <: Real}
     m_tilde = sum(weights_m .* g_sigma)
     V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
 
@@ -122,14 +122,14 @@ function statistic_estimation(
 end
 
 function statistic_estimation(
-    ::Val{C}, first_element::V, g_sigma, sigma_points, m, weights_m, weights_c
-) where {C, V <: AbstractVector}
+        ::Val{C}, first_element::V, g_sigma, sigma_points, m, weights_m, weights_c
+    ) where {C, V <: AbstractVector}
     d_out = length(first(g_sigma))
 
     @inbounds m_tilde = sum(wm * yi for (wm, yi) in zip(weights_m, g_sigma))
     @inbounds V_tilde = sum(
         wc * (yi - m_tilde) * (yi - m_tilde)' for
-        (wc, yi) in zip(weights_c, g_sigma)
+            (wc, yi) in zip(weights_c, g_sigma)
     )
 
     # Compute `C_tilde` only if `C === true`
@@ -137,7 +137,7 @@ function statistic_estimation(
         reshape(
             sum(
                 wc * (xi - m) * (yi - m_tilde) for
-                (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
+                    (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
             ),
             1,
             d_out,
@@ -164,12 +164,12 @@ __unscented_parameters_zero_covariance(m::AbstractVector{T}) where {T <: Real} =
 
 # Single univariate variable
 function unscented_statistics(
-    method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}
-) where {C, G}
+        method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}
+    ) where {C, G}
     m = first(means)
     V = first(covs)
     if V == 0.0
-        @warn "Unscented transform called with zero covariance input (function $g)" maxlog=1
+        @warn "Unscented transform called with zero covariance input (function $g)" maxlog = 1
         resulting_m = g(m)
         return __unscented_parameters_zero_covariance(resulting_m)
     end
@@ -195,12 +195,12 @@ end
 
 # Single multivariate inbound
 function unscented_statistics(
-    method::Unscented,
-    ::Val{C},
-    g::G,
-    means::Tuple{AbstractVector},
-    covs::Tuple{AbstractMatrix},
-) where {C, G}
+        method::Unscented,
+        ::Val{C},
+        g::G,
+        means::Tuple{AbstractVector},
+        covs::Tuple{AbstractMatrix},
+    ) where {C, G}
     m = first(means)
     V = first(covs)
     if any(isinf, V)
@@ -224,16 +224,16 @@ function unscented_statistics(
     @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d))
     @inbounds V_tilde = sum(
         weights_c[k + 1] *
-        ((g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)') for
-        k in 0:(2d)
+            ((g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)') for
+            k in 0:(2d)
     )
 
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = if C
         sum(
             weights_c[k + 1] *
-            (sigma_points[k + 1] - m) *
-            (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
+                (sigma_points[k + 1] - m) *
+                (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
         )
     else
         nothing
@@ -243,12 +243,12 @@ end
 
 # Multiple inbounds of possibly mixed variate type
 function unscented_statistics(
-    method::Unscented, ::Val{C}, g::G, ms::Tuple, Vs::Tuple
-) where {C, G}
+        method::Unscented, ::Val{C}, g::G, ms::Tuple, Vs::Tuple
+    ) where {C, G}
     joint = convert(JointNormal, ms, Vs)
 
     (m, V) = mean_cov(joint)
-    ds     = ExponentialFamily.dimensionalities(joint)
+    ds = ExponentialFamily.dimensionalities(joint)
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
@@ -258,16 +258,16 @@ function unscented_statistics(
     @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d)) # Vector
     @inbounds V_tilde = sum(
         weights_c[k + 1] *
-        ((g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)') for
-        k in 0:(2d)
+            ((g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)') for
+            k in 0:(2d)
     ) # Matrix
 
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = if C
         sum(
             weights_c[k + 1] *
-            (sigma_points[k + 1] - m) *
-            (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
+                (sigma_points[k + 1] - m) *
+                (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
         )
     else
         nothing
@@ -278,9 +278,9 @@ end
 
 """Return the sigma points and weights for a Gaussian distribution"""
 function sigma_points_weights(method::Unscented, m::Real, V::Real)
-    alpha  = getα(method)
-    beta   = getβ(method)
-    kappa  = getκ(method)
+    alpha = getα(method)
+    beta = getβ(method)
+    kappa = getκ(method)
     lambda = (1 + kappa) * alpha^2 - 1
 
     if (1 + lambda) < 0
@@ -290,19 +290,19 @@ function sigma_points_weights(method::Unscented, m::Real, V::Real)
     l = sqrt((1 + lambda) * V)
 
     sigma_points = (m, m + l, m - l)
-    weights_m    = (lambda / (1 + lambda), 1 / (2 * (1 + lambda)), 1 / (2 * (1 + lambda)))
-    weights_c    = (weights_m[1] + (1 - alpha^2 + beta), 1 / (2 * (1 + lambda)), 1 / (2 * (1 + lambda)))
+    weights_m = (lambda / (1 + lambda), 1 / (2 * (1 + lambda)), 1 / (2 * (1 + lambda)))
+    weights_c = (weights_m[1] + (1 - alpha^2 + beta), 1 / (2 * (1 + lambda)), 1 / (2 * (1 + lambda)))
 
     return (sigma_points, weights_m, weights_c)
 end
 
 function sigma_points_weights(
-    method::Unscented, m::AbstractVector, V::AbstractMatrix
-)
-    d      = length(m)
-    alpha  = getα(method)
-    beta   = getβ(method)
-    kappa  = getκ(method)
+        method::Unscented, m::AbstractVector, V::AbstractMatrix
+    )
+    d = length(m)
+    alpha = getα(method)
+    beta = getβ(method)
+    kappa = getκ(method)
     lambda = (d + kappa) * alpha^2 - d
 
     if (d + lambda) < 0
@@ -312,14 +312,14 @@ function sigma_points_weights(
     T = promote_type(eltype(m), eltype(V))
 
     sigma_points = Vector{Vector{T}}(undef, 2 * d + 1)
-    weights_m    = Vector{T}(undef, 2 * d + 1)
-    weights_c    = Vector{T}(undef, 2 * d + 1)
+    weights_m = Vector{T}(undef, 2 * d + 1)
+    weights_c = Vector{T}(undef, 2 * d + 1)
 
     L = cholsqrt((d + lambda) * V)
 
     sigma_points[1] = m
-    weights_m[1]    = lambda / (d + lambda)
-    weights_c[1]    = weights_m[1] + (1 - alpha^2 + beta)
+    weights_m[1] = lambda / (d + lambda)
+    weights_c[1] = weights_m[1] + (1 - alpha^2 + beta)
 
     @inbounds for i in 1:d
         @views sigma_points[2 * i] = m + L[:, i]
@@ -334,11 +334,11 @@ end
 
 # This function extends the `Unscented` approximation method in case if all inputs are from the `NormalDistributionsFamily`
 function approximate(
-    method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}
-) where {F, N}
+        method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}
+    ) where {F, N}
     statistics = mean_cov.(distributions)
-    means      = first.(statistics)
-    covs       = last.(statistics)
+    means = first.(statistics)
+    covs = last.(statistics)
 
     μ_tilde, Σ_tilde = approximate(method, f, means, covs)
 

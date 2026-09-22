@@ -29,19 +29,19 @@
         ) [
             (
                 input = (
-                    m_μ = NormalMeanPrecision(0.0, 1.0), m_τ = PointMass(2.0)
+                    m_μ = NormalMeanPrecision(0.0, 1.0), m_τ = PointMass(2.0),
                 ),
                 output = NormalMeanPrecision(0.0, 2.0 / 3.0),
             ),
             (
                 input = (
-                    m_μ = NormalMeanPrecision(-1.0, 1.0), m_τ = PointMass(1.5)
+                    m_μ = NormalMeanPrecision(-1.0, 1.0), m_τ = PointMass(1.5),
                 ),
                 output = NormalMeanPrecision(-1.0, 0.6),
             ),
             (
                 input = (
-                    m_μ = NormalMeanPrecision(2.0, 0.5), m_τ = PointMass(1.0)
+                    m_μ = NormalMeanPrecision(2.0, 0.5), m_τ = PointMass(1.0),
                 ),
                 output = NormalMeanPrecision(2.0, 1.0 / 3.0),
             ),
@@ -52,19 +52,19 @@
         ) [
             (
                 input = (
-                    m_μ = NormalMeanVariance(0.0, 1.0), m_τ = PointMass(2.0)
+                    m_μ = NormalMeanVariance(0.0, 1.0), m_τ = PointMass(2.0),
                 ),
                 output = NormalMeanPrecision(0.0, 2.0 / 3.0),
             ),
             (
                 input = (
-                    m_μ = NormalMeanVariance(-1.0, 1.0), m_τ = PointMass(1.5)
+                    m_μ = NormalMeanVariance(-1.0, 1.0), m_τ = PointMass(1.5),
                 ),
                 output = NormalMeanPrecision(-1.0, 0.6),
             ),
             (
                 input = (
-                    m_μ = NormalMeanVariance(2.0, 0.5), m_τ = PointMass(1.0)
+                    m_μ = NormalMeanVariance(2.0, 0.5), m_τ = PointMass(1.0),
                 ),
                 output = NormalMeanPrecision(2.0, 2.0 / 3.0),
             ),
@@ -219,13 +219,13 @@
         ) [
             (
                 input = (
-                    q_μ = NormalMeanVariance(-1.0, 2.0), q_τ = PointMass(2.0)
+                    q_μ = NormalMeanVariance(-1.0, 2.0), q_τ = PointMass(2.0),
                 ),
                 output = NormalMeanPrecision(-1.0, 2.0),
             ),
             (
                 input = (
-                    q_μ = NormalMeanPrecision(1.0, 4.0), q_τ = PointMass(3.0)
+                    q_μ = NormalMeanPrecision(1.0, 4.0), q_τ = PointMass(3.0),
                 ),
                 output = NormalMeanPrecision(1.0, 3.0),
             ),

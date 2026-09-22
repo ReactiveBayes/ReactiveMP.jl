@@ -2,7 +2,7 @@
 import ExponentialFamily: InverseWishartFast
 
 @rule MatrixNormal(:U, Marginalisation) (
-    m_out::PointMass, m_M::PointMass, m_V::PointMass
+    m_out::PointMass, m_M::PointMass, m_V::PointMass,
 ) = begin
     X = mean(m_out)
     M = mean(m_M)

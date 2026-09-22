@@ -22,7 +22,7 @@
     end
 
     @testset "Variational Message Passing: (q_out::DiscreteNonParametric)" begin
-        # `check_type_promotion = false` here is because apparently 
+        # `check_type_promotion = false` here is because apparently
         # BigFloat(0.7) + BigFloat(0.3) != BigFloat(1.0)
         @test_rules [check_type_promotion = false] Bernoulli(
             :p, Marginalisation

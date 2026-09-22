@@ -39,8 +39,8 @@ local_linearization(g::G, x_hat::Tuple{T}) where {G, T} =
 
 """Return local linearization of g around expansion point x_hat for Delta node with single input interface and univariate output"""
 function local_linearization(
-    result::R, g::G, x_hat::Tuple{AbstractVector{T}}
-) where {R <: Real, G, T <: Real}
+        result::R, g::G, x_hat::Tuple{AbstractVector{T}}
+    ) where {R <: Real, G, T <: Real}
     a = ForwardDiff.gradient(g, first(x_hat))'
     b = result - a * first(x_hat)
     return (a, b)
@@ -48,8 +48,8 @@ end
 
 """Return local linearization of g around expansion point x_hat for Delta node with single input interface and univariate output"""
 function local_linearization(
-    result::R, g::G, x_hat::Tuple{T}
-) where {R <: Real, G, T}
+        result::R, g::G, x_hat::Tuple{T}
+    ) where {R <: Real, G, T}
     a = ForwardDiff.derivative(g, first(x_hat))
     b = result - a * first(x_hat)
     return (a, b)
@@ -57,8 +57,8 @@ end
 
 """Return local linearization of g around expansion point x_hat for Delta node with single input interface and multivariate output"""
 function local_linearization(
-    result::AbstractVector, g::G, x_hat::Tuple{T}
-) where {G, T}
+        result::AbstractVector, g::G, x_hat::Tuple{T}
+    ) where {G, T}
     A = ForwardDiff.jacobian(g, first(x_hat))
     b = result - A * first(x_hat)
     return (A, b)
@@ -80,15 +80,15 @@ function local_linearization(r::Real, splitg::S, x_hat::H) where {S, H}
     # `r` is a scalar, so we need to use `gradient` instead of `jacobian`
     fA = let splitg = splitg
         (lx_hat) ->
-            (ForwardDiff.gradient(splitg, lx_hat)::Vector{eltype(lx_hat)})'
+        (ForwardDiff.gradient(splitg, lx_hat)::Vector{eltype(lx_hat)})'
     end
     return local_linearization_split(r, fA, x_hat)
 end
 
 # In case if `g(x_hat)` returns a vector, but input is a number
 function local_linearization(
-    result::AbstractVector, g::G, x_hat::Tuple{T}
-) where {G, T <: Real}
+        result::AbstractVector, g::G, x_hat::Tuple{T}
+    ) where {G, T <: Real}
     A = ForwardDiff.derivative(g, first(x_hat))
     b = result - A * first(x_hat)
     return (A, b)
@@ -96,12 +96,12 @@ end
 
 # In case if `g(x_hat)` returns a vector, but inputs are numbers
 function local_linearization(
-    r::AbstractVector, splitg::S, x_hat::H
-) where {S, H}
+        r::AbstractVector, splitg::S, x_hat::H
+    ) where {S, H}
     # `r` is a vector, so we need to use `jacobian` instead of `gradient`
     fA = let splitg = splitg
         (lx_hat) ->
-            (ForwardDiff.jacobian(splitg, lx_hat)::Matrix{eltype(lx_hat)})
+        (ForwardDiff.jacobian(splitg, lx_hat)::Matrix{eltype(lx_hat)})
     end
     return local_linearization_split(r, fA, x_hat)
 end
@@ -118,21 +118,21 @@ end
 
 # This function extends the `Linearization` approximation method in case if all inputs are from the `NormalDistributionsFamily`
 function approximate(
-    method::Linearization,
-    f::F,
-    distributions::NTuple{N, NormalDistributionsFamily},
-) where {F, N}
+        method::Linearization,
+        f::F,
+        distributions::NTuple{N, NormalDistributionsFamily},
+    ) where {F, N}
 
     # Collect statistics for the inputs of the function `f`
     statistics = mean_cov.(distributions)
-    means      = first.(statistics)
-    covs       = last.(statistics)
+    means = first.(statistics)
+    covs = last.(statistics)
 
     # Compute the local approximation for the function `f`
     (A, b) = approximate(method, f, means)
 
     # Execute the 'joint' message in the linearized version of `f`
-    joint       = convert(JointNormal, means, covs)
+    joint = convert(JointNormal, means, covs)
     jmean, jcov = mean_cov(joint)
 
     m = A * jmean + b

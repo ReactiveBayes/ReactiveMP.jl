@@ -2,7 +2,7 @@
 ## TODO: save sigma vectors in meta to limit allocations
 
 @rule Flow(:out, Marginalisation) (
-    m_in::MvNormalMeanCovariance, meta::FlowMeta{M, <:Linearization}
+    m_in::MvNormalMeanCovariance, meta::FlowMeta{M, <:Linearization},
 ) where {M} = begin
 
     # extract parameters
@@ -20,7 +20,7 @@
 end
 
 @rule Flow(:out, Marginalisation) (
-    m_in::MvNormalMeanPrecision, meta::FlowMeta{M, <:Linearization}
+    m_in::MvNormalMeanPrecision, meta::FlowMeta{M, <:Linearization},
 ) where {M} = begin
 
     # extract parameters
@@ -39,7 +39,7 @@ end
 end
 
 @rule Flow(:out, Marginalisation) (
-    m_in::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, <:Linearization}
+    m_in::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, <:Linearization},
 ) where {M} = begin
 
     # extract parameters
@@ -58,7 +58,7 @@ end
 end
 
 @rule Flow(:out, Marginalisation) (
-    m_in::MultivariateNormalDistributionsFamily, meta::FlowMeta{M, <:Unscented}
+    m_in::MultivariateNormalDistributionsFamily, meta::FlowMeta{M, <:Unscented},
 ) where {M} = begin
 
     # extract parameters
@@ -75,14 +75,14 @@ end
     Wm = getWm(approximation)
     Wc = getWc(approximation)
 
-    # calculate sigma points/vectors    
+    # calculate sigma points/vectors
     sqrtΣ = sqrt((L + λ) * Σ_in)
     χ = Vector{Vector{T}}(undef, 2 * L + 1)
     for k in 1:length(χ)
         χ[k] = copy(μ_in)
     end
     for l in 2:(L + 1)
-        χ[l]     .+= sqrtΣ[l - 1, :]
+        χ[l] .+= sqrtΣ[l - 1, :]
         χ[L + l] .-= sqrtΣ[l - 1, :]
     end
 

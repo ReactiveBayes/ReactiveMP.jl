@@ -1,6 +1,6 @@
 
 @rule NormalMixture{N}(:out, Marginalisation) (
-    q_switch::Any, q_m::ManyOf{N, Any}, q_p::ManyOf{N, Any}
+    q_switch::Any, q_m::ManyOf{N, Any}, q_p::ManyOf{N, Any},
 ) where {N} = begin
     πs = probvec(q_switch)
 

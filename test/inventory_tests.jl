@@ -1,5 +1,5 @@
 @testitem "INVENTORY.md accounts for every node, export and engine hook" tags = [
-    :quality
+    :quality,
 ] begin
     # Phase P / open item #14: the package split is only safe if nothing falls through the
     # gap between "we meant to move it" and "we remembered to move it". `inventory.jl

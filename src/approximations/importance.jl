@@ -33,25 +33,25 @@ convenient functions to generate samples and weights to approximate expectations
     is a silent-looking answer, so each such fallback emits a warning (once per session).
 """
 struct ImportanceSamplingApproximation{T, R}
-    rng        :: R
-    nsamples   :: Int
-    bsamples   :: Vector{T}
-    bweights   :: Vector{T}
-    resampling :: Bool
-    rsamples   :: Vector{T}
+    rng::R
+    nsamples::Int
+    bsamples::Vector{T}
+    bweights::Vector{T}
+    resampling::Bool
+    rsamples::Vector{T}
 end
 
 function ImportanceSamplingApproximation(
-    rng::R, nsamples::Int; resampling::Bool = true
-) where {R}
+        rng::R, nsamples::Int; resampling::Bool = true
+    ) where {R}
     return ImportanceSamplingApproximation(
         Float64, rng, nsamples; resampling = resampling
     )
 end
 
 function ImportanceSamplingApproximation(
-    ::Type{T}, rng::R, nsamples::Int; resampling::Bool = true
-) where {T, R}
+        ::Type{T}, rng::R, nsamples::Int; resampling::Bool = true
+    ) where {T, R}
     return ImportanceSamplingApproximation{T, R}(
         rng,
         nsamples,
@@ -62,12 +62,12 @@ function ImportanceSamplingApproximation(
     )
 end
 
-getsamples(approximation::ImportanceSamplingApproximation, distribution)           = getsamples(approximation, distribution, approximation.nsamples)
+getsamples(approximation::ImportanceSamplingApproximation, distribution) = getsamples(approximation, distribution, approximation.nsamples)
 getsamples(approximation::ImportanceSamplingApproximation, distribution, nsamples) = rand(approximation.rng, distribution, nsamples)
 
 function approximate_meancov(
-    approximation::ImportanceSamplingApproximation, g::Function, distribution
-)
+        approximation::ImportanceSamplingApproximation, g::Function, distribution
+    )
 
     # We use preallocated arrays to sample and compute transformed samples and weightd
     rand!(approximation.rng, distribution, approximation.bsamples)
@@ -84,9 +84,9 @@ function approximate_meancov(
         #
         # which reduces to `1/Σwᵢ²` exactly when the weights already sum to one, ranges over
         # [1, N], and equals N for uniform weights regardless of their common value.
-        sum_weights  = sum(approximation.bweights)
+        sum_weights = sum(approximation.bweights)
         sum_weights² = sum(Base.Generator(abs2, approximation.bweights))
-        n_eff        = iszero(sum_weights²) ? zero(sum_weights) : abs2(sum_weights) / sum_weights²
+        n_eff = iszero(sum_weights²) ? zero(sum_weights) : abs2(sum_weights) / sum_weights²
 
         # Here we assume that lengths of bweights ans bsamples vectors are the same
         N = length(approximation.bweights)

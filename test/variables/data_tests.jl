@@ -93,7 +93,7 @@ end
 end
 
 @testitem "DataVariable: linking to a non-PointMass marginal gives an informative error" tags = [
-    :engine
+    :engine,
 ] begin
     using BayesBase, Distributions, ExponentialFamily
     import ReactiveMP:
@@ -186,7 +186,7 @@ end
 end
 
 @testitem "DataVariable: invalid observation types are rejected with a clear error" tags = [
-    :engine
+    :engine,
 ] begin
     using BayesBase, Distributions, ExponentialFamily, LinearAlgebra
     import ReactiveMP: DataVariable, datavar, new_observation!, Uninformative
@@ -256,16 +256,16 @@ end
     @testset "all supported payloads still work" begin
         # The guard must not narrow what has always been accepted.
         for value in (
-            1.0,
-            -3,
-            true,
-            Float32(2.5),
-            big(1.0),
-            [1.0, 2.0],
-            [1 2; 3 4],
-            ones(2, 2, 2),
-            Diagonal([1.0, 2.0]),
-        )
+                1.0,
+                -3,
+                true,
+                Float32(2.5),
+                big(1.0),
+                [1.0, 2.0],
+                [1 2; 3 4],
+                ones(2, 2, 2),
+                Diagonal([1.0, 2.0]),
+            )
             var = datavar()
             new_observation!(var, value)
             @test true # did not throw
@@ -294,7 +294,7 @@ end
 end
 
 @testitem "DataVariable: an explicitly wrapped non-numeric observation reaches the nodes" tags = [
-    :engine
+    :engine,
 ] begin
     using BayesBase, Rocket
 

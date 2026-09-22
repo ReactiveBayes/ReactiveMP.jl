@@ -1,5 +1,5 @@
 @testitem "`UnspecifiedFormConstraint` should not error on `Distribution` objects" tags = [
-    :engine
+    :engine,
 ] begin
     using Distributions
     import ReactiveMP: constrain_form
@@ -12,7 +12,7 @@
 end
 
 @testitem "`CompositeFormConstraint` should call the constraints in the specified order" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: constrain_form
 
@@ -30,7 +30,7 @@ end
 end
 
 @testitem "`preprocess_form_constraints` should create `CompositeFormConstraint` from a tuple of constraints" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: preprocess_form_constraints, AbstractFormConstraint
 
@@ -45,7 +45,7 @@ end
 end
 
 @testitem "`preprocess_form_constraints` should wrap unknown form constraints into a `WrappedFormConstraint`" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP:
         preprocess_form_constraints,
@@ -71,41 +71,55 @@ end
         FormConstraint3WithContext(), FormConstraint3Context()
     )
     @test preprocess_form_constraints((FormConstraint1(), FormConstraint2())) ==
-        CompositeFormConstraint((
-        FormConstraint1(),
-        WrappedFormConstraint(
-            FormConstraint2(), WrappedFormConstraintNoContext()
-        ),
-    ))
-    @test preprocess_form_constraints((
-        FormConstraint1(), FormConstraint3WithContext()
-    )) == CompositeFormConstraint((
-        FormConstraint1(),
-        WrappedFormConstraint(
-            FormConstraint3WithContext(), FormConstraint3Context()
-        ),
-    ))
-    @test preprocess_form_constraints((
-        FormConstraint2(), FormConstraint3WithContext()
-    )) == CompositeFormConstraint((
-        WrappedFormConstraint(
-            FormConstraint2(), WrappedFormConstraintNoContext()
-        ),
-        WrappedFormConstraint(
-            FormConstraint3WithContext(), FormConstraint3Context()
-        ),
-    ))
-    @test preprocess_form_constraints((
-        FormConstraint2(), FormConstraint3WithContext(), FormConstraint1()
-    )) == CompositeFormConstraint((
-        WrappedFormConstraint(
-            FormConstraint2(), WrappedFormConstraintNoContext()
-        ),
-        WrappedFormConstraint(
-            FormConstraint3WithContext(), FormConstraint3Context()
-        ),
-        FormConstraint1(),
-    ))
+        CompositeFormConstraint(
+        (
+            FormConstraint1(),
+            WrappedFormConstraint(
+                FormConstraint2(), WrappedFormConstraintNoContext()
+            ),
+        )
+    )
+    @test preprocess_form_constraints(
+        (
+            FormConstraint1(), FormConstraint3WithContext(),
+        )
+    ) == CompositeFormConstraint(
+        (
+            FormConstraint1(),
+            WrappedFormConstraint(
+                FormConstraint3WithContext(), FormConstraint3Context()
+            ),
+        )
+    )
+    @test preprocess_form_constraints(
+        (
+            FormConstraint2(), FormConstraint3WithContext(),
+        )
+    ) == CompositeFormConstraint(
+        (
+            WrappedFormConstraint(
+                FormConstraint2(), WrappedFormConstraintNoContext()
+            ),
+            WrappedFormConstraint(
+                FormConstraint3WithContext(), FormConstraint3Context()
+            ),
+        )
+    )
+    @test preprocess_form_constraints(
+        (
+            FormConstraint2(), FormConstraint3WithContext(), FormConstraint1(),
+        )
+    ) == CompositeFormConstraint(
+        (
+            WrappedFormConstraint(
+                FormConstraint2(), WrappedFormConstraintNoContext()
+            ),
+            WrappedFormConstraint(
+                FormConstraint3WithContext(), FormConstraint3Context()
+            ),
+            FormConstraint1(),
+        )
+    )
 
     @test preprocess_form_constraints(
         preprocess_form_constraints(FormConstraint2())
@@ -120,7 +134,7 @@ end
 end
 
 @testitem "`WrappedFormConstraint` should simply redirect all the important functions to the underlying object" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 
@@ -138,7 +152,7 @@ end
 end
 
 @testitem "`WrappedFormConstraint` should not pass empty context to the `constrain_form` call" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 
@@ -160,7 +174,7 @@ end
 end
 
 @testitem "`WrappedFormConstraint` should be able to reuse the context between multiple `constrain_form` calls" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 
@@ -177,8 +191,8 @@ end
     end
 
     function constrain_form(
-        ::FormConstraintWithContext, context::FormConstraintContext, x
-    )
+            ::FormConstraintWithContext, context::FormConstraintContext, x
+        )
         context.value += 1
         return x + context.value
     end

@@ -94,12 +94,9 @@ imported by the caller.
 ## Conventions
 
 - **`CHANGELOG.md` must be updated** in every PR — CI enforces it.
-- Formatting is **Runic**, checked in CI (`make check-format`). It is zero-config — there is
-  no style file, and `.JuliaFormatter.toml` is gone — and deterministic: measured, it produces
-  byte-identical output on Julia 1.10 and 1.13, which is what JuliaFormatter could not do. The
-  version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
-  between releases; use `make scripts_update` to bump it deliberately, and run `make format`
-  over the repo in the same commit. `docs/` is excluded, as it was before.
+- Formatting is checked in CI (`make check-format`). The formatter version is pinned via
+  `scripts/Manifest.toml` on purpose; use `make scripts_update` to bump it deliberately
+  rather than letting it drift.
 - Julia compat floor is currently 1.10.
 
 ## Gotchas

@@ -86,14 +86,14 @@ See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@re
 """
 function isstochastic end
 
-isdeterministic(::Deterministic)       = true
+isdeterministic(::Deterministic) = true
 isdeterministic(::Type{Deterministic}) = true
-isdeterministic(::Stochastic)          = false
-isdeterministic(::Type{Stochastic})    = false
+isdeterministic(::Stochastic) = false
+isdeterministic(::Type{Stochastic}) = false
 
-isstochastic(::Stochastic)          = true
-isstochastic(::Type{Stochastic})    = true
-isstochastic(::Deterministic)       = false
+isstochastic(::Stochastic) = true
+isstochastic(::Type{Stochastic}) = true
+isstochastic(::Deterministic) = false
 isstochastic(::Type{Deterministic}) = false
 
 """
@@ -117,10 +117,10 @@ sdtype(any) = error(
 
 # Any `Type` is considered to be a deterministic mapping unless stated otherwise (By convention, any `Distribution` type is not deterministic)
 # E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
-sdtype(::Type{T}) where {T}    = Deterministic()
-sdtype(::Function)             = Deterministic()
+sdtype(::Type{T}) where {T} = Deterministic()
+sdtype(::Function) = Deterministic()
 sdtype(::Type{<:Distribution}) = Stochastic()
-sdtype(::Distribution)         = Stochastic()
+sdtype(::Distribution) = Stochastic()
 
 """
     as_node_symbol(type)
@@ -197,8 +197,8 @@ end
 # `PredefinedNodeFunctionalForm` are generally the nodes that are defined with the `@node` macro
 # The `UndefinedNodeFunctionalForm` nodes can be created as well, but only if the `fform` is a `Function` (see `predefined/delta.jl`)
 function factornode(
-    ::PredefinedNodeFunctionalForm, fform::F, interfaces::I, factorization
-) where {F, I}
+        ::PredefinedNodeFunctionalForm, fform::F, interfaces::I, factorization
+    ) where {F, I}
     processed_interfaces = prepare_interfaces_generic(fform, interfaces)
     localclusters = FactorNodeLocalClusters(
         processed_interfaces, collect_factorisation(fform, factorization)
@@ -217,13 +217,13 @@ getinboundinterfaces(factornode::FactorNode) = view(
 getlocalclusters(factornode::FactorNode) = factornode.localclusters
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
-interfaceindex(factornode::FactorNode, iname::Symbol)                         = findfirst(interface -> name(interface) === iname, getinterfaces(factornode))
-interfaceindices(factornode::FactorNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
+interfaceindex(factornode::FactorNode, iname::Symbol) = findfirst(interface -> name(interface) === iname, getinterfaces(factornode))
+interfaceindices(factornode::FactorNode, iname::Symbol) = (interfaceindex(factornode, iname),)
 interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 function prepare_interfaces_generic(
-    fform::F, interfaces::AbstractVector
-) where {F}
+        fform::F, interfaces::AbstractVector
+    ) where {F}
     prepare_interfaces_check_nonempty(fform, interfaces)
     prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
     prepare_interfaces_check_numarguments(fform, interfaces)
@@ -233,18 +233,18 @@ function prepare_interfaces_generic(
 end
 
 function prepare_interfaces_check_nonempty(fform, interfaces)
-    length(interfaces) > 0 || error(
+    return length(interfaces) > 0 || error(
         lazy"At least one argument is required for a factor node. Got none for `$(fform)`",
     )
 end
 
 function prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
-    # Here we create an iterator that checks ONLY adjacent interfaces 
+    # Here we create an iterator that checks ONLY adjacent interfaces
     # The reason here is that we don't want to check all possible combinations of all input interfaces
-    # because that would require allocating an intermediate storage for `Set`, which would harm the 
-    # performance of nodes creation. The `zip(interfaces, Iterators.drop(interfaces, 1))` creates a generic 
+    # because that would require allocating an intermediate storage for `Set`, which would harm the
+    # performance of nodes creation. The `zip(interfaces, Iterators.drop(interfaces, 1))` creates a generic
     # iterator of adjacent interface pairs
-    foreach(zip(interfaces, Iterators.drop(interfaces, 1))) do (left, right)
+    return foreach(zip(interfaces, Iterators.drop(interfaces, 1))) do (left, right)
         lname, _ = left
         rname, _ = right
         if isequal(lname, rname)
@@ -256,15 +256,15 @@ function prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
 end
 
 function prepare_interfaces_check_numarguments(fform::F, interfaces) where {F}
-    prepare_interfaces_check_num_inputarguments(
+    return prepare_interfaces_check_num_inputarguments(
         fform, inputinterfaces(fform), interfaces
     )
 end
 
 function prepare_interfaces_check_num_inputarguments(
-    fform, inputinterfaces::Val{Input}, interfaces
-) where {Input}
-    (length(interfaces) - 1) === length(Input) || error(
+        fform, inputinterfaces::Val{Input}, interfaces
+    ) where {Input}
+    return (length(interfaces) - 1) === length(Input) || error(
         lazy"Expected $(length(Input)) input arguments for `$(fform)`, got $(length(interfaces) - 1): $(join(map(first, Iterators.drop(interfaces, 1)), \", \"))",
     )
 end
@@ -410,10 +410,10 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         quote
             # TODO: (bvdmitri) maybe reserving `in` here is not a good idea, discuss with Wouter
             if index === $index && (
-                name === :in ||
-                name === $(QuoteNode(name)) ||
-                Base.in(name, ($(map(QuoteNode, aliases)...),))
-            )
+                    name === :in ||
+                        name === $(QuoteNode(name)) ||
+                        Base.in(name, ($(map(QuoteNode, aliases)...),))
+                )
                 return $(QuoteNode(name))
             end
         end
@@ -433,29 +433,29 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         )
     end
 
-    doctype   = rpad(dispatch_type, 30)
+    doctype = rpad(dispatch_type, 30)
     docsdtype = rpad(node_type, 15)
-    docedges  = join(map(((name, aliases),) -> string(name, !isempty(aliases) ? string(" (or ", join(aliases, ", "), ")") : ""), interfaces), ", ")
-    doc       = """    
+    docedges = join(map(((name, aliases),) -> string(name, !isempty(aliases) ? string(" (or ", join(aliases, ", "), ")") : ""), interfaces), ", ")
+    doc = """    
         $doctype : $docsdtype : $docedges
     The `$(node_fform)` has been marked as a valid `$(node_type)` factor node with the `@node` macro with `[ $(docedges) ]` interfaces.
     """
 
-    # For `Stochastic` nodes the `nodefunctions` are pre-generated automatically 
+    # For `Stochastic` nodes the `nodefunctions` are pre-generated automatically
     #   by calling the `corresponding` logpdf
     nodefunctions = if node_type == :Stochastic
         nodefunctionargnames = first.(interfaces)
 
-        # The very first function is a generic method that only accepts type and returns 
+        # The very first function is a generic method that only accepts type and returns
         # a function that fallbacks to calculate the logpdf of the distribution
         fncollection = [
             :(
                 ReactiveMP.nodefunction(::$dispatch_type) =
                     (; $(nodefunctionargnames...)) ->
-                        ReactiveMP.BayesBase.logpdf(
-                            ($node_fform)($(nodefunctionargnames[2:end]...)),
-                            $(nodefunctionargnames[1]),
-                        )
+                ReactiveMP.BayesBase.logpdf(
+                    ($node_fform)($(nodefunctionargnames[2:end]...)),
+                    $(nodefunctionargnames[1]),
+                )
             ),
         ]
 
@@ -470,10 +470,10 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
                 ) = begin
                     return let ckwargs = kwargs
                         ($interfacename) ->
-                            ReactiveMP.nodefunction($node_fform)(;
-                                $interfacename = $interfacename,
-                                ckwargs...,
-                            )
+                        ReactiveMP.nodefunction($node_fform)(;
+                            $interfacename = $interfacename,
+                            ckwargs...,
+                        )
                     end
                 end
             )
@@ -503,8 +503,8 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         $nodefunctions
 
         function ReactiveMP.alias_interface(
-            dispatch_type::$dispatch_type, index, name
-        )
+                dispatch_type::$dispatch_type, index, name
+            )
             $alias_corrections
             # If we do not return from the `alias_corrections` we throw an error
             error(

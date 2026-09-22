@@ -9,26 +9,26 @@
         @test_marginalrules [check_type_promotion = true] Categorical(:out_p) [
             (
                 input = (
-                    m_out = PointMass([0.0, 1.0]), m_p = Dirichlet([2.0, 1.0])
+                    m_out = PointMass([0.0, 1.0]), m_p = Dirichlet([2.0, 1.0]),
                 ),
                 output = (
-                    out = PointMass([0.0, 1.0]), p = Dirichlet([2.0, 2.0])
+                    out = PointMass([0.0, 1.0]), p = Dirichlet([2.0, 2.0]),
                 ),
             ),
             (
                 input = (
-                    m_out = PointMass([0.0, 1.0]), m_p = Dirichlet([4.0, 2.0])
+                    m_out = PointMass([0.0, 1.0]), m_p = Dirichlet([4.0, 2.0]),
                 ),
                 output = (
-                    out = PointMass([0.0, 1.0]), p = Dirichlet([4.0, 3.0])
+                    out = PointMass([0.0, 1.0]), p = Dirichlet([4.0, 3.0]),
                 ),
             ),
             (
                 input = (
-                    m_out = PointMass([1.0, 0.0]), m_p = Dirichlet([1.0, 2.0])
+                    m_out = PointMass([1.0, 0.0]), m_p = Dirichlet([1.0, 2.0]),
                 ),
                 output = (
-                    out = PointMass([1.0, 0.0]), p = Dirichlet([2.0, 2.0])
+                    out = PointMass([1.0, 0.0]), p = Dirichlet([2.0, 2.0]),
                 ),
             ),
         ]
@@ -37,7 +37,7 @@
         @test_marginalrules [check_type_promotion = false] Categorical(:out_p) [
             (
                 input = (
-                    m_out = Categorical([0.2, 0.8]), m_p = PointMass([0.0, 1.0])
+                    m_out = Categorical([0.2, 0.8]), m_p = PointMass([0.0, 1.0]),
                 ),
                 output = (
                     out = Categorical(normalize([tiny, 0.8], 1)),
@@ -46,7 +46,7 @@
             ),
             (
                 input = (
-                    m_out = Categorical([0.8, 0.2]), m_p = PointMass([0.0, 1.0])
+                    m_out = Categorical([0.8, 0.2]), m_p = PointMass([0.0, 1.0]),
                 ),
                 output = (
                     out = Categorical(normalize([tiny, 0.2], 1)),
@@ -55,7 +55,7 @@
             ),
             (
                 input = (
-                    m_out = Categorical([0.8, 0.2]), m_p = PointMass([1.0, 0.0])
+                    m_out = Categorical([0.8, 0.2]), m_p = PointMass([1.0, 0.0]),
                 ),
                 output = (
                     out = Categorical(normalize([0.8, tiny], 1)),

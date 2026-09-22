@@ -8,17 +8,17 @@
 # improper (α ≤ 0 for order ≥ 3); the marginal q(w), formed by the equality node as the product
 # of this message with the prior, is the proper MvNormalGamma posterior (natural parameters add).
 @rule ConjugateAR(:w, Marginalisation) (
-    q_y_x::MultivariateNormalDistributionsFamily, meta::ARMeta
+    q_y_x::MultivariateNormalDistributionsFamily, meta::ARMeta,
 ) = begin
     order = getorder(meta)
 
     myx, Vyx = mean_cov(q_y_x)
     x_idx = (order + 1):(2order)
 
-    mx       = myx[x_idx]
-    my1      = first(myx)
-    Vx       = Vyx[x_idx, x_idx]
-    Vy1      = Vyx[1, 1]
+    mx = myx[x_idx]
+    my1 = first(myx)
+    Vx = Vyx[x_idx, x_idx]
+    Vy1 = Vyx[1, 1]
     cov_x_y1 = Vyx[x_idx, 1]
 
     C = Vx + mx * transpose(mx)

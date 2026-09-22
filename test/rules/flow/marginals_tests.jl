@@ -185,7 +185,7 @@
         )
         meta = FlowMeta(compile(model, params), Unscented(2))
 
-        @test_marginalrules [check_type_promotion = false, atol = 1e-9] Flow(
+        @test_marginalrules [check_type_promotion = false, atol = 1.0e-9] Flow(
             :in
         ) [
             (

@@ -7,18 +7,18 @@ function approximation_name end
 function approximation_short_name end
 
 function approximate_meancov(
-    method::AbstractApproximationMethod, g::Function, distribution
-)
+        method::AbstractApproximationMethod, g::Function, distribution
+    )
     return approximate_meancov(method, g, mean(distribution), cov(distribution))
 end
 
 function approximate_meancov(
-    method::AbstractApproximationMethod, g::Function, m::T, v::T
-) where {T <: Real}
+        method::AbstractApproximationMethod, g::Function, m::T, v::T
+    ) where {T <: Real}
     weights = getweights(method, m, v)
-    points  = getpoints(method, m, v)
+    points = getpoints(method, m, v)
 
-    cs   = Vector{eltype(m)}(undef, length(weights))
+    cs = Vector{eltype(m)}(undef, length(weights))
     norm = 0.0
     mean = 0.0
 
@@ -46,15 +46,15 @@ function approximate_meancov(
 end
 
 function approximate_meancov(
-    method::AbstractApproximationMethod,
-    g::Function,
-    m::AbstractVector{T},
-    P::AbstractMatrix{T},
-) where {T <: Real}
+        method::AbstractApproximationMethod,
+        g::Function,
+        m::AbstractVector{T},
+        P::AbstractMatrix{T},
+    ) where {T <: Real}
     ndims = length(m)
 
     weights = getweights(method, m, P)
-    points  = getpoints(method, m, P)
+    points = getpoints(method, m, P)
 
     cs = similar(m, eltype(m), length(weights))
     norm = zero(T)
@@ -86,23 +86,23 @@ function approximate_meancov(
 end
 
 function approximate_kernel_expectation(
-    method::AbstractApproximationMethod, g::Function, distribution
-)
+        method::AbstractApproximationMethod, g::Function, distribution
+    )
     return approximate_kernel_expectation(
         method, g, mean(distribution), cov(distribution)
     )
 end
 
 function approximate_kernel_expectation(
-    method::AbstractApproximationMethod,
-    g::Function,
-    m::AbstractVector{T},
-    P::AbstractMatrix{T},
-) where {T <: Real}
+        method::AbstractApproximationMethod,
+        g::Function,
+        m::AbstractVector{T},
+        P::AbstractMatrix{T},
+    ) where {T <: Real}
     ndims = length(m)
 
     weights = getweights(method, m, P)
-    points  = getpoints(method, m, P)
+    points = getpoints(method, m, P)
 
     gbar = zeros(ndims, ndims)
     foreach(zip(weights, points)) do (weight, point)

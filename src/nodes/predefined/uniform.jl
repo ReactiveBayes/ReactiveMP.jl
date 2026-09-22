@@ -1,6 +1,6 @@
 
 @node Uniform Stochastic [
-    out, (a, aliases = [α, left]), (b, aliases = [β, right])
+    out, (a, aliases = [α, left]), (b, aliases = [β, right]),
 ]
 
 BayesBase.default_prod_rule(::Type{<:Uniform}, ::Type{<:Beta}) =

@@ -205,19 +205,19 @@ end
         z = probvec(q_switch)
         ref_val =
             z[1] * score(
-                AverageEnergy(),
-                GammaShapeRate,
-                Val{(:out, :α, :β)}(),
-                map((q) -> Marginal(q, false, false), (q_out, q_a[1], q_b[1])),
-                nothing,
-            ) +
+            AverageEnergy(),
+            GammaShapeRate,
+            Val{(:out, :α, :β)}(),
+            map((q) -> Marginal(q, false, false), (q_out, q_a[1], q_b[1])),
+            nothing,
+        ) +
             z[2] * score(
-                AverageEnergy(),
-                GammaShapeRate,
-                Val{(:out, :α, :β)}(),
-                map((q) -> Marginal(q, false, false), (q_out, q_a[2], q_b[2])),
-                nothing,
-            )
+            AverageEnergy(),
+            GammaShapeRate,
+            Val{(:out, :α, :β)}(),
+            map((q) -> Marginal(q, false, false), (q_out, q_a[2], q_b[2])),
+            nothing,
+        )
 
         @test score(
             AverageEnergy(),
@@ -251,7 +251,7 @@ end
 end
 
 @testitem "GammaMixtureNode: interfaceindices and unknown interface" tags = [
-    :nodes
+    :nodes,
 ] begin
     using ReactiveMP, Test
     import ReactiveMP:
@@ -323,7 +323,7 @@ end
 end
 
 @testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" tags = [
-    :nodes
+    :nodes,
 ] begin
     using ReactiveMP, Rocket, Test
     import ReactiveMP:

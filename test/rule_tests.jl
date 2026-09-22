@@ -26,7 +26,7 @@
 
             # check atol can be set as a single number
             let configuration = TestRulesConfiguration()
-                for atol in (1e-6, 1e-12)
+                for atol in (1.0e-6, 1.0e-12)
                     float_tolerance!(configuration, atol)
                     @test all(
                         tolerance -> isequal(tolerance, atol),
@@ -38,9 +38,9 @@
             # check atol can be set as an array of pairs
             let configuration = TestRulesConfiguration()
                 for atol in [
-                    [Float32 => 1e-5, Float64 => 1e-11],
-                    [Float32 => 1e-4, Float64 => 1e-10],
-                ]
+                        [Float32 => 1.0e-5, Float64 => 1.0e-11],
+                        [Float32 => 1.0e-4, Float64 => 1.0e-10],
+                    ]
                     float_tolerance!(configuration, atol)
                     for (key, value) in atol
                         @test isequal(
@@ -53,7 +53,7 @@
             # check atol can be set individually
             let configuration = TestRulesConfiguration()
                 for T in [Float32, Float16, BigFloat, Int],
-                    atol in (1e-6, 1e-12)
+                        atol in (1.0e-6, 1.0e-12)
 
                     float_tolerance!(configuration, T, atol)
                     @test isequal(float_tolerance(configuration, T), atol)
@@ -71,7 +71,7 @@
 
             # check rtol can be set as a single number
             let configuration = TestRulesConfiguration()
-                for rtol in (1e-6, 1e-12)
+                for rtol in (1.0e-6, 1.0e-12)
                     float_rtolerance!(configuration, rtol)
                     @test all(
                         tolerance -> isequal(tolerance, rtol),
@@ -83,9 +83,9 @@
             # check rtol can be set as an array of pairs
             let configuration = TestRulesConfiguration()
                 for rtol in [
-                    [Float32 => 1e-5, Float64 => 1e-11],
-                    [Float32 => 1e-4, Float64 => 1e-10],
-                ]
+                        [Float32 => 1.0e-5, Float64 => 1.0e-11],
+                        [Float32 => 1.0e-4, Float64 => 1.0e-10],
+                    ]
                     float_rtolerance!(configuration, rtol)
                     for (key, value) in rtol
                         @test isequal(
@@ -98,7 +98,7 @@
             # check rtol can be set individually
             let configuration = TestRulesConfiguration()
                 for T in [Float32, Float16, BigFloat, Int],
-                    rtol in (1e-6, 1e-12)
+                        rtol in (1.0e-6, 1.0e-12)
 
                     float_rtolerance!(configuration, T, rtol)
                     @test isequal(float_rtolerance(configuration, T), rtol)
@@ -107,10 +107,10 @@
 
             # `atol` and `rtol` are independent knobs
             let configuration = TestRulesConfiguration()
-                float_tolerance!(configuration, Float64, 1e-3)
-                float_rtolerance!(configuration, Float64, 1e-9)
-                @test isequal(float_tolerance(configuration, Float64), 1e-3)
-                @test isequal(float_rtolerance(configuration, Float64), 1e-9)
+                float_tolerance!(configuration, Float64, 1.0e-3)
+                float_rtolerance!(configuration, Float64, 1.0e-9)
+                @test isequal(float_tolerance(configuration, Float64), 1.0e-3)
+                @test isequal(float_rtolerance(configuration, Float64), 1.0e-9)
             end
 
             # extra_float_types setter test
@@ -129,26 +129,30 @@
             )
 
             for name in (:configuration, :blabla),
-                check in (true, false),
-                atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
-                rtol in (1e-8, :([Float64 => 1e-13, Float32 => 1e-6])),
-                extra_types in (:([Float64]), :([Float32, BigFloat]))
+                    check in (true, false),
+                    atol in (1.0e-4, :([Float64 => 1.0e-11, Float32 => 1.0e-4])),
+                    rtol in (1.0e-8, :([Float64 => 1.0e-13, Float32 => 1.0e-6])),
+                    extra_types in (:([Float64]), :([Float32, BigFloat]))
 
                 expression = test_rules_parse_configuration(
                     name,
-                    :([
-                        check_type_promotion = $check,
-                        atol = $atol,
-                        rtol = $rtol,
-                        extra_float_types = $extra_types,
-                    ]),
+                    :(
+                        [
+                            check_type_promotion = $check,
+                            atol = $atol,
+                            rtol = $rtol,
+                            extra_float_types = $extra_types,
+                        ]
+                    ),
                 )
 
                 @test inexpr(
                     expression,
-                    :(ReactiveMP.check_type_promotion!(
-                        $name, convert(Bool, $check)
-                    )),
+                    :(
+                        ReactiveMP.check_type_promotion!(
+                            $name, convert(Bool, $check)
+                        )
+                    ),
                 )
                 @test inexpr(
                     expression, :(ReactiveMP.float_tolerance!($name, $atol))
@@ -177,16 +181,18 @@
                 :(Gamma(:out, MomentMatching)),
             )
             inputs = (
-                :((
-                    m_mean = NormalMeanVariance(0.0, 1.0),
-                    q_var = InverseGamma(1.0, 1.0),
-                )),
+                :(
+                    (
+                        m_mean = NormalMeanVariance(0.0, 1.0),
+                        q_var = InverseGamma(1.0, 1.0),
+                    )
+                ),
             )
             outputs = (:(NormalMeanVariance(0.0, 0.0)), :(Gamma(2.0, 3.0)))
 
             for f in fns,
-                test_f in tfns, spec in specs, input in inputs,
-                output in outputs
+                    test_f in tfns, spec in specs, input in inputs,
+                    output in outputs
 
                 test_entry = convert(
                     TestRuleEntry, :((input = $input, output = $output))
@@ -235,11 +241,13 @@
             )
             @test convert(
                 TestRuleEntryInputSpecification,
-                :((
-                    key1 = Gamma(1.0, 1.0),
-                    key2 = NormalMeanVariance(0.0, 1.0),
-                    key3 = 3,
-                )),
+                :(
+                    (
+                        key1 = Gamma(1.0, 1.0),
+                        key2 = NormalMeanVariance(0.0, 1.0),
+                        key3 = 3,
+                    )
+                ),
             ) == TestRuleEntryInputSpecification(
                 [
                     :key1 => :(Gamma(1.0, 1.0)),
@@ -279,10 +287,12 @@
                     ),
                     :(Gamma(2.0, 3.0)),
                 )
-                @test rule_macro_convert_to_expr(spec) == :((
-                    input = (q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)),
-                    output = Gamma(2.0, 3.0),
-                ))
+                @test rule_macro_convert_to_expr(spec) == :(
+                    (
+                        input = (q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)),
+                        output = Gamma(2.0, 3.0),
+                    )
+                )
             end
         end
 
@@ -313,22 +323,24 @@
 
             let entries = convert(
                     Vector{TestRuleEntry},
-                    :([
-                        (
-                            input = (
-                                m_x = Normal(1.0, 2.0), q_y = PointMass(3)
+                    :(
+                        [
+                            (
+                                input = (
+                                    m_x = Normal(1.0, 2.0), q_y = PointMass(3),
+                                ),
+                                output = Gamma(1.0, 2.0),
                             ),
-                            output = Gamma(1.0, 2.0),
-                        ),
-                        (
-                            input = (
-                                q_x = Normal(2.0, 3.0),
-                                m_y = PointMass(4),
-                                meta = Meta("hello"),
+                            (
+                                input = (
+                                    q_x = Normal(2.0, 3.0),
+                                    m_y = PointMass(4),
+                                    meta = Meta("hello"),
+                                ),
+                                output = Gamma(2.0, 3.0),
                             ),
-                            output = Gamma(2.0, 3.0),
-                        ),
-                    ]),
+                        ]
+                    ),
                 )
                 @test length(entries) === 2
 
@@ -361,9 +373,9 @@
                 test_rules_convert_paramfloattype_for_test_entry
 
             for m in (1, :(Normal(0.0, 1.0))),
-                v in (2, Gamma(2.0, 3.0)),
-                output in (3, :(Normal(2.0, 3.0))),
-                eltype in (:Float32, Float64)
+                    v in (2, Gamma(2.0, 3.0)),
+                    output in (3, :(Normal(2.0, 3.0))),
+                    eltype in (:Float32, Float64)
 
                 let test_entry = TestRuleEntry(
                         TestRuleEntryInputSpecification(
@@ -378,17 +390,23 @@
                         ),
                     )
 
-                    modified_m = :(ReactiveMP.BayesBase.convert_paramfloattype(
-                        $eltype, $m
-                    ))
-                    modified_v = :(ReactiveMP.BayesBase.convert_paramfloattype(
-                        $eltype, $v
-                    ))
+                    modified_m = :(
+                        ReactiveMP.BayesBase.convert_paramfloattype(
+                            $eltype, $m
+                        )
+                    )
+                    modified_v = :(
+                        ReactiveMP.BayesBase.convert_paramfloattype(
+                            $eltype, $v
+                        )
+                    )
                     original_meta = :(meta = Meta(1))
                     modified_meta =
-                        :(ReactiveMP.BayesBase.convert_paramfloattype(
+                        :(
+                        ReactiveMP.BayesBase.convert_paramfloattype(
                             $eltype, Meta(1)
-                        ))
+                        )
+                    )
 
                     @test all(modified_inputs) do expression
                         !inexpr(expression, modified_meta)
@@ -422,9 +440,11 @@
                     test_rules_convert_paramfloattype(
                         :(NormalMeanVariance(1.0, 2.0)), eltype
                     ),
-                    :(ReactiveMP.BayesBase.convert_paramfloattype(
-                        $eltype, NormalMeanVariance(1.0, 2.0)
-                    )),
+                    :(
+                        ReactiveMP.BayesBase.convert_paramfloattype(
+                            $eltype, NormalMeanVariance(1.0, 2.0)
+                        )
+                    ),
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(
@@ -440,41 +460,49 @@
                     test_rules_convert_paramfloattype(
                         :((m_in = NormalMeanVariance(1.0, 2.0),)), eltype
                     ),
-                    :((
-                        m_in = ReactiveMP.BayesBase.convert_paramfloattype(
-                            $eltype, NormalMeanVariance(1.0, 2.0)
-                        ),
-                    )),
+                    :(
+                        (
+                            m_in = ReactiveMP.BayesBase.convert_paramfloattype(
+                                $eltype, NormalMeanVariance(1.0, 2.0)
+                            ),
+                        )
+                    ),
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(
                         :((m_in = ManyOf(NormalMeanVariance(1.0, 2.0)),)),
                         eltype,
                     ),
-                    :((
-                        m_in = ManyOf(
-                            ReactiveMP.BayesBase.convert_paramfloattype(
-                                $eltype, NormalMeanVariance(1.0, 2.0)
-                            ),
+                    :(
+                        (
+                            m_in = ManyOf(
+                                ReactiveMP.BayesBase.convert_paramfloattype(
+                                    $eltype, NormalMeanVariance(1.0, 2.0)
+                                ),
+                            )
                         )
-                    )),
+                    ),
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(
-                        :((
-                            m_in = NormalMeanVariance(1.0, 2.0),
-                            q_out = Gamma(1.0, 2.0),
-                        )),
+                        :(
+                            (
+                                m_in = NormalMeanVariance(1.0, 2.0),
+                                q_out = Gamma(1.0, 2.0),
+                            )
+                        ),
                         eltype,
                     ),
-                    :((
-                        m_in = ReactiveMP.BayesBase.convert_paramfloattype(
-                            $eltype, NormalMeanVariance(1.0, 2.0)
-                        ),
-                        q_out = ReactiveMP.BayesBase.convert_paramfloattype(
-                            $eltype, Gamma(1.0, 2.0)
-                        ),
-                    )),
+                    :(
+                        (
+                            m_in = ReactiveMP.BayesBase.convert_paramfloattype(
+                                $eltype, NormalMeanVariance(1.0, 2.0)
+                            ),
+                            q_out = ReactiveMP.BayesBase.convert_paramfloattype(
+                                $eltype, Gamma(1.0, 2.0)
+                            ),
+                        )
+                    ),
                 )
             end
         end
@@ -483,10 +511,10 @@
             struct MyNode1 end
 
             @eval @rule MyNode1(:out, Marginalisation) (
-                m_a::PointMass, q_b::PointMass, meta::Int
+                m_a::PointMass, q_b::PointMass, meta::Int,
             ) = begin end
             @test_throws LoadError @eval @rule MyNode1(:out, Marginalisation) (
-                a::PointMass, b::PointMass
+                a::PointMass, b::PointMass,
             ) = begin end
         end
 
@@ -494,10 +522,10 @@
             struct MyNode2 end
 
             @eval @marginalrule MyNode2(:a_b) (
-                m_a::PointMass, m_b::PointMass, q_c::PointMass, meta::Int
+                m_a::PointMass, m_b::PointMass, q_c::PointMass, meta::Int,
             ) = begin end
             @test_throws LoadError @eval @marginalrule MyNode2(:out) (
-                a::PointMass, b::PointMass, c::PointMass, meta::Int
+                a::PointMass, b::PointMass, c::PointMass, meta::Int,
             ) = begin end
         end
 
@@ -560,14 +588,16 @@
 
             ReactiveMP.@test_rules [check_type_promotion = false] TestNodeForTestRuleMacro(
                 :out, Marginalisation
-            ) [(
-                input = (
-                    m_x = PointMass(1),
-                    q_y = PointMass(2),
-                    meta = TestMetaForFailingRule(),
+            ) [
+                (
+                    input = (
+                        m_x = PointMass(1),
+                        q_y = PointMass(2),
+                        meta = TestMetaForFailingRule(),
+                    ),
+                    output = PointMass(1.0),
                 ),
-                output = PointMass(1.0),
-            )]
+            ]
 
             io = IOBuffer()
             logger = SimpleLogger(io)
@@ -576,15 +606,17 @@
 
             with_logger(logger) do
                 ReactiveMP.@test_rules (status) -> push!(tests_status, status) [
-                    check_type_promotion = true
-                ] TestNodeForTestRuleMacro(:out, Marginalisation) [(
-                    input = (
-                        m_x = PointMass(1),
-                        q_y = PointMass(2),
-                        meta = TestMetaForFailingRule(),
+                    check_type_promotion = true,
+                ] TestNodeForTestRuleMacro(:out, Marginalisation) [
+                    (
+                        input = (
+                            m_x = PointMass(1),
+                            q_y = PointMass(2),
+                            meta = TestMetaForFailingRule(),
+                        ),
+                        output = PointMass(1.0),
                     ),
-                    output = PointMass(1.0),
-                )]
+                ]
             end
 
             # Here assume that `2:end` tests are promotion tests
@@ -608,7 +640,7 @@
             # Returns the input scaled by `1 + 1e-4`, i.e. a fixed *relative* error
             # of 1e-4 regardless of the magnitude of the input.
             @rule TestNodeForRtolOption(:out, Marginalisation) (m_x::PointMass,) = PointMass(
-                mean(m_x) * (1 + 1e-4)
+                mean(m_x) * (1 + 1.0e-4)
             )
 
             # A huge value, where the 1e-4 relative error is an enormous absolute error.
@@ -616,11 +648,13 @@
             let statuses = Bool[]
                 with_logger(SimpleLogger(IOBuffer())) do
                     ReactiveMP.@test_rules (status) -> push!(statuses, status) [
-                        check_type_promotion = false
-                    ] TestNodeForRtolOption(:out, Marginalisation) [(
-                        input = (m_x = PointMass(1e10),),
-                        output = PointMass(1e10),
-                    )]
+                        check_type_promotion = false,
+                    ] TestNodeForRtolOption(:out, Marginalisation) [
+                        (
+                            input = (m_x = PointMass(1.0e10),),
+                            output = PointMass(1.0e10),
+                        ),
+                    ]
                 end
                 @test statuses == [false]
             end
@@ -629,10 +663,12 @@
             # the 1e-4 relative error is supplied.
             let statuses = Bool[]
                 ReactiveMP.@test_rules (status) -> push!(statuses, status) [
-                    check_type_promotion = false, atol = 0, rtol = 1e-3
-                ] TestNodeForRtolOption(:out, Marginalisation) [(
-                    input = (m_x = PointMass(1e10),), output = PointMass(1e10)
-                )]
+                    check_type_promotion = false, atol = 0, rtol = 1.0e-3,
+                ] TestNodeForRtolOption(:out, Marginalisation) [
+                    (
+                        input = (m_x = PointMass(1.0e10),), output = PointMass(1.0e10),
+                    ),
+                ]
                 @test statuses == [true]
             end
 
@@ -641,15 +677,15 @@
             let statuses = Bool[]
                 with_logger(SimpleLogger(IOBuffer())) do
                     ReactiveMP.@test_rules (status) -> push!(statuses, status) [
-                        check_type_promotion = false, atol = 0, rtol = 1e-6
+                        check_type_promotion = false, atol = 0, rtol = 1.0e-6,
                     ] TestNodeForRtolOption(:out, Marginalisation) [
                         (
-                            input = (m_x = PointMass(1e10),),
-                            output = PointMass(1e10),
+                            input = (m_x = PointMass(1.0e10),),
+                            output = PointMass(1.0e10),
                         ),
                         (
-                            input = (m_x = PointMass(1e-10),),
-                            output = PointMass(1e-10),
+                            input = (m_x = PointMass(1.0e-10),),
+                            output = PointMass(1.0e-10),
                         ),
                     ]
                 end
@@ -660,10 +696,12 @@
             # `rtol` rejects is still accepted when `atol` alone covers it.
             let statuses = Bool[]
                 ReactiveMP.@test_rules (status) -> push!(statuses, status) [
-                    check_type_promotion = false, atol = 1e-6, rtol = 1e-9
-                ] TestNodeForRtolOption(:out, Marginalisation) [(
-                    input = (m_x = PointMass(1e-10),), output = PointMass(1e-10)
-                )]
+                    check_type_promotion = false, atol = 1.0e-6, rtol = 1.0e-9,
+                ] TestNodeForRtolOption(:out, Marginalisation) [
+                    (
+                        input = (m_x = PointMass(1.0e-10),), output = PointMass(1.0e-10),
+                    ),
+                ]
                 @test statuses == [true]
             end
 
@@ -672,10 +710,12 @@
                 ReactiveMP.@test_rules (status) -> push!(statuses, status) [
                     check_type_promotion = false,
                     atol = 0,
-                    rtol = [Float64 => 1e-3],
-                ] TestNodeForRtolOption(:out, Marginalisation) [(
-                    input = (m_x = PointMass(1e10),), output = PointMass(1e10)
-                )]
+                    rtol = [Float64 => 1.0e-3],
+                ] TestNodeForRtolOption(:out, Marginalisation) [
+                    (
+                        input = (m_x = PointMass(1.0e10),), output = PointMass(1.0e10),
+                    ),
+                ]
                 @test statuses == [true]
             end
         end
@@ -745,10 +785,12 @@
             )
 
             @test names == :(Val{(:out, :mean)})
-            @test types == :(Tuple{
-                ReactiveMP.Message{<:PointMass},
-                ReactiveMP.Message{<:NormalMeanPrecision},
-            })
+            @test types == :(
+                Tuple{
+                    ReactiveMP.Message{<:PointMass},
+                    ReactiveMP.Message{<:NormalMeanPrecision},
+                }
+            )
             @test init == Expr[
                 :(m_out = getdata(messages[1])),
                 :(m_mean = getdata(messages[2])),
@@ -818,11 +860,13 @@
             )
 
             @test names == :(Val{(:mean,)}())
-            @test values == :((
-                ReactiveMP.Marginal(
-                    NormalMeanPrecision(0.0, 1.0), false, false
-                ),
-            ))
+            @test values == :(
+                (
+                    ReactiveMP.Marginal(
+                        NormalMeanPrecision(0.0, 1.0), false, false
+                    ),
+                )
+            )
         end
     end
 
@@ -1060,7 +1104,7 @@
                 @node MyCustomNode Stochastic [out, a]
 
                 @rule MyCustomNode(:out, Marginalisation) (
-                    m_a::PointMass, q_a::PointMass, meta::Float64
+                    m_a::PointMass, q_a::PointMass, meta::Float64,
                 ) = begin
                     return 1
                 end
@@ -1225,7 +1269,7 @@
 
                 # dummy rule for test
                 @rule GetFromRuleMethod(:out, Marginalisation) (
-                    m_in::NormalMeanVariance, q_a::NormalMeanPrecision
+                    m_in::NormalMeanVariance, q_a::NormalMeanPrecision,
                 ) = begin
                     return 0
                 end
@@ -1234,7 +1278,7 @@
                     ReactiveMP.rule, Tuple{Type{GetFromRuleMethod}, Vararg{Any}}
                 )[1]
 
-                messages_rule1      = ReactiveMP.get_messages_from_rule_method(rule1)
+                messages_rule1 = ReactiveMP.get_messages_from_rule_method(rule1)
                 message_names_rule1 = ReactiveMP.get_message_names_from_rule_method(rule1)
                 message_types_rule1 = ReactiveMP.get_message_types_from_rule_method(rule1)
 
@@ -1276,74 +1320,90 @@
         @node DummyNodeForDefaultMetaNothingTests Stochastic [out, x, y]
 
         @rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (
-            m_x::NormalMeanPrecision, m_y::NormalMeanPrecision
+            m_x::NormalMeanPrecision, m_y::NormalMeanPrecision,
         ) = 1
         @rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (
-            m_x::NormalMeanPrecision, m_y::NormalMeanPrecision, meta::Int
+            m_x::NormalMeanPrecision, m_y::NormalMeanPrecision, meta::Int,
         ) = meta
         @rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (
-            q_x::NormalMeanPrecision, q_y::NormalMeanPrecision
+            q_x::NormalMeanPrecision, q_y::NormalMeanPrecision,
         ) = 3
 
-        @test (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision)
-        )) === 1
+        @test (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision),
+            )
+        ) === 1
 
-        @test (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            m_x = vague(NormalMeanPrecision),
-            m_y = vague(NormalMeanPrecision),
-            meta = nothing,
-        )) === 1
+        @test (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                m_x = vague(NormalMeanPrecision),
+                m_y = vague(NormalMeanPrecision),
+                meta = nothing,
+            )
+        ) === 1
 
-        @test (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            m_x = vague(NormalMeanPrecision),
-            m_y = vague(NormalMeanPrecision),
-            meta = 2,
-        )) === 2
+        @test (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                m_x = vague(NormalMeanPrecision),
+                m_y = vague(NormalMeanPrecision),
+                meta = 2,
+            )
+        ) === 2
 
-        @test (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            m_x = vague(NormalMeanPrecision),
-            m_y = vague(NormalMeanPrecision),
-            meta = 3,
-        )) === 3
+        @test (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                m_x = vague(NormalMeanPrecision),
+                m_y = vague(NormalMeanPrecision),
+                meta = 3,
+            )
+        ) === 3
 
-        @test (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision)
-        )) === 3
+        @test (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision),
+            )
+        ) === 3
 
-        @test (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            q_x = vague(NormalMeanPrecision),
-            q_y = vague(NormalMeanPrecision),
-            meta = nothing,
-        )) === 3
+        @test (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                q_x = vague(NormalMeanPrecision),
+                q_y = vague(NormalMeanPrecision),
+                meta = nothing,
+            )
+        ) === 3
 
-        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            q_x = vague(NormalMeanPrecision),
-            q_y = vague(NormalMeanPrecision),
-            meta = 2,
-        ))
+        @test_throws ReactiveMP.RuleMethodError (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                q_x = vague(NormalMeanPrecision),
+                q_y = vague(NormalMeanPrecision),
+                meta = 2,
+            )
+        )
 
-        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(
-            :out, Marginalisation
-        ) (
-            q_x = vague(NormalMeanPrecision),
-            q_y = vague(NormalMeanPrecision),
-            meta = 3,
-        ))
+        @test_throws ReactiveMP.RuleMethodError (
+            @call_rule DummyNodeForDefaultMetaNothingTests(
+                :out, Marginalisation
+            ) (
+                q_x = vague(NormalMeanPrecision),
+                q_y = vague(NormalMeanPrecision),
+                meta = 3,
+            )
+        )
     end
 
     @testset "Check the `annotations` option" begin
@@ -1352,7 +1412,7 @@
         # Pass an AnnotationDict to capture annotations written by the rule
         ann = AnnotationDict()
         dist = @call_rule Bernoulli(:out, Marginalisation) (
-            m_p = Beta(1, 2), annotations = ann
+            m_p = Beta(1, 2), annotations = ann,
         )
 
         @test dist isa Bernoulli

@@ -13,9 +13,11 @@
 
         @test_rules [check_type_promotion = false] MultinomialPolya(
             :x, Marginalisation
-        ) [(
-            input = (q_N = q_N, q_ψ = q_ψ, meta = meta), output = dist_expected
-        )]
+        ) [
+            (
+                input = (q_N = q_N, q_ψ = q_ψ, meta = meta), output = dist_expected,
+            ),
+        ]
     end
 
     @testset "Predictive Distribution: (q_N::Poisson, q_ψ::GaussianDistributionsFamily)" begin
@@ -29,10 +31,12 @@
         for q_N in q_Ns
             @test_rules [check_type_promotion = false] MultinomialPolya(
                 :x, Marginalisation
-            ) [(
-                input = (q_N = q_N, q_ψ = q_ψ, meta = meta),
-                output = dist_expected,
-            )]
+            ) [
+                (
+                    input = (q_N = q_N, q_ψ = q_ψ, meta = meta),
+                    output = dist_expected,
+                ),
+            ]
         end
     end
 end

@@ -89,7 +89,7 @@
 
         # check base functions (multi layer)
         f1 = PlanarFlow()
-        layer1 = AdditiveCouplingLayer(f1;)
+        layer1 = AdditiveCouplingLayer(f1)
         f2 = PlanarFlow()
         layer2 = AdditiveCouplingLayer(f2; permute = false)
         model = FlowModel(2, (layer1, layer2))
@@ -233,7 +233,7 @@
         @test jacobian(compiled_model, [2.5, 5.0]) ==
             [1.0 0.0; 1.1413016497063289 1.0]
         @test jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) == [
-            [1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]
+            [1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0],
         ]
 
         # check jacobian! function (single layer)
@@ -343,11 +343,13 @@
     end
 
     @testset "Joint processing functions" begin
-        model = FlowModel((
-            InputLayer(8),
-            AdditiveCouplingLayer(PlanarFlow()),
-            AdditiveCouplingLayer(PlanarFlow(); permute = false),
-        ))
+        model = FlowModel(
+            (
+                InputLayer(8),
+                AdditiveCouplingLayer(PlanarFlow()),
+                AdditiveCouplingLayer(PlanarFlow(); permute = false),
+            )
+        )
         compiled_model = compile(model)
         x = randn(8)
         @test forward_jacobian(compiled_model, x) ==
@@ -371,23 +373,23 @@
         @test absdet_jacobian(compiled_model, [1.5, 6.9]) == 1.0
         @test absdet_jacobian(compiled_model, [2.5, 6.4]) == 1.0
         @test isapprox(
-            logdet_jacobian(compiled_model, [1.5, 6.9]), 0.0; atol = 1e-10
+            logdet_jacobian(compiled_model, [1.5, 6.9]), 0.0; atol = 1.0e-10
         )
         @test isapprox(
-            logdet_jacobian(compiled_model, [2.5, 6.4]), 0.0; atol = 1e-10
+            logdet_jacobian(compiled_model, [2.5, 6.4]), 0.0; atol = 1.0e-10
         )
         @test sum(
             isapprox.(
                 logabsdet_jacobian(compiled_model, [1.5, 6.9]),
                 (0.0, 1.0);
-                atol = 1e-10,
+                atol = 1.0e-10,
             ),
         ) == 2
         @test sum(
             isapprox.(
                 logabsdet_jacobian(compiled_model, [2.5, 6.4]),
                 (0.0, 1.0);
-                atol = 1e-10,
+                atol = 1.0e-10,
             ),
         ) == 2
 
@@ -407,14 +409,14 @@
             isapprox.(
                 logabsdetinv_jacobian(compiled_model, [1.5, 6.9]),
                 (0.0, -1.0);
-                atol = 1e-10,
+                atol = 1.0e-10,
             ),
         ) == 2
         @test sum(
             isapprox.(
                 logabsdetinv_jacobian(compiled_model, [2.5, 6.4]),
                 (0.0, -1.0);
-                atol = 1e-10,
+                atol = 1.0e-10,
             ),
         ) == 2
     end

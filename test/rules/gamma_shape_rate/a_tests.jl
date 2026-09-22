@@ -16,7 +16,7 @@
             ),
             (
                 input = (
-                    q_out = PointMass(1.0), q_β = GammaShapeRate(1.0, 1.0)
+                    q_out = PointMass(1.0), q_β = GammaShapeRate(1.0, 1.0),
                 ),
                 output = GammaShapeLikelihood(1.0, -0.5772156649015315),
             ),

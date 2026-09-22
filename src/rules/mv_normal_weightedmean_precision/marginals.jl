@@ -1,5 +1,5 @@
 @marginalrule MvNormalWeightedMeanPrecision(:out_ξ_Λ) (
-    m_out::MultivariateNormalDistributionsFamily, m_ξ::PointMass, m_Λ::PointMass
+    m_out::MultivariateNormalDistributionsFamily, m_ξ::PointMass, m_Λ::PointMass,
 ) = begin
     return (
         m_out = prod(

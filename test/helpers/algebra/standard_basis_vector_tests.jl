@@ -23,9 +23,9 @@
     for N in 1:8
         for I in 1:N
             for T in (Int, Float64, Float32)
-                scale  = rand(rng, T)
-                e      = StandardBasisVector(N, I, scale)
-                e_c    = zeros(T, N)
+                scale = rand(rng, T)
+                e = StandardBasisVector(N, I, scale)
+                e_c = zeros(T, N)
                 e_c[I] = scale
 
                 m = rand(rng, T)
@@ -77,13 +77,13 @@
         if N1 !== N2
             for I1 in 1:N1, I2 in 1:N2
                 for T in (Int, Float64, Float32)
-                    scale1   = rand(rng, T)
-                    scale2   = rand(rng, T)
-                    e1       = StandardBasisVector(N1, I1, scale1)
-                    e2       = StandardBasisVector(N2, I2, scale2)
-                    e_c1     = zeros(T, N1)
+                    scale1 = rand(rng, T)
+                    scale2 = rand(rng, T)
+                    e1 = StandardBasisVector(N1, I1, scale1)
+                    e2 = StandardBasisVector(N2, I2, scale2)
+                    e_c1 = zeros(T, N1)
                     e_c1[I1] = scale1
-                    e_c2     = zeros(T, N2)
+                    e_c2 = zeros(T, N2)
                     e_c2[I2] = scale2
 
                     @test_throws AssertionError dot(e1, e2)

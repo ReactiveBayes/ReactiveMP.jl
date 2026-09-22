@@ -30,8 +30,8 @@ end
 The `switch_first` argument specifies whether the first index always has to be permuted.
 """
 function PermutationMatrix(
-    dim::T; switch_first::Bool = true
-) where {T <: Integer}
+        dim::T; switch_first::Bool = true
+    ) where {T <: Integer}
     ind = shuffle(collect(1:dim))
     if switch_first && ind[1] == 1
         tmp = ind[2]
@@ -46,7 +46,7 @@ function Base.size(mat::PermutationMatrix)
     return (nr_elements, nr_elements)
 end
 Base.size(mat::PermutationMatrix, d) = d::Integer <= 2 ? length(mat.ind) : 1
-Base.length(mat::PermutationMatrix)  = prod(size(mat))
+Base.length(mat::PermutationMatrix) = prod(size(mat))
 
 function Base.getindex(mat::PermutationMatrix, i::Int, j::Int)
     if mat.ind[i] == j
@@ -71,44 +71,44 @@ function Base.:*(P::PermutationMatrix, v::AbstractVector)
 end
 
 function LinearAlgebra.mul!(
-    y::AbstractVector, P::PermutationMatrix, v::AbstractVector
-)
+        y::AbstractVector, P::PermutationMatrix, v::AbstractVector
+    )
     ind = getind(P)
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         y[k] = v[ind[k]]
     end
 end
 
 function Base.:*(
-    P::Adjoint{T, PermutationMatrix{T}}, v::AbstractVector
-) where {T}
+        P::Adjoint{T, PermutationMatrix{T}}, v::AbstractVector
+    ) where {T}
     y = similar(v)
     mul!(y, P, v)
     return y
 end
 
 function LinearAlgebra.mul!(
-    y::AbstractVector, P::Adjoint{T, PermutationMatrix{T}}, v::AbstractVector
-) where {T}
+        y::AbstractVector, P::Adjoint{T, PermutationMatrix{T}}, v::AbstractVector
+    ) where {T}
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         y[ind[k]] = v[k]
     end
 end
 
 function Base.:*(
-    P::Transpose{T, PermutationMatrix{T}}, v::AbstractVector
-) where {T}
+        P::Transpose{T, PermutationMatrix{T}}, v::AbstractVector
+    ) where {T}
     y = similar(v)
     mul!(y, P, v)
     return y
 end
 
 function LinearAlgebra.mul!(
-    y::AbstractVector, P::Transpose{T, PermutationMatrix{T}}, v::AbstractVector
-) where {T}
+        y::AbstractVector, P::Transpose{T, PermutationMatrix{T}}, v::AbstractVector
+    ) where {T}
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         y[ind[k]] = v[k]
     end
 end
@@ -122,10 +122,10 @@ function Base.:*(P::PermutationMatrix, X::AbstractMatrix)
 end
 
 function LinearAlgebra.mul!(
-    Y::AbstractMatrix, P::PermutationMatrix{T}, X::AbstractMatrix
-) where {T}
+        Y::AbstractMatrix, P::PermutationMatrix{T}, X::AbstractMatrix
+    ) where {T}
     ind = getind(P)
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         @inbounds @simd for ki in 1:size(P, 1)
             Y[k, ki] = X[ind[k], ki]
         end
@@ -133,8 +133,8 @@ function LinearAlgebra.mul!(
 end
 
 function Base.:*(
-    P::Adjoint{T, PermutationMatrix{T}}, X::AbstractMatrix
-) where {T}
+        P::Adjoint{T, PermutationMatrix{T}}, X::AbstractMatrix
+    ) where {T}
     @assert size(X, 1) == size(X, 2) "Multiplication with permutation matrices is only supported for square matrices."
     Y = similar(X)
     mul!(Y, P, X)
@@ -142,10 +142,10 @@ function Base.:*(
 end
 
 function LinearAlgebra.mul!(
-    Y::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}, X::AbstractMatrix
-) where {T}
+        Y::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}, X::AbstractMatrix
+    ) where {T}
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         @inbounds @simd for ki in 1:size(P, 1)
             Y[ind[k], ki] = X[k, ki]
         end
@@ -153,8 +153,8 @@ function LinearAlgebra.mul!(
 end
 
 function Base.:*(
-    P::Transpose{T, PermutationMatrix{T}}, X::AbstractMatrix
-) where {T}
+        P::Transpose{T, PermutationMatrix{T}}, X::AbstractMatrix
+    ) where {T}
     @assert size(X, 1) == size(X, 2) "Multiplication with permutation matrices is only supported for square matrices."
     Y = similar(X)
     mul!(Y, P, X)
@@ -162,10 +162,10 @@ function Base.:*(
 end
 
 function LinearAlgebra.mul!(
-    Y::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}, X::AbstractMatrix
-) where {T}
+        Y::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}, X::AbstractMatrix
+    ) where {T}
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         @inbounds @simd for ki in 1:size(P, 1)
             Y[ind[k], ki] = X[k, ki]
         end
@@ -200,10 +200,10 @@ function Base.:*(X::AbstractMatrix, P::PermutationMatrix)
 end
 
 function LinearAlgebra.mul!(
-    Y::AbstractMatrix, X::AbstractMatrix, P::PermutationMatrix
-)
+        Y::AbstractMatrix, X::AbstractMatrix, P::PermutationMatrix
+    )
     ind = getind(P)
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         @inbounds @simd for ki in 1:size(P, 1)
             Y[ki, ind[k]] = X[ki, k]
         end
@@ -211,8 +211,8 @@ function LinearAlgebra.mul!(
 end
 
 function Base.:*(
-    X::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}
-) where {T}
+        X::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}
+    ) where {T}
     @assert size(X, 1) == size(X, 2) "Multiplication with permutation matrices is only supported for square matrices."
     Y = similar(X)
     mul!(Y, X, P)
@@ -220,10 +220,10 @@ function Base.:*(
 end
 
 function LinearAlgebra.mul!(
-    Y::AbstractMatrix, X::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}
-) where {T}
+        Y::AbstractMatrix, X::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}
+    ) where {T}
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         @inbounds @simd for ki in 1:size(P, 1)
             Y[ki, k] = X[ki, ind[k]]
         end
@@ -231,8 +231,8 @@ function LinearAlgebra.mul!(
 end
 
 function Base.:*(
-    X::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}
-) where {T}
+        X::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}
+    ) where {T}
     @assert size(X, 1) == size(X, 2) "Multiplication with permutation matrices is only supported for square matrices."
     Y = similar(X)
     mul!(Y, X, P)
@@ -240,17 +240,17 @@ function Base.:*(
 end
 
 function LinearAlgebra.mul!(
-    Y::AbstractMatrix, X::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}
-) where {T}
+        Y::AbstractMatrix, X::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}
+    ) where {T}
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:size(P, 1)
+    return @inbounds @simd for k in 1:size(P, 1)
         @inbounds @simd for ki in 1:size(P, 1)
             Y[ki, k] = X[ki, ind[k]]
         end
     end
 end
 
-# multiplication of some square matrix with the permutation matrix 
+# multiplication of some square matrix with the permutation matrix
 function PT_X_P(X::AbstractMatrix, P::PermutationMatrix)
 
     # allocate output
@@ -259,7 +259,7 @@ function PT_X_P(X::AbstractMatrix, P::PermutationMatrix)
     # perform permutation operation
     PT_X_P!(Y, X, P)
 
-    # return output 
+    # return output
     return Y
 end
 
@@ -269,7 +269,7 @@ function PT_X_P!(Y::AbstractMatrix, X::AbstractMatrix, P::PermutationMatrix)
     ind = getind(P)
 
     # perform permutation operation
-    @inbounds @simd for k1 in 1:size(P, 1)
+    return @inbounds @simd for k1 in 1:size(P, 1)
         @inbounds @simd for k2 in 1:size(P, 1)
             Y[ind[k1], ind[k2]] = X[k1, k2]
         end

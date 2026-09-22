@@ -22,9 +22,9 @@ import StatsFuns: log2π
     μ0, Λ0, α0, β0 = mean(q_μ), mean(q_Λ), mean(q_α), mean(q_β)
     d = length(μ0)
 
-    Δ      = μ_q - μ0
+    Δ = μ_q - μ0
     E_logγ = digamma(α_q) - log(β_q)
-    E_γ    = α_q / β_q
+    E_γ = α_q / β_q
     E_quad = tr(Λ0 * cholinv(Λ_q)) + E_γ * dot(Δ, Λ0, Δ)
 
     E_logp =

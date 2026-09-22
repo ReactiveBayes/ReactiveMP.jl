@@ -22,7 +22,7 @@
 
     @testset "id, x~Normal, y~Normal" begin
         for enforce in (Val(false), Val(true)),
-            grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
+                grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
 
             test_meta = DeltaMeta(
                 method = CVI(
@@ -36,8 +36,8 @@
                     true,
                 ),
             )
-            @test_marginalrules [check_type_promotion = false, atol = 1e-2] DeltaFn{
-                identity
+            @test_marginalrules [check_type_promotion = false, atol = 1.0e-2] DeltaFn{
+                identity,
             }(
                 :ins
             ) [
@@ -71,7 +71,7 @@
 
     @testset "id, x ~ MvNormal, y ~ MvNormal" begin
         for enforce in (Val(false), Val(true)),
-            grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
+                grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
 
             test_meta = DeltaMeta(
                 method = CVI(
@@ -85,8 +85,8 @@
                     true,
                 ),
             )
-            @test_marginalrules [check_type_promotion = false, atol = 1e-2] DeltaFn{
-                identity
+            @test_marginalrules [check_type_promotion = false, atol = 1.0e-2] DeltaFn{
+                identity,
             }(
                 :ins
             ) [
@@ -96,11 +96,13 @@
                         m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))),
                         meta = test_meta,
                     ),
-                    output = FactorizedJoint((
-                        MvNormalMeanCovariance(
-                            0.5 * ones(2), 0.5 * Matrix(Diagonal(ones(2)))
-                        ),
-                    )),
+                    output = FactorizedJoint(
+                        (
+                            MvNormalMeanCovariance(
+                                0.5 * ones(2), 0.5 * Matrix(Diagonal(ones(2)))
+                            ),
+                        )
+                    ),
                 ),
                 (
                     input = (
@@ -108,11 +110,13 @@
                         m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))),
                         meta = test_meta,
                     ),
-                    output = FactorizedJoint((
-                        MvNormalMeanCovariance(
-                            5.0 * ones(2), 0.5 * Matrix(Diagonal(ones(2)))
-                        ),
-                    )),
+                    output = FactorizedJoint(
+                        (
+                            MvNormalMeanCovariance(
+                                5.0 * ones(2), 0.5 * Matrix(Diagonal(ones(2)))
+                            ),
+                        )
+                    ),
                 ),
                 (
                     input = (
@@ -120,16 +124,22 @@
                         m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))),
                         meta = test_meta,
                     ),
-                    output = FactorizedJoint(((MvNormalMeanCovariance(
-                        0.5 * ones(2), inv([1+2 / 3 1/3; 1/3 1+2 / 3])
-                    )),)),
+                    output = FactorizedJoint(
+                        (
+                            (
+                                MvNormalMeanCovariance(
+                                    0.5 * ones(2), inv([1 + 2 / 3 1 / 3; 1 / 3 1 + 2 / 3])
+                                )
+                            ),
+                        )
+                    ),
                 ),
             ]
         end
     end
     @testset "f(x) = x + k, x~Normal, y~Normal" begin
         for enforce in (Val(false), Val(true)),
-            grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
+                grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
 
             test_meta = DeltaMeta(
                 method = CVI(
@@ -143,8 +153,8 @@
                     true,
                 ),
             )
-            @test_marginalrules [check_type_promotion = false, atol = 1e-2] DeltaFn{
-                add_1
+            @test_marginalrules [check_type_promotion = false, atol = 1.0e-2] DeltaFn{
+                add_1,
             }(
                 :ins
             ) [
@@ -178,7 +188,7 @@
 
     @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
         for enforce in (Val(false), Val(true)),
-            grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
+                grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
 
             test_meta = DeltaMeta(
                 method = CVI(
@@ -192,29 +202,33 @@
                     true,
                 ),
             )
-            @test_marginalrules [check_type_promotion = false, atol = 1e-2] DeltaFn{
-                two_into_one
+            @test_marginalrules [check_type_promotion = false, atol = 1.0e-2] DeltaFn{
+                two_into_one,
             }(
                 :ins
-            ) [(
-                input = (
-                    m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
-                    m_ins = ManyOf(
-                        NormalMeanVariance(), NormalMeanVariance(1, 2)
+            ) [
+                (
+                    input = (
+                        m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
+                        m_ins = ManyOf(
+                            NormalMeanVariance(), NormalMeanVariance(1, 2)
+                        ),
+                        meta = test_meta,
                     ),
-                    meta = test_meta,
+                    output = FactorizedJoint(
+                        (
+                            NormalMeanVariance(1 / 3, 2 / 3),
+                            NormalMeanVariance(1.0, 1.0),
+                        )
+                    ),
                 ),
-                output = FactorizedJoint((
-                    NormalMeanVariance(1 / 3, 2 / 3),
-                    NormalMeanVariance(1.0, 1.0),
-                )),
-            )]
+            ]
         end
     end
 
     @testset "f(x) -> x[1], x~MvNormal out~Normal" begin
         for enforce in (Val(false),),
-            grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
+                grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
 
             test_meta = DeltaMeta(
                 method = CVI(
@@ -228,29 +242,33 @@
                     true,
                 ),
             )
-            @test_marginalrules [check_type_promotion = false, atol = 1e-2] DeltaFn{
-                extract_coordinate
+            @test_marginalrules [check_type_promotion = false, atol = 1.0e-2] DeltaFn{
+                extract_coordinate,
             }(
                 :ins
-            ) [(
-                input = (
-                    m_out = NormalMeanVariance(0, 1),
-                    m_ins = ManyOf(
-                        MvGaussianMeanCovariance(ones(2), [1 0; 0 1])
+            ) [
+                (
+                    input = (
+                        m_out = NormalMeanVariance(0, 1),
+                        m_ins = ManyOf(
+                            MvGaussianMeanCovariance(ones(2), [1 0; 0 1])
+                        ),
+                        meta = test_meta,
                     ),
-                    meta = test_meta,
+                    # output = FactorizedJoint((MvNormalWeightedMeanPrecision(ones(2), [2 0; 0 1]),)),
+                    output = FactorizedJoint(
+                        (
+                            MvNormalMeanCovariance([0.5, 1.0], [0.5 0.0; 0.0 1.0]),
+                        )
+                    ),
                 ),
-                # output = FactorizedJoint((MvNormalWeightedMeanPrecision(ones(2), [2 0; 0 1]),)),
-                output = FactorizedJoint((
-                    MvNormalMeanCovariance([0.5, 1.0], [0.5 0.0; 0.0 1.0]),
-                )),
-            )]
+            ]
         end
     end
 
     @testset "id, x~Gamma out~Gamma" begin
         for enforce in (Val(false), Val(true)),
-            grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
+                grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
 
             test_meta = DeltaMeta(
                 method = CVI(
@@ -265,8 +283,8 @@
                 ),
             )
 
-            @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{
-                identity
+            @test_marginalrules [check_type_promotion = false, atol = 1.0e-1] DeltaFn{
+                identity,
             }(
                 :ins
             ) [
@@ -290,7 +308,7 @@
         end
 
         for enforce in (Val(false), Val(true)),
-            grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
+                grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
 
             test_meta = DeltaMeta(
                 method = CVI(
@@ -304,8 +322,8 @@
                     true,
                 ),
             )
-            @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{
-                identity
+            @test_marginalrules [check_type_promotion = false, atol = 1.0e-1] DeltaFn{
+                identity,
             }(
                 :ins
             ) [

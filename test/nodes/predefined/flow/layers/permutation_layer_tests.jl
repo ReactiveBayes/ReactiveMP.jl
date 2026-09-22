@@ -147,7 +147,7 @@
 
     @testset "Utility Jacobian" begin
 
-        # check utility functions jacobian 
+        # check utility functions jacobian
         P = PermutationMatrix(3)
         layer = PermutationLayer(3, P)
         @test det_jacobian(layer, randn(3)) == det(P)

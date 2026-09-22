@@ -70,18 +70,18 @@ function (fallback::NodeFunctionRuleFallback)(args...)
 end
 
 function rulefallback_nodefunction(
-    fallback::NodeFunctionRuleFallback,
-    fform,
-    on,
-    vconstraint,
-    mnames,
-    messages,
-    qnames,
-    marginals,
-    meta,
-    annotations,
-    __node,
-)
+        fallback::NodeFunctionRuleFallback,
+        fform,
+        on,
+        vconstraint,
+        mnames,
+        messages,
+        qnames,
+        marginals,
+        meta,
+        annotations,
+        __node,
+    )
     return rulefallback_nodefunction(
         fallback,
         sdtype(fform),
@@ -99,59 +99,59 @@ function rulefallback_nodefunction(
 end
 
 function rulefallback_nodefunction(
-    fallback::NodeFunctionRuleFallback,
-    ::Stochastic,
-    fform,
-    on,
-    vconstraint,
-    mnames,
-    messages,
-    qnames,
-    marginals,
-    meta,
-    annotations,
-    __node,
-)
-    vals   = _mergevals(mnames, qnames)
-    means  = _extractvalues(fallback.extractfn, messages, marginals)
+        fallback::NodeFunctionRuleFallback,
+        ::Stochastic,
+        fform,
+        on,
+        vconstraint,
+        mnames,
+        messages,
+        qnames,
+        marginals,
+        meta,
+        annotations,
+        __node,
+    )
+    vals = _mergevals(mnames, qnames)
+    means = _extractvalues(fallback.extractfn, messages, marginals)
     kwargs = NamedTuple{vals}(means)
-    fn     = ReactiveMP.nodefunction(fform, on; kwargs...)
+    fn = ReactiveMP.nodefunction(fform, on; kwargs...)
     return FallbackNodeFunctionUnnormalizedLogPdf(fn)
 end
 
 function rulefallback_nodefunction(
-    fallback::NodeFunctionRuleFallback,
-    ::Deterministic,
-    fform,
-    on::Val{:out},
-    vconstraint,
-    mnames,
-    messages,
-    qnames,
-    marginals,
-    meta,
-    annotations,
-    __node,
-)
+        fallback::NodeFunctionRuleFallback,
+        ::Deterministic,
+        fform,
+        on::Val{:out},
+        vconstraint,
+        mnames,
+        messages,
+        qnames,
+        marginals,
+        meta,
+        annotations,
+        __node,
+    )
     error(
         "This fallback rule does not work for deterministic nodes. Use `@meta` to define an approximation method for the deterministic node $(fform).",
     )
 end
 
 function rulefallback_nodefunction(
-    fallback::NodeFunctionRuleFallback,
-    ::Deterministic,
-    fform,
-    on,
-    vconstraint,
-    mnames,
-    messages,
-    qnames,
-    marginals,
-    meta,
-    annotations,
-    __node,
-)
+        fallback::NodeFunctionRuleFallback,
+        ::Deterministic,
+        fform,
+        on,
+        vconstraint,
+        mnames,
+        messages,
+        qnames,
+        marginals,
+        meta,
+        annotations,
+        __node,
+    )
     error(
         "This fallback rule does not work for deterministic nodes. Use `@meta` to define an approximation method for a deterministic node $(fform).",
     )

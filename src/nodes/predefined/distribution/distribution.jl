@@ -1,5 +1,5 @@
 
-# This structure is used to create an actual node from a distribution object without creating 
+# This structure is used to create an actual node from a distribution object without creating
 # Extra constant nodes for the parameters of the distribution
 struct StandaloneDistributionNode{D, C} <: AbstractFactorNode
     distribution::D
@@ -40,8 +40,8 @@ end
 # The activation of this node is very simple, it just initializes the clusters and connects the outbound message
 # The outbound message is fixed to the distribution provided during the creation of the node
 function activate!(
-    factornode::StandaloneDistributionNode, options::FactorNodeActivationOptions
-)
+        factornode::StandaloneDistributionNode, options::FactorNodeActivationOptions
+    )
     initialize_clusters!(
         getlocalclusters(factornode),
         DefaultFunctionalDependencies(),
@@ -59,23 +59,23 @@ end
 
 # The score function for this node is also very simple, it just calculates the KLDivergence between the marginal on the edge and the distribution
 function score(
-    ::Type{T},
-    ::FactorBoundFreeEnergy,
-    node::StandaloneDistributionNode,
-    meta,
-    stream_postprocessors,
-) where {T <: CountingReal}
+        ::Type{T},
+        ::FactorBoundFreeEnergy,
+        node::StandaloneDistributionNode,
+        meta,
+        stream_postprocessors,
+    ) where {T <: CountingReal}
     # `FactorBoundFreeEnergy` here is simply equal to `kldivergence` between the marginal and the outbound message
     stream_of_scores =
         get_stream_of_marginals(
-            first(get_node_local_marginals(getlocalclusters(node)))
-        ) |> skip_initial()
+        first(get_node_local_marginals(getlocalclusters(node)))
+    ) |> skip_initial()
     stream_of_scores =
         stream_of_scores |> map(
-            T,
-            (marginal) ->
-                convert(T, score(KLDivergence(), marginal, node.distribution)),
-        )
+        T,
+        (marginal) ->
+        convert(T, score(KLDivergence(), marginal, node.distribution)),
+    )
     stream_of_scores = postprocess_stream_of_scores(
         stream_postprocessors, stream_of_scores
     )

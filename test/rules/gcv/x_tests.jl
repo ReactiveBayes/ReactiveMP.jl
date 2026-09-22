@@ -5,9 +5,9 @@
     import ReactiveMP:
         @test_rules, ExponentialLinearQuadratic, GaussHermiteCubature
 
-    expected_A     = GCVRulesTestUtils.expected_A
-    expected_B     = GCVRulesTestUtils.expected_B
-    default_meta   = GCVRulesTestUtils.default_meta
+    expected_A = GCVRulesTestUtils.expected_A
+    expected_B = GCVRulesTestUtils.expected_B
+    default_meta = GCVRulesTestUtils.default_meta
     parameter_sets = GCVRulesTestUtils.parameter_sets
 
     # Mirror image of the `:y` rule -- see `y_tests.jl` for the derivation. The likelihood
@@ -22,7 +22,7 @@
             noise_precision = expected_A(q_ω) * expected_B(q_z, q_κ)
 
             msg = @call_rule GCV(:x, Marginalisation) (
-                m_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
+                m_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta,
             )
 
             @test msg isa NormalMeanVariance
@@ -37,7 +37,7 @@
             noise_precision = expected_A(q_ω) * expected_B(q_z, q_κ)
 
             msg = @call_rule GCV(:x, Marginalisation) (
-                q_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
+                q_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta,
             )
 
             @test msg isa NormalMeanVariance
@@ -49,16 +49,18 @@
     @testset "Type promotion, against fully worked-out constants" begin
         # Same intermediates as the `:y` type-promotion case (A·B = exp(-0.936)), with
         # q_y = N(3.0, 1.0) → var = 1.0 + exp(0.936).
-        @test_rules [check_type_promotion = true] GCV(:x, Marginalisation) [(
-            input = (
-                m_y = NormalMeanVariance(3.0, 1.0),
-                q_z = NormalMeanVariance(0.5, 0.7),
-                q_κ = NormalMeanVariance(0.8, 0.4),
-                q_ω = NormalMeanVariance(1.2, 0.5),
-                meta = GCVMetadata(GaussHermiteCubature(20)),
+        @test_rules [check_type_promotion = true] GCV(:x, Marginalisation) [
+            (
+                input = (
+                    m_y = NormalMeanVariance(3.0, 1.0),
+                    q_z = NormalMeanVariance(0.5, 0.7),
+                    q_κ = NormalMeanVariance(0.8, 0.4),
+                    q_ω = NormalMeanVariance(1.2, 0.5),
+                    meta = GCVMetadata(GaussHermiteCubature(20)),
+                ),
+                output = NormalMeanVariance(3.0, 1.0 + exp(0.936)),
             ),
-            output = NormalMeanVariance(3.0, 1.0 + exp(0.936)),
-        )]
+        ]
     end
 
     @testset "The two variants differ by exactly Var(y)" begin
@@ -66,10 +68,10 @@
             (; q_y, q_z, q_κ, q_ω) = params
 
             from_message = @call_rule GCV(:x, Marginalisation) (
-                m_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
+                m_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta,
             )
             from_marginal = @call_rule GCV(:x, Marginalisation) (
-                q_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
+                q_y = q_y, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta,
             )
 
             @test mean(from_message) ≈ mean(from_marginal)
@@ -85,7 +87,7 @@
         elq_mean, elq_var = mean_var(elq)
 
         msg = @call_rule GCV(:x, Marginalisation) (
-            m_y = elq, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
+            m_y = elq, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta,
         )
 
         @test msg isa NormalMeanVariance

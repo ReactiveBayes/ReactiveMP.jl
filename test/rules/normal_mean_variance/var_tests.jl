@@ -11,7 +11,7 @@
         ) [
             (
                 input = (
-                    m_out = PointMass(2.0), m_μ = NormalMeanVariance(0.0, 1.0)
+                    m_out = PointMass(2.0), m_μ = NormalMeanVariance(0.0, 1.0),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -20,7 +20,7 @@
             ),
             (
                 input = (
-                    m_out = PointMass(0.5), m_μ = NormalMeanVariance(1.0, 0.5)
+                    m_out = PointMass(0.5), m_μ = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -29,7 +29,7 @@
             ),
             (
                 input = (
-                    m_out = PointMass(-3.5), m_μ = NormalMeanVariance(0.5, 2.0)
+                    m_out = PointMass(-3.5), m_μ = NormalMeanVariance(0.5, 2.0),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -38,7 +38,7 @@
             ),
             (
                 input = (
-                    m_out = PointMass(3.5), m_μ = NormalMeanVariance(-0.5, 2.0)
+                    m_out = PointMass(3.5), m_μ = NormalMeanVariance(-0.5, 2.0),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -54,7 +54,7 @@
         ) [
             (
                 input = (
-                    m_out = NormalMeanVariance(0.0, 1.0), m_μ = PointMass(2.0)
+                    m_out = NormalMeanVariance(0.0, 1.0), m_μ = PointMass(2.0),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -63,7 +63,7 @@
             ),
             (
                 input = (
-                    m_out = NormalMeanVariance(1.0, 0.5), m_μ = PointMass(0.5)
+                    m_out = NormalMeanVariance(1.0, 0.5), m_μ = PointMass(0.5),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -72,7 +72,7 @@
             ),
             (
                 input = (
-                    m_out = NormalMeanVariance(0.5, 2.0), m_μ = PointMass(-3.5)
+                    m_out = NormalMeanVariance(0.5, 2.0), m_μ = PointMass(-3.5),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -81,7 +81,7 @@
             ),
             (
                 input = (
-                    m_out = NormalMeanVariance(-0.5, 2.0), m_μ = PointMass(3.5)
+                    m_out = NormalMeanVariance(-0.5, 2.0), m_μ = PointMass(3.5),
                 ),
                 output = ContinuousUnivariateLogPdf(
                     DomainSets.HalfLine(),
@@ -163,13 +163,13 @@
         ) [
             (
                 input = (
-                    q_out = NormalMeanVariance(-1.0, 2.0), q_μ = PointMass(2.0)
+                    q_out = NormalMeanVariance(-1.0, 2.0), q_μ = PointMass(2.0),
                 ),
                 output = GammaInverse(-0.5, 5.5; check_args = false),
             ),
             (
                 input = (
-                    q_out = NormalMeanPrecision(1.0, 4.0), q_μ = PointMass(3.0)
+                    q_out = NormalMeanPrecision(1.0, 4.0), q_μ = PointMass(3.0),
                 ),
                 output = GammaInverse(-0.5, 2.125; check_args = false),
             ),
@@ -187,13 +187,13 @@
         ) [
             (
                 input = (
-                    q_out = PointMass(2.0), q_μ = NormalMeanVariance(-1.0, 2.0)
+                    q_out = PointMass(2.0), q_μ = NormalMeanVariance(-1.0, 2.0),
                 ),
                 output = GammaInverse(-0.5, 5.5; check_args = false),
             ),
             (
                 input = (
-                    q_out = PointMass(3.0), q_μ = NormalMeanPrecision(1.0, 4.0)
+                    q_out = PointMass(3.0), q_μ = NormalMeanPrecision(1.0, 4.0),
                 ),
                 output = GammaInverse(-0.5, 2.125; check_args = false),
             ),

@@ -7,7 +7,7 @@
     import ReactiveMP: @test_rules
 
     @testset "Belief Propagation: (m_out::PointMass, )" begin
-        @test_rules [check_type_promotion = true, atol = [Float64 => 1e-5]] Probit(
+        @test_rules [check_type_promotion = true, atol = [Float64 => 1.0e-5]] Probit(
             :in, Marginalisation
         ) [
             (
@@ -37,7 +37,7 @@
         @test_rules [check_type_promotion = true] Probit(:in, Marginalisation) [
             (
                 input = (
-                    m_out = PointMass(1.0), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = PointMass(1.0), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(
                     0.6723616582693972, 0.32950039939606945
@@ -45,7 +45,7 @@
             ),
             (
                 input = (
-                    m_out = PointMass(1.0), m_in = NormalMeanPrecision(1.0, 2.0)
+                    m_out = PointMass(1.0), m_in = NormalMeanPrecision(1.0, 2.0),
                 ),
                 output = NormalWeightedMeanPrecision(
                     0.6723616582693972, 0.32950039939606945
@@ -62,7 +62,7 @@
             ),
             (
                 input = (
-                    m_out = PointMass(0.0), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = PointMass(0.0), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(
                     -0.821224653874111, 0.7003447377360019
@@ -70,7 +70,7 @@
             ),
             (
                 input = (
-                    m_out = PointMass(0.0), m_in = NormalMeanPrecision(1.0, 2.0)
+                    m_out = PointMass(0.0), m_in = NormalMeanPrecision(1.0, 2.0),
                 ),
                 output = NormalWeightedMeanPrecision(
                     -0.821224653874111, 0.7003447377360019
@@ -92,7 +92,7 @@
         @test_rules [check_type_promotion = true] Probit(:in, Marginalisation) [
             (
                 input = (
-                    m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(
                     0.6723616582693972, 0.32950039939606945
@@ -100,7 +100,7 @@
             ),
             (
                 input = (
-                    m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(
                     0.6723616582693972, 0.32950039939606945
@@ -108,7 +108,7 @@
             ),
             (
                 input = (
-                    m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(
                     0.6723616582693972, 0.32950039939606945
@@ -116,7 +116,7 @@
             ),
             (
                 input = (
-                    m_out = Bernoulli(0.8), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = Bernoulli(0.8), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(
                     0.427017495944859, 0.199141999223396
@@ -124,7 +124,7 @@
             ),
             (
                 input = (
-                    m_out = Bernoulli(0.8), m_in = NormalMeanPrecision(1.0, 2.0)
+                    m_out = Bernoulli(0.8), m_in = NormalMeanPrecision(1.0, 2.0),
                 ),
                 output = NormalWeightedMeanPrecision(
                     0.427017495944859, 0.199141999223396
@@ -141,7 +141,7 @@
             ),
             (
                 input = (
-                    m_out = Bernoulli(0.0), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = Bernoulli(0.0), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(
                     -0.821224653874111, 0.7003447377360019
@@ -149,7 +149,7 @@
             ),
             (
                 input = (
-                    m_out = Bernoulli(0.0), m_in = NormalMeanPrecision(1.0, 2.0)
+                    m_out = Bernoulli(0.0), m_in = NormalMeanPrecision(1.0, 2.0),
                 ),
                 output = NormalWeightedMeanPrecision(
                     -0.821224653874111, 0.7003447377360019
@@ -168,18 +168,18 @@
 
         # Test against an extreme case with m_out = Bernoulli(0.5)
 
-        @test_rules [check_type_promotion = false, atol = 1e-13] Probit(
+        @test_rules [check_type_promotion = false, atol = 1.0e-13] Probit(
             :in, Marginalisation
         ) [
             (
                 input = (
-                    m_out = Bernoulli(0.5), m_in = NormalMeanVariance(1.0, 0.5)
+                    m_out = Bernoulli(0.5), m_in = NormalMeanVariance(1.0, 0.5),
                 ),
                 output = NormalWeightedMeanPrecision(0.0, 1.0 * tiny),
             ),
             (
                 input = (
-                    m_out = Bernoulli(0.5), m_in = NormalMeanPrecision(1.0, 2.0)
+                    m_out = Bernoulli(0.5), m_in = NormalMeanPrecision(1.0, 2.0),
                 ),
                 output = NormalWeightedMeanPrecision(0.0, 1.0 * tiny),
             ),
@@ -192,7 +192,7 @@
             ),
         ]
 
-        @test_rules [check_type_promotion = false, atol = 1e-7] Probit(
+        @test_rules [check_type_promotion = false, atol = 1.0e-7] Probit(
             :in, Marginalisation
         ) [
             (
@@ -218,7 +218,7 @@
             ),
         ]
 
-        @test_rules [check_type_promotion = false, atol = 1e-25] Probit(
+        @test_rules [check_type_promotion = false, atol = 1.0e-25] Probit(
             :in, Marginalisation
         ) [
             (

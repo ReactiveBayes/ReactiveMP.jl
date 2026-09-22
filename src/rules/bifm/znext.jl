@@ -7,15 +7,15 @@
 ) = begin
 
     # fetch information from meta data
-    A       = getA(meta)
-    B       = getB(meta)
-    H       = getH(meta)
+    A = getA(meta)
+    B = getB(meta)
+    H = getH(meta)
     ξztilde = getξztilde(meta)
-    BHBt    = getBHBt(meta)
-    Λz      = getΛz(meta)
+    BHBt = getBHBt(meta)
+    Λz = getΛz(meta)
 
     # fetch statistics of incoming messages
-    μ_in, Σ_in       = mean_cov(m_in)
+    μ_in, Σ_in = mean_cov(m_in)
     μ_zprev, Σ_zprev = mean_cov(m_zprev.argument)
 
     # calculate intermediate quantities

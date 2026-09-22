@@ -67,13 +67,13 @@ function ARMeta(::Type{Multivariate}, order, stype::S) where {S}
 end
 
 getvform(meta::ARMeta{F}) where {F} = F
-getorder(meta::ARMeta)              = meta.order
-getstype(meta::ARMeta)              = meta.stype
+getorder(meta::ARMeta) = meta.order
+getstype(meta::ARMeta) = meta.stype
 
 is_multivariate(meta::ARMeta) = getvform(meta) === Multivariate
-is_univariate(meta::ARMeta)   = getvform(meta) === Univariate
+is_univariate(meta::ARMeta) = getvform(meta) === Univariate
 
-is_safe(meta::ARMeta)   = getstype(meta) === ARsafe()
+is_safe(meta::ARMeta) = getstype(meta) === ARsafe()
 is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 
 @node AR Stochastic [(y, aliases = [out]), x, θ, γ]
@@ -93,23 +93,23 @@ default_meta(::Type{AR}) =
 
     order = getorder(meta)
 
-    mx, Vx   = ar_slice(getvform(meta), myx, (order + 1):(2order)), ar_slice(getvform(meta), Vyx, (order + 1):(2order), (order + 1):(2order))
+    mx, Vx = ar_slice(getvform(meta), myx, (order + 1):(2order)), ar_slice(getvform(meta), Vyx, (order + 1):(2order), (order + 1):(2order))
     my1, Vy1 = first(myx), first(Vyx)
-    Vy1x     = ar_slice(getvform(meta), Vyx, 1, (order + 1):(2order))
+    Vy1x = ar_slice(getvform(meta), Vyx, 1, (order + 1):(2order))
 
     # Equivalent to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
     AE =
         (
-            -mean(log, q_γ) +
+        -mean(log, q_γ) +
             log2π +
             mγ * (
-                Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) +
+            Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) +
                 mul_trace(Vθ, Vx) +
                 dot(mx, Vθ, mx) +
                 dot(mθ, Vx, mθ) +
                 abs2(dot(mθ, mx))
-            )
-        ) / 2
+        )
+    ) / 2
 
     # correction
     if is_multivariate(meta)
@@ -146,12 +146,12 @@ end
         0.5 *
         mγ *
         (
-            Vy1 + my1^2 - 2 * mθ' * mx * my1 +
+        Vy1 + my1^2 - 2 * mθ' * mx * my1 +
             mul_trace(Vθ, Vx) +
             dot(mx, Vθ, mx) +
             dot(mθ, Vx, mθ) +
             abs2(dot(mθ, mx))
-        )
+    )
 
     # correction
     if is_multivariate(meta)
@@ -201,11 +201,11 @@ end
 
 Base.size(precision::ARPrecisionMatrix) = (precision.order, precision.order)
 Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) =
-    if (i === 1 && j === 1)
-        precision.γ
-    else
-        ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
-    end
+if (i === 1 && j === 1)
+    precision.γ
+else
+    ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
+end
 
 Base.convert(
     ::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{R}
@@ -214,14 +214,14 @@ Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{T}) where {T} =
     matrix
 
 add_precision(matrix::AbstractMatrix, precision::ARPrecisionMatrix) = broadcast(+, matrix, precision)
-add_precision(value::Real, precision::Real)                         = value + precision
+add_precision(value::Real, precision::Real) = value + precision
 
 add_precision!(matrix::AbstractMatrix, precision::ARPrecisionMatrix) = broadcast!(+, matrix, precision)
-add_precision!(value::Real, precision::Real)                         = value + precision
+add_precision!(value::Real, precision::Real) = value + precision
 
 function Base.broadcast!(
-    ::typeof(+), matrix::AbstractMatrix, precision::ARPrecisionMatrix
-)
+        ::typeof(+), matrix::AbstractMatrix, precision::ARPrecisionMatrix
+    )
     matrix[1, 1] += precision.γ
     for j in 2:first(size(matrix))
         matrix[j, j] += convert(eltype(precision), huge)
@@ -230,7 +230,7 @@ function Base.broadcast!(
 end
 
 ar_precision(::Type{Multivariate}, order, γ) = ARPrecisionMatrix(order, γ)
-ar_precision(::Type{Univariate}, order, γ)   = γ
+ar_precision(::Type{Univariate}, order, γ) = γ
 
 ## Allocation-free AR Transition matrix
 
@@ -255,17 +255,17 @@ Base.convert(
 ) where {T} = matrix
 
 add_transition(matrix::AbstractMatrix, transition::ARTransitionMatrix) = broadcast(+, matrix, transition)
-add_transition(value::Real, transition::Real)                          = value + transition
+add_transition(value::Real, transition::Real) = value + transition
 
 add_transition!(matrix::AbstractMatrix, transition::ARTransitionMatrix) = broadcast!(+, matrix, transition)
-add_transition!(value::Real, transition::Real)                          = value + transition
+add_transition!(value::Real, transition::Real) = value + transition
 
 function Base.broadcast!(
-    ::typeof(+), matrix::AbstractMatrix, transition::ARTransitionMatrix
-)
+        ::typeof(+), matrix::AbstractMatrix, transition::ARTransitionMatrix
+    )
     matrix[1] += transition.inv_γ
     return matrix
 end
 
 ar_transition(::Type{Multivariate}, order, γ) = ARTransitionMatrix(order, γ)
-ar_transition(::Type{Univariate}, order, γ)   = inv(γ)
+ar_transition(::Type{Univariate}, order, γ) = inv(γ)

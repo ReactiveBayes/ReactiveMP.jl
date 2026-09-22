@@ -19,7 +19,7 @@
     J2 = jacobian(compiled_model, [-5.0, -1.5])
 
     @testset "Belief Propagation: (m_in::MvNormalMeanCovariance, ) (Linearization)" begin
-        @test_rules [check_type_promotion = false, atol = 1e-5] Flow(
+        @test_rules [check_type_promotion = false, atol = 1.0e-5] Flow(
             :out, Marginalisation
         ) [
             (
@@ -51,7 +51,7 @@
     end
 
     @testset "Belief Propagation: (m_in::MvNormalMeanCovariance, ) (Unscented)" begin
-        @test_rules [check_type_promotion = false, atol = 2e-5] Flow(
+        @test_rules [check_type_promotion = false, atol = 2.0e-5] Flow(
             :out, Marginalisation
         ) [
             (
@@ -83,7 +83,7 @@
     end
 
     @testset "Belief Propagation: (m_in::MvNormalMeanPrecision, ) (Linearization)" begin
-        @test_rules [check_type_promotion = false, atol = 1e-5] Flow(
+        @test_rules [check_type_promotion = false, atol = 1.0e-5] Flow(
             :out, Marginalisation
         ) [
             (
@@ -115,7 +115,7 @@
     end
 
     @testset "Belief Propagation: (m_in::MvNormalMeanPrecision, ) (Unscented)" begin
-        @test_rules [check_type_promotion = false, atol = 2e-5] Flow(
+        @test_rules [check_type_promotion = false, atol = 2.0e-5] Flow(
             :out, Marginalisation
         ) [
             (
@@ -147,7 +147,7 @@
     end
 
     @testset "Belief Propagation: (m_in::MvNormalWeightedMeanPrecision, ) (Linearization)" begin
-        @test_rules [check_type_promotion = false, atol = 1e-5] Flow(
+        @test_rules [check_type_promotion = false, atol = 1.0e-5] Flow(
             :out, Marginalisation
         ) [
             (
@@ -183,7 +183,7 @@
     end
 
     @testset "Belief Propagation: (m_in::MvNormalWeightedMeanPrecision, ) (Unscented)" begin
-        @test_rules [check_type_promotion = false, atol = 2e-5] Flow(
+        @test_rules [check_type_promotion = false, atol = 2.0e-5] Flow(
             :out, Marginalisation
         ) [
             (

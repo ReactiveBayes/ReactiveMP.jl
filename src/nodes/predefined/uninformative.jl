@@ -7,49 +7,49 @@ struct Uninformative end
 @average_energy Uninformative (q_out::Any,) = zero(paramfloattype(q_out))
 
 function BayesBase.default_prod_rule(
-    ::Type{<:Uninformative}, ::Type{T}
-) where {T}
+        ::Type{<:Uninformative}, ::Type{T}
+    ) where {T}
     return PreserveTypeProd(T)
 end
 
 function BayesBase.default_prod_rule(
-    ::Type{T}, ::Type{<:Uninformative}
-) where {T}
+        ::Type{T}, ::Type{<:Uninformative}
+    ) where {T}
     return PreserveTypeProd(T)
 end
 
 function BayesBase.default_prod_rule(
-    ::Type{<:Uninformative}, ::Type{<:Uninformative}
-)
+        ::Type{<:Uninformative}, ::Type{<:Uninformative}
+    )
     return PreserveTypeProd(Uninformative)
 end
 
 function BayesBase.default_prod_rule(
-    ::Type{<:Uninformative}, ::Type{T}
-) where {T <: BayesBase.TerminalProdArgument}
+        ::Type{<:Uninformative}, ::Type{T}
+    ) where {T <: BayesBase.TerminalProdArgument}
     return PreserveTypeProd(T)
 end
 
 function BayesBase.default_prod_rule(
-    ::Type{T}, ::Type{<:Uninformative}
-) where {T <: BayesBase.TerminalProdArgument}
+        ::Type{T}, ::Type{<:Uninformative}
+    ) where {T <: BayesBase.TerminalProdArgument}
     return PreserveTypeProd(T)
 end
 
 function Base.prod(
-    ::PreserveTypeProd{T}, left::Uninformative, right::T
-) where {T}
+        ::PreserveTypeProd{T}, left::Uninformative, right::T
+    ) where {T}
     return right
 end
 
 function Base.prod(
-    ::PreserveTypeProd{T}, left::T, right::Uninformative
-) where {T}
+        ::PreserveTypeProd{T}, left::T, right::Uninformative
+    ) where {T}
     return left
 end
 
 function Base.prod(
-    ::PreserveTypeProd{Uninformative}, left::Uninformative, right::Uninformative
-)
+        ::PreserveTypeProd{Uninformative}, left::Uninformative, right::Uninformative
+    )
     return Uninformative()
 end

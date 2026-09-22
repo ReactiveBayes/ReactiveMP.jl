@@ -4,19 +4,19 @@ outer_product(vs) = prod.(Iterators.product(vs...))
 
 # Fast implementation for the case where we need a joint marginal over all categoricals.
 function marginalrule(
-    ::Type{<:DiscreteTransition},
-    ::Val{marginal_symbol},
-    ::Val{message_names},
-    messages::NTuple{
-        N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}
-    },
-    ::Val{(:a)},
-    marginals::Tuple{
-        Union{<:Marginal{<:DirichletCollection}}, <:Marginal{<:PointMass}
-    },
-    ::Any,
-    ::Any,
-) where {marginal_symbol, message_names, N}
+        ::Type{<:DiscreteTransition},
+        ::Val{marginal_symbol},
+        ::Val{message_names},
+        messages::NTuple{
+            N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}},
+        },
+        ::Val{(:a)},
+        marginals::Tuple{
+            Union{<:Marginal{<:DirichletCollection}}, <:Marginal{<:PointMass},
+        },
+        ::Any,
+        ::Any,
+    ) where {marginal_symbol, message_names, N}
     result =
         outer_product(probvec.(messages)) .*
         softmax!(mean(BroadcastFunction(clamplog), first(marginals)))
@@ -44,14 +44,14 @@ Compute the marginal for one of the Categorical interfaces of the `DiscreteTrans
 - `q_a`: The marginal distribution over the transition tensor.
 """
 function discrete_transition_marginal_rule(
-    message_names::NTuple{N, Symbol},
-    messages::NTuple{
-        N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}
-    },
-    marginals_names::NTuple{M, Symbol},
-    marginals,
-    q_a,
-) where {N, M}
+        message_names::NTuple{N, Symbol},
+        messages::NTuple{
+            N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}},
+        },
+        marginals_names::NTuple{M, Symbol},
+        marginals,
+        q_a,
+    ) where {N, M}
     e_log_a = mean(BroadcastFunction(clamplog), q_a)
     e_log_a = discrete_transition_process_marginals(
         e_log_a, marginals_names, marginals
@@ -70,7 +70,7 @@ end
 discrete_transition_marginal_rule_contingency(
     message_names::NTuple{N, Symbol},
     messages::NTuple{
-        N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}
+        N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}},
     },
     marginals_names::NTuple{M, Symbol},
     marginals,
@@ -83,26 +83,26 @@ discrete_transition_marginal_rule_contingency(
 )
 
 function marginalrule(
-    ::Type{<:DiscreteTransition},
-    ::Val{marginal_symbol},
-    ::Val{message_names},
-    messages::NTuple{
-        N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}
-    },
-    ::Val{marginal_names},
-    marginals::NTuple{
-        M,
-        Union{
-            Marginal{<:DirichletCollection},
-            Marginal{<:PointMass},
-            Marginal{<:Categorical},
-            Marginal{<:Contingency},
-            Marginal{<:Bernoulli},
+        ::Type{<:DiscreteTransition},
+        ::Val{marginal_symbol},
+        ::Val{message_names},
+        messages::NTuple{
+            N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}},
         },
-    },
-    ::Any,
-    ::Any,
-) where {marginal_symbol, message_names, marginal_names, N, M}
+        ::Val{marginal_names},
+        marginals::NTuple{
+            M,
+            Union{
+                Marginal{<:DirichletCollection},
+                Marginal{<:PointMass},
+                Marginal{<:Categorical},
+                Marginal{<:Contingency},
+                Marginal{<:Bernoulli},
+            },
+        },
+        ::Any,
+        ::Any,
+    ) where {marginal_symbol, message_names, marginal_names, N, M}
     q_a = marginals[findfirst(==(:a), marginal_names)]
     return discrete_transition_marginal_rule_contingency(
         message_names, messages, marginal_names, marginals, q_a
@@ -110,31 +110,31 @@ function marginalrule(
 end
 
 function marginalrule(
-    ::Type{<:DiscreteTransition},
-    ::Val{marginal_symbol},
-    ::Val{message_names},
-    messages::NTuple{
-        N,
-        Union{
-            <:Message{<:DiscreteNonParametric},
-            <:Message{<:Bernoulli},
-            <:Message{<:PointMass},
+        ::Type{<:DiscreteTransition},
+        ::Val{marginal_symbol},
+        ::Val{message_names},
+        messages::NTuple{
+            N,
+            Union{
+                <:Message{<:DiscreteNonParametric},
+                <:Message{<:Bernoulli},
+                <:Message{<:PointMass},
+            },
         },
-    },
-    ::Val{marginal_names},
-    marginals::NTuple{
-        M,
-        Union{
-            Marginal{<:DirichletCollection},
-            Marginal{<:PointMass},
-            Marginal{<:Categorical},
-            Marginal{<:Contingency},
-            Marginal{<:Bernoulli},
+        ::Val{marginal_names},
+        marginals::NTuple{
+            M,
+            Union{
+                Marginal{<:DirichletCollection},
+                Marginal{<:PointMass},
+                Marginal{<:Categorical},
+                Marginal{<:Contingency},
+                Marginal{<:Bernoulli},
+            },
         },
-    },
-    ::Any,
-    ::Any,
-) where {marginal_symbol, message_names, marginal_names, N, M}
+        ::Any,
+        ::Any,
+    ) where {marginal_symbol, message_names, marginal_names, N, M}
     # Find indices of PointMass and non-PointMass messages
     point_mass_indices = findall(m -> m isa Message{<:PointMass}, messages)
     remaining_indices = setdiff(1:length(messages), point_mass_indices)

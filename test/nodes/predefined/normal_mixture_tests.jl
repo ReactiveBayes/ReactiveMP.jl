@@ -20,7 +20,8 @@
             )
 
             ref_val =
-                0.8 * (score(
+                0.8 * (
+                score(
                     AverageEnergy(),
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
@@ -29,8 +30,10 @@
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
-                )) +
-                0.2 * (score(
+                )
+            ) +
+                0.2 * (
+                score(
                     AverageEnergy(),
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
@@ -39,7 +42,8 @@
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
-                ))
+                )
+            )
             @test score(
                 AverageEnergy(),
                 NormalMixture,
@@ -63,7 +67,8 @@
             )
 
             ref_val =
-                0.6 * (score(
+                0.6 * (
+                score(
                     AverageEnergy(),
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
@@ -72,8 +77,10 @@
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
-                )) +
-                0.4 * (score(
+                )
+            ) +
+                0.4 * (
+                score(
                     AverageEnergy(),
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
@@ -82,7 +89,8 @@
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
-                ))
+                )
+            )
             @test score(
                 AverageEnergy(),
                 NormalMixture,
@@ -106,7 +114,8 @@
             )
 
             ref_val =
-                0.5 * (score(
+                0.5 * (
+                score(
                     AverageEnergy(),
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
@@ -115,8 +124,10 @@
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
-                )) +
-                0.5 * (score(
+                )
+            ) +
+                0.5 * (
+                score(
                     AverageEnergy(),
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
@@ -125,7 +136,8 @@
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
-                ))
+                )
+            )
             @test score(
                 AverageEnergy(),
                 NormalMixture,
@@ -155,7 +167,8 @@
             )
 
             ref_val =
-                0.5 * (score(
+                0.5 * (
+                score(
                     AverageEnergy(),
                     MvNormalMeanPrecision,
                     Val{(:out, :μ, :Λ)}(),
@@ -164,8 +177,10 @@
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
-                )) +
-                0.5 * (score(
+                )
+            ) +
+                0.5 * (
+                score(
                     AverageEnergy(),
                     MvNormalMeanPrecision,
                     Val{(:out, :μ, :Λ)}(),
@@ -174,7 +189,8 @@
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
-                ))
+                )
+            )
             @test score(
                 AverageEnergy(),
                 NormalMixture,

@@ -20,8 +20,8 @@ function create_project_to_ins(::CVIProjection, form::ProjectedTo, ::Any)
 end
 
 function create_project_to_ins(
-    ::CVIProjection, params::ProjectionParameters, m_in::Any
-)
+        ::CVIProjection, params::ProjectionParameters, m_in::Any
+    )
     T = ExponentialFamily.exponential_family_typetag(m_in)
     ef_in = convert(ExponentialFamilyDistribution, m_in)
     conditioner = getconditioner(ef_in)
@@ -36,7 +36,7 @@ function create_project_to_ins(method::CVIProjection, m_in::Any, k::Int)
 end
 
 @marginalrule DeltaFn(:ins) (
-    m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}
+    m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M},
 ) where {M <: CVIProjection} = begin
     method = ReactiveMP.getmethod(meta)
     g = getnodefn(meta, Val(:out))
@@ -57,8 +57,8 @@ end
 end
 
 function create_density_function(
-    forms_match, i, pre_samples, logp_nc_drop_index, m_in
-)
+        forms_match, i, pre_samples, logp_nc_drop_index, m_in
+    )
     if forms_match
         return z -> logp_nc_drop_index(z, i, pre_samples)
     end
@@ -95,8 +95,8 @@ function optimize_parameters(i, pre_samples, m_ins, logp_nc_drop_index, method)
 end
 
 function generate_samples(
-    rng, ::Nothing, m_ins, sampling_strategy::FullSampling
-)
+        rng, ::Nothing, m_ins, sampling_strategy::FullSampling
+    )
     return zip(
         map(
             m_in -> ReactiveMP.cvilinearize(
@@ -112,11 +112,11 @@ function generate_samples(::Any, ::Nothing, m_ins, ::MeanBased)
 end
 
 function generate_samples(
-    rng,
-    proposal_distribution::FactorizedJoint,
-    ::Any,
-    sampling_strategy::FullSampling,
-)
+        rng,
+        proposal_distribution::FactorizedJoint,
+        ::Any,
+        sampling_strategy::FullSampling,
+    )
     return zip(
         map(
             q_in -> ReactiveMP.cvilinearize(
@@ -128,13 +128,13 @@ function generate_samples(
 end
 
 function generate_samples(
-    ::Any, proposal_distribution::FactorizedJoint, ::Any, ::MeanBased
-)
+        ::Any, proposal_distribution::FactorizedJoint, ::Any, ::MeanBased
+    )
     return zip(map(q_in -> [mean(q_in)], proposal_distribution.multipliers)...)
 end
 
 @marginalrule DeltaFn(:ins) (
-    m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}
+    m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M},
 ) where {N, M <: CVIProjection} = begin
     method = ReactiveMP.getmethod(meta)
     rng = method.rng
@@ -149,72 +149,72 @@ end
     )
 
     logp_nc_drop_index =
-        let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
-            (z, i, pre_samples) -> begin
-                samples = map(
-                    ttuple ->
-                        ReactiveMP.TupleTools.insertat(ttuple, i, (z,)),
-                    pre_samples,
-                )
-                t_samples = map(s -> g(s...), samples)
-                logpdfs = map(out -> logpdf(m_out, out), t_samples)
-                return mean(logpdfs)
-            end
+    let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
+        (z, i, pre_samples) -> begin
+            samples = map(
+                ttuple ->
+                ReactiveMP.TupleTools.insertat(ttuple, i, (z,)),
+                pre_samples,
+            )
+            t_samples = map(s -> g(s...), samples)
+            logpdfs = map(out -> logpdf(m_out, out), t_samples)
+            return mean(logpdfs)
         end
+    end
 
     optimize_natural_parameters =
-        let m_ins = m_ins, logp_nc_drop_index = logp_nc_drop_index
-            (i, pre_samples) -> begin
-                m_in = m_ins[i]
-                default_type = ExponentialFamily.exponential_family_typetag(
-                    m_in
-                )
+    let m_ins = m_ins, logp_nc_drop_index = logp_nc_drop_index
+        (i, pre_samples) -> begin
+            m_in = m_ins[i]
+            default_type = ExponentialFamily.exponential_family_typetag(
+                m_in
+            )
 
-                prj = create_project_to_ins(method, m_in, i)
+            prj = create_project_to_ins(method, m_in, i)
 
-                typeform = ExponentialFamilyProjection.get_projected_to_type(
-                    prj
-                )
-                dims = ExponentialFamilyProjection.get_projected_to_dims(prj)
-                forms_match =
-                    typeform === default_type && dims == size(m_in)
+            typeform = ExponentialFamilyProjection.get_projected_to_type(
+                prj
+            )
+            dims = ExponentialFamilyProjection.get_projected_to_dims(prj)
+            forms_match =
+                typeform === default_type && dims == size(m_in)
 
-                # Create log probability function
-                df = if forms_match
-                    let i = i,
+            # Create log probability function
+            df = if forms_match
+                let i = i,
                         pre_samples = pre_samples,
                         logp_nc_drop_index = logp_nc_drop_index
 
-                        (z) -> logp_nc_drop_index(z, i, pre_samples)
-                    end
-                else
-                    let i = i,
+                    (z) -> logp_nc_drop_index(z, i, pre_samples)
+                end
+            else
+                let i = i,
                         pre_samples = pre_samples,
                         logp_nc_drop_index = logp_nc_drop_index,
                         m_in = m_in
 
-                        (z) ->
-                            logp_nc_drop_index(z, i, pre_samples) +
-                            logpdf(m_in, z)
-                    end
-                end
-
-                logp = convert(
-                    promote_variate_type(
-                        variate_form(typeof(m_in)),
-                        BayesBase.AbstractContinuousGenericLogPdf,
-                    ),
-                    UnspecifiedDomain(),
-                    df,
-                )
-
-                return if forms_match
-                    project_to(prj, logp, m_in)
-                else
-                    project_to(prj, logp)
+                    (z) ->
+                    logp_nc_drop_index(z, i, pre_samples) +
+                        logpdf(m_in, z)
                 end
             end
+
+            logp = convert(
+                promote_variate_type(
+                    variate_form(typeof(m_in)),
+                    BayesBase.AbstractContinuousGenericLogPdf,
+                ),
+                UnspecifiedDomain(),
+                df,
+            )
+
+            return if forms_match
+                project_to(prj, logp, m_in)
+            else
+                project_to(prj, logp)
+            end
         end
+    end
 
     result = FactorizedJoint(
         ntuple(i -> optimize_natural_parameters(i, pre_samples), length(m_ins)),

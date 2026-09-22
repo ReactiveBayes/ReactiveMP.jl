@@ -103,7 +103,7 @@ default_functional_dependencies(::Type{<:ContinuousTransition}) =
 function ctcompanion_matrix(a, epsilon, meta::CTMeta)
     a0 = a + epsilon # expansion point
     Js = getjacobians(meta, a0)
-    f  = gettransformation(meta)
+    f = gettransformation(meta)
     dy = length(Js)
     # we approximate each row of A by a linear function and create a matrix A composed of the approximated rows
     A = f(a0)
@@ -114,21 +114,21 @@ function ctcompanion_matrix(a, epsilon, meta::CTMeta)
 end
 
 @average_energy ContinuousTransition (
-    q_y_x::Any, q_a::Any, q_W::Any, meta::CTMeta
+    q_y_x::Any, q_a::Any, q_W::Any, meta::CTMeta,
 ) = begin
-    ma, Va   = mean_cov(q_a)
+    ma, Va = mean_cov(q_a)
     myx, Vyx = mean_cov(q_y_x)
-    mW       = mean(q_W)
+    mW = mean(q_W)
 
     Fs = getjacobians(meta, ma) # dx × dydx
     dy = length(Fs)
 
-    n  = div(ndims(q_y_x), 2)
+    n = div(ndims(q_y_x), 2)
     mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
 
     mx, Vx = @views myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
     my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
-    Vyx    = @view Vyx[1:dy, (dy + 1):end]
+    Vyx = @view Vyx[1:dy, (dy + 1):end]
 
     g1 = -mA * Vyx'
     g2 = g1'
@@ -148,24 +148,24 @@ end
     AE =
         n / 2 * log2π - mean(logdet, q_W) +
         (
-            tr(
-                mW * (
-                    mA * Vx * mA' +
+        tr(
+            mW * (
+                mA * Vx * mA' +
                     g1 +
                     g2 +
                     Vy +
                     (mA * mx - my) * (mA * mx - my)'
-                ),
-            ) +
+            ),
+        ) +
             trWSU +
             trkronxxWSU
-        ) / 2
+    ) / 2
 
     return AE
 end
 
 @average_energy ContinuousTransition (
-    q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta
+    q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta,
 ) = begin
     ma, Va = mean_cov(q_a)
     my, Vy = mean_cov(q_y)
@@ -193,10 +193,10 @@ end
     AE =
         n / 2 * log2π - mean(logdet, q_W) +
         (
-            tr(mW * (mA * Vx * mA' + Vy + (mA * mx - my) * (mA * mx - my)')) +
+        tr(mW * (mA * Vx * mA' + Vy + (mA * mx - my) * (mA * mx - my)')) +
             trWSU +
             trkronxxWSU
-        ) / 2
+    ) / 2
 
     return AE
 end

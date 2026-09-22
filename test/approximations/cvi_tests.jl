@@ -4,8 +4,8 @@
 
     function gammafisher(dist::GammaShapeRate)
         return [
-            polygamma(1, shape(dist)) -1/rate(dist);
-            -1/rate(dist) shape(dist)/rate(dist)^2
+            polygamma(1, shape(dist)) -1 / rate(dist);
+            -1 / rate(dist) shape(dist) / rate(dist)^2
         ]
     end
 
@@ -31,23 +31,23 @@ end
     end
 
     function ReactiveMP.cvi_update!(
-        state::Tuple{NoopOptimiser, Nothing}, new_λ, λ, ∇
-    )
+            state::Tuple{NoopOptimiser, Nothing}, new_λ, λ, ∇
+        )
         return state, vec(λ)
     end
 
     @testset "Checking that the procedure runs for different parameters (with a noop-optimiser)" begin
         for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)),
-            force_proper in (Val(true), Val(false)),
-            warn in (true, false),
-            n_iters in 1:3,
-            n_gradpoints in 1:3
+                force_proper in (Val(true), Val(false)),
+                warn in (true, false),
+                n_iters in 1:3,
+                n_gradpoints in 1:3
 
             for (left, right) in (
-                (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
-                (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
-                (Bernoulli(0.5), Bernoulli(0.5)),
-            )
+                    (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
+                    (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
+                    (Bernoulli(0.5), Bernoulli(0.5)),
+                )
                 method = CVI(
                     1,
                     n_iters,
@@ -81,8 +81,8 @@ end
     end
 
     function ReactiveMP.cvi_update!(
-        state::Tuple{CountingOptimizer, Nothing}, new_λ, λ, ∇
-    )
+            state::Tuple{CountingOptimizer, Nothing}, new_λ, λ, ∇
+        )
         opt = state[1]
         opt.num_its += 1
         return (state, vec(λ))
@@ -90,16 +90,16 @@ end
 
     @testset "Checking that the procedure runs for different parameters (with a counting-optimiser)" begin
         for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)),
-            force_proper in (Val(true), Val(false)),
-            warn in (true, false),
-            n_iters in 1:3,
-            n_gradpoints in 1:3
+                force_proper in (Val(true), Val(false)),
+                warn in (true, false),
+                n_iters in 1:3,
+                n_gradpoints in 1:3
 
             for (left, right) in (
-                (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
-                (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
-                (Bernoulli(0.5), Bernoulli(0.5)),
-            )
+                    (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
+                    (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
+                    (Bernoulli(0.5), Bernoulli(0.5)),
+                )
                 opt = CountingOptimizer(0)
                 method = CVI(
                     1, n_iters, opt, strategy, n_gradpoints, force_proper, warn
@@ -123,16 +123,16 @@ end
 
     @testset "Checking that the procedure runs for different parameters (with a lambda based counting-optimiser)" begin
         for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)),
-            force_proper in (Val(true), Val(false)),
-            warn in (true, false),
-            n_iters in 1:3,
-            n_gradpoints in 1:3
+                force_proper in (Val(true), Val(false)),
+                warn in (true, false),
+                n_iters in 1:3,
+                n_gradpoints in 1:3
 
             for (left, right) in (
-                (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
-                (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
-                (Bernoulli(0.5), Bernoulli(0.5)),
-            )
+                    (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
+                    (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
+                    (Bernoulli(0.5), Bernoulli(0.5)),
+                )
                 counting = 0
                 callback = (new_λ, λ, _) -> begin
                     counting += 1
@@ -180,22 +180,22 @@ end
                 (
                     left = Bernoulli(rand(rng)),
                     right = Bernoulli(rand(rng)),
-                    tol = 9e-3,
+                    tol = 9.0e-3,
                 ),
                 (
                     left = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1),
                     right = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1),
-                    tol = 1e-2,
+                    tol = 1.0e-2,
                 ),
                 (
                     left = GammaShapeRate(rand(rng) + 1, rand(rng) + 1),
                     right = GammaShapeRate(rand(rng) + 1, rand(rng) + 1),
-                    tol = 8e-2,
+                    tol = 8.0e-2,
                 ),
                 (
                     left = GammaShapeScale(rand(rng) + 1, rand(rng) + 1),
                     right = GammaShapeScale(rand(rng) + 1, rand(rng) + 1),
-                    tol = 1e-1,
+                    tol = 1.0e-1,
                 ),
                 # (left = Categorical(softmax(rand(rng, 3))), Categorical(softmax(rand(rng, 3)))) # Categorical is broken, needs fix!
             )
@@ -206,15 +206,15 @@ end
                 )
                 n_iters = get(candidate, :n_iters, (1000,))
                 n_gradpoints = get(candidate, :n_gradpoints, (50,))
-                tol = get(candidate, :tol, 1e-2)
+                tol = get(candidate, :tol, 1.0e-2)
 
                 left = candidate[:left]
                 right = candidate[:right]
                 closed = prod(GenericProd(), left, right)
 
                 for grad in grads,
-                    optimiser in optimisers, n in n_iters,
-                    k in n_gradpoints
+                        optimiser in optimisers, n in n_iters,
+                        k in n_gradpoints
 
                     method = CVI(
                         StableRNG(42), 1, n, optimiser, grad, k, Val(true), true
@@ -230,7 +230,7 @@ end
                             isapprox(mean(numerical), mean(closed), atol = tol)
                         )
                         if variate_form(typeof(left)) === Univariate &&
-                            variate_form(typeof(right)) === Univariate
+                                variate_form(typeof(right)) === Univariate
                             @test all(
                                 isapprox(
                                     var(numerical), var(closed), atol = tol
@@ -238,7 +238,7 @@ end
                             )
                         end
                         if variate_form(typeof(left)) === Multivariate &&
-                            variate_form(typeof(right)) === Multivariate
+                                variate_form(typeof(right)) === Multivariate
                             @test all(
                                 isapprox(
                                     cov(numerical), cov(closed), atol = tol
@@ -272,8 +272,8 @@ end
                 meta, ContinuousUnivariateLogPdf((x) -> logpdf(left, x)), right
             )
             for numerical in (numerical_1, numerical_2)
-                @test isapprox(mean(numerical), mean(closed), atol = 5e-2)
-                @test isapprox(var(numerical), var(closed), atol = 5e-2)
+                @test isapprox(mean(numerical), mean(closed), atol = 5.0e-2)
+                @test isapprox(var(numerical), var(closed), atol = 5.0e-2)
             end
         end
     end
@@ -307,10 +307,10 @@ end
             )
             for numerical in (numerical_1, numerical_2)
                 @test isapprox(
-                    mean(numerical), mean(closed), atol = n * 5e-2, rtol = 5e-2
+                    mean(numerical), mean(closed), atol = n * 5.0e-2, rtol = 5.0e-2
                 )
                 @test isapprox(
-                    cov(numerical), cov(closed), atol = n * 5e-2, rtol = 5e-2
+                    cov(numerical), cov(closed), atol = n * 5.0e-2, rtol = 5.0e-2
                 )
             end
         end

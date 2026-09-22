@@ -31,7 +31,7 @@ end
 
 # VMP: Mean-field
 @rule ContinuousTransition(:x, Marginalisation) (
-    q_y::Any, q_a::Any, q_W::Any, meta::CTMeta
+    q_y::Any, q_a::Any, q_W::Any, meta::CTMeta,
 ) = begin
     ma, Va = mean_cov(q_a)
     my = mean(q_y)

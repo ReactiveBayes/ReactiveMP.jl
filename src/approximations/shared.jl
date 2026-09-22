@@ -1,6 +1,6 @@
 
 as_vec(d::Float64) = [d] # Extend vectorization to Float
-as_vec(something)  = vec(something) # Avoid type-piracy, but better to refactor this
+as_vec(something) = vec(something) # Avoid type-piracy, but better to refactor this
 
 as_mat(d::Float64) = [d;;]
 as_mat(mat::AbstractMatrix) = mat
@@ -16,7 +16,7 @@ function __starts_at(sizes::Tuple)
     )
 end
 
-Base.@propagate_inbounds __as_vec_copyto!(container, start, input::Real)             = container[start] = input
+Base.@propagate_inbounds __as_vec_copyto!(container, start, input::Real) = container[start] = input
 Base.@propagate_inbounds __as_vec_copyto!(container, start, input::AbstractVecOrMat) = copyto!(container, start, input, 1, length(input))
 
 # This function linearizes the `inputs` argument into one (potentially big) vector
@@ -25,9 +25,9 @@ Base.@propagate_inbounds __as_vec_copyto!(container, start, input::AbstractVecOr
 #             ([2, 3], [ 1.0 0.0; 0.0 1.0 ]) becomes `[ 2.0, 3.0, 1.0, 0.0, 0.0, 1.0 ]`
 #             and so on
 function __as_vec(inputs::Tuple)
-    sizes     = prod.(size.(inputs))
+    sizes = prod.(size.(inputs))
     starts_at = __starts_at(sizes)
-    total     = last(starts_at) + prod(last(sizes)) - 1
+    total = last(starts_at) + prod(last(sizes)) - 1
 
     T = promote_type(eltype.(inputs)...)
     x = Vector{T}(undef, total)

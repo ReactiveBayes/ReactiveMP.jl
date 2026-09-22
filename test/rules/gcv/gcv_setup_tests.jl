@@ -38,9 +38,9 @@
 
     # ⟨(y - x)²⟩ under a factorized q(y)q(x)
     expected_psi(q_y, q_x) =
-        let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
-            (m_y - m_x)^2 + v_y + v_x
-        end
+    let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
+        (m_y - m_x)^2 + v_y + v_x
+    end
 
     # ⟨(y - x)²⟩ under a joint q(y, x); equals the factorized form when Cov(y, x) = 0
     function expected_psi(q_y_x)
@@ -54,9 +54,9 @@
     # structured parameterisation. Every structured rule must then agree exactly with its
     # mean-field sibling.
     block_diagonal_joint(q_y, q_x) =
-        let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
-            MvNormalMeanCovariance([m_y, m_x], [v_y 0.0; 0.0 v_x])
-        end
+    let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
+        MvNormalMeanCovariance([m_y, m_x], [v_y 0.0; 0.0 v_x])
+    end
 
     default_meta() = GCVMetadata(GaussHermiteCubature(20))
 

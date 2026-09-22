@@ -140,7 +140,7 @@
             q_y_x = MvNormalMeanCovariance(zeros(3), diageye(3))
             q_θ = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
             q_γ = GammaShapeRate(2.0, 3.0)
-            @test softdot_structured_ae(q_y_x, q_θ, q_γ) ≈ 2.256852 atol = 1e-4
+            @test softdot_structured_ae(q_y_x, q_θ, q_γ) ≈ 2.256852 atol = 1.0e-4
         end
     end # testset: structured
 end # testset

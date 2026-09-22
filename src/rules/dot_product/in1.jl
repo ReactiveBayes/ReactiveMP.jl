@@ -5,7 +5,7 @@
     meta::Union{AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(dot)(:in2, Marginalisation) (
-        m_out = m_out, m_in1 = m_in2, meta = meta
+        m_out = m_out, m_in1 = m_in2, meta = meta,
     )
 end
 

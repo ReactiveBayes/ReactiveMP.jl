@@ -26,7 +26,7 @@ import StatsFuns: log2π, logπ
 # E_{X|Y}[(X−M) Y (X−M)ᵀ] = D Y Dᵀ + tr(Y Y⁻¹) Uq = D Y Dᵀ + p Uq.
 
 @average_energy MatrixNormalWishart (
-    q_out::MatrixNormalWishart, q_M::Any, q_U::Any, q_V::Any, q_ν::Any
+    q_out::MatrixNormalWishart, q_M::Any, q_U::Any, q_V::Any, q_ν::Any,
 ) = begin
     Mq, Uq, Vq, νq = params(q_out)
     M = mean(q_M)
@@ -54,8 +54,8 @@ import StatsFuns: log2π, logπ
     trVY = νq * mul_trace(invV, Vq)
 
     return (n * p / 2) * log2π +
-           (p / 2) * logdet(U) +
-           (ν * p / 2) * log(2) +
-           (ν / 2) * logdet(V) +
-           logΓp - ((n + ν - p - 1) / 2) * L + (quad + trVY) / 2
+        (p / 2) * logdet(U) +
+        (ν * p / 2) * log(2) +
+        (ν / 2) * logdet(V) +
+        logΓp - ((n + ν - p - 1) / 2) * L + (quad + trVY) / 2
 end

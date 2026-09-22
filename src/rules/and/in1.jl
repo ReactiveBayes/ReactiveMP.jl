@@ -3,6 +3,6 @@
 
     return Bernoulli(
         (1 - pout - pin2 + 2 * pout * pin2) /
-        (2 - 2 * pout - pin2 + 2 * pout * pin2),
+            (2 - 2 * pout - pin2 + 2 * pout * pin2),
     )
 end

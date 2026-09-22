@@ -53,7 +53,7 @@ getinterfaces(factornode::MixtureNode) =
     (factornode.out, factornode.switch, factornode.inputs...)
 sdtype(factornode::MixtureNode) = Stochastic()
 
-interfaceindices(factornode::MixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
+interfaceindices(factornode::MixtureNode, iname::Symbol) = (interfaceindex(factornode, iname),)
 interfaceindices(factornode::MixtureNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 function interfaceindex(factornode::MixtureNode, iname::Symbol)
@@ -71,12 +71,16 @@ function interfaceindex(factornode::MixtureNode, iname::Symbol)
 end
 
 function factornode(::Type{<:Mixture}, interfaces, factorization)
-    outinterface = interfaces[findfirst(
-        ((name, variable),) -> name == :out, interfaces
-    )]
-    switchinterface = interfaces[findfirst(
-        ((name, variable),) -> name == :switch, interfaces
-    )]
+    outinterface = interfaces[
+        findfirst(
+            ((name, variable),) -> name == :out, interfaces
+        ),
+    ]
+    switchinterface = interfaces[
+        findfirst(
+            ((name, variable),) -> name == :switch, interfaces
+        ),
+    ]
     inputinterfaces = filter(((name, variable),) -> name == :inputs, interfaces)
 
     N = length(inputinterfaces)
@@ -106,8 +110,8 @@ collect_functional_dependencies(::MixtureNode, ::Any) = error(
 )
 
 function activate!(
-    factornode::MixtureNode, options::FactorNodeActivationOptions
-)
+        factornode::MixtureNode, options::FactorNodeActivationOptions
+    )
     dependecies = collect_functional_dependencies(
         factornode, getdependecies(options)
     )
@@ -115,11 +119,11 @@ function activate!(
 end
 
 function functional_dependencies(
-    ::MixtureNodeFunctionalDependencies,
-    factornode::MixtureNode{N},
-    interface,
-    iindex::Int,
-) where {N}
+        ::MixtureNodeFunctionalDependencies,
+        factornode::MixtureNode{N},
+        interface,
+        iindex::Int,
+    ) where {N}
     message_dependencies = if iindex === 1
         # output depends on:
         (factornode.switch, factornode.inputs)
@@ -140,10 +144,10 @@ end
 
 # function for using hard switching
 function functional_dependencies(
-    ::RequireMarginalFunctionalDependencies,
-    factornode::MixtureNode{N},
-    iindex::Int,
-) where {N}
+        ::RequireMarginalFunctionalDependencies,
+        factornode::MixtureNode{N},
+        iindex::Int,
+    ) where {N}
     message_dependencies = if iindex === 1
         # output depends on:
         (factornode.inputs,)
@@ -174,30 +178,33 @@ function functional_dependencies(
 end
 
 function collect_latest_messages(
-    ::MixtureNodeFunctionalDependencies,
-    factornode::MixtureNode{N},
-    messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}},
-) where {N}
+        ::MixtureNodeFunctionalDependencies,
+        factornode::MixtureNode{N},
+        messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}},
+    ) where {N}
     output_or_switch_interface = messages[1]
     inputsinterfaces = messages[2]
 
-    msgs_names = Val{(
-        name(output_or_switch_interface), name(inputsinterfaces[1])
-    )}()
+    msgs_names = Val{
+        (
+            name(output_or_switch_interface), name(inputsinterfaces[1]),
+        ),
+    }()
     msgs_observable =
         combineLatest(
-            (
-                get_stream_of_inbound_messages(output_or_switch_interface),
-                combineLatest(
-                    map(
-                        (input) -> get_stream_of_inbound_messages(input),
-                        inputsinterfaces,
-                    ),
-                    PushNew(),
+        (
+            get_stream_of_inbound_messages(output_or_switch_interface),
+            combineLatest(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
                 ),
+                PushNew(),
             ),
-            PushNew(),
-        ) |> map_to((
+        ),
+        PushNew(),
+    ) |> map_to(
+        (
             get_stream_of_inbound_messages(output_or_switch_interface),
             ManyOf(
                 map(
@@ -205,33 +212,35 @@ function collect_latest_messages(
                     inputsinterfaces,
                 ),
             ),
-        ))
+        )
+    )
     return msgs_names, msgs_observable
 end
 
 function collect_latest_messages(
-    ::RequireMarginalFunctionalDependencies,
-    factornode::MixtureNode{N},
-    messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}},
-) where {N}
-    switchinterface  = messages[1]
+        ::RequireMarginalFunctionalDependencies,
+        factornode::MixtureNode{N},
+        messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}},
+    ) where {N}
+    switchinterface = messages[1]
     inputsinterfaces = messages[2]
 
     msgs_names = Val{(name(switchinterface), name(inputsinterfaces[1]))}()
     msgs_observable =
         combineLatest(
-            (
-                get_stream_of_inbound_messages(switchinterface),
-                combineLatest(
-                    map(
-                        (input) -> get_stream_of_inbound_messages(input),
-                        inputsinterfaces,
-                    ),
-                    PushNew(),
+        (
+            get_stream_of_inbound_messages(switchinterface),
+            combineLatest(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
                 ),
+                PushNew(),
             ),
-            PushNew(),
-        ) |> map_to((
+        ),
+        PushNew(),
+    ) |> map_to(
+        (
             get_stream_of_inbound_messages(switchinterface),
             ManyOf(
                 map(
@@ -239,41 +248,44 @@ function collect_latest_messages(
                     inputsinterfaces,
                 ),
             ),
-        ))
+        )
+    )
     return msgs_names, msgs_observable
 end
 
 function collect_latest_messages(
-    ::RequireMarginalFunctionalDependencies,
-    ::MixtureNode{N},
-    messages::Tuple{NTuple{N, IndexedNodeInterface}},
-) where {N}
+        ::RequireMarginalFunctionalDependencies,
+        ::MixtureNode{N},
+        messages::Tuple{NTuple{N, IndexedNodeInterface}},
+    ) where {N}
     inputsinterfaces = messages[1]
 
     msgs_names = Val{(name(inputsinterfaces[1]),)}()
     msgs_observable =
         combineLatest(
-            map(
-                (input) -> get_stream_of_inbound_messages(input),
-                inputsinterfaces,
-            ),
-            PushNew(),
-        ) |> map_to((
+        map(
+            (input) -> get_stream_of_inbound_messages(input),
+            inputsinterfaces,
+        ),
+        PushNew(),
+    ) |> map_to(
+        (
             ManyOf(
                 map(
                     (input) -> get_stream_of_inbound_messages(input),
                     inputsinterfaces,
                 ),
             ),
-        ))
+        )
+    )
     return msgs_names, msgs_observable
 end
 
 function collect_latest_messages(
-    ::RequireMarginalFunctionalDependencies,
-    factornode::MixtureNode{N},
-    messages::Tuple{NodeInterface},
-) where {N}
+        ::RequireMarginalFunctionalDependencies,
+        factornode::MixtureNode{N},
+        messages::Tuple{NodeInterface},
+    ) where {N}
     outputinterface = messages[1]
 
     msgs_names = Val{(name(outputinterface),)}()
@@ -284,21 +296,21 @@ function collect_latest_messages(
 end
 
 function collect_latest_marginals(
-    ::MixtureNodeFunctionalDependencies,
-    factornode::MixtureNode{N},
-    marginal_dependencies::Tuple{},
-) where {N}
+        ::MixtureNodeFunctionalDependencies,
+        factornode::MixtureNode{N},
+        marginal_dependencies::Tuple{},
+    ) where {N}
     return nothing, of(nothing)
 end
 
 function collect_latest_marginals(
-    ::RequireMarginalFunctionalDependencies,
-    factornode::MixtureNode{N},
-    marginals::Tuple{NodeInterface},
-) where {N}
+        ::RequireMarginalFunctionalDependencies,
+        factornode::MixtureNode{N},
+        marginals::Tuple{NodeInterface},
+    ) where {N}
     switchinterface = marginals[1]
 
-    marginal_names       = Val{(name(switchinterface),)}()
+    marginal_names = Val{(name(switchinterface),)}()
     marginals_observable = combineLatestUpdates((get_stream_of_marginals(getvariable(switchinterface)),), PushNew())
 
     return marginal_names, marginals_observable
@@ -306,7 +318,7 @@ end
 
 # FreeEnergy related functions
 @average_energy Mixture (
-    q_out::Any, q_switch::Any, q_inputs::ManyOf{N, Any}
+    q_out::Any, q_switch::Any, q_inputs::ManyOf{N, Any},
 ) where {N} = begin
     @warn """
     AverageEnergy not defined for Mixture node.

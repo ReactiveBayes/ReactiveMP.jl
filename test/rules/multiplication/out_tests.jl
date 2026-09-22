@@ -66,13 +66,13 @@
         d2 = NormalMeanVariance(0.5, 1.5)
         d3 = NormalMeanVariance(2.0, 0.5)
         OutMessage_1 = @call_rule typeof(*)(:out, Marginalisation) (
-            m_A = d1, m_in = d2
+            m_A = d1, m_in = d2,
         )
         OutMessage_2 = @call_rule typeof(*)(:out, Marginalisation) (
-            m_A = d1, m_in = d3
+            m_A = d1, m_in = d3,
         )
         OutMessage_3 = @call_rule typeof(*)(:out, Marginalisation) (
-            m_A = d2, m_in = d3
+            m_A = d2, m_in = d3,
         )
         groundtruthOutMessage_1 = besselmod(
             mean(d1), var(d1), mean(d2), var(d2), 0.0
@@ -96,14 +96,14 @@
         end
     end
     @testset "messages of type Any" begin
-        rng         = StableRNG(42)
-        d1          = NormalMeanVariance(0.0, 1.0)
-        d2          = LogNormal(0.0, 1.0)
+        rng = StableRNG(42)
+        d1 = NormalMeanVariance(0.0, 1.0)
+        d2 = LogNormal(0.0, 1.0)
         num_samples = 3000
-        samples_d1  = rand(rng, d1, num_samples)
+        samples_d1 = rand(rng, d1, num_samples)
 
         OutMessage = @call_rule typeof(*)(:out, Marginalisation) (
-            m_A = d1, m_in = d2
+            m_A = d1, m_in = d2,
         )
 
         @test typeof(OutMessage) <: ContinuousUnivariateLogPdf

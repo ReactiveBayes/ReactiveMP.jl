@@ -5,8 +5,8 @@ __get_corresponding_size(s::NTuple{N, Int}, occurrence::Int) where {N} =
 __get_corresponding_size(s::NTuple{N, Int}, occurrence::Nothing) where {N} = 1
 
 function get_corresponding_size(
-    dim::Int, dims::NTuple{N, Int}, values::AbstractArray{T, N}
-) where {T, N}
+        dim::Int, dims::NTuple{N, Int}, values::AbstractArray{T, N}
+    ) where {T, N}
     occurrence = findfirst(==(dim), dims)
     s = size(values)
     return __get_corresponding_size(s, occurrence)
@@ -19,10 +19,10 @@ Multiply the tensor with the values along the specified dimensions. This is simi
 the result, only performs the elementwise multiplication.
 """
 function multiply_dimensions!(
-    tensor::AbstractArray{T, M},
-    dims::NTuple{N, Int},
-    values::AbstractArray{T, N},
-) where {T, M, N}
+        tensor::AbstractArray{T, M},
+        dims::NTuple{N, Int},
+        values::AbstractArray{T, N},
+    ) where {T, M, N}
     localdims = ntuple(dim -> get_corresponding_size(dim, dims, values), M)
     v = reshape(values, localdims)
     tensor .*= v
@@ -30,10 +30,10 @@ function multiply_dimensions!(
 end
 
 function multiply_dimensions!(
-    tensor::AbstractArray{T, M},
-    dims::NTuple{N, Int},
-    values::AbstractArray{P, N},
-) where {T, M, N, P}
+        tensor::AbstractArray{T, M},
+        dims::NTuple{N, Int},
+        values::AbstractArray{P, N},
+    ) where {T, M, N, P}
     NT = promote_type(T, P)
     tensor = convert_paramfloattype(NT, tensor)
     values = convert_paramfloattype(NT, values)
@@ -46,19 +46,19 @@ end
 Sum out the dimensions of the tensor that are not part of the marginal distribution. This is a generalization of an inner product, where we also figure out which dimensions of the tensor align with the dimensions of `values`.
 """
 function sum_out_dimensions(
-    tensor::AbstractArray{T, M},
-    dims::NTuple{N, Int},
-    values::AbstractArray{T, N},
-) where {T, M, N}
+        tensor::AbstractArray{T, M},
+        dims::NTuple{N, Int},
+        values::AbstractArray{T, N},
+    ) where {T, M, N}
     result = multiply_dimensions!(tensor, dims, values)
     return sum(result; dims = dims)
 end
 
 function sum_out_dimensions(
-    tensor::AbstractArray{T, M},
-    dims::NTuple{N, Int},
-    values::AbstractArray{P, N},
-) where {T, M, N, P}
+        tensor::AbstractArray{T, M},
+        dims::NTuple{N, Int},
+        values::AbstractArray{P, N},
+    ) where {T, M, N, P}
     NT = promote_type(T, P)
     tensor = convert_paramfloattype(NT, tensor)
     values = convert_paramfloattype(NT, values)
@@ -89,8 +89,8 @@ Therefore, the function will return `(2, 3, 7)` and the contingency tensor `marg
 
 """
 function discrete_transition_decode_marginal(
-    marginal_name::String, marginal::Contingency{T, <:AbstractArray{T, N}}
-) where {T, N}
+        marginal_name::String, marginal::Contingency{T, <:AbstractArray{T, N}}
+    ) where {T, N}
     split_marginal_names = split(marginal_name, "_")
     dims = Tuple(
         map(get_corresponding_index, split_marginal_names)
@@ -99,20 +99,20 @@ function discrete_transition_decode_marginal(
 end
 
 function discrete_transition_decode_marginal(
-    marginal_name::String, marginal::Categorical
-)
+        marginal_name::String, marginal::Categorical
+    )
     return (get_corresponding_index(marginal_name),), probvec(marginal)
 end
 
 function discrete_transition_decode_marginal(
-    marginal_name::String, marginal::Bernoulli
-)
+        marginal_name::String, marginal::Bernoulli
+    )
     return (get_corresponding_index(marginal_name),), collect(probvec(marginal))
 end
 
 function discrete_transition_decode_marginal(
-    marginal_name::String, marginal::PointMass{<:AbstractVector{<:Real}}
-)
+        marginal_name::String, marginal::PointMass{<:AbstractVector{<:Real}}
+    )
     return (get_corresponding_index(marginal_name),), mean(marginal)
 end
 
@@ -131,8 +131,8 @@ Process the marginals to update the expected log transition matrix. This is a co
 - The updated expected log transition matrix.
 """
 function discrete_transition_process_marginals(
-    e_log_a, marginals_names, marginals
-)
+        e_log_a, marginals_names, marginals
+    )
     result = copy(e_log_a)
     foreach(zip(marginals_names, marginals)) do (marginal_name, marginal)
         marginal = getdata(marginal)
@@ -160,8 +160,8 @@ Process the messages to update the expected log transition matrix. This is a com
 This argument toggles between marginalising out a variable (for messages) and computing a joint marginal distribution.
 """
 function discrete_transition_process_messages(
-    msg, message_names, messages, callback
-)
+        msg, message_names, messages, callback
+    )
     foreach(zip(message_names, messages)) do (message_name, message)
         if message_name === :out
             msg = callback(msg, (1,), probvec(message))
@@ -196,8 +196,8 @@ Compute the message for one of the Categorical interfaces of the `DiscreteTransi
 - `q_a`: The marginal distribution over the transition tensor.
 """
 function discrete_transition_structured_message_rule(
-    message_names, messages, marginals_names, marginals, q_a
-)
+        message_names, messages, marginals_names, marginals, q_a
+    )
     e_log_a = mean(BroadcastFunction(clamplog), q_a)
     e_log_a = discrete_transition_process_marginals(
         e_log_a, marginals_names, marginals
@@ -212,28 +212,28 @@ function discrete_transition_structured_message_rule(
 end
 
 function ReactiveMP.rule(
-    fform::Type{<:DiscreteTransition},
-    on::Val{S},
-    vconstraint::Marginalisation,
-    messages_names::Val{mes_names},
-    messages::NTuple{
-        N, Union{Message{<:PointMass}, Message{<:DiscreteNonParametric}}
-    },
-    marginals_names::Val{mar_names},
-    marginals::NTuple{
-        M,
-        Union{
-            Marginal{<:DirichletCollection},
-            Marginal{<:PointMass{<:AbstractArray}},
-            Marginal{<:DiscreteNonParametric},
-            Marginal{<:Contingency},
-            Marginal{<:Bernoulli},
+        fform::Type{<:DiscreteTransition},
+        on::Val{S},
+        vconstraint::Marginalisation,
+        messages_names::Val{mes_names},
+        messages::NTuple{
+            N, Union{Message{<:PointMass}, Message{<:DiscreteNonParametric}},
         },
-    },
-    meta::Any,
-    annotations::Any,
-    ::Any,
-) where {S, M, N, mes_names, mar_names}
+        marginals_names::Val{mar_names},
+        marginals::NTuple{
+            M,
+            Union{
+                Marginal{<:DirichletCollection},
+                Marginal{<:PointMass{<:AbstractArray}},
+                Marginal{<:DiscreteNonParametric},
+                Marginal{<:Contingency},
+                Marginal{<:Bernoulli},
+            },
+        },
+        meta::Any,
+        annotations::Any,
+        ::Any,
+    ) where {S, M, N, mes_names, mar_names}
     q_a = marginals[findfirst(==(:a), mar_names)]
     return discrete_transition_structured_message_rule(
         mes_names, messages, mar_names, marginals, q_a
@@ -241,26 +241,26 @@ function ReactiveMP.rule(
 end
 
 function ReactiveMP.rule(
-    fform::Type{<:DiscreteTransition},
-    on::Val{S},
-    vconstraint::Marginalisation,
-    messages_names::Nothing,
-    messages::Nothing,
-    marginals_names::Val{mar_names},
-    marginals::NTuple{
-        M,
-        Union{
-            Marginal{<:DirichletCollection},
-            Marginal{<:PointMass{<:AbstractArray}},
-            Marginal{<:DiscreteNonParametric},
-            Marginal{<:Contingency},
-            Marginal{<:Bernoulli},
+        fform::Type{<:DiscreteTransition},
+        on::Val{S},
+        vconstraint::Marginalisation,
+        messages_names::Nothing,
+        messages::Nothing,
+        marginals_names::Val{mar_names},
+        marginals::NTuple{
+            M,
+            Union{
+                Marginal{<:DirichletCollection},
+                Marginal{<:PointMass{<:AbstractArray}},
+                Marginal{<:DiscreteNonParametric},
+                Marginal{<:Contingency},
+                Marginal{<:Bernoulli},
+            },
         },
-    },
-    meta::Any,
-    annotations::Any,
-    ::Any,
-) where {S, M, mar_names}
+        meta::Any,
+        annotations::Any,
+        ::Any,
+    ) where {S, M, mar_names}
     q_a = marginals[findfirst(==(:a), mar_names)]
     return discrete_transition_structured_message_rule(
         (), (), mar_names, marginals, q_a

@@ -11,8 +11,8 @@
 end
 
 @testitem "post_rule_annotations! stores a RuleInputArgumentsRecord" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         post_rule_annotations!,
@@ -20,11 +20,11 @@ end
         RuleInputArgumentsRecord,
         get_rule_input_arguments
 
-    ann       = AnnotationDict()
-    mapping   = RuleInputArgumentsTestUtils.MockMapping(:out)
-    messages  = (:msg1, :msg2)
+    ann = AnnotationDict()
+    mapping = RuleInputArgumentsTestUtils.MockMapping(:out)
+    messages = (:msg1, :msg2)
     marginals = (:mar1,)
-    result    = :the_result
+    result = :the_result
 
     post_rule_annotations!(
         InputArgumentsAnnotations(), ann, mapping, messages, marginals, result
@@ -39,8 +39,8 @@ end
 end
 
 @testitem "post_product_annotations! merges two RuleInputArgumentsRecord into ProductInputArgumentsRecord" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -50,10 +50,10 @@ end
         ProductInputArgumentsRecord,
         get_rule_input_arguments
 
-    left_record  = RuleInputArgumentsRecord(RuleInputArgumentsTestUtils.MockMapping(:left), nothing, nothing, :left_result)
+    left_record = RuleInputArgumentsRecord(RuleInputArgumentsTestUtils.MockMapping(:left), nothing, nothing, :left_result)
     right_record = RuleInputArgumentsRecord(RuleInputArgumentsTestUtils.MockMapping(:right), nothing, nothing, :right_result)
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(left_ann, :rule_input_arguments, left_record)
     annotate!(right_ann, :rule_input_arguments, right_record)
@@ -75,8 +75,8 @@ end
 end
 
 @testitem "post_product_annotations! merges record (left) and prod (right)" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -96,7 +96,7 @@ end
         RuleInputArgumentsTestUtils.MockMapping(:r3), nothing, nothing, :res3
     )
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(left_ann, :rule_input_arguments, r1)
     annotate!(
@@ -121,8 +121,8 @@ end
 end
 
 @testitem "post_product_annotations! merges prod (left) and record (right)" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -142,7 +142,7 @@ end
         RuleInputArgumentsTestUtils.MockMapping(:r3), nothing, nothing, :res3
     )
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(
         left_ann, :rule_input_arguments, ProductInputArgumentsRecord([r1, r2])
@@ -167,8 +167,8 @@ end
 end
 
 @testitem "post_product_annotations! merges two ProductInputArgumentsRecord" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -191,7 +191,7 @@ end
         RuleInputArgumentsTestUtils.MockMapping(:r4), nothing, nothing, :res4
     )
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(
         left_ann, :rule_input_arguments, ProductInputArgumentsRecord([r1, r2])
@@ -219,8 +219,8 @@ end
 end
 
 @testitem "post_product_annotations! copies the right record through when the left side never ran a rule (e.g. a clamped constant)" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -237,7 +237,7 @@ end
         :right_result,
     )
 
-    left_ann  = AnnotationDict() # empty: represents a clamped/constant message, which never runs a rule
+    left_ann = AnnotationDict() # empty: represents a clamped/constant message, which never runs a rule
     right_ann = AnnotationDict()
     annotate!(right_ann, :rule_input_arguments, right_record)
 
@@ -255,8 +255,8 @@ end
 end
 
 @testitem "post_product_annotations! copies the left record through when the right side never ran a rule (e.g. a clamped constant)" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         annotate!,
@@ -273,7 +273,7 @@ end
         :left_result,
     )
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict() # empty: represents a clamped/constant message, which never runs a rule
     annotate!(left_ann, :rule_input_arguments, left_record)
 
@@ -291,15 +291,15 @@ end
 end
 
 @testitem "post_product_annotations! leaves the merged annotation empty when neither side ran a rule (product of two clamped constants)" tags = [
-    :engine
-] setup=[RuleInputArgumentsTestUtils] begin
+    :engine,
+] setup = [RuleInputArgumentsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
         post_product_annotations!,
         InputArgumentsAnnotations,
         has_annotation
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
 
     merged = post_product_annotations!(
@@ -356,7 +356,7 @@ end
 end
 
 @testitem "Base.show for RuleInputArgumentsRecord skips meta when nothing" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
 
@@ -383,7 +383,7 @@ end
 end
 
 @testitem "Base.show for RuleInputArgumentsRecord skips messages/marginals when nothing" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
 
@@ -463,7 +463,7 @@ end
 end
 
 @testitem "merging does not mutate the operand records" tags = [:engine] setup = [
-    RuleInputArgumentsTestUtils
+    RuleInputArgumentsTestUtils,
 ] begin
     # `EqualityChain` hands the *same* cached `Message` -- and therefore the same
     # `AnnotationDict` and the same `ProductInputArgumentsRecord` -- to several
@@ -496,7 +496,7 @@ end
     @testset "prod (left) merged twice with different records" begin
         shared = ProductInputArgumentsRecord([record(:a), record(:b)])
 
-        first  = _merge_input_arguments(shared, record(:c))
+        first = _merge_input_arguments(shared, record(:c))
         second = _merge_input_arguments(shared, record(:d))
 
         # The shared operand must not have grown.
@@ -513,7 +513,7 @@ end
     @testset "prod (right) merged twice with different records" begin
         shared = ProductInputArgumentsRecord([record(:a), record(:b)])
 
-        first  = _merge_input_arguments(record(:c), shared)
+        first = _merge_input_arguments(record(:c), shared)
         second = _merge_input_arguments(record(:d), shared)
 
         @test length(shared.mappings) == 2
@@ -524,9 +524,9 @@ end
 
     @testset "prod merged twice with another prod" begin
         shared = ProductInputArgumentsRecord([record(:a), record(:b)])
-        other  = ProductInputArgumentsRecord([record(:c)])
+        other = ProductInputArgumentsRecord([record(:c)])
 
-        first  = _merge_input_arguments(shared, other)
+        first = _merge_input_arguments(shared, other)
         second = _merge_input_arguments(shared, other)
 
         @test length(shared.mappings) == 2
@@ -540,7 +540,7 @@ end
         # The same scenario one layer up, through the public processor entry point:
         # a single `left_ann` (as a cached message would supply) feeding two products.
         shared_record = ProductInputArgumentsRecord([record(:a), record(:b)])
-        left_ann      = AnnotationDict()
+        left_ann = AnnotationDict()
         annotate!(left_ann, :rule_input_arguments, shared_record)
 
         function merge_with(name)
@@ -558,7 +558,7 @@ end
             )
         end
 
-        first  = merge_with(:c)
+        first = merge_with(:c)
         second = merge_with(:d)
 
         # Under the in-place implementation this was [:a, :b, :c, :d] -- the second

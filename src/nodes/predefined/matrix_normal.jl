@@ -4,7 +4,7 @@ import ExponentialFamily: covmats
 import StatsFuns: log2π
 
 @node MatrixNormal Stochastic [
-    out, (M, aliases = [mean]), (U, aliases = [rowcov]), (V, aliases = [colcov])
+    out, (M, aliases = [mean]), (U, aliases = [rowcov]), (V, aliases = [colcov]),
 ]
 
 # Average energy (mean-field) for `out ~ MatrixNormal(M, U, V)`:
@@ -21,7 +21,7 @@ import StatsFuns: log2π
 # E[X B Xᵀ] = (E[X]) B (E[X])ᵀ + tr(B V) U for X ~ MatrixNormal(·, U, V).
 @average_energy MatrixNormal (q_out::Any, q_M::Any, q_U::Any, q_V::Any) = begin
     Mout = mean(q_out)
-    Mm   = mean(q_M)
+    Mm = mean(q_M)
     n, p = size(Mout)
 
     invU = mean(cholinv, q_U) # E[U⁻¹], n×n

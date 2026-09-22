@@ -1,11 +1,11 @@
 
 @testitem "rules:GCV: effective noise moments" tags = [:rules] setup = [
-    GCVRulesTestUtils
+    GCVRulesTestUtils,
 ] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions, StableRNGs
 
-    expected_A     = GCVRulesTestUtils.expected_A
-    expected_B     = GCVRulesTestUtils.expected_B
+    expected_A = GCVRulesTestUtils.expected_A
+    expected_B = GCVRulesTestUtils.expected_B
     parameter_sets = GCVRulesTestUtils.parameter_sets
 
     # These two quantities appear in every GCV rule, so it is worth establishing what they
@@ -24,7 +24,7 @@
             # expectation and not merely the one the implementation happens to use.
             # Tolerance is the sampling noise floor for 10^6 draws, not a fudge factor.
             samples = exp.(-rand(rng, Normal(m, sqrt(v)), 10^6))
-            @test mean(samples) ≈ expected_A(q_ω) rtol = 5e-3
+            @test mean(samples) ≈ expected_A(q_ω) rtol = 5.0e-3
         end
     end
 
@@ -48,23 +48,23 @@
 
         # The approximation reproduces the true variance of the exponent ...
         @test v_κ * v_z + m_κ^2 * v_z + m_z^2 * v_κ ≈
-            var(κ_samples .* z_samples) rtol = 1e-2
+            var(κ_samples .* z_samples) rtol = 1.0e-2
 
         # ... and lands in the right ballpark, but is not exact.
         @test expected_B(q_z, q_κ) ≈ truth rtol = 0.2
-        @test !isapprox(expected_B(q_z, q_κ), truth; rtol = 1e-4)
+        @test !isapprox(expected_B(q_z, q_κ), truth; rtol = 1.0e-4)
     end
 end
 
 @testitem "rules:GCV: mean-field and structured variants agree at zero y-x covariance" tags = [
-    :rules
+    :rules,
 ] setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
 
-    coefficients         = GCVRulesTestUtils.coefficients
+    coefficients = GCVRulesTestUtils.coefficients
     block_diagonal_joint = GCVRulesTestUtils.block_diagonal_joint
-    default_meta         = GCVRulesTestUtils.default_meta
-    parameter_sets       = GCVRulesTestUtils.parameter_sets
+    default_meta = GCVRulesTestUtils.default_meta
+    parameter_sets = GCVRulesTestUtils.parameter_sets
 
     # With no posterior covariance between `y` and `x`, a structured `q(y, x)` carries exactly
     # the information of the factorized pair, so every structured rule must reduce to its
@@ -84,11 +84,11 @@ end
             @test all(
                 coefficients(
                     @call_rule GCV(:κ, Marginalisation) (
-                        q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta
+                        q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta,
                     )
                 ) .≈ coefficients(
                     @call_rule GCV(:κ, Marginalisation) (
-                        q_y_x = q_y_x, q_z = q_z, q_ω = q_ω, meta = meta
+                        q_y_x = q_y_x, q_z = q_z, q_ω = q_ω, meta = meta,
                     )
                 ),
             )
@@ -98,11 +98,11 @@ end
             @test all(
                 coefficients(
                     @call_rule GCV(:z, Marginalisation) (
-                        q_y = q_y, q_x = q_x, q_κ = q_κ, q_ω = q_ω, meta = meta
+                        q_y = q_y, q_x = q_x, q_κ = q_κ, q_ω = q_ω, meta = meta,
                     )
                 ) .≈ coefficients(
                     @call_rule GCV(:z, Marginalisation) (
-                        q_y_x = q_y_x, q_κ = q_κ, q_ω = q_ω, meta = meta
+                        q_y_x = q_y_x, q_κ = q_κ, q_ω = q_ω, meta = meta,
                     )
                 ),
             )
@@ -111,7 +111,7 @@ end
 end
 
 @testitem "rules:GCV: the three ExponentialLinearQuadratic rules are mutually distinct" tags = [
-    :rules
+    :rules,
 ] setup = [GCVRulesTestUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
 
@@ -136,10 +136,10 @@ end
     q_ω = NormalMeanVariance(1.2, 0.5)
 
     κ_msg = @call_rule GCV(:κ, Marginalisation) (
-        q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta
+        q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta,
     )
     z_msg = @call_rule GCV(:z, Marginalisation) (
-        q_y = q_y, q_x = q_x, q_κ = q_κ, q_ω = q_ω, meta = meta
+        q_y = q_y, q_x = q_x, q_κ = q_κ, q_ω = q_ω, meta = meta,
     )
 
     shape(d) = (d.a, d.c, d.d)

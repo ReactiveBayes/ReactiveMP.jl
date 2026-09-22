@@ -75,10 +75,10 @@ not part of the belief the message represents. Compare `getannotations` explicit
 need annotation-sensitive equality.
 """
 mutable struct Message{D} <: AbstractMessage    # `mutable` structure here appears to be more performance
-    const data        :: D                      # in `RxInfer` benchmarks
-    const is_clamped  :: Bool                   # could be revised at some point though
-    const is_initial  :: Bool
-    const annotations :: AnnotationDict
+    const data::D                      # in `RxInfer` benchmarks
+    const is_clamped::Bool                   # could be revised at some point though
+    const is_initial::Bool
+    const annotations::AnnotationDict
 end
 
 Message(data, is_clamped::Bool, is_initial::Bool) =
@@ -124,22 +124,22 @@ getannotations(message::Message) = message.annotations
 typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
-getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
+getdata(messages::AbstractArray{<:Message}) = map(getdata, messages)
 
 function show(io::IO, message::Message)
     print(io, "Message(", getdata(message), ")")
     ann = getannotations(message)
-    if !isempty(ann)
+    return if !isempty(ann)
         print(io, " with ", ann)
     end
 end
 
-# We need this dummy method as Julia is not smart enough to 
+# We need this dummy method as Julia is not smart enough to
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
     return left.is_clamped == right.is_clamped &&
-           left.is_initial == right.is_initial &&
-           left.data == right.data
+        left.is_initial == right.is_initial &&
+        left.data == right.data
 end
 
 """
@@ -204,11 +204,11 @@ The rules for the product are the following:
 See: [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref)
 """
 function compute_product_of_two_messages(
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    left::Message,
-    right::Message,
-)
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        left::Message,
+        right::Message,
+    )
     span_id = generate_span_id(context.callbacks)
     invoke_callback(
         context.callbacks,
@@ -226,9 +226,9 @@ function compute_product_of_two_messages(
         (is_clamped_or_initial(right))
 
     # process distributions
-    left_dist  = getdata(left)
+    left_dist = getdata(left)
     right_dist = getdata(right)
-    new_dist   = prod(context.prod_constraint, left_dist, right_dist)
+    new_dist = prod(context.prod_constraint, left_dist, right_dist)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
         form_span_id = generate_span_id(context.callbacks)
@@ -258,10 +258,10 @@ function compute_product_of_two_messages(
     end
 
     # process annotations
-    left_ann  = getannotations(left)
+    left_ann = getannotations(left)
     right_ann = getannotations(right)
-    new_ann   = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
-    result    = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
+    new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
 
     invoke_callback(
         context.callbacks,
@@ -275,8 +275,8 @@ end
 
 # Sometimes we call the product on the `DeferredMessage` that need to be casted to a `Message`
 function compute_product_of_two_messages(
-    variable::AbstractVariable, context::MessageProductContext, left, right
-)
+        variable::AbstractVariable, context::MessageProductContext, left, right
+    )
     return compute_product_of_two_messages(
         variable, context, as_message(left), as_message(right)
     )
@@ -290,8 +290,8 @@ Computes the product of a **collection** of messages for a given `variable` (as 
 See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref)
 """
 function compute_product_of_messages(
-    variable::AbstractVariable, context::MessageProductContext, messages
-)
+        variable::AbstractVariable, context::MessageProductContext, messages
+    )
     span_id = generate_span_id(context.callbacks)
     invoke_callback(
         context.callbacks,
@@ -351,14 +351,14 @@ The default fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Comput
 struct MessagesProductFromLeftToRight end
 
 function compute_product_of_messages(
-    ::MessagesProductFromLeftToRight,
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    messages,
-)
+        ::MessagesProductFromLeftToRight,
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        messages,
+    )
     return foldl(
         (left, right) ->
-            compute_product_of_two_messages(variable, context, left, right),
+        compute_product_of_two_messages(variable, context, left, right),
         messages,
     )
 end
@@ -371,14 +371,14 @@ Alternative fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Comput
 struct MessagesProductFromRightToLeft end
 
 function compute_product_of_messages(
-    ::MessagesProductFromRightToLeft,
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    messages,
-)
+        ::MessagesProductFromRightToLeft,
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        messages,
+    )
     return foldr(
         (left, right) ->
-            compute_product_of_two_messages(variable, context, left, right),
+        compute_product_of_two_messages(variable, context, left, right),
         messages,
     )
 end
@@ -391,15 +391,15 @@ it will be called with `variable`, `context` and `messages` as arguments. The fu
 [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood to compute the pairwise products.
 """
 function compute_product_of_messages(
-    f::Function,
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    messages,
-)
+        f::Function,
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        messages,
+    )
     return f(variable, context, messages)
 end
 
-Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
+Distributions.pdf(message::Message, x) = Distributions.pdf(getdata(message), x)
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 
 MacroHelpers.@proxy_methods Message getdata [
@@ -445,10 +445,10 @@ A special type of a message, for which the actual message is not computed immedi
 To compute and get the actual message, one needs to call the `as_message` method.
 """
 mutable struct DeferredMessage{R, S, F} <: AbstractMessage
-    const messages  :: R
-    const marginals :: S
-    const mappingFn :: F
-    cache           :: Union{Nothing, Message}
+    const messages::R
+    const marginals::S
+    const mappingFn::F
+    cache::Union{Nothing, Message}
 end
 
 DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
@@ -456,7 +456,7 @@ DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
-    if isnothing(cache)
+    return if isnothing(cache)
         print(
             io, "DeferredMessage([ use `as_message` to compute the message ])"
         )
@@ -486,8 +486,8 @@ function as_message(message::DeferredMessage, cache::Nothing)::Message
 end
 
 function as_message(
-    message::DeferredMessage, cache::Nothing, messages, marginals
-)::Message
+        message::DeferredMessage, cache::Nothing, messages, marginals
+    )::Message
     computed = message.mappingFn(messages, marginals)
     setcache!(message, computed)
     return computed
@@ -513,8 +513,8 @@ Each variable-to-node connection owns one `MessageObservable`. For [`ReactiveMP.
 See also: [`ReactiveMP.MarginalObservable`](@ref), [`ReactiveMP.set_initial_message!`](@ref)
 """
 struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
-    subject :: Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
-    stream  :: LazyObservable{M}
+    subject::Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
+    stream::LazyObservable{M}
 end
 
 MessageObservable(::Type{M} = AbstractMessage) where {M} =
@@ -526,16 +526,16 @@ Rocket.getrecent(observable::MessageObservable) =
 @inline Rocket.on_subscribe!(observable::MessageObservable, actor) =
     subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ErrorActor{<:AbstractMessage})      = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ErrorActor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.CompletionActor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Subject{<:AbstractMessage})                 = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Subject{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.BehaviorSubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.PendingSubjectInstance{<:AbstractMessage})  = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.RecentSubjectInstance{<:AbstractMessage})   = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ReplaySubjectInstance{<:AbstractMessage})   = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.PendingSubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.RecentSubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ReplaySubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 
 function connect!(message::MessageObservable, source)
     set!(message.stream, source |> multicast(message.subject) |> ref_count())
@@ -568,15 +568,15 @@ outgoing `Message` from given input messages and marginals using the appropriate
 See also: [`Message`](@ref), [`DeferredMessage`](@ref)
 """
 struct MessageMapping{F, T, C, N, M, A, X, R, K, E}
-    vtag            :: T
-    vconstraint     :: C
-    msgs_names      :: N
-    marginals_names :: M
-    meta            :: A
-    annotations     :: X
-    factornode      :: R
-    rulefallback    :: K
-    callbacks       :: E
+    vtag::T
+    vconstraint::C
+    msgs_names::N
+    marginals_names::M
+    meta::A
+    annotations::X
+    factornode::R
+    rulefallback::K
+    callbacks::E
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -605,17 +605,17 @@ function Base.show(io::IO, mapping::MessageMapping)
 end
 
 function MessageMapping(
-    ::Type{F},
-    vtag::T,
-    vconstraint::C,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    annotations::X,
-    factornode::R,
-    rulefallback::K,
-    callbacks::E,
-) where {F, T, C, N, M, A, X, R, K, E}
+        ::Type{F},
+        vtag::T,
+        vconstraint::C,
+        msgs_names::N,
+        marginals_names::M,
+        meta::A,
+        annotations::X,
+        factornode::R,
+        rulefallback::K,
+        callbacks::E,
+    ) where {F, T, C, N, M, A, X, R, K, E}
     return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
         vtag,
         vconstraint,
@@ -630,17 +630,17 @@ function MessageMapping(
 end
 
 function MessageMapping(
-    ::F,
-    vtag::T,
-    vconstraint::C,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    annotations::X,
-    factornode::R,
-    rulefallback::K,
-    callbacks::E,
-) where {F <: Function, T, C, N, M, A, X, R, K, E}
+        ::F,
+        vtag::T,
+        vconstraint::C,
+        msgs_names::N,
+        marginals_names::M,
+        meta::A,
+        annotations::X,
+        factornode::R,
+        rulefallback::K,
+        callbacks::E,
+    ) where {F <: Function, T, C, N, M, A, X, R, K, E}
     return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
         vtag,
         vconstraint,
@@ -662,9 +662,9 @@ function (mapping::MessageMapping)(messages, marginals)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial =
         !is_message_clamped && (
-            __check_all(is_clamped_or_initial, messages) &&
+        __check_all(is_clamped_or_initial, messages) &&
             __check_all(is_clamped_or_initial, marginals)
-        )
+    )
 
     span_id = generate_span_id(mapping.callbacks)
     invoke_callback(
@@ -682,38 +682,38 @@ function (mapping::MessageMapping)(messages, marginals)
     end
 
     result =
-        if !isnothing(messages) &&
+    if !isnothing(messages) &&
             any(ismissing, TupleTools.flatten(getdata.(messages)))
-            missing
-        elseif !isnothing(marginals) &&
+        missing
+    elseif !isnothing(marginals) &&
             any(ismissing, TupleTools.flatten(getdata.(marginals)))
-            missing
-        else
-            ruleargs = (
-                message_mapping_fform(mapping),
-                mapping.vtag,
-                mapping.vconstraint,
-                mapping.msgs_names,
-                messages,
-                mapping.marginals_names,
-                marginals,
-                mapping.meta,
-                annotations,
-                mapping.factornode,
-            )
-            ruleoutput = rule(ruleargs...)
-            # if `@rule` is not defined, the default behaviour is to return
-            # the `RuleMethodError` object
-            if ruleoutput isa RuleMethodError
-                if !isnothing(mapping.rulefallback)
-                    mapping.rulefallback(ruleargs...)
-                else
-                    throw(ruleoutput)
-                end
+        missing
+    else
+        ruleargs = (
+            message_mapping_fform(mapping),
+            mapping.vtag,
+            mapping.vconstraint,
+            mapping.msgs_names,
+            messages,
+            mapping.marginals_names,
+            marginals,
+            mapping.meta,
+            annotations,
+            mapping.factornode,
+        )
+        ruleoutput = rule(ruleargs...)
+        # if `@rule` is not defined, the default behaviour is to return
+        # the `RuleMethodError` object
+        if ruleoutput isa RuleMethodError
+            if !isnothing(mapping.rulefallback)
+                mapping.rulefallback(ruleargs...)
             else
-                ruleoutput
+                throw(ruleoutput)
             end
+        else
+            ruleoutput
         end
+    end
 
     # Run annotation processors after the rule has been executed
     # Skip them entirely when the rule was short-circuited to `missing`: no rule ran, so

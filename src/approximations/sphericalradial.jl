@@ -2,7 +2,7 @@ export srcubature
 
 struct SphericalRadialCubature <: AbstractApproximationMethod end
 
-approximation_name(::SphericalRadialCubature)       = "SphericalRadial"
+approximation_name(::SphericalRadialCubature) = "SphericalRadial"
 approximation_short_name(::SphericalRadialCubature) = "SR"
 
 function srcubature()
@@ -10,10 +10,10 @@ function srcubature()
 end
 
 function getweights(
-    ::SphericalRadialCubature,
-    mean::AbstractVector{T},
-    covariance::AbstractMatrix{T},
-) where {T <: Real}
+        ::SphericalRadialCubature,
+        mean::AbstractVector{T},
+        covariance::AbstractMatrix{T},
+    ) where {T <: Real}
     d = length(mean)
     return Base.Generator(1:(2d + 1)) do i
         return i === (2d + 1) ? 1.0 / (d + 1) : 1.0 / (2.0(d + 1))
@@ -37,10 +37,10 @@ end
 #     point in place (`broadcast!(*, point, point, cv)`) rather than allocating; that is safe only
 #     because the next iteration rewrites the buffer before use.
 function getpoints(
-    ::SphericalRadialCubature,
-    mean::AbstractVector{T},
-    covariance::AbstractMatrix{T},
-) where {T <: Real}
+        ::SphericalRadialCubature,
+        mean::AbstractVector{T},
+        covariance::AbstractMatrix{T},
+    ) where {T <: Real}
     d = length(mean)
     L = cholsqrt(covariance)
 

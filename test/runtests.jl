@@ -14,8 +14,8 @@ if get(ENV, "RUN_AQUA", "true") == "true"
         # `src/fixes.jl` does. Measured: with these two owners declared, zero pirates remain.
         piracies = (;
             treat_as_own = [
-                ReactiveMP.Distributions.Uniform, ReactiveMP.ForwardDiff.Dual
-            ]
+                ReactiveMP.Distributions.Uniform, ReactiveMP.ForwardDiff.Dual,
+            ],
         ),
         deps_compat = (; check_extras = true, check_weakdeps = true),
     )
@@ -46,7 +46,7 @@ const TEST_ALL = get(ENV, "TEST_ALL", "false") == "true"
 
 const SELECTED_PATHS = String[]
 const SELECTED_NAMES = String[]
-const SELECTED_TAGS  = Symbol[]
+const SELECTED_TAGS = Symbol[]
 
 for arg in ARGS
     if startswith(arg, "tag:")

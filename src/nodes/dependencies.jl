@@ -5,20 +5,20 @@ export DefaultFunctionalDependencies,
 
 collect_latest_messages(dependencies, factornode, collection) =
     __collect_latest_updates(
-        get_stream_of_inbound_messages, nothing, collection
-    )
+    get_stream_of_inbound_messages, nothing, collection
+)
 collect_latest_marginals(dependencies, factornode, collection) =
     __collect_latest_updates(
-        get_stream_of_marginals, __reset_vstatus_of_sources, collection
-    )
+    get_stream_of_marginals, __reset_vstatus_of_sources, collection
+)
 
 function __collect_latest_updates(f::F, callback::C, collection) where {F, C}
     return __collect_latest_updates(f, callback, Tuple(collection))
 end
 
 function __collect_latest_updates(
-    f::F, callback::C, collection::Tuple
-) where {F, C}
+        f::F, callback::C, collection::Tuple
+    ) where {F, C}
     return if isempty(collection)
         (nothing, of(nothing))
     else
@@ -42,7 +42,7 @@ end
 # guarantees downstream. Marginal dependencies alone are sufficient to resolve the deadlock.
 function __reset_vstatus_of_sources(wrapper, sources)
     values = map(getrecent, sources)
-    if is_initial(values)
+    return if is_initial(values)
         Rocket.fill_vstatus!(wrapper, true)
     end
 end
@@ -57,14 +57,14 @@ See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.Requi
 abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
-    annotations          = getannotations(options)
-    rulefallback         = getrulefallback(options)
-    callbacks            = getcallbacks(options)
-    fform                = functionalform(factornode)
-    meta                 = collect_meta(fform, getmetadata(options))
+    annotations = getannotations(options)
+    rulefallback = getrulefallback(options)
+    callbacks = getcallbacks(options)
+    fform = functionalform(factornode)
+    meta = collect_meta(fform, getmetadata(options))
     stream_postprocessor = getpostprocessor(options)
 
-    foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
+    return foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
             with_functional_dependencies(
                 dependencies, factornode, interface, iindex
@@ -76,7 +76,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                     dependencies, factornode, marginal_dependencies
                 )
 
-                vtag        = tag(interface)
+                vtag = tag(interface)
                 vconstraint = Marginalisation()
 
                 stream_of_outbound_messages = combineLatest(
@@ -84,22 +84,22 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                 )
 
                 mapping =
-                    let messagemap = MessageMapping(
-                            fform,
-                            vtag,
-                            vconstraint,
-                            messagestag,
-                            marginalstag,
-                            meta,
-                            annotations,
-                            node_if_required(fform, factornode),
-                            rulefallback,
-                            callbacks,
-                        )
-                        (dependencies) -> DeferredMessage(
-                            dependencies[1], dependencies[2], messagemap
-                        )
-                    end
+                let messagemap = MessageMapping(
+                        fform,
+                        vtag,
+                        vconstraint,
+                        messagestag,
+                        marginalstag,
+                        meta,
+                        annotations,
+                        node_if_required(fform, factornode),
+                        rulefallback,
+                        callbacks,
+                    )
+                    (dependencies) -> DeferredMessage(
+                        dependencies[1], dependencies[2], messagemap
+                    )
+                end
 
                 stream_of_outbound_messages =
                     stream_of_outbound_messages |> map(AbstractMessage, mapping)
@@ -117,8 +117,8 @@ end
 function functional_dependencies end
 
 function with_functional_dependencies(
-    callback::F, strategy::FunctionalDependencies, factornode, interface, iindex
-) where {F}
+        callback::F, strategy::FunctionalDependencies, factornode, interface, iindex
+    ) where {F}
     message_dependencies, marginal_dependencies = functional_dependencies(
         strategy, factornode, interface, iindex
     )
@@ -149,8 +149,8 @@ collect_functional_dependencies(fform::F, something) where {F} = something
 default_functional_dependencies(any) = DefaultFunctionalDependencies()
 
 function functional_dependencies(
-    ::DefaultFunctionalDependencies, factornode, interface, iindex
-)
+        ::DefaultFunctionalDependencies, factornode, interface, iindex
+    )
     clusters = getlocalclusters(factornode)
     # Find the index of the cluster for the current interface
     cindex = clusterindex(clusters, iindex)
@@ -192,7 +192,7 @@ RequireMessageFunctionalDependencies(μ = vague(NormalMeanPrecision),     τ = n
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
 struct RequireMessageFunctionalDependencies{S <: NamedTuple} <:
-       FunctionalDependencies
+    FunctionalDependencies
     specification::S
 end
 
@@ -200,11 +200,11 @@ RequireMessageFunctionalDependencies(; kwargs...) =
     RequireMessageFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
-    dependencies::RequireMessageFunctionalDependencies,
-    factornode,
-    interface,
-    iindex,
-)
+        dependencies::RequireMessageFunctionalDependencies,
+        factornode,
+        interface,
+        iindex,
+    )
     specification = dependencies.specification
 
     clusters = getlocalclusters(factornode)
@@ -263,7 +263,7 @@ RequireMarginalFunctionalDependencies(μ = vague(NormalMeanPrecision),     τ = 
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
 struct RequireMarginalFunctionalDependencies{S <: NamedTuple} <:
-       FunctionalDependencies
+    FunctionalDependencies
     specification::S
 end
 
@@ -271,11 +271,11 @@ RequireMarginalFunctionalDependencies(; kwargs...) =
     RequireMarginalFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
-    dependencies::RequireMarginalFunctionalDependencies,
-    factornode,
-    interface,
-    iindex,
-)
+        dependencies::RequireMarginalFunctionalDependencies,
+        factornode,
+        interface,
+        iindex,
+    )
     specification = dependencies.specification
 
     clusters = getlocalclusters(factornode)
@@ -291,7 +291,7 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies_default_clusters      = skipindex(get_node_local_marginals(clusters), cindex)
+    marginal_dependencies_default_clusters = skipindex(get_node_local_marginals(clusters), cindex)
     marginal_dependencies_default_factorization = skipindex(getfactorization(clusters), cindex)
 
     marginal_dependencies = if name(interface) ∈ keys(specification)
@@ -310,7 +310,7 @@ function functional_dependencies(
 
         insertafter = sum(
             first(el) < iindex ? 1 : 0 for
-            el in marginal_dependencies_default_factorization;
+                el in marginal_dependencies_default_factorization;
             init = 0,
         )
         TupleTools.insertafter(
@@ -336,8 +336,8 @@ See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDep
 struct RequireEverythingFunctionalDependencies <: FunctionalDependencies end
 
 function functional_dependencies(
-    ::RequireEverythingFunctionalDependencies, factornode, interface, iindex
-)
+        ::RequireEverythingFunctionalDependencies, factornode, interface, iindex
+    )
     clusters = getlocalclusters(factornode)
     # Find the index of the cluster for the current interface
     cindex = clusterindex(clusters, iindex)

@@ -16,7 +16,7 @@
             μ, v = ReactiveMP.approximate_meancov(
                 approximation,
                 (x) ->
-                    exp(-(a * x + b * exp(c * x + d * x^2 / 2)) / 2) *
+                exp(-(a * x + b * exp(c * x + d * x^2 / 2)) / 2) *
                     exp(x^2 / 2),
                 NormalMeanVariance(0.0, 1.0),
             )
@@ -70,14 +70,14 @@
                 isapprox.(
                     mean_var(q),
                     mean_var(prod(GenericProd(), left, right)),
-                    atol = 1e-2,
+                    atol = 1.0e-2,
                 ),
             )
             @test all(
                 isapprox.(
                     mean_var(q),
                     mean_var(prod(GenericProd(), right, left)),
-                    atol = 1e-2,
+                    atol = 1.0e-2,
                 ),
             )
         end
@@ -214,6 +214,6 @@ end
         ω_samples = rand(rng, Normal(0.7, sqrt(0.4)), 10^6)
         mc = mean(@. (log2π + ω_samples + psi * exp(-ω_samples)) / 2)
 
-        @test meanfield_ae(q_y, q_x, q_z, q_κ, q_ω) ≈ mc rtol = 5e-3
+        @test meanfield_ae(q_y, q_x, q_z, q_κ, q_ω) ≈ mc rtol = 5.0e-3
     end
 end

@@ -39,7 +39,7 @@ function Base.getindex(cmatrix::CompanionMatrix, i::Int, j::Int)
 end
 
 struct CompanionMatrixTransposed{R <: Real, T <: AbstractVector{R}} <:
-       AbstractMatrix{R}
+    AbstractMatrix{R}
     θ::T
 end
 
@@ -63,35 +63,35 @@ function Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int, j::Int)
 end
 
 as_companion_matrix(θ::T) where {R, T <: AbstractVector{R}} = CompanionMatrix{R, T}(θ)
-as_companion_matrix(θ::T) where {T <: Real}                 = θ
+as_companion_matrix(θ::T) where {T <: Real} = θ
 
-LinearAlgebra.transpose(cmatrix::CompanionMatrix)           = CompanionMatrixTransposed(cmatrix.θ)
+LinearAlgebra.transpose(cmatrix::CompanionMatrix) = CompanionMatrixTransposed(cmatrix.θ)
 LinearAlgebra.transpose(cmatrix::CompanionMatrixTransposed) = CompanionMatrix(cmatrix.θ)
 
-LinearAlgebra.adjoint(cmatrix::CompanionMatrix)           = CompanionMatrixTransposed(cmatrix.θ)
+LinearAlgebra.adjoint(cmatrix::CompanionMatrix) = CompanionMatrixTransposed(cmatrix.θ)
 LinearAlgebra.adjoint(cmatrix::CompanionMatrixTransposed) = CompanionMatrix(cmatrix.θ)
 
 LinearAlgebra.inv(t::Union{CompanionMatrix, CompanionMatrixTransposed}) =
     inv(as_matrix(t))
 
 function as_matrix(cmatrix::CompanionMatrix{R}) where {R}
-    dim     = first(size(cmatrix))
-    S       = zeros(R, dim, dim)
+    dim = first(size(cmatrix))
+    S = zeros(R, dim, dim)
     S[1, :] = cmatrix.θ
     for i in 2:dim
         S[i, i - 1] = one(R)
     end
-    S
+    return S
 end
 
 function as_matrix(cmatrix::CompanionMatrixTransposed{R}) where {R}
-    dim     = first(size(cmatrix))
-    S       = zeros(R, dim, dim)
+    dim = first(size(cmatrix))
+    S = zeros(R, dim, dim)
     S[:, 1] = cmatrix.θ
     for i in 2:dim
         S[i - 1, i] = one(R)
     end
-    S
+    return S
 end
 
 function Base.:*(tm::CompanionMatrix, v::AbstractVector)

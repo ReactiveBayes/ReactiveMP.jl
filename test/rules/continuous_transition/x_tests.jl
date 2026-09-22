@@ -40,12 +40,14 @@
                 qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(
+                @test_rules [check_type_promotion = true, atol = 1.0e-4] ContinuousTransition(
                     :x, Marginalisation
-                ) [(
-                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metal),
-                    output = benchmark_rule_strucutred(qy, qW, mA, ΣA, UA),
-                )]
+                ) [
+                    (
+                        input = (m_y = qy, q_a = qa, q_W = qW, meta = metal),
+                        output = benchmark_rule_strucutred(qy, qW, mA, ΣA, UA),
+                    ),
+                ]
             end
         end
     end
@@ -65,12 +67,14 @@
 
             @test_rules [check_type_promotion = true] ContinuousTransition(
                 :x, Marginalisation
-            ) [(
-                input = (m_y = qy, q_a = qa, q_W = qW, meta = metanl),
-                output = MvGaussianWeightedMeanPrecision(
-                    zeros(dx), 3 / 4 * diageye(dx)
+            ) [
+                (
+                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metanl),
+                    output = MvGaussianWeightedMeanPrecision(
+                        zeros(dx), 3 / 4 * diageye(dx)
+                    ),
                 ),
-            )]
+            ]
         end
     end
 
@@ -99,12 +103,14 @@
             qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(
+            @test_rules [check_type_promotion = true, atol = 1.0e-4] ContinuousTransition(
                 :x, Marginalisation
-            ) [(
-                input = (q_y = qy, q_a = qa, q_W = qW, meta = metal),
-                output = benchmark_rule_meanfield(qy, qW, mA, ΣA, UA),
-            )]
+            ) [
+                (
+                    input = (q_y = qy, q_a = qa, q_W = qW, meta = metal),
+                    output = benchmark_rule_meanfield(qy, qW, mA, ΣA, UA),
+                ),
+            ]
         end
     end
 end

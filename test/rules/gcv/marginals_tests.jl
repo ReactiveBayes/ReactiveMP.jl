@@ -5,9 +5,9 @@
     import ReactiveMP:
         @test_marginalrules, ExponentialLinearQuadratic, GaussHermiteCubature
 
-    expected_A     = GCVRulesTestUtils.expected_A
-    expected_B     = GCVRulesTestUtils.expected_B
-    default_meta   = GCVRulesTestUtils.default_meta
+    expected_A = GCVRulesTestUtils.expected_A
+    expected_B = GCVRulesTestUtils.expected_B
+    default_meta = GCVRulesTestUtils.default_meta
     parameter_sets = GCVRulesTestUtils.parameter_sets
 
     # The joint `q(y, x)` combines the two incoming messages with the factor
@@ -45,7 +45,7 @@
 
             @test result isa MvNormalWeightedMeanPrecision
             @test weightedmean(result) ≈ [m_y * w_y, m_x * w_x]
-            @test invcov(result) ≈ [w_y+ab -ab; -ab w_x+ab]
+            @test invcov(result) ≈ [w_y + ab -ab; -ab w_x + ab]
         end
     end
 
@@ -66,7 +66,7 @@
                 meta = meta,
             )
             to_y = @call_rule GCV(:y, Marginalisation) (
-                m_x = q_x, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
+                m_x = q_x, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta,
             )
 
             W = invcov(joint)
@@ -121,8 +121,8 @@
 
             m = mean(joint)
             lo, hi = minmax(mean(q_y), mean(q_x))
-            @test lo - 1e-10 <= m[1] <= hi + 1e-10
-            @test lo - 1e-10 <= m[2] <= hi + 1e-10
+            @test lo - 1.0e-10 <= m[1] <= hi + 1.0e-10
+            @test lo - 1.0e-10 <= m[2] <= hi + 1.0e-10
         end
     end
 
@@ -130,19 +130,21 @@
         # A·B = exp(-0.936) as derived in `y_tests.jl`. With m_y = N(3.0, 1.0) and
         # m_x = N(1.0, 2.0): W_y = 1.0, W_x = 0.5, ξ = [3.0, 0.5].
         ab = exp(-0.936)
-        @test_marginalrules [check_type_promotion = true] GCV(:y_x) [(
-            input = (
-                m_y = NormalMeanVariance(3.0, 1.0),
-                m_x = NormalMeanVariance(1.0, 2.0),
-                q_z = NormalMeanVariance(0.5, 0.7),
-                q_κ = NormalMeanVariance(0.8, 0.4),
-                q_ω = NormalMeanVariance(1.2, 0.5),
-                meta = GCVMetadata(GaussHermiteCubature(20)),
+        @test_marginalrules [check_type_promotion = true] GCV(:y_x) [
+            (
+                input = (
+                    m_y = NormalMeanVariance(3.0, 1.0),
+                    m_x = NormalMeanVariance(1.0, 2.0),
+                    q_z = NormalMeanVariance(0.5, 0.7),
+                    q_κ = NormalMeanVariance(0.8, 0.4),
+                    q_ω = NormalMeanVariance(1.2, 0.5),
+                    meta = GCVMetadata(GaussHermiteCubature(20)),
+                ),
+                output = MvNormalWeightedMeanPrecision(
+                    [3.0, 0.5], [1.0 + ab -ab; -ab 0.5 + ab]
+                ),
             ),
-            output = MvNormalWeightedMeanPrecision(
-                [3.0, 0.5], [1.0+ab -ab; -ab 0.5+ab]
-            ),
-        )]
+        ]
     end
 
     @testset "Accepts ExponentialLinearQuadratic incoming messages" begin
@@ -156,11 +158,11 @@
         m_x, w_x = mean_precision(q_x)
 
         joint = @call_marginalrule GCV(:y_x) (
-            m_y = elq, m_x = q_x, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta
+            m_y = elq, m_x = q_x, q_z = q_z, q_κ = q_κ, q_ω = q_ω, meta = meta,
         )
 
         @test joint isa MvNormalWeightedMeanPrecision
         @test weightedmean(joint) ≈ [elq_mean * elq_precision, m_x * w_x]
-        @test invcov(joint) ≈ [elq_precision+ab -ab; -ab w_x+ab]
+        @test invcov(joint) ≈ [elq_precision + ab -ab; -ab w_x + ab]
     end
 end

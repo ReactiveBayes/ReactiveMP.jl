@@ -3,7 +3,7 @@
     using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
     import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
-    # TODO: A more rigorous test suit for the average energy of CTransition needs to be added 
+    # TODO: A more rigorous test suit for the average energy of CTransition needs to be added
     dy, dx = 2, 3
     meta = CTMeta(a -> reshape(a, dy, dx))
 
@@ -30,22 +30,22 @@
             Marginal(q_W, false, false),
         )
 
-        # 12,992 is a result of manual calculation 
+        # 12,992 is a result of manual calculation
         @test score(
             AverageEnergy(),
             ContinuousTransition,
             Val{(:y_x, :a, :W)}(),
             marginals_st,
             meta,
-        ) ≈ 12.992 atol = 1e-2
-        # 12,07336 is a result of manual calculation 
+        ) ≈ 12.992 atol = 1.0e-2
+        # 12,07336 is a result of manual calculation
         @test score(
             AverageEnergy(),
             ContinuousTransition,
             Val{(:y, :x, :a, :W)}(),
             marginals_mf,
             meta,
-        ) ≈ 12.07736 atol = 1e-2
+        ) ≈ 12.07736 atol = 1.0e-2
     end
 
     @testset "ContinuousTransition Functionality" begin

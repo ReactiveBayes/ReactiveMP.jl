@@ -13,7 +13,7 @@
     h_inv_z(x, y) = x .^ 2 .- y
 
     @testset "Single input with known inverse" begin
-        @test_rules [check_type_promotion = true, atol = 1e-5] DeltaFn{g}(
+        @test_rules [check_type_promotion = true, atol = 1.0e-5] DeltaFn{g}(
             (:in, k = 1), Marginalisation
         ) [
             (
@@ -63,14 +63,14 @@
                 input = (
                     m_out = MvNormalMeanCovariance([2.0], [3.0;;]),
                     m_ins = ManyOf(MvNormalMeanCovariance([5.0], [1.0;;])),
-                    meta  = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z)),
+                    meta = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z)),
                 ),
                 output = MvNormalMeanCovariance(
                     [2.6457513110645907], [0.14285714285714282;;]
                 ),
             ),
         ]
-        @test_rules [check_type_promotion = true, atol = 1e-5] DeltaFn{h}(
+        @test_rules [check_type_promotion = true, atol = 1.0e-5] DeltaFn{h}(
             (:in, k = 2), Marginalisation
         ) [
             (
@@ -97,7 +97,7 @@
     end
 
     @testset "Single input with unknown inverse" begin
-        @test_rules [check_type_promotion = true, atol = 1e-3] DeltaFn{h}(
+        @test_rules [check_type_promotion = true, atol = 1.0e-3] DeltaFn{h}(
             (:in, k = 1), Marginalisation
         ) [
             (

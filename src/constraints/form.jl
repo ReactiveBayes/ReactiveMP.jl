@@ -208,7 +208,7 @@ end
 
 Base.:+(constraint::AbstractFormConstraint) = constraint
 
-Base.:+(left::AbstractFormConstraint, right::AbstractFormConstraint)   = CompositeFormConstraint((left, right))
-Base.:+(left::AbstractFormConstraint, right::CompositeFormConstraint)  = CompositeFormConstraint((left, right.constraints...))
-Base.:+(left::CompositeFormConstraint, right::AbstractFormConstraint)  = CompositeFormConstraint((left.constraints..., right))
+Base.:+(left::AbstractFormConstraint, right::AbstractFormConstraint) = CompositeFormConstraint((left, right))
+Base.:+(left::AbstractFormConstraint, right::CompositeFormConstraint) = CompositeFormConstraint((left, right.constraints...))
+Base.:+(left::CompositeFormConstraint, right::AbstractFormConstraint) = CompositeFormConstraint((left.constraints..., right))
 Base.:+(left::CompositeFormConstraint, right::CompositeFormConstraint) = CompositeFormConstraint((left.constraints..., right.constraints...))

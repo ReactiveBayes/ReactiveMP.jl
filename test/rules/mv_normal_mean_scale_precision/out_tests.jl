@@ -57,7 +57,7 @@
                     q_γ = Gamma(3.0, 1.0),
                 ),
                 output = MvNormalMeanCovariance(
-                    [0.0, 1.0], [7/3 -1.0; -1.0 13/3]
+                    [0.0, 1.0], [7 / 3 -1.0; -1.0 13 / 3]
                 ),
             ),
             (
@@ -120,10 +120,10 @@
 
             # Warm up
             @call_rule MvNormalMeanScalePrecision(:out, Marginalisation) (
-                m_μ = m_μ_scale, q_γ = q_γ
+                m_μ = m_μ_scale, q_γ = q_γ,
             )
             @call_rule MvNormalMeanScalePrecision(:out, Marginalisation) (
-                m_μ = m_μ_general, q_γ = q_γ
+                m_μ = m_μ_general, q_γ = q_γ,
             )
 
             allocs_scale = @allocated @call_rule MvNormalMeanScalePrecision(

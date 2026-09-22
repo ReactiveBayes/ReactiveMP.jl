@@ -7,25 +7,25 @@ add_to_count_discrete_transition(
 ) where {T, N} = c + N
 
 function ReactiveMP.rule(
-    fform::Type{<:DiscreteTransition},
-    on::Val{:a},
-    vconstraint::Marginalisation,
-    messages_names::Nothing,
-    messages::Nothing,
-    marginals_names::Val{m_names},
-    marginals::NTuple{
-        M,
-        Union{
-            Marginal{<:PointMass},
-            Marginal{<:Categorical},
-            Marginal{<:Contingency},
-            Marginal{<:Bernoulli},
+        fform::Type{<:DiscreteTransition},
+        on::Val{:a},
+        vconstraint::Marginalisation,
+        messages_names::Nothing,
+        messages::Nothing,
+        marginals_names::Val{m_names},
+        marginals::NTuple{
+            M,
+            Union{
+                Marginal{<:PointMass},
+                Marginal{<:Categorical},
+                Marginal{<:Contingency},
+                Marginal{<:Bernoulli},
+            },
         },
-    },
-    meta::Any,
-    annotations::Any,
-    ::Any,
-) where {M, m_names}
+        meta::Any,
+        annotations::Any,
+        ::Any,
+    ) where {M, m_names}
     # Special case, if there is only one marginal, we can return the result directly.
     if M === 1
         return DirichletCollection(components(getdata(first(marginals))) .+ 1)

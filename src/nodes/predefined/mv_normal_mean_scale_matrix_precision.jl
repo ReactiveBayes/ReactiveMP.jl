@@ -4,18 +4,18 @@ import StatsFuns: log2π
 import ExponentialFamily: MvNormalMeanScaleMatrixPrecision
 
 @node MvNormalMeanScaleMatrixPrecision Stochastic [
-    out, (μ, aliases = [mean]), (γ, aliases = [scale]), (G, aliases = [matrix])
+    out, (μ, aliases = [mean]), (γ, aliases = [scale]), (G, aliases = [matrix]),
 ]
 
 # default method for mean-field assumption
 @average_energy MvNormalMeanScaleMatrixPrecision (
-    q_out::Any, q_μ::Any, q_γ::Any, q_G::Any
+    q_out::Any, q_μ::Any, q_γ::Any, q_G::Any,
 ) = begin
     dim = ndims(q_out)
 
     m_mean, v_mean = mean_cov(q_μ)
-    m_out, v_out   = mean_cov(q_out)
-    m_Λ            = mean(q_γ) * mean(q_G)
+    m_out, v_out = mean_cov(q_out)
+    m_Λ = mean(q_γ) * mean(q_G)
 
     result = zero(promote_samplefloattype(q_out, q_μ, q_γ, q_G))
     result += dim * log2π
@@ -25,10 +25,10 @@ import ExponentialFamily: MvNormalMeanScaleMatrixPrecision
         # optimize trace operation (indices can be interchanges because of symmetry)
         result +=
             m_Λ[k1, k2] * (
-                v_out[k1, k2] +
+            v_out[k1, k2] +
                 v_mean[k1, k2] +
                 (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1])
-            )
+        )
     end
     result /= 2
 
@@ -37,7 +37,7 @@ end
 
 # default method for structured mean-field assumption
 @average_energy MvNormalMeanScaleMatrixPrecision (
-    q_out_μ::Any, q_γ::Any, q_G::Any
+    q_out_μ::Any, q_γ::Any, q_G::Any,
 ) = begin
     dim = div(ndims(q_out_μ), 2)
 
@@ -59,10 +59,10 @@ end
         # optimize trace operation (indices can be interchanges because of symmetry)
         result +=
             m_Λ[k1, k2] * (
-                v_out[k1, k2] - v_out_mean[k1, k2] - v_mean_out[k1, k2] +
+            v_out[k1, k2] - v_out_mean[k1, k2] - v_mean_out[k1, k2] +
                 v_mean[k1, k2] +
                 (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1])
-            )
+        )
     end
     result /= 2
 

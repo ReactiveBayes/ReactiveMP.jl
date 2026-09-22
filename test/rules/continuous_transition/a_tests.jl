@@ -41,10 +41,12 @@
                 qW = Wishart(dy + 1, diageye(dy))
                 @test_rules [check_type_promotion = false] ContinuousTransition(
                     :a, Marginalisation
-                ) [(
-                    input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metal),
-                    output = benchmark_rule_structured(qyx, qW),
-                )]
+                ) [
+                    (
+                        input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metal),
+                        output = benchmark_rule_structured(qyx, qW),
+                    ),
+                ]
             end
         end
     end
@@ -66,12 +68,14 @@
             qW = Wishart(dy, diageye(dy))
             @test_rules [check_type_promotion = true] ContinuousTransition(
                 :a, Marginalisation
-            ) [(
-                input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metanl),
-                output = MvNormalWeightedMeanPrecision(
-                    zeros(1), (qW.df * dy * dx) * diageye(1)
+            ) [
+                (
+                    input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metanl),
+                    output = MvNormalWeightedMeanPrecision(
+                        zeros(1), (qW.df * dy * dx) * diageye(1)
+                    ),
                 ),
-            )]
+            ]
         end
     end
 
@@ -103,23 +107,27 @@
             qW = Wishart(dy + 1, diageye(dy))
             @test_rules [check_type_promotion = false] ContinuousTransition(
                 :a, Marginalisation
-            ) [(
-                input = (q_y = qy, q_x = qx, q_a = qa, q_W = qW, meta = metal),
-                output = benchmark_rule_meanfield(qy, qx, qW),
-            )]
+            ) [
+                (
+                    input = (q_y = qy, q_x = qx, q_a = qa, q_W = qW, meta = metal),
+                    output = benchmark_rule_meanfield(qy, qx, qW),
+                ),
+            ]
 
             @test_rules [check_type_promotion = false] ContinuousTransition(
                 :a, Marginalisation
-            ) [(
-                input = (
-                    q_y = PointMass(μy),
-                    q_x = qx,
-                    q_a = qa,
-                    q_W = qW,
-                    meta = metal,
+            ) [
+                (
+                    input = (
+                        q_y = PointMass(μy),
+                        q_x = qx,
+                        q_a = qa,
+                        q_W = qW,
+                        meta = metal,
+                    ),
+                    output = benchmark_rule_meanfield(PointMass(μy), qx, qW),
                 ),
-                output = benchmark_rule_meanfield(PointMass(μy), qx, qW),
-            )]
+            ]
         end
     end
 end

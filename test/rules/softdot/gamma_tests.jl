@@ -31,130 +31,148 @@
         @testset "(q_y::PointMass, q_θ::PointMass, q_x::PointMass)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = PointMass(3.0),
-                    q_θ = PointMass(5.0),
-                    q_x = PointMass(2.0),
+            ) [
+                (
+                    input = (
+                        q_y = PointMass(3.0),
+                        q_θ = PointMass(5.0),
+                        q_x = PointMass(2.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 49 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 49 / 2),
-            )]
+            ]
         end
 
         # 001
         @testset "(q_y::PointMass, q_θ::PointMass, q_x::NormalMeanVariance)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = PointMass(3.0),
-                    q_θ = PointMass(5.0),
-                    q_x = NormalMeanVariance(2.0, 7.0),
+            ) [
+                (
+                    input = (
+                        q_y = PointMass(3.0),
+                        q_θ = PointMass(5.0),
+                        q_x = NormalMeanVariance(2.0, 7.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 224 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 224 / 2),
-            )]
+            ]
         end
 
         # 010
         @testset "(q_y::PointMass, q_θ::NormalMeanVariance, q_x::PointMass)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = PointMass(3.0),
-                    q_θ = NormalMeanVariance(2.0, 7.0),
-                    q_x = PointMass(5.0),
+            ) [
+                (
+                    input = (
+                        q_y = PointMass(3.0),
+                        q_θ = NormalMeanVariance(2.0, 7.0),
+                        q_x = PointMass(5.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 224 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 224 / 2),
-            )]
+            ]
         end
 
         # 011
         @testset "(q_y::PointMass, q_θ::NormalMeanVariance, q_x::NormalMeanVariance)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = PointMass(3.0),
-                    q_θ = NormalMeanVariance(2.0, 7.0),
-                    q_x = NormalMeanVariance(5.0, 11.0),
+            ) [
+                (
+                    input = (
+                        q_y = PointMass(3.0),
+                        q_θ = NormalMeanVariance(2.0, 7.0),
+                        q_x = NormalMeanVariance(5.0, 11.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 345 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 345 / 2),
-            )]
+            ]
         end
 
         # 100
         @testset "(q_y::NormalMeanVariance, q_θ::PointMass, q_x::PointMass)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = NormalMeanVariance(2.0, 3.0),
-                    q_θ = PointMass(5.0),
-                    q_x = PointMass(7.0),
+            ) [
+                (
+                    input = (
+                        q_y = NormalMeanVariance(2.0, 3.0),
+                        q_θ = PointMass(5.0),
+                        q_x = PointMass(7.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 1092 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 1092 / 2),
-            )]
+            ]
         end
 
         # 101
         @testset "(q_y::NormalMeanVariance, q_θ::PointMass, q_x::NormalMeanVariance)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = NormalMeanVariance(3.0, 7.0),
-                    q_θ = PointMass(2.0),
-                    q_x = NormalMeanVariance(5.0, 9.0),
+            ) [
+                (
+                    input = (
+                        q_y = NormalMeanVariance(3.0, 7.0),
+                        q_θ = PointMass(2.0),
+                        q_x = NormalMeanVariance(5.0, 9.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 92 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 92 / 2),
-            )]
+            ]
         end
 
         # 110
         @testset "(q_y::NormalMeanVariance, q_θ::NormalMeanVariance, q_x::PointMass)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = NormalMeanVariance(3.0, 7.0),
-                    q_θ = NormalMeanVariance(5.0, 9.0),
-                    q_x = PointMass(2.0),
+            ) [
+                (
+                    input = (
+                        q_y = NormalMeanVariance(3.0, 7.0),
+                        q_θ = NormalMeanVariance(5.0, 9.0),
+                        q_x = PointMass(2.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 92 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 92 / 2),
-            )]
+            ]
         end
 
         # 111
         @testset "(q_y::NormalMeanVariance, q_θ::NormalMeanVariance, q_x::NormalMeanVariance)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = NormalMeanVariance(3.0, 7.0),
-                    q_θ = NormalMeanVariance(5.0, 9.0),
-                    q_x = NormalMeanVariance(11.0, 13.0),
+            ) [
+                (
+                    input = (
+                        q_y = NormalMeanVariance(3.0, 7.0),
+                        q_θ = NormalMeanVariance(5.0, 9.0),
+                        q_x = NormalMeanVariance(11.0, 13.0),
+                    ),
+                    output = GammaShapeRate(3 / 2, 4242 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 4242 / 2),
-            )]
+            ]
         end
 
         # 122
         @testset "(q_y::NormalMeanVariance, q_θ::MvNormalMeanCovariance, q_x::MvNormalMeanCovariance)" begin
             @test_rules [check_type_promotion = true] SoftDot(
                 :γ, Marginalisation
-            ) [(
-                input = (
-                    q_y = NormalMeanVariance(3.0, 7.0),
-                    q_θ = MvNormalMeanCovariance(
-                        [5.0, 9.0], [11.0 13.0; 17.0 19.0]
+            ) [
+                (
+                    input = (
+                        q_y = NormalMeanVariance(3.0, 7.0),
+                        q_θ = MvNormalMeanCovariance(
+                            [5.0, 9.0], [11.0 13.0; 17.0 19.0]
+                        ),
+                        q_x = MvNormalMeanCovariance(
+                            [23.0, 29.0], [31.0 37.0; 41.0 43.0]
+                        ),
                     ),
-                    q_x = MvNormalMeanCovariance(
-                        [23.0, 29.0], [31.0 37.0; 41.0 43.0]
-                    ),
+                    output = GammaShapeRate(3 / 2, 191032 / 2),
                 ),
-                output = GammaShapeRate(3 / 2, 191032 / 2),
-            )]
+            ]
         end
     end # testset: mean-field
 

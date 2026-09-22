@@ -96,7 +96,7 @@
 end
 
 @testitem "AutoregressiveNode: is_univariate, is_safe, is_unsafe, default_meta, is_multivariate cases, ar_unit, ARPrecisionMatrix" tags = [
-    :nodes
+    :nodes,
 ] begin
     using ReactiveMP,
         Distributions, ExponentialFamily, LazyArrays, LinearAlgebra, Test

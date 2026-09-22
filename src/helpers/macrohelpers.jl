@@ -27,7 +27,7 @@ function bottom_type(type)
     @capture(
         type,
         (DeltaFn{T_}) | (ReactiveMP.DeltaFn{T_}) | (typeof(T_)) | (Type{<:T_}) |
-        (Type{T_}) | (T_)
+            (Type{T_}) | (T_)
     ) || error("Expression $(type) doesnt seem to be a valid type expression.")
     return T
 end
@@ -101,13 +101,13 @@ macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
         "Invalid specification of proxy methods, should be an array of methods",
     )
 
-    output      = Expr(:block)
+    output = Expr(:block)
     output.args = map(method -> :(($method)(proxy::$(proxy_type)) = ($method)($(proxy_getter)(proxy))), methods)
 
     return esc(output)
 end
 
-__test_inferred_typeof(x)                   = typeof(x)
+__test_inferred_typeof(x) = typeof(x)
 __test_inferred_typeof(::Type{T}) where {T} = Type{T}
 
 macro test_inferred(T, expression)
@@ -116,14 +116,14 @@ macro test_inferred(T, expression)
             let
                 local result = Test.@inferred($expression)
                 if !(
-                    ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
-                )
+                        ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
+                    )
                     error(
                         "Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T",
                     )
                 end
                 @test ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <:
-                    $T
+                $T
                 result
             end
         end,
@@ -131,24 +131,24 @@ macro test_inferred(T, expression)
 end
 
 function check_rule_interfaces(
-    macrotype,
-    fform,
-    lambda,
-    ifaces,
-    on_type,
-    m_names,
-    q_names;
-    mod = __MODULE__,
-)
+        macrotype,
+        fform,
+        lambda,
+        ifaces,
+        on_type,
+        m_names,
+        q_names;
+        mod = __MODULE__,
+    )
     # skip rules like (typeof(+))(:in1_in2) for which interfaces returns nothing
     if ifaces === nothing
         return nothing
     end
     names_expected = valof_set(ifaces, mod)
-    onames         = valof_set(on_type, mod)
-    mnames         = valof_set(m_names, mod)
-    qnames         = valof_set(q_names, mod)
-    names_used     = union(onames, mnames, qnames)
+    onames = valof_set(on_type, mod)
+    mnames = valof_set(m_names, mod)
+    qnames = valof_set(q_names, mod)
+    names_used = union(onames, mnames, qnames)
 
     names_unknown = setdiff(names_expected, names_used)
     if !isempty(names_unknown)
@@ -156,26 +156,34 @@ function check_rule_interfaces(
         expected_list = join(sort(collect(names_expected)), ", ")
         provided_list = join(sort(collect(names_used)), ", ")
 
-        throw(ArgumentError("""
-        Interface mismatch for $(macrotype) $(fform) $(lambda):
-          Expected symbols: $expected_list
-          Provided symbols: $provided_list
-          Missing symbols:  $missing_list
-        """))
+        throw(
+            ArgumentError(
+                """
+                Interface mismatch for $(macrotype) $(fform) $(lambda):
+                  Expected symbols: $expected_list
+                  Provided symbols: $provided_list
+                  Missing symbols:  $missing_list
+                """
+            )
+        )
     end
 
     names_extra = setdiff(names_used, names_expected)
-    if !isempty(names_extra)
+    return if !isempty(names_extra)
         extras_list = join(sort(collect(names_extra)), ", ")
         expected_list = join(sort(collect(names_expected)), ", ")
         provided_list = join(sort(collect(names_used)), ", ")
 
-        throw(ArgumentError("""
-        Interface mismatch for $(macrotype) $(fform) $(lambda):
-          Expected symbols: $expected_list
-          Provided symbols: $provided_list
-          Extra symbols:    $extras_list
-        """))
+        throw(
+            ArgumentError(
+                """
+                Interface mismatch for $(macrotype) $(fform) $(lambda):
+                  Expected symbols: $expected_list
+                  Provided symbols: $provided_list
+                  Extra symbols:    $extras_list
+                """
+            )
+        )
     end
 end
 

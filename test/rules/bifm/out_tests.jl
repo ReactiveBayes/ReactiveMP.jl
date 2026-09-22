@@ -21,7 +21,7 @@
 
         @test_rules [
             check_type_promotion = true,
-            atol = [Float32 => 1e-2, Float64 => 1e-2, BigFloat => 1e-8],
+            atol = [Float32 => 1.0e-2, Float64 => 1.0e-2, BigFloat => 1.0e-8],
         ] BIFM(:out, Marginalisation) [
             (
                 input = (

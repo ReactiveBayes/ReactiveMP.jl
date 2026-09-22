@@ -26,7 +26,7 @@ end
 
 # --------------- Rules for 2 interfaces (DirichletCollection q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (
-    m_in::DiscreteNonParametric, q_a::DirichletCollection, meta::Any
+    m_in::DiscreteNonParametric, q_a::DirichletCollection, meta::Any,
 ) = begin
     N = eltype(probvec(m_in))
     eloga = softmax!(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
@@ -35,7 +35,7 @@ end
 end
 
 @rule DiscreteTransition(:in, Marginalisation) (
-    m_out::DiscreteNonParametric, q_a::DirichletCollection, meta::Any
+    m_out::DiscreteNonParametric, q_a::DirichletCollection, meta::Any,
 ) = begin
     eloga = softmax!(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
     out = eloga' * probvec(m_out)

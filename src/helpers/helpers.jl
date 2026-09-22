@@ -25,8 +25,8 @@ A special type of iterator that simply iterates over internal `iterator`, but sk
 See also: [`skipindex`](@ref)
 """
 struct SkipIndexIterator{T, I} <: AbstractVector{T}
-    iterator :: I
-    skip     :: Int
+    iterator::I
+    skip::Int
 end
 
 skip(iter::SkipIndexIterator) = iter.skip
@@ -60,19 +60,19 @@ function skipindex(iterator::NTuple{N}, skip::Int) where {N}
     return TupleTools.deleteat(iterator, skip)
 end
 
-Base.IteratorSize(::Type{<:SkipIndexIterator})   = HasLength()
+Base.IteratorSize(::Type{<:SkipIndexIterator}) = HasLength()
 Base.IteratorEltype(::Type{<:SkipIndexIterator}) = HasEltype()
-Base.IndexStyle(::Type{<:SkipIndexIterator})     = IndexLinear()
+Base.IndexStyle(::Type{<:SkipIndexIterator}) = IndexLinear()
 
 Base.length(iter::SkipIndexIterator) = length(iter.iterator) - 1
-Base.size(iter::SkipIndexIterator)   = (length(iter),)
+Base.size(iter::SkipIndexIterator) = (length(iter),)
 
-Base.@propagate_inbounds Base.getindex(iter::SkipIndexIterator, i::Int)               = i < skip(iter) ? iter.iterator[i] : iter.iterator[i + 1]
+Base.@propagate_inbounds Base.getindex(iter::SkipIndexIterator, i::Int) = i < skip(iter) ? iter.iterator[i] : iter.iterator[i + 1]
 Base.@propagate_inbounds Base.getindex(iter::SkipIndexIterator, i::CartesianIndex{1}) = Base.getindex(iter, first(i.I))
 
 Rocket.similar_typeof(::SkipIndexIterator, ::Type{L}) where {L} = Vector{L}
 
-## 
+##
 
 import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
 
@@ -109,11 +109,11 @@ function swapped(array::AbstractArray, i, j)
     return array
 end
 
-## 
+##
 
-__check_all(fn::Function, iterator)     = all(fn, iterator)
+__check_all(fn::Function, iterator) = all(fn, iterator)
 __check_all(fn::Function, tuple::Tuple) = TupleTools.prod(map(fn, tuple))
-__check_all(fn::Function, ::Nothing)    = true
+__check_all(fn::Function, ::Nothing) = true
 
 ##
 
@@ -122,8 +122,8 @@ is_clamped_or_initial(something) =
 
 # See: https://github.com/JuliaLang/julia/issues/42795
 function fill_bitarray!(
-    V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x
-)
+        V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x
+    )
     B = V.parent
     I0 = V.indices[1]
     l0 = length(I0)

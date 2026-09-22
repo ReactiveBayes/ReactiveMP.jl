@@ -234,25 +234,25 @@ end
     @node ArbitraryNode Stochastic [out, a, b]
 
     @marginalrule ArbitraryNode(:out_a_b) (
-        m_out::PointMass, m_a::PointMass, m_b::PointMass
+        m_out::PointMass, m_a::PointMass, m_b::PointMass,
     ) = begin
         return PointMass(mean(m_out) + mean(m_a) + mean(m_b))
     end
 
     @marginalrule ArbitraryNode(:out_a) (
-        m_out::PointMass, m_a::PointMass, q_b::PointMass
+        m_out::PointMass, m_a::PointMass, q_b::PointMass,
     ) = begin
         return PointMass(mean(m_out) + mean(m_a) - mean(q_b))
     end
 
     @marginalrule ArbitraryNode(:out_b) (
-        m_out::PointMass, q_a::PointMass, m_b::PointMass
+        m_out::PointMass, q_a::PointMass, m_b::PointMass,
     ) = begin
         return PointMass(mean(m_out) + mean(m_b) - mean(q_a))
     end
 
     @marginalrule ArbitraryNode(:a_b) (
-        q_out::PointMass, m_a::PointMass, m_b::PointMass
+        q_out::PointMass, m_a::PointMass, m_b::PointMass,
     ) = begin
         return PointMass(mean(m_a) + mean(m_b) - mean(q_out))
     end

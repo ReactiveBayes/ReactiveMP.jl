@@ -4,10 +4,10 @@
 
     import ReactiveMP: ExponentialLinearQuadratic
 
-    expected_A     = GCVRulesTestUtils.expected_A
-    expected_psi   = GCVRulesTestUtils.expected_psi
-    coefficients   = GCVRulesTestUtils.coefficients
-    default_meta   = GCVRulesTestUtils.default_meta
+    expected_A = GCVRulesTestUtils.expected_A
+    expected_psi = GCVRulesTestUtils.expected_psi
+    coefficients = GCVRulesTestUtils.coefficients
+    default_meta = GCVRulesTestUtils.default_meta
     parameter_sets = GCVRulesTestUtils.parameter_sets
 
     # Keeping only the `κ`-dependent terms of `-log p = ½[log2π + (κz + ω) + ψ·e^{-(κz+ω)}]`
@@ -37,7 +37,7 @@
             (; q_y, q_x, q_z, q_ω) = params
 
             msg = @call_rule GCV(:κ, Marginalisation) (
-                q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta
+                q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta,
             )
 
             @test msg isa ExponentialLinearQuadratic
@@ -51,14 +51,14 @@
 
     @testset "Structured: (q_y_x, q_z, q_ω)" begin
         for (m, V) in (
-            ([3.0, 1.0], [1.0 0.3; 0.3 2.0]),
-            ([-1.5, 2.5], [0.25 -0.1; -0.1 0.5]),
-        )
+                ([3.0, 1.0], [1.0 0.3; 0.3 2.0]),
+                ([-1.5, 2.5], [0.25 -0.1; -0.1 0.5]),
+            )
             q_y_x = MvNormalMeanCovariance(m, V)
             (; q_z, q_ω) = first(parameter_sets())
 
             msg = @call_rule GCV(:κ, Marginalisation) (
-                q_y_x = q_y_x, q_z = q_z, q_ω = q_ω, meta = meta
+                q_y_x = q_y_x, q_z = q_z, q_ω = q_ω, meta = meta,
             )
 
             @test msg isa ExponentialLinearQuadratic

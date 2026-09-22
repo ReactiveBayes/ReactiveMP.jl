@@ -5,9 +5,9 @@ import LinearAlgebra: mul!, axpy!
 
 using Distributions
 
-const product  = Iterators.product
+const product = Iterators.product
 const repeated = Iterators.repeated
-const sqrtPI1  = sqrt(pi)
+const sqrtPI1 = sqrt(pi)
 
 struct GaussHermiteCubature{PI, WI} <: AbstractApproximationMethod
     piter::PI
@@ -16,7 +16,7 @@ end
 
 GaussHermiteCubature(p::Int) = ghcubature(p)
 
-approximation_name(approx::GaussHermiteCubature)       = "GaussHermite($(approx.p))"
+approximation_name(approx::GaussHermiteCubature) = "GaussHermite($(approx.p))"
 approximation_short_name(approx::GaussHermiteCubature) = "GH$(approx.p)"
 
 function ghcubature(p::Int)
@@ -25,18 +25,18 @@ function ghcubature(p::Int)
 end
 
 function getweights(
-    gh::GaussHermiteCubature, mean::T, variance::T
-) where {T <: Real}
+        gh::GaussHermiteCubature, mean::T, variance::T
+    ) where {T <: Real}
     return Base.Generator(gh.witer) do weight
         return weight / sqrtPI1
     end
 end
 
 function getweights(
-    gh::GaussHermiteCubature,
-    mean::AbstractVector{T},
-    covariance::AbstractMatrix{T},
-) where {T <: Real}
+        gh::GaussHermiteCubature,
+        mean::AbstractVector{T},
+        covariance::AbstractMatrix{T},
+    ) where {T <: Real}
     sqrtpi = (pi^(length(mean) / 2))
     return Base.Generator(
         product(repeated(gh.witer, length(mean))...)
@@ -46,8 +46,8 @@ function getweights(
 end
 
 function getpoints(
-    gh::GaussHermiteCubature, mean::T, variance::T
-) where {T <: Real}
+        gh::GaussHermiteCubature, mean::T, variance::T
+    ) where {T <: Real}
     sqrt2V = sqrt(2 * variance)
     return Base.Generator(gh.piter) do point
         return mean + sqrt2V * point
@@ -71,10 +71,10 @@ end
 #
 # The univariate method above does not have this property: it yields freshly computed scalars.
 function getpoints(
-    cubature::GaussHermiteCubature,
-    mean::AbstractVector{T},
-    covariance::AbstractMatrix{T},
-) where {T <: Real}
+        cubature::GaussHermiteCubature,
+        mean::AbstractVector{T},
+        covariance::AbstractMatrix{T},
+    ) where {T <: Real}
     sqrtP = cholsqrt(covariance)
     sqrt2 = sqrt(2)
 

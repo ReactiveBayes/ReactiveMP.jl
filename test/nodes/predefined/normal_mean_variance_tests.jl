@@ -5,15 +5,15 @@
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass(0.956629)
-            q_μ = NormalMeanVariance(0.255332, 0.762870)
+            q_μ = NormalMeanVariance(0.255332, 0.76287)
             q_τ = GammaShapeRate(0.93037, 0.79312)
 
             for N in (
-                    NormalMeanPrecision,
-                    NormalMeanVariance,
-                    NormalWeightedMeanPrecision,
-                ),
-                G in (GammaShapeRate, GammaShapeScale)
+                        NormalMeanPrecision,
+                        NormalMeanVariance,
+                        NormalWeightedMeanPrecision,
+                    ),
+                    G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
                     Marginal(q_out, false, false),
@@ -32,15 +32,15 @@
 
         begin
             q_out = NormalMeanVariance(0.148725, 0.483501)
-            q_μ   = NormalMeanVariance(0.992776, 0.545851)
-            q_v   = GammaShapeRate(0.309396, 0.343814)
+            q_μ = NormalMeanVariance(0.992776, 0.545851)
+            q_v = GammaShapeRate(0.309396, 0.343814)
 
             for N in (
-                    NormalMeanPrecision,
-                    NormalMeanVariance,
-                    NormalWeightedMeanPrecision,
-                ),
-                G in (GammaShapeRate, GammaShapeScale)
+                        NormalMeanPrecision,
+                        NormalMeanVariance,
+                        NormalWeightedMeanPrecision,
+                    ),
+                    G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
                     Marginal(q_out, false, false),
@@ -68,11 +68,11 @@
             q_v = GammaShapeRate(0.49074414, 0.4071772)
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (GammaShapeRate, GammaShapeScale)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
@@ -99,11 +99,11 @@
             q_v = GammaShapeRate(0.435485, 0.5269575)
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                G in (GammaShapeRate, GammaShapeScale)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),

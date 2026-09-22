@@ -75,7 +75,7 @@
             (
                 input = (
                     q_out_μ = MvNormalWeightedMeanPrecision(
-                        2*ones(4), diageye(4)
+                        2 * ones(4), diageye(4)
                     ),
                     q_γ = GammaShapeRate(2.0, 4.0),
                 ),
@@ -84,7 +84,7 @@
             (
                 input = (
                     q_out_μ = MvNormalWeightedMeanPrecision(
-                        3*ones(4), diageye(4)
+                        3 * ones(4), diageye(4)
                     ),
                     q_γ = GammaShapeRate(22.0, 14.0),
                 ),

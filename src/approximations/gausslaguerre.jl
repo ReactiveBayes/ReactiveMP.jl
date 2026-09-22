@@ -7,8 +7,8 @@ using StatsFuns: logsumexp
 import Base: ==
 
 struct GaussLaguerreQuadrature{
-    R <: DomainIntegrals.HalfLineRule, W <: AbstractVector
-} <: AbstractApproximationMethod
+        R <: DomainIntegrals.HalfLineRule, W <: AbstractVector,
+    } <: AbstractApproximationMethod
     rule::R
     logw::W
 end
@@ -21,12 +21,12 @@ function GaussLaguerreQuadrature(::Type{T}, n::Int) where {T}
     return GaussLaguerreQuadrature(DomainIntegrals.HalfLineRule(x, w), logw)
 end
 
-getpoints(approximation::GaussLaguerreQuadrature)     = points(approximation.rule)
-getweights(approximation::GaussLaguerreQuadrature)    = weights(approximation.rule)
+getpoints(approximation::GaussLaguerreQuadrature) = points(approximation.rule)
+getweights(approximation::GaussLaguerreQuadrature) = weights(approximation.rule)
 getlogweights(approximation::GaussLaguerreQuadrature) = approximation.logw
-getlength(approximation::GaussLaguerreQuadrature)     = length(getweights(approximation))
+getlength(approximation::GaussLaguerreQuadrature) = length(getweights(approximation))
 
-approximation_name(approximation::GaussLaguerreQuadrature)       = "GaussLaguerre($(getlength(approximation)))"
+approximation_name(approximation::GaussLaguerreQuadrature) = "GaussLaguerre($(getlength(approximation)))"
 approximation_short_name(approximation::GaussLaguerreQuadrature) = "GL$(getlength(approximation))"
 
 approximate(approximation::GaussLaguerreQuadrature, fn::Function) =
@@ -43,10 +43,10 @@ This function calculates the log of the Gauss-laguerre integral by making use of
 """
 function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
     # get weights and points
-    p    = getlength(approximation)
-    x    = getpoints(approximation)
+    p = getlength(approximation)
+    x = getpoints(approximation)
     logw = getlogweights(approximation)
-    T    = eltype(logw)
+    T = eltype(logw)
 
     # calculate the ln(wi) + logf(xi) terms
     logresult = Vector{T}(undef, p)
@@ -59,7 +59,7 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
 end
 
 function Base.:(==)(
-    left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}
-) where {R}
+        left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}
+    ) where {R}
     return getlength(left) == getlength(right)
 end

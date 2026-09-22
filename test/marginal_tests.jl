@@ -10,8 +10,8 @@
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false),
-            data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
+                initial in (true, false),
+                data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
             marginal = Marginal(data, clamped, initial)
             @test getdata(marginal) === data
@@ -27,8 +27,8 @@
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false),
-            clamped2 in (true, false), initial1 in (true, false),
-            initial2 in (true, false)
+                clamped2 in (true, false), initial1 in (true, false),
+                initial2 in (true, false)
 
             msg1 = Marginal(dist1, clamped1, initial1)
             msg2 = Marginal(dist2, clamped2, initial2)
@@ -87,8 +87,8 @@
         ]
 
         for (distribution, distribution_methods) in
-            zip(distributions, dists_methods),
-            method in methods_to_test
+                zip(distributions, dists_methods),
+                method in methods_to_test
 
             T = typeof(distribution)
             marginal = Marginal(distribution, false, false)

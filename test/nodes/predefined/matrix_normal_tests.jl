@@ -30,19 +30,19 @@
 
         # All point masses: the average energy reduces to -logpdf.
         for (X, M, U, V) in (
-            (
-                [1.0 2.0; 3.0 4.0],
-                [0.5 1.0; 1.5 2.0],
-                [2.0 0.3; 0.3 1.5],
-                [1.0 0.2; 0.2 2.0],
-            ),
-            (
-                [1.0 2.0; 3.0 4.0; 5.0 6.0],
-                [0.5 1.0; 2.0 3.0; 4.0 5.0],
-                [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0],
-                [1.0 0.5; 0.5 2.0],
-            ),
-        )
+                (
+                    [1.0 2.0; 3.0 4.0],
+                    [0.5 1.0; 1.5 2.0],
+                    [2.0 0.3; 0.3 1.5],
+                    [1.0 0.2; 0.2 2.0],
+                ),
+                (
+                    [1.0 2.0; 3.0 4.0; 5.0 6.0],
+                    [0.5 1.0; 2.0 3.0; 4.0 5.0],
+                    [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0],
+                    [1.0 0.5; 0.5 2.0],
+                ),
+            )
             marginals = (
                 Marginal(PointMass(X), false, false),
                 Marginal(PointMass(M), false, false),
@@ -72,11 +72,11 @@
             Ψ = D * invV * D' + tr(invV * V_out) * U_out
             expected =
                 (
-                    p * logdet(U) +
+                p * logdet(U) +
                     n * logdet(V) +
                     n * p * log(2π) +
                     tr(invU * Ψ)
-                ) / 2
+            ) / 2
             @test score_ae(marginals) ≈ expected
         end
 
@@ -98,11 +98,11 @@
             D = X - M
             expected =
                 (
-                    p * mean(logdet, q_U) +
+                p * mean(logdet, q_U) +
                     n * mean(logdet, q_V) +
                     n * p * log(2π) +
                     tr(invU * (D * invV * D'))
-                ) / 2
+            ) / 2
             @test score_ae(marginals) ≈ expected
         end
     end

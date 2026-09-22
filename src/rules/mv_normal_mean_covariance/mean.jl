@@ -6,14 +6,14 @@
 )
 
 @rule MvNormalMeanCovariance(:μ, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily, m_Σ::PointMass
+    m_out::MultivariateNormalDistributionsFamily, m_Σ::PointMass,
 ) = begin
     @logscale 0
     m_out_mean, m_out_cov = mean_cov(m_out)
     return MvNormalMeanCovariance(m_out_mean, m_out_cov + mean(m_Σ))
 end
 
-# Variational                       # 
+# Variational                       #
 # --------------------------------- #
 @rule MvNormalMeanCovariance(:μ, Marginalisation) (q_out::PointMass, q_Σ::PointMass) = MvNormalMeanCovariance(
     mean(q_out), mean(q_Σ)
@@ -28,7 +28,7 @@ end
 )
 
 @rule MvNormalMeanCovariance(:μ, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily, q_Σ::Any
+    m_out::MultivariateNormalDistributionsFamily, q_Σ::Any,
 ) = begin
     m_out_mean, m_out_cov = mean_cov(m_out)
     return MvNormalMeanCovariance(m_out_mean, m_out_cov + mean(q_Σ))

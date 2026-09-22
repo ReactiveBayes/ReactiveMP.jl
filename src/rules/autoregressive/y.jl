@@ -1,6 +1,6 @@
 
 @rule AR(:y, Marginalisation) (
-    m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta
+    m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta,
 ) = begin
     mθ, Vθ = mean_cov(q_θ)
     mx, Wx = mean_invcov(m_x)
@@ -23,13 +23,13 @@ end
 
 @rule AR(:y, Marginalisation) (q_x::Any, q_θ::Any, q_γ::Any, meta::ARMeta) =
     begin
-        mA = as_companion_matrix(mean(q_θ))
+    mA = as_companion_matrix(mean(q_θ))
 
-        mV = ar_transition(getvform(meta), getorder(meta), mean(q_γ))
+    mV = ar_transition(getvform(meta), getorder(meta), mean(q_γ))
 
-        return convert(
-            promote_variate_type(getvform(meta), NormalMeanVariance),
-            mA * mean(q_x),
-            mV,
-        )
-    end
+    return convert(
+        promote_variate_type(getvform(meta), NormalMeanVariance),
+        mA * mean(q_x),
+        mV,
+    )
+end

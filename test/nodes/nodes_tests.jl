@@ -53,9 +53,11 @@ end
     @test sdtype(() -> nothing) === Deterministic()
     @test sdtype(Normal(0.0, 1.0)) === Stochastic()
 
-    @test_throws "Unknown if an object of type `Vector{Float64}` is stochastic or deterministic." sdtype([
-        1.0, 2.0, 3.0
-    ])
+    @test_throws "Unknown if an object of type `Vector{Float64}` is stochastic or deterministic." sdtype(
+        [
+            1.0, 2.0, 3.0,
+        ]
+    )
     @test_throws "Unknown if an object of type `Matrix{Float64}` is stochastic or deterministic." sdtype(
         [1.0 0.0; 0.0 1.0]
     )
@@ -87,13 +89,13 @@ end
     struct CustomStochasticNode end
 
     @node CustomStochasticNode Stochastic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z
+        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
     ]
 
     function customstochasticnode end
 
     @node typeof(customstochasticnode) Stochastic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z
+        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
     ]
 
     struct CustomDeterministicNode end
@@ -101,7 +103,7 @@ end
     CustomDeterministicNode(x, y, z) = x + y + z
 
     @node CustomDeterministicNode Deterministic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z
+        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
     ]
 
     function customdeterministicnode end
@@ -109,7 +111,7 @@ end
     customdeterministicnode(x, y, z) = x + y + z
 
     @node typeof(customdeterministicnode) Deterministic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z
+        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
     ]
 
     @test ReactiveMP.sdtype(CustomStochasticNode) === Stochastic()
@@ -118,11 +120,11 @@ end
     @test ReactiveMP.sdtype(customdeterministicnode) === Deterministic()
 
     for node in [
-        CustomStochasticNode,
-        customstochasticnode,
-        CustomDeterministicNode,
-        customdeterministicnode,
-    ]
+            CustomStochasticNode,
+            customstochasticnode,
+            CustomDeterministicNode,
+            customdeterministicnode,
+        ]
         @test alias_interface(node, 1, :out) === :out
         @test alias_interface(node, 2, :x) === :x
         @test alias_interface(node, 2, :xx) === :x
@@ -159,7 +161,7 @@ end
 
 # This is a limitation of the current implementation, which can be removed in the future
 @testitem "@node macro (in the current implementation) should not support interface names with underscores" tags = [
-    :nodes
+    :nodes,
 ] begin
     @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
         quote
@@ -185,7 +187,7 @@ end
 end
 
 @testitem "@node macro should generate a documentation entry for a newly specified node" tags = [
-    :nodes
+    :nodes,
 ] begin
     using REPL # `REPL` changes the docstring output format
 
@@ -193,11 +195,11 @@ end
     struct DummyNodeForDocumentationDeterministic end
 
     @node DummyNodeForDocumentationStochastic Stochastic [
-        out, x, (y, aliases = [yy])
+        out, x, (y, aliases = [yy]),
     ]
 
     @node DummyNodeForDocumentationDeterministic Deterministic [
-        out, (x, aliases = [xx, xxx]), y
+        out, (x, aliases = [xx, xxx]), y,
     ]
 
     binding = @doc(ReactiveMP.is_predefined_node)
@@ -284,7 +286,7 @@ end
 end
 
 @testitem "Generic node construction checks should not allocate" tags = [
-    :nodes, :alloc
+    :nodes, :alloc,
 ] begin
     import ReactiveMP:
         prepare_interfaces_check_adjacent_duplicates,
@@ -318,7 +320,7 @@ end
 end
 
 @testitem "`@node` macro should generate the node function in all directions for `Stochastic` nodes" tags = [
-    :nodes
+    :nodes,
 ] begin
     @testset "For a regular node a user needs to define a node function" begin
         struct DummyNodeForNodeFunction end
@@ -358,7 +360,7 @@ end
         using Distributions
 
         struct DummyNodeForNodeFunctionAsDistribution <:
-               Distributions.ContinuousUnivariateDistribution
+            Distributions.ContinuousUnivariateDistribution
             mean
             var
         end
@@ -371,7 +373,7 @@ end
 
         nodefunction =
             (out, mean, var) ->
-                Distributions.logpdf(Distributions.Normal(mean, var), out)
+        Distributions.logpdf(Distributions.Normal(mean, var), out)
 
         for out in (-1, 1), mean in (-1, 1), var in (1, 2)
             @test ReactiveMP.nodefunction(
@@ -403,7 +405,7 @@ end
 end
 
 @testitem "`factornode` should throw an error if the functional form is not defined with the `@node` macro" tags = [
-    :nodes
+    :nodes,
 ] begin
     struct UnknownDistribution end
 
@@ -419,7 +421,7 @@ end
 end
 
 @testitem "new node defined with `@node` macro should define Symbol -> Node function mapping" tags = [
-    :nodes
+    :nodes,
 ] begin
     struct DummyNodeToTestSymbolToNodeFunctionMapping end
 
@@ -431,13 +433,13 @@ end
 end
 
 @testitem "nodesymbol_to_nodefform returns nothing for an unknown node symbol" tags = [
-    :nodes
+    :nodes,
 ] begin
     @test ReactiveMP.nodesymbol_to_nodefform(Val(:UnknownNode)) === nothing
 end
 
 @testitem "`@node` macro should error if defined a rule for undefined interface" tags = [
-    :nodes
+    :nodes,
 ] begin
     struct DummyNodeToTestRuleForUndefinedInterface end
 
@@ -475,7 +477,7 @@ end
     @test_throws "Interface mismatch for @marginalrule DummyNodeToTestRuleForUndefinedInterface(:out) (m_y::Any, m_x::Any)" eval(
         quote
             @marginalrule DummyNodeToTestRuleForUndefinedInterface(:out) (
-                m_y::Any, m_x::Any
+                m_y::Any, m_x::Any,
             ) = 0.0
         end,
     )
@@ -483,7 +485,7 @@ end
     @test_throws "Interface mismatch for @average_energy DummyNodeToTestRuleForUndefinedInterface (q_y::Any, q_x::Any)" eval(
         quote
             @average_energy DummyNodeToTestRuleForUndefinedInterface (
-                q_y::Any, q_x::Any
+                q_y::Any, q_x::Any,
             ) = 0.0
         end,
     )
@@ -524,7 +526,7 @@ end
     @test_throws "Interface mismatch for @average_energy typeof(dummynodetestruleforundefinedinterface) (q_y::Any, q_x::Any)" eval(
         quote
             @average_energy typeof(dummynodetestruleforundefinedinterface) (
-                q_y::Any, q_x::Any
+                q_y::Any, q_x::Any,
             ) = 0.0
         end,
     )

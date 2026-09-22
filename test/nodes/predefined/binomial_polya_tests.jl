@@ -18,7 +18,7 @@
                 ),
             ),
             nothing,
-        ) ≈ 1.856 atol = 1e-3
+        ) ≈ 1.856 atol = 1.0e-3
 
         # Test with meta and fixed RNG
         rng = MersenneTwister(123)
@@ -38,6 +38,6 @@
                 ),
             ),
             meta,
-        ) ≈ 1.856 atol = 1e-3
+        ) ≈ 1.856 atol = 1.0e-3
     end
 end

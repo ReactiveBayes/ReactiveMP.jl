@@ -113,31 +113,35 @@
     @testset "Multiple univariate input" begin
         @test_rules [check_type_promotion = false] DeltaFn{h}(
             :out, Marginalisation
-        ) [(
-            input = (
-                m_ins = ManyOf(
-                    NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)
+        ) [
+            (
+                input = (
+                    m_ins = ManyOf(
+                        NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)
+                    ),
+                    meta = DeltaMeta(; method = Unscented()),
                 ),
-                meta = DeltaMeta(; method = Unscented()),
+                output = NormalMeanVariance(1.9999999997671694, 67.00000899657607),
             ),
-            output = NormalMeanVariance(1.9999999997671694, 67.00000899657607),
-        )]
+        ]
     end
 
     @testset "Multiple multivariate input" begin
         @test_rules [check_type_promotion = false] DeltaFn{h}(
             :out, Marginalisation
-        ) [(
-            input = (
-                m_ins = ManyOf(
-                    MvNormalMeanCovariance([2.0], [3.0]),
-                    MvNormalMeanCovariance([5.0], [1.0]),
+        ) [
+            (
+                input = (
+                    m_ins = ManyOf(
+                        MvNormalMeanCovariance([2.0], [3.0]),
+                        MvNormalMeanCovariance([5.0], [1.0]),
+                    ),
+                    meta = DeltaMeta(; method = Unscented()),
                 ),
-                meta = DeltaMeta(; method = Unscented()),
+                output = MvNormalMeanCovariance(
+                    [1.9999999997671694], [67.00000899657607]
+                ),
             ),
-            output = MvNormalMeanCovariance(
-                [1.9999999997671694], [67.00000899657607]
-            ),
-        )]
+        ]
     end
 end

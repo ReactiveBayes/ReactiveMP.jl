@@ -46,12 +46,12 @@
             #   ⟨-log N⟩ = -log(w)/2 + log(2π)/2 + w⋅(E[out²] + E[in²])/2 + ⟨-log φ⟩
             # with a = w. This ties the GaussianCoupling energy to an independently tested node.
             for (q_out_in, w) in (
-                (MvNormalMeanCovariance([1.0, 2.0], [2.0 0.5; 0.5 3.0]), 2.0),
-                (
-                    MvNormalMeanCovariance([-1.0, 0.5], [1.0 -0.25; -0.25 0.5]),
-                    0.75,
-                ),
-            )
+                    (MvNormalMeanCovariance([1.0, 2.0], [2.0 0.5; 0.5 3.0]), 2.0),
+                    (
+                        MvNormalMeanCovariance([-1.0, 0.5], [1.0 -0.25; -0.25 0.5]),
+                        0.75,
+                    ),
+                )
                 m, V = mean_cov(q_out_in)
                 expected = score(
                     AverageEnergy(),
@@ -65,9 +65,9 @@
                 )
                 second_moments = (V[1, 1] + abs2(m[1])) + (V[2, 2] + abs2(m[2]))
                 @test -log(w) / 2 +
-                      log(2π) / 2 +
-                      w * second_moments / 2 +
-                      energy(q_out_in, PointMass(w)) ≈ expected
+                    log(2π) / 2 +
+                    w * second_moments / 2 +
+                    energy(q_out_in, PointMass(w)) ≈ expected
             end
         end
     end
@@ -90,7 +90,7 @@
             )
             for _ in 1:iterations, i in 1:n, j in nbrs[i]
                 msg[i, j] = @call_rule GaussianCoupling(:in, Marginalisation) (
-                    m_out = collect_into(i, j), q_a = PointMass(-A[i, j])
+                    m_out = collect_into(i, j), q_a = PointMass(-A[i, j]),
                 )
             end
             return map(i -> collect_into(i, 0), 1:n)

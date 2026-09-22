@@ -18,7 +18,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations(),
     ) # symmetric rule
 end
 
@@ -41,7 +41,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) where {F <: NormalDistributionsFamily} = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations(),
     ) # symmetric rule
 end
 
@@ -81,7 +81,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations(),
     ) # symmetric rule
 end
 
@@ -138,7 +138,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations(),
     ) # symmetric rule
 end
 
@@ -159,7 +159,7 @@ end
 end
 
 #-----------------------
-# Univariate Normal * Univariate Normal 
+# Univariate Normal * Univariate Normal
 #----------------------
 @rule typeof(*)(:out, Marginalisation) (
     m_A::UnivariateGaussianDistributionsFamily,
@@ -191,13 +191,13 @@ mx, vx : mean and variance of the random variable x
 my, vy : mean and variance of the random variable y 
 rho    : correlation coefficient
 """
-function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
+function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1.0e-8)
     logpdf = function (x)
         x += jitter
         term1 =
             -1 / (2 * (1 - rho^2)) * (
-                mx^2 / vx + my^2 / vy - 2 * rho * (x + mx * my) / sqrt(vx * vy)
-            )
+            mx^2 / vx + my^2 / vy - 2 * rho * (x + mx * my) / sqrt(vx * vy)
+        )
 
         term2 = 0.0
         for n in 0:truncation
@@ -205,11 +205,11 @@ function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
                 term2 +=
                     x^(2 * n - m) * abs(x)^(m - n) * sqrt(vx)^(m - n - 1) /
                     (
-                        pi *
+                    pi *
                         factorial(2 * n) *
                         (1 - rho^2)^(2 * n + 1 / 2) *
                         sqrt(vy)^(m - n + 1)
-                    ) *
+                ) *
                     (mx / vx - rho * my / sqrt(vx * vy))^m *
                     binomial(2 * n, m) *
                     (my / vy - rho * mx / sqrt(vx * vy))^(2 * n - m) *

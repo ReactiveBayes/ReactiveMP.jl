@@ -3,11 +3,11 @@ export VariableBoundEntropy
 struct VariableBoundEntropy end
 
 function score(
-    ::Type{T},
-    ::VariableBoundEntropy,
-    variable::RandomVariable,
-    stream_postprocessors,
-) where {T <: CountingReal}
+        ::Type{T},
+        ::VariableBoundEntropy,
+        variable::RandomVariable,
+        stream_postprocessors,
+    ) where {T <: CountingReal}
     mapping = let d = degree(variable)
         (marginal) -> begin
             # The entropy of point masses is not finite

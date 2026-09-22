@@ -1,6 +1,6 @@
 
 @marginalrule NormalMeanPrecision(:out_μ_τ) (
-    m_out::UnivariateNormalDistributionsFamily, m_μ::PointMass, m_τ::PointMass
+    m_out::UnivariateNormalDistributionsFamily, m_μ::PointMass, m_τ::PointMass,
 ) = begin
     return (
         out = prod(
@@ -12,7 +12,7 @@
 end
 
 @marginalrule NormalMeanPrecision(:out_μ_τ) (
-    m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass
+    m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass,
 ) = begin
     return (
         out = m_out,
@@ -33,7 +33,7 @@ end
 
     W_bar = mean(m_τ)
 
-    W  = [W_out+W_bar -W_bar; -W_bar W_μ+W_bar]
+    W = [W_out + W_bar -W_bar; -W_bar W_μ + W_bar]
     xi = [xi_out; xi_μ]
 
     return (out_μ = MvNormalWeightedMeanPrecision(xi, W), τ = m_τ)
@@ -49,14 +49,14 @@ end
 
     W_bar = mean(q_τ)
 
-    W  = [W_out+W_bar -W_bar; -W_bar W_μ+W_bar]
+    W = [W_out + W_bar -W_bar; -W_bar W_μ + W_bar]
     xi = [xi_out; xi_μ]
 
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
 @marginalrule NormalMeanPrecision(:out_μ) (
-    m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, q_τ::Any
+    m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, q_τ::Any,
 ) = begin
     return (
         out = m_out,
@@ -67,7 +67,7 @@ end
 end
 
 @marginalrule NormalMeanPrecision(:out_μ) (
-    m_out::UnivariateNormalDistributionsFamily, m_μ::PointMass, q_τ::Any
+    m_out::UnivariateNormalDistributionsFamily, m_μ::PointMass, q_τ::Any,
 ) = begin
     return (
         out = prod(

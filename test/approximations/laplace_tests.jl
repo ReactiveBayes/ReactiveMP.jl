@@ -1,6 +1,6 @@
 
 @testitem "LaplaceApproximation: recovers the exact Gaussian product" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, LinearAlgebra
 
@@ -28,8 +28,8 @@
             MvNormalMeanCovariance([0.0], [1.0;;]),
         )
 
-        @test m ≈ [0.5] atol = 1e-6
-        @test c ≈ [0.5;;] atol = 1e-8
+        @test m ≈ [0.5] atol = 1.0e-6
+        @test c ≈ [0.5;;] atol = 1.0e-8
         # The covariance must be a valid one. This is the assertion that fails on `main`.
         @test isposdef(c)
         @test all(>(0), diag(c))
@@ -51,8 +51,8 @@
             MvNormalMeanCovariance(m₀, inv(Λ₀)),
         )
 
-        @test m ≈ m_exact atol = 1e-6
-        @test c ≈ Σ_exact atol = 1e-8
+        @test m ≈ m_exact atol = 1.0e-6
+        @test c ≈ Σ_exact atol = 1.0e-8
         @test isposdef(c)
         @test issymmetric(Matrix(c)) || c ≈ transpose(c)
     end
@@ -60,7 +60,7 @@
     @testset "the covariance is positive-definite across a range of curvatures" begin
         # Sweeps the kernel precision over four orders of magnitude. Every returned covariance
         # must be positive-definite; on `main` every one of them is negative-definite.
-        for λ in (1e-2, 1.0, 1e1, 1e2)
+        for λ in (1.0e-2, 1.0, 1.0e1, 1.0e2)
             m, c = approximate_meancov(
                 LaplaceApproximation(),
                 (z) -> exp(-λ * sum(abs2, z .- 0.5) / 2),
@@ -69,13 +69,13 @@
 
             @test isposdef(c)
             # Exact: Λ = 1 + λ
-            @test c ≈ [inv(1 + λ);;] atol = 1e-8
+            @test c ≈ [inv(1 + λ);;] atol = 1.0e-8
         end
     end
 end
 
 @testitem "LaplaceApproximation: rejects a stationary point that is not a maximum" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, LinearAlgebra
 

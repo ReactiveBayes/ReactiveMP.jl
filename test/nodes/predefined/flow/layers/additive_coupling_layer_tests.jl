@@ -46,7 +46,7 @@
         @test outt[2].dim == 2
         @test outf.dim == 2
 
-        layer_comp  = compile(outf)
+        layer_comp = compile(outf)
         layer_compp = compile(outf, [1.0, 2.0, 3.0])
 
         @test typeof(layer_comp) <: AdditiveCouplingLayer
@@ -148,7 +148,7 @@
         @test jacobian(layer, [3.0, 1.5]) == [1.0 0.0; 1.0197320743308804 1.0]
         @test jacobian(layer, [2.5, 5.0]) == [1.0 0.0; 1.1413016497063289 1.0]
         @test jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [
-            [1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]
+            [1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0],
         ]
 
         # check jacobian function
@@ -165,7 +165,7 @@
             [1.0 0.0; -1.1413016497063289 1.0],
         ]
 
-        # check for invertibility 
+        # check for invertibility
         layer = AdditiveCouplingLayer(PlanarFlow(); permute = false)
         x = randn(10)
         layer = compile(ReactiveMP._prepare(10, layer))

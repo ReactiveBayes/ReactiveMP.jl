@@ -125,7 +125,7 @@
                     ),
                 ),
                 output = MvNormalWeightedMeanPrecision(
-                    [-1 / 2, -3], [5/2 0; 0 5/2]
+                    [-1 / 2, -3], [5 / 2 0; 0 5 / 2]
                 ),
             ),
             (

@@ -29,19 +29,19 @@
         ) [
             (
                 input = (
-                    m_out = NormalMeanVariance(0.0, 1.0), m_v = PointMass(2.0)
+                    m_out = NormalMeanVariance(0.0, 1.0), m_v = PointMass(2.0),
                 ),
                 output = NormalMeanVariance(0.0, 3.0),
             ),
             (
                 input = (
-                    m_out = NormalMeanVariance(-1.0, 1.0), m_v = PointMass(1.5)
+                    m_out = NormalMeanVariance(-1.0, 1.0), m_v = PointMass(1.5),
                 ),
                 output = NormalMeanVariance(-1.0, 2.5),
             ),
             (
                 input = (
-                    m_out = NormalMeanVariance(2.0, 0.5), m_v = PointMass(1.0)
+                    m_out = NormalMeanVariance(2.0, 0.5), m_v = PointMass(1.0),
                 ),
                 output = NormalMeanVariance(2.0, 1.5),
             ),
@@ -52,19 +52,19 @@
         ) [
             (
                 input = (
-                    m_out = NormalMeanPrecision(0.0, 1.0), m_v = PointMass(2.0)
+                    m_out = NormalMeanPrecision(0.0, 1.0), m_v = PointMass(2.0),
                 ),
                 output = NormalMeanVariance(0.0, 3.0),
             ),
             (
                 input = (
-                    m_out = NormalMeanPrecision(-1.0, 1.0), m_v = PointMass(1.5)
+                    m_out = NormalMeanPrecision(-1.0, 1.0), m_v = PointMass(1.5),
                 ),
                 output = NormalMeanVariance(-1.0, 2.5),
             ),
             (
                 input = (
-                    m_out = NormalMeanPrecision(2.0, 0.5), m_v = PointMass(1.0)
+                    m_out = NormalMeanPrecision(2.0, 0.5), m_v = PointMass(1.0),
                 ),
                 output = NormalMeanVariance(2.0, 3.0),
             ),
@@ -103,19 +103,19 @@
         ) [
             (
                 input = (
-                    m_out = NormalMeanVariance(0.0, 1.0), q_v = PointMass(2.0)
+                    m_out = NormalMeanVariance(0.0, 1.0), q_v = PointMass(2.0),
                 ),
                 output = NormalMeanVariance(0.0, 3.0),
             ),
             (
                 input = (
-                    m_out = NormalMeanVariance(-1.0, 1.0), q_v = PointMass(1.5)
+                    m_out = NormalMeanVariance(-1.0, 1.0), q_v = PointMass(1.5),
                 ),
                 output = NormalMeanVariance(-1.0, 2.5),
             ),
             (
                 input = (
-                    m_out = NormalMeanVariance(2.0, 0.5), q_v = PointMass(1.0)
+                    m_out = NormalMeanVariance(2.0, 0.5), q_v = PointMass(1.0),
                 ),
                 output = NormalMeanVariance(2.0, 1.5),
             ),
@@ -126,19 +126,19 @@
         ) [
             (
                 input = (
-                    m_out = NormalMeanPrecision(0.0, 1.0), q_v = PointMass(2.0)
+                    m_out = NormalMeanPrecision(0.0, 1.0), q_v = PointMass(2.0),
                 ),
                 output = NormalMeanVariance(0.0, 3.0),
             ),
             (
                 input = (
-                    m_out = NormalMeanPrecision(-1.0, 1.0), q_v = PointMass(1.5)
+                    m_out = NormalMeanPrecision(-1.0, 1.0), q_v = PointMass(1.5),
                 ),
                 output = NormalMeanVariance(-1.0, 2.5),
             ),
             (
                 input = (
-                    m_out = NormalMeanPrecision(2.0, 0.5), q_v = PointMass(1.0)
+                    m_out = NormalMeanPrecision(2.0, 0.5), q_v = PointMass(1.0),
                 ),
                 output = NormalMeanVariance(2.0, 3.0),
             ),
@@ -177,13 +177,13 @@
         ) [
             (
                 input = (
-                    m_out = PointMass(-1.0), q_v = GammaShapeRate(1.0, 1.0)
+                    m_out = PointMass(-1.0), q_v = GammaShapeRate(1.0, 1.0),
                 ),
                 output = NormalMeanVariance(-1.0, 1.0),
             ),
             (
                 input = (
-                    m_out = PointMass(1.0), q_v = GammaShapeScale(1.0, 1.0)
+                    m_out = PointMass(1.0), q_v = GammaShapeScale(1.0, 1.0),
                 ),
                 output = NormalMeanVariance(1.0, 1.0),
             ),
@@ -217,13 +217,13 @@
         ) [
             (
                 input = (
-                    q_out = NormalMeanVariance(-1.0, 2.0), q_v = PointMass(2.0)
+                    q_out = NormalMeanVariance(-1.0, 2.0), q_v = PointMass(2.0),
                 ),
                 output = NormalMeanVariance(-1.0, 2.0),
             ),
             (
                 input = (
-                    q_out = NormalMeanPrecision(1.0, 4.0), q_v = PointMass(3.0)
+                    q_out = NormalMeanPrecision(1.0, 4.0), q_v = PointMass(3.0),
                 ),
                 output = NormalMeanVariance(1.0, 3.0),
             ),

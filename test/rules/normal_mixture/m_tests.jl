@@ -75,7 +75,7 @@
     end
 
     @testset "Variational : (m_out::MultivariateNormalDistributionsFamily..., m_p::Wishart...) k=1" begin
-        @test_rules [check_type_promotion = true, atol = 1e-4] NormalMixture{2}(
+        @test_rules [check_type_promotion = true, atol = 1.0e-4] NormalMixture{2}(
             (:m, k = 1), Marginalisation
         ) [
             (

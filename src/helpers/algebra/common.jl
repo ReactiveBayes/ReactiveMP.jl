@@ -32,8 +32,8 @@ See also: [`mul_inplace!`](@ref)
 function negate_inplace! end
 
 negate_inplace!(A::AbstractArray) = -A
-negate_inplace!(A::Real)          = -A
-negate_inplace!(A::Array)         = map!(-, A, A)
+negate_inplace!(A::Real) = -A
+negate_inplace!(A::Array) = map!(-, A, A)
 
 """
     mul_inplace!(alpha, A)
@@ -56,34 +56,34 @@ Helper function for A + x * y'. Uses optimised BLAS version for AbstractFloats a
 """
 function rank1update end
 
-rank1update(A::AbstractMatrix, x::AbstractVector)                    = rank1update(eltype(A), eltype(x), eltype(x), A, x, x)
+rank1update(A::AbstractMatrix, x::AbstractVector) = rank1update(eltype(A), eltype(x), eltype(x), A, x, x)
 rank1update(A::AbstractMatrix, x::AbstractVector, y::AbstractVector) = rank1update(eltype(A), eltype(x), eltype(y), A, x, y)
 
-rank1update(A::Real, x::Real)          = rank1update(A, x, x)
+rank1update(A::Real, x::Real) = rank1update(A, x, x)
 rank1update(A::Real, x::Real, y::Real) = A + x * y
 
 function rank1update(
-    ::Type{T}, ::Type{T}, ::Type{T}, A::Matrix, x::Vector, y::Vector
-) where {T <: LinearAlgebra.BlasFloat}
+        ::Type{T}, ::Type{T}, ::Type{T}, A::Matrix, x::Vector, y::Vector
+    ) where {T <: LinearAlgebra.BlasFloat}
     return LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
 end
 
 function rank1update(
-    ::Type{T1},
-    ::Type{T2},
-    ::Type{T3},
-    A::AbstractMatrix,
-    x::AbstractVector,
-    y::AbstractVector,
-) where {T1 <: Real, T2 <: Real, T3 <: Real}
+        ::Type{T1},
+        ::Type{T2},
+        ::Type{T3},
+        A::AbstractMatrix,
+        x::AbstractVector,
+        y::AbstractVector,
+    ) where {T1 <: Real, T2 <: Real, T3 <: Real}
     T = promote_type(T1, T2, T3)
     B = Matrix{T}(undef, size(A))
     return rank1update!(B, A, x, y)
 end
 
 function rank1update!(
-    B::AbstractMatrix, A::AbstractMatrix, x::AbstractVector, y::AbstractVector
-)
+        B::AbstractMatrix, A::AbstractMatrix, x::AbstractVector, y::AbstractVector
+    )
     sz = size(A)
     @inbounds for k2 in 1:sz[2]
         yk2 = y[k2]

@@ -109,7 +109,7 @@ end
 
     message_prod_fold =
         (variable, context, msgs) ->
-            msg(sum(filter(!ismissing, getdata.(msgs))))
+    msg(sum(filter(!ismissing, getdata.(msgs))))
     marginal_prod_fold =
         (variable, context, msgs) -> error("Marginal should not be called here")
 
@@ -159,7 +159,7 @@ end
 end
 
 @testitem "RandomVariable: before/after marginal computation callbacks" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP:
         MessageObservable,
@@ -182,8 +182,8 @@ end
     end
 
     function ReactiveMP.invoke_callback(
-        handler::MarginalCallbackHandler, event::ReactiveMP.Event{E}
-    ) where {E}
+            handler::MarginalCallbackHandler, event::ReactiveMP.Event{E}
+        ) where {E}
         E ∈ handler.listen_to &&
             push!(handler.events, (event = E, data = event))
     end
@@ -193,7 +193,7 @@ end
         handler = MarginalCallbackHandler(listen_to, [])
         marginal_context = MessageProductContext(;
             fold_strategy = (variable, context, msgs) ->
-                msg(sum(getdata.(msgs))),
+            msg(sum(getdata.(msgs))),
             callbacks = handler,
         )
 
@@ -248,7 +248,7 @@ end
         handler = MarginalCallbackHandler(listen_to, [])
         marginal_context = MessageProductContext(;
             fold_strategy = (variable, context, msgs) ->
-                msg(sum(getdata.(msgs))),
+            msg(sum(getdata.(msgs))),
             callbacks = handler,
         )
 
@@ -296,7 +296,7 @@ end
 end
 
 @testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP:
         RandomVariableActivationOptions,

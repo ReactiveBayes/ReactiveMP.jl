@@ -1,6 +1,6 @@
 
 @node MvNormalMeanCovariance Stochastic [
-    out, (μ, aliases = [mean]), (Σ, aliases = [cov])
+    out, (μ, aliases = [mean]), (Σ, aliases = [cov]),
 ]
 
 # default method for mean-field assumption
@@ -9,8 +9,8 @@
     dim = ndims(q_out)
 
     m_mean, v_mean = mean_cov(q_μ)
-    m_out, v_out   = mean_cov(q_out)
-    inv_m_Σ        = mean(cholinv, q_Σ)
+    m_out, v_out = mean_cov(q_out)
+    inv_m_Σ = mean(cholinv, q_Σ)
 
     result = zero(promote_paramfloattype(q_out, q_μ, q_Σ))
     result += mean(logdet, q_Σ)
@@ -18,10 +18,10 @@
     @inbounds for k1 in 1:dim, k2 in 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result +=
             inv_m_Σ[k1, k2] * (
-                v_out[k1, k2] +
+            v_out[k1, k2] +
                 v_mean[k1, k2] +
                 (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1])
-            )
+        )
     end
     result /= 2
 
@@ -42,10 +42,10 @@ end
     @inbounds for k1 in 1:dim, k2 in 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result +=
             inv_m_Σ[k1, k2] * (
-                V[k1, k2] + V[dim + k1, dim + k2] - V[dim + k1, k2] -
+            V[k1, k2] + V[dim + k1, dim + k2] - V[dim + k1, k2] -
                 V[k1, dim + k2] +
                 (m[k1] - m[dim + k1]) * (m[k2] - m[dim + k2])
-            )
+        )
     end
     result /= 2
 

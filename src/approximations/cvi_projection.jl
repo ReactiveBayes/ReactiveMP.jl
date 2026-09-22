@@ -113,7 +113,7 @@ method = CVIProjection(in_prjparams = (in_1 = ProjectedTo(NormalMeanVariance), i
     and improved accuracy. Parameters and defaults may change as the implementation evolves.
 """
 Base.@kwdef struct CVIProjection{R, S, OF, IFS, PD, SS} <:
-                   AbstractApproximationMethod
+    AbstractApproximationMethod
     rng::R = Random.MersenneTwister(42)
     outsamples::S = 100
     out_prjparams::OF = nothing
@@ -123,8 +123,8 @@ Base.@kwdef struct CVIProjection{R, S, OF, IFS, PD, SS} <:
 end
 
 function get_kth_in_form(
-    ::CVIProjection{R, S, OF, Nothing}, ::Int
-) where {R, S, OF}
+        ::CVIProjection{R, S, OF, Nothing}, ::Int
+    ) where {R, S, OF}
     return nothing
 end
 

@@ -17,7 +17,7 @@
             distribution = NormalMeanVariance(0.0, 1.0)
 
             @testset "differing annotations do not break equality" begin
-                plain     = Wrapper(distribution, false, false)
+                plain = Wrapper(distribution, false, false)
                 annotated = Wrapper(distribution, false, false)
                 annotate!(getannotations(annotated), :logscale, 42.0)
 
@@ -27,7 +27,7 @@
             end
 
             @testset "differing :logscale values do not break equality either" begin
-                left  = Wrapper(distribution, false, false)
+                left = Wrapper(distribution, false, false)
                 right = Wrapper(distribution, false, false)
                 annotate!(getannotations(left), :logscale, 1.0)
                 annotate!(getannotations(right), :logscale, 2.0)
@@ -67,8 +67,8 @@ end
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false),
-            data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
+                initial in (true, false),
+                data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
             msg = Message(data, clamped, initial)
             @test getdata(msg) === data
@@ -84,8 +84,8 @@ end
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false),
-            clamped2 in (true, false), initial1 in (true, false),
-            initial2 in (true, false)
+                clamped2 in (true, false), initial1 in (true, false),
+                initial2 in (true, false)
 
             msg1 = Message(dist1, clamped1, initial1)
             msg2 = Message(dist2, clamped2, initial2)
@@ -100,8 +100,8 @@ end
         _testvar = ReactiveMP.randomvar()
         × =
             (x, y) -> compute_product_of_two_messages(
-                _testvar, MessageProductContext(), x, y
-            )
+            _testvar, MessageProductContext(), x, y
+        )
 
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
@@ -117,27 +117,27 @@ end
             product(repeated([true, false], 2)...)
             @test is_clamped(
                 Message(dist1, true, left_is_initial) ×
-                Message(dist2, false, right_is_initial),
+                    Message(dist2, false, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist1, false, left_is_initial) ×
-                Message(dist2, true, right_is_initial),
+                    Message(dist2, true, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist1, true, left_is_initial) ×
-                Message(dist2, true, right_is_initial),
+                    Message(dist2, true, right_is_initial),
             ) == true
             @test is_clamped(
                 Message(dist2, true, left_is_initial) ×
-                Message(dist1, false, right_is_initial),
+                    Message(dist1, false, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist2, false, left_is_initial) ×
-                Message(dist1, true, right_is_initial),
+                    Message(dist1, true, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist2, true, left_is_initial) ×
-                Message(dist1, true, right_is_initial),
+                    Message(dist1, true, right_is_initial),
             ) == true
         end
 
@@ -145,19 +145,19 @@ end
             product(repeated([true, false], 2)...)
             @test is_initial(
                 Message(dist1, left_is_clamped, true) ×
-                Message(dist2, right_is_clamped, true),
+                    Message(dist2, right_is_clamped, true),
             ) == !(left_is_clamped && right_is_clamped)
             @test is_initial(
                 Message(dist2, left_is_clamped, true) ×
-                Message(dist1, right_is_clamped, true),
+                    Message(dist1, right_is_clamped, true),
             ) == !(left_is_clamped && right_is_clamped)
             @test is_initial(
                 Message(dist1, left_is_clamped, false) ×
-                Message(dist2, right_is_clamped, false),
+                    Message(dist2, right_is_clamped, false),
             ) == false
             @test is_initial(
                 Message(dist2, left_is_clamped, false) ×
-                Message(dist1, right_is_clamped, false),
+                    Message(dist1, right_is_clamped, false),
             ) == false
         end
 
@@ -241,10 +241,10 @@ end
         ]
 
         for (distribution, distribution_methods) in
-            zip(distributions, dists_methods),
-            method in methods_to_test
+                zip(distributions, dists_methods),
+                method in methods_to_test
 
-            T       = typeof(distribution)
+            T = typeof(distribution)
             message = Message(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(method, (T,))
@@ -256,8 +256,8 @@ end
         fn_mean_functions = (inv, log, xtlog, mirrorlog, loggamma)
 
         for distribution in distributions, fn_mean in fn_mean_functions
-            F       = typeof(fn_mean)
-            T       = typeof(distribution)
+            F = typeof(fn_mean)
+            T = typeof(distribution)
             message = Message(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(mean, (F, T), ReactiveMP)
@@ -333,7 +333,7 @@ end
 end
 
 @testitem "MessageMapping should call `rulefallback` is no rule is available" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
@@ -359,7 +359,7 @@ end
         nothing,
     )
 
-    messages  = (Message(NonexistingDistribution(), false, false),)
+    messages = (Message(NonexistingDistribution(), false, false),)
     marginals = nothing
 
     @test_throws ReactiveMP.RuleMethodError mapping_no_rule_fallback(
@@ -396,7 +396,7 @@ end
 end
 
 @testitem "MessageMapping should call provided callbacks handler" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
@@ -411,9 +411,9 @@ end
 
     callbacks = (
         before_message_rule_call = (event) ->
-            push!(events, (event = :before_message_rule_call, data = event)),
+        push!(events, (event = :before_message_rule_call, data = event)),
         after_message_rule_call = (event) ->
-            push!(events, (event = :after_message_rule_call, data = event)),
+        push!(events, (event = :after_message_rule_call, data = event)),
     )
 
     mapping = MessageMapping(
@@ -468,7 +468,7 @@ end
 
     function isapprox(left::Normal, right::Normal; kwargs...)
         return isapprox(left.mean, right.mean; kwargs...) &&
-               isapprox(left.var, right.var; kwargs...)
+            isapprox(left.var, right.var; kwargs...)
     end
 
     struct AbstractVariableForMessageProductContextTests <: AbstractVariable end
@@ -488,8 +488,8 @@ end
     end
 
     function ReactiveMP.invoke_callback(
-        handler::SaveOrderOfComputationCallbacks, event::ReactiveMP.Event{E}
-    ) where {E}
+            handler::SaveOrderOfComputationCallbacks, event::ReactiveMP.Event{E}
+        ) where {E}
         E ∈ handler.listen_to &&
             push!(handler.events, (event = E, data = event))
     end
@@ -499,7 +499,7 @@ end
 end
 
 @testitem "MessageProductContext should compute product of two messages" tags = [
-    :engine
+    :engine,
 ] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         Message, MessageProductContext, compute_product_of_two_messages, getdata
@@ -518,7 +518,7 @@ end
 end
 
 @testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" tags = [
-    :engine
+    :engine,
 ] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         Message,
@@ -530,8 +530,8 @@ end
     context = MessageProductContext()
 
     for left_is_clamped in (true, false),
-        right_is_clamped in (true, false), left_is_initial in (true, false),
-        right_is_initial in (true, false)
+            right_is_clamped in (true, false), left_is_initial in (true, false),
+            right_is_initial in (true, false)
 
         msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial)
         msg2 = Message(Normal(0, 1), right_is_clamped, right_is_initial)
@@ -554,7 +554,7 @@ end
 end
 
 @testitem "compute_message_product should support different folding strategies" tags = [
-    :engine
+    :engine,
 ] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
@@ -574,7 +574,7 @@ end
         import ReactiveMP: MessagesProductFromLeftToRight
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -610,7 +610,7 @@ end
         import ReactiveMP: MessagesProductFromRightToLeft
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -646,16 +646,16 @@ end
         # Custom strategy: compute (1 × 3) × 2
         custom_fold =
             (variable, context, messages) -> begin
-                first = compute_product_of_two_messages(
-                    variable, context, messages[1], messages[3]
-                )
-                return compute_product_of_two_messages(
-                    variable, context, first, messages[2]
-                )
-            end
+            first = compute_product_of_two_messages(
+                variable, context, messages[1], messages[3]
+            )
+            return compute_product_of_two_messages(
+                variable, context, first, messages[2]
+            )
+        end
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -685,7 +685,7 @@ end
         import ReactiveMP: MessagesProductFromLeftToRight
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -723,7 +723,7 @@ end
 end
 
 @testitem "Form constraint callbacks with FormConstraintCheckEach" tags = [
-    :engine
+    :engine,
 ] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
@@ -741,7 +741,7 @@ end
 
     @testset "CheckEach applies form constraint after each pairwise product" begin
         listen_to = (
-            :before_form_constraint_applied, :after_form_constraint_applied
+            :before_form_constraint_applied, :after_form_constraint_applied,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -784,7 +784,7 @@ end
 end
 
 @testitem "Form constraint callbacks with FormConstraintCheckLast" tags = [
-    :engine
+    :engine,
 ] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
@@ -801,7 +801,7 @@ end
 
     @testset "CheckLast applies form constraint once at the end" begin
         listen_to = (
-            :before_form_constraint_applied, :after_form_constraint_applied
+            :before_form_constraint_applied, :after_form_constraint_applied,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -865,7 +865,7 @@ end
 end
 
 @testitem "Before/after product of messages callbacks" tags = [:engine] setup = [
-    MessageProductContextUtils
+    MessageProductContextUtils,
 ] begin
     import ReactiveMP:
         MessageProductContext, Message, compute_product_of_messages, getdata

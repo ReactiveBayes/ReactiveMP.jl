@@ -1,5 +1,5 @@
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out::Any, q_in::Categorical)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
@@ -33,55 +33,61 @@
 end
 
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(
         :a, Marginalisation
-    ) [(
-        input = (q_out_in = Contingency(diageye(3)),),
-        output = DirichletCollection(
-            [
-                1.333333333333333 1 1;
-                1 1.3333333333333 1;
-                1 1 1.33333333333333333
-            ],
+    ) [
+        (
+            input = (q_out_in = Contingency(diageye(3)),),
+            output = DirichletCollection(
+                [
+                    1.333333333333333 1 1;
+                    1 1.3333333333333 1;
+                    1 1 1.33333333333333333
+                ],
+            ),
         ),
-    )]
+    ]
 end
 
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in_T1::Contingency)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(
         :a, Marginalisation
-    ) [(
-        input = (q_out_in_T1 = Contingency(ones(3, 3, 3)),),
-        output = DirichletCollection(ones(3, 3, 3) .+ (1 / 27)),
-    )]
+    ) [
+        (
+            input = (q_out_in_T1 = Contingency(ones(3, 3, 3)),),
+            output = DirichletCollection(ones(3, 3, 3) .+ (1 / 27)),
+        ),
+    ]
 end
 
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in_T1_t2::Contingency)" tags = [
-    :rules
+    :rules,
 ] begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(
         :a, Marginalisation
-    ) [(
-        input = (q_out_in_T1_t2 = Contingency(ones(3, 3, 3, 3)),),
-        output = DirichletCollection(ones(3, 3, 3, 3) .+ (1 / 81)),
-    )]
+    ) [
+        (
+            input = (q_out_in_T1_t2 = Contingency(ones(3, 3, 3, 3)),),
+            output = DirichletCollection(ones(3, 3, 3, 3) .+ (1 / 81)),
+        ),
+    ]
 end
 
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency, q_T1::Categorical)" tags = [
-    :rules
+    :rules,
 ] begin
     # This should be the normalized outer product of the marginals, along the decoded dimensions
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
@@ -120,7 +126,7 @@ end
 end
 
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_in::Contingency, q_T1::PointMass)" tags = [
-    :rules
+    :rules,
 ] begin
     # This should be the normalized outer product of the marginals, along the decoded dimensions
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
@@ -159,7 +165,7 @@ end
 end
 
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out_T1::Contingency, q_in::Categorical)" tags = [
-    :rules
+    :rules,
 ] begin
     # This should be the normalized outer product of the marginals, along the decoded dimensions
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
@@ -167,17 +173,19 @@ end
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(
         :a, Marginalisation
-    ) [(
-        input = (
-            q_out_T1 = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]),
-            q_in = Categorical([0.1, 0.4, 0.5]),
+    ) [
+        (
+            input = (
+                q_out_T1 = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]),
+                q_in = Categorical([0.1, 0.4, 0.5]),
+            ),
+            output = DirichletCollection(
+                [
+                    1.017777777777778 1.0711111111111111 1.0888888888888888; 1.0044444444444445 1.017777777777778 1.0222222222222221; 1.0222222222222221 1.0888888888888888 1.1111111111111112;;;
+                    1.008888888888889 1.0355555555555556 1.0444444444444445; 1.011111111111111 1.0444444444444445 1.0555555555555556; 1.0133333333333334 1.0533333333333332 1.0666666666666667;;;
+                    1.011111111111111 1.0444444444444445 1.0555555555555556; 1.0066666666666666 1.0266666666666666 1.0333333333333334; 1.0044444444444445 1.017777777777778 1.0222222222222221
+                ],
+            ),
         ),
-        output = DirichletCollection(
-            [
-                1.017777777777778 1.0711111111111111 1.0888888888888888; 1.0044444444444445 1.017777777777778 1.0222222222222221; 1.0222222222222221 1.0888888888888888 1.1111111111111112;;;
-                1.008888888888889 1.0355555555555556 1.0444444444444445; 1.011111111111111 1.0444444444444445 1.0555555555555556; 1.0133333333333334 1.0533333333333332 1.0666666666666667;;;
-                1.011111111111111 1.0444444444444445 1.0555555555555556; 1.0066666666666666 1.0266666666666666 1.0333333333333334; 1.0044444444444445 1.017777777777778 1.0222222222222221
-            ],
-        ),
-    )]
+    ]
 end

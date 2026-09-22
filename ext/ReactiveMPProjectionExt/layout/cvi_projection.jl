@@ -33,7 +33,7 @@ In order to compute:
 - `m_in_k`: uses the inbound message on the `in_k` edge and `q_ins`
 """
 struct CVIProjectionApproximationDeltaFnRuleLayout <:
-       AbstractDeltaNodeDependenciesLayout end
+    AbstractDeltaNodeDependenciesLayout end
 
 deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) =
     CVIProjectionApproximationDeltaFnRuleLayout()
@@ -45,15 +45,15 @@ end
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout,
-    ::Val{:q_out},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
+        ::CVIProjectionApproximationDeltaFnRuleLayout,
+        ::Val{:q_out},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:q_out),
@@ -68,15 +68,15 @@ end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout,
-    ::Val{:q_ins},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
+        ::CVIProjectionApproximationDeltaFnRuleLayout,
+        ::Val{:q_ins},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:q_ins),
@@ -89,26 +89,26 @@ function deltafn_apply_layout(
     )
 end
 
-# This function declares how to compute `m_out` 
+# This function declares how to compute `m_out`
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout,
-    ::Val{:m_out},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
-    let interface = factornode.out
-        msgs_names      = Val{(:out,)}()
+        ::CVIProjectionApproximationDeltaFnRuleLayout,
+        ::Val{:m_out},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
+    return let interface = factornode.out
+        msgs_names = Val{(:out,)}()
         msgs_observable = combineLatestUpdates((get_stream_of_inbound_messages(factornode.out),), PushNew())
 
-        marginal_names       = Val{(:out, :ins)}()
+        marginal_names = Val{(:out, :ins)}()
         marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[1]), get_stream_of_marginals(factornode.localmarginals.marginals[2])), PushNew())
 
-        fform       = functionalform(factornode)
-        vtag        = tag(interface)
+        fform = functionalform(factornode)
+        vtag = tag(interface)
         vconstraint = Marginalisation()
 
         stream_of_outbound_messages = combineLatest(
@@ -116,22 +116,22 @@ function deltafn_apply_layout(
         )
 
         mapping =
-            let messagemap = MessageMapping(
-                    fform,
-                    vtag,
-                    vconstraint,
-                    msgs_names,
-                    marginal_names,
-                    meta,
-                    annotations,
-                    factornode,
-                    rulefallback,
-                    callbacks,
-                )
-                (dependencies) -> DeferredMessage(
-                    dependencies[1], dependencies[2], messagemap
-                )
-            end
+        let messagemap = MessageMapping(
+                fform,
+                vtag,
+                vconstraint,
+                msgs_names,
+                marginal_names,
+                meta,
+                annotations,
+                factornode,
+                rulefallback,
+                callbacks,
+            )
+            (dependencies) -> DeferredMessage(
+                dependencies[1], dependencies[2], messagemap
+            )
+        end
 
         stream_of_outbound_messages = with_statics(
             factornode, stream_of_outbound_messages
@@ -145,17 +145,17 @@ function deltafn_apply_layout(
     end
 end
 
-# This function declares how to compute `m_in` for each `k` 
+# This function declares how to compute `m_in` for each `k`
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout,
-    ::Val{:m_in},
-    factornode::DeltaFnNode,
-    meta,
-    stream_postprocessors,
-    annotations,
-    rulefallback,
-    callbacks,
-)
+        ::CVIProjectionApproximationDeltaFnRuleLayout,
+        ::Val{:m_in},
+        factornode::DeltaFnNode,
+        meta,
+        stream_postprocessors,
+        annotations,
+        rulefallback,
+        callbacks,
+    )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:m_in),

@@ -9,16 +9,16 @@ at creation time and can be updated later via [`ReactiveMP.new_observation!`](@r
 See also: [`ReactiveMP.RandomVariable`](@ref), [`ReactiveMP.ConstVariable`](@ref)
 """
 mutable struct DataVariable{M, P} <: AbstractVariable
-    input_messages :: Vector{MessageObservable{AbstractMessage}}
-    marginal       :: MarginalObservable
-    messageout     :: M
-    prediction     :: P
-    label          :: Any
+    input_messages::Vector{MessageObservable{AbstractMessage}}
+    marginal::MarginalObservable
+    messageout::M
+    prediction::P
+    label::Any
 end
 
 function DataVariable(; label = nothing)
     messageout = RecentSubject(Message)
-    marginal   = MarginalObservable()
+    marginal = MarginalObservable()
     prediction = MarginalObservable()
     return DataVariable(
         Vector{MessageObservable{AbstractMessage}}(),
@@ -38,12 +38,12 @@ datavar(; label = nothing) = DataVariable(; label = label)
 
 degree(datavar::DataVariable) = length(datavar.input_messages)
 
-israndom(::DataVariable)                  = false
+israndom(::DataVariable) = false
 israndom(::AbstractArray{<:DataVariable}) = false
-isdata(::DataVariable)                    = true
-isdata(::AbstractArray{<:DataVariable})   = true
-isconst(::DataVariable)                   = false
-isconst(::AbstractArray{<:DataVariable})  = false
+isdata(::DataVariable) = true
+isdata(::AbstractArray{<:DataVariable}) = true
+isconst(::DataVariable) = false
+isconst(::AbstractArray{<:DataVariable}) = false
 
 get_stream_of_marginals(datavar::DataVariable) = datavar.marginal
 get_stream_of_predictions(datavar::DataVariable) = datavar.prediction
@@ -104,11 +104,11 @@ Activation proceeds in up to three steps:
 See also: [`ReactiveMP.DataVariableActivationOptions`](@ref), [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref)
 """
 function activate!(
-    datavar::DataVariable, options::DataVariableActivationOptions
-)
+        datavar::DataVariable, options::DataVariableActivationOptions
+    )
     if options.prediction
-        # if the prediction is requested, we instantiate the stream of predictions 
-        # as the product of all inbound messages to the datavar 
+        # if the prediction is requested, we instantiate the stream of predictions
+        # as the product of all inbound messages to the datavar
         # otherwise the stream of predictions is empty
         stream_of_predictions = collectLatest(
             AbstractMessage,
@@ -130,9 +130,11 @@ function activate!(
             map(l -> __link_getmarginal(l), options.args)
         )
         linkstream =
-            linkvalues |> map(Any, (args) -> let f = options.transform
+            linkvalues |> map(
+            Any, (args) -> let f = options.transform
                 return __apply_link(f, getrecent.(args))
-            end)
+            end
+        )
         # This subscription should unsubscribe automatically when the linked `datavar`s complete
         subscribe!(linkstream, (val) -> new_observation!(datavar, val))
     end
@@ -164,7 +166,7 @@ function __apply_link_data(f::F, data::Tuple) where {F}
     offenders = join(
         (
             "  argument $(i) :: $(typeof(d))" for
-            (i, d) in enumerate(data) if !(d isa PointMass)
+                (i, d) in enumerate(data) if !(d isa PointMass)
         ),
         "\n",
     )
@@ -198,7 +200,7 @@ function new_observation!(datavar::DataVariable, data)
     return new_observation!(datavar, PointMass(data))
 end
 new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
-new_observation!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false))
+new_observation!(datavar::DataVariable, ::Missing) = next!(datavar.messageout, Message(missing, false, false))
 
 # `PointMass` only defines `variate_form` (and hence usable `mean`/`var`) for these payloads.
 # Wrapping anything else produces a `PointMass` that *constructs* fine but whose `mean` recurses
@@ -247,20 +249,20 @@ function __assert_valid_observation(datavar::DataVariable, data::D) where {D}
 end
 
 function new_observation!(
-    datavars::AbstractArray{<:DataVariable}, data::AbstractArray
-)
+        datavars::AbstractArray{<:DataVariable}, data::AbstractArray
+    )
     @assert size(datavars) === size(data) """
     Invalid `new_observation!` call: size of datavar array and data must match: `variables` has size $(size(datavars)) and `data` has size $(size(data)). 
     """
-    foreach(zip(datavars, data)) do (var, d)
+    return foreach(zip(datavars, data)) do (var, d)
         new_observation!(var, d)
     end
 end
 
 function new_observation!(
-    datavars::AbstractArray{<:DataVariable}, data::Missing
-)
-    foreach(datavars) do var
+        datavars::AbstractArray{<:DataVariable}, data::Missing
+    )
+    return foreach(datavars) do var
         new_observation!(var, data)
     end
 end

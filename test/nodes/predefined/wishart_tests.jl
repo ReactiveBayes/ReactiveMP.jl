@@ -7,8 +7,8 @@
     @testset "AverageEnergy" begin
         begin
             q_out = Wishart(2.0, [2.0 0.0; 0.0 2.0])
-            q_ν   = PointMass(2.0)
-            q_S   = PointMass([2.0 0.0; 0.0 2.0])
+            q_ν = PointMass(2.0)
+            q_S = PointMass([2.0 0.0; 0.0 2.0])
 
             marginals = (
                 Marginal(q_out, false, false),
@@ -22,7 +22,7 @@
                 Val{(:out, :ν, :S)}(),
                 marginals,
                 nothing,
-            ) ≈ 6.033250123747594 rtol = 1e-8
+            ) ≈ 6.033250123747594 rtol = 1.0e-8
         end
 
         begin
@@ -34,8 +34,8 @@
             ν = 4.0
 
             q_out = Wishart(ν, S)
-            q_ν   = PointMass(ν)
-            q_S   = PointMass(S)
+            q_ν = PointMass(ν)
+            q_S = PointMass(S)
 
             marginals = (
                 Marginal(q_out, false, false),
@@ -49,7 +49,7 @@
                 Val{(:out, :ν, :S)}(),
                 marginals,
                 nothing,
-            ) ≈ 8.97595944423116 rtol = 1e-8
+            ) ≈ 8.97595944423116 rtol = 1.0e-8
         end
     end
 

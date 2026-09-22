@@ -1,6 +1,6 @@
 
 @testitem "ImportanceSamplingApproximation: effective sample size is scale-invariant" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, StableRNGs
 
@@ -22,7 +22,7 @@
 
         # A wide sweep of scales, including ones far outside the range where `1/Σwᵢ²` would
         # land anywhere near `N/10`.
-        for scale in (1e-6, 1e-3, 1.0, 1e3, 1e6)
+        for scale in (1.0e-6, 1.0e-3, 1.0, 1.0e3, 1.0e6)
             # A fresh approximation per call, seeded identically, so both runs draw exactly the
             # same samples and any difference is attributable to the weighting alone.
             a = ImportanceSamplingApproximation(StableRNG(42), 2000)
@@ -35,8 +35,8 @@
                 b, (z) -> scale * target(z), NormalMeanVariance(0.0, 4.0)
             )
 
-            @test m_unit ≈ m_scaled rtol = 1e-10
-            @test v_unit ≈ v_scaled rtol = 1e-10
+            @test m_unit ≈ m_scaled rtol = 1.0e-10
+            @test v_unit ≈ v_scaled rtol = 1.0e-10
         end
     end
 
@@ -45,7 +45,7 @@
         # should be triggered -- again independent of the constant's magnitude. Under the old
         # formula `n_eff = 1/(N·c²)`, which for `c = 1` and `N = 1000` gave 1e-3, far below
         # `N/10 = 100`, so resampling fired on perfectly uniform weights.
-        for c in (1e-6, 1.0, 1e6)
+        for c in (1.0e-6, 1.0, 1.0e6)
             approximation = ImportanceSamplingApproximation(StableRNG(7), 1000)
             m, v = approximate_meancov(
                 approximation, (z) -> c, NormalMeanVariance(2.0, 3.0)
@@ -76,7 +76,7 @@
 end
 
 @testitem "ImportanceSamplingApproximation: degenerate estimates warn instead of substituting silently" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP,
         BayesBase, Distributions, ExponentialFamily, StableRNGs, Logging
@@ -121,7 +121,7 @@ end
         @test isfinite(v)
         # Not exactly zero -- which is precisely why `iszero(v)` misses it.
         @test !iszero(v)
-        @test v < 1e-25
+        @test v < 1.0e-25
     end
 
     @testset "an infinite variance is caught, not propagated" begin
@@ -145,7 +145,7 @@ end
 end
 
 @testitem "ImportanceSamplingApproximation: recovers a known posterior" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily, StableRNGs
 
@@ -173,7 +173,7 @@ end
         )
 
         # Tolerances are Monte Carlo noise floors for 2e5 samples, not slack.
-        @test m ≈ m_exact rtol = 2e-2
-        @test v ≈ v_exact rtol = 1e-1
+        @test m ≈ m_exact rtol = 2.0e-2
+        @test v ≈ v_exact rtol = 1.0e-1
     end
 end

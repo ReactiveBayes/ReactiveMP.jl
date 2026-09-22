@@ -43,11 +43,11 @@ Note: This function is a part of the private API and is not intended to be used 
 """
 to_marginal(any) = any
 
-as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
+as_marginal(message::Message) = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal))
 
-getdata(::Nothing)                 = nothing
-getdata(collection::Tuple)         = map(getdata, collection)
+getdata(::Nothing) = nothing
+getdata(collection::Tuple) = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
 
 # TupleTools.prod is a more efficient version of Base.all for Tuple here
@@ -94,8 +94,8 @@ function __init__()
         MethodError
     ) do io, exc, argtypes, kwargs
         if exc.f == ReactiveMP.factornode &&
-            length(argtypes) >= 2 &&
-            argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
+                length(argtypes) >= 2 &&
+                argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
             errmsg = """
             `$(argtypes[2])` has been used but the `ReactiveMP` backend does not support `$(argtypes[2])` as a factor node.
 

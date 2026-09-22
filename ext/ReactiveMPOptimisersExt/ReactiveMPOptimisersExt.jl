@@ -12,8 +12,8 @@ function ReactiveMP.cvi_setup(opt::Optimisers.AbstractRule, λ)
 end
 
 function ReactiveMP.cvi_update!(
-    opt_and_state::Tuple{Optimisers.AbstractRule, Any}, new_λ, λ, ∇
-)
+        opt_and_state::Tuple{Optimisers.AbstractRule, Any}, new_λ, λ, ∇
+    )
     # Retrieve the optimiser and its current state
     optimiser, current_state = opt_and_state
     # Apply the optimiser to the current state and adjust the gradient

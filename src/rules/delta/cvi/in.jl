@@ -1,11 +1,11 @@
 
 @rule DeltaFn((:in, k), Marginalisation) (
-    q_ins::FactorizedJoint, m_in::Any, meta::DeltaMeta{M}
+    q_ins::FactorizedJoint, m_in::Any, meta::DeltaMeta{M},
 ) where {M <: CVI} = begin
     q_ins_k = component(q_ins, k)
     # Check if both the marginal and the message are from the same exponential family
     if ExponentialFamily.exponential_family_typetag(q_ins_k) ===
-        ExponentialFamily.exponential_family_typetag(m_in)
+            ExponentialFamily.exponential_family_typetag(m_in)
         q_ins_k_ef = convert(ExponentialFamilyDistribution, q_ins_k)
         m_in_ef = convert(ExponentialFamilyDistribution, m_in)
         if getconditioner(q_ins_k_ef) !== getconditioner(m_in_ef)

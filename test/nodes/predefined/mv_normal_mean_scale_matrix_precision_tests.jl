@@ -13,12 +13,12 @@
             # AE = - div(ndims(q_μ),2) * mean(log,q_γ) - 0.5*mean(logdet, q_G) + div(ndims(q_μ),2)*log(2pi) + 0.5*tr(mean(q_γ)*mean(q_G)*( Cov_out + Cov_μ + (m_out - m_μ)*(m_out - m_μ)'))
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                g in (Gamma,),
-                M in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    g in (Gamma,),
+                    M in (Wishart,)
 
                 marginals = (
                     Marginal(q_out, false, false),
@@ -52,23 +52,23 @@
                 ],
             )
             q_γ = Gamma(2.0, 1.0)
-            q_G = Wishart(ndims(q_out) + 2, 0.25*[1.0 0.0; 0.0 1.0])
+            q_G = Wishart(ndims(q_out) + 2, 0.25 * [1.0 0.0; 0.0 1.0])
             # m_μ, Cov_μ = mean_cov(q_μ)
             # m_out, Cov_out = mean_cov(q_out)
             # AE = - div(ndims(q_μ),2) * mean(log,q_γ) - 0.5*mean(logdet, q_G) + div(ndims(q_μ),2)*log(2pi) + 0.5*tr(mean(q_γ)*mean(q_G)*( Cov_out + Cov_μ + (m_out - m_μ)*(m_out - m_μ)'))
 
             for N1 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                N2 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                g in (Gamma,),
-                M in (Wishart,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    N2 in (
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    g in (Gamma,),
+                    M in (Wishart,)
 
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
@@ -103,7 +103,7 @@
             )
             d = div(ndims(q_out_μ), 2)
             q_γ = GammaShapeRate(3.0, 2.0)
-            q_G = Wishart(d + 2, 0.25*[0.349811 0.318591; 0.318591 0.401713])
+            q_G = Wishart(d + 2, 0.25 * [0.349811 0.318591; 0.318591 0.401713])
             # m_out_μ, Cov_out_μ = mean_cov(q_out_μ)
             # m_out, m_μ = @views m_out_μ[1:d], m_out_μ[(d + 1):end]
             # Cov_out, Cov_μ = @views Cov_out_μ[1:d, 1:d], Cov_out_μ[(d + 1):end, (d + 1):end]
@@ -111,10 +111,10 @@
             # AE = - div(ndims(q_μ),2) * mean(log,q_γ) - 0.5*mean(logdet, q_G) + div(ndims(q_μ),2)*log(2pi) + 0.5*tr(mean(q_γ)*mean(q_G)*( Cov_out + Cov_μ - Cov_out_out - Cov_μ_μ + (m_out - m_μ)*(m_out - m_μ)'))
 
             for N in (
-                MvNormalMeanPrecision,
-                MvNormalMeanCovariance,
-                MvNormalWeightedMeanPrecision,
-            )
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision,
+                )
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
                     Marginal(q_γ, false, false),
@@ -147,7 +147,7 @@
             )
             q_γ = GammaShapeRate(4.0, 3.0)
             q_G = Wishart(
-                ndims(q_out) + 2, 0.25*[5.60439 4.34489; 4.34489 3.69273]
+                ndims(q_out) + 2, 0.25 * [5.60439 4.34489; 4.34489 3.69273]
             )
             # m_out_μ, Cov_out_μ = mean_cov(q_out_μ)
             # m_out, m_μ = @views m_out_μ[1:d], m_out_μ[(d + 1):end]
@@ -156,10 +156,10 @@
             # AE = - div(ndims(q_μ),2) * mean(log,q_γ) - 0.5*mean(logdet, q_G) + div(ndims(q_μ),2)*log(2pi) + 0.5*tr(mean(q_γ)*mean(q_G)*( Cov_out + Cov_μ - Cov_out_out - Cov_μ_μ + (m_out - m_μ)*(m_out - m_μ)'))
 
             for N in (
-                MvNormalMeanPrecision,
-                MvNormalMeanCovariance,
-                MvNormalWeightedMeanPrecision,
-            )
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision,
+                )
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
                     Marginal(q_γ, false, false),

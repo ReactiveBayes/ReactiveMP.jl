@@ -28,13 +28,13 @@
         return (μn, Λn, αn, βn)
     end
 
-    function params_approx(d::MvNormalGamma, ref; atol = 1e-8)
+    function params_approx(d::MvNormalGamma, ref; atol = 1.0e-8)
         μ, Λ, α, β = params(d)
         μr, Λr, αr, βr = ref
         return isapprox(μ, μr; atol = atol) &&
-               isapprox(Λ, Λr; atol = atol) &&
-               isapprox(α, αr; atol = atol) &&
-               isapprox(β, βr; atol = atol)
+            isapprox(Λ, Λr; atol = atol) &&
+            isapprox(α, αr; atol = atol) &&
+            isapprox(β, βr; atol = atol)
     end
 
     @testset "order 1: hand-computed posterior" begin
@@ -43,7 +43,7 @@
         q_y_x = MvNormalMeanCovariance(ones(2), diageye(2))   # C=[2], b=[1], a=2
 
         q = @call_marginalrule ConjugateAR(:w) (
-            m_w = m_w, q_y_x = q_y_x, meta = meta
+            m_w = m_w, q_y_x = q_y_x, meta = meta,
         )
         μ, Λ, α, β = params(q)
 
@@ -71,7 +71,7 @@
             )
 
             q = @call_marginalrule ConjugateAR(:w) (
-                m_w = m_w, q_y_x = q_y_x, meta = meta
+                m_w = m_w, q_y_x = q_y_x, meta = meta,
             )
             @test params_approx(q, blr_reference(m_w, q_y_x, order))
         end
@@ -85,7 +85,7 @@
             m_w = MvNormalGamma(zeros(order), diageye(order), α0, 1.0)
 
             q = @call_marginalrule ConjugateAR(:w) (
-                m_w = m_w, q_y_x = q_y_x, meta = meta
+                m_w = m_w, q_y_x = q_y_x, meta = meta,
             )
             @test shape(q) ≈ α0 + 1 / 2
         end
@@ -102,7 +102,7 @@
             m_w = MvNormalGamma(zeros(order), diageye(order), 2.0, 1.0)
 
             q = @call_marginalrule ConjugateAR(:w) (
-                m_w = m_w, q_y_x = q_y_x, meta = meta
+                m_w = m_w, q_y_x = q_y_x, meta = meta,
             )
             _, Λ, _, β = params(q)
             @test isposdef(Λ)
@@ -116,7 +116,7 @@
         q_y_x = MvNormalMeanCovariance(ones(2), diageye(2))
 
         q = @call_marginalrule ConjugateAR(:w) (
-            m_w = m_w, q_y_x = q_y_x, meta = meta
+            m_w = m_w, q_y_x = q_y_x, meta = meta,
         )
 
         # Likelihood factor in mean parameters: Λ=C, μ=C⁻¹b, α=3/2−d/2, β=a/2 − ½ bᵀC⁻¹b.
@@ -134,7 +134,7 @@
         q_y_x = MvNormalMeanCovariance([2.0, 1.0], [2.0 0.5; 0.5 3.0])   # C=4, b=2.5, a=6
 
         q = @call_marginalrule ConjugateAR(:w) (
-            m_w = m_w, q_y_x = q_y_x, meta = meta
+            m_w = m_w, q_y_x = q_y_x, meta = meta,
         )
         μ, Λ, α, β = params(q)
 
@@ -152,7 +152,7 @@ end
 
     import ReactiveMP: @call_marginalrule, conjugatear_effective_marginals
 
-    same_normal(a, b; atol = 1e-8) =
+    same_normal(a, b; atol = 1.0e-8) =
         isapprox(mean(a), mean(b); atol = atol) &&
         isapprox(cov(a), cov(b); atol = atol)
 
@@ -172,10 +172,10 @@ end
             m_x = MvNormalMeanCovariance(randn(rng, order), diageye(order))
 
             got = @call_marginalrule ConjugateAR(:y_x) (
-                m_y = m_y, m_x = m_x, q_w = q_w, meta = meta
+                m_y = m_y, m_x = m_x, q_w = q_w, meta = meta,
             )
             exp = @call_marginalrule AR(:y_x) (
-                m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta
+                m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta,
             )
             @test same_normal(got, exp)
         end

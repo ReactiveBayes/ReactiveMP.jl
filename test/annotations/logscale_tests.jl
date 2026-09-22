@@ -30,7 +30,7 @@ end
 end
 
 @testitem "@logscale macro sets logscale annotation via getannotations" tags = [
-    :engine
+    :engine,
 ] begin
     import ReactiveMP: AnnotationDict, getlogscale, @logscale
 
@@ -42,7 +42,7 @@ end
 end
 
 @testitem "post_rule_annotations! is no-op when logscale already annotated" tags = [
-    :engine
+    :engine,
 ] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
@@ -62,7 +62,7 @@ end
 end
 
 @testitem "post_rule_annotations! sets logscale to 0 when all messages are PointMass" tags = [
-    :engine
+    :engine,
 ] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
@@ -72,7 +72,7 @@ end
         Message
     import BayesBase: PointMass
 
-    ann      = AnnotationDict()
+    ann = AnnotationDict()
     messages = (Message(PointMass(1.0), false, false), Message(PointMass(2.0), false, false))
 
     post_rule_annotations!(
@@ -83,7 +83,7 @@ end
 end
 
 @testitem "post_rule_annotations! sets logscale to 0 when all marginals are PointMass" tags = [
-    :engine
+    :engine,
 ] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
@@ -93,7 +93,7 @@ end
         Marginal
     import BayesBase: PointMass
 
-    ann       = AnnotationDict()
+    ann = AnnotationDict()
     marginals = (Marginal(PointMass(1.0), false, false),)
 
     post_rule_annotations!(
@@ -104,12 +104,12 @@ end
 end
 
 @testitem "post_rule_annotations! errors when logscale not set and inputs are not all PointMass" tags = [
-    :engine
+    :engine,
 ] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict, post_rule_annotations!, LogScaleAnnotations
 
-    ann      = AnnotationDict()
+    ann = AnnotationDict()
     messages = (Message(LogScaleAnnotationsTestUtils.CustomDistributionForLogScaleTesting(), false, false),)
 
     @test_throws "Log-scale annotation has not been set" post_rule_annotations!(
@@ -118,7 +118,7 @@ end
 end
 
 @testitem "post_product_annotations! with LogScaleAnnotations sums logscales and adds compute_logscale" tags = [
-    :engine
+    :engine,
 ] setup = [LogScaleAnnotationsTestUtils] begin
     import ReactiveMP:
         AnnotationDict,
@@ -127,12 +127,12 @@ end
         post_product_annotations!,
         LogScaleAnnotations
 
-    left_ann  = AnnotationDict()
+    left_ann = AnnotationDict()
     right_ann = AnnotationDict()
     annotate!(left_ann, :logscale, 1.0)
     annotate!(right_ann, :logscale, 2.0)
 
-    dist   = LogScaleAnnotationsTestUtils.CustomDistributionForLogScaleTesting()
+    dist = LogScaleAnnotationsTestUtils.CustomDistributionForLogScaleTesting()
     merged = post_product_annotations!((LogScaleAnnotations(),), left_ann, right_ann, dist, dist, dist)
 
     # 1.0 + 2.0 + compute_logscale(...) = 1.0 + 2.0 + 10.0 = 13.0
@@ -140,7 +140,7 @@ end
 end
 
 @testitem "A `missing` message stays deferred under LogScaleAnnotations" tags = [
-    :engine
+    :engine,
 ] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
@@ -214,7 +214,7 @@ end
         )
 
         variable = randomvar()
-        context  = MessageProductContext(annotations = (LogScaleAnnotations(),))
+        context = MessageProductContext(annotations = (LogScaleAnnotations(),))
 
         # Both orderings: the missing side may be on the left or on the right.
         left_product = compute_product_of_two_messages(

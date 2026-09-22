@@ -139,7 +139,7 @@ end
 end
 
 @testitem "collect_latest_marginals should re-fire while all dependencies are initial (deadlock guard, RxInfer#344)" tags = [
-    :nodes
+    :nodes,
 ] begin
     # Regression test for https://github.com/ReactiveBayes/RxInfer.jl/issues/344
     # With plain `PushNew()` semantics every marginal dependency must refresh before the
@@ -187,7 +187,7 @@ end
     updates = Ref(0)
     subscription = subscribe!(stream, (_) -> updates[] += 1)
 
-    initial(value)     = Marginal(value, false, true)
+    initial(value) = Marginal(value, false, true)
     non_initial(value) = Marginal(value, false, false)
 
     # The combination fires for the first time only once all dependencies emitted
@@ -219,7 +219,7 @@ end
 end
 
 @testitem "collect_latest_messages should keep strict PushNew semantics even for initial messages" tags = [
-    :nodes
+    :nodes,
 ] begin
     # Guards the scoping of the RxInfer#344 deadlock fix: the `is_initial` vstatus reset is
     # deliberately applied to marginal dependencies only. Applying it to message dependencies
@@ -270,7 +270,7 @@ end
     updates = Ref(0)
     subscription = subscribe!(stream, (_) -> updates[] += 1)
 
-    initial(value)     = Message(value, false, true)
+    initial(value) = Message(value, false, true)
     non_initial(value) = Message(value, false, false)
 
     # The combination fires for the first time only once all dependencies emitted
@@ -751,7 +751,7 @@ end
 end
 
 @testitem "Functional dependencies may change depending on the metadata from options" tags = [
-    :nodes
+    :nodes,
 ] begin
     # This test demonstrates how functional dependencies can be customized based on metadata
     # passed during node activation. This is useful when:
@@ -815,8 +815,8 @@ end
 
     # Mock different behavior for our custom dependencies
     function ReactiveMP.functional_dependencies(
-        ::CustomDependencyA, factornode, interface, iindex
-    )
+            ::CustomDependencyA, factornode, interface, iindex
+        )
         # CustomDependencyA only depends on in1
         msg_deps =
             name(interface) === :out ? (getinterface(factornode, 2),) : () # only in1
@@ -824,8 +824,8 @@ end
     end
 
     function ReactiveMP.functional_dependencies(
-        ::CustomDependencyB, factornode, interface, iindex
-    )
+            ::CustomDependencyB, factornode, interface, iindex
+        )
         # CustomDependencyB only depends on in2
         msg_deps =
             name(interface) === :out ? (getinterface(factornode, 3),) : () # only in2

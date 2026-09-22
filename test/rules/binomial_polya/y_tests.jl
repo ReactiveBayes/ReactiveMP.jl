@@ -16,7 +16,7 @@
 
         # Test with default meta
         pred_dist = @call_rule BinomialPolya(:y, Marginalisation) (
-            q_x = q_x, q_n = q_n, q_β = q_β, meta = nothing
+            q_x = q_x, q_n = q_n, q_β = q_β, meta = nothing,
         )
         @test pred_dist isa Binomial
         @test ntrials(pred_dist) == 5
@@ -24,12 +24,12 @@
         # Test with Monte Carlo sampling
         meta = BinomialPolyaMeta(1000, MersenneTwister(42))
         pred_dist_mc = @call_rule BinomialPolya(:y, Marginalisation) (
-            q_x = q_x, q_n = q_n, q_β = q_β, meta = meta
+            q_x = q_x, q_n = q_n, q_β = q_β, meta = meta,
         )
         @test pred_dist_mc isa Binomial
         @test ntrials(pred_dist_mc) == 5
         @test 0 < succprob(pred_dist_mc) < 1
 
-        @test pred_dist_mc.p ≈ pred_dist.p atol = 1e-2
+        @test pred_dist_mc.p ≈ pred_dist.p atol = 1.0e-2
     end
 end

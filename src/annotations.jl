@@ -146,13 +146,13 @@ Otherwise each processor in `processors` is called via the per-processor `post_p
 to populate the result.
 """
 function post_product_annotations!(
-    processors,
-    left_ann::AnnotationDict,
-    right_ann::AnnotationDict,
-    new_dist,
-    left_dist,
-    right_dist,
-)
+        processors,
+        left_ann::AnnotationDict,
+        right_ann::AnnotationDict,
+        new_dist,
+        left_dist,
+        right_dist,
+    )
     merged = AnnotationDict()
     if isnothing(processors)
         return merged

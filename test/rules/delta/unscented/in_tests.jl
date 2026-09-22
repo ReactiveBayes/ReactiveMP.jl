@@ -102,7 +102,7 @@
     end
 
     @testset "Single input with unknown inverse" begin
-        @test_rules [check_type_promotion = false, atol = 1e-3] DeltaFn{h}(
+        @test_rules [check_type_promotion = false, atol = 1.0e-3] DeltaFn{h}(
             (:in, k = 1), Marginalisation
         ) [
             (

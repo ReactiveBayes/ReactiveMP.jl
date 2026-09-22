@@ -16,8 +16,8 @@ to_marginal(dist::WishartFast) = convert(Wishart, dist)
 
     return (
         m_q_ν * (mean(logdet, q_S) + d * log(2)) -
-        mean(logdet, q_out) * (m_q_ν - d - 1) +
-        tr(mean(cholinv, q_S) * mean(q_out)) +
-        d * (d - 1) / 2 * logπ
+            mean(logdet, q_out) * (m_q_ν - d - 1) +
+            tr(mean(cholinv, q_S) * mean(q_out)) +
+            d * (d - 1) / 2 * logπ
     ) / 2 + mapreduce(i -> loggamma((m_q_ν + 1 - i) / 2), +, 1:d)
 end

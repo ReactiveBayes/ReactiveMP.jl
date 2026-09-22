@@ -36,7 +36,7 @@ end
 
     mx, Vx = @views myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
     my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
-    Vyx    = @views Vyx[1:dy, (dy + 1):end]
+    Vyx = @views Vyx[1:dy, (dy + 1):end]
 
     Δ = compute_delta(my, Vy, mx, Vx, Vyx, mA, Va, ma, Fs)
 
@@ -45,7 +45,7 @@ end
 
 # VMP: Mean-field
 @rule ContinuousTransition(:W, Marginalisation) (
-    q_y::Any, q_x::Any, q_a::Any, meta::CTMeta
+    q_y::Any, q_x::Any, q_a::Any, meta::CTMeta,
 ) = begin
     ma, Va = mean_cov(q_a)
     my, Vy = mean_cov(q_y)

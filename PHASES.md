@@ -12,11 +12,15 @@ Branch: `refactor/rule-node-system-rewrite`
 
 ## Next action
 
-**Phase 2 — tooling migration.** Phase 0 is complete (results in `DISCUSSION.md` §3.15) and
-Phase 1 was closed internally, so nothing is waiting on external feedback.
+**Phase 3 — `MessagePassingRulesBase`.** Phases 0, 1 and 2 are closed. Phase 3 is the first
+one that writes the new package rather than measuring or tidying, and it is where the API
+freezes, so the open items it must settle first are the real content: **#9 (beliefs consumed
+vs the entropy partition), #10 (buffer ownership), #11 (capability metadata for
+missing-extension diagnostics), #12 (context service contracts) and #13 (the approximations
+protocol)** — plus #3 (factorisation keying), which is a one-way door in the syntax.
 
-Phase 2 is independent of the redesign and low risk, and it is the first phase on this branch
-that touches real code rather than documents.
+Phase 0 already supplied two of #12's four contracts and found that incoming annotations have
+no declared route; that gap should be closed as part of the same decision.
 
 ---
 
@@ -29,7 +33,7 @@ that touches real code rather than documents.
 | P | Prep: disposition inventory, layout and environment decisions | **done** |
 | 0 | Spike: dispatch gate, syntax samples, delta dependency semantics | **done** |
 | 1 | Circulate for external feedback | **done** *(internally)* |
-| 2 | Tooling migration on ReactiveMP | **in progress** |
+| 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | not started |
 | 4 | `MessagePassingRulesTestUtils` | not started |
 | 4.5 | **Engine integration slice** — small end-to-end proof | not started |
@@ -317,9 +321,13 @@ review-driven open items #9–#13 came out of it.
 
 ---
 
-## Phase 2 — Tooling migration *(can run in parallel with Phase 1)*
+## Phase 2 — Tooling migration — **DONE**
 
 **Goal:** make every later session faster. Independent of the redesign, low risk.
+
+Seven of the eight items are done. The eighth, Aqua's `ambiguities`, is **deliberately left
+off** with the reasoning and the measured baseline recorded below — it is a decision, not an
+omission.
 
 **Exit criteria**
 - [x] `runtests.jl` filters by **name and tags**, not just filename (TestItemRunner already
@@ -335,33 +343,38 @@ review-driven open items #9–#13 came out of it.
       must not weaken full CI coverage**; CI runs everything. Enforced rather than intended:
       `ci.yml` sets `TEST_ALL=true`, so a `:slow` tag changes what a developer runs locally
       and never what CI runs
-- [ ] Runic replaces JuliaFormatter
-- [ ] Aqua `ambiguities` enabled. **Measured in Phase P: 322 ambiguous pairs**
-      (`Aqua.detect_ambiguities(ReactiveMP; recursive = true)`), which split into five
-      unrelated problems that should be budgeted and fixed independently:
+- [x] Runic replaces JuliaFormatter. Zero-config, so `.JuliaFormatter.toml` and its 27 style
+      options are deleted — there is no style file left for CI and contributors to disagree
+      through. **Measured: byte-identical output on Julia 1.10 and 1.13**, which JuliaFormatter
+      could not manage; its output moved with the Julia minor version through JuliaSyntax,
+      which is why `FormatCheck.yml` had to pin its Julia to the newest version in the test
+      matrix. That pin is now the floor and matches `scripts/Manifest.toml`. Runic's own
+      version stays pinned, since its output may change between releases. Reformatted 389 of
+      518 files; `docs/` stays excluded, as before, and no docstring or doctest line was
+      touched
+- [ ] Aqua `ambiguities` — **deliberately left off; revisit after the split.** Re-measured on
+      this branch (Julia 1.13, `Aqua.detect_ambiguities(ReactiveMP; recursive = true)`):
+      **322 pairs**, identical to the Phase P baseline. Attributing each pair to the
+      ReactiveMP files on either side:
 
-      | count | source | character |
+      | pairs touching | file | character |
       |---|---|---|
-      | 253 | `src/helpers/algebra/{permutation_matrix,standard_basis_vector,companion_matrix}.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra`. Cleanup is independent of rule dispatch; the inventory moves the used helpers with Flow/AR and deletes CompanionMatrix |
-      | 27 | `rule`/`marginalrule` dispatch | **one single shape**, repeated: the delta catch-all `rule(::F<:Function, …, meta::DeltaMeta, …, node::DeltaFnNode)` (`delta.jl:78`, `:104`) against the `meta::Any` arithmetic rules — `src/rules/addition/in2.jl:1`, `src/rules/subtraction/{out,in1,in2}.jl:1` and `src/rules/multiplication/marginals.jl:31`. Neither is more specific — delta wins on `meta`/`node`, the arithmetic rule wins on `fform`/`on`/`messages`. This is the only category the new dispatch design is claiming to eliminate, and it is a useful Phase 0 target |
-      | 23 | `src/fixes.jl` | the deliberate upstream hot-fixes; expected to disappear when upstream releases |
-      | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against `BayesBase`'s `PreserveTypeProd` methods; separate from the two known piracies in `uniform.jl` |
-      | 8 | scattered | `gcv.jl`, `cvi.jl`, `message.jl`/`marginal.jl`, `nodes.jl` vs the mixtures |
+      | 119 | `src/helpers/algebra/permutation_matrix.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra` |
+      | 85 | `src/helpers/algebra/standard_basis_vector.jl` | same shape |
+      | 71 | `src/helpers/algebra/companion_matrix.jl` | same shape — and `CompanionMatrix` has **zero references anywhere in `src/` or `test/`**, so this is entirely dead weight |
+      | 27 / 25 | `delta.jl` / `rule.jl` | **one** repeated shape: the delta catch-all against the `meta::Any` arithmetic rules. The only category the new dispatch design claims to eliminate |
+      | 23 | `src/fixes.jl` | deliberate upstream hot-fixes; they leave when upstream releases |
+      | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against BayesBase's `PreserveTypeProd` |
 
-      **Read ambiguity reports with care.** An earlier version of this table cited the
-      arithmetic rules as `rule.jl:358`/`:392`. Those two lines are the
-      `function ReactiveMP.rule(` and `function ReactiveMP.marginalrule(` headers *inside the
-      macro's `quote` block*, so **every one of the ~490 generated rule methods reports that
-      same source location**. `Method.file`/`Method.line` therefore cannot identify a rule
-      today; v6 recovers the node and interface names from the *signature* instead
-      (`get_node_from_rule_method`, `src/rule.jl:1664-1690`). That is an argument for the
-      registry independent of the ambiguity count.
+      (A pair is counted against both files it touches, so the column does not sum to 322.)
 
-      Originally reported on Julia 1.13.0 against a local root `Manifest.toml` (gitignored,
-      not committed). No machine-readable report or exact resolution was retained. The count is both
-      Julia-version and resolution dependent, so re-measure before acting rather than
-      treating 322 as fixed. Zero pairs were reported to have neither side in ReactiveMP.
-      Per-type counts in inventory notes may overlap and must not be added as disjoint totals
+      **Why not now.** Three files account for the large majority, `INVENTORY.md` already
+      sends all three out of this package with Flow/AR and marks `CompanionMatrix` for
+      deletion, and the 52 rule-dispatch pairs are what the rewrite removes by construction.
+      Cleaning them here is work on code that is leaving, and a ratchet on a number that is
+      about to move on its own would mostly measure the split rather than any regression.
+      Revisit once Phases 5–6 have moved the rules and the algebra helpers out; the count to
+      beat is recorded above.
 - [x] Aqua `piracies` enabled — the 3 known methods declared via
       `treat_as_own = [Distributions.Uniform, ForwardDiff.Dual]`, after which **zero pirates
       remain** (measured). Both are documented where they are defined: the `Uniform`×`Beta`

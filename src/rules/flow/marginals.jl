@@ -6,7 +6,7 @@
     m_in::NormalDistributionsFamily,
     meta::FlowMeta{M, <:Linearization},
 ) where {M} = begin
-    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
+    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ).
     # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
     # Here q(μ) = q(μ | out, Σ)
 
@@ -29,7 +29,7 @@ end
     m_in::NormalDistributionsFamily,
     meta::FlowMeta{M, <:Linearization},
 ) where {M} = begin
-    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
+    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ).
     # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
     # Here q(μ) = q(μ | out, Σ)
 
@@ -53,7 +53,7 @@ end
     m_in::NormalDistributionsFamily,
     meta::FlowMeta{M, <:Linearization},
 ) where {M} = begin
-    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
+    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ).
     # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
     # Here q(μ) = q(μ | out, Σ)
 
@@ -92,14 +92,14 @@ end
     Wm = getWm(approximation)
     Wc = getWc(approximation)
 
-    # calculate sigma points/vectors    
+    # calculate sigma points/vectors
     sqrtΣ = sqrt((L + λ) * Σ_out)
     χ = Vector{Vector{T}}(undef, 2 * L + 1)
     for k in 1:length(χ)
         χ[k] = copy(μ_out)
     end
     for l in 2:(L + 1)
-        χ[l]     .+= sqrtΣ[l - 1, :]
+        χ[l] .+= sqrtΣ[l - 1, :]
         χ[L + l] .-= sqrtΣ[l - 1, :]
     end
 

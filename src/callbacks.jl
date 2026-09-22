@@ -220,7 +220,7 @@ This event fires right before computing the message and calling the correspondin
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct BeforeMessageRuleCallEvent{M, Ms, Mr, S} <:
-       Event{:before_message_rule_call}
+    Event{:before_message_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
@@ -243,7 +243,7 @@ This event fires right after computing the message and calling the corresponding
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, S} <:
-       Event{:after_message_rule_call}
+    Event{:after_message_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
@@ -267,7 +267,7 @@ This event fires right before computing the product of two messages.
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct BeforeProductOfTwoMessagesEvent{V, C, L, R, S} <:
-       Event{:before_product_of_two_messages}
+    Event{:before_product_of_two_messages}
     variable::V
     context::C
     left::L
@@ -292,7 +292,7 @@ This event fires right after computing the product of two messages.
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A, S} <:
-       Event{:after_product_of_two_messages}
+    Event{:after_product_of_two_messages}
     variable::V
     context::C
     left::L
@@ -317,7 +317,7 @@ This event fires right before computing the product of a collection of messages
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct BeforeProductOfMessagesEvent{V, C, Ms, S} <:
-       Event{:before_product_of_messages}
+    Event{:before_product_of_messages}
     variable::V
     context::C
     messages::Ms
@@ -340,7 +340,7 @@ This event fires right after computing the product of a collection of messages
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct AfterProductOfMessagesEvent{V, C, Ms, R, S} <:
-       Event{:after_product_of_messages}
+    Event{:after_product_of_messages}
     variable::V
     context::C
     messages::Ms
@@ -364,7 +364,7 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct BeforeFormConstraintAppliedEvent{V, C, S, D, I} <:
-       Event{:before_form_constraint_applied}
+    Event{:before_form_constraint_applied}
     variable::V
     context::C
     strategy::S
@@ -389,7 +389,7 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct AfterFormConstraintAppliedEvent{V, C, S, D, R, I} <:
-       Event{:after_form_constraint_applied}
+    Event{:after_form_constraint_applied}
     variable::V
     context::C
     strategy::S
@@ -412,7 +412,7 @@ This event fires right before computing the marginal for a [`ReactiveMP.RandomVa
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMarginalComputationEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct BeforeMarginalComputationEvent{V, C, Ms, S} <:
-       Event{:before_marginal_computation}
+    Event{:before_marginal_computation}
     variable::V
     context::C
     messages::Ms
@@ -434,7 +434,7 @@ This event fires right after computing the marginal for a [`ReactiveMP.RandomVar
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMarginalComputationEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
 struct AfterMarginalComputationEvent{V, C, Ms, R, S} <:
-       Event{:after_marginal_computation}
+    Event{:after_marginal_computation}
     variable::V
     context::C
     messages::Ms

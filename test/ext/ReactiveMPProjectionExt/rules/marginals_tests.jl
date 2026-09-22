@@ -22,33 +22,37 @@
             m_in = input[1]
             m_out = input[1]
             q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (
-                m_out = m_out, m_ins = ManyOf(m_in), meta = meta
+                m_out = m_out, m_ins = ManyOf(m_in), meta = meta,
             )
             @test length(q_factorised) === 1
             q_in_1 = component(q_factorised, 1)
-            @test q_in_1 ≈ prod(GenericProd(), m_in, m_out) atol = 1e-1
+            @test q_in_1 ≈ prod(GenericProd(), m_in, m_out) atol = 1.0e-1
         end
     end
 
     @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
         f(x, y) = [x, y]
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
-        @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{
-            f
+        @test_marginalrules [check_type_promotion = false, atol = 1.0e-1] DeltaFn{
+            f,
         }(
             :ins
-        ) [(
-            input = (
-                m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
-                m_ins = ManyOf(
-                    NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)
+        ) [
+            (
+                input = (
+                    m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
+                    m_ins = ManyOf(
+                        NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)
+                    ),
+                    meta = meta,
                 ),
-                meta = meta,
+                output = FactorizedJoint(
+                    (
+                        NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0),
+                    )
+                ),
             ),
-            output = FactorizedJoint((
-                NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0)
-            )),
-        )]
+        ]
     end
 
     @testset "f(x) -> x, x~EF, out~EF with Binomial" begin
@@ -62,7 +66,7 @@
             m_in = first(input_output)
             m_out = last(input_output)
             q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (
-                m_out = m_out, m_ins = ManyOf(m_in), meta = meta
+                m_out = m_out, m_ins = ManyOf(m_in), meta = meta,
             )
             @test length(q_factorised) === 1
             component1 = component(q_factorised, 1)
@@ -71,7 +75,7 @@
             )
             grid = getsupport(q_prod)
             mean_prod = sum(grid .* pdf(q_prod, grid))
-            @test mean(component1) ≈ mean_prod atol = 1e-1
+            @test mean(component1) ≈ mean_prod atol = 1.0e-1
         end
     end
 
@@ -105,12 +109,12 @@
             m_in = first(input_output)
             m_out = last(input_output)
             q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (
-                m_out = m_out, m_ins = ManyOf(m_in), meta = meta
+                m_out = m_out, m_ins = ManyOf(m_in), meta = meta,
             )
             @test length(q_factorised) === 1
             component1 = component(q_factorised, 1)
             q_prod = prod(GenericProd(), m_in, m_out)
-            @test mean(component1) ≈ mean(q_prod) atol = 2e-1
+            @test mean(component1) ≈ mean(q_prod) atol = 2.0e-1
         end
     end
 end
@@ -155,7 +159,7 @@ end
         f(x, y) = x .* y
 
         result = @call_marginalrule DeltaFn{f}(:ins) (
-            m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta_partial
+            m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta_partial,
         )
 
         # First input should use default form (nothing specified)
@@ -166,7 +170,7 @@ end
 end
 
 @testitem "CVIProjection proposal distribution convergence tests" tags = [
-    :engine
+    :engine,
 ] begin
     using ExponentialFamily,
         ExponentialFamilyProjection, BayesBase, LinearAlgebra
@@ -194,13 +198,13 @@ end
             n_samples = 1000
             samples_q = [
                 (rand(rng, q_result[1]), rand(rng, q_result[2])) for
-                _ in 1:n_samples
+                    _ in 1:n_samples
             ]
 
             # Compute E_q[log q(x,y) - log p(x,y)]
             log_q_terms = [
                 logpdf(q_result[1], x) + logpdf(q_result[2], y) for
-                (x, y) in samples_q
+                    (x, y) in samples_q
             ]
             log_p_terms = [log_posterior(x, y) for (x, y) in samples_q]
 
@@ -213,7 +217,7 @@ end
 
         for i in 1:n_iterations
             result = @call_marginalrule DeltaFn{f}(:ins) (
-                m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta
+                m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta,
             )
             kl_divergences[i] = estimate_kl_divergence(result)
         end
@@ -223,7 +227,7 @@ end
 end
 
 @testitem "Basic checks for marginal rule with mean based approximation" tags = [
-    :engine
+    :engine,
 ] begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
     import ReactiveMP: @test_rules, @test_marginalrules
@@ -234,27 +238,31 @@ end
             method = CVIProjection(sampling_strategy = MeanBased()),
             inverse = nothing,
         )
-        @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{
-            f
+        @test_marginalrules [check_type_promotion = false, atol = 1.0e-1] DeltaFn{
+            f,
         }(
             :ins
-        ) [(
-            input = (
-                m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
-                m_ins = ManyOf(
-                    NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)
+        ) [
+            (
+                input = (
+                    m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
+                    m_ins = ManyOf(
+                        NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)
+                    ),
+                    meta = meta,
                 ),
-                meta = meta,
+                output = FactorizedJoint(
+                    (
+                        NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0),
+                    )
+                ),
             ),
-            output = FactorizedJoint((
-                NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0)
-            )),
-        )]
+        ]
     end
 end
 
 @testitem "DeltaNode - CVI sampling strategy performance comparison" tags = [
-    :engine
+    :engine,
 ] begin
     using Test
     using BenchmarkTools
@@ -269,7 +277,7 @@ end
         m_in2 = NormalMeanVariance(0.0, 2.0)
         return @belapsed begin
             @call_marginalrule DeltaFn{f}(:ins) (
-                m_out = $m_out, m_ins = ManyOf($m_in1, $m_in2), meta = $meta
+                m_out = $m_out, m_ins = ManyOf($m_in1, $m_in2), meta = $meta,
             )
         end samples = 2
     end

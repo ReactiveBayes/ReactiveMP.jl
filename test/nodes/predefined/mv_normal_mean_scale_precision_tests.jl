@@ -9,11 +9,11 @@
             q_γ = GammaShapeRate(1.0, 1.0)
 
             for N in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                g in (Gamma,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    g in (Gamma,)
 
                 marginals = (
                     Marginal(q_out, false, false),
@@ -48,16 +48,16 @@
             q_γ = Gamma(2.0, 1.0)
 
             for N1 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                N2 in (
-                    MvNormalMeanPrecision,
-                    MvNormalMeanCovariance,
-                    MvNormalWeightedMeanPrecision,
-                ),
-                g in (Gamma,)
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    N2 in (
+                        MvNormalMeanPrecision,
+                        MvNormalMeanCovariance,
+                        MvNormalWeightedMeanPrecision,
+                    ),
+                    g in (Gamma,)
 
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
@@ -92,10 +92,10 @@
             q_γ = GammaShapeRate(3.0, 2.0)
 
             for N in (
-                MvNormalMeanPrecision,
-                MvNormalMeanCovariance,
-                MvNormalWeightedMeanPrecision,
-            )
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision,
+                )
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
                     Marginal(q_γ, false, false),
@@ -128,10 +128,10 @@
             q_γ = GammaShapeRate(4.0, 3.0)
 
             for N in (
-                MvNormalMeanPrecision,
-                MvNormalMeanCovariance,
-                MvNormalWeightedMeanPrecision,
-            )
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision,
+                )
                 marginals = (
                     Marginal(convert(N, q_out_μ), false, false),
                     Marginal(q_γ, false, false),

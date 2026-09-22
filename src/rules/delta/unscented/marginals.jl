@@ -22,7 +22,7 @@
 
     # Apply the RTS smoother
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
-    (μ_in, Σ_in)         = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
+    (μ_in, Σ_in) = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
 
     dist = convert(
         promote_variate_type(typeof(μ_in), NormalMeanVariance), μ_in, Σ_in

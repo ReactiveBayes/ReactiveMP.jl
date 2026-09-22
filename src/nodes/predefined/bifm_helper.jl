@@ -22,15 +22,15 @@ struct BIFMHelper <: AbstractFactorNode end
 
 # specify custom functional dependencies for BIFMHelper node
 function functional_dependencies(
-    ::DefaultFunctionalDependencies,
-    factornode::FactorNode{<:Type{BIFMHelper}},
-    interface,
-    iindex,
-)
+        ::DefaultFunctionalDependencies,
+        factornode::FactorNode{<:Type{BIFMHelper}},
+        interface,
+        iindex,
+    )
     clusters = getlocalclusters(factornode)
     cindex = clusterindex(clusters, iindex)
 
-    nodeinterfaces     = getinterfaces(factornode)
+    nodeinterfaces = getinterfaces(factornode)
     nodelocalmarginals = get_node_local_marginals(clusters)
 
     # output

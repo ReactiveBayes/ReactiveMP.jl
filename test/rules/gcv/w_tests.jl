@@ -39,10 +39,10 @@
         # precisely the values that make the copy-pasted `:κ` coefficients differ from the
         # correct ones. With `⟨z⟩ = 1` and `Var(z) = 0` the bug would be invisible.
         for (m_y, v_y, m_x, v_x, m_z, v_z, m_κ, v_κ) in (
-            (3.0, 1.0, 1.0, 2.0, 0.5, 0.7, 0.8, 0.4),
-            (0.0, 1.0, 0.0, 1.0, 2.0, 0.3, 1.0, 0.0),
-            (-1.5, 0.25, 2.5, 0.5, -0.75, 1.25, 0.3, 0.9),
-        )
+                (3.0, 1.0, 1.0, 2.0, 0.5, 0.7, 0.8, 0.4),
+                (0.0, 1.0, 0.0, 1.0, 2.0, 0.3, 1.0, 0.0),
+                (-1.5, 0.25, 2.5, 0.5, -0.75, 1.25, 0.3, 0.9),
+            )
             q_y = NormalMeanVariance(m_y, v_y)
             q_x = NormalMeanVariance(m_x, v_x)
             q_z = NormalMeanVariance(m_z, v_z)
@@ -51,7 +51,7 @@
             psi = (m_y - m_x)^2 + v_y + v_x
 
             msg = @call_rule GCV(:ω, Marginalisation) (
-                q_y = q_y, q_x = q_x, q_z = q_z, q_κ = q_κ, meta = meta
+                q_y = q_y, q_x = q_x, q_z = q_z, q_κ = q_κ, meta = meta,
             )
 
             @test msg isa ExponentialLinearQuadratic
@@ -67,18 +67,18 @@
 
     @testset "Structured: (q_y_x, q_z, q_κ)" begin
         for (m_y, m_x, V, m_z, v_z, m_κ, v_κ) in (
-            (3.0, 1.0, [1.0 0.3; 0.3 2.0], 0.5, 0.7, 0.8, 0.4),
-            (-1.5, 2.5, [0.25 -0.1; -0.1 0.5], -0.75, 1.25, 0.3, 0.9),
-        )
+                (3.0, 1.0, [1.0 0.3; 0.3 2.0], 0.5, 0.7, 0.8, 0.4),
+                (-1.5, 2.5, [0.25 -0.1; -0.1 0.5], -0.75, 1.25, 0.3, 0.9),
+            )
             q_y_x = MvNormalMeanCovariance([m_y, m_x], V)
-            q_z   = NormalMeanVariance(m_z, v_z)
-            q_κ   = NormalMeanVariance(m_κ, v_κ)
+            q_z = NormalMeanVariance(m_z, v_z)
+            q_κ = NormalMeanVariance(m_κ, v_κ)
 
             # ⟨(y − x)²⟩ under the joint posterior
             psi = (m_y - m_x)^2 + V[1, 1] + V[2, 2] - V[1, 2] - V[2, 1]
 
             msg = @call_rule GCV(:ω, Marginalisation) (
-                q_y_x = q_y_x, q_z = q_z, q_κ = q_κ, meta = meta
+                q_y_x = q_y_x, q_z = q_z, q_κ = q_κ, meta = meta,
             )
 
             @test msg isa ExponentialLinearQuadratic
@@ -95,21 +95,21 @@
         # *identical* coefficients. This is the invariant that the #621 copy-paste broke:
         # the structured method was correct while the mean-field one was not.
         for (m_y, v_y, m_x, v_x, m_z, v_z, m_κ, v_κ) in (
-            (3.0, 1.0, 1.0, 2.0, 0.5, 0.7, 0.8, 0.4),
-            (0.4, 0.6, 0.5, 0.3, 2.0, 0.3, 1.2, 0.25),
-            (-1.5, 0.25, 2.5, 0.5, -0.75, 1.25, 0.3, 0.9),
-        )
-            q_y   = NormalMeanVariance(m_y, v_y)
-            q_x   = NormalMeanVariance(m_x, v_x)
+                (3.0, 1.0, 1.0, 2.0, 0.5, 0.7, 0.8, 0.4),
+                (0.4, 0.6, 0.5, 0.3, 2.0, 0.3, 1.2, 0.25),
+                (-1.5, 0.25, 2.5, 0.5, -0.75, 1.25, 0.3, 0.9),
+            )
+            q_y = NormalMeanVariance(m_y, v_y)
+            q_x = NormalMeanVariance(m_x, v_x)
             q_y_x = MvNormalMeanCovariance([m_y, m_x], [v_y 0.0; 0.0 v_x])
-            q_z   = NormalMeanVariance(m_z, v_z)
-            q_κ   = NormalMeanVariance(m_κ, v_κ)
+            q_z = NormalMeanVariance(m_z, v_z)
+            q_κ = NormalMeanVariance(m_κ, v_κ)
 
             meanfield = @call_rule GCV(:ω, Marginalisation) (
-                q_y = q_y, q_x = q_x, q_z = q_z, q_κ = q_κ, meta = meta
+                q_y = q_y, q_x = q_x, q_z = q_z, q_κ = q_κ, meta = meta,
             )
             structured = @call_rule GCV(:ω, Marginalisation) (
-                q_y_x = q_y_x, q_z = q_z, q_κ = q_κ, meta = meta
+                q_y_x = q_y_x, q_z = q_z, q_κ = q_κ, meta = meta,
             )
 
             @test all(coefficients(meanfield) .≈ coefficients(structured))
@@ -129,10 +129,10 @@
         q_ω = NormalMeanVariance(1.2, 0.5)
 
         ω_msg = @call_rule GCV(:ω, Marginalisation) (
-            q_y = q_y, q_x = q_x, q_z = q_z, q_κ = q_κ, meta = meta
+            q_y = q_y, q_x = q_x, q_z = q_z, q_κ = q_κ, meta = meta,
         )
         κ_msg = @call_rule GCV(:κ, Marginalisation) (
-            q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta
+            q_y = q_y, q_x = q_x, q_z = q_z, q_ω = q_ω, meta = meta,
         )
 
         @test (ω_msg.a, ω_msg.c, ω_msg.d) != (κ_msg.a, κ_msg.c, κ_msg.d)

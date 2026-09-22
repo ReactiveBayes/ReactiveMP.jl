@@ -1,7 +1,7 @@
 export marginalrule
 
 @marginalrule MvNormalMeanPrecision(:out_μ_Λ) (
-    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_Λ::PointMass
+    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_Λ::PointMass,
 ) = begin
     return (
         out = prod(
@@ -13,7 +13,7 @@ export marginalrule
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ_Λ) (
-    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_Λ::PointMass
+    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_Λ::PointMass,
 ) = begin
     return (
         out = m_out,
@@ -95,7 +95,7 @@ end
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ) (
-    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_Λ::Any
+    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_Λ::Any,
 ) = begin
     return (
         out = m_out,
@@ -106,7 +106,7 @@ end
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ) (
-    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_Λ::Any
+    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_Λ::Any,
 ) = begin
     return (
         out = prod(
@@ -119,13 +119,13 @@ end
 ## TerminalProdArgument / BIFM related
 
 @marginalrule MvNormalMeanPrecision(:out_μ_Λ) (
-    m_out::TerminalProdArgument, m_μ::PointMass, m_Λ::PointMass
+    m_out::TerminalProdArgument, m_μ::PointMass, m_Λ::PointMass,
 ) = begin
     return (out = getdist(m_out), μ = m_μ, Λ = m_Λ)
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ_Λ) (
-    m_out::PointMass, m_μ::TerminalProdArgument, m_Λ::PointMass
+    m_out::PointMass, m_μ::TerminalProdArgument, m_Λ::PointMass,
 ) = begin
     return (out = m_out, μ = getdist(m_μ), Λ = m_Λ)
 end

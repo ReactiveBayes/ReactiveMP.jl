@@ -5,7 +5,7 @@
     meta::DeltaMeta{M, Nothing},
 ) where {M <: Linearization} = begin
     # Divide marginal on inx by forward message
-    ξ_inx, Λ_inx       = weightedmean_precision(component(q_ins, k))
+    ξ_inx, Λ_inx = weightedmean_precision(component(q_ins, k))
     ξ_fw_inx, Λ_fw_inx = weightedmean_precision(m_in)
 
     ξ_bw_inx = ξ_inx - ξ_fw_inx
@@ -19,7 +19,7 @@
 end
 
 @rule DeltaFn((:in, _), Marginalisation) (
-    m_out::NormalDistributionsFamily, m_ins::Nothing, meta::DeltaMeta{M, I}
+    m_out::NormalDistributionsFamily, m_ins::Nothing, meta::DeltaMeta{M, I},
 ) where {M <: Linearization, I <: Function} = begin
     return approximate(getmethod(meta), getnodefn(meta, Val(:in)), (m_out,))
 end

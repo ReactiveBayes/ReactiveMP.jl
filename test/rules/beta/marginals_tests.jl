@@ -13,7 +13,7 @@
                     m_b = PointMass(2.0),
                 ),
                 output = (
-                    out = Beta(1.0, 3.0), a = PointMass(1.0), b = PointMass(2.0)
+                    out = Beta(1.0, 3.0), a = PointMass(1.0), b = PointMass(2.0),
                 ),
             ),
             (
@@ -23,7 +23,7 @@
                     m_b = PointMass(3.0),
                 ),
                 output = (
-                    out = Beta(3.0, 4.0), a = PointMass(2.0), b = PointMass(3.0)
+                    out = Beta(3.0, 4.0), a = PointMass(2.0), b = PointMass(3.0),
                 ),
             ),
             (
@@ -33,7 +33,7 @@
                     m_b = PointMass(3.0),
                 ),
                 output = (
-                    out = Beta(2.0, 5.0), a = PointMass(1.0), b = PointMass(3.0)
+                    out = Beta(2.0, 5.0), a = PointMass(1.0), b = PointMass(3.0),
                 ),
             ),
         ]

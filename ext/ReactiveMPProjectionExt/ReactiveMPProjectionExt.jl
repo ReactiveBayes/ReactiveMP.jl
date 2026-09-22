@@ -21,8 +21,8 @@ BayesBase.logpdf(d::DivisionOf, p) =
     logpdf(d.numerator, p) - logpdf(d.denumerator, p)
 
 function BayesBase.prod(
-    ::GenericProd, something::DivisionOf, division::DivisionOf
-)
+        ::GenericProd, something::DivisionOf, division::DivisionOf
+    )
     if division.denumerator == something.numerator
         return DivisionOf(division.numerator, something.denumerator)
     elseif division.numerator == something.denumerator
@@ -48,8 +48,8 @@ BayesBase.prod(::GenericProd, division::DivisionOf, ::Missing) = division
 BayesBase.prod(::GenericProd, ::Missing, division::DivisionOf) = division
 
 function BayesBase.prod(
-    ::GenericProd, productof::ProductOf, divisionof::DivisionOf
-)
+        ::GenericProd, productof::ProductOf, divisionof::DivisionOf
+    )
     return ProductOf(productof, divisionof)
 end
 
@@ -58,7 +58,7 @@ include("rules/in.jl")
 include("rules/out.jl")
 include("rules/marginals.jl")
 
-# This will enable the extension and make `CVIProjection` compatible with delta nodes 
+# This will enable the extension and make `CVIProjection` compatible with delta nodes
 # Otherwise it should throw an error suggesting users to install `ExponentialFamilyProjection`
 # See `approximations/cvi_projection.jl`
 ReactiveMP.is_delta_node_compatible(::ReactiveMP.CVIProjection) = Val(true)

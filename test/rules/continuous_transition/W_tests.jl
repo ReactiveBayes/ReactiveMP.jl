@@ -19,11 +19,11 @@
         function benchmark_rule_structured(q_y_x, mA, ΣA, UA)
             myx, Vyx = mean_cov(q_y_x)
 
-            dy  = size(mA, 1)
-            Vx  = Vyx[(dy + 1):end, (dy + 1):end]
-            Vy  = Vyx[1:dy, 1:dy]
-            mx  = myx[(dy + 1):end]
-            my  = myx[1:dy]
+            dy = size(mA, 1)
+            Vx = Vyx[(dy + 1):end, (dy + 1):end]
+            Vy = Vyx[1:dy, 1:dy]
+            mx = myx[(dy + 1):end]
+            my = myx[1:dy]
             Vyx = Vyx[1:dy, (dy + 1):end]
 
             G =
@@ -51,12 +51,14 @@
                 )
                 qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
 
-                @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                @test_rules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
                     :W, Marginalisation
-                ) [(
-                    input = (q_y_x = qyx, q_a = qa, meta = metal),
-                    output = benchmark_rule_structured(qyx, mA, ΣA, UA),
-                )]
+                ) [
+                    (
+                        input = (q_y_x = qyx, q_a = qa, meta = metal),
+                        output = benchmark_rule_structured(qyx, mA, ΣA, UA),
+                    ),
+                ]
             end
         end
     end
@@ -77,10 +79,12 @@
             qa = MvNormalMeanCovariance(zeros(1), diageye(1))
             @test_rules [check_type_promotion = true] ContinuousTransition(
                 :W, Marginalisation
-            ) [(
-                input = (q_y_x = qyx, q_a = qa, meta = metanl),
-                output = WishartFast(dy + 2, dy * diageye(dy)),
-            )]
+            ) [
+                (
+                    input = (q_y_x = qyx, q_a = qa, meta = metanl),
+                    output = WishartFast(dy + 2, dy * diageye(dy)),
+                ),
+            ]
         end
     end
 
@@ -118,12 +122,14 @@
 
             qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
 
-            @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+            @test_rules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
                 :W, Marginalisation
-            ) [(
-                input = (q_y = qy, q_x = qx, q_a = qa, meta = metal),
-                output = benchmark_rule_meanfield(qy, qx, mA, ΣA, UA),
-            )]
+            ) [
+                (
+                    input = (q_y = qy, q_x = qx, q_a = qa, meta = metal),
+                    output = benchmark_rule_meanfield(qy, qx, mA, ΣA, UA),
+                ),
+            ]
         end
     end
 end

@@ -5,7 +5,7 @@
 
     import ReactiveMP: @call_rule, conjugatear_effective_marginals
 
-    same_normal(a, b; atol = 1e-8) =
+    same_normal(a, b; atol = 1.0e-8) =
         isapprox(mean(a), mean(b); atol = atol) &&
         isapprox(cov(a), cov(b); atol = atol)
 
@@ -24,10 +24,10 @@
             m_x = MvNormalMeanCovariance(randn(rng, order), diageye(order))
 
             got = @call_rule ConjugateAR(:y, Marginalisation) (
-                m_x = m_x, q_w = q_w, meta = meta
+                m_x = m_x, q_w = q_w, meta = meta,
             )
             exp = @call_rule AR(:y, Marginalisation) (
-                m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta
+                m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta,
             )
             @test same_normal(got, exp)
         end
@@ -48,10 +48,10 @@
             q_x = MvNormalMeanCovariance(randn(rng, order), diageye(order))
 
             got = @call_rule ConjugateAR(:y, Marginalisation) (
-                q_x = q_x, q_w = q_w, meta = meta
+                q_x = q_x, q_w = q_w, meta = meta,
             )
             exp = @call_rule AR(:y, Marginalisation) (
-                q_x = q_x, q_θ = q_θ, q_γ = q_γ, meta = meta
+                q_x = q_x, q_θ = q_θ, q_γ = q_γ, meta = meta,
             )
             @test same_normal(got, exp)
         end

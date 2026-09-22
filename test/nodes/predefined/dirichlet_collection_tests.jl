@@ -12,7 +12,7 @@
                     a = rand(rng, dims...)
 
                     q_out = DirichletCollection(α)
-                    q_a   = PointMass(a)
+                    q_a = PointMass(a)
 
                     marginals = (
                         Marginal(q_out, false, false),
@@ -27,7 +27,7 @@
                     )
 
                     q_out = Dirichlet.(eachslice(α, dims = ntuple(d -> d + 1, rank - 1)))
-                    q_a   = PointMass.(eachslice(a, dims = ntuple(d -> d + 1, rank - 1)))
+                    q_a = PointMass.(eachslice(a, dims = ntuple(d -> d + 1, rank - 1)))
 
                     avg_energy_matrix = 0.0
                     for (dir, a) in zip(q_out, q_a)

@@ -17,7 +17,7 @@
     # See `__gcv_log_noise_precision`: the coupling is `⟨e^{-(κz+ω)}⟩`, computed from summed
     # log-exponents so it cannot come out `NaN` for individually extreme factors.
     ab = exp(__gcv_log_noise_precision(q_z, q_κ, q_ω))
-    W = [y_precision+ab -ab; -ab x_precision+ab]
+    W = [y_precision + ab -ab; -ab x_precision + ab]
     ξ = [y_mean * y_precision; x_mean * x_precision]
 
     return MvNormalWeightedMeanPrecision(ξ, W)

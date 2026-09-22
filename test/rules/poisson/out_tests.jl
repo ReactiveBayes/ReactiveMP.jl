@@ -12,7 +12,7 @@
     end
 
     @testset "Variational Message Passing: (q_l::Gamma)" begin
-        @test_rules [check_type_promotion = true, atol = 1e-4] Poisson(
+        @test_rules [check_type_promotion = true, atol = 1.0e-4] Poisson(
             :out, Marginalisation
         ) [
             (input = (q_l = Gamma(1.0, 1.0),), output = Poisson(0.56146)),

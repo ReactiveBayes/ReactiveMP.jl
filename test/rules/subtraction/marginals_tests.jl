@@ -226,7 +226,7 @@
                 ),
                 output = (
                     in1 = MvNormalWeightedMeanPrecision(
-                        [5 / 4, 19 / 8], [1.0 -1/4; -1/4 7/8]
+                        [5 / 4, 19 / 8], [1.0 -1 / 4; -1 / 4 7 / 8]
                     ),
                     in2 = PointMass([1.0, 1.0]),
                 ),
@@ -243,7 +243,7 @@
                 ),
                 output = (
                     in1 = MvNormalWeightedMeanPrecision(
-                        [5.0, 9 / 2], [5/2 1.0; 1.0 5/2]
+                        [5.0, 9 / 2], [5 / 2 1.0; 1.0 5 / 2]
                     ),
                     in2 = PointMass([1.0, 1.0]),
                 ),
@@ -260,7 +260,7 @@
                 ),
                 output = (
                     in1 = MvNormalWeightedMeanPrecision(
-                        [13 / 6, 13 / 6], [7/3 -1/6; -1/6 7/3]
+                        [13 / 6, 13 / 6], [7 / 3 -1 / 6; -1 / 6 7 / 3]
                     ),
                     in2 = PointMass([2.0, 1.0]),
                 ),
@@ -282,7 +282,7 @@
                 ),
                 output = (
                     in1 = MvNormalWeightedMeanPrecision(
-                        [13 / 4, 13 / 8], [3/2 -1/4; -1/4 11/8]
+                        [13 / 4, 13 / 8], [3 / 2 -1 / 4; -1 / 4 11 / 8]
                     ),
                     in2 = PointMass([1.0, -1.0]),
                 ),
@@ -338,7 +338,7 @@
                 ),
                 output = (
                     in1 = MvNormalWeightedMeanPrecision(
-                        [13 / 4, 13 / 8], [3/2 -1/4; -1/4 11/8]
+                        [13 / 4, 13 / 8], [3 / 2 -1 / 4; -1 / 4 11 / 8]
                     ),
                     in2 = PointMass([1.0, -1.0]),
                 ),
@@ -395,7 +395,7 @@
                 output = (
                     in1 = PointMass([1.0, 1.0]),
                     in2 = MvNormalWeightedMeanPrecision(
-                        [1 / 4, 11 / 8], [1.0 -1/4; -1/4 7/8]
+                        [1 / 4, 11 / 8], [1.0 -1 / 4; -1 / 4 7 / 8]
                     ),
                 ),
             ),
@@ -412,7 +412,7 @@
                 output = (
                     in1 = PointMass([1.0, 1.0]),
                     in2 = MvNormalWeightedMeanPrecision(
-                        [4.0, 7 / 2], [5/2 1.0; 1.0 5/2]
+                        [4.0, 7 / 2], [5 / 2 1.0; 1.0 5 / 2]
                     ),
                 ),
             ),
@@ -429,7 +429,7 @@
                 output = (
                     in1 = PointMass([2.0, 1.0]),
                     in2 = MvNormalWeightedMeanPrecision(
-                        [7 / 6, 13 / 6], [7/3 -1/6; -1/6 7/3]
+                        [7 / 6, 13 / 6], [7 / 3 -1 / 6; -1 / 6 7 / 3]
                     ),
                 ),
             ),
@@ -451,7 +451,7 @@
                 output = (
                     in1 = PointMass([1.0, -1.0]),
                     in2 = MvNormalWeightedMeanPrecision(
-                        [5 / 4, 29 / 8], [3/2 -1/4; -1/4 11/8]
+                        [5 / 4, 29 / 8], [3 / 2 -1 / 4; -1 / 4 11 / 8]
                     ),
                 ),
             ),
@@ -507,7 +507,7 @@
                 output = (
                     in1 = PointMass([1.0, -1.0]),
                     in2 = MvNormalWeightedMeanPrecision(
-                        [5 / 4, 29 / 8], [3/2 -1/4; -1/4 11/8]
+                        [5 / 4, 29 / 8], [3 / 2 -1 / 4; -1 / 4 11 / 8]
                     ),
                 ),
             ),
@@ -556,9 +556,11 @@
                     m_in1 = NormalMeanVariance(3.0, 4.0),
                     m_in2 = NormalMeanVariance(5.0, 6.0),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [5 / 4, 1 / 3], [3/4 -1/2; -1/2 2/3]
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [5 / 4, 1 / 3], [3 / 4 -1 / 2; -1 / 2 2 / 3]
+                    )
+                ),
             ),
             (
                 input = (
@@ -566,9 +568,11 @@
                     m_in1 = NormalMeanPrecision(3.0, 4.0),
                     m_in2 = NormalMeanPrecision(5.0, 6.0),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [14.0, 28.0], [6.0 -2.0; -2.0 8.0]
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [14.0, 28.0], [6.0 -2.0; -2.0 8.0]
+                    )
+                ),
             ),
             (
                 input = (
@@ -576,9 +580,11 @@
                     m_in1 = NormalWeightedMeanPrecision(3.0, 4.0),
                     m_in2 = NormalWeightedMeanPrecision(5.0, 6.0),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [4.0, 4.0], [6.0 -2.0; -2.0 8.0]
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [4.0, 4.0], [6.0 -2.0; -2.0 8.0]
+                    )
+                ),
             ),
             (
                 input = (
@@ -586,9 +592,11 @@
                     m_in1 = NormalMeanPrecision(3.0, 4.0),
                     m_in2 = NormalWeightedMeanPrecision(5.0, 6.0),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [25 / 2, 9 / 2], [9/2 -1/2; -1/2 13/2]
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [25 / 2, 9 / 2], [9 / 2 -1 / 2; -1 / 2 13 / 2]
+                    )
+                ),
             ),
             (
                 input = (
@@ -602,13 +610,15 @@
                         [1.0, 2.0], [3.0 1.0; 1.0 2.0]
                     ),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [1 / 5, 12 / 5, 0.0, 0.0],
-                    [
-                        [0.8 -0.4 -0.4 0.2; -0.4 1.2 0.2 -0.6];
-                        [-0.4 0.2 0.8 -0.4; 0.2 -0.6 -0.4 1.2]
-                    ],
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [1 / 5, 12 / 5, 0.0, 0.0],
+                        [
+                            [0.8 -0.4 -0.4 0.2; -0.4 1.2 0.2 -0.6];
+                            [-0.4 0.2 0.8 -0.4; 0.2 -0.6 -0.4 1.2]
+                        ],
+                    )
+                ),
             ),
             (
                 input = (
@@ -622,15 +632,17 @@
                         [1.0, 2.0], [3.0 1.0; 1.0 2.0]
                     ),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [10.0, 10.0, 0.0, 0.0],
-                    [
-                        6.0 2.0 -3.0 -1.0;
-                        2.0 4.0 -1.0 -2.0;
-                        -3.0 -1.0 6.0 2.0;
-                        -1.0 -2.0 2.0 4.0
-                    ],
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [10.0, 10.0, 0.0, 0.0],
+                        [
+                            6.0 2.0 -3.0 -1.0;
+                            2.0 4.0 -1.0 -2.0;
+                            -3.0 -1.0 6.0 2.0;
+                            -1.0 -2.0 2.0 4.0
+                        ],
+                    )
+                ),
             ),
             (
                 input = (
@@ -644,15 +656,17 @@
                         [1.0, 2.0], [3.0 1.0; 1.0 1.0]
                     ),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [2.0, 4.0, 0.0, 0.0],
-                    [
-                        6.0 2.0 -3.0 -1.0;
-                        2.0 2.0 -1.0 -1.0;
-                        -3.0 -1.0 6.0 2.0;
-                        -1.0 -1.0 2.0 2.0
-                    ],
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [2.0, 4.0, 0.0, 0.0],
+                        [
+                            6.0 2.0 -3.0 -1.0;
+                            2.0 2.0 -1.0 -1.0;
+                            -3.0 -1.0 6.0 2.0;
+                            -1.0 -1.0 2.0 2.0
+                        ],
+                    )
+                ),
             ),
             (
                 input = (
@@ -666,15 +680,17 @@
                         [1.0, 1.0], [3.0 1.0; 1.0 2.0]
                     ),
                 ),
-                output = (MvNormalWeightedMeanPrecision(
-                    [21 / 5, 17 / 5, 4 / 5, 3 / 5],
-                    [
-                        17/5 4/5 -2/5 1/5;
-                        4/5 13/5 1/5 -3/5;
-                        -2/5 1/5 17/5 4/5;
-                        1/5 -3/5 4/5 13/5
-                    ],
-                )),
+                output = (
+                    MvNormalWeightedMeanPrecision(
+                        [21 / 5, 17 / 5, 4 / 5, 3 / 5],
+                        [
+                            17 / 5 4 / 5 -2 / 5 1 / 5;
+                            4 / 5 13 / 5 1 / 5 -3 / 5;
+                            -2 / 5 1 / 5 17 / 5 4 / 5;
+                            1 / 5 -3 / 5 4 / 5 13 / 5
+                        ],
+                    )
+                ),
             ),
         ]
     end

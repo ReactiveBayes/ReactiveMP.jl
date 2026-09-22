@@ -6,14 +6,14 @@
 )
 
 @rule NormalMeanPrecision(:out, Marginalisation) (
-    m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass
+    m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass,
 ) = begin
     @logscale 0
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return NormalMeanPrecision(m_μ_mean, inv(m_μ_cov + inv(mean(m_τ))))
 end
 
-# Variational                       # 
+# Variational                       #
 # --------------------------------- #
 @rule NormalMeanPrecision(:out, Marginalisation) (q_μ::PointMass, q_τ::PointMass) = NormalMeanPrecision(
     mean(q_μ), mean(q_τ)
@@ -28,7 +28,7 @@ end
 )
 
 @rule NormalMeanPrecision(:out, Marginalisation) (
-    m_μ::UnivariateNormalDistributionsFamily, q_τ::Any
+    m_μ::UnivariateNormalDistributionsFamily, q_τ::Any,
 ) = begin
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return NormalMeanPrecision(m_μ_mean, cholinv(m_μ_cov + cholinv(mean(q_τ))))

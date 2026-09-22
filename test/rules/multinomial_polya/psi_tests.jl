@@ -25,10 +25,12 @@
 
         @test_rules [check_type_promotion = false] MultinomialPolya(
             :ψ, Marginalisation
-        ) [(
-            input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta),
-            output = MvGaussianWeightedMeanPrecision(η_expected, Λ_expected),
-        )]
+        ) [
+            (
+                input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta),
+                output = MvGaussianWeightedMeanPrecision(η_expected, Λ_expected),
+            ),
+        ]
     end
 
     @testset "Expectation Propagation: (q_x::PointMass, q_N::Poisson, m_ψ::GaussianDistributionsFamily)" begin
@@ -43,12 +45,14 @@
         for q_N in q_Ns
             @test_rules [check_type_promotion = false] MultinomialPolya(
                 :ψ, Marginalisation
-            ) [(
-                input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta),
-                output = MvGaussianWeightedMeanPrecision(
-                    η_expected, Λ_expected
+            ) [
+                (
+                    input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta),
+                    output = MvGaussianWeightedMeanPrecision(
+                        η_expected, Λ_expected
+                    ),
                 ),
-            )]
+            ]
         end
     end
 end

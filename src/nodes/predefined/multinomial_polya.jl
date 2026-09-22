@@ -44,27 +44,27 @@ default_meta(::Type{MultinomialPolya}) =
     q_ψ::Union{GaussianDistributionsFamily, PointMass},
     meta::MultinomialPolyaMeta,
 ) = begin
-    N             = mean(q_N)
-    K             = first(size(mean(q_x)))
-    x             = mean(q_x)
-    T             = promote_samplefloattype(q_x, q_N, q_ψ)
-    μ_ψ           = mean(q_ψ)
-    v_ψ           = var(q_ψ)
-    Nks           = compose_Nks(x, N)
-    method        = ReactiveMP.ghcubature(meta.ncubaturepoints)
+    N = mean(q_N)
+    K = first(size(mean(q_x)))
+    x = mean(q_x)
+    T = promote_samplefloattype(q_x, q_N, q_ψ)
+    μ_ψ = mean(q_ψ)
+    v_ψ = var(q_ψ)
+    Nks = compose_Nks(x, N)
+    method = ReactiveMP.ghcubature(meta.ncubaturepoints)
     weights(m, v) = ReactiveMP.getweights(method, m, v)
-    points(m, v)  = ReactiveMP.getpoints(method, m, v)
-    expectations  = map((m, v) -> mapreduce((w, p) -> w * softplus(p), +, weights(m, v), points(m, v)), μ_ψ, v_ψ)
+    points(m, v) = ReactiveMP.getpoints(method, m, v)
+    expectations = map((m, v) -> mapreduce((w, p) -> w * softplus(p), +, weights(m, v), points(m, v)), μ_ψ, v_ψ)
 
     if q_x isa PointMass
         term1 =
             -mapreduce(
-                (Nk, y) ->
-                    loggamma(Nk + 1) - loggamma(Nk - y + 1) - loggamma(y + 1),
-                +,
-                Nks,
-                x,
-            )
+            (Nk, y) ->
+            loggamma(Nk + 1) - loggamma(Nk - y + 1) - loggamma(y + 1),
+            +,
+            Nks,
+            x,
+        )
     elseif q_x isa Multinomial || q_x isa Categorical
         if N != 1
             p = q_x.p

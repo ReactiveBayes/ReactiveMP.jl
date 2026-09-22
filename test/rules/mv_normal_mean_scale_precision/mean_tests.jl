@@ -115,10 +115,10 @@
 
             # Warm up
             @call_rule MvNormalMeanScalePrecision(:μ, Marginalisation) (
-                m_out = m_out_scale, q_γ = q_γ
+                m_out = m_out_scale, q_γ = q_γ,
             )
             @call_rule MvNormalMeanScalePrecision(:μ, Marginalisation) (
-                m_out = m_out_general, q_γ = q_γ
+                m_out = m_out_general, q_γ = q_γ,
             )
 
             allocs_scale = @allocated @call_rule MvNormalMeanScalePrecision(

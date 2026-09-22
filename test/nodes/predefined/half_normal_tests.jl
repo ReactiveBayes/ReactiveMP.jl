@@ -5,10 +5,10 @@
     @testset "AverageEnergy" begin
         begin
             q_out = GammaShapeRate(2.0, 1.0)
-            q_v   = PointMass(2.0)
+            q_v = PointMass(2.0)
 
             marginals = (
-                Marginal(q_out, false, false), Marginal(q_v, false, false)
+                Marginal(q_out, false, false), Marginal(q_v, false, false),
             )
 
             @test score(
@@ -21,10 +21,10 @@
         end
         begin
             q_out = GammaShapeScale(2.0, 1.0)
-            q_v   = PointMass(2.0)
+            q_v = PointMass(2.0)
 
             marginals = (
-                Marginal(q_out, false, false), Marginal(q_v, false, false)
+                Marginal(q_out, false, false), Marginal(q_v, false, false),
             )
 
             @test score(
@@ -38,10 +38,10 @@
 
         begin
             q_out = GammaInverse(3.0, 1.0)
-            q_v   = PointMass(2.0)
+            q_v = PointMass(2.0)
 
             marginals = (
-                Marginal(q_out, false, false), Marginal(q_v, false, false)
+                Marginal(q_out, false, false), Marginal(q_v, false, false),
             )
 
             @test score(

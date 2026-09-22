@@ -16,7 +16,7 @@
                     nothing,
                 ),
                 -logpdf(Poisson(l), k),
-                rtol = 1e-12,
+                rtol = 1.0e-12,
             )
         end
 
@@ -33,7 +33,7 @@
                     nothing,
                 ),
                 entropy(Poisson(k)),
-                rtol = 1e-3,
+                rtol = 1.0e-3,
             )
         end
 
@@ -50,7 +50,7 @@
                     nothing,
                 ),
                 entropy(Poisson(k)),
-                rtol = 1e-1,
+                rtol = 1.0e-1,
             )
         end
     end

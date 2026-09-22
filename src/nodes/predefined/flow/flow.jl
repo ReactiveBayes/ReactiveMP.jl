@@ -24,10 +24,10 @@ The `FlowMeta` structure is required for the `Flow` factor node and can be inclu
 ```
 """
 struct FlowMeta{
-    T <: AbstractCompiledFlowModel, A <: AbstractApproximationMethod
-}
-    model         :: T
-    approximation :: A
+        T <: AbstractCompiledFlowModel, A <: AbstractApproximationMethod,
+    }
+    model::T
+    approximation::A
 end
 
 default_meta(::Type{Flow}) = error(
@@ -40,7 +40,7 @@ function FlowMeta(model::T) where {T <: AbstractCompiledFlowModel}
 end
 
 # get-functions for the FlowMeta structure
-getmodel(meta::FlowMeta)         = meta.model
+getmodel(meta::FlowMeta) = meta.model
 getapproximation(meta::FlowMeta) = meta.approximation
 
 # include neural networks

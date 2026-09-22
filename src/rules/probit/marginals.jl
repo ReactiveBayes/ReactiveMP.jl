@@ -21,13 +21,17 @@ using StatsFuns:
     elseif γ <= 0 && p > 0.5
         log_mom0_pz = logsumexp((log(1 - p), log(2 * p - 1) + normlogcdf(γ)))
     elseif γ > 0 && p <= 0.5
-        log_mom0_pz = logsumexp((
-            log(1 - p) + normlogcdf(-γ), log(p) + normlogcdf(γ)
-        ))
+        log_mom0_pz = logsumexp(
+            (
+                log(1 - p) + normlogcdf(-γ), log(p) + normlogcdf(γ),
+            )
+        )
     else
-        log_mom0_pz = logsumexp((
-            log(1 - p) + normlogccdf(γ), log(p) + normlogcdf(γ)
-        ))
+        log_mom0_pz = logsumexp(
+            (
+                log(1 - p) + normlogccdf(γ), log(p) + normlogcdf(γ),
+            )
+        )
     end
     tmp = log(vz) + normlogpdf(γ) - log(1 + vz) / 2 - log_mom0_pz
     mom1_pz = mz + (2 * p - 1) * exp(tmp)

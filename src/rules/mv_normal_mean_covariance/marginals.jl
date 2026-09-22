@@ -1,7 +1,7 @@
 export marginalrule
 
 @marginalrule MvNormalMeanCovariance(:out_μ_Σ) (
-    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_Σ::PointMass
+    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_Σ::PointMass,
 ) = begin
     return (
         out = prod(
@@ -15,7 +15,7 @@ export marginalrule
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ_Σ) (
-    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_Σ::PointMass
+    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_Σ::PointMass,
 ) = begin
     return (
         out = m_out,
@@ -99,7 +99,7 @@ end
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ) (
-    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_Σ::Any
+    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_Σ::Any,
 ) = begin
     return (
         out = m_out,
@@ -112,7 +112,7 @@ end
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ) (
-    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_Σ::Any
+    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_Σ::Any,
 ) = begin
     return (
         out = prod(

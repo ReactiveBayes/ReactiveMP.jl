@@ -14,7 +14,7 @@ end
 
 # --------------- Rules for 2 interfaces (q_out PointMass, q_a DirichletCollection) ---------------
 @rule DiscreteTransition(:in, Marginalisation) (
-    q_out::PointMass{<:AbstractVector}, q_a::DirichletCollection, meta::Any
+    q_out::PointMass{<:AbstractVector}, q_a::DirichletCollection, meta::Any,
 ) = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
     out = eloga' * probvec(q_out)

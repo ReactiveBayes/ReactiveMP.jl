@@ -30,19 +30,19 @@ macro logscale(value)
 end
 
 function pre_rule_annotations!(
-    ::LogScaleAnnotations, ann::AnnotationDict, mapping, messages, marginals
-)
+        ::LogScaleAnnotations, ann::AnnotationDict, mapping, messages, marginals
+    )
     return nothing
 end
 
 function post_rule_annotations!(
-    ::LogScaleAnnotations,
-    ann::AnnotationDict,
-    mapping,
-    messages,
-    marginals,
-    result,
-)
+        ::LogScaleAnnotations,
+        ann::AnnotationDict,
+        mapping,
+        messages,
+        marginals,
+        result,
+    )
     has_annotation(ann, :logscale) && return nothing
     if isnothing(marginals) && all(m -> getdata(m) isa PointMass, messages)
         annotate!(ann, :logscale, 0)
@@ -57,17 +57,17 @@ function post_rule_annotations!(
 end
 
 function post_product_annotations!(
-    ::LogScaleAnnotations,
-    merged::AnnotationDict,
-    left_ann::AnnotationDict,
-    right_ann::AnnotationDict,
-    new_dist,
-    left_dist,
-    right_dist,
-)
-    left_logscale  = getlogscale(left_ann)
+        ::LogScaleAnnotations,
+        merged::AnnotationDict,
+        left_ann::AnnotationDict,
+        right_ann::AnnotationDict,
+        new_dist,
+        left_dist,
+        right_dist,
+    )
+    left_logscale = getlogscale(left_ann)
     right_logscale = getlogscale(right_ann)
-    new_logscale   = compute_logscale(new_dist, left_dist, right_dist)
+    new_logscale = compute_logscale(new_dist, left_dist, right_dist)
     annotate!(merged, :logscale, left_logscale + right_logscale + new_logscale)
     return nothing
 end
@@ -81,12 +81,12 @@ Use [`LogScaleAnnotations`](@ref) instead. See the migration guide in the docume
 function AddonLogScale(args...; kwargs...)
     error(
         """`AddonLogScale` has been removed in ReactiveMP v6 """ *
-        """and replaced by `LogScaleAnnotations`.\n""" *
-        """\n""" *
-        """To migrate, replace:\n""" *
-        """  addons = (AddonLogScale(),)\n""" *
-        """with:\n""" *
-        """  annotations = (LogScaleAnnotations(),)\n""" *
-        """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
+            """and replaced by `LogScaleAnnotations`.\n""" *
+            """\n""" *
+            """To migrate, replace:\n""" *
+            """  addons = (AddonLogScale(),)\n""" *
+            """with:\n""" *
+            """  annotations = (LogScaleAnnotations(),)\n""" *
+            """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
     )
 end

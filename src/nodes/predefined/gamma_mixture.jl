@@ -15,10 +15,10 @@ collect_factorisation(::Type{<:GammaMixture}, factorization) =
 struct GammaMixtureNodeFactorisation end
 
 struct GammaMixtureNode{N} <: AbstractFactorNode
-    out    :: NodeInterface
-    switch :: NodeInterface
-    as     :: NTuple{N, IndexedNodeInterface}
-    bs     :: NTuple{N, IndexedNodeInterface}
+    out::NodeInterface
+    switch::NodeInterface
+    as::NTuple{N, IndexedNodeInterface}
+    bs::NTuple{N, IndexedNodeInterface}
 end
 
 functionalform(factornode::GammaMixtureNode{N}) where {N} = GammaMixture{N}
@@ -26,7 +26,7 @@ getinterfaces(factornode::GammaMixtureNode) =
     (factornode.out, factornode.switch, factornode.as..., factornode.bs...)
 sdtype(factornode::GammaMixtureNode) = Stochastic()
 
-interfaceindices(factornode::GammaMixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
+interfaceindices(factornode::GammaMixtureNode, iname::Symbol) = (interfaceindex(factornode, iname),)
 interfaceindices(factornode::GammaMixtureNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
@@ -46,12 +46,16 @@ function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
 end
 
 function factornode(::Type{<:GammaMixture}, interfaces, factorization)
-    outinterface = interfaces[findfirst(
-        ((name, variable),) -> name == :out, interfaces
-    )]
-    switchinterface = interfaces[findfirst(
-        ((name, variable),) -> name == :switch, interfaces
-    )]
+    outinterface = interfaces[
+        findfirst(
+            ((name, variable),) -> name == :out, interfaces
+        ),
+    ]
+    switchinterface = interfaces[
+        findfirst(
+            ((name, variable),) -> name == :switch, interfaces
+        ),
+    ]
     asinterfaces = filter(((name, variable),) -> name == :a, interfaces)
     bsinterfaces = filter(((name, variable),) -> name == :b, interfaces)
 
@@ -95,8 +99,8 @@ collect_functional_dependencies(::GammaMixtureNode, ::Any) = error(
 )
 
 function activate!(
-    factornode::GammaMixtureNode, options::FactorNodeActivationOptions
-)
+        factornode::GammaMixtureNode, options::FactorNodeActivationOptions
+    )
     dependecies = collect_functional_dependencies(
         factornode, getdependecies(options)
     )
@@ -104,11 +108,11 @@ function activate!(
 end
 
 function functional_dependencies(
-    ::GammaMixtureNodeFunctionalDependencies,
-    factornode::GammaMixtureNode{N},
-    interface,
-    iindex::Int,
-) where {N}
+        ::GammaMixtureNodeFunctionalDependencies,
+        factornode::GammaMixtureNode{N},
+        interface,
+        iindex::Int,
+    ) where {N}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -127,50 +131,53 @@ function functional_dependencies(
 end
 
 function collect_latest_messages(
-    ::GammaMixtureNodeFunctionalDependencies,
-    ::GammaMixtureNode{N},
-    message_dependencies::Tuple{},
-) where {N}
+        ::GammaMixtureNodeFunctionalDependencies,
+        ::GammaMixtureNode{N},
+        message_dependencies::Tuple{},
+    ) where {N}
     return nothing, of(nothing)
 end
 
 function collect_latest_marginals(
-    ::GammaMixtureNodeFunctionalDependencies,
-    ::GammaMixtureNode{N},
-    marginal_dependencies::Tuple{
-        NodeInterface,
-        NTuple{N, IndexedNodeInterface},
-        NTuple{N, IndexedNodeInterface},
-    },
-) where {N}
+        ::GammaMixtureNodeFunctionalDependencies,
+        ::GammaMixtureNode{N},
+        marginal_dependencies::Tuple{
+            NodeInterface,
+            NTuple{N, IndexedNodeInterface},
+            NTuple{N, IndexedNodeInterface},
+        },
+    ) where {N}
     varinterface = marginal_dependencies[1]
     asinterfaces = marginal_dependencies[2]
     bsinterfaces = marginal_dependencies[3]
 
-    marginal_names = Val{(
-        name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1])
-    )}()
+    marginal_names = Val{
+        (
+            name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1]),
+        ),
+    }()
     marginals_observable =
         combineLatest(
-            (
-                get_stream_of_marginals(getvariable(varinterface)),
-                combineLatest(
-                    map(
-                        (rate) -> get_stream_of_marginals(getvariable(rate)),
-                        reverse(bsinterfaces),
-                    ),
-                    PushNew(),
+        (
+            get_stream_of_marginals(getvariable(varinterface)),
+            combineLatest(
+                map(
+                    (rate) -> get_stream_of_marginals(getvariable(rate)),
+                    reverse(bsinterfaces),
                 ),
-                combineLatest(
-                    map(
-                        (shape) -> get_stream_of_marginals(getvariable(shape)),
-                        reverse(asinterfaces),
-                    ),
-                    PushNew(),
-                ),
+                PushNew(),
             ),
-            PushNew(),
-        ) |> map_to((
+            combineLatest(
+                map(
+                    (shape) -> get_stream_of_marginals(getvariable(shape)),
+                    reverse(asinterfaces),
+                ),
+                PushNew(),
+            ),
+        ),
+        PushNew(),
+    ) |> map_to(
+        (
             get_stream_of_marginals(getvariable(varinterface)),
             ManyOf(
                 map(
@@ -184,23 +191,24 @@ function collect_latest_marginals(
                     bsinterfaces,
                 ),
             ),
-        ))
+        )
+    )
 
     return marginal_names, marginals_observable
 end
 
 function collect_latest_marginals(
-    ::GammaMixtureNodeFunctionalDependencies,
-    ::GammaMixtureNode{N},
-    marginal_dependencies::Tuple{
-        NodeInterface, NodeInterface, IndexedNodeInterface
-    },
-) where {N}
-    outinterface    = marginal_dependencies[1]
+        ::GammaMixtureNodeFunctionalDependencies,
+        ::GammaMixtureNode{N},
+        marginal_dependencies::Tuple{
+            NodeInterface, NodeInterface, IndexedNodeInterface,
+        },
+    ) where {N}
+    outinterface = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
-    varinterface    = marginal_dependencies[3]
+    varinterface = marginal_dependencies[3]
 
-    marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
+    marginal_names = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
     marginals_observable = combineLatestUpdates((get_stream_of_marginals(getvariable(outinterface)), get_stream_of_marginals(getvariable(switchinterface)), get_stream_of_marginals(getvariable(varinterface))), PushNew())
 
     return marginal_names, marginals_observable
@@ -227,13 +235,13 @@ end
 end
 
 function score(
-    ::Type{T},
-    ::FactorBoundFreeEnergy,
-    ::Stochastic,
-    node::GammaMixtureNode{N},
-    meta,
-    stream_postprocessors,
-) where {T <: CountingReal, N}
+        ::Type{T},
+        ::FactorBoundFreeEnergy,
+        ::Stochastic,
+        node::GammaMixtureNode{N},
+        meta,
+        stream_postprocessors,
+    ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
             get_stream_of_marginals(getvariable(node.out)) |> skip_initial(),
@@ -242,7 +250,7 @@ function score(
                 combineLatest(
                     map(
                         (as) ->
-                            get_stream_of_marginals(getvariable(as)) |>
+                        get_stream_of_marginals(getvariable(as)) |>
                             skip_initial(),
                         node.as,
                     ),
@@ -253,7 +261,7 @@ function score(
                 combineLatest(
                     map(
                         (bs) ->
-                            get_stream_of_marginals(getvariable(bs)) |>
+                        get_stream_of_marginals(getvariable(bs)) |>
                             skip_initial(),
                         node.bs,
                     ),
@@ -274,10 +282,10 @@ function score(
                 meta,
             )
 
-            out_entropy    = score(DifferentialEntropy(), marginals[1])
+            out_entropy = score(DifferentialEntropy(), marginals[1])
             switch_entropy = score(DifferentialEntropy(), marginals[2])
-            a_entropies    = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
-            b_entropies    = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
+            a_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
+            b_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
 
             return convert(
                 T,
@@ -322,10 +330,10 @@ BayesBase.default_prod_rule(
 ) = PreserveTypeProd(Distribution)
 
 function prod(
-    ::PreserveTypeProd{Distribution},
-    left::GammaShapeLikelihood{T1},
-    right::GammaShapeLikelihood{T2},
-) where {T1, T2}
+        ::PreserveTypeProd{Distribution},
+        left::GammaShapeLikelihood{T1},
+        right::GammaShapeLikelihood{T2},
+    ) where {T1, T2}
     T = promote_type(T1, T2)
     return GammaShapeLikelihood(T(left.p) + T(right.p), T(left.γ) + T(right.γ))
 end

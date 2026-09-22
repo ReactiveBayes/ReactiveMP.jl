@@ -10,11 +10,11 @@ Use [`constvar`](@ref) to create an instance.
 See also: [`ReactiveMP.RandomVariable`](@ref), [`ReactiveMP.DataVariable`](@ref)
 """
 mutable struct ConstVariable <: AbstractVariable
-    marginal   :: MarginalObservable
-    messageout :: MessageObservable
-    constant   :: Any
-    nconnected :: Int
-    label      :: Any
+    marginal::MarginalObservable
+    messageout::MessageObservable
+    constant::Any
+    nconnected::Int
+    label::Any
 end
 
 function ConstVariable(constant; label = nothing)
@@ -35,12 +35,12 @@ constvar(constant; label = nothing) = ConstVariable(constant; label = label)
 degree(constvar::ConstVariable) = constvar.nconnected
 getconst(constvar::ConstVariable) = constvar.constant
 
-israndom(::ConstVariable)                  = false
+israndom(::ConstVariable) = false
 israndom(::AbstractArray{<:ConstVariable}) = false
-isdata(::ConstVariable)                    = false
-isdata(::AbstractArray{<:ConstVariable})   = false
-isconst(::ConstVariable)                   = true
-isconst(::AbstractArray{<:ConstVariable})  = true
+isdata(::ConstVariable) = false
+isdata(::AbstractArray{<:ConstVariable}) = false
+isconst(::ConstVariable) = true
+isconst(::AbstractArray{<:ConstVariable}) = true
 
 get_stream_of_marginals(constvar::ConstVariable) = constvar.marginal
 get_stream_of_predictions(constvar::ConstVariable) = constvar.marginal

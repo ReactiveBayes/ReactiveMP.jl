@@ -57,8 +57,8 @@
         )
 
         @test result1 isa NormalMeanVariance
-        @test mean(result1) ≈ 0.0 atol = 1e-1
-        @test var(result1) ≈ 0.5 atol = 1e-1
+        @test mean(result1) ≈ 0.0 atol = 1.0e-1
+        @test var(result1) ≈ 0.5 atol = 1.0e-1
 
         # Case 2: Quadratic centered at 2.0 (-0.5*(z-2)²) corresponds to Normal(2,1)
         # Combining Normal(0,1) prior with Normal(2,1) likelihood:
@@ -69,20 +69,20 @@
         )
 
         @test result2 isa NormalMeanVariance
-        @test mean(result2) ≈ 1.0 atol = 1e-1  # (0*1 + 2*1)/(1+1) = 1.0
-        @test var(result2) ≈ 0.5 atol = 1e-1  # 1/(1+1) = 0.5
+        @test mean(result2) ≈ 1.0 atol = 1.0e-1  # (0*1 + 2*1)/(1+1) = 1.0
+        @test var(result2) ≈ 0.5 atol = 1.0e-1  # 1/(1+1) = 0.5
 
         # Case 3: Stronger quadratic (-2.0*(z-2)²) corresponds to Normal(2,0.25)
         # Combining Normal(0,1) prior with Normal(2,0.25) likelihood:
-        # Expected posterior: Normal(1.6, 0.2) 
+        # Expected posterior: Normal(1.6, 0.2)
         log_fn3 = (z, i, samples) -> -2.0 * (z - 2.0)^2
         result3 = ReactiveMPProjectionExt.optimize_parameters(
             1, pre_samples, m_ins, log_fn3, method
         )
 
         @test result3 isa NormalMeanVariance
-        @test mean(result3) ≈ 1.6 atol = 1e-1 # (0*1 + 2*4)/(1+4) = 8/5 = 1.6
-        @test var(result3) ≈ 0.2 atol = 1e-1 # 1/(1+4) = 0.2
+        @test mean(result3) ≈ 1.6 atol = 1.0e-1 # (0*1 + 2*4)/(1+4) = 8/5 = 1.6
+        @test var(result3) ≈ 0.2 atol = 1.0e-1 # 1/(1+4) = 0.2
 
         # Case 4: Test with a different prior
         m_in2 = NormalMeanVariance(1.0, 2.0)  # Prior: mean=1, variance=2 (precision=0.5)
@@ -95,8 +95,8 @@
         )
 
         @test result4 isa NormalMeanVariance
-        @test mean(result4) ≈ 5 / 3 atol = 1e-1 # (1*0.5 + 2*1)/(0.5+1) = 1.67
-        @test var(result4) ≈ 2 / 3 atol = 1e-1 # 1/(0.5+1) = 0.67
+        @test mean(result4) ≈ 5 / 3 atol = 1.0e-1 # (1*0.5 + 2*1)/(0.5+1) = 1.67
+        @test var(result4) ≈ 2 / 3 atol = 1.0e-1 # 1/(0.5+1) = 0.67
     end
 end
 
@@ -128,8 +128,8 @@ end
     )
 
     @test result1 isa NormalMeanVariance
-    @test mean(result1) ≈ 0.0 atol = 1e-1
-    @test var(result1) ≈ 0.5 atol = 1e-1
+    @test mean(result1) ≈ 0.0 atol = 1.0e-1
+    @test var(result1) ≈ 0.5 atol = 1.0e-1
 
     m_in = Laplace(0.0, 1.0)
     m_ins = [m_in]

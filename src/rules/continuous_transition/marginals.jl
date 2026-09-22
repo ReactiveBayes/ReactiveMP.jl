@@ -10,12 +10,12 @@
 end
 
 function continuous_tranition_marginal(
-    m_y::MultivariateNormalDistributionsFamily,
-    m_x::MultivariateNormalDistributionsFamily,
-    q_a::Any,
-    q_W::Any,
-    meta::CTMeta,
-)
+        m_y::MultivariateNormalDistributionsFamily,
+        m_x::MultivariateNormalDistributionsFamily,
+        q_a::Any,
+        q_W::Any,
+        meta::CTMeta,
+    )
     ma, Va = mean_cov(q_a)
 
     Fs = getjacobians(meta, ma)
@@ -31,7 +31,7 @@ function continuous_tranition_marginal(
 
     W_11 = Wy + mW
 
-    # 
+    #
     W_12 = negate_inplace!(mW * mA)
 
     W_21 = negate_inplace!(mA' * mW)

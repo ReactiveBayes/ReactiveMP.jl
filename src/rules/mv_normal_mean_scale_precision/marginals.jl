@@ -1,7 +1,7 @@
 export marginalrule
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (
-    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_γ::PointMass
+    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_γ::PointMass,
 ) = begin
     return (
         out = prod(
@@ -17,7 +17,7 @@ export marginalrule
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (
-    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass
+    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass,
 ) = begin
     return (
         out = m_out,
@@ -96,7 +96,7 @@ end
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ) (
-    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any
+    m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any,
 ) = begin
     return (
         out = m_out,
@@ -112,7 +112,7 @@ end
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ) (
-    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_γ::Any
+    m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_γ::Any,
 ) = begin
     return (
         out = prod(
