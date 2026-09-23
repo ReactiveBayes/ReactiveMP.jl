@@ -43,7 +43,7 @@ Build it test-first, one commit per step, `PHASES.md` updated in each:
    TestUtils, so v6's callback form is gone; self-tested through a recording testset;
 3. **done** — registry-backed coverage, recording the rule each check actually selected, and
    `check_rule_coverage(modules...)`;
-4. node-definition verification from `nodefunction`, with shape and scale asserted
+4. **done** — node-definition verification from `nodefunction`, with shape and scale asserted
    separately and a wrong rule and a wrong log scale as negative controls;
 5. derivative checks, ForwardDiff against a central finite difference, on the allocating and
    the in-place path;
@@ -586,8 +586,11 @@ keying), and #9–#13 (resolve before the API freezes).
 - [x] `@test_rules` successor: numerical output, type promotion (default on),
       `rule`/`rule!` agreement, optional non-allocating flag — `@test_message_update_rule`,
       `@test_marginal_update_rule`, `@test_average_energy`; failures point at the table's line
-- [ ] **node-definition verification** — reference update computed from `nodefunction`
-      for a bounded initial subset, with separate shape and scale assertions
+- [x] **node-definition verification** — reference update computed from `nodefunction`
+      for a bounded initial subset, with separate shape and scale assertions —
+      `@verify_message_update_rule`: BP and naive VMP, point masses substituted, finite
+      discrete inputs enumerated, ≤2 continuous inputs integrated (HCubature). Scale is
+      checked only when the shape holds
 - [x] registry-backed coverage check: every `RuleSpec`/`NodeSpec` has a test; record the
       actual selected rule so a fallback cannot conceal an untested specialization —
       `check_rule_coverage(modules...)`; a broader rule answering for a specific one stays
