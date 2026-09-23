@@ -23,8 +23,8 @@ re-check before relying on one.
 MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. Signed off by the
 user; § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
 `public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart,
-InverseWishart, DirichletCollection and MvNormalGamma are done; next MvNormalWishart, then
-MatrixNormal. Steps 1–5 are done; step 5 is summarised
+InverseWishart, DirichletCollection, MvNormalGamma and MvNormalWishart are done; next
+MatrixNormal, then MatrixNormalWishart, which close the step. Steps 1–5 are done; step 5 is summarised
 in § Phase 5, *Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1639,6 +1639,9 @@ extending it, is recorded for Phase 8.
     ExponentialFamily's constructor keeps each parameter's float type, so the rules promote
     them to one. The energy is checked against ExponentialFamily's entropy, which it equals
     when the prior is q(out). 495 checks agree, the correction declared.
+  - *MvNormalWishart — done.* Its one message rule, for known parameters, promoting them to
+    one float type; no energy, as in v6. v6's test used ν = 1 at d = 2, no Wishart; the port's
+    cases use valid ones. It agrees with v6 (497 checks).
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,

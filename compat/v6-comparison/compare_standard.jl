@@ -175,6 +175,7 @@ const MESSAGE_CASES = [
     ("MvNormalGamma:out:q-point-masses", MvNormalGamma, :out, (q = (μ = PointMass([0.5, -1.0]), Λ = PointMass([2.0 0.3; 0.3 1.5]), α = PointMass(2.0), β = PointMass(3.0)),), false),
     ("MvNormalGamma:out:q-gamma-α-β", MvNormalGamma, :out, (q = (μ = PointMass([0.5, -1.0]), Λ = WISHART, α = GammaShapeRate(4.0, 2.0), β = GammaShapeRate(6.0, 2.0)),), false),
     ("MvNormalGamma:out:q-normal-μ", MvNormalGamma, :out, (q = (μ = MvNormalMeanCovariance([0.5, -1.0], [1.0 0.2; 0.2 2.0]), Λ = PointMass([2.0 0.3; 0.3 1.5]), α = PointMass(2.0), β = PointMass(3.0)),), MVNG_OUT),
+    ("MvNormalWishart:out:q-point-masses", MvNormalWishart, :out, (q = (μ = PointMass([0.5, -1.0]), W = PointMass([2.0 0.3; 0.3 1.5]), λ = PointMass(2.5), ν = PointMass(4.0)),), false),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
