@@ -1246,6 +1246,10 @@ half-maintained copies that drift.
   retained results across multiple updates. Poisoning alone does not prove safe reuse.
 - Mixture rewrite: pin current behaviour (including the `reverse` quirk) with regression
   tests first, then delete.
+- *(Scope, set by the user at Phase 4.5: log scales are a niche feature with known gaps. The
+  rewrite preserves v6's behaviour, gaps included, and checks log scales only where v6
+  produces them. Fixing them is a separate milestone after the migration. See `PHASES.md`
+  § Phase 4.5, Step 0.)*
 - **Annotation and product behaviour is its own acceptance gate, not a by-product of
   numerical rule tests.** Folding products over raw distributions also touches form
   constraints, fold order, callbacks, and the `is_clamped`/`is_initial` flags — and

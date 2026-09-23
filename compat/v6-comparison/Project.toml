@@ -5,8 +5,10 @@ ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 ReactiveMP = "a194aa59-28ba-4574-a09c-4a745416d6e3"
+RxInfer = "86711068-29c9-4ff7-b620-ae75d7495b3d"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 ReactiveMP = "=6.5.0"
+RxInfer = "=5.5.2"
 julia = "1.10"

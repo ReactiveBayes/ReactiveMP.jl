@@ -16,7 +16,10 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5 — Step 0: record the v6 fixtures.** The design brief in § Phase 4.5 is **signed
+**Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
+the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Next is
+the cluster over a whole group, `getnodefn` and `FactorizedJoint` marginal returns. The
+design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
 in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
 and rule definition and creation are replaced. The work is proven on four slice cases
@@ -59,7 +62,7 @@ names rather than generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; next is Step 0 |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; Step 0 done, next the base-package additions |
 | 5 | `StandardMessagePassingRules` | not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | not started |
 | 7 | Complete the engine — remaining nodes, diagnostics, RxInfer plumbing | not started |
@@ -654,7 +657,7 @@ Decided instead:
 - **Downstream breakage is accepted until the release.** Only a small internal group uses the
   branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
-**Status: design signed off 2026-09-23; next is Step 0.**
+**Status: design signed off 2026-09-23; Step 0 done; next the base-package additions.**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -715,10 +718,38 @@ mutated in place.
 
 ### Step 0 — record the v6 fixtures, before anything is deleted
 
-`compat/v6-comparison` gains an RxInfer version compatible with ReactiveMP 6.5.0, and
-records, for each slice model: free-energy trajectories, posteriors, per-message log scales,
-emission order (the mixture `reverse` order included) and the missing-input behaviour.
-`MigrationRecord` is rule-shaped, so this needs a trajectory-shaped fixture alongside it.
+**Done.** `compat/v6-comparison` pins RxInfer 5.5.2, and `record_engine_fixtures.jl` records
+seven models into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `bp_chain`,
+`vmp_meanfield`, `vmp_structured`, `normal_mixture` and `delta_unscented`. Each fixture holds
+the free energy per iteration, the final posteriors, and every message-rule call **in the
+order v6 made it**, with its result and log scale. That order is materialisation order, and it
+includes the mixture's. `--check` re-records and compares, and the `v6-comparison` CI job runs it.
+
+The fixture is TestUtils' `EngineTrajectory`, holding `RuleCallRecord`s, written as **TOML**
+(`save_engine_fixture`/`load_engine_fixture`, compared by `compare_engine_trajectory`).
+`Serialization`, which the rule-level `MigrationRecord` uses, only reads back on the Julia
+minor that wrote it, and ReactiveMP's tests read these on 1.10–1.12.
+
+What recording found, all **preserved, not fixed**:
+- **Log scales are recorded only for `bp_iid`.** Log scales are a niche feature with known
+  gaps; per the user they keep v6's behaviour, and fixing them is **a separate milestone
+  after the migration**, with its own plan. Taking easy wins along the way is fine. v6 cannot
+  annotate the other models:
+  - `NormalMeanVariance(:μ)` with `(m_out::Normal, q_v::PointMass)` sets no `@logscale`
+    (`rules/normal_mean_variance/mean.jl:30`), while its mirror `out.jl:40` does;
+  - `(:out)` with `(q_μ::Normal, q_v::PointMass)`, which predicting a missing observation
+    needs, sets none either;
+  - found by reading, and triggered by no model here: the all-point-mass fallback
+    (`annotations/logscale.jl:45-49`) handles all-messages or all-marginals, never a mix.
+- **A skipped rule call is still traced.** For a missing input, v6 fires the after-rule-call
+  event with result `missing` (`bp_iid_missing`). RxInfer treats a missing observation as a
+  prediction and refuses free energy with it, so that fixture has none.
+- **In `bp_iid`, the posterior's log scale is minus the free energy** (−8.28849), as it
+  should be for an exact BP model. It is a cross-check on the recording.
+- **`vmp_structured`'s free energy is not monotone.** It reaches 10.41383 at iteration 3 and
+  rises to 10.41462 at iteration 5. Recorded as is; not investigated.
+- The trace holds message-rule calls only. Marginal-rule calls fire no event through
+  RxInfer's callbacks, so their order is not recorded.
 
 ### Design brief — 2026-09-23
 
@@ -801,6 +832,7 @@ were proposals and were accepted as written, except item 3, which became a bench
    the trace (`RxInferTraceCallbacks`, `trace.jl:156-161`) of every `AfterMessageRuleCallEvent`
    — edge, result and log scale, in order (`message.jl:730`). A trajectory-shaped fixture type
    joins `MigrationRecord` in TestUtils. Log scales are compared explicitly, with a tolerance.
+   *(Done as Step 0; see above.)*
 10. **Order of work**, one commit per step, test first: Step 0 fixtures → the base-package
     additions (group cluster, `getnodefn`, `FactorizedJoint` returns) → the rule ports → the
     engine core (variables, equality chain, generic node activation) on case (a) → free energy
@@ -809,12 +841,14 @@ were proposals and were accepted as written, except item 3, which became a bench
     keep passing until Phase 5 deletes them per directory.
 
 ### Exit criteria
-- [ ] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted
+- [x] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted —
+      `compat/v6-comparison/fixtures/engine/`, re-checked in CI
 - [ ] a working end-to-end inference in the new engine over the slice: ordinary belief
       propagation, structured VMP, a mixture (variadic group), and a delta node
 - [ ] free energy agrees with the recorded v6 trajectories on the same models
 - [ ] annotations and log scales agree with the recorded ones, compared explicitly (see the
-      annotation gate in `PLAN.md`)
+      annotation gate in `PLAN.md`), **where v6 records them** (`bp_iid`). Elsewhere v6's
+      behaviour is preserved, gaps included
 - [ ] a retained-value test: hold a materialised message across several updates and confirm
       neither its value nor its annotations change underneath you (deferred messages materialise
       as in v6, so the guarantee starts at materialisation)

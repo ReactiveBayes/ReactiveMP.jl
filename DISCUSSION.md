@@ -1138,6 +1138,13 @@ in `PHASES.md` § Phase 4.5; what matters for later readers is why.
   fields is deliberate: a mutable struct is passed by reference, which can avoid copying. The
   typed annotations stay; the struct kind is decided by benchmarking both representations.
 - **Signed off.** The user accepted the rest of the brief as written (2026-09-23).
+- **Log scales: preserve, do not fix.** Recording the fixtures found three gaps in v6's log
+  scales (`PHASES.md` § Phase 4.5, Step 0). The user's position: log scales are
+  underdeveloped, niche, and used by a few research papers. The rewrite keeps v6's
+  behaviour, takes easy wins only, and leaves a proper fix to a later milestone with its own
+  plan and discussion. The recording itself deviates from nothing: an earlier draft wrapped
+  `LogScaleAnnotations` to patch one gap, and it was dropped once the fixtures could be
+  recorded unmodified.
 - **What the investigation found, and the proposals answer.** Clusters and group indices in
   v6 are positions in a flat interface list, re-derived from neighbour order, never from
   GraphPPL's `EdgeLabel.index` (#7). Five node types override activation. `getnodefn` is

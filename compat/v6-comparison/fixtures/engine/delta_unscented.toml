@@ -1,0 +1,94 @@
+[header]
+format = 1
+julia = "1.10.12"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "x ~ NMV(0.5, 1), z := x^2 + 1 (Unscented), y ~ NMV(z, 0.1) observed at 2.0."
+free_energy = [0.28853601837087917, 0.28853601837087917, 0.28853601837087917]
+id = "delta_unscented"
+
+    [trajectory.posteriors.x]
+    params = [0.6190476190474186, 1.4761904761765194]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.z]
+    params = [20.749999999941792, 10.333333333307463]
+    type = "NormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DeltaFn"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [2.25, 3.0000000002328306]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DeltaFn"
+    target = "(:in, 1)"
+
+        [trajectory.trace.result]
+        params = [0.11904761904741856, 0.47619047617651944]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DeltaFn"
+    target = "(:in, 1)"
+
+        [trajectory.trace.result]
+        params = [0.11904761904741856, 0.47619047617651944]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DeltaFn"
+    target = "(:in, 1)"
+
+        [trajectory.trace.result]
+        params = [0.11904761904741856, 0.47619047617651944]
+        type = "NormalWeightedMeanPrecision"

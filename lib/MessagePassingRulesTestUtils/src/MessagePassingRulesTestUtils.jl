@@ -1,6 +1,6 @@
 module MessagePassingRulesTestUtils
 
-using BayesBase, Distributions, ForwardDiff, HCubature, Serialization, Statistics, Test
+using BayesBase, Distributions, ForwardDiff, HCubature, Serialization, Statistics, Test, TOML
 using MessagePassingRulesBase
 
 export @test_message_update_rule, @test_marginal_update_rule, @test_average_energy
@@ -10,6 +10,7 @@ export check_rule_coverage
 export @verify_message_update_rule, verify_message_update_rule, verify_message_update
 export @test_rule_derivatives, test_rule_derivatives
 export compare_with_reference, DeclaredDisagreement, MigrationRecord, save_migration_fixtures, load_migration_fixtures
+export encode_fixture_value, RuleCallRecord, EngineTrajectory, save_engine_fixture, load_engine_fixture, compare_engine_trajectory
 
 include("checks.jl")
 include("coverage.jl")
@@ -17,5 +18,6 @@ include("table_tests.jl")
 include("verification.jl")
 include("derivatives.jl")
 include("migration.jl")
+include("engine_fixtures.jl")
 
 end

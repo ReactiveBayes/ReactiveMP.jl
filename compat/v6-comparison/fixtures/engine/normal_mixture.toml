@@ -1,0 +1,2377 @@
+[header]
+format = 1
+julia = "1.10.12"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "π ~ Dirichlet([1, 1]), m[k] ~ NMP(∓1, 0.1), p[k] ~ GammaShapeRate(1, 1), z[i] ~ Categorical(π), y[i] ~ NormalMixture(z[i], m, p) observed; mean-field."
+free_energy = [22.92638105468564, 20.13923847757098, 19.095707028804146, 17.75875022460141, 17.558118883857325]
+id = "normal_mixture"
+
+    [[trajectory.posteriors.m]]
+    params = [-17.779945708887468, 8.830909436643047]
+    type = "NormalWeightedMeanPrecision"
+    [[trajectory.posteriors.m]]
+    params = [18.21422874844115, 9.389345236756363]
+    type = "NormalWeightedMeanPrecision"
+
+    [[trajectory.posteriors.p]]
+    params = [3.0000087078667352, 1.3744372411487216]
+    type = "GammaShapeRate"
+    [[trajectory.posteriors.p]]
+    params = [2.9999912921332648, 1.2782119572551507]
+    type = "GammaShapeRate"
+
+    [[trajectory.posteriors.z]]
+    params = [[0.9999999930169197, 6.983080376648509e-9]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.z]]
+    params = [[0.999999892525866, 1.0747413404599042e-7]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.z]]
+    params = [[4.80032276285248e-7, 0.9999995199677237]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.z]]
+    params = [[3.263889038849763e-6, 0.9999967361109612]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.z]]
+    params = [[0.999999998909164, 1.0908359823642685e-9]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.z]]
+    params = [[1.711160520081562e-6, 0.9999982888394799]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.z]]
+    params = [[1.2119701589540636e-5, 0.9999878802984105]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.z]]
+    params = [[0.9999999564980973, 4.3501902756803765e-8]]
+    type = "DiscreteNonParametric"
+
+    [trajectory.posteriors."π"]
+    params = [[5.000017415733472, 4.999982584266528]]
+    type = "Dirichlet"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9852259683067269, 0.014774031693273067]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.973403006423134, 0.02659699357686586]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.012128434984274234, 0.9878715650157257]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.021881270936130476, 0.9781187290638694]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9900481981330957, 0.009951801866904315]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.017986209962091555, 0.9820137900379085]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.03229546469845053, 0.9677045353015494]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9781187290638694, 0.021881270936130476]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GammaShapeRate"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 1.0]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4926129841533635, 5.522191552359205]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4867015032115671, 5.1785039941710735]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.006064217492137, 0.12273976204085528]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0109406354680652, 0.20141709896708107]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4950240990665478, 5.786831718087944]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0089931049810459, 0.17086899463986976]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0161477323492252, 0.27919429231810483]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4890593645319348, 5.2867317305902155]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Dirichlet"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[1.0, 1.0]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.985225968306727, 1.014774031693273]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9734030064231343, 1.026596993576866]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0121284349842743, 1.987871565015726]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0218812709361305, 1.9781187290638695]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9900481981330957, 1.0099518018669043]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0179862099620915, 1.9820137900379085]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0322954646984506, 1.9677045353015494]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9781187290638695, 1.0218812709361305]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 0.1]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 0.014774031693273067]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 0.026596993576865863]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.2, 0.9878715650157258]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.9, 0.9781187290638695]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 0.009951801866904315]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.9820137900379085]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.7, 0.9677045353015494]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 0.02188127093613048]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GammaShapeRate"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 1.0]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0073870158466365, 0.11753420359255694]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0132984967884329, 0.18120629187453918]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.493935782507863, 0.17854632493107098]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4890593645319348, 0.12046585316198116]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0049759009334522, 0.08724818265692134]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4910068950189541, 0.12997277669330132]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4838522676507746, 0.13042303636380018]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0109406354680652, 0.15719163913058892]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [-1.0, 0.1]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 0.1257465344678443]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 0.12423754411250243]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.2, 0.001547978551978486]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.9, 0.002792754229468055]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 0.12636200615513196]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.0022956191205872702]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.7, 0.004121940443610444]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 0.12483942205589767]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999552239080189, 4.477609198094928e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9997735856553587, 0.00022641434464133742]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.11220062826569298, 0.8877993717343069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.11884262906108772, 0.8811573709389123]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999857565809683, 1.424341903157402e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.1152628712331208, 0.8847371287668793]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.13064572626541243, 0.8693542737345875]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.501226935038931, 0.498773064961069]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9998663621413083, 0.00013363785869158535]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999777215548797, 0.8651645344705313]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4998873469341814, 0.8169371588864617]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0563452142720071, 0.9889746126970396]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0596787630837288, 0.9099951594470742]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999929131559333, 0.9472442083701472]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0578821481569718, 0.9258926616359875]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0656020734894902, 0.9061177040772975]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999335081543665, 0.8230390706236582]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999554431097597, 1.0000445568902403]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9997746938683627, 1.0002253061316373]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.112690428544014, 1.887309571455986]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.1193575261674578, 1.8806424738325425]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999858263118666, 1.0000141736881334]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.1157642963139438, 1.8842357036860562]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.1312041469789804, 1.8687958530210196]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9998670163087333, 1.0001329836912667]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 6.345686541324512e-5]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 0.0003208756444849488]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.2, 1.2636852292014062]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.9, 1.2541901070259915]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 2.0185830192360774e-5]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.2593074996892535]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.7, 1.2373184308747849]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 0.00018939221640836576]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.00002227844512, 0.0003665943931008537]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0001126530658186, 0.0015913059915536273]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4436547857279929, 0.11852309050300759]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4403212369162712, 0.08654269848878472]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000070868440667, 0.00012832888638360273]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4421178518430282, 0.08845901713948846]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4343979265105098, 0.10837056331507329]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000664918456335, 0.0009895440927860152]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 0.395821928028146]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 0.3957503803269835]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.2, 0.04460733026052799]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.9, 0.04724643128632606]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 0.3958339549016637]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.04582408874269929]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.7, 0.051935792519915126]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 0.39578692520165726]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999997542551082, 2.4574489182194477e-7]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999976839895826, 2.3160104175634306e-6]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.031045413009609085, 0.9689545869903909]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.04392336346580734, 0.9560766365341926]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999999490778017, 5.092219819752109e-8]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.03856032920063109, 0.9614396707993689]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.0594300455966239, 0.940569954403376]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5529601631038359, 0.44703983689616417]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.99999888621005, 1.113789950074231e-6]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999999006639457, 0.40804083902174143]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999990638119636, 0.29369434811866246]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0190604069562383, 0.2809153758198275]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0268854205138398, 0.3378651700590023]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999999794160115, 0.5342715794679629]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.023632436296121, 0.3136171740166019]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0362452385286298, 0.40664678266098464]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.499999549778974, 0.32180994894186693]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999998013278915, 1.0000001986721085]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999981276239271, 1.0000018723760729]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.038120813912477, 1.961879186087523]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0537708410276794, 1.9462291589723206]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.999999958832023, 1.0000000411679772]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.047264872592242, 1.9527351274077578]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0724904770572594, 1.9275095229427404]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.999999099557948, 1.0000009004420518]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 3.9038107979276643e-7]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 3.679128381710464e-6]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.2, 1.8900460567864488]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.9, 1.8592945107861614]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 8.089308318284296e-8]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.8720784239478465]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.7, 1.8225113318028434]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 1.7693250608207222e-6]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000000993360543, 1.6342718149293002e-6]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000009361880364, 1.3217209456905012e-5]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4809395930437614, 0.09633166345271471]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4731145794861602, 0.0634612334748141]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000000205839885, 3.727315914516744e-7]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.476367563703879, 0.06487632747111889]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4637547614713702, 0.08812535906236806]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.000000450221026, 6.697514731075754e-6]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 0.7970058991309242]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 0.7970045651787263]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.2, 0.03038251960407552]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.9, 0.04285568601452113]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 0.797006024662671]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.037670389761744215]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.7, 0.05777534932380119]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 0.7970053398160284]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.999999974436732, 2.55632680044248e-8]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999996766785235, 3.2332147660810324e-7]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.0011308420769259291, 0.9988691579230741]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.0026376370504306197, 0.9973623629495695]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999999956109256, 4.38907439598903e-9]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.001961433409861894, 0.998038566590138]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.004970594600362258, 0.9950294053996378]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5234206353179692, 0.47657936468203077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999998592630581, 1.4073694181758468e-7]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.499999988362203, 0.18862399446068556]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999998528063876, 0.14465221812381607]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0006209252238885, 0.010131466022906535]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0014480650499178, 0.020279670721017017]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999999980018535, 0.26793848987587854]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0010769002132196, 0.01589004367680839]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0027282353705338, 0.03427563205912295]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999999359288507, 0.14930948762253946]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999999767244063, 1.0000000232755937]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999997056127752, 1.000000294387225]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.001241850447777, 1.998758149552223]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0028961300998356, 1.9971038699001644]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.999999996003707, 1.000000003996293]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0021538004264394, 1.9978461995735608]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0054564707410678, 1.9945435292589324]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999998718577017, 1.0000001281422983]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 5.1312358665989275e-8]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 6.489932355807477e-7]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.2, 2.201818652004786]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.9, 2.1981716992413287]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 8.810053517138757e-9]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.0, 2.1998082068598683]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.7, 2.1925272839423116]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 2.8249692133574723e-7]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.000000011637797, 1.912173424992443e-7]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000001471936126, 2.07498315404981e-6]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4993790747761115, 0.09002387938722778]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4985519349500822, 0.05684668966157015]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000000019981465, 3.61395803139183e-8]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4989230997867804, 0.05792810549185303]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4972717646294662, 0.08446571573475897]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.000000064071149, 9.517693590064133e-7]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 1.64156637279232]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 1.6415659277445727]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.2, 0.002038579982556693]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.9, 0.004754189893778386]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 1.6415664044405722]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.003535606436041921]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.7, 0.00895715909114512]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 1.64156620064666]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999999929805121, 7.019487868418116e-9]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999998919655312, 1.0803446889027376e-7]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[4.775425272819379e-7, 0.9999995224574727]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[3.246960506378483e-6, 0.9999967530394936]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999999989034767, 1.0965232435932749e-9]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[1.7022853773213764e-6, 0.9999982977146228]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[1.2056841929809452e-5, 0.9999879431580702]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5013000290870688, 0.49869997091293117]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.9999999562712926, 4.372870740790545e-8]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999999965084598, 0.07994235248056758]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.499999946262933, 0.09448326903602518]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.000000240016138, 4.266700784699287e-6]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0000016319445195, 2.5046501450395883e-5]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.499999999454582, 0.1202484021398252]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.00000085558026, 1.3806786719506541e-5]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.0000060598507947, 8.379716105370401e-5]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 1)"
+
+        [trajectory.trace.result]
+        params = [1.4999999782490487, 0.07963630034229562]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999999930169197, 1.0000000069830803]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.999999892525866, 1.000000107474134]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0000004800322764, 1.9999995199677238]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0000032638890388, 1.9999967361109612]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999999989091641, 1.000000001090836]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0000017111605202, 1.99999828883948]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.0000121197015894, 1.9999878802984106]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    logscale = -0.6931471805599453
+    node = "DiscreteNonParametric"
+    target = ":p"
+
+        [trajectory.trace.result]
+        params = [[1.9999999564980973, 1.0000000435019027]]
+        type = "Dirichlet"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 1.6217131716987576e-8]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 2.4959217050133846e-7]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.2, 2.3223453057294243]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.9, 2.3223388406496364]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 2.5332990390297082e-9]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [2.0, 2.322342446623154]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [1.7, 2.3223182743850583]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 2)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 1.010264881535362e-7]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000000034915402, 5.735607618516799e-8]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.000000053737067, 7.5732866211258e-7]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.499999759983862, 0.08708230268106465]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4999983680554805, 0.05404698956044286]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.000000000545418, 9.862853166948101e-9]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.49999914441974, 0.055058797922794674]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.4999939401492053, 0.08202271951545964]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:p, 2)"
+
+        [trajectory.trace.result]
+        params = [1.0000000217509515, 3.2302779746939125e-7]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.1, 2.1827178405105627]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.8, 2.1827176211669457]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.2, 1.0477750207854036e-6]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.9, 7.124148884292755e-6]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-2.3, 2.18271785337167]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [2.0, 3.7349806212410284e-6]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [1.7, 2.6453889065884206e-5]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMixture"
+    target = "(:m, 1)"
+
+        [trajectory.trace.result]
+        params = [-1.9, 2.1827177608002772]
+        type = "NormalMeanPrecision"

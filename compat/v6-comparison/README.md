@@ -57,10 +57,23 @@ so run this from the repository root.
 
 ## Engine fixtures (Phase 4.5)
 
-Phase 4.5 replaces the v6 engine rather than bridging to it, so before any v6 code is deleted
-this environment also records engine-level fixtures from full v6 runs — free-energy
-trajectories, posteriors, log scales and emission order — through an RxInfer version
-compatible with ReactiveMP 6.5.0. See `PHASES.md` § Phase 4.5, Step 0.
+Phase 4.5 replaces v6's rule-call and node-creation paths rather than bridging to them, so
+before any v6 code is deleted this environment records engine-level fixtures from full v6
+runs, through **RxInfer 5.5.2** (pinned, `=5.5.2`; it accepts ReactiveMP 6.5):
+
+```bash
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl          # record
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check  # compare
+```
+
+The fixtures are `fixtures/engine/<model>.toml`, one per slice model, written by
+`MessagePassingRulesTestUtils.save_engine_fixture`. Each holds the free energy per iteration,
+the final posteriors, and every message-rule call in the order v6 made it, which is
+materialisation order, with its result and log scale. They are **TOML, not `Serialization`**,
+so ReactiveMP's tests can read them on every Julia version in the CI matrix. `--check`
+re-records the fixtures and compares them with the committed files; CI runs it. The header's
+`notes` say what the recording could not capture: log scales are recorded only where v6
+produces them, which is `bp_iid` alone. See `PHASES.md` § Phase 4.5, Step 0.
 
 ## The standing constraint
 
