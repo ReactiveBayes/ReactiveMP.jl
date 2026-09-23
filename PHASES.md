@@ -16,9 +16,11 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5 — engine integration slice. Plan it before writing code**: read § Phase 4.5
-below, whose entry brief lists the contracts already made, the v6 starting points and the
-five questions the planning session must answer.
+**Phase 4.5 — the engine design session, then the first cut of the v7 engine.** Phase 4.5
+was restructured on 2026-09-23 (`DISCUSSION.md` §3.18): there is no bridge into the v6
+engine. The new engine is written directly in `src/`, built first for four slice cases, and
+compared against fixtures recorded from v6. The design session comes before any code; its
+agenda, the contracts it must honour and the v6 starting points are in § Phase 4.5 below.
 
 Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system; `lib/MessagePassingRulesTestUtils`
 is its test tooling; `compat/v6-comparison` holds the v6 oracle and the migration check.
@@ -41,6 +43,7 @@ Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* a
 and this file's § Phase 4.5. Working conventions established so far: one commit per step,
 failing test first, `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive
 names rather than generic ones, and no comments that only narrate.
+
 ---
 
 ## Status at a glance
@@ -55,10 +58,10 @@ names rather than generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine integration slice** — small end-to-end proof | not started |
+| 4.5 | **Engine design and first cut** — the real v7 engine, for four slice cases *(absorbs the start of 7)* | not started; next is the design session |
 | 5 | `StandardMessagePassingRules` | not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | not started |
-| 7 | ReactiveMP engine rewrite | not started *(under-planned — wants its own design session)* |
+| 7 | Complete the engine — remaining nodes, diagnostics, RxInfer plumbing | not started |
 | 8 | Release and downstream coordination | not started |
 
 ---
@@ -109,7 +112,7 @@ names rather than generic ones, and no comments that only narrate.
         **Closed in Phase 2:** the fast subset drops only `:slow`, and CI sets `TEST_ALL=true`,
         so the inventory gate runs everywhere
 - [x] **repository layout decided: monorepo under `lib/`, split at Phase 6.** Boundaries
-      are still moving (#9–#13 are unresolved API decisions), and a cross-package change is
+      were still moving (#9–#13 were then unresolved API decisions), and a cross-package change is
       one commit in a monorepo versus two pull requests and a dev-pin across repositories.
       Pay the split cost once, at a known gate. See `PLAN.md` § Repository layout
 - [x] **Julia floor decided: stays at 1.10.** Nothing in the design requires more. The
@@ -140,7 +143,9 @@ names rather than generic ones, and no comments that only narrate.
         instantiating. Cross-package `[deps]` are deliberately left out for now: the
         packages are unregistered and `[sources]` needs Julia 1.11 while our floor is 1.10,
         so Phase 3 onwards wires them with `Pkg.develop(path = ...)` and commits the
-        Manifest. Documented in `lib/README.md`
+        Manifest. Documented in `lib/README.md`. *(Superseded in Phase 4: the sibling is
+        listed in `[deps]` and developed at test time, and no Manifest under `lib/` is
+        committed — see `lib/README.md`.)*
 
 ---
 
@@ -357,9 +362,11 @@ omission.
       passes `(filename, name, tags)` to the filter — no package swap needed). Three kinds of
       `test_args` entry, composable: a path (`rules:beta:out`, unchanged), `tag:<name>` and
       `name:<text>`. Same kind OR'ed, different kinds AND'ed
-- [x] tag taxonomy applied: `:rules` (194), `:nodes` (83), `:engine` (130 — everything that
+- [x] tag taxonomy applied: `:rules` (196), `:nodes` (84), `:engine` (133 — everything that
       is not a rule or node test), `:alloc` (6, the items asserting allocation counts),
-      `:quality` (1, the inventory gate). **All 414 items carry a tag; none is `:slow` yet** —
+      `:quality` (1, the inventory gate). *(Counts corrected in the post-Phase-4 audit: the
+      figures first recorded here, 194/83/130, summed to 408, not 414, and were already
+      wrong at the tagging commit `80be2dcd`.)* **All 414 items carry a tag; none is `:slow` yet** —
       nothing has been measured as slow, so nothing claims to be. Tagging one later removes it
       from `make test` and leaves it in `make test-all` and CI
 - [x] `make test` = fast subset, `make test-all` = everything — **the fast local default
@@ -429,7 +436,7 @@ proposal. Citations are as of `545425a2`.
 | #9 consumed vs. partition | **accepted** as proposed |
 | #10 buffer ownership | **accepted, strengthened**: storage reuse is unspecified engine-internal behaviour; outsiders copy, outsider getters copy by default, `InputArgumentsAnnotations` deep-copies |
 | #11 capability diagnostic | **proposal rejected**: keep the existing `is_delta_node_compatible` guard, no static table |
-| #12 context services | **changed**: `ann` carries incoming annotations too (no `args.ann_in`); the node moves into `ctx.node` and the `node` slot is dropped; `nodefn` is not a service. The missing-input sub-point is still only proposed |
+| #12 context services | **changed**: `ann` carries incoming annotations too (no `args.ann_in`); the node moves into `ctx.node` and the `node` slot is dropped; `nodefn` is not a service. The missing-input sub-point was left proposed at the sign-off and confirmed, exactly as v6, when Phase 3 closed |
 | #13 approximations protocol | **parked** by the user; no proposal stands |
 | RNG ownership | **accepted** as proposed |
 
@@ -491,7 +498,9 @@ proposal. Citations are as of `545425a2`.
   `f` or its inverse; nothing calls `getnode()`. There are 46 FastCholesky calls in `src/`
   outside `approximations/`. On the missing-input path, pre-rule annotation processors run,
   the body and post-rule processors do not (`message.jl:678-728`).
-- *Proposed.* Adopt `args.ann_in[:sym]`, keyed exactly like `m` and never dispatched on. Four
+- *Proposed* *(changed at the sign-off — see the table above: no `args.ann_in`, `ann` is
+  two-way; `nodefn` is not a service; the services are `node`, `product`, `linalg`, `rng`,
+  `context.jl:23`)*. Adopt `args.ann_in[:sym]`, keyed exactly like `m` and never dispatched on. Four
   services — `product`, `nodefn`, `linalg`, `rng` — declared with `ctx = (...)`. The concrete
   `ctx` type may be parameterised so services specialise; "non-dispatching" means it never
   selects the mathematics. The missing-input path skips both the body and the post-rule
@@ -519,8 +528,12 @@ proposal. Citations are as of `545425a2`.
       interface names containing underscores (`nodes:*` tests)
 - [x] `@define_message_update_rule` / `@define_marginal_update_rule` / `@define_average_energy`
       — `rules:spike`, `rules:specs`, `rules:malformed`
-- [ ] `RuleSpec`/`NodeSpec` registry, per-module const + discovery (never `push!` into a
-      shared global — precompilation hazard, see `PLAN.md`)
+- [x] `RuleSpec`/`NodeSpec` registry, per-module const + discovery (never `push!` into a
+      shared global — precompilation hazard, see `PLAN.md`) — `__message_passing_registry__`
+      is a `const` created in the defining module by `@define_registry`, and `registries()`
+      discovers them across loaded modules (`registry.jl`); `registry:in-process`,
+      `registry:lifecycle`. *(Implemented in Phase 3; the box was left unticked until the
+      post-Phase-4 audit.)*
 - [x] dependency language with the four selectors + static-arity enforcement — plus custom
       selectors, consumed and scored declared separately (#9), and definition-time checks
       of targets, groups, joint order and partition coverage (`dependencies:*`)
@@ -539,8 +552,8 @@ proposal. Citations are as of `545425a2`.
       `@call_average_energy` and their `@which_*` counterparts (+ function forms, all named after
       the definition macros they mirror), `list_rules(node[, edge]; algorithm)` (renamed from
       `rules`, per the naming rule), rule source on display, `rule_coverage`, the coverage matrix,
-      `text/plain` and `text/html` display, and a visualisation entry point that fails with
-      a "load X to enable" hint rather than a `MethodError`
+      `text/plain` and `text/html` display, and a visualisation entry point, `visualize_spec`,
+      which with no backend loaded is a `MethodError` carrying a "load X to enable" hint
 - [x] CI assertion: `ExponentialFamily` absent from the dependency closure — `quality:closure`,
       checked on the resolved graph *and* on what a fresh process loads
 - [x] **resolve open items #3, #9, #10, #11, #12** — signed off 2026-09-22, see the entry
@@ -602,22 +615,41 @@ it to surface rules that were already wrong.
 
 ---
 
-## Phase 4.5 — Engine integration slice
+## Phase 4.5 — Engine design and first cut
 
-**Goal:** prove the rule/engine *interface* before porting hundreds of rules against it.
+**Goal:** the first cut of the real v7 engine, written directly in `src/` and built for four
+slice cases, so that the rule/engine *interface* is proven against the engine that will ship
+before hundreds of rules are ported against it.
 
 Rule kernels and test utilities can be developed without an engine. That does not
 establish that their interface with the engine is correct — **this is the single largest
 planning risk**, and the cheapest insurance is a small end-to-end proof first.
 
-**Status: not started, and not yet planned.** It wants its own planning session before any
-code. Everything that session needs is below or linked from here.
+**Restructured on 2026-09-23** (`DISCUSSION.md` §3.18). An earlier version of this phase
+asked whether the slice should be a bridge that lets v6's `MessageMapping` call base-package
+rules. It is not: most of the slice runs through the code Phase 7 was to demolish — the
+mixtures' `activate!`/`ManyOf`/`reverse` wiring and the delta layouts' own rule path — and
+v6 and v7 cannot share a process, so the free-energy comparison is fixture-based either way.
+Decided instead:
 
-### Entry brief — what is already decided and must be honoured
+- **Phase 4.5 absorbs the start of Phase 7.** One engine design session, then the real
+  engine for the slice's nodes. Phase 7 becomes *complete the engine*.
+- **v6 is a fixture source only.** Fixtures are recorded from `compat/v6-comparison`
+  **before anything is deleted**. The v6 engine is deleted when the new one lands; v6 rules
+  and their tests are deleted per directory as Phase 5 ports them. `src/` never holds two
+  engines, and the suite shrinks rather than going red.
+- **ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`** — `[sources]` on
+  1.11+, developed at test time on 1.10, as TestUtils does. `ci.yml`, `make test` and
+  `make docs` gain the develop step.
+- **Downstream breakage is accepted until the release.** Only a small internal group uses the
+  branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
-These are contracts the base package already makes; the engine side of Phase 4.5 has to
-implement them, not revisit them. Decisions are in `PLAN.md` § Open items, reasons in
-`DISCUSSION.md` §3.16–3.17.
+**Status: not started. Next is the design session**, before any code.
+
+### Contracts already made — the engine implements them, it does not revisit them
+
+Decisions are in `PLAN.md` § Open items, reasons in `DISCUSSION.md` §3.16–3.17. Each was
+re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
 
 - **Rules see no envelope.** `Message`/`Marginal` stay in the engine; the engine unwraps
   them and calls a rule with raw distributions in `RuleArgs` (`args.m`, `args.q`), sorted
@@ -630,13 +662,15 @@ implement them, not revisit them. Decisions are in `PLAN.md` § Open items, reas
   the annotations that arrived with each input, keyed like the inputs, plus the sink the rule
   writes. v6's `AnnotationDict` and its post-rule processors map onto `out`.
 - **The context carries the node.** `RuleContext(node, product, linalg, rng)`, built per
-  node/edge (most likely held by `MessageMapping`); `product` replaces the throwaway
-  `randomvar` in v6's `rules/mixture/switch.jl`; `linalg` stays unstable (#13 parked).
+  node/edge; `product` replaces the throwaway `randomvar` in v6's `rules/mixture/switch.jl:11`;
+  `linalg` stays unstable (#13 parked).
 - **Missing inputs as v6**: no rule call, no post-rule processors, result `missing`
-  (`execute_rule` docstring). Needs an engine test.
+  (`execute_rule` docstring, `rulespec.jl:113-116`).
 - **Resolution before execution.** `find_message_rule`/`find_marginal_rule`/
   `find_average_energy` return a `RuleSpec` or `RuleNotFound` and never throw; the engine's
-  fallback sits on the `RuleNotFound` branch; `execute_rule` never catches.
+  fallback sits on the `RuleNotFound` branch; `execute_rule(spec, output, algorithm, ctx,
+  args, ann, target)` — seven arguments, the target included (`rulespec.jl:107`) — never
+  catches.
 - **Dependencies are declared per algorithm** (`DependenciesSpec`, `dependencies_spec(node,
   algorithm)`); `nothing` means the engine's default scheme (own cluster → messages minus
   self, other clusters → marginals). Consumed inputs and the free-energy partition are
@@ -645,45 +679,74 @@ implement them, not revisit them. Decisions are in `PLAN.md` § Open items, reas
 - **Buffers are engine internals** (#10): reuse is unspecified; outsiders copy; getters copy
   by default; `InputArgumentsAnnotations` deep-copies.
 
-### Where v6 does these things today (starting points)
+### What v6 does, and where — to replace, and to record fixtures from
 
-- rule call and annotation processors: `MessageMapping`, `src/message.jl:570-738` (call at
-  `:657`); marginal rules: `MarginalMapping`, `src/marginal.jl:251-322`;
+All re-verified in the post-Phase-4 audit.
+
+- rule call: `MessageMapping`, `src/message.jl:570-738`. The callable is at `:657`; it builds
+  `ruleargs` at `:692-703` and calls `rule(ruleargs...)` at `:704`; the fallback runs on a
+  `RuleMethodError` at `:707-712` (`NodeFunctionRuleFallback`, `src/rules/fallbacks.jl:60-73`);
+  pre-/post-rule annotation processors at `:678-682`/`:722-728`, the missing-input
+  short-circuit at `:685-690`. `DeferredMessage` computes lazily and caches, `:447-494`;
+- marginal rules: `MarginalMapping`, `src/marginal.jl:251-322`;
 - average energy and free energy per node: `src/score/node.jl` (`score` at `:7`, `:26`, `:80`);
 - dependency wiring: `activate!` in `src/nodes/dependencies.jl:59` and
   `src/nodes/nodes.jl:327`; clusters in `src/nodes/clusters.jl:129`;
-- the mixture `reverse(...)` to pin first (#6): `normal_mixture.jl:176,183`,
-  `gamma_mixture.jl:166,173`.
+- the mixture `reverse(...)` (#6): `normal_mixture.jl:176,183`, `gamma_mixture.jl:166,173`,
+  inside `collect_latest_marginals`. It orders only the `combineLatest` trigger, so what is
+  to be recorded is **emission order**, not values.
 
-### Questions the planning session has to answer
+**Gaps in today's tests that the fixtures and the new engine's tests must close.** The mixture
+`reverse` order is not pinned (`normal_mixture_tests.jl:357-397` checks names only). The
+missing-input path is pinned only under `LogScaleAnnotations`, and without asserting that the
+rule was not called (`test/annotations/logscale_tests.jl:142-220`). Retained-message
+immutability is not pinned at all, and v6's `Message` holds an `AnnotationDict` that can be
+mutated in place.
 
-1. **Where the slice lives.** A bridge inside today's `src/` that lets `MessageMapping` call
-   base-package rules alongside v6 ones, or a small throwaway engine under `lib/` or `test/`
-   that exists only to prove the interface. The first touches the engine early; the second
-   proves less about the real one.
-2. **How ReactiveMP depends on `MessagePassingRulesBase`** — the same develop-at-test-time
-   pattern as TestUtils, or deferred until the slice is proven.
-3. **Where the v6 free-energy fixtures come from.** Engine comparisons cannot run v6 and v7 in
-   one process (same package), so they need fixtures from full v6 inference runs — most
-   likely an RxInfer version compatible with ReactiveMP 6.5.0 added to
-   `compat/v6-comparison`, recording free-energy trajectories with
-   `save_migration_fixtures`.
-4. **Which four rules** — one each for BP, structured VMP, a mixture (variadic group) and a
-   delta node — and whether the delta one needs `static_inputs = :fold` in the slice.
-5. **How annotations and log scales are compared** against v6: `Message ==` ignores
-   annotations, so the check must be explicit (`PLAN.md` § Verification, annotation gate).
+### Step 0 — record the v6 fixtures, before anything is deleted
+
+`compat/v6-comparison` gains an RxInfer version compatible with ReactiveMP 6.5.0, and
+records, for each slice model: free-energy trajectories, posteriors, per-message log scales,
+emission order (the mixture `reverse` order included) and the missing-input behaviour.
+`MigrationRecord` is rule-shaped, so this needs a trajectory-shaped fixture alongside it.
+
+### The design session's agenda
+
+Carried over from the earlier planning questions:
+1. **Which four slice cases** — one each for BP, structured VMP, a mixture (variadic group)
+   and a delta node, and whether the delta one needs `static_inputs = :fold` in the first cut.
+   Proposed: `NormalMeanVariance` BP (its rules are already ported in `check.jl`),
+   `NormalMeanPrecision` VMP, the `NormalMixture((:m, k))` canary, and delta + `Unscented`
+   without `:fold`, static gating as a stretch (Phase 0 has fixtures for it).
+2. **The fixture format and source** — Step 0 above; proposed as stated there.
+3. **How annotations and log scales are compared**: `Message ==` ignores annotations, so the
+   check must be explicit (`PLAN.md` § Verification, annotation gate). Proposed: per-message
+   log scales recorded through callbacks and compared with a tolerance.
+
+Moved up from Phase 7:
+4. dependency-to-stream wiring for groups (`__collect_latest_updates` must collapse
+   consecutive same-name interfaces), and with it the mixture `activate!` demolition;
+5. the `Message`/`DeferredMessage` envelope (immutable `Message`, annotations as a type
+   parameter);
+6. preserving edge order when building clusters — GraphPPL's factorisation indexes the
+   original flat list, the single biggest correctness trap — and plumbing `EdgeLabel.index`
+   through RxInfer rather than re-deriving group indices from neighbour position (#7);
+7. buffer-reuse eligibility for the engine's own retainers (#10);
+8. where `RuleContext` is built and held, and where the fallback lives.
 
 ### Exit criteria
-- [ ] a working end-to-end inference over a handful of hand-ported rules covering: ordinary
-      belief propagation, structured VMP, a mixture (variadic group), and a delta node
-- [ ] free energy computed and compared against v6 on the same model, from recorded v6
-      fixtures
-- [ ] annotations and log scales preserved (see the annotation gate in `PLAN.md`)
+- [ ] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted
+- [ ] a working end-to-end inference in the new engine over the slice: ordinary belief
+      propagation, structured VMP, a mixture (variadic group), and a delta node
+- [ ] free energy agrees with the recorded v6 trajectories on the same models
+- [ ] annotations and log scales agree with the recorded ones, compared explicitly (see the
+      annotation gate in `PLAN.md`)
 - [ ] a retained-value test: hold a message across several updates and confirm it is not
       mutated underneath you
 - [ ] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
-- [ ] the mixture `reverse(...)` scheduling pinned by a regression test before any mixture
-      wiring is touched (#6)
+- [ ] mixture emission order agrees with the recorded v6 order (#6)
+- [ ] edge order and group indices preserved through integration (#7)
+- [ ] the v6 engine deleted; ReactiveMP depends on `MessagePassingRulesBase`
 
 Do not start Phase 5 until this passes.
 
@@ -696,7 +759,9 @@ Do not start Phase 5 until this passes.
 **Exit criteria**
 - [ ] JuliaSyntax-based migration tool, run with ReactiveMP v6 loaded as an oracle for
       `interfaces(fform)` (do **not** regex-guess on `_`)
-- [ ] migrated per rule directory, diffs reviewed per directory
+- [ ] migrated per rule directory, diffs reviewed per directory; each v6 directory and its
+      tests are deleted in the same commit that ports it (v6 fixtures are recorded first,
+      see Phase 4.5 Step 0)
 - [ ] canary passing: `NormalMixture((:m, k))` — indexed target + group + `where {N}` +
       aligned dependency
 - [ ] **`MIGRATION.md` written *during* this phase, not after** — the mechanical rules are
@@ -746,31 +811,21 @@ Do not start Phase 5 until this passes.
 - [ ] surviving impure algorithms (BIFM and stateful projection algorithms) carry the
       `pure = false` marker under the agreed purity/RNG contract
 
-## Phase 7 — ReactiveMP engine rewrite
+## Phase 7 — Complete the engine
 
-**Under-planned. Wants its own design session before it starts.** `PLAN.md` treats this as
-one line item; it is not.
+Phase 4.5 now builds the engine's first cut and settles its design (restructured
+2026-09-23, `DISCUSSION.md` §3.18); what remains here is completing it once Phases 5–6 have
+ported the rules. The items that moved to Phase 4.5 are group stream wiring, the `Message`
+envelope, edge order, `EdgeLabel.index` (#7) and the mixture `reverse` (#6).
 
-Known scope, incomplete:
-- [ ] mixture `activate!` demolition via variadic groups (~70–85% deletable)
-- [ ] dependency-to-stream wiring for groups (`__collect_latest_updates` must collapse
-      consecutive same-name interfaces)
-- [ ] `Message`/`DeferredMessage` envelope changes (immutable `Message`, annotations as a
-      type parameter)
+Known scope:
+- [ ] every node supported, as Phases 5–6 port their rules — including the remaining
+      mixture `activate!` demolition via variadic groups (~70–85% deletable)
 - [ ] `EqualityChain` `BitVector` → `Vector{Bool}`
 - [ ] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
-- [ ] preserve edge order when building clusters (GraphPPL factorisation indexes the
-      original flat list — the single biggest correctness trap)
-- [ ] plumb `EdgeLabel.index` through RxInfer instead of re-deriving group indices from
-      neighbor position (open item #7)
-- [ ] pin the unexplained `reverse(...)` in mixture marginal wiring with a regression test
-      *before* touching it
-
+- [ ] RxInfer plumbing for the new engine
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
-      not just numerical rule equality
-
-**Closes open items:** #6 (mixture regression pinned before rewriting) and #7 (edge indices
-preserved through integration).
+      not just numerical rule equality — for every ported node, against recorded v6 fixtures
 
 ---
 
@@ -799,7 +854,7 @@ Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #3, #8,
 #11, #12 and #14 are resolved (#3 and #9–#12 at the Phase 3 sign-off), and #4 is **deferred by
 decision** (Phase 0; reopened only by a concrete ruleset use case). #13 is **parked** by the
 user and holds back only the `linalg` context service. #6 and #7 are engine integration
-requirements. #2 remains deferred unless needed. #5
+requirements, closed in Phase 4.5. #2 remains deferred unless needed. #5
 (Reactant/StableCholesky) belongs to a separate effort and does not block this rewrite.
 
 ## Structural note
@@ -807,3 +862,5 @@ requirements. #2 remains deferred unless needed. #5
 Rule kernels and test utilities can be developed independently of the engine. However,
 **Phase 5 bulk migration is gated on Phase 4.5**, and release is gated on full engine and
 downstream integration. Engine independence does not establish interface correctness.
+Since the restructuring (`DISCUSSION.md` §3.18) the engine Phase 4.5 builds is the real one,
+not a proof alongside v6, so Phase 5 ports rules straight into it and Phase 7 completes it.

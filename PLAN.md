@@ -67,7 +67,8 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   deleted separately. It also absorbs `RequireMessage`/`RequireMarginal`/
   `RequireEverythingFunctionalDependencies` (see Dependencies).
 - **`context` (`ctx`) is infrastructure, never dispatched on**: a reference to the node
-  itself (`ctx.node`), linear-algebra strategy (replacing 48 global `cholinv` calls;
+  itself (`ctx.node`), linear-algebra strategy (replacing the global `cholinv` calls — 48 lines in `src/`
+  mention it; counting every FastCholesky function outside `approximations/` gives 46;
   `StableCholesky.jl` supplies strategies + workspace), RNG, output buffers, engine
   services. Explicit argument, never shared across tasks.
 
@@ -136,9 +137,9 @@ NamedTuple-backed container is type-stable and allocation-free.
   Members are listed in interface-declaration order (#9). Single keys sit in a NamedTuple
   in **canonical sorted order**, applied by the macro to the dispatch signature and by a
   `@generated` constructor to the arguments, so the key order is fixed at compile time and
-  needs no node lookup at macro expansion. Phase 3 step 2 must measure this on the 1.10
-  floor before anything is built on it; the fallback, if constant propagation does not
-  hold, is the explicit `args.q[Val((:y, :x))]` spelling, which goes back to the user first.
+  needs no node lookup at macro expansion. Measured at Phase 3 step 2 on 1.10.12 and 1.13:
+  `@inferred` and allocation-free, so the explicit `args.q[Val((:y, :x))]` fallback spelling
+  was not needed (`DISCUSSION.md` §3.16).
 - `m[:inputs...]` is a variadic group, replacing `ManyOf{N,T}` plus its `where {N}`.
   Verified to parse.
 - The outbound target is `towards = :out`, or `towards = (:m, k)` for a member of a group.
@@ -611,15 +612,17 @@ ReactiveMP.jl/
 
 **One cost of the 1.10 floor, found while building this:** `[sources]`, the tidy way for a
 `Project.toml` to point at a sibling directory, requires Julia 1.11. On 1.10 an
-inter-package dependency inside `lib/` is listed in `[deps]` and the sibling is
-`Pkg.develop`ed into the environment **at test time** (`make test-testutils`, `LibTests.yml`);
+inter-package dependency inside `lib/` is listed in `[deps]` — and in `[sources]`, which
+1.11+ honours and 1.10 ignores — and the sibling is `Pkg.develop`ed into the environment
+**at test time** (`make test-testutils`, `LibTests.yml`);
 no Manifest under `lib/` is committed, so each Julia version resolves for itself. (An earlier
 version of this paragraph said to commit a dev-link Manifest; one resolved on 1.10 cannot
 serve 1.11 and 1.12, so Phase 4 changed it.) Documented in `lib/README.md`. It is the one
 concrete thing the floor decision costs.
 
-The reason is the open items. Boundaries are still moving — #9 through #13 are all API
-decisions that have not landed — and a change that spans two packages is one commit in a
+The reason was the open items. Boundaries were still moving when this was decided — #9
+through #13 were API decisions that had not landed (#9–#12 have since been resolved at the
+Phase 3 sign-off, and #13 is parked) — and a change that spans two packages is one commit in a
 monorepo and two pull requests plus a dev-pin across repositories. Paying the split cost
 once, at a known gate, beats paying a coordination cost on every commit until then.
 
@@ -629,8 +632,13 @@ ReactiveMP, and they are differently named, so `ReactiveMP@6.5.0` and
 `ReactiveMP.rule(...)` and `message_passing_rule(...)` in one process, and `MIGRATION.md`'s
 before/after doctests can both execute. What cannot coexist is ReactiveMP v7 against v6 —
 same package name. **So Phase 4.5 and Phase 7 engine comparisons must run against values
-recorded by the Phase 4 checker, not a live side-by-side**, which is why that checker must
-capture results rather than only assert equality.
+recorded from v6, not a live side-by-side**, which is why that checker must
+capture results rather than only assert equality. The engine itself is rewritten in place
+in `src/`, with no bridge letting v6 call the new rules; the v6 engine and rules are
+deleted as they are replaced, after their fixtures are recorded (`DISCUSSION.md` §3.18).
+ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`, wired the same way.
+**Downstream breakage before the release is accepted**: only a small internal group uses the
+branch and checks it locally, and the coordinated downstream CI stays a Phase 8 gate.
 
 ### Approximations are utilities, not algorithms
 
@@ -800,8 +808,10 @@ to the table above follow: `DomainSets` does **not** move to the approximations 
 
 Follow `PHASES.md` for the authoritative order and acceptance criteria: preparation and
 baselines → the throwaway dispatch/dependency spike → external feedback and tooling → base
-and test utilities → **Phase 4.5 engine integration before bulk migration** → standard
-rules → approximations and node packages → full engine integration → coordinated release.
+and test utilities → **Phase 4.5: the engine design session and the first cut of the real v7
+engine, before bulk migration** → standard rules, ported straight into it → approximations
+and node packages → completing the engine → coordinated release. There is no bridge into
+the v6 engine; v6 is a source of recorded fixtures only (`DISCUSSION.md` §3.18).
 The tooling work retains TestItemRunner and adds name/tag filtering, Runic and Aqua checks.
 
 This work spans multiple sessions and wants external feedback. Carry it on a long-lived
@@ -873,6 +883,8 @@ The dispatch result, ownership contracts and early engine integration are separa
    `combineLatest` gates on the *set* of streams rather than their order. So the regression to
    pin is **scheduling, not values** — cheaper than this entry originally implied, but still
    pin it before touching, because bit-identical scheduling is what Phase 4.5 compares.
+   Since the v6 wiring is replaced rather than bridged, "pinning" means recording v6's
+   emission order as a fixture (Phase 4.5 Step 0) that the new engine must reproduce.
 7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
 8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as

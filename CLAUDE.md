@@ -81,10 +81,12 @@ Entries of the same kind are OR'ed; different kinds are AND'ed.
 Tests are `@testitem` blocks (414 of them across ~231 files), each self-contained and
 independently runnable. Naming convention is `"rules:<Node>:<edge>"` for rule tests.
 
-**Every test item carries a tag.** The taxonomy is `:rules` (194), `:nodes` (83), `:engine`
-(130 — everything that is not a rule or node test), plus `:alloc` on the six items that
+**Every test item carries a tag.** The taxonomy is `:rules` (196), `:nodes` (84), `:engine`
+(133 — everything that is not a rule or node test), plus `:alloc` on the six items that
 assert allocation counts and `:quality` on the inventory gate. `:slow` exists and is
-**currently unused**: nothing has been measured as slow yet, so nothing claims to be. When
+**unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
+The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
+`:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`, and `LibTests.yml` runs it. When
 items are tagged `:slow` they disappear from `make test` and stay in `make test-all` and CI.
 
 The fast default must never become a coverage reduction — CI sets `TEST_ALL=true`, so a
@@ -117,7 +119,9 @@ imported by the caller.
 - `lib/` holds the new packages. `MessagePassingRulesBase` and `MessagePassingRulesTestUtils`
   have their own suites (`make test-base`, `make test-testutils`, same `test_args` syntax),
   run by `LibTests.yml`; the other two are still empty stubs. TestUtils depends on the
-  unregistered base, which is `Pkg.develop`ed at test time; no Manifest under `lib/` is committed.
+  unregistered base through `[deps]` and `[sources]` (honoured on 1.11+); on 1.10 it is
+  `Pkg.develop`ed at test time. No Manifest under `lib/` is committed — the local ones are
+  gitignored.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 
@@ -138,6 +142,11 @@ and read whichever exist before proposing changes:
 
 **If none of these files exist, the repository has no unfinished business** and you can
 treat `main` as the whole story.
+
+The current work is the rule/node rewrite. From Phase 4.5 on, the v6 engine in `src/` is
+**replaced in place**, not bridged: v6 code and tests are deleted as they are replaced, after
+their behaviour has been recorded as fixtures in `compat/v6-comparison`. Breaking downstream
+packages before the release is accepted.
 
 When work is in progress, update `PHASES.md` **in the same commit as the change it
 describes**. Never mark something done as a separate act — status claimed without a diff

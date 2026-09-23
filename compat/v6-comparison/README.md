@@ -49,11 +49,18 @@ As Phase 3 onwards creates them, add them by relative path from the repository r
 julia> using Pkg
 julia> Pkg.activate("compat/v6-comparison")
 julia> Pkg.develop(path = "lib/MessagePassingRulesBase")
-julia> Pkg.develop(path = "lib/StandardMessagePassingRules")
+julia> Pkg.develop(path = "lib/StandardMessagePassingRules")   # once Phase 5 creates it
 ```
 
 `Pkg.develop` resolves its path against the working directory, not the activated project,
 so run this from the repository root.
+
+## Engine fixtures (Phase 4.5)
+
+Phase 4.5 replaces the v6 engine rather than bridging to it, so before any v6 code is deleted
+this environment also records engine-level fixtures from full v6 runs — free-energy
+trajectories, posteriors, log scales and emission order — through an RxInfer version
+compatible with ReactiveMP 6.5.0. See `PHASES.md` § Phase 4.5, Step 0.
 
 ## The standing constraint
 

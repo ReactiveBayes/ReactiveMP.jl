@@ -1,8 +1,9 @@
 # `lib/` — the new message-passing rule packages
 
-Scaffolding for the rule/node rewrite. **Nothing here is implemented yet**; each package is
-a `Project.toml` plus an empty module, created in Phase P so that Phase 3 onwards starts
-with a working layout rather than inventing one under time pressure.
+The packages of the rule/node rewrite, created as stubs in Phase P. `MessagePassingRulesBase`
+(Phase 3) and `MessagePassingRulesTestUtils` (Phase 4) are implemented, each with its own
+test suite; `StandardMessagePassingRules` and `MessagePassingRulesApproximations` are still a
+`Project.toml` plus an empty module.
 
 Read `PLAN.md` for the design, `PHASES.md` for what is next, and `INVENTORY.md` for where
 each of the 231 entities in ReactiveMP is destined to land.
@@ -32,8 +33,9 @@ destination as the placeholder token `models`.
 
 These packages are unregistered, and `[sources]` — the tidy way to point a `Project.toml` at
 a sibling directory — requires Julia 1.11, while the floor is 1.10. So a package that depends
-on another one here lists it in `[deps]` like any other dependency, and the sibling is
-**developed into its environment at test time**:
+on another one here lists it in `[deps]` like any other dependency — and in `[sources]`,
+which 1.11+ honours and 1.10 ignores — and the sibling is **developed into its environment
+at test time**:
 
 ```julia
 julia> using Pkg

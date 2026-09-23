@@ -778,8 +778,8 @@ call-site shapes, and include a negative control that must allocate.
 
 #### Three findings that change the design
 
-**1. The body slots need the target threaded through.** `PLAN.md` lists six slots
-`(output, algo, ctx, args, ann, node)` and no target — but an indexed target
+**1. The body slots need the target threaded through.** `PLAN.md` listed six slots
+`(output, algo, ctx, args, ann, node)` *(five since §3.16)* and no target — but an indexed target
 `towards = (:m, k)` has to bind `k`, which is a runtime value the lowered body cannot close
 over. Resolution: thread `target` to every body and let the macro emit `k = index(target)`
 as an ordinary binding when the declaration names an index. It stays out of the user-facing
@@ -859,7 +859,7 @@ Both hard cases were demonstrated as standalone calls, with no graph and no Rock
 ```
 product : (left, right) -> (dist, logscale::Real)
 nodefn  : (ctx, target) -> a callable of the FREE arguments only
-linalg  : (matrix)      -> a factorisation object (replaces the 48 global cholinv calls)
+linalg  : (matrix)      -> a factorisation object (replaces the global cholinv calls, 48 lines in src/)
 rng     : ()            -> an AbstractRNG owned by the caller
 ```
 
@@ -909,7 +909,8 @@ reasons where the user changed or rejected the proposal:
     was never needed; the body slots shrink to `(output, algo, ctx, args, ann)`. It follows
     that `nodefn` is not a service at all: `getnodefn(ctx.node, …)`.
   The remaining services are `node`, `product`, `linalg`, `rng`. The missing-input path
-  (skip body and post-rule processors, as v6) is still only proposed.
+  (skip body and post-rule processors, as v6) was left proposed at the sign-off, and
+  confirmed when Phase 3 closed (the `execute_rule` docstring).
 - **#13 parked (user)** — "I will sleep over it". The brief's `approx_cholinv`/
   `approx_cholsqrt` protocol owned by the approximations package is neither accepted nor
   rejected. Until it is settled, the `linalg` context service is not frozen.
@@ -1051,6 +1052,50 @@ checker. The findings worth keeping:
   a case covering the specific one leaves the broad one reported — the property PLAN required
   so that a fallback cannot conceal an untested specialisation.
 
+### 3.18 Phase 4.5 restructured — no bridge, the real engine
+
+Recorded 2026-09-23, after the post-Phase-4 audit. Phase 4.5 had been framed as an
+*integration slice*, and its first planning question was where the slice lives: either a
+bridge inside today's `src/` letting v6's `MessageMapping` call base-package rules
+alongside v6 ones, or a throwaway engine that proves the interface and nothing else. The
+bridge was the assistant's recommendation. **The user rejected both**: break properly, and
+write the real code.
+
+Looking closely, the bridge buys less than it appears to:
+
+- Of the four slice cases, the mixture and the delta node run through exactly the code
+  Phase 7 was to demolish — the mixtures' custom `activate!` with `ManyOf` and the
+  `reverse(...)` trigger wiring (`normal_mixture.jl:176,183`), and the delta layouts, which
+  reach rules through their own path (`delta.jl:301-348`). Bridging them means writing
+  adapters for code that is being deleted, and proves the new rules against the *old*
+  engine, which is not the question.
+- The one thing a live v6 engine could offer — comparing scheduling and free energy against
+  the real thing — is unavailable anyway: v6 and v7 share a UUID and cannot load in one
+  process (`PLAN.md` § Repository layout). The comparison is fixture-based either way.
+- What the bridge kept was a green `main` suite, and that was not a requirement: the branch
+  is used by a small internal group and verified locally until the release.
+
+Decided:
+
+- **Phase 4.5 absorbs the start of Phase 7.** It opens with the engine design session that
+  Phase 7 lacked, then builds the real v7 engine in `src/` for the slice's nodes. Phase 7
+  shrinks to completing it. Phase 5 ports rules straight into the new engine.
+- **v6 is a fixture source only.** Before anything is deleted, `compat/v6-comparison`
+  records free-energy trajectories, posteriors, log scales and emission order from full v6
+  runs (via an RxInfer compatible with ReactiveMP 6.5.0). The v6 engine is deleted when the
+  new one lands; v6 rule directories and their tests are deleted as Phase 5 ports them.
+  `src/` never holds two engines, and the suite shrinks rather than going red.
+- **ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`**, not a weakdep and
+  an extension: `[sources]` on 1.11+, developed at test time on 1.10, as TestUtils already
+  does. The cost is a develop step in `ci.yml` and the Makefile.
+- **Downstream breakage before the release is accepted.** `IntegrationTest.yml` is not a gate
+  for this branch; the coordinated downstream CI remains the Phase 8 requirement.
+
+The consequence to watch: the design Phase 7 was flagged as missing — group stream wiring,
+the immutable `Message`, edge order in clusters, `EdgeLabel.index`, buffer-reuse
+eligibility — is now due at the *start* of Phase 4.5 rather than after Phase 6. That is
+the point: those are the decisions the rule interface most needs proven against.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1125,6 +1170,10 @@ Claims the assistant made that were **wrong** and should not be revived:
 19. **"Key a joint marginal by an internal `Symbol("y,x")`."** Collision-free, but it
     forms a symbol at run time, which is slow and was never the design. The key is the
     member tuple in the type, `Val((:y, :x))`. See §3.16.
+20. **"Phase 4.5 needs a bridge so v6's engine can call the new rules."** It does not. The
+    slice's hard cases run through engine code that is being deleted, and a live v6
+    comparison is impossible anyway (same UUID), so the bridge would be adapters for dead
+    code. The real engine is written directly, against recorded v6 fixtures. See §3.18.
 
 ---
 
@@ -1212,8 +1261,9 @@ The original discussion left these questions:
 - **`aligned` selector generality (#2)** — everything in-tree is `k ↔ k`. `q[:p][f(k)]`
    extends naturally; deliberately not built until something needs it. (Not `q[:p[f(k)]]`,
    which parses as `(:p)[f(k)]` — indexing a `Symbol`. See §3.14.)
-- **Per-(target, factorisation) group selection (#3)** — assumed per-target. Works for all four
-   in-tree cases because the mixtures pin their factorisation. A one-way door in the syntax.
+- ~~**Per-(target, factorisation) group selection (#3)**~~ — **RESOLVED at the Phase 3
+   sign-off: per target** (§3.16). Selection that genuinely varies with factorisation is a
+   distinct algorithm, not a syntax axis.
 - **The ruleset axis (#4)** — scoped rule tables (`Overlay(mine, standard)`). Introduced by the
    assistant, never requested. Its piracy argument is now dead (see §5); `algorithm` may
    already cover the "controllable dispatch" goal. **DEFERRED in Phase 0**, and the
@@ -1221,7 +1271,8 @@ The original discussion left these questions:
 - **The engine step is under-planned.** The rule layer is designed in detail;
    "rewrite ReactiveMP against the new base" hides the mixture `activate!` work, the
    dependency-to-stream wiring for variadic groups, and the `Message`/`DeferredMessage`
-   envelope changes. Wants its own session.
+   envelope changes. Wants its own session. *(It gets one: since the restructuring in §3.18
+   the engine design session opens Phase 4.5.)*
 
 Review added #9–#13 (all but #13 settled at the Phase 3 sign-off, §3.16): belief/entropy separation, buffer ownership, capability metadata,
 context services and the numerical protocol. These block API freeze, not preparation or
@@ -1245,9 +1296,10 @@ In parallel with waiting: migrate ReactiveMP's tooling (Runic, Aqua, and name/ta
 in `runtests.jl` — **not** a runner swap). It is independent, low-risk, and compounds —
 every later session runs faster.
 
-Then base package → test utils with a bounded numerical oracle → **Phase 4.5 engine
-integration slice** → bulk standard-rule migration → approximations and node packages →
-full engine integration → coordinated release. Start strict downstream CI as soon as
+Then base package → test utils with a bounded numerical oracle → **Phase 4.5: the engine
+design session and the first cut of the real v7 engine** (§3.18) → bulk standard-rule
+migration into it → approximations and node packages → completing the engine → coordinated
+release. Start strict downstream CI as soon as
 compatible development revisions exist, rather than waiting until release.
 
 Rule kernels and test utilities can be developed independently of the engine, but that
