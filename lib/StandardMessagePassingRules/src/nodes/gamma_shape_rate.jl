@@ -2,7 +2,6 @@
     node = GammaShapeRate,
     type = Stochastic,
     interfaces = [:out, (:α, aliases = [:a, :shape]), (:β, aliases = [:b, :rate])],
-    algorithm = BP,
 )
 
 gamma_shape_rate_energy(q_out, q_α, q_β) =

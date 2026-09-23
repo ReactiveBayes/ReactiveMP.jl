@@ -1,6 +1,6 @@
 @testmodule VerifiedRules begin
     using MessagePassingRulesBase, Distributions, BayesBase
-    using MessagePassingRulesBase: BP, VMP, annotate!
+    using MessagePassingRulesBase: annotate!
 
     struct Gauss
         μ::Float64
@@ -15,7 +15,7 @@
         body = (args, ann) -> (annotate!(ann, :logscale, 0.0); Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2))),
     )
     @define_message_update_rule(
-        node = Gauss, target = :μ, algorithm = VMP, args = (q[:out]::Normal, q[:σ]::PointMass),
+        node = Gauss, target = :μ, args = (q[:out]::Normal, q[:σ]::PointMass),
         body = (args) -> Normal(mean(args.q[:out]), mean(args.q[:σ])),
     )
 
@@ -58,21 +58,20 @@
     # A discrete input, enumerated.
     @define_factor_node(node = Bernoulli, type = Stochastic, interfaces = [:out, :p])
     @define_message_update_rule(
-        node = Bernoulli, target = :p, algorithm = VMP, args = (q[:out]::Bernoulli,),
+        node = Bernoulli, target = :p, args = (q[:out]::Bernoulli,),
         body = (args) -> Beta(1 + mean(args.q[:out]), 2 - mean(args.q[:out])),
     )
 end
 
 @testitem "verification:correct-rules" tags = [:testutils] setup = [VerifiedRules, Recording] begin
     using MessagePassingRulesTestUtils, Distributions, BayesBase
-    using MessagePassingRulesBase: VMP
     V = VerifiedRules
     set = Recording.recorded() do
         @verify_message_update_rule(node = V.Gauss, target = :out, m = (μ = PointMass(1.0), σ = PointMass(2.0)))
         @verify_message_update_rule(node = V.Gauss, target = :μ, m = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
-        @verify_message_update_rule(node = V.Gauss, target = :μ, algorithm = VMP(), q = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
+        @verify_message_update_rule(node = V.Gauss, target = :μ, q = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
         @verify_message_update_rule(node = V.SumOfTwo, target = :out, m = (a = Normal(1.0, 0.5), b = Normal(-2.0, 0.8)))
-        @verify_message_update_rule(node = Bernoulli, target = :p, algorithm = VMP(), q = (out = Bernoulli(0.3),))
+        @verify_message_update_rule(node = Bernoulli, target = :p, q = (out = Bernoulli(0.3),))
     end
     @test isempty(Recording.failures(set))
     # Shape for all five, scale for the three belief-propagation rules that annotate one.

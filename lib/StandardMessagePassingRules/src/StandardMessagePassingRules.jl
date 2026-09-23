@@ -2,22 +2,24 @@
     StandardMessagePassingRules
 
 The message passing rules for the standard nodes: distributions, arithmetic, logic and the
-mixtures, written with `MessagePassingRulesBase`. A distribution node runs under `BP` by
-default, and its rules combine messages and marginals as v6's did: the engine's default
-dependency scheme gives each rule the messages inside its own cluster and the marginals of
-the other clusters. The mixtures run under `VMP`, with declared dependencies.
+mixtures, written with `MessagePassingRulesBase`. Every distribution node runs under
+`DefaultAlgorithm`, and its rules name no algorithm: whether a rule computes a belief
+propagation, variational or structured update follows from the factorisation, through the
+engine's default dependency scheme, which gives each rule the messages inside its own cluster
+and the marginals of the other clusters, as in v6. A node whose rules ignore the
+factorisation declares an algorithm of its own, as [`NormalMixture`](@ref) does.
 """
 module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
-using MessagePassingRulesBase: annotate!, BP, VMP
+using MessagePassingRulesBase: annotate!
 using StatsFuns: log2π
 using SpecialFunctions: loggamma, logfactorial
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny
 using LogExpFunctions: softmax!
 
-export NormalMixture
+export NormalMixture, NormalMixtureVMP
 
 include("helpers.jl")
 

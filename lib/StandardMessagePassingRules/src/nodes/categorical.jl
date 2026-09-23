@@ -1,4 +1,4 @@
-@define_factor_node(node = Categorical, type = Stochastic, interfaces = [:out, :p], algorithm = BP)
+@define_factor_node(node = Categorical, type = Stochastic, interfaces = [:out, :p])
 
 @define_average_energy(
     node = Categorical,

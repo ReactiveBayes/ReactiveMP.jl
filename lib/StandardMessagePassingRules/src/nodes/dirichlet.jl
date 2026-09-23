@@ -1,4 +1,4 @@
-@define_factor_node(node = Dirichlet, type = Stochastic, interfaces = [:out, :a], algorithm = BP)
+@define_factor_node(node = Dirichlet, type = Stochastic, interfaces = [:out, :a])
 
 @define_average_energy(
     node = Dirichlet,

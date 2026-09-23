@@ -2,7 +2,6 @@
     node = NormalMeanPrecision,
     type = Stochastic,
     interfaces = [:out, (:μ, aliases = [:mean]), (:τ, aliases = [:invcov, :precision])],
-    algorithm = BP,
 )
 
 # Also each component's energy inside `NormalMixture`.

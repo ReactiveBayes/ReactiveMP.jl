@@ -799,7 +799,13 @@ it is a rule switcher, or a node's own algorithm where a node needs one. See
       (`gate:routing-macros`). Tests: `algorithm:*`; the tests that used `VMP` as a second
       algorithm now name what they need (`MixtureVMP`, `Standalone`, `Alternative`,
       `FixedPartition`, `ToyDelta`)
-- [ ] the lib packages and scripts follow (`NormalMixtureVMP`; nodes drop `algorithm = BP`)
+- [x] the lib packages and scripts follow: the standard nodes drop `algorithm = BP`;
+      `NormalMixture` runs under its own exported, standalone `NormalMixtureVMP`, documented as
+      always variational whatever the factorisation; TestUtils' test rules drop
+      `algorithm = VMP`, since the verification reference was already chosen from the input
+      kinds, not the algorithm; `check.jl` calls `DefaultAlgorithm()`. Labels naming v6's inference
+      modes (`check.jl`, the fixture ids) describe the mathematics and stay. Every suite and
+      every v6 comparison is unchanged
 - [ ] the documents follow
 
 ### Step 3 — the slice's rules, ported
@@ -810,7 +816,7 @@ in v6, with the input types the selected rule declares. Deduplicated, it is:
 
 | node | message rules | marginal rules | average energies |
 |---|---|---|---|
-| `NormalMeanVariance` | `:out` ×3, `:μ` ×2 (+ BP siblings) | `(:out, :μ)` | singles, `(:out, :μ)` joint |
+| `NormalMeanVariance` | `:out` ×3, `:μ` ×2 (+ their message-input siblings) | `(:out, :μ)` | singles, `(:out, :μ)` joint |
 | `NormalMeanPrecision` | `:out` ×2, `:μ` ×2, `:τ` ×2 | `(:out, :μ)` | singles, `(:out, :μ)` joint |
 | `GammaShapeRate` | `:out` | — | singles |
 | `Categorical` | `:out`, `:p` | — | singles |
@@ -819,8 +825,9 @@ in v6, with the input types the selected rule declares. Deduplicated, it is:
 | `DeltaFn` + `Unscented` | `:out`, `(:in, k)` | `(:in,)` | — (engine) |
 
 Porting conventions:
-- a distribution node runs under `BP`; its rules omit `algorithm`, and they combine `m[…]`
-  and `q[…]` as v6's did, under the default dependency scheme;
+- a distribution node runs under `DefaultAlgorithm` and its rules omit `algorithm`; they
+  combine `m[…]` and `q[…]` as v6's did, and the factorisation decides which apply, through
+  the default dependency scheme *(this read `BP` until the algorithm reconciliation above)*;
 - a rule taking a non-point-mass `q_v` is ported with ReactiveMP.jl#669 **corrected**, and the
   comparison declares it a `:correction`;
 - log scales are kept exactly as v6 has them, gaps included;
@@ -857,7 +864,9 @@ Findings so far:
       to one only approximately into BigFloat fails Distributions' own check
 - [x] `NormalMixture`, the design's canary: the node is now this package's own
       `struct NormalMixture end`, with no `{N}`, since the components are the groups' length.
-      It is declared `interfaces = [:out, :switch, :m..., :p...]` under `VMP` with its
+      It is declared `interfaces = [:out, :switch, :m..., :p...]` under its own standalone
+      algorithm `NormalMixtureVMP` (`VMP` until the algorithm reconciliation), always
+      variational whatever the factorisation, with its
       dependencies, `(:m, k) => (q[:out], q[:switch], q[:p][k])` and so on. Its rules towards
       `(:m, k)`, `(:p, k)`, `:switch` and `:out` and its average energy are univariate for now;
       the multivariate branches wait for `MvNormalMeanPrecision`. The switch rule and the

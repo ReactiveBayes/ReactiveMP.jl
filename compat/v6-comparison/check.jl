@@ -39,12 +39,12 @@ module V7Port
     )
 end
 
-using MessagePassingRulesBase: RuleArgs, Target, BP, AnnotationStore, RuleAnnotations, RuleContext, getannotation
+using MessagePassingRulesBase: RuleArgs, Target, DefaultAlgorithm, AnnotationStore, RuleAnnotations, RuleContext, getannotation
 using MessagePassingRulesBase: message_passing_rule
 
 function v7_message_update(node, edge, m, q)
     store = AnnotationStore()
-    result = message_passing_rule(node, Target(edge), BP(), RuleArgs(m = m, q = q), RuleContext(), RuleAnnotations(out = store))
+    result = message_passing_rule(node, Target(edge), DefaultAlgorithm(), RuleArgs(m = m, q = q), RuleContext(), RuleAnnotations(out = store))
     return result, getannotation(store, :logscale, nothing)
 end
 

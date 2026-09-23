@@ -6,17 +6,27 @@ means `m` and precisions `p`, both groups with one member per component. v6 call
 `NormalMixture{N}`; the number of components is now the groups' length, not a type
 parameter.
 
-Its rules run under `VMP` and require a mean-field factorisation, as in v6. The
-multivariate form, with `MvNormalMeanPrecision` components, arrives when those rules are
-ported.
+Its rules run under its own algorithm, [`NormalMixtureVMP`](@ref), and are always variational:
+they consume marginals only, whatever the factorisation. The multivariate form, with
+`MvNormalMeanPrecision` components, arrives when those rules are ported.
 """
 struct NormalMixture end
+
+"""
+    NormalMixtureVMP()
+
+[`NormalMixture`](@ref)'s own algorithm: variational message passing, **regardless of the
+factorisation**. Its rules take the marginals of `out`, `switch` and the components, and never
+their messages, which is what v6's mixture did too. It stands alone and inherits nothing from
+`DefaultAlgorithm`, which has no mixture rules.
+"""
+struct NormalMixtureVMP <: AbstractAlgorithm end
 
 @define_factor_node(
     node = NormalMixture,
     type = Stochastic,
     interfaces = [:out, :switch, :m..., :p...],
-    algorithm = VMP,
+    algorithm = NormalMixtureVMP,
     dependencies = [
         :out => (q[:switch], q[:m...], q[:p...]),
         :switch => (q[:out], q[:m...], q[:p...]),

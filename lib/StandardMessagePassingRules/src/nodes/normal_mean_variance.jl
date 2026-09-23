@@ -2,7 +2,6 @@
     node = NormalMeanVariance,
     type = Stochastic,
     interfaces = [:out, (:μ, aliases = [:mean]), (:v, aliases = [:var])],
-    algorithm = BP,
 )
 
 @define_average_energy(

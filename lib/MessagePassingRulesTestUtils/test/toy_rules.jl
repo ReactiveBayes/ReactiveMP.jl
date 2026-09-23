@@ -1,6 +1,6 @@
 @testmodule ToyRules begin
     using MessagePassingRulesBase, Distributions, BayesBase
-    using MessagePassingRulesBase: BP, VMP, annotate!
+    using MessagePassingRulesBase: annotate!
 
     struct Gauss end
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :σ])
