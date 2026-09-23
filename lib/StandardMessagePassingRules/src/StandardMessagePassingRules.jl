@@ -33,7 +33,7 @@ include("helpers.jl")
 # The nodes this package declares, for types other packages own.
 const NODES = [
     NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
-    MvNormalMeanCovariance, MvNormalMeanPrecision, MvNormalWeightedMeanPrecision,
+    MvNormalMeanCovariance, MvNormalMeanPrecision, MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision,
 ]
 
 include("nodes/normal_mean_variance.jl")
@@ -110,6 +110,12 @@ include("rules/mv_normal_mean_precision/marginals.jl")
 include("nodes/mv_normal_weighted_mean_precision.jl")
 include("rules/mv_normal_weighted_mean_precision/out.jl")
 include("rules/mv_normal_weighted_mean_precision/marginals.jl")
+
+include("nodes/mv_normal_mean_scale_precision.jl")
+include("rules/mv_normal_mean_scale_precision/out.jl")
+include("rules/mv_normal_mean_scale_precision/mean.jl")
+include("rules/mv_normal_mean_scale_precision/precision.jl")
+include("rules/mv_normal_mean_scale_precision/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")
