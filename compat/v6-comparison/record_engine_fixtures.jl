@@ -121,6 +121,20 @@ scaled_square_plus(c, x, s) = c * x^2 + s
     y ~ NormalMeanVariance(z, 0.1)
 end
 
+# Belief propagation through deterministic nodes under the default scheme (Phase 5, step 4): a
+# tree of the four logic nodes, closed by a Bernoulli factor on its last output.
+@model function logic_bp(p)
+    x ~ Bernoulli(p)
+    y ~ Bernoulli(0.6)
+    z ~ AND(x, y)
+    n ~ NOT(z)
+    w ~ Bernoulli(0.4)
+    o ~ OR(n, w)
+    v ~ Bernoulli(0.5)
+    i ~ IMPLY(o, v)
+    i ~ Bernoulli(0.9)
+end
+
 const Y = [1.2, 0.7, 2.1, 1.6, 0.9, 1.4]
 const Y_MIXTURE = [-2.1, -1.8, 2.2, 1.9, -2.3, 2.0, 1.7, -1.9]
 
@@ -190,6 +204,11 @@ const MODELS = [
             ),
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
         ),
+    ),
+    (
+        "logic_bp",
+        "x ~ Bernoulli(p = 0.3) as data, y ~ Bernoulli(0.6), z ~ AND(x, y), n ~ NOT(z), w ~ Bernoulli(0.4), o ~ OR(n, w), v ~ Bernoulli(0.5), i ~ IMPLY(o, v), and i ~ Bernoulli(0.9); BP through the logic nodes.",
+        () -> record("logic_bp"; description = "", model = logic_bp(), data = (p = 0.3,), iterations = 2, returnvars = (:x, :y, :z, :n, :w, :o, :v, :i)),
     ),
     (
         "delta_unscented_static",

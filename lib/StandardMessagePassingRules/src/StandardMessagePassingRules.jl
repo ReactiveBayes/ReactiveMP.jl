@@ -22,6 +22,7 @@ using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 import DomainSets
 
 export NormalMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
+export AND, OR, NOT, IMPLY
 
 include("helpers.jl")
 
@@ -86,6 +87,12 @@ include("rules/uniform/out.jl")
 
 include("nodes/uninformative.jl")
 include("rules/uninformative/out.jl")
+
+include("nodes/logic.jl")
+include("rules/and/rules.jl")
+include("rules/or/rules.jl")
+include("rules/not/rules.jl")
+include("rules/implication/rules.jl")
 
 include("nodes/normal_mixture.jl")
 include("rules/normal_mixture/m.jl")

@@ -19,10 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 4: logic** — AND, OR, NOT and IMPLY, deterministic nodes under the default
-scheme, ported from `legacy/v6/` as steps 1 and 3 did. Steps 1–3 are done: the slice nodes are
-finished, the engine distributes a `FactorizedCluster`, and the univariate distributions are
-ported. Phase 5's plan is its entry brief (§ Phase 5, `DISCUSSION.md` §3.26).
+**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance, MvNormalMeanPrecision
+(with the correction strategy in `precision.jl`), MvNormalMeanScalePrecision and its matrix
+form, MvNormalWeightedMeanPrecision, then NormalMixture's multivariate branches. Steps 1–4 are
+done. Phase 5's plan is its entry brief (§ Phase 5, `DISCUSSION.md` §3.26).
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -113,7 +113,7 @@ generic ones, and no comments that only narrate.
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
-| 5 | `StandardMessagePassingRules` | entry brief signed off; steps 1–3 done; step 4, logic, next |
+| 5 | `StandardMessagePassingRules` | entry brief signed off; steps 1–4 done; step 5, the multivariate normals, next |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | 8 | Release and downstream coordination | not started |
@@ -1432,7 +1432,14 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
    - **Uniform(0, 1) × Beta** is the Beta, v6's special case, defined for types neither
      package owns: piracy, kept and declared owned in the quality tests as v6 did, and the
      same upstream candidate (ExponentialFamily).
-4. **Logic**: AND, OR, NOT, IMPLY, deterministic nodes under the default scheme.
+4. **Logic** — *done*. AND, OR, NOT and IMPLY, Standard's own exported types: 11 message rules
+   and 3 marginal rules, with v6's tables and a v6 comparison (`compare_standard.jl`: 269
+   checks). AND's and OR's `in2` rules called `in1` in v6; each pair now shares a helper. NOT's
+   v6 marginal rule `(:in)` is not ported: the engine's joint over a deterministic node's one
+   plain input is that variable's marginal, the same value. And the deterministic default
+   scheme, written in Phase 4.5 case (d) and never run end to end, now has a v6 fixture:
+   `logic_bp`, a tree of the four nodes closed by a Bernoulli factor, agrees call by call,
+   posteriors and free energy included (`engine:fixture:logic_bp`).
 5. **Multivariate normals**: MvNormalMeanCovariance, MvNormalMeanPrecision (whose `precision.jl`
    uses the correction strategy), MvNormalMeanScalePrecision and its matrix form,
    MvNormalWeightedMeanPrecision; then NormalMixture's multivariate branches.

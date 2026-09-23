@@ -24,7 +24,11 @@ as_v7(node, v6::V6Oracle.ReactiveMP.GammaShapeLikelihood) = GammaShapeLikelihood
 as_v7(node, v6) = v6
 
 # The nodes whose type is the port's own; v6 had its own of the same name.
-v6_node(node) = node === HalfNormal ? V6Oracle.ReactiveMP.HalfNormal : node === Uninformative ? V6Oracle.ReactiveMP.Uninformative : node
+const V6_NODES = Dict{Any, Any}(
+    HalfNormal => V6Oracle.ReactiveMP.HalfNormal, Uninformative => V6Oracle.ReactiveMP.Uninformative,
+    AND => V6Oracle.ReactiveMP.AND, OR => V6Oracle.ReactiveMP.OR, NOT => V6Oracle.ReactiveMP.NOT, IMPLY => V6Oracle.ReactiveMP.IMPLY,
+)
+v6_node(node) = get(V6_NODES, node, node)
 
 # (id, node, target, inputs, declared?)
 const MESSAGE_CASES = [
@@ -95,6 +99,17 @@ const MESSAGE_CASES = [
     ("Uniform:out:q-m", Uniform, :out, (m = (b = PointMass(2.0),), q = (a = PointMass(1.0),)), false),
     ("Uniform:out:m-q", Uniform, :out, (m = (a = PointMass(1.0),), q = (b = PointMass(2.0),)), false),
     ("Uniform:out:q-q", Uniform, :out, (q = (a = PointMass(1.0), b = PointMass(2.0)),), false),
+    ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
+    ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
+    ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
+    ("OR:out", OR, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
+    ("OR:in1", OR, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
+    ("OR:in2", OR, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
+    ("NOT:out", NOT, :out, (m = (in = Bernoulli(0.3),),), false),
+    ("NOT:in", NOT, :in, (m = (out = Bernoulli(0.6),),), false),
+    ("IMPLY:out", IMPLY, :out, (m = (in1 = Bernoulli(0.4), in2 = Bernoulli(0.7)),), false),
+    ("IMPLY:in1", IMPLY, :in1, (m = (out = Bernoulli(0.2), in2 = Bernoulli(0.5)),), false),
+    ("IMPLY:in2", IMPLY, :in2, (m = (out = Bernoulli(0.3), in1 = Bernoulli(0.4)),), false),
 ]
 
 const CLUSTER_MESSAGE_CASES = [
@@ -128,6 +143,9 @@ const MARGINAL_CASES = [
     ("Gamma:(out,α,θ)", Gamma, (:out, :α, :θ), (m = (out = Gamma(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0)),), false),
     ("GammaInverse:(out,α,θ)", GammaInverse, (:out, :α, :θ), (m = (out = GammaInverse(1.0, 2.0), α = PointMass(1.0), θ = PointMass(2.0)),), false),
     ("Poisson:(out,l)", Poisson, (:out, :l), (m = (out = PointMass(1.0), l = Gamma(2.0, 1.0)),), false),
+    ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
+    ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
+    ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
 ]
 
 const AVERAGE_ENERGY_CASES = [

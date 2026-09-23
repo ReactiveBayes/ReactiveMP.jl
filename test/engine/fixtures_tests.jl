@@ -232,3 +232,40 @@ end
     )
     @test compare_engine_trajectory(trajectory, H.fixture("delta_unscented_static"); atol = 1.0e-9) === :agree
 end
+
+@testitem "engine:fixture:logic_bp" tags = [:engine] setup = [EngineHarness] begin
+    # Belief propagation through deterministic nodes under the default scheme: every message
+    # out of a logic node reads the messages on its other interfaces (Phase 5, step 4).
+    using ExponentialFamily, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    x = H.random!(graph)
+    p = H.data!(graph)
+    y = H.random!(graph)
+    y_prior = [(:out, y), (:p, H.constant!(graph, 0.6))]
+    z = H.random!(graph)
+    n = H.random!(graph)
+    w = H.random!(graph)
+    w_prior = [(:out, w), (:p, H.constant!(graph, 0.4))]
+    o = H.random!(graph)
+    v = H.random!(graph)
+    v_prior = [(:out, v), (:p, H.constant!(graph, 0.5))]
+    i = H.random!(graph)
+    i_factor = [(:out, i), (:p, H.constant!(graph, 0.9))]
+    H.node!(graph, Bernoulli, [(:out, x), (:p, p)])
+    H.node!(graph, Bernoulli, y_prior)
+    H.node!(graph, AND, [(:out, z), (:in1, x), (:in2, y)])
+    H.node!(graph, NOT, [(:out, n), (:in, z)])
+    H.node!(graph, Bernoulli, w_prior)
+    H.node!(graph, OR, [(:out, o), (:in1, n), (:in2, w)])
+    H.node!(graph, Bernoulli, v_prior)
+    H.node!(graph, IMPLY, [(:out, i), (:in1, o), (:in2, v)])
+    H.node!(graph, Bernoulli, i_factor)
+
+    trajectory = H.run(
+        graph; id = "logic_bp", data = [p => 0.3], iterations = 2,
+        posteriors = [:o => o, :w => w, :n => n, :y => y, :v => v, :z => z, :i => i, :x => x],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("logic_bp"); atol = 1.0e-9) === :agree
+end

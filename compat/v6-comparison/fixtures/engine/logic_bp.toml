@@ -1,0 +1,254 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "x ~ Bernoulli(p = 0.3) as data, y ~ Bernoulli(0.6), z ~ AND(x, y), n ~ NOT(z), w ~ Bernoulli(0.4), o ~ OR(n, w), v ~ Bernoulli(0.5), i ~ IMPLY(o, v), and i ~ Bernoulli(0.9); BP through the logic nodes."
+free_energy = [0.6102777027376511, 0.6102777027376511]
+id = "logic_bp"
+
+    [trajectory.posteriors.i]
+    params = [0.9178939617083948]
+    type = "Bernoulli"
+
+    [trajectory.posteriors.n]
+    params = [0.7547864506627394]
+    type = "Bernoulli"
+
+    [trajectory.posteriors.o]
+    params = [0.8210603829160532]
+    type = "Bernoulli"
+
+    [trajectory.posteriors.v]
+    params = [0.8284241531664214]
+    type = "Bernoulli"
+
+    [trajectory.posteriors.w]
+    params = [0.36818851251840945]
+    type = "Bernoulli"
+
+    [trajectory.posteriors.x]
+    params = [0.3556701030927834]
+    type = "Bernoulli"
+
+    [trajectory.posteriors.y]
+    params = [0.6318114874815906]
+    type = "Bernoulli"
+
+    [trajectory.posteriors.z]
+    params = [0.24521354933726058]
+    type = "Bernoulli"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.6]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.4]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.9]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "IMPLY"
+    target = ":in1"
+
+        [trajectory.trace.result]
+        params = [0.35714285714285715]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "OR"
+    target = ":in1"
+
+        [trajectory.trace.result]
+        params = [0.40322580645161293]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NOT"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.596774193548387]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.3]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "AND"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.18]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NOT"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.8200000000000001]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "OR"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.8920000000000001]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "IMPLY"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.8284241531664214]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "IMPLY"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5539999999999999]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.9]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "OR"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.4664179104477612]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "AND"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.5335820895522388]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "AND"
+    target = ":in1"
+
+        [trajectory.trace.result]
+        params = [0.5629370629370628]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Bernoulli"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.3]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "AND"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.18]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NOT"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.8200000000000001]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "OR"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.8920000000000001]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "IMPLY"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.8284241531664214]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "IMPLY"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5539999999999999]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "OR"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.4664179104477612]
+        type = "Bernoulli"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "AND"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.5335820895522388]
+        type = "Bernoulli"
