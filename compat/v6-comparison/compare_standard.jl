@@ -35,16 +35,35 @@ const MESSAGE_CASES = [
     ("NMV:μ:m-point-mass-q-inverse-gamma", NormalMeanVariance, :μ, (m = (out = PointMass(-1.0),), q = (v = INVERSE_GAMMA,)), true),
     ("NMV:μ:m-normal-q-point-mass", NormalMeanVariance, :μ, (m = (out = NormalMeanVariance(0.0, 1.0),), q = (v = PointMass(1.5),)), false),
     ("NMV:μ:m-normal-q-inverse-gamma", NormalMeanVariance, :μ, (m = (out = NormalMeanVariance(0.0, 1.0),), q = (v = INVERSE_GAMMA,)), true),
+    ("NMP:out:m-point-masses", NormalMeanPrecision, :out, (m = (μ = PointMass(1.0), τ = PointMass(2.0)),), false),
+    ("NMP:out:m-normal", NormalMeanPrecision, :out, (m = (μ = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),), false),
+    ("NMP:out:q-point-masses", NormalMeanPrecision, :out, (q = (μ = PointMass(1.0), τ = PointMass(2.0)),), false),
+    ("NMP:out:q-gamma", NormalMeanPrecision, :out, (q = (μ = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)),), false),
+    ("NMP:out:m-point-mass-q-gamma", NormalMeanPrecision, :out, (m = (μ = PointMass(-1.0),), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
+    ("NMP:out:m-normal-q-gamma", NormalMeanPrecision, :out, (m = (μ = NormalWeightedMeanPrecision(1.0, 2.0),), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
+    ("NMP:μ:m-point-masses", NormalMeanPrecision, :μ, (m = (out = PointMass(1.0), τ = PointMass(2.0)),), false),
+    ("NMP:μ:m-normal", NormalMeanPrecision, :μ, (m = (out = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),), false),
+    ("NMP:μ:q-point-masses", NormalMeanPrecision, :μ, (q = (out = PointMass(1.0), τ = PointMass(2.0)),), false),
+    ("NMP:μ:q-gamma", NormalMeanPrecision, :μ, (q = (out = PointMass(1.2), τ = GammaShapeRate(3.0, 2.0)),), false),
+    ("NMP:μ:m-normal-q-gamma", NormalMeanPrecision, :μ, (m = (out = NormalMeanVariance(0.0, 1.0),), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
+    ("NMP:τ:q-normals", NormalMeanPrecision, :τ, (q = (out = PointMass(1.2), μ = NormalWeightedMeanPrecision(1.0, 2.0)),), false),
+]
+
+const CLUSTER_MESSAGE_CASES = [
+    ("NMP:τ:q-joint", NormalMeanPrecision, :τ, ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),), false),
 ]
 
 const MARGINAL_CASES = [
     ("NMV:(out,μ):point-mass-v", NormalMeanVariance, (:out, :μ), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5)), q = (v = PointMass(2.0),)), false),
     ("NMV:(out,μ):inverse-gamma-v", NormalMeanVariance, (:out, :μ), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5)), q = (v = INVERSE_GAMMA,)), true),
+    ("NMP:(out,μ):gamma-τ", NormalMeanPrecision, (:out, :μ), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalWeightedMeanPrecision(2.0, 0.5)), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
 ]
 
 const AVERAGE_ENERGY_CASES = [
     ("NMV:energy:singles", NormalMeanVariance, (q = (out = NormalMeanVariance(0.0, 1.0), μ = NormalMeanVariance(1.0, 2.0), v = INVERSE_GAMMA),), false),
     ("NMV:energy:joint", NormalMeanVariance, (q = (v = PointMass(2.0),), clusters = ((:out, :μ) => MvNormalMeanCovariance([0.0, 1.0], [1.0 0.2; 0.2 2.0]),)), false),
+    ("NMP:energy:singles", NormalMeanPrecision, (q = (out = PointMass(1.2), μ = NormalWeightedMeanPrecision(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)),), false),
+    ("NMP:energy:joint", NormalMeanPrecision, (q = (τ = GammaShapeRate(3.0, 2.0),), clusters = ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),)), false),
 ]
 
 declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, reasoning = NMV_669)] : DeclaredDisagreement[]
@@ -58,6 +77,14 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             v6, v6_logscale = v6_message_update(node, towards, m, q)
             record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = ":$towards", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
             # A declared correction must actually differ, or the declaration is stale.
+            @test flagged == (record.outcome === :correction)
+        end
+    end
+    @testset "message rules consuming a joint" begin
+        for (id, node, towards, clusters, flagged) in CLUSTER_MESSAGE_CASES
+            v7 = call_message_update_rule(node, towards; clusters)
+            v6, _ = v6_message_update(node, towards, NamedTuple(), NamedTuple{map(V6Oracle.v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))))
+            record = compare_with_reference(id, v7, v6; inputs = clusters, node = string(node), target = ":$towards", declared = declare(id, flagged))
             @test flagged == (record.outcome === :correction)
         end
     end

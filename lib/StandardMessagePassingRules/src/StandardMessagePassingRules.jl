@@ -14,11 +14,17 @@ using MessagePassingRulesBase: annotate!, BP, VMP
 using StatsFuns: log2π
 
 # The nodes this package declares, for types other packages own.
-const NODES = [NormalMeanVariance]
+const NODES = [NormalMeanVariance, NormalMeanPrecision]
 
 include("nodes/normal_mean_variance.jl")
 include("rules/normal_mean_variance/out.jl")
 include("rules/normal_mean_variance/mean.jl")
 include("rules/normal_mean_variance/marginals.jl")
+
+include("nodes/normal_mean_precision.jl")
+include("rules/normal_mean_precision/out.jl")
+include("rules/normal_mean_precision/mean.jl")
+include("rules/normal_mean_precision/precision.jl")
+include("rules/normal_mean_precision/marginals.jl")
 
 end
