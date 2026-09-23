@@ -91,12 +91,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (115 of them across 19 files), each self-contained and
+Tests are `@testitem` blocks (117 of them across 19 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (19) and `:engine` (95 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (19) and `:engine` (97 —
 everything except the node tests and the inventory gate), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.

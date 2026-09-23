@@ -19,17 +19,15 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 4.5, case (b): VMP** — mean-field (`vmp_meanfield`) and structured
-(`vmp_structured`), through the engine step 4 built. What each remaining case needs is in
-§ Phase 4.5, *Cases (b)–(d)*; start by extending `test/engine/harness.jl` to take a
-factorisation and initial marginals.
+**Phase 4.5, case (c): the mixture** — `normal_mixture`, through the engine step 4 built and
+case (b) extended. What it needs is in § Phase 4.5, *Cases (b)–(d)*; it starts by lifting
+`activate!`'s two refusals, declared dependencies and interface groups.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
 | What | Where it lands | Recorded in |
 |---|---|---|
-| VMP, mean-field and structured, against `vmp_meanfield` and `vmp_structured` | 4.5 case (b) | § *Cases (b)–(d)* |
-| distributing a `FactorizedCluster` joint to its members, if the slice selects one | 4.5 case (b) | § *Cases (b)–(d)*; brief item 5 |
+| distributing a `FactorizedCluster` joint to its members; no slice model selects one | Phase 5, the first port that returns one | § *Cases (b)–(d)*, case (b); brief item 5 |
 | `activate!` refuses declared dependencies and interface groups; wiring both | 4.5 case (c) | § *Cases (b)–(d)*; step 4 item 3; `DISCUSSION.md` §3.23 |
 | a declared free-energy partition in `bethe_free_energy` | 4.5 case (c) | step 4 item 5 |
 | mixture emission order (#6), group indices through integration (#7) | 4.5 case (c) | exit criteria |
@@ -47,7 +45,8 @@ introspection only (`DISCUSSION.md` §3.23, Correction 25).
 
 Step 4, the engine core on case (a), is done (§ Phase 4.5, *Step 4*): the v6 rule system is in
 `legacy/v6/`, the engine finds and runs rules through `MessagePassingRulesBase`, and
-`bp_iid`, `bp_iid_missing` and `bp_chain` agree with v6 call by call.
+`bp_iid`, `bp_iid_missing` and `bp_chain` agree with v6 call by call. Case (b) is done too:
+`vmp_meanfield` and `vmp_structured` agree the same way, with no engine change.
 
 Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSION.md`
 §3.18–3.19); the design session itself was step 1. Since then:
@@ -56,7 +55,8 @@ Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSI
 - **step 3** ported the slice's rules and numerics, in agreement with v6;
 - the **algorithm reconciliation** replaced `BP`/`VMP` with one `DefaultAlgorithm` (§3.20);
 - `Require*FunctionalDependencies` were dropped (§3.21);
-- **step 4** made the clean cut and ran case (a) through the new engine.
+- **step 4** made the clean cut and ran case (a) through the new engine;
+- **case (b)** ran mean-field and structured VMP through it, changing only the test harness.
 
 Three ground rules were set on the same day (§3.22):
 - step 4 is a **clean cut**: the engine keeps only the new rule path, and every unported node
@@ -104,7 +104,7 @@ generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | steps 0–4 and the algorithm reconciliation done, case (a) running; next case (b) |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | steps 0–4 and the algorithm reconciliation done, cases (a) and (b) running; next case (c) |
 | 5 | `StandardMessagePassingRules` | the slice's six nodes ported in 4.5; the bulk not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
@@ -710,7 +710,7 @@ Decided instead:
 
 **Status: signed off 2026-09-23. Steps 0 (fixtures), 1 (the design session), 2 (base
 additions), 3 (rule ports) and 4 (the engine core, case (a)) are done, as is the algorithm
-reconciliation. Next is case (b), VMP.**
+reconciliation. Case (b), VMP, is done. Next is case (c), the mixture.**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -1029,7 +1029,7 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    rule found raises `MessagePassingRulesBase.RuleNotFoundError`, with its near misses; there
    is no fallback. A node's average energy is found with `find_average_energy`; v6's
    decomposition of `NamedTuple` joints went with the generic `score(AverageEnergy(), …)`,
-   since `FactorizedCluster` replaces it (case (b)).
+   since `FactorizedCluster` replaces it (deferred to Phase 5 by case (b)).
 5. [x] **Free energy in the engine:** `bethe_free_energy(T, nodes, variables)`, porting RxInfer's
    assembly (`reactivemp_free_energy.jl:52-128`). It combines the node scores over the declared
    partition or the factorisation, the variable entropies, and the data/constant degree
@@ -1085,27 +1085,42 @@ Not yet planned session by session; this is what step 4 left for each, so the pl
 next case starts from it. Each case is its own step: one commit, test first, the fixture
 comparison as its gate, `PHASES.md` and `CHANGELOG.md` in the same commit.
 
-**Common to all three.** `test/engine/harness.jl` hard-codes RxInfer's default (Bethe)
-factorisation and feeds no initial values. It needs a `factorisation` argument per node (for
-`MeanField()` and `q(x, μ)q(τ)`) and initial marginals, set the way RxInfer does, after the
-variables are activated and before the nodes are (`reactivemp_inference.jl:316-335`). Each
-fixture's model, constraints and initialization are in
+**Common to all three.** `test/engine/harness.jl` takes a `factorisation` per node
+(`node!(…; factorisation)`, default Bethe, with `meanfield_factorisation`) and
+`initial_marginals`, each set right after its variable is activated and before any node is, as
+RxInfer does (`reactivemp_inference.jl:316-335`); both were added in case (b). Build a graph in
+GraphPPL's order, which is RxInfer's activation order: variables as the statements create them,
+a statement's constants after its random variable, and data where it is first used
+(`vmp_structured` interleaves `x[i]`, `y[i]` and the `0.5` of each `y` node). Posteriors are
+subscribed in the order RxInfer's `returnvars` `Dict` iterates (`batch.jl:335-342`): `μ, τ, x`
+on 1.13. Each fixture's model, constraints and initialization are in
 `compat/v6-comparison/record_engine_fixtures.jl`; `slice_rule_inventory.jl` lists every v6 rule
 each model selects, with its input types. Compare with `atol = 1e-9` as for case (a), and
 declare any disagreement rather than loosen the tolerance.
 
-**Case (b), VMP** (`vmp_meanfield`, `vmp_structured`; NMP, GammaShapeRate and NMV, all ported).
-- Mean-field should need nothing new: every cluster is a single interface, so rules read
-  marginals only. `q(τ)` is initialised.
-- Structured, `x[i] ~ NMP(μ, τ)` under `q(x, μ)q(τ)`: the first joint in a VMP run. The
-  `(:out, :μ)` marginal rule and the `q[:out, :μ]` average energy exist. The `τ` rule reads the
-  joint as `q[(:out, :μ)]`, which `rule_marginals` already keys by the member tuple.
-- `FactorizedCluster` (brief item 5): the slice's ported marginal rules return
-  `MvNormalWeightedMeanPrecision`, so this fixture may never produce one. Check with
-  `slice_rule_inventory.jl`. If none is selected, record that and defer the distribution
-  logic to the first port that returns one. If one is, the engine must hand each block to a
-  consumer reading that member, and `score(DifferentialEntropy(), ::Marginal{<:NamedTuple})`
-  (v6's split, still in `src/score/score.jl`) becomes its `FactorizedCluster` counterpart.
+**Case (b), VMP — done** (`vmp_meanfield`, `vmp_structured`; NMP, GammaShapeRate and NMV).
+Both agree with v6 at `atol = 1e-9`, call by call: 62 and 122 rule calls in v6's order, the
+posteriors, and the free energy over five iterations, `vmp_structured`'s non-monotone one
+included (`engine:fixture:vmp_meanfield`, `engine:fixture:vmp_structured`). **No engine code
+changed**; the harness gained a factorisation per node and initial marginals. A negative
+control, a wrong initial `q(τ)`, fails on the free energy, the posteriors and the trace.
+- Mean-field needed nothing new: every cluster is a single interface, so rules read marginals
+  only. `q(τ)` is initialised.
+- Structured, `x[i] ~ NMP(μ, τ)` under `q(x, μ)q(τ)`, was the first joint in a VMP run: the
+  `ClusterTarget((:out, :μ))` marginal rule, the `τ` rule reading `q[:out, :μ]`, the joint
+  average energy and the joint's entropy in the node score all ran end to end for the first
+  time.
+- **`FactorizedCluster` (brief item 5) is deferred to Phase 5.** `slice_rule_inventory.jl` shows
+  the only marginal rules the slice selects are NMV's and NMP's `(:out_μ)` over two Normal
+  messages (`bp_chain`, `vmp_structured`) and Delta's `(:ins)`; each returns one joint, never
+  v6's NamedTuple split, which needs a `PointMass` message. So no slice model produces a
+  `FactorizedCluster`. The first port that returns one (the `PointMass` variants of those
+  marginal rules, `legacy/v6/src/rules/normal_mean_{variance,precision}/marginals.jl`) brings
+  the engine work with it: hand each block to a consumer reading that member, and give
+  `score(DifferentialEntropy(), ::Marginal{<:NamedTuple})` (v6's split, still in
+  `src/score/score.jl`) its `FactorizedCluster` counterpart.
+- A Bethe-factorised x-node in the same model stalls rather than failing: loopy BP with no
+  initial messages never fires, as in v6, so its posteriors never emit.
 
 **Case (c), the mixture** (`normal_mixture`; NormalMixture, Categorical, Dirichlet, NMP,
 GammaShapeRate, all ported).
@@ -1259,9 +1274,9 @@ built:
       `compat/v6-comparison/fixtures/engine/`, re-checked by `record_engine_fixtures.jl --check`
 - [ ] a working end-to-end inference in the new engine over the slice: ordinary belief
       propagation, structured VMP, a mixture (variadic group), and a delta node — *belief
-      propagation done (case (a), step 4)*
-- [ ] free energy agrees with the recorded v6 trajectories on the same models — *case (a)
-      agrees (`bp_iid`, `bp_chain`)*
+      propagation (case (a), step 4) and mean-field and structured VMP (case (b)) done*
+- [ ] free energy agrees with the recorded v6 trajectories on the same models — *cases (a) and
+      (b) agree (`bp_iid`, `bp_chain`, `vmp_meanfield`, `vmp_structured`)*
 - [x] annotations and log scales agree with the recorded ones, compared explicitly (see the
       annotation gate in `PLAN.md`), **where v6 records them** (`bp_iid`). Elsewhere v6's
       behaviour is preserved, gaps included — `engine:fixture:bp_iid`
@@ -1317,6 +1332,9 @@ first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `Fa
       and rules with the base macros, `factornode` and `FactorNodeActivationOptions`, algorithms
       and extensions, `bethe_free_energy`, and the registry as introspection only
       (`DISCUSSION.md` §3.23)
+- [ ] the engine distributes a `FactorizedCluster` to its members, with the first port whose
+      marginal rule returns one (the `PointMass` variants of NMV's and NMP's `(:out, :μ)`);
+      no slice model selects one (§ Phase 4.5, case (b))
 - [ ] hand-written cases done: `mixture/switch.jl`, the ~15 rules touching raw
       `messages[i]`/`marginals[i]`
 - [ ] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).

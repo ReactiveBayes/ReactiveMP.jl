@@ -7,7 +7,7 @@
     import ReactiveMP:
         activate!, israndom, isdata, getdata, getannotations, has_annotation, get_annotation, message_mapping_fform,
         FactorNodeActivationOptions, RandomVariableActivationOptions, DataVariableActivationOptions,
-        MessageProductContext, get_stream_of_marginals, get_stream_of_predictions
+        MessageProductContext, get_stream_of_marginals, get_stream_of_predictions, set_initial_marginal!
     import MessagePassingRulesBase: Target, IndexedTarget
 
     const FIXTURES = joinpath(pkgdir(ReactiveMP), "compat", "v6-comparison", "fixtures", "engine")
@@ -36,8 +36,11 @@
         return isempty(random) ? others : (random, others...)
     end
 
-    function node!(graph::Graph, fform, interfaces)
-        node = factornode(fform, interfaces, bethe_factorisation(interfaces))
+    # RxInfer's `MeanField()`: every interface is a cluster of its own.
+    meanfield_factorisation(interfaces) = Tuple((name,) for (name, _) in interfaces)
+
+    function node!(graph::Graph, fform, interfaces; factorisation = bethe_factorisation(interfaces))
+        node = factornode(fform, interfaces, factorisation)
         push!(graph.nodes, node)
         return node
     end
@@ -52,14 +55,15 @@
     final(histories::Vector{<:Vector}) = map(final, histories)
 
     """
-        run(graph; id, data, iterations, posteriors, predictions = [], annotations = nothing, free_energy = true)
+        run(graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], annotations = nothing, free_energy = true)
 
-    Activate `graph` as RxInfer does (variables, then factor nodes), subscribe to the
+    Activate `graph` as RxInfer does (variables, each followed by its entry in
+    `initial_marginals` (variable => distribution), then factor nodes), subscribe to the
     `posteriors` (name => variable or vector of variables), then to the `predictions` of data
     variables, then to the free energy, and feed `data` (variable => value, or vectors of
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
     """
-    function run(graph::Graph; id, data, iterations, posteriors, predictions = [], annotations = nothing, free_energy = true)
+    function run(graph::Graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], annotations = nothing, free_energy = true)
         trace = RuleCallRecord[]
         iteration = Ref(0)
         callbacks = (
@@ -76,6 +80,9 @@
                 activate!(variable, RandomVariableActivationOptions(nothing, product, product))
             elseif isdata(variable)
                 activate!(variable, DataVariableActivationOptions(true, false, nothing, nothing))
+            end
+            for (initialised, marginal) in initial_marginals
+                initialised === variable && set_initial_marginal!(variable, marginal)
             end
         end
         for node in graph.nodes
