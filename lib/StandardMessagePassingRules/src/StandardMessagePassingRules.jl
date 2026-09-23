@@ -22,7 +22,7 @@ using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 using LinearAlgebra: I, Hermitian, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
 using MatrixCorrectionTools: correction!
-import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily
+import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily
 import DomainSets
 
 export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
@@ -34,7 +34,7 @@ include("helpers.jl")
 const NODES = [
     NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
     MvNormalMeanCovariance, MvNormalMeanPrecision, MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision,
-    MvNormalMeanScaleMatrixPrecision, Wishart,
+    MvNormalMeanScaleMatrixPrecision, Wishart, InverseWishart,
 ]
 
 include("nodes/normal_mean_variance.jl")
@@ -126,6 +126,9 @@ include("rules/mv_normal_mean_scale_matrix_precision/marginals.jl")
 include("nodes/wishart.jl")
 include("rules/wishart/out.jl")
 include("rules/wishart/marginals.jl")
+include("nodes/inverse_wishart.jl")
+include("rules/inverse_wishart/out.jl")
+include("rules/inverse_wishart/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")

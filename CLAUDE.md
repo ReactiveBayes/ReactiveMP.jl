@@ -150,7 +150,7 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
-  six nodes, the univariate distributions, the logic nodes, the multivariate normals and Wishart so far), `MessagePassingRulesApproximations` (`make test-approximations`;
+  six nodes, the univariate distributions, the logic nodes, the multivariate normals, Wishart and InverseWishart so far), `MessagePassingRulesApproximations` (`make test-approximations`;
   `Unscented` and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation` and its Unscented
   rules). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.

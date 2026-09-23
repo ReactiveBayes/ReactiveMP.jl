@@ -22,8 +22,8 @@ re-check before relying on one.
 **Phase 5, step 6: Matrix and Wishart** — Wishart, InverseWishart, MatrixNormal,
 MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. Signed off by the
 user; § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
-`public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart is
-done; next InverseWishart, then DirichletCollection. Steps 1–5 are done; step 5 is summarised
+`public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart and
+InverseWishart are done; next DirichletCollection, then MvNormalGamma. Steps 1–5 are done; step 5 is summarised
 in § Phase 5, *Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -41,7 +41,7 @@ in § Phase 5, *Step 5 brief*.
 | `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | the log-scale milestone, Phase 7 | Phase 5 review |
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
-| ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
+| ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
@@ -1625,6 +1625,11 @@ extending it, is recorded for Phase 8.
     variational `:out` rules took E[S]⁻¹ for a `q_S`; they use E[S⁻¹], corrected and declared
     (ReactiveMP.jl#675). The energy's constants are in ν's float type. 461 checks agree, the
     correction declared.
+  - *InverseWishart — done.* 4 message rules, 1 marginal rule and the energy; the marginal rule
+    takes any InverseWishart message, not only v6's `InverseWishartFast`. Nothing differs from
+    v6 (475 checks). ExponentialFamily's E[out⁻¹] fails for a BigFloat InverseWishart, beside
+    its Float64 E[log |out|]; both are on ExponentialFamily.jl#322, so the energy table runs
+    in Float64 only.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,
