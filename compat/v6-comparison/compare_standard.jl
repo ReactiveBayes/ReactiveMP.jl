@@ -17,6 +17,12 @@ const NMV_669 = "ReactiveMP.jl#669: v6 uses E[v] for the variance a non-point-ma
 
 const INVERSE_GAMMA = InverseGamma(3.0, 4.0)
 
+# v6 returns a split cluster as a NamedTuple and the port as a `FactorizedCluster`; its shape
+# likelihood is v6's own type. Both are read as the port's before comparing.
+as_v7(node, v6::NamedTuple) = FactorizedCluster(v6_cluster_blocks(node, v6)...)
+as_v7(node, v6::V6Oracle.ReactiveMP.GammaShapeLikelihood) = GammaShapeLikelihood(params(v6)...)
+as_v7(node, v6) = v6
+
 # (id, node, target, inputs, declared?)
 const MESSAGE_CASES = [
     ("NMV:out:m-point-masses", NormalMeanVariance, :out, (m = (μ = PointMass(1.0), v = PointMass(2.0)),), false),
@@ -49,6 +55,12 @@ const MESSAGE_CASES = [
     ("NMP:τ:q-normals", NormalMeanPrecision, :τ, (q = (out = PointMass(1.2), μ = NormalWeightedMeanPrecision(1.0, 2.0)),), false),
     ("GSR:out:m-point-masses", GammaShapeRate, :out, (m = (α = PointMass(2.0), β = PointMass(3.0)),), false),
     ("GSR:out:q", GammaShapeRate, :out, (q = (α = PointMass(2.0), β = GammaShapeRate(2.0, 4.0)),), false),
+    ("GSR:α:q", GammaShapeRate, :α, (q = (out = GammaShapeRate(2.0, 3.0), β = GammaShapeRate(3.0, 1.5)),), false),
+    ("GSR:α:q-point-mass-out", GammaShapeRate, :α, (q = (out = PointMass(1.5), β = GammaShapeRate(1.0, 1.0)),), false),
+    ("GSR:β:q", GammaShapeRate, :β, (q = (out = GammaShapeRate(2.0, 3.0), α = GammaShapeRate(4.0, 2.0)),), false),
+    ("GSR:β:q-point-mass-α", GammaShapeRate, :β, (q = (out = GammaShapeScale(1.0, 10.0), α = PointMass(10.0)),), false),
+    ("NMV:v:q-point-masses", NormalMeanVariance, :v, (q = (out = PointMass(-1.0), μ = PointMass(2.0)),), false),
+    ("NMV:v:q-normals", NormalMeanVariance, :v, (q = (out = NormalMeanVariance(-1.0, 2.0), μ = NormalMeanPrecision(1.0, 4.0)),), false),
     ("Categorical:out:m-dirichlet", Categorical, :out, (m = (p = Dirichlet([1.0, 3.0]),),), false),
     ("Categorical:out:q-dirichlet", Categorical, :out, (q = (p = Dirichlet([1.0, 3.0, 0.5]),),), false),
     ("Categorical:out:m-point-mass", Categorical, :out, (m = (p = PointMass([0.2, 0.8]),),), false),
@@ -61,12 +73,29 @@ const MESSAGE_CASES = [
 
 const CLUSTER_MESSAGE_CASES = [
     ("NMP:τ:q-joint", NormalMeanPrecision, :τ, ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),), false),
+    ("NMV:v:q-joint", NormalMeanVariance, :v, ((:out, :μ) => MvNormalMeanCovariance([2.0, 3.0], [2.0 -0.1; -0.1 3.0]),), false),
 ]
 
 const MARGINAL_CASES = [
     ("NMV:(out,μ):point-mass-v", NormalMeanVariance, (:out, :μ), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5)), q = (v = PointMass(2.0),)), false),
     ("NMV:(out,μ):inverse-gamma-v", NormalMeanVariance, (:out, :μ), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5)), q = (v = INVERSE_GAMMA,)), true),
     ("NMP:(out,μ):gamma-τ", NormalMeanPrecision, (:out, :μ), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalWeightedMeanPrecision(2.0, 0.5)), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
+    ("NMV:(out,μ):point-mass-out", NormalMeanVariance, (:out, :μ), (m = (out = PointMass(1.0), μ = NormalMeanVariance(0.0, 1.0)), q = (v = PointMass(2.0),)), false),
+    ("NMV:(out,μ):point-mass-μ", NormalMeanVariance, (:out, :μ), (m = (out = NormalMeanVariance(0.0, 1.0), μ = PointMass(1.0)), q = (v = PointMass(2.0),)), false),
+    ("NMV:(out,μ):point-mass-out-inverse-gamma-v", NormalMeanVariance, (:out, :μ), (m = (out = PointMass(1.0), μ = NormalMeanVariance(0.0, 1.0)), q = (v = INVERSE_GAMMA,)), true),
+    ("NMV:(out,μ):point-mass-μ-inverse-gamma-v", NormalMeanVariance, (:out, :μ), (m = (out = NormalMeanVariance(0.0, 1.0), μ = PointMass(1.0)), q = (v = INVERSE_GAMMA,)), true),
+    ("NMV:(out,μ,v):point-mass-μ", NormalMeanVariance, (:out, :μ, :v), (m = (out = NormalMeanVariance(0.0, 1.0), μ = PointMass(1.0), v = PointMass(2.0)),), false),
+    ("NMV:(out,μ,v):point-mass-out", NormalMeanVariance, (:out, :μ, :v), (m = (out = PointMass(1.0), μ = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),), false),
+    ("NMV:(out,μ,v):normals", NormalMeanVariance, (:out, :μ, :v), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5), v = PointMass(2.0)),), false),
+    ("NMP:(out,μ):point-mass-out", NormalMeanPrecision, (:out, :μ), (m = (out = PointMass(1.0), μ = NormalMeanPrecision(0.0, 1.0)), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
+    ("NMP:(out,μ):point-mass-μ", NormalMeanPrecision, (:out, :μ), (m = (out = NormalMeanPrecision(0.0, 1.0), μ = PointMass(1.0)), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
+    ("NMP:(out,μ,τ):point-mass-μ", NormalMeanPrecision, (:out, :μ, :τ), (m = (out = NormalMeanPrecision(0.0, 1.0), μ = PointMass(1.0), τ = PointMass(2.0)),), false),
+    ("NMP:(out,μ,τ):point-mass-out", NormalMeanPrecision, (:out, :μ, :τ), (m = (out = PointMass(1.0), μ = NormalMeanPrecision(0.0, 1.0), τ = PointMass(2.0)),), false),
+    ("NMP:(out,μ,τ):normals", NormalMeanPrecision, (:out, :μ, :τ), (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5), τ = PointMass(0.5)),), false),
+    ("GSR:(out,α,β)", GammaShapeRate, (:out, :α, :β), (m = (out = GammaShapeScale(2.0, 2.0), α = PointMass(2.0), β = PointMass(3.0)),), false),
+    ("Categorical:(out,p):point-mass-out", Categorical, (:out, :p), (m = (out = PointMass([0.0, 1.0]), p = Dirichlet([2.0, 1.0])),), false),
+    ("Categorical:(out,p):point-mass-p", Categorical, (:out, :p), (m = (out = Categorical([0.2, 0.8]), p = PointMass([0.3, 0.7])),), false),
+    ("Dirichlet:(out,a)", Dirichlet, (:out, :a), (m = (out = Dirichlet([2.0, 3.0]), a = PointMass([3.0, 1.0])),), false),
 ]
 
 const AVERAGE_ENERGY_CASES = [
@@ -107,7 +136,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             store = AnnotationStore()
             v7 = call_message_update_rule(node, edge; m, q, ann = store)
             v6, v6_logscale = v6_message_update(node, edge, m, q)
-            record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = ":$edge", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
+            record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = ":$edge", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
             # A declared correction must actually differ, or the declaration is stale.
             @test flagged == (record.outcome === :correction)
         end
@@ -131,12 +160,25 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
         v6 = v6_average_energy(V6_NORMAL_MIXTURE, q)
         @test compare_with_reference("NormalMixture:energy", v7, v6; node = "NormalMixture", target = "energy").outcome === :agree
     end
+    # Belief propagation towards NMV's `v` is a log-density on the half line with no family;
+    # the port and v6 are compared by evaluating it.
+    @testset "log-density messages" begin
+        for m in [
+                (out = PointMass(2.0), μ = NormalMeanVariance(0.0, 1.0)),
+                (out = NormalMeanVariance(0.5, 2.0), μ = PointMass(-3.5)),
+                (out = NormalMeanVariance(1.0, 0.5), μ = NormalMeanVariance(-1.0, 2.0)),
+            ]
+            v7 = call_message_update_rule(NormalMeanVariance, :v; m)
+            v6, _ = v6_message_update(NormalMeanVariance, :v, m, NamedTuple())
+            @test all(v -> logpdf(v7, v) ≈ logpdf(v6, v), (0.1, 1.0, 3.5, 10.0))
+        end
+    end
     @testset "marginal rules" begin
         for (id, node, members, inputs, flagged) in MARGINAL_CASES
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
             v7 = call_marginal_update_rule(node, members; m, q)
             v6 = v6_marginal_update(node, members, m, q)
-            record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = string(members), declared = declare(id, flagged))
+            record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = string(members), declared = declare(id, flagged))
             @test flagged == (record.outcome === :correction)
         end
     end

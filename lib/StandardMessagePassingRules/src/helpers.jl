@@ -16,3 +16,13 @@ function isonehot(vec::AbstractVector{T}) where {T}
     end
     return ones_seen == 1
 end
+
+"""
+    promoted_cluster(cluster::FactorizedCluster, inputs...)
+
+`cluster` with every block in the float type of all `inputs` together. A rule's output must
+carry the promoted float type of every input, and that includes a block that passes an input
+through unchanged, such as v6's `v = m_v`.
+"""
+promoted_cluster(cluster::FactorizedCluster, inputs...) =
+    BayesBase.convert_paramfloattype(BayesBase.promote_paramfloattype(inputs...), cluster)

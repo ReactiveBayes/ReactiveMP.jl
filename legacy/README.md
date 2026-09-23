@@ -21,9 +21,8 @@ Phase 5 ports each node from here into `lib/StandardMessagePassingRules` (or its
 packages), and deletes what it ported. Already gone: Delta's Unscented rules (Phase 4.5 case
 (d)), and `approximations/unscented.jl` and `rts.jl`, whose ports are in
 `lib/MessagePassingRulesApproximations`. Kept on purpose although partly ported:
-- the six slice nodes' rule directories (`normal_mean_variance`, `normal_mean_precision`,
-  `gamma_shape_rate`, `categorical`, `dirichlet`, `normal_mixture`) hold the variants not yet
-  ported, and each leaves when its node is finished;
+- `normal_mixture`, whose multivariate branches wait for `MvNormalMeanPrecision` (Phase 5 step
+  5); the other five slice nodes were finished in Phase 5 step 1 and are gone;
 - `approximations/approximations.jl` and `shared.jl`, which unported files here still use;
 - `nodes/predefined/delta/` and `rules/delta/`, for `Linearization` and CVI (Phase 6). `INVENTORY.md` says where each entity goes. The
 behaviour the ports must reproduce is ReactiveMP 6.5.0's, which `compat/v6-comparison` runs.

@@ -72,3 +72,81 @@ end
         ],
     )
 end
+
+@testitem "rules:GammaShapeRate:α-β-marginals" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using SpecialFunctions: loggamma
+
+    # v6's tables. E[log β] under GammaShapeRate(1, 1) is -γₑ, the Euler–Mascheroni constant.
+    γₑ = 0.5772156649015315
+    @test_message_update_rule(
+        node = GammaShapeRate, target = :α,
+        cases = [
+            (q = (out = GammaShapeRate(1.0, 1.0), β = GammaShapeRate(1.0, 1.0)),) => GammaShapeLikelihood(1.0, -2γₑ),
+            (q = (out = PointMass(1.0), β = GammaShapeRate(1.0, 1.0)),) => GammaShapeLikelihood(1.0, -γₑ),
+        ],
+    )
+    @test_message_update_rule(
+        node = GammaShapeRate, target = :β,
+        cases = [
+            (q = (out = GammaShapeRate(1.0, 1.0), α = GammaShapeRate(1.0, 1.0)),) => GammaShapeRate(2.0, 1.0),
+            (q = (out = PointMass(1.0), α = GammaShapeRate(1.0, 1.0)),) => GammaShapeRate(2.0, 1.0),
+            (q = (out = GammaShapeScale(1.0, 1.0), α = PointMass(10.0)),) => GammaShapeRate(11.0, 1.0),
+            (q = (out = GammaShapeScale(1.0, 10.0), α = GammaShapeRate(1.0, 1.0)),) => GammaShapeRate(2.0, 10.0),
+        ],
+    )
+    @test_marginal_update_rule(
+        node = GammaShapeRate, target = (:out, :α, :β), check_type_promotion = false,
+        cases = [
+            (m = (out = GammaShapeRate(1.0, 2.0), α = PointMass(1.0), β = PointMass(2.0)),) =>
+                FactorizedCluster((:out,) => GammaShapeRate(1.0, 4.0), (:α,) => PointMass(1.0), (:β,) => PointMass(2.0)),
+            (m = (out = GammaShapeScale(2.0, 2.0), α = PointMass(2.0), β = PointMass(3.0)),) =>
+                FactorizedCluster((:out,) => GammaShapeRate(3.0, 3.5), (:α,) => PointMass(2.0), (:β,) => PointMass(3.0)),
+        ],
+    )
+
+    # Two shape likelihoods multiply by adding their parameters.
+    @test prod(BayesBase.PreserveTypeProd(Distribution), GammaShapeLikelihood(1.0, 2.0), GammaShapeLikelihood(2.0, 0.5)) == GammaShapeLikelihood(3.0, 2.5)
+    @test logpdf(GammaShapeLikelihood(1.0, 2.0), 3.0) ≈ 2.0 * 3.0 - loggamma(3.0)
+end
+
+@testitem "rules:Categorical:marginals" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using BayesBase: tiny
+
+    # v6's tables.
+    @test_marginal_update_rule(
+        node = Categorical, target = (:out, :p), float_types = (Float32, Float64),
+        cases = [
+            (m = (out = PointMass([0.0, 1.0]), p = Dirichlet([2.0, 1.0])),) => FactorizedCluster((:out,) => PointMass([0.0, 1.0]), (:p,) => Dirichlet([2.0, 2.0])),
+            (m = (out = PointMass([1.0, 0.0]), p = Dirichlet([1.0, 2.0])),) => FactorizedCluster((:out,) => PointMass([1.0, 0.0]), (:p,) => Dirichlet([2.0, 2.0])),
+        ],
+    )
+    @test_marginal_update_rule(
+        node = Categorical, target = (:out, :p), check_type_promotion = false,
+        cases = [
+            (m = (out = Categorical([0.2, 0.8]), p = PointMass([0.0, 1.0])),) =>
+                FactorizedCluster((:out,) => Categorical([tiny, 0.8] ./ (tiny + 0.8)), (:p,) => PointMass([0.0, 1.0])),
+            (m = (out = Categorical([0.8, 0.2]), p = PointMass([1.0, 0.0])),) =>
+                FactorizedCluster((:out,) => Categorical([0.8, tiny] ./ (0.8 + tiny)), (:p,) => PointMass([1.0, 0.0])),
+        ],
+    )
+
+    # Towards `p` from anything but a Categorical or a one-hot point mass is an error, as in v6.
+    @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = PointMass(1.0),))
+    @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = 1.0,))
+end
+
+@testitem "rules:Dirichlet:marginals" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+
+    # v6's tables.
+    @test_marginal_update_rule(
+        node = Dirichlet, target = (:out, :a),
+        cases = [
+            (m = (out = Dirichlet([1.0, 2.0]), a = PointMass([0.2, 1.0])),) => FactorizedCluster((:out,) => Dirichlet([0.2, 2.0]), (:a,) => PointMass([0.2, 1.0])),
+            (m = (out = Dirichlet([2.0, 2.0]), a = PointMass([2.0, 0.5])),) => FactorizedCluster((:out,) => Dirichlet([3.0, 1.5]), (:a,) => PointMass([2.0, 0.5])),
+            (m = (out = Dirichlet([2.0, 3.0]), a = PointMass([3.0, 1.0])),) => FactorizedCluster((:out,) => Dirichlet([4.0, 3.0]), (:a,) => PointMass([3.0, 1.0])),
+        ],
+    )
+end

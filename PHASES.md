@@ -19,10 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 1: finish the slice nodes** — the rules of NMV, NMP, GammaShapeRate,
-Categorical and Dirichlet that Phase 4.5 did not need, so that their directories leave
-`legacy/v6/`. Phase 4.5 is closed (§ Phase 4.5, *Exit criteria*); Phase 5's plan is its entry
-brief below, signed off on 2026-09-23 (`DISCUSSION.md` §3.26).
+**Phase 5, step 2: the engine distributes a `FactorizedCluster`** to the consumers of each
+block, and splits its entropy. Step 1 is done: the slice nodes are finished and their
+directories have left `legacy/v6/`, and their split marginals are the first rules to return a
+`FactorizedCluster`. Phase 5's plan is its entry brief (§ Phase 5, `DISCUSSION.md` §3.26).
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -113,7 +113,7 @@ generic ones, and no comments that only narrate.
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
-| 5 | `StandardMessagePassingRules` | entry brief signed off; step 1, finishing the slice nodes, next |
+| 5 | `StandardMessagePassingRules` | entry brief signed off; step 1 done; step 2, distributing a `FactorizedCluster`, next |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | 8 | Release and downstream coordination | not started |
@@ -1382,10 +1382,25 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
   body.
 
 **Order of work**, one commit per step or per node, each with `PHASES.md` and `CHANGELOG.md`:
-1. **Finish the slice nodes**: NMV (`var.jl`, 5 marginals), NMP (5 marginals), GammaShapeRate
-   (`a.jl`, `b.jl`, its marginal), Categorical (2 marginals, the catch-all `p.jl`), Dirichlet
-   (1 marginal). Their directories leave `legacy/v6/`; NormalMixture's stays for its
-   multivariate branches (step 5).
+1. **Finish the slice nodes** — *done*. NMV (`var.jl`, 5 marginals), NMP (5 marginals),
+   GammaShapeRate (`a.jl`, `b.jl`, its marginal), Categorical (2 marginals, the catch-all
+   `p.jl`), Dirichlet (1 marginal): 8 message rules and 14 marginal rules. Their rule
+   directories, node files and tests have left `legacy/v6/`; NormalMixture's stays for its
+   multivariate branches (step 5). Findings:
+   - every split marginal is a `FactorizedCluster`, its pass-through blocks converted to the
+     promoted float type by `promoted_cluster` (`src/helpers.jl`), and passes the tables'
+     promotion checks;
+   - NMV's point-mass `(:out, :μ)` variants read `q_v` as v6 did, so they carry #669 too, and
+     are corrected and declared like the others;
+   - `GammaShapeLikelihood` is Standard's own type now (exported), with its product;
+   - `DomainSets` joins Standard's dependencies, for the belief-propagation messages towards
+     NMV's `v`, which are log-densities on the half line; TestUtils cannot compare those by
+     value, so the tables and the v6 comparison evaluate them at points;
+   - the comparison reads v6's NamedTuple marginals as clusters by matching the node's own
+     interface names (`v6_cluster_blocks`, `V6Oracle.jl`): 163 checks agree, the #669 ones
+     declared;
+   - the committed comparison manifest pinned the lib packages by absolute paths from one
+     machine; they are relative now, as its README says.
 2. **Engine: distribute a `FactorizedCluster`** to the consumers of each block, and split its
    entropy (v6's `score(DifferentialEntropy(), ::Marginal{<:NamedTuple})`). Step 1's split
    marginals are the first to need it; tested on a toy graph.

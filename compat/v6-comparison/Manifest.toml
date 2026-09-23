@@ -822,19 +822,19 @@ version = "2.28.1010+0"
 
 [[deps.MessagePassingRulesApproximations]]
 deps = ["FastCholesky", "LinearAlgebra"]
-path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/MessagePassingRulesApproximations"
+path = "../../lib/MessagePassingRulesApproximations"
 uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 version = "0.1.0-DEV"
 
 [[deps.MessagePassingRulesBase]]
 deps = ["BayesBase", "LinearAlgebra", "MacroTools", "TupleTools"]
-path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/MessagePassingRulesBase"
+path = "../../lib/MessagePassingRulesBase"
 uuid = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 version = "0.1.0-DEV"
 
 [[deps.MessagePassingRulesTestUtils]]
 deps = ["BayesBase", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Serialization", "Statistics", "TOML", "Test"]
-path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/MessagePassingRulesTestUtils"
+path = "../../lib/MessagePassingRulesTestUtils"
 uuid = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 version = "0.1.0-DEV"
 
@@ -1197,8 +1197,8 @@ version = "2.9.0"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
 [[deps.StandardMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "LogExpFunctions", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
-path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/StandardMessagePassingRules"
+deps = ["BayesBase", "Distributions", "DomainSets", "ExponentialFamily", "LogExpFunctions", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
+path = "../../lib/StandardMessagePassingRules"
 uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
 version = "0.1.0-DEV"
 

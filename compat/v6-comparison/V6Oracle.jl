@@ -4,7 +4,7 @@ module V6Oracle
 
 using ReactiveMP
 
-export v6_message_update, v6_marginal_update, v6_average_energy, v6_logdensity, v6_interfaces
+export v6_message_update, v6_marginal_update, v6_average_energy, v6_logdensity, v6_interfaces, v6_cluster_blocks
 
 v6_target(target::Symbol) = Val(target)
 v6_target((edge, k)::Tuple{Symbol, Integer}) = (Val(edge), k)
@@ -72,6 +72,28 @@ function order_by_interfaces(fform, inputs::NamedTuple)
     position(key) = something(findfirst(==(Symbol(first(split(string(key), "_")))), names), length(names) + 1)
     sorted = sort(collect(keys(inputs)); by = position)
     return NamedTuple{Tuple(sorted)}(map(k -> inputs[k], Tuple(sorted)))
+end
+
+"""
+    v6_cluster_blocks(fform, result::NamedTuple)
+
+The blocks of a v6 marginal rule's NamedTuple result as `members => value` pairs, a key such
+as `out_μ` split into `(:out, :μ)` by matching the node's own interface names, never by
+guessing at `_`.
+"""
+function v6_cluster_blocks(fform, result::NamedTuple)
+    names = map(string, collect(v6_interfaces(fform)))
+    return [Tuple(split_into_interfaces(string(key), names)) => value for (key, value) in pairs(result)]
+end
+
+function split_into_interfaces(key::AbstractString, names)
+    key in names && return [Symbol(key)]
+    for name in names
+        startswith(key, name * "_") || continue
+        rest = split_into_interfaces(key[(ncodeunits(name) + 2):end], names)
+        rest === nothing || return [Symbol(name); rest]
+    end
+    return nothing
 end
 
 """The v6 node's log-density, as a keyword function of its interfaces."""

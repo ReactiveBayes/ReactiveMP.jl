@@ -18,3 +18,13 @@
         Dirichlet(probs .+ one(eltype(probs)))
     end,
 )
+
+@define_message_update_rule(
+    node = Categorical, target = :p,
+    args = (q[:out]::Any,),
+    body = (args) -> throw(
+        ArgumentError(
+            "This rule is only defined for PointMass over a one-hot vector or a Categorical distribution. Got: $(typeof(args.q[:out]))",
+        ),
+    ),
+)

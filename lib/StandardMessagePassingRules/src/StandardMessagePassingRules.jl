@@ -18,8 +18,10 @@ using SpecialFunctions: loggamma, logfactorial
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny
 using LogExpFunctions: softmax!
+using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
+import DomainSets
 
-export NormalMixture, NormalMixtureVMP
+export NormalMixture, NormalMixtureVMP, GammaShapeLikelihood
 
 include("helpers.jl")
 
@@ -29,6 +31,7 @@ const NODES = [NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categori
 include("nodes/normal_mean_variance.jl")
 include("rules/normal_mean_variance/out.jl")
 include("rules/normal_mean_variance/mean.jl")
+include("rules/normal_mean_variance/var.jl")
 include("rules/normal_mean_variance/marginals.jl")
 
 include("nodes/normal_mean_precision.jl")
@@ -38,14 +41,20 @@ include("rules/normal_mean_precision/precision.jl")
 include("rules/normal_mean_precision/marginals.jl")
 
 include("nodes/gamma_shape_rate.jl")
+include("gamma_shape_likelihood.jl")
 include("rules/gamma_shape_rate/out.jl")
+include("rules/gamma_shape_rate/a.jl")
+include("rules/gamma_shape_rate/b.jl")
+include("rules/gamma_shape_rate/marginals.jl")
 
 include("nodes/categorical.jl")
 include("rules/categorical/out.jl")
 include("rules/categorical/p.jl")
+include("rules/categorical/marginals.jl")
 
 include("nodes/dirichlet.jl")
 include("rules/dirichlet/out.jl")
+include("rules/dirichlet/marginals.jl")
 
 include("nodes/normal_mixture.jl")
 include("rules/normal_mixture/m.jl")

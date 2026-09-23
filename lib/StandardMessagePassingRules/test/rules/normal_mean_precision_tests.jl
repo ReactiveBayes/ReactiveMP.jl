@@ -84,3 +84,29 @@ end
     @verify_message_update_rule(node = NormalMeanPrecision, target = :μ, q = (out = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)))
     @verify_message_update_rule(node = NormalMeanPrecision, target = :τ, q = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(0.0, 2.0)))
 end
+
+@testitem "rules:NormalMeanPrecision:split-marginals" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+
+    # A point-mass message splits the cluster; the precision adds E[τ].
+    @test_marginal_update_rule(
+        node = NormalMeanPrecision, target = (:out, :μ),
+        cases = [
+            (m = (out = PointMass(1.0), μ = NormalMeanPrecision(0.0, 1.0)), q = (τ = GammaShapeRate(3.0, 2.0),)) =>
+                FactorizedCluster((:out,) => PointMass(1.0), (:μ,) => NormalWeightedMeanPrecision(1.5, 2.5)),
+            (m = (out = NormalMeanPrecision(0.0, 1.0), μ = PointMass(1.0)), q = (τ = PointMass(2.0),)) =>
+                FactorizedCluster((:out,) => NormalWeightedMeanPrecision(2.0, 3.0), (:μ,) => PointMass(1.0)),
+        ],
+    )
+    @test_marginal_update_rule(
+        node = NormalMeanPrecision, target = (:out, :μ, :τ),
+        cases = [
+            (m = (out = NormalMeanPrecision(0.0, 1.0), μ = PointMass(1.0), τ = PointMass(2.0)),) =>
+                FactorizedCluster((:out,) => NormalWeightedMeanPrecision(2.0, 3.0), (:μ,) => PointMass(1.0), (:τ,) => PointMass(2.0)),
+            (m = (out = PointMass(1.0), μ = NormalMeanPrecision(0.0, 1.0), τ = PointMass(2.0)),) =>
+                FactorizedCluster((:out,) => PointMass(1.0), (:μ,) => NormalWeightedMeanPrecision(2.0, 3.0), (:τ,) => PointMass(2.0)),
+            (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5), τ = PointMass(0.5)),) =>
+                FactorizedCluster((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 4.0], [1.5 -0.5; -0.5 2.5]), (:τ,) => PointMass(0.5)),
+        ],
+    )
+end
