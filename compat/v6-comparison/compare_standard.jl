@@ -47,6 +47,16 @@ const MESSAGE_CASES = [
     ("NMP:μ:q-gamma", NormalMeanPrecision, :μ, (q = (out = PointMass(1.2), τ = GammaShapeRate(3.0, 2.0)),), false),
     ("NMP:μ:m-normal-q-gamma", NormalMeanPrecision, :μ, (m = (out = NormalMeanVariance(0.0, 1.0),), q = (τ = GammaShapeRate(3.0, 2.0),)), false),
     ("NMP:τ:q-normals", NormalMeanPrecision, :τ, (q = (out = PointMass(1.2), μ = NormalWeightedMeanPrecision(1.0, 2.0)),), false),
+    ("GSR:out:m-point-masses", GammaShapeRate, :out, (m = (α = PointMass(2.0), β = PointMass(3.0)),), false),
+    ("GSR:out:q", GammaShapeRate, :out, (q = (α = PointMass(2.0), β = GammaShapeRate(2.0, 4.0)),), false),
+    ("Categorical:out:m-dirichlet", Categorical, :out, (m = (p = Dirichlet([1.0, 3.0]),),), false),
+    ("Categorical:out:q-dirichlet", Categorical, :out, (q = (p = Dirichlet([1.0, 3.0, 0.5]),),), false),
+    ("Categorical:out:m-point-mass", Categorical, :out, (m = (p = PointMass([0.2, 0.8]),),), false),
+    ("Categorical:out:q-point-mass", Categorical, :out, (q = (p = PointMass([0.2, 0.8]),),), false),
+    ("Categorical:p:q-categorical", Categorical, :p, (q = (out = Categorical([0.3, 0.2, 0.5]),),), false),
+    ("Categorical:p:q-one-hot", Categorical, :p, (q = (out = PointMass([0.0, 1.0, 0.0]),),), false),
+    ("Dirichlet:out:m", Dirichlet, :out, (m = (a = PointMass([1.0, 2.0]),),), false),
+    ("Dirichlet:out:q", Dirichlet, :out, (q = (a = PointMass([1.0, 2.0, 4.0]),),), false),
 ]
 
 const CLUSTER_MESSAGE_CASES = [
@@ -63,6 +73,10 @@ const AVERAGE_ENERGY_CASES = [
     ("NMV:energy:singles", NormalMeanVariance, (q = (out = NormalMeanVariance(0.0, 1.0), μ = NormalMeanVariance(1.0, 2.0), v = INVERSE_GAMMA),), false),
     ("NMV:energy:joint", NormalMeanVariance, (q = (v = PointMass(2.0),), clusters = ((:out, :μ) => MvNormalMeanCovariance([0.0, 1.0], [1.0 0.2; 0.2 2.0]),)), false),
     ("NMP:energy:singles", NormalMeanPrecision, (q = (out = PointMass(1.2), μ = NormalWeightedMeanPrecision(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)),), false),
+    ("GSR:energy:point-mass-α", GammaShapeRate, (q = (out = GammaShapeRate(2.0, 3.0), α = PointMass(2.0), β = GammaShapeRate(3.0, 1.5)),), false),
+    ("GSR:energy:gamma-α", GammaShapeRate, (q = (out = GammaShapeRate(2.0, 3.0), α = GammaShapeRate(4.0, 2.0), β = PointMass(3.0)),), false),
+    ("Categorical:energy", Categorical, (q = (out = Categorical([0.3, 0.2, 0.5]), p = Dirichlet([1.0, 3.0, 0.5])),), false),
+    ("Dirichlet:energy", Dirichlet, (q = (out = Dirichlet([2.0, 3.0]), a = PointMass([2.0, 1.0])),), false),
     ("NMP:energy:joint", NormalMeanPrecision, (q = (τ = GammaShapeRate(3.0, 2.0),), clusters = ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),)), false),
 ]
 

@@ -1,0 +1,74 @@
+# E[log x] under Gamma(a, rate b) is digamma(a) - log(b); under Dirichlet(a) it is
+# digamma(aᵢ) - digamma(Σa).
+
+@testitem "rules:GammaShapeRate" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
+    using SpecialFunctions: digamma, loggamma
+
+    @test_message_update_rule(
+        node = GammaShapeRate, target = :out,
+        cases = [
+            (m = (α = PointMass(2.0), β = PointMass(3.0)),) => GammaShapeRate(2.0, 3.0),
+            (q = (α = PointMass(2.0), β = GammaShapeRate(2.0, 4.0)),) => GammaShapeRate(2.0, 0.5),
+        ],
+    )
+    @test_average_energy(
+        node = GammaShapeRate,
+        cases = [
+            (q = (out = GammaShapeRate(2.0, 3.0), α = PointMass(2.0), β = PointMass(3.0)),) =>
+                loggamma(2.0) - 2 * log(3.0) - (2 - 1) * (digamma(2.0) - log(3.0)) + 3 * (2 / 3),
+        ],
+    )
+    @verify_message_update_rule(node = GammaShapeRate, target = :out, q = (α = PointMass(2.0), β = GammaShapeRate(2.0, 4.0)))
+end
+
+@testitem "rules:Categorical" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using SpecialFunctions: digamma
+
+    softened = (a -> (ρ = exp.(digamma.(a) .- digamma(sum(a))); ρ ./ sum(ρ)))([1.0, 3.0])
+    # Promotion is checked in Float32 and Float64 only, here and below: converting a
+    # Categorical whose Float64 probabilities sum to one only approximately into BigFloat
+    # fails Distributions' probability-vector check, before any rule is involved.
+    @test_message_update_rule(
+        node = Categorical, target = :out, float_types = (Float32, Float64),
+        cases = [
+            (m = (p = Dirichlet([1.0, 3.0]),),) => ExpectedWithAnnotations(Categorical([0.25, 0.75]); logscale = 0),
+            (q = (p = Dirichlet([1.0, 3.0]),),) => Categorical(softened),
+            (m = (p = PointMass([0.2, 0.8]),),) => Categorical([0.2, 0.8]),
+            (q = (p = PointMass([0.2, 0.8]),),) => Categorical([0.2, 0.8]),
+        ],
+    )
+    @test_message_update_rule(
+        node = Categorical, target = :p, float_types = (Float32, Float64),
+        cases = [
+            (q = (out = Categorical([0.3, 0.7]),),) => ExpectedWithAnnotations(Dirichlet([1.3, 1.7]); logscale = -log(2.0)),
+            (q = (out = PointMass([0.0, 1.0]),),) => ExpectedWithAnnotations(Dirichlet([1.0, 2.0]); logscale = -log(2.0)),
+        ],
+    )
+    @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = PointMass([0.5, 0.5]),))
+    @test_average_energy(
+        node = Categorical, float_types = (Float32, Float64),
+        cases = [(q = (out = Categorical([0.3, 0.7]), p = Dirichlet([1.0, 3.0])),) => -sum([0.3, 0.7] .* (digamma.([1.0, 3.0]) .- digamma(4.0)))],
+    )
+end
+
+@testitem "rules:Dirichlet" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
+    using SpecialFunctions: digamma, loggamma
+
+    @test_message_update_rule(
+        node = Dirichlet, target = :out,
+        cases = [
+            (m = (a = PointMass([1.0, 2.0]),),) => Dirichlet([1.0, 2.0]),
+            (q = (a = PointMass([1.0, 2.0]),),) => Dirichlet([1.0, 2.0]),
+        ],
+    )
+    @test_average_energy(
+        node = Dirichlet,
+        cases = [
+            (q = (out = Dirichlet([2.0, 3.0]), a = PointMass([2.0, 1.0])),) =>
+                -loggamma(3.0) + loggamma(2.0) + loggamma(1.0) - (2.0 - 1) * (digamma(2.0) - digamma(5.0)),
+        ],
+    )
+end

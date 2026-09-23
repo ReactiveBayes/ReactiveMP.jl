@@ -4,7 +4,10 @@
     # another package owns, through functions the base package owns. That is the design, and
     # Aqua reports it as piracy, so the node types are declared as owned here. Message rules
     # never show up: their target's `Symbol` parameter makes them look owned to Aqua.
-    Aqua.test_all(StandardMessagePassingRules; piracies = (treat_as_own = StandardMessagePassingRules.NODES,))
+    # An alias such as `Categorical`, a `DiscreteNonParametric` with fixed parameters, is
+    # compared by its underlying type.
+    owned = unique([StandardMessagePassingRules.NODES; map(T -> Base.unwrap_unionall(T).name.wrapper, StandardMessagePassingRules.NODES)])
+    Aqua.test_all(StandardMessagePassingRules; piracies = (treat_as_own = owned,))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

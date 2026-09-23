@@ -19,7 +19,7 @@ relying on one.
 **Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
 the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Step 2, the
 base-package additions, is done. Step 3, porting the slice's rules, is under way: its
-checklist is in § Phase 4.5, and `NormalMeanVariance` and `NormalMeanPrecision` are ported. The
+checklist is in § Phase 4.5, and the NMV, NMP, GammaShapeRate, Categorical and Dirichlet nodes are ported. The
 design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
 in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
@@ -822,7 +822,14 @@ Findings so far:
 - [x] `NormalMeanPrecision`: `out.jl`, `mean.jl`, `precision.jl`, the `(:out, :μ)` marginal
       and both average energies. It needs no correction: `E[τ]` is right for a precision. v6's
       scalar `cholinv` becomes `inv`, and the v6 comparison agrees on every case
-- [ ] `GammaShapeRate`, `Categorical`, `Dirichlet`
+- [x] `GammaShapeRate`, `Categorical`, `Dirichlet`: every v6 rule and average energy of the
+      three nodes, and v6's private `isonehot` helper. One easy win beyond v6: the softened
+      `Categorical(:out)` rule for `q[:p]::Dirichlet` clamped to `[tiny, Inf]`, which turned
+      every input into `Float64`, so v6 tested no Categorical rule for type promotion.
+      `max(ρ, tiny)` gives the same numbers and keeps the input's precision. The v6
+      comparison agrees on all of it, 100 checks in total. Categorical tables check promotion
+      in Float32 and Float64 only, because converting a Categorical whose probabilities sum
+      to one only approximately into BigFloat fails Distributions' own check
 - [ ] `NormalMixture`
 - [ ] `Unscented` into `MessagePassingRulesApproximations` (the Delta node and its rules stay
       in ReactiveMP, for the engine to port in case (d))
