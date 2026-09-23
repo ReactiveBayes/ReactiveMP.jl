@@ -116,7 +116,7 @@ replacement".
 | `ARunsafe` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
 | `AbstractApproximationMethod` | `type` | `src/approximations/approximations.jl` | `approximations` |  |
 | `AbstractFormConstraint` | `type` | `src/constraints/form.jl` | `engine` |  |
-| `AbstractMessage` | `type` | `src/message.jl` | `base` | value type; the observable half stays in the engine |
+| `AbstractMessage` | `type` | `src/message.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Adam` | `type` | `src/approximations/optimizers/adam.jl` | `delete` | optimiser for the old `ProdCVI` path; use Optimisers.jl directly |
 | `AdditiveCouplingLayer` | `type` | `src/nodes/predefined/flow/layers/additive_coupling_layer.jl` | `node:Flow` |  |
 | `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `base` |  |
@@ -179,10 +179,10 @@ replacement".
 | `LaplaceApproximation` | `type` | `src/approximations/laplace.jl` | `delete` | no in-tree consumer; takes Optim with it; no replacement |
 | `Linearization` | `type` | `src/approximations/linearization.jl` | `approximations` |  |
 | `LogScaleAnnotations` | `type` | `src/annotations/logscale.jl` | `base` |  |
-| `Marginal` | `type` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `Marginal` | `type` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Marginalisation` | `type` | `src/nodes/nodes.jl` | `delete` | dead dispatch axis, hardcoded at all 5 construction sites; absorbed by the algorithm axis |
 | `MeanBased` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
-| `Message` | `type` | `src/message.jl` | `base` | value type; the observable half stays in the engine |
+| `Message` | `type` | `src/message.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Mixture` | `type` | `src/nodes/predefined/mixture.jl` | `standard` |  |
 | `MixtureNode` | `type` | `src/nodes/predefined/mixture.jl` | `standard` |  |
 | `MomentMatching` | `type` | `src/nodes/nodes.jl` | `delete` | defined and exported but dispatched on nowhere; absorbed by the algorithm axis |
@@ -222,8 +222,8 @@ replacement".
 | `VariableBoundEntropy` | `type` | `src/score/variable.jl` | `engine` | walks the graph |
 | `approximation_name` | `function` | `src/approximations/approximations.jl` | `approximations` |  |
 | `approximation_short_name` | `function` | `src/approximations/approximations.jl` | `approximations` |  |
-| `as_marginal` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
-| `as_message` | `function` | `src/message.jl` | `base` | value type; the observable half stays in the engine |
+| `as_marginal` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
+| `as_message` | `function` | `src/message.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `compile` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `compose_Nks` | `function` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
 | `constrain_form` | `function` | `src/constraints/form.jl` | `engine` |  |
@@ -235,20 +235,20 @@ replacement".
 | `dot` | `function` | `src/nodes/predefined/dot_product.jl` | `standard` |  |
 | `factorisation` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `factornode` | `function` | `src/nodes/nodes.jl` | `engine` |  |
-| `functional_dependencies` | `function` | `src/nodes/predefined/bifm.jl` | `base` | the dependency protocol itself |
+| `functional_dependencies` | `function` | `src/nodes/predefined/bifm.jl` | `base` | the dependency protocol itself; becomes `dependencies_spec` |
 | `functionalform` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `get_rule_input_arguments` | `function` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
 | `getannotations` | `function` | `src/annotations.jl` | `base` |  |
 | `getapproximation` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
-| `getdata` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `getdata` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `getinterfaces` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `getlayers` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `getlogscale` | `function` | `src/annotations/logscale.jl` | `base` |  |
 | `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
 | `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
 | `huge` | `const` | `src/ReactiveMP.jl` | `base` | re-exported from TinyHugeNumbers |
-| `is_clamped` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
-| `is_initial` | `function` | `src/marginal.jl` | `base` | value type; the observable half stays in the engine |
+| `is_clamped` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
+| `is_initial` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `isdeterministic` | `function` | `src/nodes/nodes.jl` | `base` |  |
 | `isstochastic` | `function` | `src/nodes/nodes.jl` | `base` |  |
 | `laplace` | `function` | `src/approximations/laplace.jl` | `delete` | no in-tree consumer; no replacement |

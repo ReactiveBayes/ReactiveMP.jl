@@ -390,8 +390,9 @@ design now.
 
 **What stays true regardless of the representation:** resolution must not go through a
 runtime container. A spec fetched from a `Dict` keyed on runtime values infers as `Any`
-whatever the spec's own type, so § Registry's per-module `const` plus dispatch is a
-requirement, not a preference.
+whatever the spec's own type, so resolution by dispatch on the base package's `find_*`
+methods is a requirement, not a preference. The per-module `const` of § Registry is
+introspection only and is never read on the resolution path (`DISCUSSION.md` §3.23).
 
 **Measuring this is easy to get wrong, in the direction that flatters whatever you built.**
 If the spec is constructed inline inside an inlinable `find_rule`, the compiler constant-folds
@@ -644,7 +645,8 @@ Pólya/GPL-3), impurity (`BIFM` mutates its meta from inside message rules), eng
 
 **The full assignment lives in `INVENTORY.md`**, not here: 231 entities — 49 nodes, 165
 exported symbols, 8 engine-hook families, 2 extensions and 7 rule-level exceptions — each
-with a destination, generated and checked by `scripts/inventory.jl` and gated in CI. This
+with a destination, generated and checked by `scripts/inventory.jl` and gated by the root suite's `:quality`
+item. This
 section states the policy; the inventory states the 231 decisions, and is the thing to
 consult when moving code.
 
@@ -698,8 +700,9 @@ before/after doctests can both execute. What cannot coexist is ReactiveMP v7 aga
 same package name. **So Phase 4.5 and Phase 7 engine comparisons must run against values
 recorded from v6, not a live side-by-side**, which is why that checker must
 capture results rather than only assert equality. The engine itself is rewritten in place
-in `src/`, with no bridge letting v6 call the new rules; the v6 engine and rules are
-deleted as they are replaced, after their fixtures are recorded (`DISCUSSION.md` §3.18).
+in `src/`, with no bridge letting v6 call the new rules; the v6 rule system and every
+unported node moved to `legacy/v6/` in step 4, after their fixtures were recorded
+(`DISCUSSION.md` §3.18, §3.22).
 ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`, wired the same way.
 **Downstream breakage before the release is accepted**: only a small internal group uses the
 branch and checks it locally, and the coordinated downstream CI stays a Phase 8 gate.
@@ -948,10 +951,10 @@ The dispatch result, ownership contracts and early engine integration are separa
    the axis later is a new keyword rather than a resurfacing, so it waits for a concrete use
    case. *(Since the Phase 4.5 algorithm reconciliation a `DefaultAlgorithmExtension` gives a
    one-level overlay without any ruleset keyword: its own rules first, the default's for the
-   rest. The general `Overlay(mine, standard)` stays deferred. If a use case needs an overlay over
-a node's own algorithm, the recommended form is an extension with an explicit parent,
-`AlgorithmExtension{Parent}`, rather than a registry axis; both are sketched in
-`DISCUSSION.md` §3.23.)* The rule-fallback contract was
+   rest. The general `Overlay(mine, standard)` stays deferred. If a use case needs an overlay
+   over a node's own algorithm, the recommended form is an extension with an explicit parent,
+   `AlgorithmExtension{Parent}`, rather than a registry axis; both are sketched in
+   `DISCUSSION.md` §3.23.)* The rule-fallback contract was
    specified independently, as required:
    **resolution is a separate, total function** — `find_rule` returns a spec or a
    `RuleNotFound`, never throws and never runs anything, and the fallback is consulted on the
@@ -1079,7 +1082,7 @@ a node's own algorithm, the recommended form is an extension with an explicit pa
     ones that cannot are listed individually. All 18 exported deletions (21 deletion rows at the time; 22 since `NormalMixtureNode` joined them in Phase 4.5) carry a
     migration note, including where the answer is "no replacement".
 
-    Generated and validated by `scripts/inventory.jl`, gated in CI by
+    Generated and validated by `scripts/inventory.jl`, gated by the root suite's
     `test/inventory_tests.jl` (tag `:quality`), so a node added upstream without a
     destination fails the suite rather than being silently missed at split time.
 

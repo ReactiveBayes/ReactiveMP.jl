@@ -6,7 +6,7 @@ this checkout, which becomes v7 and would collide by name.
 ## What it is for
 
 Phase 4's migration checker runs a v6 rule and a v7 rule on identical inputs and asserts
-they agree. `MIGRATION.md`'s before/after doctests execute here too. Both work in a single
+they agree. `MIGRATION.md`'s before/after doctests will execute here too, once Phase 5 writes it. Both work in a single
 process because the new rule packages are differently named and do not depend on
 ReactiveMP, so v6 and they coexist.
 
@@ -45,19 +45,8 @@ println(pkgversion(ReactiveMP), "  ", pathof(ReactiveMP))'
 The path must be under `~/.julia/packages/`. If it points into this repository, something
 has dev-linked the local copy and the comparison is measuring v7 against itself.
 
-## Adding the new packages
-
-As Phase 3 onwards creates them, add them by relative path from the repository root:
-
-```julia
-julia> using Pkg
-julia> Pkg.activate("compat/v6-comparison")
-julia> Pkg.develop(path = "lib/MessagePassingRulesBase")
-julia> Pkg.develop(path = "lib/StandardMessagePassingRules")
-```
-
 `Pkg.develop` resolves its path against the working directory, not the activated project,
-so run this from the repository root.
+so run this from the repository root. A new lib package joins the same single `develop` call.
 
 ## Engine fixtures (Phase 4.5)
 
@@ -74,8 +63,10 @@ The fixtures are `fixtures/engine/<model>.toml`, one per slice model, written by
 `MessagePassingRulesTestUtils.save_engine_fixture`. Each holds the free energy per iteration,
 the final posteriors, and every message-rule call in the order v6 made it, which is
 materialisation order, with its result and log scale. They are **TOML, not `Serialization`**,
-so ReactiveMP's tests can read them on every Julia version in the CI matrix. `--check`
-re-records the fixtures and compares them with the committed files; it is run locally, and CI would run it on a PR. The header's
+so ReactiveMP's tests can read them on a Julia minor other than the one that recorded them
+(recorded on 1.10.12, read on 1.13). `--check` re-records the fixtures and compares them with
+the committed files; it is run locally, since the `v6-comparison` CI job still targets 1.10
+and is stale until the workflows are updated (`PHASES.md` § Phase 7). The header's
 `notes` say what the recording could not capture: log scales are recorded only where v6
 produces them, which is `bp_iid` alone. See `PHASES.md` § Phase 4.5, Step 0.
 
@@ -109,12 +100,7 @@ julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/slic
   `src/approximations/`.
 - `slice_rule_inventory.jl`: every v6 rule the slice models select, with its declared types.
 
-The disposition inventory runs here too, `julia --project=compat/v6-comparison
-scripts/inventory.jl --check`: it records where everything in ReactiveMP 6.5.0 goes, and since
-Phase 4.5 step 4 only v6.5.0 still has all of it. The root suite's `:quality` item runs it.
-The engine fixtures in `fixtures/engine/` are what `test/engine/` in the root suite compares
-the new engine with.
-
+How the checker works:
 
 - `V6Oracle.jl` calls a v6 rule from the inputs a v7 rule takes, and returns its result and
   log scale. It is the only code in the repository that names ReactiveMP v6's internals.
@@ -124,6 +110,12 @@ the new engine with.
 - v6 rules are verified against their own node definitions with `verify_message_update`.
   Failures there are findings about v6, pinned in `KNOWN_V6_FINDINGS` with their
   explanation, so a new one fails the run until it is understood.
+
+The disposition inventory runs here too, `julia --project=compat/v6-comparison
+scripts/inventory.jl --check`: it records where everything in ReactiveMP 6.5.0 goes, and since
+Phase 4.5 step 4 only v6.5.0 still has all of it. The root suite's `:quality` item runs it.
+The engine fixtures in `fixtures/engine/` are what `test/engine/` in the root suite compares
+the new engine with.
 
 All four `lib/` packages are dev'd into this environment by relative path and recorded in the
 committed manifest, resolved on 1.13.

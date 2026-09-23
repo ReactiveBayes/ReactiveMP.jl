@@ -8,9 +8,12 @@ without a diff alongside it is how a tracking file starts lying.
 
 Branch: `refactor/rule-node-system-rewrite`
 
-`file:line` citations in the three documents were re-verified against the code after the
-Runic reformat (`3e3adae6`). A later reformat or edit moves them again, so re-check before
-relying on one.
+`file:line` citations in the three documents were last re-verified against the code after
+step 4 (`94f84efd`). Citations into v6 code name ReactiveMP 6.5.0's layout; the nodes, rules,
+`clusters.jl`, `dependencies.jl`, `score/` and the fallbacks are in `legacy/v6/` under the
+same paths, while v6's `message.jl` and `marginal.jl` were rewritten in place, so their v6
+line numbers are only in the 6.5.0 release. A later reformat or edit moves them again, so
+re-check before relying on one.
 
 ---
 
@@ -34,6 +37,7 @@ factorisation and initial marginals.
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
 | `docs/` rewritten for the new engine (`make docs` refuses until then) | Phase 5 | § Phase 5 |
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
+| the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
@@ -140,8 +144,9 @@ generic ones, and no comments that only narrate.
         symbols, 8 engine-hook families, 2 extensions, 7 rule-level exceptions. Rules
         inherit their node's destination, so only the rules that cannot are listed
   - [x] **231 destinations decided**; `--check` passes. Totals: `standard` 58,
-        `base` 43, `engine` 32, `delete` 21 *(22, and `standard` 57, since `NormalMixtureNode`
-        became a deletion in Phase 4.5)*, `node:Flow` 16, `node:Delta` 11,
+        `base` 43, `engine` 32 *(35 and 40 since `Message`, `Marginal` and six accessors were
+        corrected to `engine` after step 4, as `PLAN.md` § Package split decided)*, `delete` 21
+        *(22, and `standard` 57, since `NormalMixtureNode` became a deletion in Phase 4.5)*, `node:Flow` 16, `node:Delta` 11,
         `models` 11, `node:Polya` 10, `node:Autoregressive` 9, `approximations` 7,
         `node:ContinuousTransition` 5, `node:BIFM` 5, `node:DiscreteTransition` 3.
         `StandardMessagePassingRules` is distributions, arithmetic, logic and mixtures;
@@ -728,8 +733,9 @@ re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
 - **Missing inputs as v6**: no rule call, no post-rule processors, result `missing`
   (`execute_rule` docstring, `rulespec.jl:136-139`).
 - **Resolution before execution.** `find_message_rule`/`find_marginal_rule`/
-  `find_average_energy` return a `RuleSpec` or `RuleNotFound` and never throw; the engine's
-  fallback sits on the `RuleNotFound` branch; `execute_rule(spec, output, algorithm, ctx,
+  `find_average_energy` return a `RuleSpec` or `RuleNotFound` and never throw; an engine
+  fallback would sit on the `RuleNotFound` branch, and the first cut has none (user fallbacks
+  are Phase 7; until then `RuleNotFound` is raised as `RuleNotFoundError`); `execute_rule(spec, output, algorithm, ctx,
   args, ann, target)` — seven arguments, the target included (`rulespec.jl:141`) — never
   catches. The engine passes it `rule_algorithm(spec, algorithm)`, which is `DefaultAlgorithm()`
   when a `DefaultAlgorithmExtension` inherited the rule (algorithm reconciliation).
@@ -745,7 +751,9 @@ re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
 
 ### What v6 does, and where — to replace, and to record fixtures from
 
-All re-verified in the post-Phase-4 audit.
+All re-verified in the post-Phase-4 audit, **against v6**. Step 4 has since replaced these in
+`src/`: the line numbers are ReactiveMP 6.5.0's, and the files other than `message.jl` and
+`marginal.jl` are kept under the same paths in `legacy/v6/`.
 
 - rule call: `MessageMapping`, `src/message.jl:570-738`. The callable is at `:657`; it builds
   `ruleargs` at `:692-703` and calls `rule(ruleargs...)` at `:704`; the fallback runs on a
@@ -774,12 +782,13 @@ seven models into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `b
 `vmp_meanfield`, `vmp_structured`, `normal_mixture` and `delta_unscented`. Each fixture holds
 the free energy per iteration, the final posteriors, and every message-rule call **in the
 order v6 made it**, with its result and log scale. That order is materialisation order, and it
-includes the mixture's. `--check` re-records and compares; it runs locally, and the `v6-comparison` CI job would run it on a PR.
+includes the mixture's. `--check` re-records and compares; it runs locally. The `v6-comparison` CI job still
+targets 1.10 and is stale until the workflows are updated (Phase 7).
 
 The fixture is TestUtils' `EngineTrajectory`, holding `RuleCallRecord`s, written as **TOML**
 (`save_engine_fixture`/`load_engine_fixture`, compared by `compare_engine_trajectory`).
 `Serialization`, which the rule-level `MigrationRecord` uses, only reads back on the Julia
-minor that wrote it, and ReactiveMP's tests read these on 1.10–1.12.
+minor that wrote it, and the fixtures were recorded on 1.10.12 and are read on 1.13.
 
 What recording found, all **preserved, not fixed**:
 - **Log scales are recorded only for `bp_iid`.** Log scales are a niche feature with known
@@ -886,7 +895,7 @@ Porting conventions:
 - log scales are kept exactly as v6 has them, gaps included;
 - each node gets v6's own tables, verification against its log-density where the tool
   supports the inputs (messages only, or marginals only), and a v6 comparison in
-  `compat/v6-comparison/compare_standard.jl`, which CI runs.
+  `compat/v6-comparison/compare_standard.jl`, run locally.
 
 **Renamed on 2026-09-23 (user): the rule keyword `towards` is now `target`**, in the macros,
 the interactive functions, the test tooling and every document. See `DISCUSSION.md` §3.19.
@@ -1109,6 +1118,9 @@ GammaShapeRate, all ported).
   names, and group members would collide under one name. They need `(name, k)` keys that fold
   into one tuple per group.
 - `IndexedTarget{:m}(k)` targets are already produced by `rule_target`; nothing calls them yet.
+- `ManyOf` (`src/nodes/interfaces.jl`) and `proxy_type` (`src/helpers/macrohelpers.jl`) are v6's
+  group container and rule-signature helper, unused since step 4; the group wiring either
+  uses or deletes them.
 - `bethe_free_energy` over a declared partition, when `DependenciesSpec.partition` is set.
 - Exit criteria: #6, the emission order against the fixture's trace (v6's `reverse(...)` in
   `normal_mixture.jl:176,183` orders only the `combineLatest` trigger); #7, group indices kept
@@ -1127,8 +1139,10 @@ GammaShapeRate, all ported).
   `q_out` aliasing (a single-interface cluster's marginal *is* the variable's, which
   `initialize_cluster!` already does); the empty group.
 - The deterministic node score is written (`src/score/node.jl`) but never exercised: it asks
-  for the marginal rule of `ClusterTarget` over the inbound interfaces, `(:in,)` for a group,
-  meaning the joint over the group. Case (d) is its first test.
+  for the marginal rule of `ClusterTarget` over the inbound interfaces, which for a group must
+  be `(:in,)`, the joint over the group. As written it maps `name` over the inbound
+  interfaces (`src/score/node.jl:51`), and `name` of a group member is the group's name, so it
+  would build `(:in, :in, …)`; case (d) folds the members into `(:in,)`, and is its first test.
 - The Delta rules' destination is in `INVENTORY.md`; they leave `legacy/v6/` in the commit
   that ports them.
 
@@ -1320,12 +1334,14 @@ first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `Fa
 ## Phase 6 — Approximations and node packages
 
 **Exit criteria**
-- [ ] **delete first, package second** — `sphericalradial.jl`, `gausslaguerre.jl`,
-      `importance.jl`, `laplace.jl` have no consumer in `src/`; remove them and their tests
-      (skim the tests first, they may be the only record of intended behaviour)
-- [ ] remove the superseded `cvi.jl` (`ProdCVI`/`CVI`), `delta/layouts/cvi.jl`,
-      `rules/delta/cvi/*`, and with them `ReactiveMPOptimisersExt`, the `Optimisers`
-      weakdep and `DiffResults`
+- [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
+      `laplace.jl` had no consumer; step 4 moved them and their tests to `legacy/v6/`, and
+      they are not ported from there (skim the tests first, they may be the only record of
+      intended behaviour)
+- [ ] the superseded `cvi.jl` (`ProdCVI`/`CVI`), `delta/layouts/cvi.jl` and
+      `rules/delta/cvi/*` are not ported from `legacy/v6/` either. *Their dependencies are
+      already gone:* step 4 moved `ReactiveMPOptimisersExt` to `legacy/v6/ext/` and dropped
+      the `Optimisers` weakdep and `DiffResults` from `Project.toml`
 - [ ] delta node's built-in method set is now `{Unscented, Linearization}` — **an accepted
       capability regression**, alongside exported deletions; it needs (a) an explicit breaking
       entry in the release notes, not folded in with the renames, and (b) an error that

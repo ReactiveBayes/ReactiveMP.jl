@@ -526,6 +526,9 @@ it treated one sentence of a draft as a constraint on the whole project. A plain
 argument gives the same behaviour on 1.10. The floor should move when something concrete
 needs it to, and nothing does. `PLAN.md` § Dispatch axes now says this directly.
 
+*(Superseded in Phase 4.5, §3.22: work targets Julia 1.13 only, for the tooling, not for
+`ScopedValues`; the floor is reconsidered at registration.)*
+
 #### Ambiguities are five problems, not one
 
 322 ambiguous pairs sounds like a redesign-scale problem. It is not: **253 of them come

@@ -36,12 +36,18 @@ src/
     clusters.jl        local marginals / factorisation clusters, keyed :μ or (:out, :μ)
     dependencies.jl    the default dependency scheme; stream wiring
     equality.jl        equality-chain optimisation for high-degree variables
+  annotations.jl       AnnotationDict, the per-message annotation store
   annotations/         per-message metadata (log scale, input arguments)
+  callbacks.jl         rule-call and other engine events
+  postprocessors.jl    stream postprocessors (with postprocessors/)
+  constraints/         form constraints
+  helpers/             small internal utilities
   score/               node scores, variable entropies, bethe_free_energy
+  fixes.jl             upstream hot-fixes; empty now
 lib/                   the new packages: the rule system, its test tooling, rules, numerics
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
 legacy/v6/             the v6 rule system and unported nodes, for reference; never loaded
-test/                  mirrors src/; test/engine/ runs whole graphs against the v6 fixtures
+test/                  mostly mirrors src/; test/engine/ runs whole graphs against the v6 fixtures
 ```
 
 Include order in `src/ReactiveMP.jl` is load-bearing: `nodes/equality.jl` must precede
@@ -91,16 +97,18 @@ TestItemRunner would otherwise scan. `@testmodule` names are global across the w
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
 **Every test item carries a tag.** The taxonomy is `:nodes` (19) and `:engine` (95 —
-everything that is not a node test), plus `:alloc` on the two items that assert allocation
-counts and `:quality` on the inventory gate. `:rules` went with the v6 rule tests; rules are
-tested in the lib suites now. `:slow` exists and is
-**unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
+everything except the node tests and the inventory gate), plus `:alloc` on the two items that
+assert allocation counts and `:quality` on the inventory gate. `:rules` went with the v6 rule
+tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
 The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
-`:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`, and `LibTests.yml` runs it. When
-items are tagged `:slow` they disappear from `make test` and stay in `make test-all` and CI.
+`:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`
+(`TEST_ALL=true make test-base`). When items are tagged `:slow` they disappear from `make test`
+and stay in `make test-all`.
 
-The fast default must never become a coverage reduction — CI sets `TEST_ALL=true`, so a
-`:slow` tag changes what *you* run locally, never what CI runs.
+The fast default must never become a coverage reduction — the CI workflows set `TEST_ALL=true`,
+so a `:slow` tag changes what *you* run locally, never what CI runs. The workflows under
+`.github/` still describe the 1.10 matrix and the pre-step-4 layout, and are brought up to date
+before the first PR (`PHASES.md` § Phase 7); until then, "CI" means these checks run locally.
 
 Rule tests live with the rules, in the lib packages, and are table-driven via
 `MessagePassingRulesTestUtils` (`@test_message_update_rule`). The engine's own tests declare

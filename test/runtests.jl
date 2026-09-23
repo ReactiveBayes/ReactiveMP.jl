@@ -15,13 +15,13 @@ end
 # `make test test_args="..."` passes each entry through as an element of `ARGS`. Three
 # prefixes, and they compose:
 #
-#   rules:beta:out       path   -- maps to `test/rules/beta/out`, matched with `occursin`,
+#   engine:fixtures      path   -- maps to `test/engine/fixtures`, matched with `occursin`,
 #                                  so prefixes work. This is the original syntax
-#   tag:rules            tag    -- only items carrying that tag
-#   name:NormalMixture   name   -- only items whose name contains that text
+#   tag:engine           tag    -- only items carrying that tag
+#   name:MessageMapping  name   -- only items whose name contains that text
 #
 # Entries of the same kind are OR'ed together; different kinds are AND'ed. So
-# `test_args="tag:rules name:Beta"` runs the rule tests whose names mention Beta.
+# `test_args="tag:engine name:MessageMapping"` runs the engine tests whose names mention MessageMapping.
 #
 # TestItemRunner's filter already receives `(filename, name, tags)` -- this file previously
 # chose to look at `filename` alone, which is why name and tag selection appeared to need a

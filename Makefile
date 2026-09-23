@@ -26,14 +26,14 @@ doc_init:
 	julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate();'
 
 docs: ## Generate documentation (out of the build until Phase 5 rewrites it for the new engine)
-	@echo "docs/ describes the v6 engine and is out of the build until it is rewritten (PHASES.md § Phase 4.5)"; exit 1
+	@echo "docs/ describes the v6 engine and is out of the build until it is rewritten (PHASES.md § Phase 5)"; exit 1
 
 .PHONY: test test-all test-base test-testutils test-standard test-approximations
 
-test: ## Run the fast subset (skips `:slow`). test_args="rules:beta:out", "tag:rules", "name:Beta" all work; RUN_AQUA=false skips the slow Aqua checks
+test: ## Run the fast subset (skips `:slow`). test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
 
-test-all: ## Run everything, including `:slow`. This is what CI runs
+test-all: ## Run everything, including `:slow`. This is what CI will run
 	TEST_ALL=true julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
 	
 test-base: ## Test lib/MessagePassingRulesBase. Takes test_args like `test`, e.g. test_args="tag:quality"

@@ -114,8 +114,8 @@ isdata(interface::IndexedNodeInterface) = isdata(interface.interface)
 isconst(interface::IndexedNodeInterface) = isconst(interface.interface)
 
 """
-Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s. `@rule` macro 
-also treats `ManyOf` specially.
+Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s.
+It is v6's group container and has no user since the move to `MessagePassingRulesBase`, where a group reaches a rule as a tuple.
 """
 struct ManyOf{T}
     collection::T
