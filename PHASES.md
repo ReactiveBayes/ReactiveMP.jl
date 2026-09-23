@@ -20,9 +20,11 @@ re-check before relying on one.
 ## Next action
 
 **Phase 5, step 6: Matrix and Wishart** — Wishart, InverseWishart, MatrixNormal,
-MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection (§ Phase 5). It
-needs a brief first, as step 5 had. Steps 1–5 are done; step 5, the multivariate normals and
-NormalMixture's multivariate branches, is summarised in § Phase 5, *Step 5 brief*.
+MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. **Briefed**, awaiting
+the user's sign-off: § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
+`public_equivalent` (user, `DISCUSSION.md` §3.29) and the defaults. The first commit is
+Wishart, with `public_equivalent`. Steps 1–5 are done; step 5 is summarised in § Phase 5,
+*Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -40,6 +42,7 @@ NormalMixture's multivariate branches, is summarised in § Phase 5, *Step 5 brie
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
+| `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -163,7 +166,8 @@ generic ones, and no comments that only narrate.
         `node:ContinuousTransition` 5, `node:BIFM` 5, `node:DiscreteTransition` 3.
         `StandardMessagePassingRules` is distributions, arithmetic, logic and mixtures;
         domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) go to a separate
-        package **that is not yet named**, so the token is `models`
+        package **that is not yet named**, so the token is `models` *(since Phase 5 step 6,
+        each gets its own node package, `DISCUSSION.md` §3.30)*
   - [x] `--check` wired into CI as `test/inventory_tests.jl`, tagged `:quality`.
         **Caveat:** no CI job *names* it — `julia-actions/julia-runtest` calls `Pkg.test()`
         with empty `ARGS`, so `runtests.jl` applies no filter and the item rides along inside
@@ -1548,8 +1552,75 @@ multivariate branches.
   checks agree. Found on the way: every multivariate energy was a Float64 whatever its inputs
   (`d * log2π`), fixed in its own commit; ExponentialFamily's InverseWishart has the same bug
   upstream (ExponentialFamily.jl#322).
+
+### Step 6 brief — Matrix and Wishart
+
+**Scope, counted** from `legacy/v6/`: 28 message rules, 4 marginal rules (each over the whole
+node with point-mass inputs, so `FactorizedCluster`s) and 6 average energies, in seven nodes.
+Every node's type is ExponentialFamily's or Distributions', so Standard defines no type. None
+uses `meta`, a correction strategy, an RNG, a rule-to-rule call, `ManyOf` or
+`TerminalProdArgument`, and none has `@allocated` tests.
+
+| node | interfaces (aliases) | message | marginal | energies |
+|---|---|---|---|---|
+| Wishart | out, ν (df), S (scale) | 4 | 1 | 1 |
+| InverseWishart | out, ν (df), S (scale, Ψ) | 4 | 1 | 1 |
+| MatrixNormal | out, M (mean), U (rowcov), V (colcov) | 14 | 1 | 1 |
+| MatrixNormalWishart | out, M (mean), U (rowcov), V (scale), ν (dof) | 1 | 0 | 1 |
+| MvNormalGamma | out, μ, Λ, α, β | 2 | 0 | 1 |
+| MvNormalWishart | out, μ (mean), W (scale), λ, ν | 1 | 0 | 0 |
+| DirichletCollection | out, a | 2 | 1 | 1 |
+
+**Decided (user): `public_equivalent`** replaces the engine's `to_marginal` (§3.29). It maps an
+efficient working type to the public type users expect for the same distribution
+(`WishartFast` → `Wishart`, `InverseWishartFast` → `InverseWishart`), the identity by default.
+The engine applies it to every marginal it forms, in `as_marginal`, so downstream rules
+receive the result as well as users. `MessagePassingRulesBase` owns it for now, documented with
+the working/public split and its uses; Standard adds the two Fast methods in the Wishart
+commit, which also removes `to_marginal`. BayesBase owning it, with ExponentialFamily
+extending it, is recorded for Phase 8.
+
+**Defaults for the step**, open to the user's correction:
+- **v6's mistakes**, corrected and declared, each with an issue tagging @Nimrais:
+  - Wishart's `:out` with a `q_S` takes `inv(mean(q_S))`; naive VMP needs E[S⁻¹],
+    `mean(cholinv, q_S)`, which v6's own energy uses (`rules/wishart/out.jl:11-12`);
+  - MvNormalGamma's `:out` with a `q_μ` drops ½ tr(E[Λ] Cov μ) from the rate
+    (`rules/mv_normal_gamma/out.jl:6-8`);
+  - any other disagreement a hand-derived check finds.
+- **Refused rather than guessed:** where v6 accepts `Any` but its math holds for point masses
+  only, the port narrows the signature, so other inputs find no rule instead of an E[f(x)]
+  computed as f(E[x]): MatrixNormalWishart's energy (`nodes/predefined/matrix_normal_wishart.jl:29-39`),
+  and MatrixNormal's energy, whose `isa MatrixNormal` checks silently drop the second moments
+  of any other type (`matrix_normal.jl:34,38`).
+- **Kept from v6:**
+  - MatrixNormal's BP `:out` and `:M` rules returning a vectorised `MvNormalMeanCovariance`: a
+    sum of Kronecker covariances is not a Kronecker product, so no MatrixNormal message exists;
+  - the improper `InverseWishartFast` likelihoods towards `U` and `V` (degrees of freedom
+    `p - n - 1` and `n - p - 1`), which v6's tables assert;
+  - MvNormalWishart's `W` alias `scale`, a model-spec name, although ExponentialFamily's `scale`
+    of an MvNormalWishart is κ, the `λ` interface;
+  - no rules or energies invented where v6 has none: MatrixNormalWishart and MvNormalWishart
+    are point-mass only, and MvNormalWishart has no energy.
+- **Helpers:** v6's `mul_trace` is not ported; `dot(A', B)` computes tr(AB) without the
+  product. The energies put their constants in the result's float type (`gaussian_energy`
+  where it fits); v6's `d * log(2)`, `d * (d - 1) / 2 * logπ`, `0.5 *`, `.- 1.0` and
+  `n * p * log2π` all make Float64. The float-type test of step 5 extends to these nodes; its
+  InverseWishart `@test_broken` stays until ExponentialFamily.jl#322.
+- **Inverses:** `cholinv`, as in step 5; v6's `inv` in Wishart's `:out` goes.
+- **Tests:** v6's tables, except invalid inputs (MvNormalWishart's ν = 1 at d = 2), dropped
+  with a note. Hand-derived cases for the four marginal rules and for DirichletCollection,
+  which has no rule tests, rank 2 included, which is DiscreteTransition's. MatrixNormalWishart's
+  Monte-Carlo energy test (`rtol = 0.1`) becomes a closed-form case, and v6's `to_marginal` TODO
+  a `public_equivalent` value test. Comparison cases in `compare_standard.jl` for every node.
+- **Order:** one commit per node: Wishart (with `public_equivalent`), InverseWishart,
+  DirichletCollection, MvNormalGamma, MvNormalWishart, MatrixNormal, MatrixNormalWishart.
+- **Consumers elsewhere**, all Phase 6 and using the types only, so nothing waits on them:
+  ConjugateAR (MvNormalGamma), DiscreteTransition (DirichletCollection) and
+  ContinuousTransition (WishartFast, and so `public_equivalent`).
+
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
-   MvNormalGamma, MvNormalWishart, DirichletCollection.
+   MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,
+   `DISCUSSION.md` §3.29).
 7. **Arithmetic**: `+`, `-`, `*`, `dot`. Two questions are settled in that step: v6's
    `meta::AbstractCorrectionStrategy` with `default_meta = ReplaceZeroDiagonalEntries(tiny)`
    (most likely a `DefaultAlgorithmExtension` or an algorithm parameter), and the two
@@ -1604,7 +1675,7 @@ multivariate branches.
 - [ ] hand-written cases done: `mixture/switch.jl` and the `Mixture` rules reading raw
       `messages[i]` (step 8)
 - [ ] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).
-      Probit and ContinuousTransition (Phase 6, `models` and `node:ContinuousTransition`) get
+      Probit and ContinuousTransition (Phase 6, `node:Probit` and `node:ContinuousTransition`) get
       their own algorithms from `ProbitMeta` and `CTMeta`, declaring their dependencies. Probit's
       self-dependency gets a default initial message declared on its node, separately from
       `dependencies`. Two pages are written with the port:
@@ -1648,8 +1719,9 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
       until the numerical protocol (open item #13, parked) is settled
 - [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
 - [ ] confirm `Optim` no longer appears anywhere
-- [ ] non-standard nodes spun out: Flow, Autoregressive, GP, BIFM, Pólya, … (Delta already, in
-      Phase 4.5 case (d))
+- [ ] non-standard nodes spun out: Flow, Autoregressive, GP, BIFM, Pólya, GCV, Probit, SoftDot,
+      GaussianCoupling, … (Delta already, in Phase 4.5 case (d); the last four each get their
+      own package rather than a shared `models` one, `DISCUSSION.md` §3.30)
 - [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
       becomes honest again (see `PLAN.md` § Licensing)
 - [ ] surviving impure algorithms (BIFM and stateful projection algorithms) carry the

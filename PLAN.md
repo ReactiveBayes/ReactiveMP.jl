@@ -629,9 +629,9 @@ algorithms out of the core. Sorting today's 28 deps:
 
 | package | contents | deps |
 |---|---|---|
-| `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` — **not** `Message`/`Marginal`, which stay in the engine | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
+| `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like`, `public_equivalent` (§3.29) — **not** `Message`/`Marginal`, which stay in the engine | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
 | `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `BayesBase`, `StatsFuns`, `SpecialFunctions`, `LogExpFunctions`, `DomainSets`; `FastCholesky`, `LinearAlgebra` and `MatrixCorrectionTools` from Phase 5 step 5 |
-| *(name deferred to Phase 6)* | domain-specific models: `GCV`, `Probit`, `SoftDot`, `GaussianCoupling` | light; `StatsFuns` and the standard rules |
+| node packages | one per non-standard node, among them `GCV`, `Probit`, `SoftDot` and `GaussianCoupling` (user, Phase 5 step 6; `DISCUSSION.md` §3.30) | each its own; `StatsFuns` and the standard rules for those four |
 | `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery, over means and covariances. **Standalone — does *not* depend on the base package, nor on any distribution package** | `LinearAlgebra`, `FastCholesky`; `ForwardDiff` with `Linearization` |
 | `DeltaMessagePassingRules` | the Delta node `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules (created in Phase 4.5 case (d)) | the base, `MessagePassingRulesApproximations`, `ExponentialFamily`, `Distributions`, `BayesBase` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
@@ -642,9 +642,10 @@ follow their nodes out: `Tullio` (only `DiscreteTransition`) and `PolyaGammaHybr
 (only the Pólya nodes).
 
 **Where the line falls.** `StandardMessagePassingRules` holds what is generic and
-model-agnostic — distributions, arithmetic, logic, mixtures. Domain-specific models go to a
-sibling package whose **name is deliberately not fixed until Phase 6**, when it is actually
-built; `INVENTORY.md` records its destination as the placeholder token `models`. A node
+model-agnostic — distributions, arithmetic, logic, mixtures. Domain-specific models each get
+their own node package (user, Phase 5 step 6, replacing the unnamed `models` package;
+`DISCUSSION.md` §3.30): `INVENTORY.md` records them as `node:GCV`, `node:Probit`,
+`node:SoftDot` and `node:GaussianCoupling`. A node
 leaves for its own package only for a stated reason, and every such reason is recorded in
 `INVENTORY.md`: a heavy or licence-bearing dependency (`DiscreteTransition`/Tullio,
 Pólya/GPL-3), impurity (`BIFM` mutates its meta from inside message rules), keeping a distribution package

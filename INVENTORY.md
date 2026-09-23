@@ -18,7 +18,6 @@ Validate with `julia --project=compat/v6-comparison scripts/inventory.jl --check
 |---|---|
 | `base` | `MessagePassingRulesBase` |
 | `standard` | `StandardMessagePassingRules` — distributions, arithmetic, logic, mixtures |
-| `models` | domain-specific models (GCV, Probit, SoftDot, GaussianCoupling); **package not yet named** |
 | `approximations` | `MessagePassingRulesApproximations` |
 | `testutils` | `MessagePassingRulesTestUtils` |
 | `engine` | stays in `ReactiveMP` |
@@ -76,9 +75,9 @@ replacement".
 | `ExponentialFamily.NormalMeanPrecision` | `node` | `src/nodes/predefined/normal_mean_precision.jl` | `standard` |  |
 | `ExponentialFamily.NormalMeanVariance` | `node` | `src/nodes/predefined/normal_mean_variance.jl` | `standard` |  |
 | `Flow` | `node` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
-| `GCV` | `node` | `src/nodes/predefined/gcv.jl` | `models` | needs only StatsFuns |
+| `GCV` | `node` | `src/nodes/predefined/gcv.jl` | `node:GCV` | needs only StatsFuns |
 | `GammaMixture` | `node` | `src/nodes/predefined/gamma_mixture.jl` | `standard` | ~250-line clone of NormalMixture; collapses with groups |
-| `GaussianCoupling` | `node` | `src/nodes/predefined/gaussian_coupling.jl` | `models` |  |
+| `GaussianCoupling` | `node` | `src/nodes/predefined/gaussian_coupling.jl` | `node:GaussianCoupling` |  |
 | `HalfNormal` | `node` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
 | `IMPLY` | `node` | `src/nodes/predefined/implication.jl` | `standard` | logic |
 | `InverseWishart` | `node` | `src/nodes/predefined/wishart_inverse.jl` | `standard` |  |
@@ -91,8 +90,8 @@ replacement".
 | `NormalMixture` | `node` | `src/nodes/predefined/normal_mixture.jl` | `standard` | canary rule for the migration: `NormalMixture((:m, k))` |
 | `OR` | `node` | `src/nodes/predefined/or.jl` | `standard` | logic |
 | `Poisson` | `node` | `src/nodes/predefined/poisson.jl` | `standard` |  |
-| `Probit` | `node` | `src/nodes/predefined/probit.jl` | `models` |  |
-| `SoftDot` | `node` | `src/nodes/predefined/softdot.jl` | `models` | declared as `@node softdot` |
+| `Probit` | `node` | `src/nodes/predefined/probit.jl` | `node:Probit` |  |
+| `SoftDot` | `node` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` | declared as `@node softdot` |
 | `Uninformative` | `node` | `src/nodes/predefined/uninformative.jl` | `standard` | source of 11 Aqua ambiguities against BayesBase `prod` in v6; Standard's `UninformativeProd` has none, and BayesBase owning the identity is the recorded upstream fix |
 | `dot` | `node` | `src/nodes/predefined/dot_product.jl` | `standard` | arithmetic |
 
@@ -161,13 +160,13 @@ replacement".
 | `FormConstraintCheckPickDefault` | `type` | `src/constraints/form.jl` | `engine` |  |
 | `ForwardDiffGrad` | `type` | `src/approximations/cvi.jl` | `delete` | gradient strategy belonging to the old `ProdCVI`; no replacement |
 | `FullSampling` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
-| `GCV` | `type` | `src/nodes/predefined/gcv.jl` | `models` |  |
-| `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `models` |  |
+| `GCV` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` |  |
+| `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` |  |
 | `GammaMixture` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
 | `GammaMixtureNode` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
 | `GaussHermiteCubature` | `type` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
 | `GaussLaguerreQuadrature` | `type` | `src/approximations/gausslaguerre.jl` | `delete` | no in-tree consumer; takes DomainIntegrals with it; no replacement |
-| `GaussianCoupling` | `type` | `src/nodes/predefined/gaussian_coupling.jl` | `models` |  |
+| `GaussianCoupling` | `type` | `src/nodes/predefined/gaussian_coupling.jl` | `node:GaussianCoupling` |  |
 | `GaussianMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` | alias |
 | `GaussianMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` | alias |
 | `HalfNormal` | `type` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
@@ -200,8 +199,8 @@ replacement".
 | `PermutationMatrix` | `type` | `src/helpers/algebra/permutation_matrix.jl` | `node:Flow` | only consumer is Flow's `permutation_layer.jl`; its over-broad `*` methods cause 137 Aqua ambiguities and should be narrowed first |
 | `PlanarFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/planar_flow.jl` | `node:Flow` |  |
 | `Poisson` | `type` | `src/nodes/predefined/poisson.jl` | `standard` |  |
-| `Probit` | `type` | `src/nodes/predefined/probit.jl` | `models` |  |
-| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `models` | becomes Probit's own algorithm (its moment matching), declaring its dependencies (DISCUSSION §3.21) |
+| `Probit` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` |  |
+| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` | becomes Probit's own algorithm (its moment matching), declaring its dependencies (DISCUSSION §3.21) |
 | `ProdCVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection` |
 | `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
 | `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
@@ -211,7 +210,7 @@ replacement".
 | `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
-| `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `models` |  |
+| `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` |  |
 | `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; 85 Aqua ambiguities, narrow first |
 | `Stochastic` | `type` | `src/nodes/nodes.jl` | `base` |  |
 | `UT` | `type` | `src/approximations/unscented.jl` | `approximations` | alias |
@@ -263,7 +262,7 @@ replacement".
 | `score` | `function` | `src/score/score.jl` | `base` | average-energy methods become `message_passing_average_energy`; entropy/KL helpers remain separate, graph score assembly stays in the engine |
 | `sdtype` | `function` | `src/nodes/nodes.jl` | `base` |  |
 | `skipindex` | `function` | `src/helpers/helpers.jl` | `base` |  |
-| `softdot` | `type` | `src/nodes/predefined/softdot.jl` | `models` |  |
+| `softdot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` |  |
 | `srcubature` | `function` | `src/approximations/sphericalradial.jl` | `delete` | no in-tree consumer; no replacement |
 | `tiny` | `const` | `src/ReactiveMP.jl` | `base` | re-exported from TinyHugeNumbers |
 | `update!` | `function` | `src/approximations/optimizers/adam.jl` | `delete` | `Adam`'s step function; no replacement |

@@ -25,7 +25,6 @@ const SOURCE = pkgdir(ReactiveMP)
 const DESTINATIONS = [
     "base",             # MessagePassingRulesBase
     "standard",         # StandardMessagePassingRules: distributions, arithmetic, logic, mixtures
-    "models",           # domain-specific models; package not yet named
     "approximations",   # MessagePassingRulesApproximations
     "testutils",        # MessagePassingRulesTestUtils
     "engine",           # ReactiveMP itself
@@ -301,7 +300,6 @@ function generate()
         |---|---|
         | `base` | `MessagePassingRulesBase` |
         | `standard` | `StandardMessagePassingRules` — distributions, arithmetic, logic, mixtures |
-        | `models` | domain-specific models (GCV, Probit, SoftDot, GaussianCoupling); **package not yet named** |
         | `approximations` | `MessagePassingRulesApproximations` |
         | `testutils` | `MessagePassingRulesTestUtils` |
         | `engine` | stays in `ReactiveMP` |

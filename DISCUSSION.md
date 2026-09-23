@@ -511,7 +511,7 @@ package. `ContinuousTransition` gets its own package rather than joining them.
 
 The package's **name is deliberately deferred to Phase 6**, when it is built. The inventory
 records the placeholder token `models` and says so explicitly, rather than inventing a name
-to look finished.
+to look finished. *(Superseded by §3.30: each of the four gets its own node package.)*
 
 #### The Julia floor stays at 1.10
 
@@ -1481,6 +1481,38 @@ context is for; an algorithm would multiply the rule table by every strategy. `n
 identity, the engine passes it until Phase 7 lets a user set it per node, and step 7 decides
 how `*` and `dot` keep v6's default. The step 5 brief in `PHASES.md` § Phase 5 has the details.
 
+### 3.29 `public_equivalent`: an efficient type's public counterpart (user, 2026-09-23)
+
+v6's Wishart and InverseWishart nodes added `to_marginal(::WishartFast) = convert(Wishart, …)`
+and the same for `InverseWishartFast`, so that rules can work in the efficient types while
+users see the Distributions ones. `to_marginal` is an engine function, and the engine has no
+runtime dependency on ExponentialFamily, so the methods needed an owner. Tracing its call
+sites showed it is not about marginals as such: the engine applies it in `as_marginal`, to
+every marginal a variable forms, and downstream rules receive the result as well as users.
+What it means is "the same distribution, as the public type users expect instead of an
+efficient working type"; a marginal is only where the engine applies it today, and callbacks
+or fixtures could use it too.
+
+The user renamed it to say that: **`public_equivalent`**, stressing that the result is the
+same distribution, not a different one. Names tied to marginals (`marginal_form`), to users
+(`user_facing_form`, wrong since rules see it too) or clashing with exponential-family terms
+(`canonical_form`, `natural_form`) were rejected. `MessagePassingRulesBase` owns it for now,
+the identity by default, documented with the working/public split and its uses; the engine
+calls it where it called `to_marginal`, and Standard adds the two Fast Wishart methods when it
+ports Wishart (step 6). Its right owner is **BayesBase**, with ExponentialFamily extending it for
+the Fast types it defines, so that any package gets it; that move is recorded for Phase 8, the
+ecosystem integration, beside the upstream `Uninformative` identity (§3.27). A reverse,
+working-form direction is not needed: rules accept both types.
+
+### 3.30 The domain-specific nodes get their own packages (user, 2026-09-23)
+
+§2's *Standard versus models* sent GCV, Probit, SoftDot and GaussianCoupling to one sibling
+package, its name deferred to Phase 6. The user decided each gets its own node package
+instead, as Flow, BIFM, the Pólya nodes and the transitions do. The placeholder destination
+`models` is gone from `INVENTORY.md` and `scripts/inventory.jl`; the four are `node:GCV`,
+`node:Probit`, `node:SoftDot` and `node:GaussianCoupling`, and the deferred naming question
+closes with it.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1731,7 +1763,7 @@ Open as of the Phase 4.5 reconciliation:
   edge (Probit), separately from `dependencies` (§3.21). Needed when Probit is ported.
 - **Log scales** — preserved as v6 has them, gaps included; fixing them is a milestone of its
   own after the migration.
-- **The models package's name** — deferred to Phase 6.
+- **The models package's name** — *settled by §3.30: no such package; each node gets its own.*
 - **The Julia floor** — 1.13 only until registration, when 1.10 support is reconsidered
   (§3.22).
 
