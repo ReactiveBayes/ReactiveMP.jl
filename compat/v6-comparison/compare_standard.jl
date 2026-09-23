@@ -32,6 +32,9 @@ const WISHART_OUT = "ReactiveMP.jl#675: v6 uses E[S]⁻¹ for the inverse scale 
 # v6's variational MvNormalGamma `:out` rule passes E[β] as the rate; the expectation of
 # γ (out - μ)ᵀΛ(out - μ)/2 under a `q_μ` adds tr(E[Λ] Cov μ)/2 to it. They agree for a point mass.
 const MVNG_OUT = "ReactiveMP.jl#676: v6's MvNormalGamma out rule drops tr(E[Λ] Cov μ)/2 from the rate for a non-point-mass q_μ"
+# v6's `+` `:in1` specialisation for two BLAS-typed MvNormalWeightedMeanPrecision messages
+# takes μ_in2 - μ_out, the generic rule's negation of the mean; `-` reaches it through its redirects.
+const ADDITION_SIGN = "ReactiveMP.jl#677: v6's `+` in1 rule for two weighted-mean normals computes E[in2] - E[out]; it is E[out] - E[in2], as v6's generic rule gives"
 const I2 = [1.0 0.0; 0.0 1.0]
 const INVERSE_WISHART = InverseWishart(5.0, [2.0 0.3; 0.3 2.0])
 const WISHART = Wishart(4.0, [1.0 0.2; 0.2 0.5])
@@ -191,6 +194,28 @@ const MESSAGE_CASES = [
     ("MatrixNormal:V:m-point-masses", MatrixNormal, :V, (m = (out = PointMass([1.0 2.0; 3.0 4.0; 5.0 6.0]), M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]), U = PointMass([2.0 0.3 0.0; 0.3 3.0 0.1; 0.0 0.1 4.0])),), false),
     ("MatrixNormal:V:q", MatrixNormal, :V, (q = (out = MatrixNormal([0.5 1.0; 2.0 3.0; 4.0 5.0], [0.5 0.1 0.0; 0.1 0.5 0.0; 0.0 0.0 0.5], [1.0 0.2; 0.2 0.5]), M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]), U = InverseWishart(7.0, [2.0 0.3 0.0; 0.3 3.0 0.1; 0.0 0.1 4.0])),), false),
     ("MatrixNormalWishart:out:q-point-masses", MatrixNormalWishart, :out, (q = (M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]), U = PointMass([2.0 0.3 0.0; 0.3 3.0 0.1; 0.0 0.1 4.0]), V = PointMass([1.0 0.5; 0.5 2.0]), ν = PointMass(4.0)),), false),
+    ("+:out:normals", +, :out, (m = (in1 = NormalMeanVariance(1.0, 2.0), in2 = NormalMeanPrecision(3.0, 0.5)),), false),
+    ("+:out:normal-point-mass", +, :out, (m = (in1 = NormalMeanPrecision(3.0, 0.5), in2 = PointMass(2.0)),), false),
+    ("+:out:point-mass-normal", +, :out, (m = (in1 = PointMass(2.0), in2 = NormalMeanVariance(1.0, 2.0)),), false),
+    ("+:out:mv-normals", +, :out, (m = (in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("+:out:mv-weighted-point-mass", +, :out, (m = (in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = PointMass([1.0, 2.0])),), false),
+    ("+:out:point-mass-mv-weighted", +, :out, (m = (in1 = PointMass([1.0, 2.0]), in2 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0])),), false),
+    ("+:in1:normals", +, :in1, (m = (out = NormalMeanVariance(1.0, 2.0), in2 = NormalMeanPrecision(3.0, 0.5)),), false),
+    ("+:in1:normal-point-mass", +, :in1, (m = (out = NormalMeanPrecision(3.0, 0.5), in2 = PointMass(2.0)),), false),
+    ("+:in1:point-mass-normal", +, :in1, (m = (out = PointMass(2.0), in2 = NormalMeanVariance(1.0, 2.0)),), false),
+    ("+:in1:mv-normals", +, :in1, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("+:in1:mv-weighted-point-mass", +, :in1, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = PointMass([1.0, 2.0])),), false),
+    ("+:in1:point-mass-mv-weighted", +, :in1, (m = (out = PointMass([1.0, 2.0]), in2 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0])),), false),
+    ("+:in2:normals", +, :in2, (m = (out = NormalMeanVariance(1.0, 2.0), in1 = NormalMeanPrecision(3.0, 0.5)),), false),
+    ("+:in2:normal-point-mass", +, :in2, (m = (out = NormalMeanPrecision(3.0, 0.5), in1 = PointMass(2.0)),), false),
+    ("+:in2:point-mass-normal", +, :in2, (m = (out = PointMass(2.0), in1 = NormalMeanVariance(1.0, 2.0)),), false),
+    ("+:in2:mv-normals", +, :in2, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("+:in2:mv-weighted-point-mass", +, :in2, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = PointMass([1.0, 2.0])),), false),
+    ("+:in2:point-mass-mv-weighted", +, :in2, (m = (out = PointMass([1.0, 2.0]), in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0])),), false),
+    ("+:in1:two-weighted", +, :in1, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), ADDITION_SIGN),
+    ("+:in2:two-weighted", +, :in2, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), ADDITION_SIGN),
+    ("+:out:two-weighted", +, :out, (m = (in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), false),
+    ("+:out:point-masses", +, :out, (m = (in1 = PointMass(1.0), in2 = PointMass(2.5)),), false),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -271,6 +296,10 @@ const MARGINAL_CASES = [
     ("InverseWishart:(out,ν,S):point-masses", InverseWishart, (:out, :ν, :S), (m = (out = ExponentialFamily.InverseWishartFast(4.0, [1.0 0.2; 0.2 0.5]), ν = PointMass(5.0), S = PointMass([2.0 0.3; 0.3 1.5])),), false),
     ("DirichletCollection:(out,a):point-mass", DirichletCollection, (:out, :a), (m = (out = DirichletCollection([2.0 1.0; 1.5 3.0; 1.0 2.5]), a = PointMass([1.0 2.0; 3.0 0.5; 2.0 1.5])),), false),
     ("MatrixNormal:(out,M,U,V):point-masses", MatrixNormal, (:out, :M, :U, :V), (m = (out = PointMass([1.0 2.0; 3.0 4.0; 5.0 6.0]), M = PointMass([0.5 1.0; 2.0 3.0; 4.0 5.0]), U = PointMass([2.0 0.3 0.0; 0.3 3.0 0.1; 0.0 0.1 4.0]), V = PointMass([1.0 0.5; 0.5 2.0])),), false),
+    ("+:(in1,in2):point-mass-in2", +, (:in1, :in2), (m = (out = NormalMeanVariance(1.0, 2.0), in1 = NormalMeanPrecision(3.0, 0.5), in2 = PointMass(2.0)),), false),
+    ("+:(in1,in2):point-mass-in1", +, (:in1, :in2), (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = PointMass([1.0, 2.0]), in2 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("+:(in1,in2):normals", +, (:in1, :in2), (m = (out = NormalMeanVariance(1.0, 2.0), in1 = NormalMeanPrecision(3.0, 0.5), in2 = NormalMeanVariance(0.0, 1.0)),), false),
+    ("+:(in1,in2):mv-normals", +, (:in1, :in2), (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), false),
     ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),

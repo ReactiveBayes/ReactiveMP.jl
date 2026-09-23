@@ -35,7 +35,7 @@ const NODES = [
     NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
     MvNormalMeanCovariance, MvNormalMeanPrecision, MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision,
     MvNormalMeanScaleMatrixPrecision, Wishart, InverseWishart, DirichletCollection, MvNormalGamma,
-    MvNormalWishart, MatrixNormal, MatrixNormalWishart,
+    MvNormalWishart, MatrixNormal, MatrixNormalWishart, +,
 ]
 
 include("nodes/normal_mean_variance.jl")
@@ -145,6 +145,11 @@ include("rules/matrix_normal/V.jl")
 include("rules/matrix_normal/marginals.jl")
 include("nodes/matrix_normal_wishart.jl")
 include("rules/matrix_normal_wishart/out.jl")
+include("nodes/addition.jl")
+include("rules/addition/out.jl")
+include("rules/addition/in1.jl")
+include("rules/addition/in2.jl")
+include("rules/addition/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")

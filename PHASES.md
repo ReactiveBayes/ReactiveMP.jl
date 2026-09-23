@@ -19,10 +19,11 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot`. **Briefed**, awaiting the user's
-sign-off: § Phase 5, *Step 7 brief* has the counts, the v6 mistakes to correct, the four
-decisions (the matrix correction's `nothing` as "not set", sampling through `ctx.rng`, the
-corrected `*` log-scale, the functions as nodes; `DISCUSSION.md` §3.31–3.33) and the defaults.
+**Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot`. Signed off by the user; § Phase 5,
+*Step 7 brief* has the counts, the v6 mistakes to correct, the four decisions (the matrix
+correction's `nothing` as "not set", sampling through `ctx.rng`, the corrected `*` log-scale,
+the functions as nodes; `DISCUSSION.md` §3.31–3.33), the defaults and the progress. `+` is
+done; next `-`, then `dot`.
 Steps 1–6 are done; step 6 is summarised in § Phase 5, *Step 6 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1728,6 +1729,17 @@ the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs,
 - **Order:** `+` (with the helpers `-` needs, and the check that function nodes need no hack),
   `-`, `dot` (with `matrix_correction(ctx, default)`), the engine's `rng` default, `*`. Each
   node gets comparison cases, and each commit updates this file and the CHANGELOG.
+- **Progress:**
+  - *`+` — done.* The function is the node with no hack: `test/engine/function_nodes_tests.jl`
+    runs `s = x1 + x2` through the engine, exact posteriors and free energy included, so the
+    fallback to types is not needed. Two helpers, `sum_message` and `difference_message`, carry
+    v6's per-parametrisation results, with `input_joint` for the joint of two Gaussian inputs;
+    `-` will reuse them. The rules take a Gaussian or a point mass, with `convolve` for any
+    other two distributions and a rule for two normals resolving the overlap. v6's BLAS
+    specialisation for two weighted-mean normals flipped the sign of the `:in1` mean; it is not
+    ported, and the difference is declared (ReactiveMP.jl#677). v6's 172 table cases pass,
+    with new cases for that specialisation and for `convolve`; Aqua lists `typeof(+)` as owned.
+    587 checks agree, the correction declared.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
