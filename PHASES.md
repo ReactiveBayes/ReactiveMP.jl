@@ -16,42 +16,18 @@ relying on one.
 
 ## Next action
 
-**Phase 4 — `MessagePassingRulesTestUtils`.** Phase 3 is closed: its last two decisions were
-answered — #13 parked until the late phases, missing inputs exactly as v6. The per-step record
-of Phase 3 is in the commits `0e2a8d92`..`ab60685e` and `DISCUSSION.md` §3.16.
+**Phase 4.5 — engine integration slice.** Phase 4 is closed: `MessagePassingRulesTestUtils`
+provides the table macros, registry-backed coverage, verification against the node
+definition, derivative checks and the migration checker, and the `v6-comparison` job runs the
+checker against ReactiveMP 6.5.0 on 1.10 (`DISCUSSION.md` §3.17). Its first result is a real
+one: v6's variational `NormalMeanVariance` rules are wrong for a non-point-mass `q_v`
+(ReactiveMP.jl#669), to be ported as a declared `:correction`.
 
-Decided with the user while planning Phase 4:
-
-- **Test macros mirror the definitions**: `@test_message_update_rule`,
-  `@test_marginal_update_rule`, `@test_average_energy` — the definition's keywords plus
-  `cases = [inputs => expected, …]`. Type promotion on by default, `rule`/`rule!` agreement
-  automatic for in-place rules, `check_nonallocating` opt-in.
-- **Migration checker generic in TestUtils; the v6 adapter lives in `compat/v6-comparison`**,
-  so TestUtils never names ReactiveMP. Fixtures via Serialization, stamped with Julia and
-  package versions, read back only by the same Julia minor.
-- **Verification subset**: univariate BP and naive VMP, at most 2 integrated dimensions
-  (HCubature), exact enumeration for discrete inputs, PointMass inputs substituted. Shape and
-  scale as separate assertions.
-- **Wiring**: MessagePassingRulesBase is developed at test time; no Manifest is committed
-  under `lib/`.
-
-Build it test-first, one commit per step, `PHASES.md` updated in each:
-
-1. **done** — package wiring — dependencies, harness, `LibTests.yml` entry with a develop step,
-   `make test-testutils`, `lib/README.md`;
-2. **done** — the three table macros, each sugar over a function of the same name; `@test` runs inside
-   TestUtils, so v6's callback form is gone; self-tested through a recording testset;
-3. **done** — registry-backed coverage, recording the rule each check actually selected, and
-   `check_rule_coverage(modules...)`;
-4. **done** — node-definition verification from `nodefunction`, with shape and scale asserted
-   separately and a wrong rule and a wrong log scale as negative controls;
-5. **done** — derivative checks, ForwardDiff against a central finite difference, on the allocating and
-   the in-place path;
-6. **done** — the migration checker: generic records, fixtures and declared disagreements in TestUtils;
-   a `V6Oracle` adapter and a check script in `compat/v6-comparison`, comparing an inline port
-   of `NormalMeanVariance` against v6, and running step 4's verification on a first handful
-   of v6 rules; a 1.10 CI job;
-7. close-out. Real disagreement investigations happen per ported rule in Phase 5.
+Phase 4.5 proves the rule/engine interface on a handful of hand-ported rules before Phase 5
+ports hundreds: belief propagation, structured VMP, a mixture and a delta node, end to end,
+with free energy compared against v6 fixtures, annotations and log scales preserved, and a
+retained-value test. It wants a planning session of its own — the engine side is the least
+planned part of the rewrite.
 ---
 
 ## Status at a glance
@@ -65,7 +41,7 @@ Build it test-first, one commit per step, `PHASES.md` updated in each:
 | 1 | Circulate for external feedback | **done** *(internally)* |
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
-| 4 | `MessagePassingRulesTestUtils` | not started |
+| 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine integration slice** — small end-to-end proof | not started |
 | 5 | `StandardMessagePassingRules` | not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | not started |
@@ -599,9 +575,13 @@ keying), and #9–#13 (resolve before the API freezes).
       agree — the tool that makes downstream (and agent-driven) migration verifiable —
       `compare_with_reference` and version-stamped fixtures in TestUtils; `V6Oracle.jl` and
       `check.jl` in `compat/v6-comparison`, run by the `v6-comparison` CI job on 1.10
-- [ ] disagreements with v6 investigated and recorded as migration bugs or deliberate
+- [x] disagreements with v6 investigated and recorded as migration bugs or deliberate
       mathematical corrections; analytic/finite-difference derivative checks cover both
-      allocating and in-place paths
+      allocating and in-place paths — the mechanism is built (`DeclaredDisagreement`, pinned
+      `KNOWN_V6_FINDINGS`) and its first real case investigated: v6's variational
+      `NormalMeanVariance` rules are wrong for non-point-mass `q_v` (ReactiveMP.jl#669), a
+      `:correction` for Phase 5. Investigating each ported rule is Phase 5's work, per rule.
+      Derivative checks: `@test_rule_derivatives`, through `rule` and `rule!`
 
 Definition verification lands **before** Phase 5, not after: it is the difference between
 checking ported rules against v6's output and checking them against the mathematics. Expect

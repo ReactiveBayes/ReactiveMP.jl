@@ -1003,7 +1003,18 @@ Three more decisions were taken while planning Phase 3's execution:
   run-time choice between two algorithm *values* is a small union, which Julia splits, and
   each branch then resolves to one rule statically. JET reports nothing on the one-rule and
   indexed routes. The generated adapters — slot selection, the `k` binding — cost nothing.
-- **Phase 4 step 2: the table macros.** Three things found while building them:
+- **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
+  so an in-place rule towards a group member can size its buffer by `k` exactly as its
+  body can. The first cut raised an error in that case instead; it was fixed before
+  commit.
+
+### 3.17 Phase 4 — what building the test tooling found
+
+`MessagePassingRulesTestUtils` was built in six steps (`ed5cacbb`..`2c78b2b1`): table macros,
+registry-backed coverage, node-definition verification, derivative checks and the migration
+checker. The findings worth keeping:
+
+- **The table macros.** Three things found while building them:
   - Julia's `Test` can record a result against a *given* source line (`Test.do_test` with a
     `Test.Returned`), identical on 1.10 and 1.13. So a failure reports the user's
     `@test_message_update_rule` line with a sentence describing the case, and the
@@ -1016,7 +1027,7 @@ Three more decisions were taken while planning Phase 3's execution:
   - The promotion contract is v6's: an output carries the promoted float type of *all* its
     inputs. It caught a toy marginal rule returning `(mean(out), mean(μ))` unpromoted, which
     is exactly the class of rule that breaks `ForwardDiff.Dual` propagation.
-- **Phase 4 step 6: node-definition verification found a wrong v6 rule.** Verifying eleven v6
+- **Node-definition verification found a wrong v6 rule.** Verifying eleven v6
   rules against their own node definitions, ten pass, and one does not:
   `NormalMeanVariance(:μ)` under VMP with a non-point-mass `q_v` returns variance `E[v]`, where
   naive VMP — `exp E_q[log N(out | μ, v)]` — gives `1/E[1/v]`. With `q_v = InverseGamma(3, 4)`
@@ -1029,10 +1040,16 @@ Three more decisions were taken while planning Phase 3's execution:
   `KNOWN_V6_FINDINGS`, and to be ported as a declared `:correction` in Phase 5. This is the
   outcome Phase 4 was built to produce: a test of the mathematics, not of what a rule returned
   the day it was written.
-- **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
-  so an in-place rule towards a group member can size its buffer by `k` exactly as its
-  body can. The first cut raised an error in that case instead; it was fixed before
-  commit.
+- **Scale is only meaningful once shape holds.** A rule with the wrong shape has no single
+  log-ratio to compare with its log scale, so checking both reported one mistake twice.
+  Scale is now checked only after shape passes.
+- **Differentiable rules must declare abstract element types.** An in-place rule declared over
+  `Vector{Float64}` cannot receive `ForwardDiff.Dual` inputs at all; the derivative check
+  surfaces it as a type mismatch with the near miss named. Phase 5's ports should declare
+  inputs over abstract element types wherever derivatives are expected to pass.
+- **Coverage records the selected rule.** With a broad and a specific rule for the same edge,
+  a case covering the specific one leaves the broad one reported — the property PLAN required
+  so that a fallback cannot conceal an untested specialisation.
 
 ---
 
