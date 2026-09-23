@@ -65,3 +65,23 @@ additions must therefore ship as non-breaking 1.x releases. A BayesBase 2.0 rele
 this rewrite would make this environment unresolvable and silently cost us the main
 instrument for verifying 490 ported rules. If a breaking BayesBase change becomes
 unavoidable, redesign this harness first, not afterwards.
+
+## The migration checker
+
+`check.jl` runs here, on the 1.10 floor, and in CI (`LibTests.yml`, job `v6-comparison`):
+
+```bash
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+```
+
+- `V6Oracle.jl` calls a v6 rule from the inputs a v7 rule takes, and returns its result and
+  log scale. It is the only code in the repository that names ReactiveMP v6's internals.
+- Ported rules are compared with their v6 originals through `compare_with_reference` from
+  `MessagePassingRulesTestUtils`. An undeclared disagreement fails; a declared one must say
+  whether it is a `:migration_bug` or a `:correction`, and why.
+- v6 rules are verified against their own node definitions with `verify_message_update`.
+  Failures there are findings about v6, pinned in `KNOWN_V6_FINDINGS` with their
+  explanation, so a new one fails the run until it is understood.
+
+`MessagePassingRulesBase` and `MessagePassingRulesTestUtils` are dev'd into this
+environment by relative path and recorded in the committed manifest, resolved on 1.10.

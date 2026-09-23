@@ -1016,6 +1016,19 @@ Three more decisions were taken while planning Phase 3's execution:
   - The promotion contract is v6's: an output carries the promoted float type of *all* its
     inputs. It caught a toy marginal rule returning `(mean(out), mean(μ))` unpromoted, which
     is exactly the class of rule that breaks `ForwardDiff.Dual` propagation.
+- **Phase 4 step 6: node-definition verification found a wrong v6 rule.** Verifying eleven v6
+  rules against their own node definitions, ten pass, and one does not:
+  `NormalMeanVariance(:μ)` under VMP with a non-point-mass `q_v` returns variance `E[v]`, where
+  naive VMP — `exp E_q[log N(out | μ, v)]` — gives `1/E[1/v]`. With `q_v = InverseGamma(3, 4)`
+  that is 2 against 4/3, and the log-ratio to the reference varies by 0.68 over the test points.
+  The corrected formula verifies to 1.5e-8, and so does the analogous `(:out)` rule. The node's
+  own average energy already uses `mean(inv, q_v)`, so v6's messages are not the optimum of the
+  free energy v6 computes. The same `mean(q_v)` appears in nine places across `mean.jl`,
+  `out.jl` and `marginals.jl`; v6's tests never pass a non-degenerate `q_v`, which is why a
+  golden-value table could not see it. Reported as **ReactiveMP.jl#669**, pinned in
+  `KNOWN_V6_FINDINGS`, and to be ported as a declared `:correction` in Phase 5. This is the
+  outcome Phase 4 was built to produce: a test of the mathematics, not of what a rule returned
+  the day it was written.
 - **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
   so an in-place rule towards a group member can size its buffer by `k` exactly as its
   body can. The first cut raised an error in that case instead; it was fixed before

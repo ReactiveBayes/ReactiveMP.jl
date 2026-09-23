@@ -6,6 +6,7 @@ on:
     types: [review_requested, reopened, synchronize]
     paths:
       - 'lib/**'
+      - 'compat/**'
       - '.github/workflows/LibTests.yml'
   push:
     branches:
@@ -13,6 +14,7 @@ on:
       - 'refactor/rule-node-system-rewrite'
     paths:
       - 'lib/**'
+      - 'compat/**'
       - '.github/workflows/LibTests.yml'
 
 concurrency:
@@ -48,3 +50,18 @@ jobs:
             using Pkg
             "${{ matrix.package }}" == "MessagePassingRulesBase" || Pkg.develop(path = "lib/MessagePassingRulesBase")
             Pkg.test()'
+
+  v6-comparison:
+    name: v6 comparison - Julia 1.10
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+      - name: Compare ports with v6 and verify v6 rules
+        run: |
+          julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
+          julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl

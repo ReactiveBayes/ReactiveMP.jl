@@ -47,7 +47,7 @@ Build it test-first, one commit per step, `PHASES.md` updated in each:
    separately and a wrong rule and a wrong log scale as negative controls;
 5. **done** — derivative checks, ForwardDiff against a central finite difference, on the allocating and
    the in-place path;
-6. the migration checker: generic records, fixtures and declared disagreements in TestUtils;
+6. **done** — the migration checker: generic records, fixtures and declared disagreements in TestUtils;
    a `V6Oracle` adapter and a check script in `compat/v6-comparison`, comparing an inline port
    of `NormalMeanVariance` against v6, and running step 4's verification on a first handful
    of v6 rules; a 1.10 CI job;
@@ -595,8 +595,10 @@ keying), and #9–#13 (resolve before the API freezes).
       actual selected rule so a fallback cannot conceal an untested specialization —
       `check_rule_coverage(modules...)`; a broader rule answering for a specific one stays
       reported (`coverage:selected-rule`)
-- [ ] **migration checker**: runs a v6 and a v7 rule on identical inputs and asserts they
-      agree — the tool that makes downstream (and agent-driven) migration verifiable
+- [x] **migration checker**: runs a v6 and a v7 rule on identical inputs and asserts they
+      agree — the tool that makes downstream (and agent-driven) migration verifiable —
+      `compare_with_reference` and version-stamped fixtures in TestUtils; `V6Oracle.jl` and
+      `check.jl` in `compat/v6-comparison`, run by the `v6-comparison` CI job on 1.10
 - [ ] disagreements with v6 investigated and recorded as migration bugs or deliberate
       mathematical corrections; analytic/finite-difference derivative checks cover both
       allocating and in-place paths

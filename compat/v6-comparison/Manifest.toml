@@ -2,7 +2,7 @@
 
 julia_version = "1.10.12"
 manifest_format = "2.0"
-project_hash = "1fa12d359fe80936cb53778fd2f2d63f93d3c971"
+project_hash = "c02c7ddaacf40cbdca65d441a266f2c45ef2181a"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -112,6 +112,9 @@ weakdeps = ["SparseArrays"]
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[deps.Base64]]
+uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[deps.BayesBase]]
 deps = ["Distributions", "DomainSets", "LinearAlgebra", "Random", "SpecialFunctions", "StaticArrays", "Statistics", "StatsAPI", "StatsBase", "StatsFuns", "TinyHugeNumbers"]
@@ -414,6 +417,10 @@ git-tree-sha1 = "31bb6c92405c084617facc1d7ed9eb6c402d061e"
 uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 version = "0.3.30"
 
+[[deps.InteractiveUtils]]
+deps = ["Markdown"]
+uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
 [[deps.IntervalSets]]
 git-tree-sha1 = "79d6bd28c8d9bccc2229784f1bd637689b256377"
 uuid = "8197267c-284f-5f27-9208-e0e47529a953"
@@ -433,14 +440,11 @@ version = "0.7.14"
 git-tree-sha1 = "a779299d77cd080bf77b97535acecd73e1c5e5cb"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
 version = "0.1.17"
+weakdeps = ["Dates", "Test"]
 
     [deps.InverseFunctions.extensions]
     InverseFunctionsDatesExt = "Dates"
     InverseFunctionsTestExt = "Test"
-
-    [deps.InverseFunctions.weakdeps]
-    Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
-    Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "b2d91fe939cae05960e760110b328288867b5758"
@@ -500,16 +504,35 @@ version = "0.3.29"
     ChangesOfVariables = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
     InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 
+[[deps.Logging]]
+uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
 [[deps.MacroTools]]
 git-tree-sha1 = "1e0228a030642014fe5cfe68c2c0a818f9e3f522"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.16"
+
+[[deps.Markdown]]
+deps = ["Base64"]
+uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[deps.MatrixCorrectionTools]]
 deps = ["LinearAlgebra"]
 git-tree-sha1 = "73f93b21eae5714c282396bfae9d9f13d6ad04b6"
 uuid = "41f81499-25de-46de-b591-c3cfc21e9eaf"
 version = "1.2.0"
+
+[[deps.MessagePassingRulesBase]]
+deps = ["BayesBase", "LinearAlgebra", "MacroTools", "TupleTools"]
+path = "../../lib/MessagePassingRulesBase"
+uuid = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+version = "0.1.0-DEV"
+
+[[deps.MessagePassingRulesTestUtils]]
+deps = ["BayesBase", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Serialization", "Statistics", "Test"]
+path = "../../lib/MessagePassingRulesTestUtils"
+uuid = "08c5795c-a039-451c-8c5c-d65dcf644a97"
+version = "0.1.0-DEV"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -794,6 +817,10 @@ version = "7.2.1+1"
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
+
+[[deps.Test]]
+deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
+uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.TinyHugeNumbers]]
 git-tree-sha1 = "d5b24fd37550762d78280fb37c1800c3ea7e95cb"

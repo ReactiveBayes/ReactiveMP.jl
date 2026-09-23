@@ -9,11 +9,13 @@ export ExpectedWithAnnotations
 export check_rule_coverage
 export @verify_message_update_rule, verify_message_update_rule, verify_message_update
 export @test_rule_derivatives, test_rule_derivatives
+export compare_with_reference, DeclaredDisagreement, MigrationRecord, save_migration_fixtures, load_migration_fixtures
 
 include("checks.jl")
 include("coverage.jl")
 include("table_tests.jl")
 include("verification.jl")
 include("derivatives.jl")
+include("migration.jl")
 
 end
