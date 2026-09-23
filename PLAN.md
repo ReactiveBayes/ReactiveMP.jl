@@ -611,9 +611,12 @@ ReactiveMP.jl/
 
 **One cost of the 1.10 floor, found while building this:** `[sources]`, the tidy way for a
 `Project.toml` to point at a sibling directory, requires Julia 1.11. On 1.10 an
-inter-package dependency inside `lib/` is wired with an explicit `Pkg.develop(path = ...)`
-and a committed `Manifest.toml` instead. Workable, and documented in `lib/README.md`, but
-it is the one concrete thing the floor decision costs.
+inter-package dependency inside `lib/` is listed in `[deps]` and the sibling is
+`Pkg.develop`ed into the environment **at test time** (`make test-testutils`, `LibTests.yml`);
+no Manifest under `lib/` is committed, so each Julia version resolves for itself. (An earlier
+version of this paragraph said to commit a dev-link Manifest; one resolved on 1.10 cannot
+serve 1.11 and 1.12, so Phase 4 changed it.) Documented in `lib/README.md`. It is the one
+concrete thing the floor decision costs.
 
 The reason is the open items. Boundaries are still moving — #9 through #13 are all API
 decisions that have not landed — and a change that spans two packages is one commit in a

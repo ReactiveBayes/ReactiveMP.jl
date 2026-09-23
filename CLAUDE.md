@@ -67,6 +67,7 @@ make check-format                          # verify only, no writes
 make docs                                  # build documentation
 make test-base                             # lib/MessagePassingRulesBase's own suite
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
+julia +1.10 --project=compat/v6-comparison compat/v6-comparison/check.jl   # v6 comparison, on the floor
 ```
 
 `test_args` takes three kinds of entry, and they compose:

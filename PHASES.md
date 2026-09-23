@@ -16,18 +16,31 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5 — engine integration slice.** Phase 4 is closed: `MessagePassingRulesTestUtils`
-provides the table macros, registry-backed coverage, verification against the node
-definition, derivative checks and the migration checker, and the `v6-comparison` job runs the
-checker against ReactiveMP 6.5.0 on 1.10 (`DISCUSSION.md` §3.17). Its first result is a real
-one: v6's variational `NormalMeanVariance` rules are wrong for a non-point-mass `q_v`
-(ReactiveMP.jl#669), to be ported as a declared `:correction`.
+**Phase 4.5 — engine integration slice. Plan it before writing code**: read § Phase 4.5
+below, whose entry brief lists the contracts already made, the v6 starting points and the
+five questions the planning session must answer.
 
-Phase 4.5 proves the rule/engine interface on a handful of hand-ported rules before Phase 5
-ports hundreds: belief propagation, structured VMP, a mixture and a delta node, end to end,
-with free energy compared against v6 fixtures, annotations and log scales preserved, and a
-retained-value test. It wants a planning session of its own — the engine side is the least
-planned part of the rewrite.
+Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system; `lib/MessagePassingRulesTestUtils`
+is its test tooling; `compat/v6-comparison` holds the v6 oracle and the migration check.
+The first finding the tooling produced is a real v6 bug — the variational
+`NormalMeanVariance` rules use `E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v`
+(ReactiveMP.jl#669) — pinned as known, to be ported as a declared `:correction` in Phase 5.
+
+**Picking this up on another machine.** Everything lives in the repository; nothing needed is
+local. With Julia 1.10 and 1.13 installed (juliaup):
+
+```bash
+git switch refactor/rule-node-system-rewrite && git pull
+make test-base                     # the base package (Julia on PATH)
+make test-testutils                # TestUtils, developing the base at test time
+julia +1.10 --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+```
+
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.17,
+and this file's § Phase 4.5. Working conventions established so far: one commit per step,
+failing test first, `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive
+names rather than generic ones, and no comments that only narrate.
 ---
 
 ## Status at a glance
@@ -597,13 +610,80 @@ Rule kernels and test utilities can be developed without an engine. That does no
 establish that their interface with the engine is correct — **this is the single largest
 planning risk**, and the cheapest insurance is a small end-to-end proof first.
 
-**Exit criteria**
+**Status: not started, and not yet planned.** It wants its own planning session before any
+code. Everything that session needs is below or linked from here.
+
+### Entry brief — what is already decided and must be honoured
+
+These are contracts the base package already makes; the engine side of Phase 4.5 has to
+implement them, not revisit them. Decisions are in `PLAN.md` § Open items, reasons in
+`DISCUSSION.md` §3.16–3.17.
+
+- **Rules see no envelope.** `Message`/`Marginal` stay in the engine; the engine unwraps
+  them and calls a rule with raw distributions in `RuleArgs` (`args.m`, `args.q`), sorted
+  single keys and type-level cluster keys (`q[:y, :x]`), built with
+  `MessagePassingRulesBase.RuleArgs`/`Messages`/`Marginals`.
+- **Groups arrive full length.** A group input is a tuple in member order with `nothing`
+  where the dependency's selection leaves a member out; an empty selection is `()` and is
+  already satisfied — it must never stall a stream combination.
+- **Annotations are two-way.** The engine builds `RuleAnnotations(m = …, q = …, out = …)`:
+  the annotations that arrived with each input, keyed like the inputs, plus the sink the rule
+  writes. v6's `AnnotationDict` and its post-rule processors map onto `out`.
+- **The context carries the node.** `RuleContext(node, product, linalg, rng)`, built per
+  node/edge (most likely held by `MessageMapping`); `product` replaces the throwaway
+  `randomvar` in v6's `rules/mixture/switch.jl`; `linalg` stays unstable (#13 parked).
+- **Missing inputs as v6**: no rule call, no post-rule processors, result `missing`
+  (`execute_rule` docstring). Needs an engine test.
+- **Resolution before execution.** `find_message_rule`/`find_marginal_rule`/
+  `find_average_energy` return a `RuleSpec` or `RuleNotFound` and never throw; the engine's
+  fallback sits on the `RuleNotFound` branch; `execute_rule` never catches.
+- **Dependencies are declared per algorithm** (`DependenciesSpec`, `dependencies_spec(node,
+  algorithm)`); `nothing` means the engine's default scheme (own cluster → messages minus
+  self, other clusters → marginals). Consumed inputs and the free-energy partition are
+  separate (#9). `static_inputs = :fold` is the delta static-gating policy; a singleton
+  cluster's marginal *is* the variable's marginal (`q_out` aliasing, engine invariant).
+- **Buffers are engine internals** (#10): reuse is unspecified; outsiders copy; getters copy
+  by default; `InputArgumentsAnnotations` deep-copies.
+
+### Where v6 does these things today (starting points)
+
+- rule call and annotation processors: `MessageMapping`, `src/message.jl:570-738` (call at
+  `:657`); marginal rules: `MarginalMapping`, `src/marginal.jl:251-322`;
+- average energy and free energy per node: `src/score/node.jl` (`score` at `:7`, `:26`, `:80`);
+- dependency wiring: `activate!` in `src/nodes/dependencies.jl:59` and
+  `src/nodes/nodes.jl:327`; clusters in `src/nodes/clusters.jl:129`;
+- the mixture `reverse(...)` to pin first (#6): `normal_mixture.jl:176,183`,
+  `gamma_mixture.jl:166,173`.
+
+### Questions the planning session has to answer
+
+1. **Where the slice lives.** A bridge inside today's `src/` that lets `MessageMapping` call
+   base-package rules alongside v6 ones, or a small throwaway engine under `lib/` or `test/`
+   that exists only to prove the interface. The first touches the engine early; the second
+   proves less about the real one.
+2. **How ReactiveMP depends on `MessagePassingRulesBase`** — the same develop-at-test-time
+   pattern as TestUtils, or deferred until the slice is proven.
+3. **Where the v6 free-energy fixtures come from.** Engine comparisons cannot run v6 and v7 in
+   one process (same package), so they need fixtures from full v6 inference runs — most
+   likely an RxInfer version compatible with ReactiveMP 6.5.0 added to
+   `compat/v6-comparison`, recording free-energy trajectories with
+   `save_migration_fixtures`.
+4. **Which four rules** — one each for BP, structured VMP, a mixture (variadic group) and a
+   delta node — and whether the delta one needs `static_inputs = :fold` in the slice.
+5. **How annotations and log scales are compared** against v6: `Message ==` ignores
+   annotations, so the check must be explicit (`PLAN.md` § Verification, annotation gate).
+
+### Exit criteria
 - [ ] a working end-to-end inference over a handful of hand-ported rules covering: ordinary
       belief propagation, structured VMP, a mixture (variadic group), and a delta node
-- [ ] free energy computed and compared against v6 on the same model
+- [ ] free energy computed and compared against v6 on the same model, from recorded v6
+      fixtures
 - [ ] annotations and log scales preserved (see the annotation gate in `PLAN.md`)
 - [ ] a retained-value test: hold a message across several updates and confirm it is not
       mutated underneath you
+- [ ] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
+- [ ] the mixture `reverse(...)` scheduling pinned by a regression test before any mixture
+      wiring is touched (#6)
 
 Do not start Phase 5 until this passes.
 
