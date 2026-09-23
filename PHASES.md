@@ -16,10 +16,11 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
+**Phase 4.5 — step 4 of the brief's order: the engine core, on case (a).** Step 0 is done:
 the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Step 2, the
-base-package additions, is done. Step 3, porting the slice's rules, is under way: its
-checklist is in § Phase 4.5, and every node of `StandardMessagePassingRules`'s share is ported; `Unscented` remains. The
+base-package additions, is done. Step 3 is done: the slice's rules and numerics are
+ported into `StandardMessagePassingRules` and `MessagePassingRulesApproximations`, and agree with
+v6 (see § Phase 4.5, Step 3). Next is step 4, the engine core, on case (a). The
 design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
 in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
@@ -63,7 +64,7 @@ names rather than generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; Steps 0 and 2 done, next the rule ports |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; steps 0, 2 and 3 done, next the engine core |
 | 5 | `StandardMessagePassingRules` | not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | not started |
 | 7 | Complete the engine — remaining nodes, diagnostics, RxInfer plumbing | not started |
@@ -658,7 +659,7 @@ Decided instead:
 - **Downstream breakage is accepted until the release.** Only a small internal group uses the
   branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
-**Status: design signed off 2026-09-23; Step 0 and step 2 done; next the rule ports (step 3).**
+**Status: design signed off 2026-09-23; steps 0, 2 and 3 done; next the engine core (step 4).**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -841,8 +842,20 @@ Findings so far:
       The package's `quality:rules` now asserts that `check_rules` and
       `check_rule_ambiguities` find nothing. That assertion found a base-package bug:
       disjoint rules were reported as ambiguous, which `a0682b5e` fixes
-- [ ] `Unscented` into `MessagePassingRulesApproximations` (the Delta node and its rules stay
-      in ReactiveMP, for the engine to port in case (d))
+- [x] `Unscented` into `MessagePassingRulesApproximations`: `Unscented` and its aliases,
+      `sigma_points_weights`, `unscented_statistics`, `approximate` over means and
+      covariances, `smoothRTS` and the shared split/join helpers. **Pure numerics** (user):
+      `PLAN.md` said the survivors need only ForwardDiff, Random, LinearAlgebra and
+      Distributions, but v6's `unscented.jl` also used ExponentialFamily, for `JointNormal`
+      and `NormalMeanVariance`, and FastCholesky. The multi-input joint is now concatenated
+      means and a block-diagonal covariance, which is all `JointNormal` contributed. FastCholesky
+      stays, as the small numeric dependency #13 expects. The dependencies are LinearAlgebra
+      and FastCholesky alone; ForwardDiff comes back with `Linearization` in Phase 6. The
+      distribution-level `approximate(::Unscented, f, ::NTuple{N, NormalDistributionsFamily})`
+      and `is_delta_node_compatible` move to the Delta rules, and the Delta node stays in
+      ReactiveMP for the engine to port in case (d). v6's numeric tests are ported, and
+      `compare_approximations.jl` agrees with v6 to 1e-12 on 22 checks, the mixed
+      scalar, vector and scalar joint included
 
 ### Design brief — 2026-09-23
 

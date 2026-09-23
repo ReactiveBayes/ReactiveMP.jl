@@ -28,7 +28,7 @@ doc_init:
 docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl
 
-.PHONY: test test-all test-base test-testutils test-standard
+.PHONY: test test-all test-base test-testutils test-standard test-approximations
 
 test: ## Run the fast subset (skips `:slow`). test_args="rules:beta:out", "tag:rules", "name:Beta" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
@@ -47,6 +47,9 @@ test-standard: ## Test lib/StandardMessagePassingRules from its test environment
 	rm -f lib/StandardMessagePassingRules/test/Manifest.toml
 	julia --startup-file=no --project=lib/StandardMessagePassingRules/test -e 'import Pkg; Pkg.develop([Pkg.PackageSpec(path = p) for p in ("lib/MessagePassingRulesBase", "lib/MessagePassingRulesTestUtils", "lib/StandardMessagePassingRules")]); Pkg.instantiate()'
 	julia --startup-file=no --project=lib/StandardMessagePassingRules/test lib/StandardMessagePassingRules/test/runtests.jl $(test_args)
+
+test-approximations: ## Test lib/MessagePassingRulesApproximations, which depends on no sibling. Takes test_args like `test`
+	julia --startup-file=no --project=lib/MessagePassingRulesApproximations -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

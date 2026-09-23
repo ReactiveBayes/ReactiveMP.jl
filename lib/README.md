@@ -2,9 +2,8 @@
 
 The packages of the rule/node rewrite, created as stubs in Phase P. `MessagePassingRulesBase`
 (Phase 3) and `MessagePassingRulesTestUtils` (Phase 4) are implemented, each with its own
-test suite. `StandardMessagePassingRules` is being filled in Phase 4.5, starting with the
-rules the engine slice needs, and `MessagePassingRulesApproximations` is still a
-`Project.toml` plus an empty module.
+test suite. `StandardMessagePassingRules` and `MessagePassingRulesApproximations` are being
+filled in Phase 4.5, with the rules and the numerics the engine slice needs.
 
 Read `PLAN.md` for the design, `PHASES.md` for what is next, and `INVENTORY.md` for where
 each of the 231 entities in ReactiveMP is destined to land.

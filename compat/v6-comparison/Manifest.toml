@@ -2,7 +2,7 @@
 
 julia_version = "1.10.12"
 manifest_format = "2.0"
-project_hash = "3830971ee471be37ad529284cc766d9947bb36e8"
+project_hash = "7a5de594d7fe11be02284c71c52af7958795d3d7"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -732,6 +732,12 @@ version = "1.1.10"
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 version = "2.28.1010+0"
+
+[[deps.MessagePassingRulesApproximations]]
+deps = ["FastCholesky", "LinearAlgebra"]
+path = "../../lib/MessagePassingRulesApproximations"
+uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
+version = "0.1.0-DEV"
 
 [[deps.MessagePassingRulesBase]]
 deps = ["BayesBase", "LinearAlgebra", "MacroTools", "TupleTools"]

@@ -36,6 +36,7 @@ jobs:
         package:
           - MessagePassingRulesBase
           - MessagePassingRulesTestUtils
+          - MessagePassingRulesApproximations
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3
@@ -48,7 +49,8 @@ jobs:
         run: |
           julia --startup-file=no --project=lib/${{ matrix.package }} -e '
             using Pkg
-            "${{ matrix.package }}" == "MessagePassingRulesBase" || Pkg.develop(path = "lib/MessagePassingRulesBase")
+            # Only the test tooling depends on a sibling; the approximations must not.
+            "${{ matrix.package }}" == "MessagePassingRulesTestUtils" && Pkg.develop(path = "lib/MessagePassingRulesBase")
             Pkg.test()'
 
   standard:
@@ -95,6 +97,8 @@ jobs:
         run: |
           julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
           julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+      - name: Compare MessagePassingRulesApproximations with v6
+        run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_approximations.jl
       - name: Compare the StandardMessagePassingRules ports with v6
         run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
       - name: Re-record the v6 engine fixtures and compare with the committed ones
