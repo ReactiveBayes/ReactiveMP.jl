@@ -202,7 +202,15 @@ end
 
 Pairs of rules in `modules` (by default all loaded) that some call could match equally
 well. Only rules consuming the same set of inputs can overlap, so candidates are grouped by
-kind, node, target and input names first, and compared with `typeintersect` within a group.
+kind, node, target and input names first. Within a group, each rule's own method of
+`find_message_rule`, `find_marginal_rule` or `find_average_energy` is compared with Julia's
+`Base.isambiguous`.
+
+Julia's check, not a hand-made `typeintersect`, because the signatures bound their inputs as
+`Messages{N, <:Tuple{…}}`: when a slot is disjoint, the intersection is a valid but empty
+type such as `Messages{N, Union{}}` or `PointMass{Union{}}`, never `Union{}` itself, so an
+intersection test reports every disjoint pair. `Base.isambiguous` ignores ambiguities only a
+`Union{}` parameter could trigger.
 """
 function check_rule_ambiguities(modules::Module...)
     groups = Dict{Any, Vector{RuleSpec}}()
@@ -212,10 +220,20 @@ function check_rule_ambiguities(modules::Module...)
     end
     ambiguous = Tuple{RuleSpec, RuleSpec}[]
     for specs in values(groups), i in eachindex(specs), j in (i + 1):lastindex(specs)
-        a, b = full_signature(specs[i]), full_signature(specs[j])
-        typeintersect(a, b) === Union{} && continue
-        (a <: b || b <: a) && continue
-        push!(ambiguous, (specs[i], specs[j]))
+        Base.isambiguous(rule_method(specs[i]), rule_method(specs[j])) && push!(ambiguous, (specs[i], specs[j]))
     end
     return ambiguous
+end
+
+rule_function(spec::RuleSpec) = spec.kind === :message ? find_message_rule : spec.kind === :marginal ? find_marginal_rule : find_average_energy
+
+# The method the definition macro added for `spec`: the one whose signature is the spec's.
+# Not finding it is a bug, never a reason to skip the pair and hide an ambiguity.
+function rule_method(spec::RuleSpec)
+    f = rule_function(spec)
+    signature = Tuple{typeof(f), full_signature(spec).parameters...}
+    for method in methods(f)
+        method.sig == signature && return method
+    end
+    return error("no method of $f has the signature of $spec")
 end

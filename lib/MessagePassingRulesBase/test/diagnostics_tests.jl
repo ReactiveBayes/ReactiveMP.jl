@@ -29,6 +29,9 @@
     @define_factor_node(node = Amb, type = Stochastic, interfaces = [:out, :a, :b])
     @define_message_update_rule(node = Amb, target = :out, args = (m[:a]::Float64, m[:b]::Real), body = (args) -> 1)
     @define_message_update_rule(node = Amb, target = :out, args = (m[:a]::Real, m[:b]::Float64), body = (args) -> 2)
+    # Disjoint in one slot, so no call matches both: not ambiguous, however the others overlap.
+    @define_message_update_rule(node = Amb, target = :b, args = (m[:out]::Float64, m[:a]::Real), body = (args) -> 1)
+    @define_message_update_rule(node = Amb, target = :b, args = (m[:out]::String, m[:a]::Float64), body = (args) -> 2)
     # Nested, not ambiguous: one is more specific.
     @define_message_update_rule(node = Amb, target = :a, args = (m[:out]::Real,), body = (args) -> 1)
     @define_message_update_rule(node = Amb, target = :a, args = (m[:out]::Float64,), body = (args) -> 2)
