@@ -20,11 +20,11 @@ re-check before relying on one.
 ## Next action
 
 **Phase 5, step 6: Matrix and Wishart** — Wishart, InverseWishart, MatrixNormal,
-MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. **Briefed**, awaiting
-the user's sign-off: § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
-`public_equivalent` (user, `DISCUSSION.md` §3.29) and the defaults. The first commit is
-Wishart, with `public_equivalent`. Steps 1–5 are done; step 5 is summarised in § Phase 5,
-*Step 5 brief*.
+MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. Signed off by the
+user; § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
+`public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart is
+done; next InverseWishart, then DirichletCollection. Steps 1–5 are done; step 5 is summarised
+in § Phase 5, *Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -1617,6 +1617,14 @@ extending it, is recorded for Phase 8.
 - **Consumers elsewhere**, all Phase 6 and using the types only, so nothing waits on them:
   ConjugateAR (MvNormalGamma), DiscreteTransition (DirichletCollection) and
   ContinuousTransition (WishartFast, and so `public_equivalent`).
+- **Progress:**
+  - *Wishart — done.* `MessagePassingRulesBase` has `public_equivalent`, the identity by
+    default; the engine's `as_marginal` calls it where it called `to_marginal`, which is gone,
+    and Standard adds the methods for `WishartFast` and `InverseWishartFast` (Aqua's piracy
+    check treats the two as owned). 4 message rules, 1 marginal rule and the energy. v6's
+    variational `:out` rules took E[S]⁻¹ for a `q_S`; they use E[S⁻¹], corrected and declared
+    (ReactiveMP.jl#675). The energy's constants are in ν's float type. 461 checks agree, the
+    correction declared.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,

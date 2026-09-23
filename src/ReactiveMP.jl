@@ -27,19 +27,9 @@ include("annotations/input_arguments.jl")
 include("message.jl")
 include("marginal.jl")
 
-"""
-    to_marginal(any)
-
-Transforms an input to a proper marginal distribution.
-Called inside `as_marginal`. Some nodes do not use `Distributions.jl`, but instead implement their own equivalents for messages for better efficiency.
-Effectively `to_marginal` is needed to convert internal effective implementation to a user-friendly equivalent (e.g. from `Distributions.jl`).
-By default does nothing and returns its input, but some nodes may override this behaviour (see for example `Wishart` and `InverseWishart`).
-
-Note: This function is a part of the private API and is not intended to be used outside of the ReactiveMP package.
-"""
-to_marginal(any) = any
-
-as_marginal(message::Message) = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
+# A marginal is formed in its public type (`MessagePassingRulesBase.public_equivalent`): an
+# efficient working type such as `WishartFast` does not leave the product of messages.
+as_marginal(message::Message) = Marginal(MessagePassingRulesBase.public_equivalent(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal))
 
 getdata(::Nothing) = nothing

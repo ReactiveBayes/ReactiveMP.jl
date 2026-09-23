@@ -13,7 +13,7 @@ module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: annotate!
-using StatsFuns: log2π
+using StatsFuns: log2π, logπ
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
@@ -22,7 +22,7 @@ using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 using LinearAlgebra: I, Hermitian, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
 using MatrixCorrectionTools: correction!
-import ExponentialFamily: InverseWishartFast, WishartFast
+import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily
 import DomainSets
 
 export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
@@ -34,7 +34,7 @@ include("helpers.jl")
 const NODES = [
     NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
     MvNormalMeanCovariance, MvNormalMeanPrecision, MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision,
-    MvNormalMeanScaleMatrixPrecision,
+    MvNormalMeanScaleMatrixPrecision, Wishart,
 ]
 
 include("nodes/normal_mean_variance.jl")
@@ -123,6 +123,9 @@ include("rules/mv_normal_mean_scale_matrix_precision/mean.jl")
 include("rules/mv_normal_mean_scale_matrix_precision/precision.jl")
 include("rules/mv_normal_mean_scale_matrix_precision/matrix.jl")
 include("rules/mv_normal_mean_scale_matrix_precision/marginals.jl")
+include("nodes/wishart.jl")
+include("rules/wishart/out.jl")
+include("rules/wishart/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")

@@ -7,7 +7,8 @@
     # An alias such as `Categorical`, a `DiscreteNonParametric` with fixed parameters, is
     # compared by its underlying type. The same list covers the Uniform(0, 1)×Beta product,
     # which is defined here for two types this package does not own (an upstream candidate).
-    owned = unique([StandardMessagePassingRules.NODES; map(T -> Base.unwrap_unionall(T).name.wrapper, StandardMessagePassingRules.NODES)])
+    # So does `public_equivalent` for ExponentialFamily's fast Wishart types.
+    owned = unique([StandardMessagePassingRules.NODES; map(T -> Base.unwrap_unionall(T).name.wrapper, StandardMessagePassingRules.NODES); ExponentialFamily.WishartFast; ExponentialFamily.InverseWishartFast])
     Aqua.test_all(StandardMessagePassingRules; piracies = (treat_as_own = owned,))
 end
 

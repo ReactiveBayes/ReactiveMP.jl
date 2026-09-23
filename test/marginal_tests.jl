@@ -140,3 +140,21 @@
         end
     end
 end
+
+@testitem "as_marginal forms a marginal in its public type" tags = [:engine] begin
+    using ReactiveMP, BayesBase, Distributions
+    import MessagePassingRulesBase
+    import ReactiveMP: as_marginal
+
+    # A working type with a public counterpart, as a rule package would declare one.
+    struct WorkingNormal
+        μ::Float64
+    end
+    MessagePassingRulesBase.public_equivalent(d::WorkingNormal) = Normal(d.μ, 1.0)
+
+    marginal = as_marginal(Message(WorkingNormal(2.0), false, true))
+    @test getdata(marginal) == Normal(2.0, 1.0)
+    @test is_initial(marginal)
+    # Any other type is left as it is.
+    @test getdata(as_marginal(Message(Gamma(2.0, 1.0), false, false))) === Gamma(2.0, 1.0)
+end

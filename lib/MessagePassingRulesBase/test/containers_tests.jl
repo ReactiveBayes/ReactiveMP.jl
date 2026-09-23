@@ -61,3 +61,11 @@ end
     @test keys(empty.m) == ()
     @test keys(empty.q) == ()
 end
+
+@testitem "public_equivalent is the identity by default" tags = [:base] begin
+    using MessagePassingRulesBase
+
+    for d in (1.0, [1.0, 2.0], "a distribution", nothing)
+        @test public_equivalent(d) === d
+    end
+end

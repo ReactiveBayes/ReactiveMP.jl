@@ -26,6 +26,9 @@ const INVERSE_GAMMA = InverseGamma(3.0, 4.0)
 # covariance a `q_Σ` contributes as E[Σ]; naive VMP gives E[Σ⁻¹]⁻¹, which its own average
 # energy already uses. They agree for a point mass.
 const MVNMC_669 = "ReactiveMP.jl#673, the multivariate #669: v6 uses E[Σ] for the covariance a non-point-mass q_Σ contributes; naive VMP gives E[Σ⁻¹]⁻¹, as v6's own MvNormalMeanCovariance energy does"
+# v6's variational Wishart `:out` rules take the inverse scale a `q_S` contributes as E[S]⁻¹;
+# naive VMP gives E[S⁻¹], which v6's own Wishart energy uses. They agree for a point mass.
+const WISHART_OUT = "ReactiveMP.jl#675: v6 uses E[S]⁻¹ for the inverse scale a non-point-mass q_S contributes to Wishart's out; naive VMP gives E[S⁻¹], as v6's own Wishart energy does"
 const I2 = [1.0 0.0; 0.0 1.0]
 const INVERSE_WISHART = InverseWishart(5.0, [2.0 0.3; 0.3 2.0])
 const WISHART = Wishart(4.0, [1.0 0.2; 0.2 0.5])
@@ -154,6 +157,11 @@ const MESSAGE_CASES = [
     ("MvNMSMP:μ:m-normal", MvNormalMeanScaleMatrixPrecision, :μ, (m = (out = MvNormalWeightedMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]),), q = (γ = GammaShapeRate(2.0, 1.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0]))), false),
     ("MvNMSMP:γ:q", MvNormalMeanScaleMatrixPrecision, :γ, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0]), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])),), false),
     ("MvNMSMP:G:q", MvNormalMeanScaleMatrixPrecision, :G, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0]), γ = GammaShapeRate(2.0, 4.0)),), false),
+    ("Wishart:out:m-point-masses", Wishart, :out, (m = (ν = PointMass(3.0), S = PointMass([2.0 0.3; 0.3 1.5])),), false),
+    ("Wishart:out:q-ν", Wishart, :out, (q = (ν = PointMass(3.0),), m = (S = PointMass([2.0 0.3; 0.3 1.5]),)), false),
+    ("Wishart:out:q-point-masses", Wishart, :out, (q = (ν = PointMass(3.0), S = PointMass([2.0 0.3; 0.3 1.5])),), false),
+    ("Wishart:out:q-inverse-wishart-S", Wishart, :out, (m = (ν = PointMass(3.0),), q = (S = INVERSE_WISHART,)), WISHART_OUT),
+    ("Wishart:out:q-ν-q-inverse-wishart-S", Wishart, :out, (q = (ν = PointMass(3.0), S = INVERSE_WISHART),), WISHART_OUT),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -230,6 +238,7 @@ const MARGINAL_CASES = [
     ("MvNMSMP:(out,μ,γ,G):point-mass-μ", MvNormalMeanScaleMatrixPrecision, (:out, :μ, :γ, :G), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = PointMass([1.0, 1.0]), γ = PointMass(0.5), G = PointMass([2.0 0.5; 0.5 1.0])),), false),
     ("MvNMSMP:(out,μ,γ,G):point-mass-out", MvNormalMeanScaleMatrixPrecision, (:out, :μ, :γ, :G), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), γ = PointMass(0.5), G = PointMass([2.0 0.5; 0.5 1.0])),), false),
     ("MvNMSMP:(out,μ,γ,G):normals", MvNormalMeanScaleMatrixPrecision, (:out, :μ, :γ, :G), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0]), γ = PointMass(0.5), G = PointMass([2.0 0.5; 0.5 1.0])),), false),
+    ("Wishart:(out,ν,S):point-masses", Wishart, (:out, :ν, :S), (m = (out = Wishart(3.0, [1.0 0.2; 0.2 0.5]), ν = PointMass(3.0), S = PointMass([2.0 0.3; 0.3 1.5])),), false),
     ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
@@ -255,6 +264,8 @@ const AVERAGE_ENERGY_CASES = [
     ("MvNMSP:energy:joint", MvNormalMeanScalePrecision, (q = (γ = GammaShapeRate(2.0, 4.0),), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
     ("MvNMSMP:energy", MvNormalMeanScaleMatrixPrecision, (q = (out = MvNormalMeanCovariance([1.5, 0.5], [1.0 0.2; 0.2 0.5]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), γ = GammaShapeRate(2.0, 4.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])),), false),
     ("MvNMSMP:energy:joint", MvNormalMeanScaleMatrixPrecision, (q = (γ = GammaShapeRate(2.0, 4.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
+    ("Wishart:energy", Wishart, (q = (out = WISHART, ν = PointMass(3.0), S = PointMass([2.0 0.3; 0.3 1.5])),), false),
+    ("Wishart:energy:inverse-wishart-S", Wishart, (q = (out = WISHART, ν = PointMass(3.0), S = INVERSE_WISHART),), false),
     ("Beta:energy", Beta, (q = (out = Beta(2.0, 3.0), a = PointMass(1.5), b = PointMass(2.5)),), false),
     ("Bernoulli:energy", Bernoulli, (q = (out = Bernoulli(0.3), p = Beta(2.0, 3.0)),), false),
     ("Gamma:energy:point-mass-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = PointMass(2.0), θ = PointMass(1.0)),), false),

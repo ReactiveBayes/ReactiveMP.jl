@@ -93,12 +93,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (125 of them across 20 files), each self-contained and
+Tests are `@testitem` blocks (126 of them across 20 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (21) and `:engine` (103 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (21) and `:engine` (104 —
 everything except the node tests and the inventory gate), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
@@ -150,7 +150,7 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
-  six nodes, the univariate distributions, the logic nodes and the multivariate normals so far), `MessagePassingRulesApproximations` (`make test-approximations`;
+  six nodes, the univariate distributions, the logic nodes, the multivariate normals and Wishart so far), `MessagePassingRulesApproximations` (`make test-approximations`;
   `Unscented` and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation` and its Unscented
   rules). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
