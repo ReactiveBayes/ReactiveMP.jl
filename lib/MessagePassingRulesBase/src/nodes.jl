@@ -107,12 +107,12 @@ function nodefunction end
     getnodefn(node, target)
 
 The function a deterministic node computes, as a rule body needs it: for `Target(:out)` the
-forward function of the free inputs, with any static inputs already folded in, and for
-`IndexedTarget(:in, k)` the known inverse towards input `k`. A rule reaches it as
-`getnodefn(ctx.node, …)` after declaring `ctx = (:node,)`.
+forward function of the free inputs, with any static inputs already folded in. A rule
+reaches it as `getnodefn(ctx.node, Target(:out))` after declaring `ctx = (:node,)`.
 
 The base package declares it and defines no methods: `node` is the engine's own node
 object, which owns the function and its static inputs, so the engine implements it. It
-replaces v6's `nodefunction(node, meta, Val(:out))` and `(Val(:in), k)`.
+replaces v6's `nodefunction(node, meta, Val(:out))`. A known inverse, v6's
+`(Val(:in), k)`, is not the node's but its algorithm's, which a rule reads from `algo`.
 """
 function getnodefn end

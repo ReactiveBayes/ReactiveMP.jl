@@ -11,7 +11,7 @@ The stream of a factor node's contribution to the Bethe free energy, one value o
 per update. `algorithm` is the one the node runs under; `nothing` means its default.
 
 A stochastic node contributes its average energy minus the entropies of its local marginals;
-a deterministic node the negative entropy of the joint of its inputs.
+a deterministic node minus the entropy of the joint over its inputs, its second cluster.
 """
 function score(
         ::Type{T},
@@ -33,6 +33,8 @@ end
 
 ## Deterministic mapping
 
+# Minus the entropy of the joint over the inputs, the node's second cluster, each time it
+# updates (v6's Delta node score).
 function score(
         ::Type{T},
         ::FactorBoundFreeEnergy,
@@ -41,30 +43,9 @@ function score(
         algorithm,
         stream_postprocessors,
     ) where {T <: CountingReal}
-    fnstream = (interface) -> get_stream_of_inbound_messages(interface) |> skip_initial()
-
-    tinterfaces = Tuple(getinterfaces(node))
-    stream = combineLatest(map(fnstream, tinterfaces), PushNew())
-
-    mapping = let marginalmapping = MarginalMapping(
-            functionalform(node),
-            MessagePassingRulesBase.ClusterTarget(map(name, Tuple(getinboundinterfaces(node)))),
-            Val{map(name, tinterfaces)}(),
-            nothing,
-            algorithm,
-            node,
-        )
-        (messages) -> begin
-            # We do not really care about (is_clamped, is_initial) at this stage, so it can be (false, false)
-            marginal = Marginal(compute_marginal(marginalmapping, messages, nothing), false, false)
-            return convert(T, -score(DifferentialEntropy(), marginal))
-        end
-    end
-
-    stream_of_scores = stream |> map(T, mapping)
-    stream_of_scores = postprocess_stream_of_scores(stream_postprocessors, stream_of_scores)
-
-    return stream_of_scores
+    joint = last(get_node_local_marginals(getlocalclusters(node)))
+    stream_of_scores = get_stream_of_marginals(joint) |> skip_initial() |> map(T, (marginal) -> convert(T, -score(DifferentialEntropy(), marginal)))
+    return postprocess_stream_of_scores(stream_postprocessors, stream_of_scores)
 end
 
 ## Stochastic mapping

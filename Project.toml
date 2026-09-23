@@ -16,6 +16,8 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 # The lib packages are unregistered; `[sources]` (Julia 1.11+) resolves them by path.
 [sources]
+DeltaMessagePassingRules = {path = "lib/DeltaMessagePassingRules"}
+MessagePassingRulesApproximations = {path = "lib/MessagePassingRulesApproximations"}
 MessagePassingRulesBase = {path = "lib/MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "lib/MessagePassingRulesTestUtils"}
 StandardMessagePassingRules = {path = "lib/StandardMessagePassingRules"}
@@ -36,11 +38,13 @@ julia = "1.11"
 # `[extras]` entry, not only on the runtime deps.
 Aqua = "0.8"
 BenchmarkTools = "1"
+DeltaMessagePassingRules = "0.1"
 Documenter = "1"
 ExponentialFamily = "2.5.0"
 InteractiveUtils = "1.11"
 JET = "0.9, 0.10, 0.11, 0.12"
 Logging = "1.11"
+MessagePassingRulesApproximations = "0.1"
 MessagePassingRulesTestUtils = "0.1"
 Pkg = "1.11"
 REPL = "1.11"
@@ -54,11 +58,13 @@ TestItemRunner = "1"
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -70,4 +76,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "BenchmarkTools", "Documenter", "ExponentialFamily", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesTestUtils", "Pkg", "REPL", "Random", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BenchmarkTools", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "REPL", "Random", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]

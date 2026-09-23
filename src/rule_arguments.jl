@@ -24,6 +24,17 @@ struct GroupMember
 end
 
 """
+    ReactiveMP.EmptyGroup(group, length)
+
+The label of a group from which a dependency selects no member, such as `m[:in][!k]` with
+one member: it takes no input, and the rule receives a tuple of `length` `nothing`s.
+"""
+struct EmptyGroup
+    group::Symbol
+    length::Int
+end
+
+"""
     ReactiveMP.input_names(labels)
 
 The names of a rule's inputs, as the `Val` a mapping carries: each label is an interface name,
@@ -40,6 +51,7 @@ function input_names(labels)
         end
     end
     folded = map(names) do name
+        name isa EmptyGroup && return GroupInputs{name.group, name.length, ()}()
         name isa Vector{GroupMember} || return name
         indices = Tuple(member.index for member in name)
         issorted(indices) || throw(ArgumentError("the members of `$(first(name).group)` must be in member order, got $(indices)"))

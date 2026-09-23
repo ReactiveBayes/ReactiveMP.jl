@@ -102,9 +102,10 @@ end
     @test clusters(structured) == ((1, 2), (3,))
     @test keys(structured) == ((:out, :μ), :v)
 
-    # A deterministic node always has one cluster over all its interfaces
-    shifted = factornode(N.shift, [(:out, randomvar()), (:in, randomvar())], ((:out,), (:in,)))
-    @test clusters(shifted) == ((1, 2),)
+    # A deterministic node's clusters are its output and the joint over its inputs, whatever
+    # the factorisation says
+    shifted = factornode(N.shift, [(:out, randomvar()), (:in, randomvar())], ((:out, :in),))
+    @test clusters(shifted) == ((1,), (2,))
 
     grouped = factornode(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out,), (:switch,), ((:m, 1),), ((:m, 2),)))
     @test clusters(grouped) == ((1,), (2,), (3,), (4,))

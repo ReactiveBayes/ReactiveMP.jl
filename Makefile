@@ -28,7 +28,7 @@ doc_init:
 docs: ## Generate documentation (out of the build until Phase 5 rewrites it for the new engine)
 	@echo "docs/ describes the v6 engine and is out of the build until it is rewritten (PHASES.md § Phase 5)"; exit 1
 
-.PHONY: test test-all test-base test-testutils test-standard test-approximations
+.PHONY: test test-all test-base test-testutils test-standard test-approximations test-delta
 
 test: ## Run the fast subset (skips `:slow`). test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
@@ -47,6 +47,9 @@ test-standard: ## Test lib/StandardMessagePassingRules against the local lib pac
 
 test-approximations: ## Test lib/MessagePassingRulesApproximations, which depends on no sibling. Takes test_args like `test`
 	julia --startup-file=no --project=lib/MessagePassingRulesApproximations -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
+
+test-delta: ## Test lib/DeltaMessagePassingRules against the local lib packages ([sources]). Takes test_args like `test`
+	julia --startup-file=no --project=lib/DeltaMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

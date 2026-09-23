@@ -1389,6 +1389,46 @@ Also settled in case (c):
   naming the algorithm (#9's activation-time check); free energy is then scored over it.
 - **#7 is closed on the engine side**: group indices are the caller's `(:m, k)`, never positions.
 
+### 3.25 Case (d): the Delta node (2026-09-23)
+
+Case (d) ran the Delta node through the new engine, on `delta_unscented`, `z := f(x)`, and on a
+fixture recorded for the case, `delta_unscented_static`, `z := f(2.0, x, s)` with a constant
+and a data input. Both agree with v6 call by call. What was decided:
+
+- **Delta has a package of its own, created early** (user): `lib/DeltaMessagePassingRules`,
+  `INVENTORY.md`'s `node:Delta`. Putting it in `StandardMessagePassingRules` would contradict
+  the standard/node split, and putting it in the engine would make ExponentialFamily an engine
+  dependency. The name follows the sibling pattern, `<family>MessagePassingRules`; the user
+  asked for an opinion and may still rename it, which is one mechanical commit before
+  registration.
+- **The node is a type, the function is the engine's.** `DeltaFn{F}` is declared like any node
+  and dispatched on as `Type{<:DeltaFn}`; the engine's `FactorNode` holds the function, given as
+  `factornode(…; nodefn = f)`, and implements `getnodefn(node, Target(:out))`. A closure works
+  as well as a named function.
+- **`DeltaApproximation(; method, inverse)` is v6's `DeltaMeta`.** The known inverse is part of
+  the algorithm and a rule reads it from `algo`; `getnodefn` gives only the forward function,
+  and the base docstring, which had said it also gave the inverse, is corrected. The
+  unknown- and known-inverse layouts are two dependency declarations, on the two forms of the
+  algorithm, both with the partition `[(:out,), (:in,)]`.
+- **Static inputs are folded by the engine, as v6 did.** Under `static_inputs = :fold` the
+  group members connected to a constant or to data get no interface, so they are not connected
+  and add no point entropy, as in v6; the rest are renumbered `1:n`, which is why `x` is
+  `(:in, 1)` in `f(2.0, x, s)`. A `StaticFold` calls `f` with the latest static values in their
+  places, and every update of the node waits for them (v6's `with_statics`). Only a group's
+  members are folded, and a folding node has exactly one group.
+- **A deterministic node's clusters are `out` and the joint over its inputs**, whatever the
+  caller's factorisation, since a deterministic node has no variational factorisation of its
+  own. The joint is computed by the marginal rule from the messages on every interface (v6's
+  `q_ins`), and the node's free energy is minus its entropy. A joint over a whole group is keyed
+  by the group's name, `(:in,)`, even with one member, and is never aliased to a variable's
+  marginal. Belief propagation through a deterministic node under the default scheme reads the
+  messages on every other interface.
+- **An empty selection still reaches the rule.** `m[:in][!k]` with one input selects nothing;
+  the rule receives `(nothing,)`, so one known-inverse rule serves any number of inputs.
+- Without a `DeltaApproximation`, a Delta node runs under `DefaultAlgorithm` and no rule is
+  found; the `RuleNotFoundError` lists the `DeltaApproximation` rules as near misses. v6 raised
+  a dedicated error; nothing here needed one.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

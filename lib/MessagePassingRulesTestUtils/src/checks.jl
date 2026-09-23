@@ -12,8 +12,10 @@ caller_source(file, line) = LineNumberNode(line, Symbol(file))
     approximately_equal(a, b; atol, rtol)
 
 Whether two rule outputs agree: numbers and arrays by `isapprox`, tuples and named tuples
-element by element, point masses by their location, and other distributions by their
-parameters. Outputs of different types are never equal.
+element by element, point masses by their location, other distributions by their
+parameters, and any other immutable struct with fields field by field (such as
+ExponentialFamily's `JointNormal`, which is not a `Distribution`). Outputs of different types
+are never equal.
 """
 approximately_equal(a, b; atol, rtol) = BayesBase.isequal_typeof(a, b) && values_close(a, b; atol, rtol)
 
@@ -28,4 +30,7 @@ values_close(a::Distribution, b::Distribution; atol, rtol) = values_close(params
 values_close(::Nothing, ::Nothing; atol, rtol) = true
 values_close(a::FactorizedCluster, b::FactorizedCluster; atol, rtol) =
     cluster_blocks(a) == cluster_blocks(b) && values_close(BayesBase.components(a), BayesBase.components(b); atol, rtol)
+values_close(a::T, b::T; atol, rtol) where {T} =
+    isstructtype(T) && !ismutabletype(T) && fieldcount(T) > 0 ?
+    all(i -> values_close(getfield(a, i), getfield(b, i); atol, rtol), 1:fieldcount(T)) : a == b
 values_close(a, b; atol, rtol) = a == b

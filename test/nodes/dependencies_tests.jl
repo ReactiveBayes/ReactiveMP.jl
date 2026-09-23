@@ -304,7 +304,9 @@ end
     @test activate!(factornode(FixedPartition, partitioned(), ((:out,), (:μ,), (:τ,))), FactorNodeActivationOptions()) === nothing
     @test_throws "declares the free-energy partition" activate!(factornode(FixedPartition, partitioned(), ((:out, :μ), (:τ,))), FactorNodeActivationOptions())
 
-    # A joint cluster over group members is not wired yet.
+    # A joint may hold a whole group, keyed by its name, but not only some of its members.
+    whole = factornode(WithGroup, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out,), ((:m, 1), (:m, 2))))
+    @test map(ReactiveMP.name, ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(whole))) == (:out, (:m,))
     joint = factornode(WithGroup, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out, (:m, 1)), ((:m, 2),)))
-    @test_throws "joins members of a group" activate!(joint, FactorNodeActivationOptions())
+    @test_throws "joins some members of a group" activate!(joint, FactorNodeActivationOptions())
 end

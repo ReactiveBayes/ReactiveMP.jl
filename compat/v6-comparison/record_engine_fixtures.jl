@@ -3,6 +3,7 @@
 #
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl
 #   julia ... record_engine_fixtures.jl --check     # re-record and compare with the committed files
+#   julia ... record_engine_fixtures.jl <id>...     # record, or check, only the models named
 
 using RxInfer, ReactiveMP, Test
 using ReactiveMP: getannotations, has_annotation, get_annotation
@@ -110,6 +111,16 @@ square_plus_one(x) = x^2 + 1.0
     y ~ NormalMeanVariance(z, 0.1)
 end
 
+# Static inputs: the constant 2.0 and the data `s` are folded into the node function, and
+# every update waits for them.
+scaled_square_plus(c, x, s) = c * x^2 + s
+
+@model function delta_unscented_static(y, s)
+    x ~ NormalMeanVariance(0.5, 1.0)
+    z := scaled_square_plus(2.0, x, s)
+    y ~ NormalMeanVariance(z, 0.1)
+end
+
 const Y = [1.2, 0.7, 2.1, 1.6, 0.9, 1.4]
 const Y_MIXTURE = [-2.1, -1.8, 2.2, 1.9, -2.3, 2.0, 1.7, -1.9]
 
@@ -180,6 +191,19 @@ const MODELS = [
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
         ),
     ),
+    (
+        "delta_unscented_static",
+        "x ~ NMV(0.5, 1), z := 2x^2 + s (Unscented), with the constant 2 and the data s = 1 folded into the node function, y ~ NMV(z, 0.1) observed at 3.0.",
+        () -> record(
+            "delta_unscented_static"; description = "", model = delta_unscented_static(), data = (y = 3.0, s = 1.0), iterations = 3, returnvars = (:x, :z),
+            meta = @meta(
+                begin
+                    scaled_square_plus() -> DeltaMeta(method = Unscented())
+                end
+            ),
+            initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
+        ),
+    ),
 ]
 
 # Found while recording, and deliberately preserved rather than fixed — log scales are a
@@ -193,10 +217,11 @@ fallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix o
 
 describe(id) = only(d for (i, d, _) in MODELS if i == id)
 
-function run_all(; check::Bool)
+function run_all(; check::Bool, only = String[])
     mkpath(FIXTURES)
     return @testset "v6 engine fixtures" begin
         for (id, description, run) in MODELS
+            isempty(only) || id in only || continue
             recorded = run()
             trajectory = EngineTrajectory(id; description = replace(description, "\n" => " "), free_energy = recorded.free_energy, posteriors = recorded.posteriors, trace = recorded.trace)
             path = joinpath(FIXTURES, "$id.toml")
@@ -212,5 +237,5 @@ function run_all(; check::Bool)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    run_all(; check = "--check" in ARGS)
+    run_all(; check = "--check" in ARGS, only = filter(!startswith("--"), ARGS))
 end

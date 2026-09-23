@@ -2,8 +2,9 @@
 
 The packages of the rule/node rewrite, created as stubs in Phase P. `MessagePassingRulesBase`
 (Phase 3) and `MessagePassingRulesTestUtils` (Phase 4) are implemented, each with its own
-test suite. `StandardMessagePassingRules` and `MessagePassingRulesApproximations` are being
-filled in Phase 4.5, with the rules and the numerics the engine slice needs.
+test suite. `StandardMessagePassingRules`, `MessagePassingRulesApproximations` and
+`DeltaMessagePassingRules` were filled in Phase 4.5 with the rules and the numerics the
+engine slice needs, and are completed in Phases 5 and 6.
 
 Read `PLAN.md` for the design, `PHASES.md` for what is next, and `INVENTORY.md` for where
 each of the 231 entities in ReactiveMP is destined to land.
@@ -14,6 +15,7 @@ each of the 231 entities in ReactiveMP is destined to land.
 | `MessagePassingRulesTestUtils` | 4 | test tooling, consumed via `[extras]` and `[sources]`: table tests, coverage, verification against the node definition, derivative checks, the migration checker |
 | `StandardMessagePassingRules` | 4.5 (the slice's six nodes), then 5 | distributions, arithmetic, logic, mixtures |
 | `MessagePassingRulesApproximations` | 4.5 (`Unscented`, `smoothRTS`), then 6 (`Linearization`) | numerical utilities over means and covariances; **standalone, must not depend on the base**, nor on a distribution package: `LinearAlgebra` and `FastCholesky` |
+| `DeltaMessagePassingRules` | 4.5 (`Unscented`), then 6 (`Linearization`, `CVIProjection`) | the Delta node (`INVENTORY.md`'s `node:Delta`, created early in case (d)): `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules. The engine owns the node's function and static inputs |
 
 The domain-models package (`GCV`, `Probit`, `SoftDot`, `GaussianCoupling`) is not created
 yet; its name is deliberately deferred to Phase 6, and `INVENTORY.md` records its
@@ -37,7 +39,7 @@ such as `MessagePassingRulesTestUtils` for a rule package, goes in `[extras]` an
 the same way. Plain `Pkg.test()` then works, and so does every `make test-*` target:
 
 ```bash
-make test-base test-testutils test-standard test-approximations
+make test-base test-testutils test-standard test-approximations test-delta
 ```
 
 Work targets **Julia 1.13**, where `[sources]` is honoured (1.11+). On the old 1.10 floor it was

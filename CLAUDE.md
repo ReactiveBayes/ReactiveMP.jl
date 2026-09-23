@@ -75,6 +75,7 @@ make test-base                             # lib/MessagePassingRulesBase's own s
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
 make test-standard                         # lib/StandardMessagePassingRules
 make test-approximations                   # lib/MessagePassingRulesApproximations, which depends on no sibling
+make test-delta                            # lib/DeltaMessagePassingRules
 # the v6 oracle environment: comparisons and engine fixtures
 for s in check compare_standard compare_approximations; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
@@ -91,12 +92,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (120 of them across 19 files), each self-contained and
+Tests are `@testitem` blocks (122 of them across 19 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (21) and `:engine` (98 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (21) and `:engine` (100 —
 everything except the node tests and the inventory gate), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
@@ -139,17 +140,19 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   only, per module because of precompilation; the engine never reads it (`DISCUSSION.md` §3.23).
 - `activate!` wires a node's declared dependencies (`dependencies_spec`) or the default scheme,
   groups included, and subscribes to a target's inputs **in declaration order**, which in VMP
-  is the update schedule (`DISCUSSION.md` §3.24). It still refuses a joint cluster over group
-  members until case (d) of Phase 4.5.
+  is the update schedule (`DISCUSSION.md` §3.24). It refuses a joint holding only some members
+  of a group. A deterministic node's clusters are always `out` and the joint over its inputs,
+  and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)` (§3.25).
 - Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (it was 322
   pairs on `main`, most in code now in `legacy/`; to be re-measured). `piracies` is on, and
   `deps_compat` checks `[extras]` too.
 - `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
-  six nodes so far) and `MessagePassingRulesApproximations` (`make test-approximations`;
-  `Unscented` and `smoothRTS`, pure numerics). Siblings are wired with `[deps]` and
-  `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
+  six nodes so far), `MessagePassingRulesApproximations` (`make test-approximations`;
+  `Unscented` and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
+  (`make test-delta`; the Delta node, its algorithm `DeltaApproximation` and its Unscented
+  rules). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
 - `legacy/v6/` holds the v6 rule system and every node not yet ported: never loaded, never
   tested, kept as the reference Phase 5 ports from. The inventory gate runs in
   `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
@@ -174,7 +177,8 @@ and read whichever exist before proposing changes:
 **If none of these files exist, the repository has no unfinished business** and you can
 treat `main` as the whole story.
 
-The current work is the rule/node rewrite. From Phase 4.5 on, the engine in `src/` is
+The current work is the rule/node rewrite; Phase 4.5 is closed and Phase 5 is next. From
+Phase 4.5 on, the engine in `src/` is
 **refactored in place**, not bridged. Its reactive machinery is kept, and rule lookup and
 invocation plus node and rule definition and creation are replaced. Step 4 is a **clean
 cut**: the v6 rule system and every unported node move to `legacy/v6/` (moved, not deleted),

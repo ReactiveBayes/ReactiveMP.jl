@@ -145,9 +145,9 @@ replacement".
 | `DataVariableActivationOptions` | `type` | `src/variables/data.jl` | `engine` |  |
 | `DefaultFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | replaced by the declarative dependency language; the default needs no declaration |
 | `DeferredMessage` | `type` | `src/message.jl` | `engine` | caches a stream result; belongs with the observables |
-| `DeltaFn` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
-| `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | replace the graph object with an engine-independent node definition; runtime wiring stays in the engine, conditional on the layout spike |
-| `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | becomes Delta's own algorithm: the approximation method and the optional inverse (case (d)) |
+| `DeltaFn` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | `DeltaMessagePassingRules.DeltaFn{F}`, declared with `static_inputs = :fold` (Phase 4.5 case (d)) |
+| `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | replaced: the engine's `FactorNode` is the node object, holding the function and its folded static inputs (`StaticFold`); `DeltaFn{F}` is the engine-independent node declaration (case (d)) |
+| `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | became Delta's own algorithm, `DeltaApproximation(; method, inverse)`: the approximation method and the optional inverse (case (d)) |
 | `Deterministic` | `type` | `src/nodes/nodes.jl` | `base` |  |
 | `DifferentialEntropy` | `type` | `src/score/score.jl` | `base` | entropy operation retained separately from average energy |
 | `DiscreteTransition` | `type` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` |  |
@@ -280,7 +280,7 @@ replacement".
 | `stream postprocessors` | `hook` | `src/postprocessors.jl` | `engine` | Rocket streams. Exports nothing but is documented public API (`lib/stream-postprocessors.md`) |
 | `scoring` | `hook` | `src/score/` | `base` | `@average_energy`, `AverageEnergy` and `DifferentialEntropy` move to base; `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, since they walk the graph |
 | `node traits (@node-generated)` | `hook` | `src/nodes/nodes.jl` | `base` | `@define_factor_node` emits a `NodeSpec` alongside the 8 method kinds generated today |
-| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec |
+| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec. Done in case (d): the unknown- and known-inverse layouts are two dependency declarations of `DeltaApproximation`; CVI's is not ported |
 | `CVI optimiser hooks` | `hook` | `src/approximations/cvi.jl` | `delete` | `cvi_setup!`/`cvi_update!` belong to the superseded `ProdCVI`, not to `CVIProjection` |
 
 ## Extensions

@@ -53,22 +53,24 @@ abstract type AbstractFactorNode end
     FactorNode
 
 A factor node in the graph: its node type `fform`, its interfaces in declaration order (a
-group's members as [`ReactiveMP.IndexedNodeInterface`](@ref)s, by their index), and its local
-clusters. A node type is anything declared with `MessagePassingRulesBase.@define_factor_node`.
+group's members as [`ReactiveMP.IndexedNodeInterface`](@ref)s, by their index), its local
+clusters, and the function it computes when it has one (see [`ReactiveMP.StaticFold`](@ref)).
+A node type is anything declared with `MessagePassingRulesBase.@define_factor_node`.
 """
-struct FactorNode{F, I, C} <: AbstractFactorNode
+struct FactorNode{F, I, C, N} <: AbstractFactorNode
     fform::F
     interfaces::I
     localclusters::C
+    nodefn::N
 
-    FactorNode(fform::Type{F}, interfaces::I, localclusters::C) where {F, I, C} =
-        new{Type{F}, I, C}(fform, interfaces, localclusters)
-    FactorNode(fform::F, interfaces::I, localclusters::C) where {F <: Function, I, C} =
-        new{F, I, C}(fform, interfaces, localclusters)
+    FactorNode(fform::Type{F}, interfaces::I, localclusters::C, nodefn::N = nothing) where {F, I, C, N} =
+        new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn)
+    FactorNode(fform::F, interfaces::I, localclusters::C, nodefn::N = nothing) where {F <: Function, I, C, N} =
+        new{F, I, C, N}(fform, interfaces, localclusters, nodefn)
 end
 
 """
-    factornode(fform, interfaces, factorisation = nothing)
+    factornode(fform, interfaces, factorisation = nothing; nodefn = nothing)
 
 Create a factor node of type `fform` connected to variables.
 
@@ -76,17 +78,25 @@ Create a factor node of type `fform` connected to variables.
   interface and `((name, k), variable)` for member `k` of a group. The names may be aliases.
   Every declared interface must be given, and a group's members as `1:n`.
 - `factorisation` lists the clusters as tuples of interface keys, `((:out, :μ), (:v,))`, a
-  group member being `(:m, k)`. `nothing` means one cluster over every interface, which is
-  what a deterministic node always gets.
+  group member being `(:m, k)`. `nothing` means one cluster over every interface. A
+  deterministic node ignores it: its clusters are `out` alone and the joint over its inputs.
+- `nodefn` is the function the node computes, which a rule reaches with
+  `MessagePassingRulesBase.getnodefn(ctx.node, Target(:out))`.
+
+A node declared with `static_inputs = :fold` must be given `nodefn`. The members of its group
+connected to a constant or to data are folded into it: they get no interface, the others are
+numbered `1:n` in their order, and every update waits for the folded values.
 
 The interfaces are kept in declaration order, so a cluster, a dependency and an emission
 never depend on the order the caller listed them in.
 """
-function factornode(fform::F, interfaces, factorisation = nothing) where {F}
+function factornode(fform::F, interfaces, factorisation = nothing; nodefn = nothing) where {F}
     spec = node_specification(fform)
-    processed = prepare_interfaces(fform, spec, interfaces)
+    given = resolve_interfaces(fform, interfaces)
+    given, statics = fold_static_inputs(fform, spec, given)
+    processed = prepare_interfaces(fform, spec, given)
     clusters = collect_factorisation(fform, spec, processed, factorisation)
-    return FactorNode(fform, processed, FactorNodeLocalClusters(processed, clusters))
+    return FactorNode(fform, processed, FactorNodeLocalClusters(processed, clusters), node_function(fform, spec, nodefn, statics))
 end
 
 function node_specification(fform)
@@ -121,7 +131,8 @@ given_key(fform, name::Symbol) = MessagePassingRulesBase.alias_interface(fform, 
 given_key(fform, (name, k)::Tuple{Symbol, Integer}) = (MessagePassingRulesBase.alias_interface(fform, name), Int(k))
 given_key(fform, key) = throw(ArgumentError("an interface of `$(fform)` is `:name` or `(:group, k)`, got `$(repr(key))`"))
 
-function prepare_interfaces(fform, spec::NodeSpec, interfaces)
+# The given interfaces by their resolved keys, `:out` or `(:m, k)`.
+function resolve_interfaces(fform, interfaces)
     isempty(interfaces) && throw(ArgumentError("a factor node needs at least one interface; got none for `$(fform)`"))
     given = Dict{Any, Any}()
     for (key, variable) in interfaces
@@ -133,6 +144,41 @@ function prepare_interfaces(fform, spec::NodeSpec, interfaces)
         )
         given[resolved] = variable
     end
+    return given
+end
+
+# Under `static_inputs = :fold`, the group members connected to a constant or to data are taken
+# out, as `(position, variable)`, and the rest renumbered `1:n` in order.
+fold_static_inputs(fform, spec::NodeSpec, given) =
+    spec.static_inputs === :fold ? fold_static_inputs(fform, spec, given, only_group(fform, spec)) : (given, ())
+
+function only_group(fform, spec::NodeSpec)
+    groups = [i.name for i in spec.interfaces if i.group]
+    length(groups) == 1 || throw(ArgumentError("`$(fform)` folds its static inputs, which needs exactly one group of inputs; it has $(Tuple(groups))"))
+    return only(groups)
+end
+
+function fold_static_inputs(fform, spec::NodeSpec, given, group::Symbol)
+    members = sort!([k for (g, k) in (key for key in keys(given) if key isa Tuple) if g === group])
+    statics = Tuple((k, given[(group, k)]) for k in members if isconst(given[(group, k)]) || isdata(given[(group, k)]))
+    free = [k for k in members if !(isconst(given[(group, k)]) || isdata(given[(group, k)]))]
+    isempty(free) && !isempty(members) && throw(
+        ArgumentError("`$(fform)`: every member of the group `$(group)` is a constant or data, so there is no input left to infer"),
+    )
+    folded = Dict{Any, Any}(key => variable for (key, variable) in given if !(key isa Tuple && first(key) === group))
+    for (i, k) in enumerate(free)
+        folded[(group, i)] = given[(group, k)]
+    end
+    return folded, statics
+end
+
+function node_function(fform, spec::NodeSpec, nodefn, statics)
+    spec.static_inputs === :fold || return nodefn
+    nodefn === nothing && throw(ArgumentError("`$(fform)` folds its static inputs into its function, so it needs `nodefn`, the function it computes"))
+    return StaticFold(nodefn, statics)
+end
+
+function prepare_interfaces(fform, spec::NodeSpec, given::AbstractDict)
     processed = Any[]
     for declared in spec.interfaces
         if declared.group
@@ -152,10 +198,12 @@ function prepare_interfaces(fform, spec::NodeSpec, interfaces)
 end
 
 # The clusters as tuples of positions into the processed interfaces, sorted within each
-# cluster and by their first member. A deterministic node has one cluster over everything.
+# cluster and by their first member. A deterministic node's clusters are its output alone and
+# the joint over its inputs, whatever the caller's factorisation.
 function collect_factorisation(fform, spec::NodeSpec, interfaces, factorisation)
     everything = (Tuple(eachindex(interfaces)),)
-    (factorisation === nothing || isdeterministic(spec.type)) && return everything
+    isdeterministic(spec.type) && return length(interfaces) == 1 ? everything : ((1,), Tuple(2:length(interfaces)))
+    factorisation === nothing && return everything
     keys = map(interface_key, interfaces)
     covered = Int[]
     clusters = map(Tuple(factorisation)) do cluster
@@ -209,6 +257,8 @@ The algorithm a node of type `fform` runs under: the one in `options`, or the no
 """
 getalgorithm(fform, options::FactorNodeActivationOptions) = something(options.algorithm, default_algorithm(fform))
 
+include("static_inputs.jl")
+
 """
     ReactiveMP.activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
 
@@ -230,17 +280,19 @@ clusters. A group reaches a rule as one tuple in member order, with `nothing` fo
 it does not depend on. Interfaces connected to constants are skipped: their message is fixed.
 
 An algorithm that declares a free-energy partition requires the factorisation to be that
-partition. A joint cluster over members of a group is not supported yet.
+partition. A joint cluster may hold a whole group, `(:in,)`, but not only some of its members.
 """
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     fform = functionalform(factornode)
     algorithm = getalgorithm(fform, options)
     spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
+    interfaces = getinterfaces(factornode)
     for cluster in getfactorization(getlocalclusters(factornode))
-        length(cluster) > 1 && any(i -> getinterface(factornode, i) isa IndexedNodeInterface, cluster) && throw(
+        members = map(i -> interfaces[i], cluster)
+        length(cluster) > 1 && any(m -> m isa IndexedNodeInterface && !whole_group(m, members, interfaces), members) && throw(
             ArgumentError(
-                "`$(fform)`: the cluster $(map(i -> interface_key(getinterface(factornode, i)), cluster)) joins members of a group, which the engine does not wire yet",
+                "`$(fform)`: the cluster $(map(interface_key, members)) joins some members of a group with other interfaces, which the engine does not wire yet; a cluster may hold a whole group",
             ),
         )
     end

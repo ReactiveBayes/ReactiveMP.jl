@@ -109,3 +109,25 @@ end
     end
     @test !isempty(Recording.failures(set))
 end
+
+@testitem "tables:struct-outputs" tags = [:testutils] begin
+    using MessagePassingRulesTestUtils: approximately_equal
+
+    # An output that is neither a number, an array nor a distribution, such as
+    # ExponentialFamily's `JointNormal`, is compared field by field, within the tolerance.
+    struct Joint{D, S}
+        dist::D
+        sizes::S
+    end
+    @test approximately_equal(Joint([1.0, 2.0], ((), ())), Joint([1.0 + 1.0e-12, 2.0], ((), ())); atol = 1.0e-10, rtol = 0.0)
+    @test !approximately_equal(Joint([1.0, 2.0], ((), ())), Joint([1.1, 2.0], ((), ())); atol = 1.0e-10, rtol = 0.0)
+    @test !approximately_equal(Joint([1.0], ((),)), Joint([1.0], ((1,),)); atol = 1.0e-10, rtol = 0.0)
+
+    # A mutable struct is compared as `==` would, since its identity may matter.
+    mutable struct Box
+        x::Float64
+    end
+    box = Box(1.0)
+    @test approximately_equal(box, box; atol = 1.0e-10, rtol = 0.0)
+    @test !approximately_equal(Box(1.0), Box(1.0); atol = 1.0e-10, rtol = 0.0)
+end

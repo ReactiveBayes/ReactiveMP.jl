@@ -1,11 +1,12 @@
-# Cases (a) to (c) of Phase 4.5, belief propagation, variational message passing and a mixture,
+# Cases (a) to (d) of Phase 4.5, belief propagation, variational message passing, a mixture and
+# a Delta node,
 # compared call by call with the trajectories v6 recorded through RxInfer
 # (`compat/v6-comparison/fixtures/engine`).
 #
 # The case (b) and (c) graphs are built in GraphPPL's order, which is the order RxInfer
 # activates them in: variables as the model statements create them, each constant after the
 # random variable of its statement, and data where it is first used. Posteriors are subscribed
-# in the order RxInfer's `returnvars` `Dict` iterates: `μ, τ, x`, and `m, π, p, z`.
+# in the order RxInfer's `returnvars` `Dict` iterates: `μ, τ, x`, `m, π, p, z` and `z, x`.
 
 @testitem "engine:fixture:bp_iid" tags = [:engine] setup = [EngineHarness] begin
     using ExponentialFamily, StandardMessagePassingRules, MessagePassingRulesTestUtils
@@ -179,4 +180,55 @@ end
     # The members do not depend on each other, so this reorders calls inside an iteration and
     # changes no value (`DISCUSSION.md` §3.24).
     @test compare_engine_trajectory(trajectory, H.fixture("normal_mixture"); atol = 1.0e-9, trace_order = :within_iteration) === :agree
+end
+
+@testmodule DeltaFunctions begin
+    square_plus_one(x) = x^2 + 1.0
+    scaled_square_plus(c, x, s) = c * x^2 + s
+end
+
+@testitem "engine:fixture:delta_unscented" tags = [:engine] setup = [EngineHarness, DeltaFunctions] begin
+    using ExponentialFamily, StandardMessagePassingRules, DeltaMessagePassingRules, MessagePassingRulesApproximations, MessagePassingRulesTestUtils
+    H = EngineHarness
+    f = DeltaFunctions.square_plus_one
+
+    graph = H.Graph()
+    x = H.random!(graph)
+    prior = [(:out, x), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))]
+    z = H.random!(graph)
+    y = H.data!(graph)
+    H.node!(graph, NormalMeanVariance, prior)
+    H.node!(graph, DeltaFn{typeof(f)}, [(:out, z), ((:in, 1), x)]; algorithm = DeltaApproximation(method = Unscented()), nodefn = f)
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, z), (:v, H.constant!(graph, 0.1))])
+
+    trajectory = H.run(
+        graph; id = "delta_unscented", data = [y => 2.0], iterations = 3,
+        posteriors = [:z => z, :x => x], initial_marginals = [z => NormalMeanVariance(1.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("delta_unscented"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:delta_unscented_static" tags = [:engine] setup = [EngineHarness, DeltaFunctions] begin
+    using ExponentialFamily, StandardMessagePassingRules, DeltaMessagePassingRules, MessagePassingRulesApproximations, MessagePassingRulesTestUtils
+    H = EngineHarness
+    f = DeltaFunctions.scaled_square_plus
+
+    # `z := f(2.0, x, s)`: the constant and the data are folded into the function, so `x` is
+    # the node's only input, `(:in, 1)`.
+    graph = H.Graph()
+    x = H.random!(graph)
+    prior = [(:out, x), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))]
+    z = H.random!(graph)
+    c = H.constant!(graph, 2.0)
+    s = H.data!(graph)
+    y = H.data!(graph)
+    H.node!(graph, NormalMeanVariance, prior)
+    H.node!(graph, DeltaFn{typeof(f)}, [(:out, z), ((:in, 1), c), ((:in, 2), x), ((:in, 3), s)]; algorithm = DeltaApproximation(method = Unscented()), nodefn = f)
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, z), (:v, H.constant!(graph, 0.1))])
+
+    trajectory = H.run(
+        graph; id = "delta_unscented_static", data = [y => 3.0, s => 1.0], iterations = 3,
+        posteriors = [:z => z, :x => x], initial_marginals = [z => NormalMeanVariance(1.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("delta_unscented_static"); atol = 1.0e-9) === :agree
 end

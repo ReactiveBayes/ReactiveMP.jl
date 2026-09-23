@@ -41,8 +41,8 @@
     meanfield_factorisation(interfaces) = Tuple((name,) for (name, _) in interfaces)
 
     # `algorithm` is RxInfer's per-node option; `nothing` is the node's default.
-    function node!(graph::Graph, fform, interfaces; factorisation = bethe_factorisation(interfaces), algorithm = nothing)
-        node = factornode(fform, interfaces, factorisation)
+    function node!(graph::Graph, fform, interfaces; factorisation = bethe_factorisation(interfaces), algorithm = nothing, nodefn = nothing)
+        node = factornode(fform, interfaces, factorisation; nodefn)
         push!(graph.nodes, node)
         graph.algorithms[node] = algorithm
         return node

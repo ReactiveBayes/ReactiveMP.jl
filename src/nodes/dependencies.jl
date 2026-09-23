@@ -12,7 +12,7 @@ collect_latest_marginals(labels, sources) =
 # Inputs are subscribed in the order they are listed, which for declared dependencies is the
 # declaration's: in variational message passing that order is the update schedule.
 function collect_latest_updates(labels, streams::Tuple, callback::C) where {C}
-    isempty(streams) && return (nothing, of(nothing))
+    isempty(streams) && return isempty(labels) ? (nothing, of(nothing)) : (input_names(labels), of(()))
     return (input_names(labels), combineLatestUpdates(streams, PushNew(), typeof(streams), identity, callback))
 end
 
@@ -45,9 +45,10 @@ group_length(factornode, group::Symbol) = count(i -> i isa IndexedNodeInterface 
 group_members(factornode, group::Symbol) = filter(i -> i isa IndexedNodeInterface && name(i) === group, getinterfaces(factornode))
 
 # A cluster's label: its interface's for a single interface, the member tuple for a joint.
-cluster_label(factornode, clusters, cindex) =
-let cluster = getfactorization(clusters, cindex)
-    isone(length(cluster)) ? input_label(factornode, getinterface(factornode, only(cluster))) : name(get_node_local_marginals(clusters)[cindex])
+function cluster_label(factornode, clusters, cindex)
+    marginal = get_node_local_marginals(clusters)[cindex]
+    isjoint(marginal) && return name(marginal)
+    return input_label(factornode, getinterface(factornode, only(getfactorization(clusters, cindex))))
 end
 
 """
@@ -55,10 +56,17 @@ end
 
 The engine's default scheme, a regular variational message passing scheme driven by the
 factorisation: the message out of interface `iindex` is computed from the inbound messages of
-the other interfaces in its cluster, and the marginals of every other cluster. Returns the
-labelled message and marginal dependencies, `(labels, sources)` each.
+the other interfaces in its cluster, and the marginals of every other cluster. For a
+deterministic node it is the inbound messages of every other interface. Returns the labelled
+message and marginal dependencies, `(labels, sources)` each.
 """
 function default_dependencies(factornode, iindex)
+    # A deterministic node's clusters only say what free energy counts; belief propagation
+    # through it reads the messages on every other interface.
+    if isdeterministic(sdtype(factornode))
+        others = Tuple(i for (j, i) in enumerate(getinterfaces(factornode)) if j != iindex)
+        return ((map(i -> input_label(factornode, i), others), others), ((), ()))
+    end
     clusters = getlocalclusters(factornode)
     cindex = clusterindex(clusters, iindex)
     cluster = getfactorization(clusters, cindex)
@@ -98,6 +106,9 @@ function declared_dependencies(factornode, spec::MessagePassingRulesBase.Depende
                 push!(collection[1], input_label(factornode, selection))
                 push!(collection[2], input.container === :m ? selection : getvariable(selection))
             end
+            # A group selection of no members still reaches the rule, as a tuple of `nothing`s.
+            isempty(selected) && !(input.selector isa MessagePassingRulesBase.SingleInterface) &&
+                push!(collection[1], EmptyGroup(input.key, group_length(factornode, input.key)))
         end
     end
     return map(Tuple, messages), map(Tuple, marginals)
@@ -135,7 +146,7 @@ function activate_messages!(factornode, options)
             messagesnames, messages = collect_latest_messages(messagelabels, message_dependencies)
             marginalsnames, marginals = collect_latest_marginals(marginallabels, marginal_dependencies)
 
-            stream_of_outbound_messages = combineLatest((messages, marginals), PushNew())
+            stream_of_outbound_messages = with_statics(factornode, combineLatest((messages, marginals), PushNew()))
 
             mapping = let messagemap = MessageMapping(
                     fform, rule_target(interface), messagesnames, marginalsnames,

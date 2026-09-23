@@ -19,18 +19,20 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 4.5, case (d): Delta** — `delta_unscented`, the last slice case. What it needs is in
-§ Phase 4.5, *Cases (b)–(d)*: Delta's own algorithm, `getnodefn`, `static_inputs = :fold`, the
-joint over a whole group, `(:in,)`, which `activate!` still refuses, and the deterministic node
-score's first test.
+**Phase 5: `StandardMessagePassingRules`, the bulk port.** Phase 4.5 is closed: all four
+slice cases run through the new engine and agree with v6 (§ Phase 4.5, *Exit criteria*). Phase
+5 is not planned session by session yet; its first session should plan it, starting from its
+exit criteria: `MIGRATION.md`, begun with the rules the 4.5 ports found, the JuliaSyntax
+migration tool, and the order in which rule directories leave `legacy/v6/`.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
 | What | Where it lands | Recorded in |
 |---|---|---|
 | distributing a `FactorizedCluster` joint to its members; no slice model selects one | Phase 5, the first port that returns one | § *Cases (b)–(d)*, case (b); brief item 5 |
-| a joint cluster over group members (`activate!` refuses it), for Delta's `(:in,)` | 4.5 case (d) | § *Cases (b)–(d)*, case (c) |
-| Delta: its own algorithm, `getnodefn`, `static_inputs = :fold`, `q_out` aliasing, the empty group | 4.5 case (d) | § *Cases (b)–(d)*; brief items 2 and 4 |
+| a joint cluster holding some members of a group with other interfaces (`activate!` refuses it) | when a node needs one | § *Cases (b)–(d)*, case (d) |
+| Delta's `Linearization` rules and `CVIProjection` | Phase 6 | § Phase 6 |
+| a v6 rule-by-rule comparison for the Delta rules (they are checked by v6's own tables and the two engine fixtures) | Phase 6, with `Linearization` | § *Cases (b)–(d)*, case (d) |
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
 | `docs/` rewritten for the new engine (`make docs` refuses until then) | Phase 5 | § Phase 5 |
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
@@ -48,7 +50,9 @@ Step 4, the engine core on case (a), is done (§ Phase 4.5, *Step 4*): the v6 ru
 `vmp_meanfield` and `vmp_structured` agree the same way, with no engine change. Case (c) is
 done: the engine wires declared dependencies and interface groups, and `normal_mixture` agrees
 with v6 in its free energy and posteriors and in every rule call, whose order within an
-iteration differs by decision (`DISCUSSION.md` §3.24).
+iteration differs by decision (`DISCUSSION.md` §3.24). Case (d) is done: the Delta node, with
+its function and its static inputs folded, agrees with v6 on `delta_unscented` and on a new
+`delta_unscented_static` fixture (§3.25). **Phase 4.5 is closed.**
 
 Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSION.md`
 §3.18–3.19); the design session itself was step 1. Since then:
@@ -59,7 +63,8 @@ Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSI
 - `Require*FunctionalDependencies` were dropped (§3.21);
 - **step 4** made the clean cut and ran case (a) through the new engine;
 - **case (b)** ran mean-field and structured VMP through it, changing only the test harness;
-- **case (c)** wired declared dependencies and groups and ran the mixture (§3.24).
+- **case (c)** wired declared dependencies and groups and ran the mixture (§3.24);
+- **case (d)** ran the Delta node, in its own package, with static inputs folded (§3.25).
 
 Three ground rules were set on the same day (§3.22):
 - step 4 is a **clean cut**: the engine keeps only the new rule path, and every unported node
@@ -107,9 +112,9 @@ generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | steps 0–4 and the algorithm reconciliation done, cases (a) and (b) running; next case (c) |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | the slice's six nodes ported in 4.5; the bulk not started |
-| 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5; the rest not started |
+| 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | 8 | Release and downstream coordination | not started |
 
@@ -713,7 +718,8 @@ Decided instead:
 
 **Status: signed off 2026-09-23. Steps 0 (fixtures), 1 (the design session), 2 (base
 additions), 3 (rule ports) and 4 (the engine core, case (a)) are done, as is the algorithm
-reconciliation. Cases (b), VMP, and (c), the mixture, are done. Next is case (d), Delta.**
+reconciliation. Cases (b), VMP, (c), the mixture, and (d), Delta, are done: Phase 4.5 is
+closed.**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -1159,22 +1165,35 @@ its iteration with the same result; their order within an iteration differs by d
 - The mixture runs under `NormalMixtureVMP()`, which the harness passes per node, as RxInfer's
   per-node algorithm option will.
 
-**Case (d), Delta** (`delta_unscented`; the Delta node and its rules are in
-`legacy/v6/src/nodes/predefined/delta/` and `legacy/v6/src/rules/delta/`, `Unscented` is ported).
-- Design Delta's own algorithm: the approximation method and the optional inverse, carried as
-  `DeltaMeta` did. Brief item 4: the base declares `getnodefn(node, target)`, and the engine's
-  Delta node implements it, owning the function and its static fold.
-- Engine features keyed off the spec (brief item 2): `static_inputs = :fold` (inputs connected
-  to constants or data are folded into the node function, and every update waits for them);
-  `q_out` aliasing (a single-interface cluster's marginal *is* the variable's, which
-  `initialize_cluster!` already does); the empty group.
-- The deterministic node score is written (`src/score/node.jl`) but never exercised: it asks
-  for the marginal rule of `ClusterTarget` over the inbound interfaces, which for a group must
-  be `(:in,)`, the joint over the group. As written it maps `name` over the inbound
-  interfaces (`src/score/node.jl:51`), and `name` of a group member is the group's name, so it
-  would build `(:in, :in, …)`; case (d) folds the members into `(:in,)`, and is its first test.
-- The Delta rules' destination is in `INVENTORY.md`; they leave `legacy/v6/` in the commit
-  that ports them.
+**Case (d), Delta — done** (`delta_unscented`, and `delta_unscented_static`, recorded for it).
+`engine:fixture:delta_unscented` and `engine:fixture:delta_unscented_static` agree with v6 at
+`atol = 1e-9`, call by call in order, in the posteriors and in the free energy. Decisions in
+`DISCUSSION.md` §3.25.
+- **A package of its own** (user): `lib/DeltaMessagePassingRules`, `INVENTORY.md`'s `node:Delta`,
+  created early. The node is `DeltaFn{F}`, declared `Deterministic`, `[:out, :in...]`,
+  `static_inputs = :fold`. Its algorithm is `DeltaApproximation(; method, inverse)`, v6's
+  `DeltaMeta`, with the compatibility guard `is_delta_node_compatible`. The unknown- and
+  known-inverse layouts are two `@define_dependencies` on its two forms, with the partition
+  `[(:out,), (:in,)]`. The Unscented rules are ported with v6's own tables, and leave
+  `legacy/v6/` in this commit. A rule-by-rule v6 comparison is not written: the tables and the
+  two fixtures cover the rules; it comes with `Linearization` in Phase 6.
+- **The engine owns the function.** `factornode(…; nodefn = f)`; a `static_inputs = :fold` node
+  requires it. The group members connected to a constant or to data get no interface, as in
+  v6, so they add no point entropy; the others are renumbered `1:n`. The node keeps a
+  `StaticFold`, which calls `f` with the latest static values in their places, and implements
+  `getnodefn(node, Target(:out))`. Every update of the node, messages and the joint, waits for
+  the static inputs (`with_statics`, as v6). The known inverse is the algorithm's, read from
+  `algo`, not `getnodefn`'s; the base docstring says so.
+- **Deterministic nodes** have two clusters, `out` and the joint over the inputs, whatever the
+  factorisation. The joint over a whole group is keyed by its name, `(:in,)`, even for one
+  member, and computed by the marginal rule from the messages on every interface (v6's `q_ins`).
+  The free energy is minus its entropy; the default scheme for a deterministic node is belief
+  propagation over the other interfaces' messages.
+- **An empty group selection**, `m[:in][!k]` with one input, reaches the rule as `(nothing,)`
+  (`EmptyGroup`).
+- `activate!` now refuses only a joint holding **some** members of a group with other
+  interfaces.
+- TestUtils compares a non-distribution struct output, such as `JointNormal`, field by field.
 
 ### Design brief — 2026-09-23
 
@@ -1287,12 +1306,11 @@ built:
 ### Exit criteria
 - [x] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted —
       `compat/v6-comparison/fixtures/engine/`, re-checked by `record_engine_fixtures.jl --check`
-- [ ] a working end-to-end inference in the new engine over the slice: ordinary belief
-      propagation, structured VMP, a mixture (variadic group), and a delta node — *belief
-      propagation (case (a), step 4), mean-field and structured VMP (case (b)) and the mixture
-      (case (c)) done*
-- [ ] free energy agrees with the recorded v6 trajectories on the same models — *cases (a) to
-      (c) agree (`bp_iid`, `bp_chain`, `vmp_meanfield`, `vmp_structured`, `normal_mixture`)*
+- [x] a working end-to-end inference in the new engine over the slice: ordinary belief
+      propagation, structured VMP, a mixture (variadic group), and a delta node — cases (a)–(d)
+- [x] free energy agrees with the recorded v6 trajectories on the same models — `bp_iid`,
+      `bp_chain`, `vmp_meanfield`, `vmp_structured`, `normal_mixture`, `delta_unscented` and
+      `delta_unscented_static`
 - [x] annotations and log scales agree with the recorded ones, compared explicitly (see the
       annotation gate in `PLAN.md`), **where v6 records them** (`bp_iid`). Elsewhere v6's
       behaviour is preserved, gaps included — `engine:fixture:bp_iid`
@@ -1308,8 +1326,9 @@ built:
       reaches the rule's `k`; `engine:fixture:normal_mixture`
 - [x] the v6 rule system and every unported node moved to `legacy/v6/` (step 4); the engine
       keeps only the new rule path; ReactiveMP depends on `MessagePassingRulesBase`
-- [ ] Delta's own algorithm designed (the method and inverse, like `DeltaMeta`), and
-      `getnodefn` implemented by the engine's Delta node (case (d))
+- [x] Delta's own algorithm designed (the method and inverse, like `DeltaMeta`), and
+      `getnodefn` implemented by the engine's Delta node (case (d)) — `DeltaApproximation` in
+      `lib/DeltaMessagePassingRules`; `getnodefn` on the engine's `FactorNode`
 - [x] the `Message` representation chosen by benchmark (mutable with `const` fields vs
       immutable), with the numbers recorded — `mutable` stays; numbers under step 4, item 7
 
@@ -1369,6 +1388,9 @@ first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `Fa
 ---
 
 ## Phase 6 — Approximations and node packages
+
+`lib/DeltaMessagePassingRules` exists since Phase 4.5 case (d), with the Delta node, its
+algorithm and its Unscented rules; the items below that concern Delta add to it.
 
 **Exit criteria**
 - [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
