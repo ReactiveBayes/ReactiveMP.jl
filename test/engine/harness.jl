@@ -16,12 +16,13 @@
 
     """
     A graph in the making: variables and factor nodes in the order they were created, which
-    is the order RxInfer creates and activates them in.
+    is the order RxInfer creates and activates them in, and the algorithm a node was given.
     """
     struct Graph
         variables::Vector{Any}
         nodes::Vector{Any}
-        Graph() = new(Any[], Any[])
+        algorithms::IdDict{Any, Any}
+        Graph() = new(Any[], Any[], IdDict{Any, Any}())
     end
 
     random!(graph::Graph) = (v = randomvar(); push!(graph.variables, v); v)
@@ -39,9 +40,11 @@
     # RxInfer's `MeanField()`: every interface is a cluster of its own.
     meanfield_factorisation(interfaces) = Tuple((name,) for (name, _) in interfaces)
 
-    function node!(graph::Graph, fform, interfaces; factorisation = bethe_factorisation(interfaces))
+    # `algorithm` is RxInfer's per-node option; `nothing` is the node's default.
+    function node!(graph::Graph, fform, interfaces; factorisation = bethe_factorisation(interfaces), algorithm = nothing)
         node = factornode(fform, interfaces, factorisation)
         push!(graph.nodes, node)
+        graph.algorithms[node] = algorithm
         return node
     end
 
@@ -86,7 +89,7 @@
             end
         end
         for node in graph.nodes
-            activate!(node, FactorNodeActivationOptions(; annotations, callbacks))
+            activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], annotations, callbacks))
         end
 
         histories = Dict{String, Any}()
@@ -104,7 +107,7 @@
         end
         energies = Float64[]
         if free_energy
-            push!(subscriptions, subscribe!(bethe_free_energy(Float64, graph.nodes, graph.variables), (f) -> push!(energies, f)))
+            push!(subscriptions, subscribe!(bethe_free_energy(Float64, graph.nodes, graph.variables; algorithm = (node) -> graph.algorithms[node]), (f) -> push!(energies, f)))
         end
 
         for it in 1:iterations

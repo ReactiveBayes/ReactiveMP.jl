@@ -1,23 +1,19 @@
 # What each outbound message is computed from, and the streams that deliver it.
 
-collect_latest_messages(collection) =
-    collect_latest_updates(get_stream_of_inbound_messages, nothing, collection)
-collect_latest_marginals(collection) =
-    collect_latest_updates(get_stream_of_marginals, reset_vstatus_of_sources, collection)
+# `labels` name each input for the rule (see `input_names`); without them an input is known by
+# its `name`, which is enough when no group member is among them.
+collect_latest_messages(interfaces) = collect_latest_messages(map(name, Tuple(interfaces)), interfaces)
+collect_latest_messages(labels, interfaces) =
+    collect_latest_updates(labels, map(get_stream_of_inbound_messages, Tuple(interfaces)), nothing)
+collect_latest_marginals(sources) = collect_latest_marginals(map(name, Tuple(sources)), sources)
+collect_latest_marginals(labels, sources) =
+    collect_latest_updates(labels, map(get_stream_of_marginals, Tuple(sources)), reset_vstatus_of_sources)
 
-collect_latest_updates(f::F, callback::C, collection) where {F, C} =
-    collect_latest_updates(f, callback, Tuple(collection))
-
-function collect_latest_updates(f::F, callback::C, collection::Tuple) where {F, C}
-    return if isempty(collection)
-        (nothing, of(nothing))
-    else
-        streams = map(f, collection)
-        (
-            Val{map(name, collection)}(),
-            combineLatestUpdates(streams, PushNew(), typeof(streams), identity, callback),
-        )
-    end
+# Inputs are subscribed in the order they are listed, which for declared dependencies is the
+# declaration's: in variational message passing that order is the update schedule.
+function collect_latest_updates(labels, streams::Tuple, callback::C) where {C}
+    isempty(streams) && return (nothing, of(nothing))
+    return (input_names(labels), combineLatestUpdates(streams, PushNew(), typeof(streams), identity, callback))
 end
 
 # Mirrors `reset_vstatus` from `clusters.jl`/`random.jl`: without this, a sibling that only ever
@@ -36,19 +32,92 @@ function reset_vstatus_of_sources(wrapper, sources)
 end
 
 """
+    ReactiveMP.input_label(factornode, interface)
+
+What a rule knows an input of `interface` by: its name, or a [`ReactiveMP.GroupMember`](@ref)
+for a member of a group.
+"""
+input_label(factornode, interface::NodeInterface) = name(interface)
+input_label(factornode, interface::IndexedNodeInterface) =
+    GroupMember(name(interface), index(interface), group_length(factornode, name(interface)))
+
+group_length(factornode, group::Symbol) = count(i -> i isa IndexedNodeInterface && name(i) === group, getinterfaces(factornode))
+group_members(factornode, group::Symbol) = filter(i -> i isa IndexedNodeInterface && name(i) === group, getinterfaces(factornode))
+
+# A cluster's label: its interface's for a single interface, the member tuple for a joint.
+cluster_label(factornode, clusters, cindex) =
+let cluster = getfactorization(clusters, cindex)
+    isone(length(cluster)) ? input_label(factornode, getinterface(factornode, only(cluster))) : name(get_node_local_marginals(clusters)[cindex])
+end
+
+"""
     ReactiveMP.default_dependencies(factornode, iindex)
 
 The engine's default scheme, a regular variational message passing scheme driven by the
 factorisation: the message out of interface `iindex` is computed from the inbound messages of
-the other interfaces in its cluster, and the marginals of every other cluster.
+the other interfaces in its cluster, and the marginals of every other cluster. Returns the
+labelled message and marginal dependencies, `(labels, sources)` each.
 """
 function default_dependencies(factornode, iindex)
     clusters = getlocalclusters(factornode)
     cindex = clusterindex(clusters, iindex)
     cluster = getfactorization(clusters, cindex)
     message_dependencies = map(i -> getinterface(factornode, i), filter(i -> i !== iindex, cluster))
-    marginal_dependencies = other_clusters(get_node_local_marginals(clusters), cindex)
-    return message_dependencies, marginal_dependencies
+    others = Tuple(i for i in eachindex(get_node_local_marginals(clusters)) if i != cindex)
+    return (
+        (map(i -> input_label(factornode, i), message_dependencies), message_dependencies),
+        (map(i -> cluster_label(factornode, clusters, i), others), map(i -> get_node_local_marginals(clusters)[i], others)),
+    )
+end
+
+"""
+    ReactiveMP.declared_dependencies(factornode, spec, interface)
+
+What the message out of `interface` is computed from under a declared
+`MessagePassingRulesBase.DependenciesSpec`, in the order the declaration lists them: a message
+is an interface's inbound message, and a marginal an interface's variable marginal or, for a
+tuple key, the local marginal of that cluster. A group dependency selects members relative to
+the target's own index. Returns `(labels, sources)` for the messages and for the marginals.
+"""
+function declared_dependencies(factornode, spec::MessagePassingRulesBase.DependenciesSpec, interface)
+    target = rule_target(interface)
+    inputs = MessagePassingRulesBase.target_dependencies(spec, target)
+    inputs === nothing && throw(
+        ArgumentError("`$(functionalform(factornode))` declares no dependencies for the target `$(repr(interface_key(interface)))` under $(nameof(spec.algorithm))"),
+    )
+    messages, marginals = (Any[], Any[]), (Any[], Any[])
+    for input in inputs
+        selected = selected_interfaces(factornode, input, interface)
+        collection = input.container === :m ? messages : marginals
+        if input.key isa Tuple
+            input.container === :q || throw(ArgumentError("`m[$(input.key)]`: a cluster has a marginal, not a message"))
+            push!(collection[1], input.key)
+            push!(collection[2], cluster_marginal(factornode, input.key))
+        else
+            for selection in selected
+                push!(collection[1], input_label(factornode, selection))
+                push!(collection[2], input.container === :m ? selection : getvariable(selection))
+            end
+        end
+    end
+    return map(Tuple, messages), map(Tuple, marginals)
+end
+
+function selected_interfaces(factornode, input::MessagePassingRulesBase.Dependency, interface)
+    input.key isa Tuple && return ()
+    input.selector isa MessagePassingRulesBase.SingleInterface && return (getinterface(factornode, interfaceindex(factornode, input.key)),)
+    members = group_members(factornode, input.key)
+    k = interface isa IndexedNodeInterface ? index(interface) : 0
+    return map(i -> members[i], MessagePassingRulesBase.selected_indices(input.selector, k, length(members)))
+end
+
+function cluster_marginal(factornode, key::Tuple)
+    marginals = get_node_local_marginals(getlocalclusters(factornode))
+    position = findfirst(marginal -> name(marginal) == key, marginals)
+    position === nothing && throw(
+        ArgumentError("`$(functionalform(factornode))` consumes `q[$(join(repr.(key), ", "))]`, which is not a cluster of its factorisation"),
+    )
+    return marginals[position]
 end
 
 function activate_messages!(factornode, options)
@@ -57,12 +126,14 @@ function activate_messages!(factornode, options)
     annotations = getannotations(options)
     callbacks = getcallbacks(options)
     stream_postprocessor = getpostprocessor(options)
+    spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
 
     return foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
-            message_dependencies, marginal_dependencies = default_dependencies(factornode, iindex)
-            messagesnames, messages = collect_latest_messages(message_dependencies)
-            marginalsnames, marginals = collect_latest_marginals(marginal_dependencies)
+            (messagelabels, message_dependencies), (marginallabels, marginal_dependencies) =
+                spec === nothing ? default_dependencies(factornode, iindex) : declared_dependencies(factornode, spec, interface)
+            messagesnames, messages = collect_latest_messages(messagelabels, message_dependencies)
+            marginalsnames, marginals = collect_latest_marginals(marginallabels, marginal_dependencies)
 
             stream_of_outbound_messages = combineLatest((messages, marginals), PushNew())
 

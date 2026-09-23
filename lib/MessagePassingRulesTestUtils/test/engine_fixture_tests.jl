@@ -79,6 +79,24 @@ end
     end
     @test contains(Recording.failure_text(set), "rule call 1")
 
+    # Unless the order within an iteration is declared free: then the same calls with the
+    # same results agree in any order, and a missing, extra or different call still does not.
+    set = Recording.recorded() do
+        @test compare_engine_trajectory(make(trace = reverse(two)), make(trace = two); trace_order = :within_iteration) === :agree
+    end
+    @test isempty(Recording.failures(set))
+    moved = [RuleCallRecord(2, "Normal", ":out", Normal(0.0, 1.0), 0.0), two[2]]
+    set = Recording.recorded() do
+        compare_engine_trajectory(make(trace = moved), make(trace = two); trace_order = :within_iteration)
+    end
+    @test contains(Recording.failure_text(set), "iteration 1")
+    changed = [two[1], RuleCallRecord(1, "Normal", ":μ", Normal(1.0, 2.0), 0.0)]
+    set = Recording.recorded() do
+        compare_engine_trajectory(make(trace = changed), make(trace = two); trace_order = :within_iteration)
+    end
+    @test contains(Recording.failure_text(set), "Normal(:μ)")
+    @test_throws ArgumentError compare_engine_trajectory(reference, reference; trace_order = :none)
+
     set = Recording.recorded() do
         compare_engine_trajectory(make(trace = [RuleCallRecord(1, "Normal", ":out", Normal(0.0, 1.0), -1.0)]), reference)
     end

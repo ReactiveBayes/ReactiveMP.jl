@@ -124,16 +124,21 @@ values_agree(a, b; atol, rtol) = encoded_close(encode_fixture_value(a), encode_f
 describe_call(r::RuleCallRecord) = "$(r.node)($(r.target)) in iteration $(r.iteration) → $(repr(encode_fixture_value(r.result)))"
 
 """
-    compare_engine_trajectory(v7, v6; atol = 1e-6, rtol = 0, declared = [])
+    compare_engine_trajectory(v7, v6; atol = 1e-6, rtol = 0, declared = [], trace_order = :exact)
 
 Compare a v7 run with its recorded v6 [`EngineTrajectory`](@ref) and return the outcome:
 `:agree`, the kind of a matching [`DeclaredDisagreement`](@ref) (looked up by the v6 id), or
-`:disagree`. The free energy, each posterior, and the trace — every rule call, **in order**,
-with its result and log scale — are checked and reported separately. A difference in the
-order of rule calls is a disagreement, because emission order is part of what an engine
-must reproduce.
+`:disagree`. The free energy, each posterior, and the trace — every rule call with its result
+and log scale — are checked and reported separately.
+
+With `trace_order = :exact` the rule calls must come **in the same order**, because emission
+order is part of what an engine must reproduce. `trace_order = :within_iteration` declares
+the order of the calls inside an iteration free: each iteration must make the same calls with
+the same results, in any order. It is for a schedule that is changed deliberately where the
+calls it reorders do not depend on each other; say why where it is used.
 """
-function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], source = LineNumberNode(0, :unknown))
+function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], trace_order = :exact, source = LineNumberNode(0, :unknown))
+    trace_order in (:exact, :within_iteration) || throw(ArgumentError("`trace_order` is `:exact` or `:within_iteration`, got $(repr(trace_order))"))
     checks = Tuple{Bool, Any, Function}[]
 
     fe_ok = length(v7.free_energy) == length(v6.free_energy) && all(((a, b),) -> isapprox(a, b; atol, rtol), zip(v7.free_energy, v6.free_energy))
@@ -146,7 +151,7 @@ function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; a
         push!(checks, (ok, :(v7.posteriors[$name] ≈ v6.posteriors[$name]), () -> "`$(v6.id)`: posterior `$name` differs: v7 $(repr(present ? encode_fixture_value(v7.posteriors[name]) : get(v7.posteriors, name, missing))), v6 $(repr(get(v6.posteriors, name, missing)))"))
     end
 
-    mismatch = first_trace_mismatch(v7.trace, v6.trace; atol, rtol)
+    mismatch = trace_order === :exact ? first_trace_mismatch(v7.trace, v6.trace; atol, rtol) : first_unmatched_call(v7.trace, v6.trace; atol, rtol)
     push!(checks, (mismatch === nothing, :(v7.trace ≈ v6.trace), () -> "`$(v6.id)`: $mismatch"))
 
     agree = all(first, checks)
@@ -163,6 +168,22 @@ function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; a
         record_check(ok || outcome !== :disagree, expression, describe, source)
     end
     return outcome
+end
+
+calls_agree(a, b; atol, rtol) =
+    (a.iteration, a.node, a.target) == (b.iteration, b.node, b.target) && values_agree(a.result, b.result; atol, rtol) &&
+    ((a.logscale === nothing && b.logscale === nothing) || (a.logscale !== nothing && b.logscale !== nothing && isapprox(a.logscale, b.logscale; atol, rtol)))
+
+# Matches every v6 call with a v7 call of its iteration that agrees, each used once.
+function first_unmatched_call(v7, v6; atol, rtol)
+    unmatched = collect(eachindex(v7))
+    for b in v6
+        position = findfirst(i -> calls_agree(v7[i], b; atol, rtol), unmatched)
+        position === nothing && return "v6 made $(describe_call(b)), which no call of v7 in iteration $(b.iteration) matches"
+        deleteat!(unmatched, position)
+    end
+    isempty(unmatched) && return nothing
+    return "v7 made $(describe_call(v7[first(unmatched)])), which v6 did not make"
 end
 
 function first_trace_mismatch(v7, v6; atol, rtol)

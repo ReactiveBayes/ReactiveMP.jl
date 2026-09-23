@@ -1,11 +1,11 @@
-# Cases (a) and (b) of Phase 4.5, belief propagation and variational message passing, compared
-# call by call with the trajectories v6 recorded through RxInfer
+# Cases (a) to (c) of Phase 4.5, belief propagation, variational message passing and a mixture,
+# compared call by call with the trajectories v6 recorded through RxInfer
 # (`compat/v6-comparison/fixtures/engine`).
 #
-# The case (b) graphs are built in GraphPPL's order, which is the order RxInfer activates them
-# in: variables as the model statements create them, each constant after the random variable of
-# its statement, and data where it is first used. Posteriors are subscribed in the order
-# RxInfer's `returnvars` `Dict` iterates, which is `μ, τ, x`.
+# The case (b) and (c) graphs are built in GraphPPL's order, which is the order RxInfer
+# activates them in: variables as the model statements create them, each constant after the
+# random variable of its statement, and data where it is first used. Posteriors are subscribed
+# in the order RxInfer's `returnvars` `Dict` iterates: `μ, τ, x`, and `m, π, p, z`.
 
 @testitem "engine:fixture:bp_iid" tags = [:engine] setup = [EngineHarness] begin
     using ExponentialFamily, StandardMessagePassingRules, MessagePassingRulesTestUtils
@@ -134,4 +134,49 @@ end
         initial_marginals = [τ => GammaShapeRate(1.0, 1.0), μ => NormalMeanPrecision(0.0, 1.0)],
     )
     @test compare_engine_trajectory(trajectory, H.fixture("vmp_structured"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:normal_mixture" tags = [:engine] setup = [EngineHarness] begin
+    using ExponentialFamily, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    Y = [-2.1, -1.8, 2.2, 1.9, -2.3, 2.0, 1.7, -1.9]
+    graph = H.Graph()
+    meanfield!(fform, interfaces; kwargs...) = H.node!(graph, fform, interfaces; factorisation = H.meanfield_factorisation(interfaces), kwargs...)
+
+    π = H.random!(graph)
+    priors = Any[(Dirichlet, [(:out, π), (:a, H.constant!(graph, [1.0, 1.0]))])]
+    m, p = [], []
+    for (μ, τ) in ((-1.0, 0.1), (1.0, 0.1))
+        push!(m, H.random!(graph))
+        push!(priors, (NormalMeanPrecision, [(:out, m[end]), (:μ, H.constant!(graph, μ)), (:τ, H.constant!(graph, τ))]))
+    end
+    for _ in 1:2
+        push!(p, H.random!(graph))
+        push!(priors, (GammaShapeRate, [(:out, p[end]), (:α, H.constant!(graph, 1.0)), (:β, H.constant!(graph, 1.0))]))
+    end
+    z, y = [], []
+    for _ in Y
+        push!(z, H.random!(graph))
+        push!(y, H.data!(graph))
+    end
+    foreach(((fform, interfaces),) -> meanfield!(fform, interfaces), priors)
+    for i in eachindex(Y)
+        meanfield!(Categorical, [(:out, z[i]), (:p, π)])
+        components = [((:m, 1), m[1]), ((:m, 2), m[2]), ((:p, 1), p[1]), ((:p, 2), p[2])]
+        meanfield!(NormalMixture, [(:out, y[i]), (:switch, z[i]), components...]; algorithm = NormalMixtureVMP())
+    end
+
+    trajectory = H.run(
+        graph; id = "normal_mixture", data = [y => Y], iterations = 5,
+        posteriors = [:m => m, :π => π, :p => p, :z => z],
+        initial_marginals = [
+            π => Dirichlet([1.0, 1.0]), m[1] => NormalMeanPrecision(-1.0, 0.1), m[2] => NormalMeanPrecision(1.0, 0.1),
+            p[1] => GammaShapeRate(1.0, 1.0), p[2] => GammaShapeRate(1.0, 1.0),
+        ],
+    )
+    # v6 subscribed to a group's members last first; the engine subscribes in declaration order.
+    # The members do not depend on each other, so this reorders calls inside an iteration and
+    # changes no value (`DISCUSSION.md` §3.24).
+    @test compare_engine_trajectory(trajectory, H.fixture("normal_mixture"); atol = 1.0e-9, trace_order = :within_iteration) === :agree
 end

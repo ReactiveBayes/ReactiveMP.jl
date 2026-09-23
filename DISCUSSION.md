@@ -1331,6 +1331,64 @@ Either one would also address the one real hazard of a global table. Loading a p
 defines a `DefaultAlgorithm` rule changes results for everyone, and a second definition of the
 same signature silently replaces the first (`duplicate_rules()` reports it afterwards).
 
+### 3.24 Case (c): the mixture, and v6's `reverse(...)` as a schedule (2026-09-23)
+
+Case (c) wired declared dependencies and interface groups into the engine and ran
+`normal_mixture`. The first run agreed with v6 for 34 rule calls and then diverged, in order
+and in values: after five iterations `z[1]` was 0.79 against v6's 0.99999999. The cause was open
+item #6. For `:out` and `:switch` v6's mixture subscribed to `(out, reverse(precisions),
+reverse(means))`, while the rule read `(out, means, precisions)` through `map_to`. The engine
+subscribed in declaration order, `(out, m₁, m₂, p₁, p₂)`.
+
+**The subscription order is the update schedule.** Posteriors are subscribed lazily, and the
+order in which a node's inputs connect their shared marginal streams decides the order in which
+messages materialise and marginals update within an iteration. In variational message passing
+that decides what each rule reads. Measured on the fixture, each order against v6 at `1e-9`:
+
+| `:switch` subscribes | against v6's five iterations |
+|---|---|
+| `out, m₁, m₂, p₁, p₂` (declaration order) | diverges at call 35, in order and values |
+| `out, p₁, p₂, m₁, m₂` (groups swapped) | free energy and every posterior agree; call order differs |
+| `out, m₂, m₁, p₂, p₁` (members reversed) | diverges at call 35 |
+| `out, p₂, p₁, m₂, m₁` (v6's) | agrees call by call |
+
+And the free energy per iteration, run for 50:
+
+| iteration | 1 | 3 | 5 | 7 | 9 | 11 | 13 | 50 |
+|---|---|---|---|---|---|---|---|---|
+| v6, and precisions first | 22.926 | 19.096 | 17.558 | 17.55262 | 17.5526135 | 17.55261352151 | 17.552613521506 | 17.552613521506 |
+| means first | 26.856 | 22.519 | 22.318 | 21.246 | 17.638 | 17.55268 | 17.5526136 | 17.552613521506 |
+
+Both schedules decrease the free energy monotonically and reach the same optimum, with
+posteriors identical to every printed digit at 50 iterations. Means first spends about six
+iterations on a plateau and converges in about 13; precisions first in about 7. The fixture's
+five iterations fall inside the plateau, which is why the first run looked so far off.
+
+So the reversal is two things. **The group order, precisions before means, is a real schedule
+choice**; it converges faster here, and nothing says it would on another model. **The member
+reversal is inert**: the members of a group do not depend on each other within an update, so
+it reorders emissions and changes no value.
+
+**Decided (user): no reversal in the engine.** v6 records no reason for it, and it is not
+mathematics. The engine subscribes to a target's inputs in declaration order, so a node's
+dependency list states its schedule, which is explicit and has a stated reason.
+`NormalMixture` declares `:out => (q[:switch], q[:p...], q[:m...])` and
+`:switch => (q[:out], q[:p...], q[:m...])`, with the reason in its docstring. The fixture is
+compared with `trace_order = :within_iteration`: the same calls with the same results in each
+iteration, in any order. A generic engine rule reproducing v6's order exactly (singles first,
+then the group members reversed) was built and measured, and then removed.
+
+Also settled in case (c):
+- **A group reaches a rule as one tuple**, full length with `nothing` for the members not
+  selected. Inputs are labelled by name, cluster tuple or group member, and the members of a
+  group fold into a type-level `GroupInputs{name, n, members}`, expanded in generated code, so
+  no name is formed at run time. The node score folds its cluster marginals the same way.
+- **A declared consumed marginal of one interface is its variable's marginal**, whatever the
+  factorisation; a tuple key is a cluster of the factorisation, or an error (#9).
+- **A declared free-energy partition must be the factorisation**, or `activate!` raises an error
+  naming the algorithm (#9's activation-time check); free energy is then scored over it.
+- **#7 is closed on the engine side**: group indices are the caller's `(:m, k)`, never positions.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1429,6 +1487,11 @@ Claims the assistant made that were **wrong** and should not be revived:
     method table, which is global already. The per-module registries are introspection data,
     per module only because of precompilation, and `registries()` joins them. Kept as it is
     (user). See §3.23.
+26. **"The mixture's `reverse(...)` is observationally inert; only emission order is at
+    stake."** Half right. Reversing the members within a group is inert. The order of the
+    groups, precisions before means, is the VMP update schedule, and changing it changes the
+    trajectory: the same optimum, reached in about 7 iterations instead of about 13. Measured
+    in case (c). See §3.24.
 
 ---
 
@@ -1499,6 +1562,8 @@ registry.
 `combineLatest` *trigger* tuple while the emitted payload comes from `map_to` with the groups
 un-reversed. `combineLatest` gates on the set of streams, not their order, so nothing
 observable depends on it. Open item #6 is therefore a scheduling pin, not a numerical one.
+*(Corrected in §3.24 and Correction 26: the trigger order is the subscription order, which is
+the update schedule, and its group order changes the values.)*
 
 **`Mixture`'s `RequireMarginal` path is unreachable, mechanically.** `mixture.jl:146` defines
 `functional_dependencies` with three positional arguments; its only caller

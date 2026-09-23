@@ -12,6 +12,27 @@
 
     struct WithGroup end
     @define_factor_node(node = WithGroup, type = Stochastic, interfaces = [:out, :m...])
+
+    # Every selector, under the node's own algorithm.
+    struct Selectors end
+    struct SelectorsAlgorithm <: AbstractAlgorithm end
+    @define_factor_node(
+        node = Selectors, type = Stochastic, interfaces = [:out, :m..., :p...], algorithm = SelectorsAlgorithm,
+        dependencies = [
+            :out => (q[:p...], m[:m...]),
+            (:m, k) => (q[:out], q[:p][k], m[:m][!k]),
+            (:p, k) => (q[:m][k],),
+        ],
+    )
+
+    struct FixedPartition end
+    struct FixedPartitionAlgorithm <: AbstractAlgorithm end
+    @define_factor_node(node = FixedPartition, type = Stochastic, interfaces = [:out, :μ, :τ], algorithm = FixedPartitionAlgorithm)
+    @define_dependencies(
+        node = FixedPartition, algorithm = FixedPartitionAlgorithm,
+        dependencies = [:out => (q[:μ], q[:τ]), :μ => (q[:out], q[:τ]), :τ => (q[:out], q[:μ])],
+        free_energy_partition = [(:out,), (:μ,), (:τ,)],
+    )
 end
 
 @testitem "collect_latest_messages" tags = [:nodes] setup = [DependencySchemeNodes] begin
@@ -195,7 +216,7 @@ end
     import ReactiveMP: default_dependencies, name
 
     variables() = [(:a, randomvar()), (:b, randomvar()), (:c, randomvar())]
-    dependencies(node, i) = map(names -> map(name, names), default_dependencies(node, i))
+    dependencies(node, i) = map(first, default_dependencies(node, i))
 
     @testset "one cluster: the other messages of the cluster, no marginals" begin
         node = factornode(DependencySchemeNodes.ThreeInterfaces, variables())
@@ -219,12 +240,71 @@ end
     end
 end
 
-@testitem "activate! wires only the default scheme, for now" tags = [:nodes] setup = [DependencySchemeNodes] begin
-    import ReactiveMP: activate!, FactorNodeActivationOptions
+@testitem "input_names folds a group's members into one input" tags = [:nodes] begin
+    import ReactiveMP: input_names, GroupMember, GroupInputs, rule_messages, rule_marginals
 
-    declared = factornode(DependencySchemeNodes.DeclaresDependencies, [(:out, randomvar()), (:in, randomvar())])
-    @test_throws "declares its own dependencies" activate!(declared, FactorNodeActivationOptions())
+    @test input_names((:out, (:y, :x))) === Val{(:out, (:y, :x))}()
+    @test input_names((:out, GroupMember(:p, 1, 3), GroupMember(:p, 3, 3), GroupMember(:m, 2, 3))) ===
+        Val{(:out, GroupInputs{:p, 3, (1, 3)}(), GroupInputs{:m, 3, (2,)}())}()
+    @test_throws "more than once" input_names((GroupMember(:p, 1, 2), :out, GroupMember(:p, 2, 2)))
+    @test_throws "member order" input_names((GroupMember(:p, 2, 2), GroupMember(:p, 1, 2)))
 
-    grouped = factornode(DependencySchemeNodes.WithGroup, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())])
-    @test_throws "interface group" activate!(grouped, FactorNodeActivationOptions())
+    # A group reaches the rule full length, `nothing` where a member is not an input.
+    names = input_names((:out, GroupMember(:p, 2, 3), (:y, :x)))
+    q = rule_marginals(identity, names, (1.0, 2.0, 3.0))
+    @test q[:out] === 1.0 && q[:p] === (nothing, 2.0, nothing) && q[:y, :x] === 3.0
+    @test rule_messages(identity, input_names((GroupMember(:m, 1, 2), GroupMember(:m, 2, 2))), (4.0, 5.0))[:m] === (4.0, 5.0)
+end
+
+@testitem "declared dependencies select group members relative to the target" tags = [:nodes] setup = [DependencySchemeNodes] begin
+    import ReactiveMP: declared_dependencies, getinterfaces, getvariable, GroupMember, name, index
+    import MessagePassingRulesBase: dependencies_spec
+    using .DependencySchemeNodes: Selectors, SelectorsAlgorithm
+
+    out = randomvar()
+    m, p = [randomvar() for _ in 1:3], [randomvar() for _ in 1:3]
+    node = factornode(Selectors, [(:out, out), (((:m, k), m[k]) for k in 1:3)..., (((:p, k), p[k]) for k in 1:3)...])
+    spec = dependencies_spec(Selectors, SelectorsAlgorithm())
+    interfaces = getinterfaces(node)
+    member(group, k) = only(filter(i -> name(i) === group && i isa ReactiveMP.IndexedNodeInterface && index(i) == k, interfaces))
+
+    # `:out => (q[:p...], m[:m...])`: every member, in member order.
+    (messagelabels, messages), (marginallabels, marginals) = declared_dependencies(node, spec, first(interfaces))
+    @test messagelabels == Tuple(GroupMember(:m, k, 3) for k in 1:3)
+    @test messages == Tuple(member(:m, k) for k in 1:3)
+    @test marginallabels == Tuple(GroupMember(:p, k, 3) for k in 1:3)
+    @test all(marginals .=== Tuple(p))
+
+    # `(:m, 2) => (q[:out], q[:p][k], m[:m][!k])`: the aligned member, and every other one.
+    (messagelabels, messages), (marginallabels, marginals) = declared_dependencies(node, spec, member(:m, 2))
+    @test messagelabels == (GroupMember(:m, 1, 3), GroupMember(:m, 3, 3))
+    @test marginallabels == (:out, GroupMember(:p, 2, 3))
+    @test marginals[1] === out && marginals[2] === p[2]
+end
+
+@testitem "activate! wires declared dependencies, groups and a declared partition" tags = [:nodes] setup = [DependencySchemeNodes] begin
+    import ReactiveMP: activate!, FactorNodeActivationOptions, RandomVariableActivationOptions, MessageProductContext
+    using .DependencySchemeNodes: Selectors, SelectorsAlgorithm, FixedPartition, FixedPartitionAlgorithm, WithGroup
+
+    # As RxInfer does: the node is created, then its variables are activated, then the node.
+    function activated(node, interfaces)
+        foreach(((_, variable),) -> activate!(variable, RandomVariableActivationOptions(nothing, MessageProductContext(), MessageProductContext())), interfaces)
+        return node
+    end
+    selectors = [(:out, randomvar()), (((:m, k), randomvar()) for k in 1:2)..., (((:p, k), randomvar()) for k in 1:2)...]
+    node = activated(factornode(Selectors, selectors, Tuple((key,) for (key, _) in selectors)), selectors)
+    @test activate!(node, FactorNodeActivationOptions(; algorithm = SelectorsAlgorithm())) === nothing
+
+    # A group under the default scheme is wired too, its members folded into one input.
+    grouped = factornode(WithGroup, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out,), ((:m, 1),), ((:m, 2),)))
+    @test activate!(grouped, FactorNodeActivationOptions()) === nothing
+
+    # A declared partition must be the factorisation.
+    partitioned() = [(:out, randomvar()), (:μ, randomvar()), (:τ, randomvar())]
+    @test activate!(factornode(FixedPartition, partitioned(), ((:out,), (:μ,), (:τ,))), FactorNodeActivationOptions()) === nothing
+    @test_throws "declares the free-energy partition" activate!(factornode(FixedPartition, partitioned(), ((:out, :μ), (:τ,))), FactorNodeActivationOptions())
+
+    # A joint cluster over group members is not wired yet.
+    joint = factornode(WithGroup, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out, (:m, 1)), ((:m, 2),)))
+    @test_throws "joins members of a group" activate!(joint, FactorNodeActivationOptions())
 end

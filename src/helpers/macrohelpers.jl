@@ -55,31 +55,6 @@ function upper_type(type)
 end
 
 """
-    proxy_type(proxy, type)
-
-Returns a type wrapped with a proxy type in a form of `ProxyType{ <: Type }`.
-
-# Arguments
-- `proxy`: Proxy type used to wrap `type`
-- `type`: Type to be wrapped
-"""
-function proxy_type(proxy, type::Symbol)
-    return :($(proxy){<:$(type)})
-end
-
-function proxy_type(proxy, type::Expr)
-    if @capture(type, Vararg{rest__})
-        error(
-            "Vararg{T, N} is forbidden in a rule signature, use `ManyOf{N, T}` instead.",
-        )
-    elseif @capture(type, ManyOf{N_, T_})
-        return :(ReactiveMP.ManyOf{<:NTuple{$N, $(proxy_type(proxy, T))}})
-    else
-        return :($(proxy){<:$(type)})
-    end
-end
-
-"""
     @proxy_methods(proxy_type, proxy_getter, proxy_methods)
 
 Generates proxy methods for a specified `proxy_type` using `proxy_getter`. For example:

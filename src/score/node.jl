@@ -79,11 +79,12 @@ function score(
     ) where {T <: CountingReal}
     fnstream = (localmarginal) -> get_stream_of_marginals(localmarginal) |> skip_initial()
 
-    localmarginals = get_node_local_marginals(getlocalclusters(node))
+    clusters = getlocalclusters(node)
+    localmarginals = get_node_local_marginals(clusters)
     stream = combineLatest(map(fnstream, localmarginals), PushNew())
 
     mapping = let fform = functionalform(node),
-            marginals_names = Val{Tuple(map(name, localmarginals))}(),
+            marginals_names = input_names(map(i -> cluster_label(node, clusters, i), Tuple(eachindex(localmarginals)))),
             ctx = RuleContext(node = node),
             algorithm = algorithm
 

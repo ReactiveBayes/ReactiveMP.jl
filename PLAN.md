@@ -428,6 +428,11 @@ The left-hand side is a **target** — `:out`, or `(:m, k)` for a member of a gr
 exactly as `target` spells it. The right-hand side is a tuple of container lookups, spelled
 exactly as a rule's `args` spells them.
 
+**The order of the right-hand side is the schedule.** The engine subscribes to a target's
+inputs in the order they are declared, and in variational message passing that order decides
+which update a rule sees first. It changes how fast a node converges, not where to
+(`DISCUSSION.md` §3.24); `NormalMixture` lists its precisions before its means for that reason.
+
 For the default dependency scheme, two axes separate:
 
 - **Role** (message vs marginal) stays derived from the factorisation, as today.
@@ -965,7 +970,12 @@ The dispatch result, ownership contracts and early engine integration are separa
    an explicitly supported *research* path when it happens, not a rejected one; whole-sweep
    tracing and `vmap` are a superset of it, not a competing approach. Nothing to decide
    here beyond keeping `buffer_like` extensible.
-6. **`reverse(...)` in the mixture marginal wiring** — undocumented, and the two groups are
+6. ~~**`reverse(...)` in the mixture marginal wiring**~~ **RESOLVED in Phase 4.5 case (c), by
+   not reproducing it** (user; `DISCUSSION.md` §3.24). The engine subscribes in declaration
+   order, which is the VMP update schedule; the group order was found to change the
+   trajectory (the same optimum, slower), so `NormalMixture` declares its precisions first,
+   and the member reversal, which changes no value, is dropped. The original entry, whose
+   "inert" is half wrong (Correction 26): undocumented, and the two groups are
    additionally swapped relative to the payload. Located: it is **not** in `mixture.jl` but in
    `normal_mixture.jl:176,183` and `gamma_mixture.jl:166,173`. Measured to be
    **observationally inert**: the `reverse` applies only to the `combineLatest` *trigger*
@@ -977,6 +987,9 @@ The dispatch result, ownership contracts and early engine integration are separa
    emission order as a fixture (Phase 4.5 Step 0) that the new engine must reproduce.
 7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
+   *(Engine side resolved in Phase 4.5: `factornode` takes `((:m, k), variable)` and the index
+   reaches the rule's `k`, verified by case (c). RxInfer passing `EdgeLabel.index` as `k` is
+   Phase 7.)*
 8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as
    `MessagePassingRulesApproximations`, holding `Unscented`/`Linearization`/`smoothRTS`
    and shared point/weight machinery — **standalone numerical utilities that do not depend

@@ -106,10 +106,12 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
 
     marginal = get_node_local_marginals(clusters)[index]
     message_dependencies = map(i -> getinterface(factornode, i), localfactorization)
-    marginal_dependencies = other_clusters(get_node_local_marginals(clusters), index)
+    others = Tuple(i for i in eachindex(get_node_local_marginals(clusters)) if i != index)
 
-    messagesnames, messages = collect_latest_messages(message_dependencies)
-    marginalsnames, marginals = collect_latest_marginals(marginal_dependencies)
+    messagesnames, messages = collect_latest_messages(map(i -> input_label(factornode, i), message_dependencies), message_dependencies)
+    marginalsnames, marginals = collect_latest_marginals(
+        map(i -> cluster_label(factornode, clusters, i), others), map(i -> get_node_local_marginals(clusters)[i], others),
+    )
 
     fform = functionalform(factornode)
     mapping = MarginalMapping(

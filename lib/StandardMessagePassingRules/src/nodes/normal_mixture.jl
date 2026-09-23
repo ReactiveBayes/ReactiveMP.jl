@@ -9,6 +9,13 @@ parameter.
 Its rules run under its own algorithm, [`NormalMixtureVMP`](@ref), and are always variational:
 they consume marginals only, whatever the factorisation. The multivariate form, with
 `MvNormalMeanPrecision` components, arrives when those rules are ported.
+
+The `:out` and `:switch` dependencies list the precisions before the means. An engine
+subscribes to a target's inputs in the order they are declared, and in variational message
+passing that order is the update schedule: each component's precision is updated before its
+mean. Both orders reach the same optimum; on the Phase 4.5 mixture model, precisions first
+converges in about 7 iterations and means first in about 13 (`DISCUSSION.md` §3.24). The
+order of the members within a group changes nothing, since they do not depend on each other.
 """
 struct NormalMixture end
 
@@ -28,8 +35,8 @@ struct NormalMixtureVMP <: AbstractAlgorithm end
     interfaces = [:out, :switch, :m..., :p...],
     algorithm = NormalMixtureVMP,
     dependencies = [
-        :out => (q[:switch], q[:m...], q[:p...]),
-        :switch => (q[:out], q[:m...], q[:p...]),
+        :out => (q[:switch], q[:p...], q[:m...]),
+        :switch => (q[:out], q[:p...], q[:m...]),
         (:m, k) => (q[:out], q[:switch], q[:p][k]),
         (:p, k) => (q[:out], q[:switch], q[:m][k]),
     ],

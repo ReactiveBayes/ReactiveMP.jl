@@ -19,18 +19,17 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 4.5, case (c): the mixture** — `normal_mixture`, through the engine step 4 built and
-case (b) extended. What it needs is in § Phase 4.5, *Cases (b)–(d)*; it starts by lifting
-`activate!`'s two refusals, declared dependencies and interface groups.
+**Phase 4.5, case (d): Delta** — `delta_unscented`, the last slice case. What it needs is in
+§ Phase 4.5, *Cases (b)–(d)*: Delta's own algorithm, `getnodefn`, `static_inputs = :fold`, the
+joint over a whole group, `(:in,)`, which `activate!` still refuses, and the deterministic node
+score's first test.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
 | What | Where it lands | Recorded in |
 |---|---|---|
 | distributing a `FactorizedCluster` joint to its members; no slice model selects one | Phase 5, the first port that returns one | § *Cases (b)–(d)*, case (b); brief item 5 |
-| `activate!` refuses declared dependencies and interface groups; wiring both | 4.5 case (c) | § *Cases (b)–(d)*; step 4 item 3; `DISCUSSION.md` §3.23 |
-| a declared free-energy partition in `bethe_free_energy` | 4.5 case (c) | step 4 item 5 |
-| mixture emission order (#6), group indices through integration (#7) | 4.5 case (c) | exit criteria |
+| a joint cluster over group members (`activate!` refuses it), for Delta's `(:in,)` | 4.5 case (d) | § *Cases (b)–(d)*, case (c) |
 | Delta: its own algorithm, `getnodefn`, `static_inputs = :fold`, `q_out` aliasing, the empty group | 4.5 case (d) | § *Cases (b)–(d)*; brief items 2 and 4 |
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
 | `docs/` rewritten for the new engine (`make docs` refuses until then) | Phase 5 | § Phase 5 |
@@ -46,7 +45,10 @@ introspection only (`DISCUSSION.md` §3.23, Correction 25).
 Step 4, the engine core on case (a), is done (§ Phase 4.5, *Step 4*): the v6 rule system is in
 `legacy/v6/`, the engine finds and runs rules through `MessagePassingRulesBase`, and
 `bp_iid`, `bp_iid_missing` and `bp_chain` agree with v6 call by call. Case (b) is done too:
-`vmp_meanfield` and `vmp_structured` agree the same way, with no engine change.
+`vmp_meanfield` and `vmp_structured` agree the same way, with no engine change. Case (c) is
+done: the engine wires declared dependencies and interface groups, and `normal_mixture` agrees
+with v6 in its free energy and posteriors and in every rule call, whose order within an
+iteration differs by decision (`DISCUSSION.md` §3.24).
 
 Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSION.md`
 §3.18–3.19); the design session itself was step 1. Since then:
@@ -56,7 +58,8 @@ Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSI
 - the **algorithm reconciliation** replaced `BP`/`VMP` with one `DefaultAlgorithm` (§3.20);
 - `Require*FunctionalDependencies` were dropped (§3.21);
 - **step 4** made the clean cut and ran case (a) through the new engine;
-- **case (b)** ran mean-field and structured VMP through it, changing only the test harness.
+- **case (b)** ran mean-field and structured VMP through it, changing only the test harness;
+- **case (c)** wired declared dependencies and groups and ran the mixture (§3.24).
 
 Three ground rules were set on the same day (§3.22):
 - step 4 is a **clean cut**: the engine keeps only the new rule path, and every unported node
@@ -710,7 +713,7 @@ Decided instead:
 
 **Status: signed off 2026-09-23. Steps 0 (fixtures), 1 (the design session), 2 (base
 additions), 3 (rule ports) and 4 (the engine core, case (a)) are done, as is the algorithm
-reconciliation. Case (b), VMP, is done. Next is case (c), the mixture.**
+reconciliation. Cases (b), VMP, and (c), the mixture, are done. Next is case (d), Delta.**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -765,8 +768,9 @@ All re-verified in the post-Phase-4 audit, **against v6**. Step 4 has since repl
 - dependency wiring: `activate!` in `src/nodes/dependencies.jl:59` and
   `src/nodes/nodes.jl:327`; clusters in `src/nodes/clusters.jl:129`;
 - the mixture `reverse(...)` (#6): `normal_mixture.jl:176,183`, `gamma_mixture.jl:166,173`,
-  inside `collect_latest_marginals`. It orders only the `combineLatest` trigger, so what is
-  to be recorded is **emission order**, not values.
+  inside `collect_latest_marginals`. It orders only the `combineLatest` trigger. *(That this
+  leaves values alone turned out half wrong: the trigger order is the VMP update schedule, and
+  its group order changes the trajectory; case (c), §3.24.)*
 
 **Gaps in today's tests that the fixtures and the new engine's tests must close.** The mixture
 `reverse` order is not pinned (`normal_mixture_tests.jl:357-397` checks names only). The
@@ -1003,7 +1007,7 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    - Activation is generic: `dependencies_spec`, or the default scheme when that is
      `nothing`. `algorithm` replaces `meta` in the activation options.
 
-   *Done, with two parts left to case (c).* `factornode(fform, interfaces, factorisation =
+   *Done, with two parts left to case (c), which did them.* `factornode(fform, interfaces, factorisation =
    nothing)` takes `(name, variable)` and `((group, k), variable)`, names or aliases in any
    order, and puts them in declaration order; the factorisation is tuples of the same keys,
    `nothing` meaning one cluster, and a deterministic node always gets one. Errors name the
@@ -1122,27 +1126,38 @@ control, a wrong initial `q(τ)`, fails on the free energy, the posteriors and t
 - A Bethe-factorised x-node in the same model stalls rather than failing: loopy BP with no
   initial messages never fires, as in v6, so its posteriors never emit.
 
-**Case (c), the mixture** (`normal_mixture`; NormalMixture, Categorical, Dirichlet, NMP,
-GammaShapeRate, all ported).
-- Lift both `activate!` refusals. Wire a `DependenciesSpec` (`MessagePassingRulesBase.
-  dependencies_spec(fform, algorithm)`) per target: for each declared input, the right
-  message or marginal stream, with the group selectors `all` (`q[:m...]`), `aligned`
-  (`q[:p][k]`) and `all-but-self`. A group reaches a rule as a tuple in member order, with
-  `nothing` where the selection leaves a member out (base docs, `@define_message_update_rule`).
-- Groups in `rule_messages`/`rule_marginals`: today the names are a flat tuple of interface
-  names, and group members would collide under one name. They need `(name, k)` keys that fold
-  into one tuple per group.
-- `IndexedTarget{:m}(k)` targets are already produced by `rule_target`; nothing calls them yet.
-- `ManyOf` (`src/nodes/interfaces.jl`) and `proxy_type` (`src/helpers/macrohelpers.jl`) are v6's
-  group container and rule-signature helper, unused since step 4; the group wiring either
-  uses or deletes them.
-- `bethe_free_energy` over a declared partition, when `DependenciesSpec.partition` is set.
-- Exit criteria: #6, the emission order against the fixture's trace (v6's `reverse(...)` in
-  `normal_mixture.jl:176,183` orders only the `combineLatest` trigger); #7, group indices kept
-  from the caller's `(:m, k)` through to the rule's `k`.
-- The mixture runs under `NormalMixtureVMP`, a standalone algorithm, whatever the
-  factorisation (§3.20). The harness passes `algorithm = NormalMixtureVMP()` for it, as
-  RxInfer's per-node algorithm option will.
+**Case (c), the mixture — done** (`normal_mixture`; NormalMixture, Categorical, Dirichlet, NMP,
+GammaShapeRate). `engine:fixture:normal_mixture` agrees with v6 at `atol = 1e-9` in the free
+energy over five iterations and every posterior, and makes the same 285 rule calls, each in
+its iteration with the same result; their order within an iteration differs by decision, below.
+- **Declared dependencies are wired** (`declared_dependencies`, `src/nodes/dependencies.jl`): per
+  target, each declared input becomes an inbound message, a variable's marginal or, for a tuple
+  key, a local cluster's marginal, with the selectors `all`, `aligned`, `all-but-self` and
+  custom ones resolved against the target's own index. The default scheme handles groups too.
+- **Groups reach a rule as one tuple**, full length, `nothing` for the members not selected.
+  An input is labelled by name, cluster tuple or `GroupMember`, and `input_names` folds a
+  group's consecutive members into a type-level `GroupInputs{name, n, members}`, which
+  `rule_messages`/`rule_marginals` expand in generated code. The node score folds its cluster
+  marginals the same way. `ManyOf` and `proxy_type`, v6's group container and signature
+  helper, are deleted.
+- **A declared free-energy partition** must be the factorisation, block for block (a group's
+  name standing for all of its members), or `activate!` raises an error naming the algorithm
+  (#9); `bethe_free_energy` then scores over it as it does over any factorisation.
+- `activate!` still refuses a **joint cluster over group members**; Delta's `(:in,)` is case (d).
+- **#6, the mixture's `reverse(...)`, is resolved by not reproducing it** (user; `DISCUSSION.md`
+  §3.24). Inputs are subscribed in declaration order, and in VMP that order is the update
+  schedule. v6 subscribed `(out, p₂, p₁, m₂, m₁)` for `:switch`. The group order, precisions
+  before means, is the schedule: means first reaches the same optimum in about 13 iterations
+  instead of about 7. So `NormalMixture` declares its precisions first, with that reason in its
+  docstring. The member reversal changes no value, since members do not depend on each other,
+  so the trace is compared per iteration with its order free
+  (`compare_engine_trajectory(…; trace_order = :within_iteration)`, new in TestUtils).
+- **#7, group indices through integration**: the caller names a member as `((:m, k), variable)`,
+  `rule_target` makes it `IndexedTarget{:m}(k)`, and the selectors resolve `k` against it; the
+  fixture, where `m[2]`'s messages differ from `m[1]`'s, agrees. No index is derived from
+  position. RxInfer passing GraphPPL's `EdgeLabel.index` as `k` is Phase 7.
+- The mixture runs under `NormalMixtureVMP()`, which the harness passes per node, as RxInfer's
+  per-node algorithm option will.
 
 **Case (d), Delta** (`delta_unscented`; the Delta node and its rules are in
 `legacy/v6/src/nodes/predefined/delta/` and `legacy/v6/src/rules/delta/`, `Unscented` is ported).
@@ -1274,9 +1289,10 @@ built:
       `compat/v6-comparison/fixtures/engine/`, re-checked by `record_engine_fixtures.jl --check`
 - [ ] a working end-to-end inference in the new engine over the slice: ordinary belief
       propagation, structured VMP, a mixture (variadic group), and a delta node — *belief
-      propagation (case (a), step 4) and mean-field and structured VMP (case (b)) done*
-- [ ] free energy agrees with the recorded v6 trajectories on the same models — *cases (a) and
-      (b) agree (`bp_iid`, `bp_chain`, `vmp_meanfield`, `vmp_structured`)*
+      propagation (case (a), step 4), mean-field and structured VMP (case (b)) and the mixture
+      (case (c)) done*
+- [ ] free energy agrees with the recorded v6 trajectories on the same models — *cases (a) to
+      (c) agree (`bp_iid`, `bp_chain`, `vmp_meanfield`, `vmp_structured`, `normal_mixture`)*
 - [x] annotations and log scales agree with the recorded ones, compared explicitly (see the
       annotation gate in `PLAN.md`), **where v6 records them** (`bp_iid`). Elsewhere v6's
       behaviour is preserved, gaps included — `engine:fixture:bp_iid`
@@ -1285,8 +1301,11 @@ built:
       as in v6, so the guarantee starts at materialisation) — `engine:retained-values`
 - [x] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
       — `MessageMapping short-circuits a missing input`, and `bp_iid_missing` end to end
-- [ ] mixture emission order agrees with the recorded v6 order (#6)
-- [ ] edge order and group indices preserved through integration (#7)
+- [x] mixture emission order agrees with the recorded v6 order (#6) — *resolved by decision
+      instead (user, §3.24): the same calls with the same results in each iteration, in
+      declaration order; v6's member reversal is not reproduced and changes no value*
+- [x] edge order and group indices preserved through integration (#7) — the caller's `(:m, k)`
+      reaches the rule's `k`; `engine:fixture:normal_mixture`
 - [x] the v6 rule system and every unported node moved to `legacy/v6/` (step 4); the engine
       keeps only the new rule path; ReactiveMP depends on `MessagePassingRulesBase`
 - [ ] Delta's own algorithm designed (the method and inverse, like `DeltaMeta`), and

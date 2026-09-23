@@ -91,12 +91,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (117 of them across 19 files), each self-contained and
+Tests are `@testitem` blocks (120 of them across 19 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (19) and `:engine` (97 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (21) and `:engine` (98 —
 everything except the node tests and the inventory gate), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
@@ -137,8 +137,10 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - Rule lookup is the base package's method table (`find_message_rule` and friends), global
   across every loaded package. The per-module `__message_passing_registry__` is introspection
   only, per module because of precompilation; the engine never reads it (`DISCUSSION.md` §3.23).
-- `activate!` wires only the default dependency scheme for now: a node that declares its own
-  dependencies, or has an interface group, is refused until case (c) of Phase 4.5.
+- `activate!` wires a node's declared dependencies (`dependencies_spec`) or the default scheme,
+  groups included, and subscribes to a target's inputs **in declaration order**, which in VMP
+  is the update schedule (`DISCUSSION.md` §3.24). It still refuses a joint cluster over group
+  members until case (d) of Phase 4.5.
 - Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (it was 322
   pairs on `main`, most in code now in `legacy/`; to be re-measured). `piracies` is on, and
   `deps_compat` checks `[extras]` too.

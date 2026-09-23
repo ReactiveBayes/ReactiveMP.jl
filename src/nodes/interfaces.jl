@@ -85,7 +85,7 @@ getvariable(interface::NodeInterface) = interface.variable
 
 A thin wrapper around [`ReactiveMP.NodeInterface`](@ref) that adds a positional `index`, used for nodes with a variable-length list of same-named edges (e.g. the `means` or `precisions` of a Gaussian Mixture node). All stream and variable accessors delegate to the wrapped interface.
 
-See also: [`ReactiveMP.NodeInterface`](@ref), [`ReactiveMP.ManyOf`](@ref)
+See also: [`ReactiveMP.NodeInterface`](@ref)
 """
 struct IndexedNodeInterface
     index::Int
@@ -113,72 +113,3 @@ israndom(interface::IndexedNodeInterface) = israndom(interface.interface)
 isdata(interface::IndexedNodeInterface) = isdata(interface.interface)
 isconst(interface::IndexedNodeInterface) = isconst(interface.interface)
 
-"""
-Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s.
-It is v6's group container and has no user since the move to `MessagePassingRulesBase`, where a group reaches a rule as a tuple.
-"""
-struct ManyOf{T}
-    collection::T
-end
-
-Base.show(io::IO, manyof::ManyOf) =
-    print(io, "ManyOf(", join(manyof.collection, ",", ""), ")")
-
-Rocket.getrecent(many::ManyOf) = ManyOf(getrecent(many.collection))
-
-getdata(many::ManyOf) = getdata(many.collection)
-is_clamped(many::ManyOf) = is_clamped(many.collection)
-is_initial(many::ManyOf) = is_initial(many.collection)
-typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
-
-BayesBase.paramfloattype(many::ManyOf) = paramfloattype(many.collection)
-
-rule_method_error_type_nameof(::Type{T}) where {V, T <: ManyOf{V}} = begin
-    # V is the tuple type carried in ManyOf{V}
-    fts = fieldtypes(V)               # get the element type tuple, works for NTuple and Tuple
-    N = length(fts)                   # number of elements
-
-    if N == 0
-        return "ManyOf{0, }"
-    end
-
-    # If all element types are the same, produce the compact NTuple-style message:
-    if all(ft -> ft === fts[1], fts)
-        elt = dropproxytype(fts[1])
-        return string(
-            "ManyOf{", N, ", ", rule_method_error_type_nameof(elt), "}"
-        )
-    end
-
-    # Otherwise produce the Union of element type names:
-    unions = join(
-        map(r -> rule_method_error_type_nameof(dropproxytype(r)), fts), ","
-    )
-    return string("ManyOf{", N, ", Union{", unions, "}}")
-end
-
-Base.iterate(many::ManyOf) = iterate(many.collection)
-Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
-
-Base.length(many::ManyOf) = length(many.collection)
-
-struct ManyOfObservable{S} <: Subscribable{ManyOf}
-    source::S
-end
-
-Rocket.getrecent(observable::ManyOfObservable) =
-    ManyOf(Rocket.getrecent(observable.source))
-
-@inline function Rocket.on_subscribe!(observable::ManyOfObservable, actor)
-    return subscribe!(observable.source |> map(ManyOf, (d) -> ManyOf(d)), actor)
-end
-
-function combineLatestMessagesInUpdates(
-        indexed::NTuple{N, <:IndexedNodeInterface}
-    ) where {N}
-    return ManyOfObservable(
-        combineLatestUpdates(
-            map((in) -> get_stream_of_inbound_messages(in), indexed), PushNew()
-        ),
-    )
-end

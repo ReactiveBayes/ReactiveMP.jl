@@ -223,21 +223,44 @@ Wires the node's message and marginal streams into the graph.
    each update is turned into a [`ReactiveMP.DeferredMessage`](@ref) by a
    [`ReactiveMP.MessageMapping`](@ref), which resolves and runs the rule.
 
-What a rule needs follows the engine's default scheme, driven by the factorisation: the
-messages inside its own cluster, and the marginals of the other clusters. Interfaces connected
-to constants are skipped: their message is fixed.
+What a rule needs is what the node's algorithm declares
+(`MessagePassingRulesBase.dependencies_spec`), or else the engine's default scheme, driven by
+the factorisation: the messages inside its own cluster, and the marginals of the other
+clusters. A group reaches a rule as one tuple in member order, with `nothing` for the members
+it does not depend on. Interfaces connected to constants are skipped: their message is fixed.
+
+An algorithm that declares a free-energy partition requires the factorisation to be that
+partition. A joint cluster over members of a group is not supported yet.
 """
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     fform = functionalform(factornode)
     algorithm = getalgorithm(fform, options)
-    MessagePassingRulesBase.dependencies_spec(fform, algorithm) === nothing || throw(
-        ArgumentError(
-            "`$(fform)` declares its own dependencies under $(algorithm); the engine does not wire declared dependencies yet, only the default scheme",
-        ),
-    )
-    any(interface -> interface isa IndexedNodeInterface, getinterfaces(factornode)) && throw(
-        ArgumentError("`$(fform)` has an interface group; the engine does not wire groups yet"),
-    )
+    spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
+    spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
+    for cluster in getfactorization(getlocalclusters(factornode))
+        length(cluster) > 1 && any(i -> getinterface(factornode, i) isa IndexedNodeInterface, cluster) && throw(
+            ArgumentError(
+                "`$(fform)`: the cluster $(map(i -> interface_key(getinterface(factornode, i)), cluster)) joins members of a group, which the engine does not wire yet",
+            ),
+        )
+    end
     initialize_clusters!(getlocalclusters(factornode), factornode, options)
     return activate_messages!(factornode, options)
+end
+
+# The factorisation must be the partition the algorithm declares, block for block. A group's
+# name in a block stands for all of its members.
+check_partition(factornode, algorithm, ::Nothing) = nothing
+function check_partition(factornode, algorithm, partition)
+    interfaces = getinterfaces(factornode)
+    block_positions(block) = Set(i for i in eachindex(interfaces) if name(interfaces[i]) in block)
+    declared = Set(map(block_positions, partition))
+    factorisation = Set(map(Set, getfactorization(getlocalclusters(factornode))))
+    declared == factorisation && return nothing
+    member_keys(positions) = Tuple(interface_key(interfaces[i]) for i in sort!(collect(positions)))
+    throw(
+        ArgumentError(
+            "`$(functionalform(factornode))` runs under $(algorithm), which declares the free-energy partition $(Tuple(partition)); its factorisation $(Tuple(map(member_keys, getfactorization(getlocalclusters(factornode))))) differs",
+        ),
+    )
 end
