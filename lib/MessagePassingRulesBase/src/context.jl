@@ -3,7 +3,7 @@
 
 The read-only infrastructure a rule receives as `ctx`. It never takes part in dispatch.
 
-- `node`: the factor node the rule belongs to, e.g. for `getnodefn(ctx.node, …)`.
+- `node`: the factor node the rule belongs to, e.g. for [`getnodefn`](@ref)`(ctx.node, target)`.
 - `product`: `(left, right) -> (distribution, logscale)`.
 - `linalg`: the linear-algebra strategy. **Unstable**: its protocol is not settled yet.
 - `rng`: the random number generator, owned by the caller.

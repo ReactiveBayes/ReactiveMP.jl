@@ -77,8 +77,8 @@ default_algorithm(node) = nodespec(node).algorithm
     static_inputs(node)
 
 How the node treats inputs connected to constants and data. `:none` treats them like any
-other input. `:fold` folds them into the node function, reached as `getnodefn(ctx.node, …)`,
-and every update waits until they are available. Which inputs are static is known only
+other input. `:fold` folds them into the node function, reached as
+[`getnodefn`](@ref)`(ctx.node, target)`, and every update waits until they are available. Which inputs are static is known only
 from the graph, so the engine does the folding and the waiting.
 """
 static_inputs(node) = nodespec(node).static_inputs
@@ -102,3 +102,17 @@ The log-density of a stochastic node without groups, as a function of keyword ar
 named after its interfaces.
 """
 function nodefunction end
+
+"""
+    getnodefn(node, target)
+
+The function a deterministic node computes, as a rule body needs it: for `Target(:out)` the
+forward function of the free inputs, with any static inputs already folded in, and for
+`IndexedTarget(:in, k)` the known inverse towards input `k`. A rule reaches it as
+`getnodefn(ctx.node, …)` after declaring `ctx = (:node,)`.
+
+The base package declares it and defines no methods: `node` is the engine's own node
+object, which owns the function and its static inputs, so the engine implements it. It
+replaces v6's `nodefunction(node, meta, Val(:out))` and `(Val(:in), k)`.
+"""
+function getnodefn end

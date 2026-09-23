@@ -18,7 +18,7 @@ relying on one.
 
 **Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
 the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. The
-cluster over a whole group is done; next are `getnodefn` and `FactorizedJoint` marginal
+cluster over a whole group and `getnodefn` are done; next are `FactorizedJoint` marginal
 returns. The
 design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
@@ -761,7 +761,9 @@ What recording found, all **preserved, not fixed**:
       `check_rules` accept groups in clusters, keep interface order, and reject a one-member
       cluster of a single interface in favour of `q[:μ]`. Tests: `group-cluster:*`, plus
       the tuple and group joints added to `gate:containers` (inferred, 0 bytes, JET-clean)
-- [ ] `getnodefn(node, target)` declared, with no methods
+- [x] `getnodefn(node, target)` declared and exported, with no methods: `Target(:out)` is
+      the forward function with static inputs folded, `IndexedTarget(:in, k)` the known
+      inverse; the engine's node implements it. Test: `nodes:getnodefn`
 - [ ] a marginal rule may return a `FactorizedJoint`
 
 ### Design brief — 2026-09-23

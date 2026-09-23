@@ -5,7 +5,7 @@ using BayesBase, LinearAlgebra, MacroTools, TupleTools
 export message_passing_rule, message_passing_rule!
 export message_passing_marginalrule, message_passing_marginalrule!
 export message_passing_average_energy
-export @define_factor_node, Stochastic, Deterministic
+export @define_factor_node, Stochastic, Deterministic, getnodefn
 export @define_message_update_rule, @define_marginal_update_rule, @define_average_energy
 export @define_dependencies
 export @call_message_update_rule, @call_marginal_update_rule, @call_average_energy

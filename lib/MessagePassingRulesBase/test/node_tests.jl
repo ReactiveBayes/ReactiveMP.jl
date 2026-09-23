@@ -111,3 +111,41 @@ end
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, μ]))), "must be a symbol")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, (:μ, aliases = [:out])]))), "alias `out`")
 end
+
+@testitem "nodes:getnodefn" tags = [:base] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: AbstractAlgorithm, RuleArgs, RuleContext, Target, IndexedTarget, getnodefn
+
+    # The base package only declares `getnodefn`; an engine's node implements it. Here a toy
+    # engine node carries a forward function with its static inputs already folded in, and
+    # a known inverse per input.
+    struct DeltaToy end
+    @define_factor_node(node = DeltaToy, type = Deterministic, interfaces = [:out, :in...])
+    struct EngineNode{F, I}
+        f::F
+        inverses::I
+    end
+    MessagePassingRulesBase.getnodefn(node::EngineNode, ::Target{:out}) = node.f
+    MessagePassingRulesBase.getnodefn(node::EngineNode, target::IndexedTarget{:in}) = node.inverses[target.index]
+
+    struct Point <: AbstractAlgorithm end
+    @define_message_update_rule(
+        node = DeltaToy, towards = :out, algorithm = Point, ctx = (:node,),
+        args = (m[:in...]::Float64,),
+        body = (ctx, args) -> getnodefn(ctx.node, Target(:out))(args.m[:in]...),
+    )
+    @define_message_update_rule(
+        node = DeltaToy, towards = (:in, k), algorithm = Point, ctx = (:node,),
+        args = (m[:out]::Float64,),
+        body = (ctx, args) -> getnodefn(ctx.node, IndexedTarget(:in, k))(args.m[:out]),
+    )
+
+    node = EngineNode((x, y) -> x + 2y, (z -> z - 2, z -> z / 2))
+    ctx = RuleContext(node = node)
+    @test message_passing_rule(DeltaToy, Target(:out), Point(), RuleArgs(m = (in = (1.0, 3.0),)), ctx) == 7.0
+    @test message_passing_rule(DeltaToy, IndexedTarget(:in, 2), Point(), RuleArgs(m = (out = 7.0,)), ctx) == 3.5
+
+    # Declared, with no methods of its own.
+    @test isempty(methods(getnodefn, Tuple{Any, Any}, MessagePassingRulesBase))
+    @test_throws MethodError getnodefn(nothing, Target(:out))
+end
