@@ -636,7 +636,7 @@ function (mapping::MessageMapping)(messages, marginals)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
         spec = resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args))
         ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
-        ctx = RuleContext(node = mapping.factornode)
+        ctx = rule_context(mapping.factornode)
         algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
         MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, ctx, args, ann, mapping.target)
     end

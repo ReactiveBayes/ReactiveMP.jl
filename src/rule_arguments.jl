@@ -1,6 +1,11 @@
 # The arguments a rule receives, built from the latest messages and marginals a node holds.
 
 import MessagePassingRulesBase: Messages, Marginals, RuleArgs, RuleAnnotations, RuleContext
+import Random
+
+# The context a rule runs with: its node, and `Random.default_rng()` as `ctx.rng` until the
+# random number generator is an activation option (`DISCUSSION.md` §3.32).
+rule_context(node) = RuleContext(node = node, rng = Random.default_rng())
 
 """
     ReactiveMP.GroupInputs{G, N, K}()

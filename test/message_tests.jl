@@ -356,6 +356,11 @@ end
         body = (algo, ctx, args) -> (algo, ctx.node, args.q[:out] - 1),
     )
 
+    # Reports the random number generator its context carries.
+    struct Draw end
+    @define_factor_node(node = Draw, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Draw, target = :out, args = (m[:in]::Int,), ctx = (:rng,), body = (ctx, args) -> ctx.rng)
+
     struct Stranger end
 end
 
@@ -373,6 +378,17 @@ end
 
     towards_in = MessageMapping(N.Increment, Target{:in}(), nothing, Val((:out,)), DefaultAlgorithm(), nothing, node, nothing)
     @test getdata(towards_in(nothing, (Marginal(3, false, false),))) === (DefaultAlgorithm(), node, 2)
+end
+
+@testitem "MessageMapping gives a rule the default random number generator" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    import Random
+    N = MessageMappingNodes
+
+    # Until the generator is an activation option, `ctx.rng` is the task's default one.
+    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing)
+    @test getdata(draw((Message(1, false, false),), nothing)) === Random.default_rng()
 end
 
 @testitem "MessageMapping throws a RuleNotFoundError when no rule fits" tags = [:engine] setup = [MessageMappingNodes] begin

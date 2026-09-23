@@ -300,7 +300,7 @@ function compute_marginal(mapping::MarginalMapping, messages, marginals)
     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
     spec = resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args))
     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
-    ctx = RuleContext(node = mapping.factornode)
+    ctx = rule_context(mapping.factornode)
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
     return MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, ctx, args, ann, mapping.target)
 end
