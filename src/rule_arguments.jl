@@ -3,9 +3,16 @@
 import MessagePassingRulesBase: Messages, Marginals, RuleArgs, RuleAnnotations, RuleContext
 import Random
 
-# The context a rule runs with: its node, and `Random.default_rng()` as `ctx.rng` until the
-# random number generator is an activation option (`DISCUSSION.md` §3.32).
-rule_context(node) = RuleContext(node = node, rng = Random.default_rng())
+# The context a rule runs with: its node; `Random.default_rng()` as `ctx.rng` until the random
+# number generator is an activation option (`DISCUSSION.md` §3.32); and `ctx.product`, which
+# multiplies two distributions with v6's `GenericProd` and returns the product with its own log
+# scale, the incoming ones being the rule's to add (§3.34).
+rule_context(node) = RuleContext(node = node, rng = Random.default_rng(), product = rule_product)
+
+function rule_product(left, right)
+    result = prod(BayesBase.GenericProd(), left, right)
+    return result, BayesBase.compute_logscale(result, left, right)
+end
 
 """
     ReactiveMP.GroupInputs{G, N, K}()

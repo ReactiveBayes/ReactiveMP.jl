@@ -361,6 +361,11 @@ end
     @define_factor_node(node = Draw, type = Stochastic, interfaces = [:out, :in])
     @define_message_update_rule(node = Draw, target = :out, args = (m[:in]::Int,), ctx = (:rng,), body = (ctx, args) -> ctx.rng)
 
+    # Multiplies its input by itself through `ctx.product`.
+    struct Square end
+    @define_factor_node(node = Square, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Square, target = :out, args = (m[:in]::Any,), ctx = (:product,), body = (ctx, args) -> ctx.product(args.m[:in], args.m[:in]))
+
     struct Stranger end
 end
 
@@ -389,6 +394,19 @@ end
     # Until the generator is an activation option, `ctx.rng` is the task's default one.
     draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing)
     @test getdata(draw((Message(1, false, false),), nothing)) === Random.default_rng()
+end
+
+@testitem "MessageMapping gives a rule the product service" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    using BayesBase, ExponentialFamily
+    N = MessageMappingNodes
+
+    # The product and its own log scale, log ∫ N(x; 1, 2)² dx = -log(2 √(π · 2)).
+    square = MessageMapping(N.Square, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Square(), nothing)
+    product, logscale = getdata(square((Message(NormalMeanVariance(1.0, 2.0), false, false),), nothing))
+    @test mean_var(product) == (1.0, 1.0)
+    @test logscale ≈ -log(2 * sqrt(2π))
 end
 
 @testitem "MessageMapping throws a RuleNotFoundError when no rule fits" tags = [:engine] setup = [MessageMappingNodes] begin

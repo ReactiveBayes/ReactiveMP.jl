@@ -22,8 +22,8 @@ re-check before relying on one.
 **Phase 5, step 8: Mixtures** — GammaMixture, then `Mixture`. Signed off by the user; § Phase 5,
 *Step 8 brief* has the counts, the four decisions (the `product` service returning the
 product's own log scale, no Mixture energy, `MixtureBP`, a `mixture_bp` fixture;
-`DISCUSSION.md` §3.34–3.35), the defaults and the progress. GammaMixture is done; next the
-engine's `product` service, then `Mixture`. Steps 1–7 are done; step 7 is summarised in
+`DISCUSSION.md` §3.34–3.35), the defaults and the progress. GammaMixture and the engine's
+`product` service are done; next `Mixture`, which closes the step. Steps 1–7 are done; step 7 is summarised in
 § Phase 5, *Step 7 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1840,6 +1840,10 @@ switch rule builds a throwaway `randomvar` for a product's log scale
     are checked in Float64 only, since ExponentialFamily's E[log Γ(a)] for a GammaShapeRate is
     a Float64 (a `0.5 *` literal, added to ExponentialFamily.jl#322) and a Categorical cannot
     go to BigFloat. Nothing differs from v6 (739 checks).
+  - *The engine's `product` service — done.* `rule_context` passes `rule_product`, which
+    multiplies with `GenericProd` and returns the product with `compute_logscale` of it alone.
+    A test runs a rule declaring `ctx = (:product,)` through a `MessageMapping`, the log scale
+    checked against ∫ N(x; 1, 2)² dx.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
