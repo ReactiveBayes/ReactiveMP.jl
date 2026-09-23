@@ -4,13 +4,13 @@
 variational_variance(q_v) = inv(mean(inv, q_v))
 
 @define_message_update_rule(
-    node = NormalMeanVariance, towards = :out,
+    node = NormalMeanVariance, target = :out,
     args = (m[:μ]::PointMass, m[:v]::PointMass),
     body = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanVariance, towards = :out,
+    node = NormalMeanVariance, target = :out,
     args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
     body = (args, ann) -> begin
         annotate!(ann, :logscale, 0)
@@ -20,25 +20,25 @@ variational_variance(q_v) = inv(mean(inv, q_v))
 )
 
 @define_message_update_rule(
-    node = NormalMeanVariance, towards = :out,
+    node = NormalMeanVariance, target = :out,
     args = (q[:μ]::PointMass, q[:v]::PointMass),
     body = (args) -> NormalMeanVariance(mean(args.q[:μ]), mean(args.q[:v])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanVariance, towards = :out,
+    node = NormalMeanVariance, target = :out,
     args = (q[:μ]::Any, q[:v]::Any),
     body = (args) -> NormalMeanVariance(mean(args.q[:μ]), variational_variance(args.q[:v])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanVariance, towards = :out,
+    node = NormalMeanVariance, target = :out,
     args = (m[:μ]::PointMass, q[:v]::Any),
     body = (args) -> NormalMeanVariance(mean(args.m[:μ]), variational_variance(args.q[:v])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanVariance, towards = :out,
+    node = NormalMeanVariance, target = :out,
     args = (m[:μ]::UnivariateNormalDistributionsFamily, q[:v]::Any),
     body = (args) -> begin
         μ_mean, μ_var = mean_var(args.m[:μ])
@@ -47,7 +47,7 @@ variational_variance(q_v) = inv(mean(inv, q_v))
 )
 
 @define_message_update_rule(
-    node = NormalMeanVariance, towards = :out,
+    node = NormalMeanVariance, target = :out,
     args = (m[:μ]::UnivariateNormalDistributionsFamily, q[:v]::PointMass),
     body = (args, ann) -> begin
         annotate!(ann, :logscale, 0)

@@ -1,7 +1,7 @@
 """
     Target{E}
 
-The outbound edge `E` of a rule, written `towards = :out`.
+The outbound edge `E` of a rule, written `target = :out`.
 """
 struct Target{E} end
 
@@ -10,7 +10,7 @@ Target(edge::Symbol) = Target{edge}()
 """
     IndexedTarget{E}(index)
 
-Member `index` of the interface group `E`, written `towards = (:m, k)`. The index is a
+Member `index` of the interface group `E`, written `target = (:m, k)`. The index is a
 field rather than a type parameter, so every position of a group shares one rule.
 """
 struct IndexedTarget{E}
@@ -37,7 +37,7 @@ target_index(target::IndexedTarget) = target.index
 """
     ClusterTarget{K}
 
-The structural cluster a marginal rule computes, written `towards = (:y, :x)` with the
+The structural cluster a marginal rule computes, written `target = (:y, :x)` with the
 members in interface-declaration order.
 """
 struct ClusterTarget{K} end

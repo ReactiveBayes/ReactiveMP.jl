@@ -7,7 +7,7 @@
     @define_factor_node(node = Affine, type = Deterministic, interfaces = [:out, :A, :x])
     @define_message_update_rule(
         node = Affine,
-        towards = :out,
+        target = :out,
         inplace = true,
         args = (m[:A]::Matrix{Float64}, m[:x]::Vector{Float64}),
         preallocate = (args) -> buffer_like(args.m[:x]),

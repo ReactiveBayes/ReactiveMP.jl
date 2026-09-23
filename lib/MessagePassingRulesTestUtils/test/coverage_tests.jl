@@ -7,9 +7,9 @@
     struct Node end
     @define_factor_node(node = Node, type = Stochastic, interfaces = [:out, :x])
     # A broad rule, and a specific one that takes precedence for Float64 inputs.
-    @define_message_update_rule(node = Node, towards = :out, args = (m[:x]::PointMass,), body = (args) -> args.m[:x])
-    @define_message_update_rule(node = Node, towards = :out, args = (m[:x]::PointMass{Float64},), body = (args) -> args.m[:x])
-    @define_message_update_rule(node = Node, towards = :x, args = (m[:out]::PointMass,), body = (args) -> args.m[:out])
+    @define_message_update_rule(node = Node, target = :out, args = (m[:x]::PointMass,), body = (args) -> args.m[:x])
+    @define_message_update_rule(node = Node, target = :out, args = (m[:x]::PointMass{Float64},), body = (args) -> args.m[:x])
+    @define_message_update_rule(node = Node, target = :x, args = (m[:out]::PointMass,), body = (args) -> args.m[:out])
 
     struct Untouched end
     @define_factor_node(node = Untouched, type = Stochastic, interfaces = [:out])
@@ -18,7 +18,7 @@
     @test length(check_rule_coverage(Covered)) == 5      # three rules, two nodes
 
     Recording.recorded() do
-        @test_message_update_rule(node = Covered.Node, towards = :out, check_type_promotion = false, cases = [(m = (x = PointMass(1.0),),) => PointMass(1.0)])
+        @test_message_update_rule(node = Covered.Node, target = :out, check_type_promotion = false, cases = [(m = (x = PointMass(1.0),),) => PointMass(1.0)])
     end
     gaps = check_rule_coverage(Covered)
     messages = map(g -> g.message, gaps)

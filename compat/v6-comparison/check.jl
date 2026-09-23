@@ -18,11 +18,11 @@ module V7Port
     @define_factor_node(node = NormalMeanVariance, type = Stochastic, interfaces = [:out, :μ, :v])
 
     @define_message_update_rule(
-        node = NormalMeanVariance, towards = :out, args = (m[:μ]::PointMass, m[:v]::PointMass),
+        node = NormalMeanVariance, target = :out, args = (m[:μ]::PointMass, m[:v]::PointMass),
         body = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
     )
     @define_message_update_rule(
-        node = NormalMeanVariance, towards = :out, args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
+        node = NormalMeanVariance, target = :out, args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
         body = (args, ann) -> begin
             annotate!(ann, :logscale, 0)
             μ_mean, μ_var = mean_var(args.m[:μ])
@@ -30,7 +30,7 @@ module V7Port
         end,
     )
     @define_message_update_rule(
-        node = NormalMeanVariance, towards = :μ, args = (m[:out]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
+        node = NormalMeanVariance, target = :μ, args = (m[:out]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
         body = (args, ann) -> begin
             annotate!(ann, :logscale, 0)
             out_mean, out_var = mean_var(args.m[:out])
@@ -42,9 +42,9 @@ end
 using MessagePassingRulesBase: RuleArgs, Target, BP, AnnotationStore, RuleAnnotations, RuleContext, getannotation
 using MessagePassingRulesBase: message_passing_rule
 
-function v7_message_update(node, towards, m, q)
+function v7_message_update(node, edge, m, q)
     store = AnnotationStore()
-    result = message_passing_rule(node, Target(towards), BP(), RuleArgs(m = m, q = q), RuleContext(), RuleAnnotations(out = store))
+    result = message_passing_rule(node, Target(edge), BP(), RuleArgs(m = m, q = q), RuleContext(), RuleAnnotations(out = store))
     return result, getannotation(store, :logscale, nothing)
 end
 
@@ -58,10 +58,10 @@ const CASES = [
 records = MigrationRecord[]
 @testset "v6 comparison" begin
     @testset "ported rules agree with v6" begin
-        for (id, towards, m) in CASES
-            v7, v7_logscale = v7_message_update(NormalMeanVariance, towards, m, NamedTuple())
-            v6, v6_logscale = v6_message_update(NormalMeanVariance, towards, m, NamedTuple())
-            push!(records, compare_with_reference(id, v7, v6; inputs = (m = m,), node = "NormalMeanVariance", target = ":$towards", v7_logscale, v6_logscale))
+        for (id, edge, m) in CASES
+            v7, v7_logscale = v7_message_update(NormalMeanVariance, edge, m, NamedTuple())
+            v6, v6_logscale = v6_message_update(NormalMeanVariance, edge, m, NamedTuple())
+            push!(records, compare_with_reference(id, v7, v6; inputs = (m = m,), node = "NormalMeanVariance", target = ":$edge", v7_logscale, v6_logscale))
         end
         @test all(r -> r.outcome === :agree, records)
     end
@@ -100,9 +100,9 @@ Test.record(set::CollectingTestSet, result) = (push!(set.results, result); resul
 Test.finish(set::CollectingTestSet) = set
 
 findings = Dict{String, Vector{String}}()
-for (label, fform, towards, m, q) in V6_VERIFICATIONS
+for (label, fform, edge, m, q) in V6_VERIFICATIONS
     set = @testset CollectingTestSet "v6: $label" begin
-        verify_message_update((m, q) -> v6_message_update(fform, towards, m, q), v6_logdensity(fform), v6_interfaces(fform), towards; m, q, source = LineNumberNode(@__LINE__, Symbol(@__FILE__)))
+        verify_message_update((m, q) -> v6_message_update(fform, edge, m, q), v6_logdensity(fform), v6_interfaces(fform), edge; m, q, source = LineNumberNode(@__LINE__, Symbol(@__FILE__)))
     end
     failed = [sprint(show, r) for r in set.results if r isa Test.Fail || r isa Test.Error]
     passed = count(r -> r isa Test.Pass, set.results)

@@ -26,17 +26,17 @@
 
     # The joint over the group, computed and then consumed.
     @define_marginal_update_rule(
-        node = DeltaToy, towards = (:in,), algorithm = Unscented,
+        node = DeltaToy, target = (:in,), algorithm = Unscented,
         args = (m[:out]::Float64, m[:in...]::Float64),
         body = (args) -> Joint(collect(args.m[:in]) .+ args.m[:out]),
     )
     @define_message_update_rule(
-        node = DeltaToy, towards = (:in, k), algorithm = Unscented,
+        node = DeltaToy, target = (:in, k), algorithm = Unscented,
         args = (q[(:in,)]::Joint, m[:in][k]::Float64),
         body = (args) -> args.q[(:in,)].members[k] - args.m[:in][k],
     )
     @define_message_update_rule(
-        node = DeltaToy, towards = :out, algorithm = Unscented,
+        node = DeltaToy, target = :out, algorithm = Unscented,
         args = (m[:in...]::Float64,),
         body = (args) -> sum(args.m[:in]),
     )
@@ -45,7 +45,7 @@
     struct Mixed <: AbstractAlgorithm end
     @define_dependencies(node = DeltaToy, algorithm = Mixed, dependencies = [:out => (q[:out, :in],)])
     @define_message_update_rule(
-        node = DeltaToy, towards = :out, algorithm = Mixed,
+        node = DeltaToy, target = :out, algorithm = Mixed,
         args = (q[:out, :in]::Joint,),
         body = (args) -> first(args.q[:out, :in].members),
     )
@@ -116,10 +116,10 @@ end
         using MessagePassingRulesBase: BP
         struct N end
         @define_factor_node(node = N, type = Deterministic, interfaces = [:out, :μ, :in...])
-        @define_message_update_rule(node = N, towards = :out, algorithm = BP, args = (q[(:μ,)]::Any,), body = (args) -> 1)
-        @define_message_update_rule(node = N, towards = :μ, algorithm = BP, args = (q[:in, :out]::Any,), body = (args) -> 1)
-        @define_marginal_update_rule(node = N, towards = (:μ,), algorithm = BP, args = (m[:out]::Any,), body = (args) -> 1)
-        @define_message_update_rule(node = N, towards = :out, algorithm = BP, args = (q[(:in,)]::Any,), body = (args) -> 1)
+        @define_message_update_rule(node = N, target = :out, algorithm = BP, args = (q[(:μ,)]::Any,), body = (args) -> 1)
+        @define_message_update_rule(node = N, target = :μ, algorithm = BP, args = (q[:in, :out]::Any,), body = (args) -> 1)
+        @define_marginal_update_rule(node = N, target = (:μ,), algorithm = BP, args = (m[:out]::Any,), body = (args) -> 1)
+        @define_message_update_rule(node = N, target = :out, algorithm = BP, args = (q[(:in,)]::Any,), body = (args) -> 1)
     end
     # Top level, statement by statement, so `using` takes effect before the macros expand.
     Core.eval(M, Expr(:toplevel, definitions.args...))
@@ -127,6 +127,6 @@ end
     has(text) = any(m -> contains(m, text), messages)
     @test has("`q[(:μ,)]`: a one-member cluster of a single interface is its marginal; write `q[:μ]`")
     @test has("`q[:in, :out]`: a cluster lists existing interfaces in interface order")
-    @test has("`towards = (:μ,)`: a one-member cluster of a single interface is its marginal")
+    @test has("`target = (:μ,)`: a one-member cluster of a single interface is its marginal")
     @test length(messages) == 3
 end

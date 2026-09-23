@@ -1,5 +1,5 @@
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :τ,
+    node = NormalMeanPrecision, target = :τ,
     args = (q[:out]::Any, q[:μ]::Any),
     body = (args) -> begin
         θ = 2 / (var(args.q[:out]) + var(args.q[:μ]) + abs2(mean(args.q[:out]) - mean(args.q[:μ])))
@@ -8,7 +8,7 @@
 )
 
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :τ,
+    node = NormalMeanPrecision, target = :τ,
     args = (q[:out, :μ]::Any,),
     body = (args) -> begin
         m, V = mean_cov(args.q[:out, :μ])

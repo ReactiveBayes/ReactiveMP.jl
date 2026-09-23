@@ -5,15 +5,15 @@
     struct Gauss end
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :τ, :p...])
 
-    @define_message_update_rule(node = Gauss, towards = :out, args = (m[:μ]::Real, m[:τ]::Real), body = (args) -> 1)
-    @define_message_update_rule(node = Gauss, towards = :nope, args = (m[:μ]::Real,), body = (args) -> 1)
-    @define_message_update_rule(node = Gauss, towards = :p, args = (m[:μ]::Real,), body = (args) -> 1)
-    @define_message_update_rule(node = Gauss, towards = :μ, args = (q[:τ, :out]::Any,), body = (args) -> 1)
-    @define_message_update_rule(node = Gauss, towards = :τ, args = (m[:p]::Any, m[:μ...]::Any), body = (args) -> 1)
-    @define_marginal_update_rule(node = Gauss, towards = (:μ, :out), args = (m[:out]::Any,), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, target = :out, args = (m[:μ]::Real, m[:τ]::Real), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, target = :nope, args = (m[:μ]::Real,), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, target = :p, args = (m[:μ]::Real,), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, target = :μ, args = (q[:τ, :out]::Any,), body = (args) -> 1)
+    @define_message_update_rule(node = Gauss, target = :τ, args = (m[:p]::Any, m[:μ...]::Any), body = (args) -> 1)
+    @define_marginal_update_rule(node = Gauss, target = (:μ, :out), args = (m[:out]::Any,), body = (args) -> 1)
 
     struct Undeclared end
-    @define_message_update_rule(node = Undeclared, towards = :out, algorithm = BP, args = (), body = () -> 1)
+    @define_message_update_rule(node = Undeclared, target = :out, algorithm = BP, args = (), body = () -> 1)
 
     # Consistent with dependencies, and then not.
     struct Mix end
@@ -21,17 +21,17 @@
         node = Mix, type = Stochastic, interfaces = [:out, :m..., :p...], algorithm = VMP,
         dependencies = [(:m, k) => (q[:out], q[:p][k]), :out => (q[:m...], q[:p...])],
     )
-    @define_message_update_rule(node = Mix, towards = (:m, k), args = (q[:out]::Any, q[:p][k]::Any), body = (args) -> 1)
-    @define_message_update_rule(node = Mix, towards = :out, args = (q[:m...]::Any,), body = (args) -> 1)
+    @define_message_update_rule(node = Mix, target = (:m, k), args = (q[:out]::Any, q[:p][k]::Any), body = (args) -> 1)
+    @define_message_update_rule(node = Mix, target = :out, args = (q[:m...]::Any,), body = (args) -> 1)
 
     # Two rules some call matches equally well.
     struct Amb end
     @define_factor_node(node = Amb, type = Stochastic, interfaces = [:out, :a, :b])
-    @define_message_update_rule(node = Amb, towards = :out, args = (m[:a]::Float64, m[:b]::Real), body = (args) -> 1)
-    @define_message_update_rule(node = Amb, towards = :out, args = (m[:a]::Real, m[:b]::Float64), body = (args) -> 2)
+    @define_message_update_rule(node = Amb, target = :out, args = (m[:a]::Float64, m[:b]::Real), body = (args) -> 1)
+    @define_message_update_rule(node = Amb, target = :out, args = (m[:a]::Real, m[:b]::Float64), body = (args) -> 2)
     # Nested, not ambiguous: one is more specific.
-    @define_message_update_rule(node = Amb, towards = :a, args = (m[:out]::Real,), body = (args) -> 1)
-    @define_message_update_rule(node = Amb, towards = :a, args = (m[:out]::Float64,), body = (args) -> 2)
+    @define_message_update_rule(node = Amb, target = :a, args = (m[:out]::Real,), body = (args) -> 1)
+    @define_message_update_rule(node = Amb, target = :a, args = (m[:out]::Float64,), body = (args) -> 2)
 end
 
 @testitem "diagnostics:check_rules" tags = [:base] setup = [BrokenRules] begin
@@ -45,7 +45,7 @@ end
     @test has("`q[:τ, :out]`: a cluster lists existing interfaces in interface order")
     @test has("`m[:p]`: `p` is a group")
     @test has("`m[:μ...]`: `μ` is not a group")
-    @test has("`towards = (:μ, :out)`: a cluster lists existing interfaces in interface order")
+    @test has("`target = (:μ, :out)`: a cluster lists existing interfaces in interface order")
     @test has("has no declaration")
     @test has("consumes (q[:m...]) but the dependencies of")
     @test length(messages) == 8

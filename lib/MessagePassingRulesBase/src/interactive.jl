@@ -18,23 +18,23 @@ as_annotations(ann::RuleAnnotations) = ann
 as_annotations(store) = RuleAnnotations(out = store)
 
 """
-    call_message_update_rule(node, towards; m = (;), q = (;), clusters = (), algorithm, ctx, ann)
+    call_message_update_rule(node, target; m = (;), q = (;), clusters = (), algorithm, ctx, ann)
 
-Run the message rule of `node` towards `towards` (`:out`, or `(:m, 2)` for a group member)
+Run the message rule of `node` towards `target` (`:out`, or `(:m, 2)` for a group member)
 on the given inputs. `clusters` gives structural clusters as `(:y, :x) => value` pairs.
 `algorithm` defaults to the node's; pass an `AnnotationStore` as `ann` to collect what the
 rule annotates.
 """
-call_message_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
-    message_passing_rule(node, as_target(towards), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
+call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
+    message_passing_rule(node, as_target(target), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
 
 """
-    call_marginal_update_rule(node, towards; m, q, clusters, algorithm, ctx, ann)
+    call_marginal_update_rule(node, target; m, q, clusters, algorithm, ctx, ann)
 
-As [`call_message_update_rule`](@ref), for the marginal of the cluster `towards`, e.g. `(:out, :μ)`.
+As [`call_message_update_rule`](@ref), for the marginal of the cluster `target`, e.g. `(:out, :μ)`.
 """
-call_marginal_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
-    message_passing_marginalrule(node, as_cluster(towards), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
+call_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
+    message_passing_marginalrule(node, as_cluster(target), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
 
 """
     call_average_energy(node; q, clusters, algorithm, ctx)
@@ -45,23 +45,23 @@ call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), alg
     message_passing_average_energy(node, algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
 
 """
-    which_message_update_rule(node, towards; m, q, clusters, algorithm)
+    which_message_update_rule(node, target; m, q, clusters, algorithm)
 
 The [`RuleSpec`](@ref) that `call_message_update_rule` would run for these inputs; its display shows the
 rule's source.
 """
-function which_message_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
-    target = as_target(towards)
-    return throw_if_not_found(find_message_rule(node, target, algorithm, interactive_args(m, q, clusters)))
+function which_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+    resolved_target = as_target(target)
+    return throw_if_not_found(find_message_rule(node, resolved_target, algorithm, interactive_args(m, q, clusters)))
 end
 
 """
-    which_marginal_update_rule(node, towards; m, q, clusters, algorithm)
+    which_marginal_update_rule(node, target; m, q, clusters, algorithm)
 
 The [`RuleSpec`](@ref) that [`call_marginal_update_rule`](@ref) would run for these inputs.
 """
-function which_marginal_update_rule(node, towards; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
-    return throw_if_not_found(find_marginal_rule(node, as_cluster(towards), algorithm, interactive_args(m, q, clusters)))
+function which_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+    return throw_if_not_found(find_marginal_rule(node, as_cluster(target), algorithm, interactive_args(m, q, clusters)))
 end
 
 """
@@ -92,7 +92,7 @@ function keyword_call(name, f, positional, args)
 end
 
 """
-    @call_message_update_rule(node = ..., towards = ..., m = (...), q = (...), ...)
+    @call_message_update_rule(node = ..., target = ..., m = (...), q = (...), ...)
 
 [`call_message_update_rule`](@ref), written with keywords.
 
@@ -103,26 +103,26 @@ julia> @define_factor_node(node = Shift, type = Deterministic, interfaces = [:ou
 
 julia> @define_message_update_rule(
            node = Shift,
-           towards = :out,
+           target = :out,
            args = (m[:in]::Real,),
            body = (args) -> args.m[:in] + 1,
        )
 
-julia> @call_message_update_rule(node = Shift, towards = :out, m = (in = 1.0,))
+julia> @call_message_update_rule(node = Shift, target = :out, m = (in = 1.0,))
 2.0
 ```
 """
 macro call_message_update_rule(args...)
-    return esc(keyword_call("call_message_update_rule", call_message_update_rule, (:node, :towards), args))
+    return esc(keyword_call("call_message_update_rule", call_message_update_rule, (:node, :target), args))
 end
 
 """
-    @call_marginal_update_rule(node = ..., towards = (:y, :x), ...)
+    @call_marginal_update_rule(node = ..., target = (:y, :x), ...)
 
 [`call_marginal_update_rule`](@ref), written with keywords.
 """
 macro call_marginal_update_rule(args...)
-    return esc(keyword_call("call_marginal_update_rule", call_marginal_update_rule, (:node, :towards), args))
+    return esc(keyword_call("call_marginal_update_rule", call_marginal_update_rule, (:node, :target), args))
 end
 
 """
@@ -135,12 +135,12 @@ macro call_average_energy(args...)
 end
 
 """
-    @which_message_update_rule(node = ..., towards = ..., m = (...), ...)
+    @which_message_update_rule(node = ..., target = ..., m = (...), ...)
 
 [`which_message_update_rule`](@ref), written with keywords.
 """
 macro which_message_update_rule(args...)
-    return esc(keyword_call("which_message_update_rule", which_message_update_rule, (:node, :towards), args))
+    return esc(keyword_call("which_message_update_rule", which_message_update_rule, (:node, :target), args))
 end
 
 target_edge_of(::Type{Target{E}}) where {E} = E
@@ -221,12 +221,12 @@ extensions; without one loaded this is a `MethodError` that says so.
 function visualize_spec end
 
 """
-    @which_marginal_update_rule(node = ..., towards = (:y, :x), ...)
+    @which_marginal_update_rule(node = ..., target = (:y, :x), ...)
 
 [`which_marginal_update_rule`](@ref), written with keywords.
 """
 macro which_marginal_update_rule(args...)
-    return esc(keyword_call("which_marginal_update_rule", which_marginal_update_rule, (:node, :towards), args))
+    return esc(keyword_call("which_marginal_update_rule", which_marginal_update_rule, (:node, :target), args))
 end
 
 """

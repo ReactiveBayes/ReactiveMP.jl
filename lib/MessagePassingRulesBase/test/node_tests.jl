@@ -130,12 +130,12 @@ end
 
     struct Point <: AbstractAlgorithm end
     @define_message_update_rule(
-        node = DeltaToy, towards = :out, algorithm = Point, ctx = (:node,),
+        node = DeltaToy, target = :out, algorithm = Point, ctx = (:node,),
         args = (m[:in...]::Float64,),
         body = (ctx, args) -> getnodefn(ctx.node, Target(:out))(args.m[:in]...),
     )
     @define_message_update_rule(
-        node = DeltaToy, towards = (:in, k), algorithm = Point, ctx = (:node,),
+        node = DeltaToy, target = (:in, k), algorithm = Point, ctx = (:node,),
         args = (m[:out]::Float64,),
         body = (ctx, args) -> getnodefn(ctx.node, IndexedTarget(:in, k))(args.m[:out]),
     )

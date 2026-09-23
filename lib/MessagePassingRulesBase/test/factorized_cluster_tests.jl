@@ -81,7 +81,7 @@ end
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :v], algorithm = BP)
     # v6's `(out_μ = …, v = m_v)`.
     @define_marginal_update_rule(
-        node = Gauss, towards = (:out, :μ, :v),
+        node = Gauss, target = (:out, :μ, :v),
         args = (m[:out]::Float64, m[:μ]::Float64, m[:v]::Float64),
         body = (args) -> FactorizedCluster((:out, :μ) => PointMass([args.m[:out], args.m[:μ]]), (:v,) => PointMass(args.m[:v])),
     )

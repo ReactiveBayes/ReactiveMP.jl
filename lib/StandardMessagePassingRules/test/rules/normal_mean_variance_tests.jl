@@ -6,7 +6,7 @@
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     @test_message_update_rule(
-        node = NormalMeanVariance, towards = :out,
+        node = NormalMeanVariance, target = :out,
         cases = [
             (m = (μ = PointMass(-1.0), v = PointMass(2.0)),) => NormalMeanVariance(-1.0, 2.0),
             (m = (μ = PointMass(2.0), v = PointMass(1.0)),) => NormalMeanVariance(2.0, 1.0),
@@ -26,7 +26,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     @test_message_update_rule(
-        node = NormalMeanVariance, towards = :μ,
+        node = NormalMeanVariance, target = :μ,
         cases = [
             (m = (out = PointMass(-1.0), v = PointMass(2.0)),) => NormalMeanVariance(-1.0, 2.0),
             (m = (out = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithAnnotations(NormalMeanVariance(0.0, 3.0); logscale = 0),
@@ -45,7 +45,7 @@ end
 
     # xi = (1, 2/0.5), W_out = 1, W_μ = 2, and E[1/v] = 1/2 couples them.
     @test_marginal_update_rule(
-        node = NormalMeanVariance, towards = (:out, :μ),
+        node = NormalMeanVariance, target = (:out, :μ),
         cases = [
             (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5)), q = (v = PointMass(2.0),)) =>
                 MvNormalWeightedMeanPrecision([1.0, 4.0], [1.5 -0.5; -0.5 2.5]),
@@ -75,8 +75,8 @@ end
     # variational inputs. The variational cases are the ones v6 got wrong. Rules mixing
     # messages and marginals are checked by their tables only: the verification tool takes
     # one kind of input or the other.
-    @verify_message_update_rule(node = NormalMeanVariance, towards = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
-    @verify_message_update_rule(node = NormalMeanVariance, towards = :μ, m = (out = NormalMeanVariance(-1.0, 0.5), v = PointMass(3.0)))
-    @verify_message_update_rule(node = NormalMeanVariance, towards = :out, q = (μ = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)))
-    @verify_message_update_rule(node = NormalMeanVariance, towards = :μ, q = (out = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)))
+    @verify_message_update_rule(node = NormalMeanVariance, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
+    @verify_message_update_rule(node = NormalMeanVariance, target = :μ, m = (out = NormalMeanVariance(-1.0, 0.5), v = PointMass(3.0)))
+    @verify_message_update_rule(node = NormalMeanVariance, target = :out, q = (μ = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)))
+    @verify_message_update_rule(node = NormalMeanVariance, target = :μ, q = (out = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)))
 end

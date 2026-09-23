@@ -4,19 +4,19 @@
     S = SpikeRules
     P, N = S.Point, S.Normal
 
-    @test (@call_message_update_rule(node = S.NMV, towards = :out, m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
+    @test (@call_message_update_rule(node = S.NMV, target = :out, m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
     # Function form, identical.
     @test call_message_update_rule(S.NMV, :out; m = (μ = P(1.0), v = P(2.0))) == N(1.0, 2.0)
     # Indexed target and the node's default algorithm (VMP here).
-    @test (@call_message_update_rule(node = S.NormalMixture, towards = (:m, 2), q = (out = N(0.5, 1.0), switch = S.Categorical([0.5, 0.5]), p = (nothing, P(20.0))))) == N(0.5, 20.0)
+    @test (@call_message_update_rule(node = S.NormalMixture, target = (:m, 2), q = (out = N(0.5, 1.0), switch = S.Categorical([0.5, 0.5]), p = (nothing, P(20.0))))) == N(0.5, 20.0)
     # A cluster given by its members.
-    @test (@call_message_update_rule(node = S.NMV, towards = :v, clusters = ((:out, :μ) => (1.0, 4.0),))) == P(9.0)
+    @test (@call_message_update_rule(node = S.NMV, target = :v, clusters = ((:out, :μ) => (1.0, 4.0),))) == P(9.0)
     # Annotations are collected when asked for.
     ann = AnnotationStore()
-    @call_message_update_rule(node = S.NMV, towards = :μ, m = (out = P(3.0), v = P(1.0)), ann = ann)
+    @call_message_update_rule(node = S.NMV, target = :μ, m = (out = P(3.0), v = P(1.0)), ann = ann)
     @test getannotation(ann, :logscale) == 0.0
 
-    @test (@call_marginal_update_rule(node = S.NMV, towards = (:out, :μ), m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),))) == (1.0, 2.0)
+    @test (@call_marginal_update_rule(node = S.NMV, target = (:out, :μ), m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),))) == (1.0, 2.0)
     @test (@call_average_energy(node = S.NMV, q = (out = N(0.0, 1.0), μ = N(1.0, 2.0), v = P(2.0)))) == 2.0
 end
 
@@ -31,11 +31,11 @@ end
     @test length(list_rules(S.DeltaFn, :in; algorithm = S.Linearization(nothing))) == 1
     @test isempty(list_rules(S.NMV, :out; algorithm = VMP()))
 
-    spec = @which_message_update_rule(node = S.NMV, towards = :out, m = (μ = S.Point(1.0), v = S.Point(2.0)))
+    spec = @which_message_update_rule(node = S.NMV, target = :out, m = (μ = S.Point(1.0), v = S.Point(2.0)))
     @test spec isa RuleSpec
     @test spec === only(list_rules(S.NMV, :out))
     @test which_message_update_rule(S.NMV, :out; m = (μ = S.Point(1.0), v = S.Point(2.0))) === spec
-    marginal = @which_marginal_update_rule(node = S.NMV, towards = (:out, :μ), m = (out = S.Point(1.0), μ = S.Point(2.0)), q = (v = S.Point(1.0),))
+    marginal = @which_marginal_update_rule(node = S.NMV, target = (:out, :μ), m = (out = S.Point(1.0), μ = S.Point(2.0)), q = (v = S.Point(1.0),))
     @test marginal.kind === :marginal
     energy = @which_average_energy(node = S.NMV, q = (out = S.Normal(0.0, 1.0), μ = S.Normal(1.0, 2.0), v = S.Point(2.0)))
     @test energy.kind === :average_energy

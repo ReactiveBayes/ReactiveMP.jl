@@ -98,8 +98,8 @@ function describe_case(table::TableContext, index, inputs::CaseInputs)
     isempty(inputs.m) || push!(parts, "m = $(inputs.m)")
     isempty(inputs.q) || push!(parts, "q = $(inputs.q)")
     isempty(inputs.clusters) || push!(parts, "clusters = $(inputs.clusters)")
-    towards = table.target === nothing ? "" : " towards $(table.target)"
-    return "case $index, $(table.kind) rule for $(table.node)$towards under $(table.algorithm), inputs ($(join(parts, "; ")))"
+    target_text = table.target === nothing ? "" : " towards $(table.target)"
+    return "case $index, $(table.kind) rule for $(table.node)$target_text under $(table.algorithm), inputs ($(join(parts, "; ")))"
 end
 
 function run_case(table::TableContext, args, ctx, output = nothing)
@@ -201,9 +201,9 @@ function run_table(table::TableContext, cases; atol = nothing, rtol = nothing, c
 end
 
 """
-    test_message_update_rule(node, towards; cases, algorithm, atol, rtol, check_type_promotion = true, float_types, check_nonallocating = false)
+    test_message_update_rule(node, target; cases, algorithm, atol, rtol, check_type_promotion = true, float_types, check_nonallocating = false)
 
-Check a node's message rule towards `towards` against a table of `inputs => expected`
+Check a node's message rule towards `target` against a table of `inputs => expected`
 cases. `inputs` is a named tuple of `m`, `q`, `clusters` (`(:y, :x) => value` pairs) and
 `ctx`; `expected` is the output, or an [`ExpectedWithAnnotations`](@ref).
 
@@ -216,16 +216,16 @@ the call allocates nothing.
 `atol` and `rtol` are a number, or a dictionary from float type to tolerance; by default
 `atol` is `1e-4`, `1e-6` and `1e-8` for `Float32`, `Float64` and `BigFloat`.
 """
-test_message_update_rule(node, towards; cases, algorithm = MessagePassingRulesBase.default_algorithm(node), source = LineNumberNode(0, :unknown), kwargs...) =
-    run_table(TableContext(:message, node, MessagePassingRulesBase.as_target(towards), algorithm, source), cases; kwargs...)
+test_message_update_rule(node, target; cases, algorithm = MessagePassingRulesBase.default_algorithm(node), source = LineNumberNode(0, :unknown), kwargs...) =
+    run_table(TableContext(:message, node, MessagePassingRulesBase.as_target(target), algorithm, source), cases; kwargs...)
 
 """
-    test_marginal_update_rule(node, towards; cases, ...)
+    test_marginal_update_rule(node, target; cases, ...)
 
-As [`test_message_update_rule`](@ref), for the marginal of the cluster `towards`.
+As [`test_message_update_rule`](@ref), for the marginal of the cluster `target`.
 """
-test_marginal_update_rule(node, towards; cases, algorithm = MessagePassingRulesBase.default_algorithm(node), source = LineNumberNode(0, :unknown), kwargs...) =
-    run_table(TableContext(:marginal, node, MessagePassingRulesBase.as_cluster(towards), algorithm, source), cases; kwargs...)
+test_marginal_update_rule(node, target; cases, algorithm = MessagePassingRulesBase.default_algorithm(node), source = LineNumberNode(0, :unknown), kwargs...) =
+    run_table(TableContext(:marginal, node, MessagePassingRulesBase.as_cluster(target), algorithm, source), cases; kwargs...)
 
 """
     test_average_energy(node; cases, ...)
@@ -250,29 +250,29 @@ function table_macro_call(name, f, positional, args, source)
 end
 
 """
-    @test_message_update_rule(node = ..., towards = ..., cases = [inputs => expected, ...], ...)
+    @test_message_update_rule(node = ..., target = ..., cases = [inputs => expected, ...], ...)
 
 [`test_message_update_rule`](@ref), written with keywords; failures point at this line.
 
 ```julia
 @test_message_update_rule(
     node    = NormalMeanVariance,
-    towards = :out,
+    target = :out,
     cases   = [(m = (μ = PointMass(1.0), v = PointMass(2.0)),) => NormalMeanVariance(1.0, 2.0)],
 )
 ```
 """
 macro test_message_update_rule(args...)
-    return esc(table_macro_call("test_message_update_rule", test_message_update_rule, (:node, :towards), args, __source__))
+    return esc(table_macro_call("test_message_update_rule", test_message_update_rule, (:node, :target), args, __source__))
 end
 
 """
-    @test_marginal_update_rule(node = ..., towards = (:y, :x), cases = [...], ...)
+    @test_marginal_update_rule(node = ..., target = (:y, :x), cases = [...], ...)
 
 [`test_marginal_update_rule`](@ref), written with keywords.
 """
 macro test_marginal_update_rule(args...)
-    return esc(table_macro_call("test_marginal_update_rule", test_marginal_update_rule, (:node, :towards), args, __source__))
+    return esc(table_macro_call("test_marginal_update_rule", test_marginal_update_rule, (:node, :target), args, __source__))
 end
 
 """

@@ -1,15 +1,15 @@
 const BODY_SLOTS = (:output, :algo, :ctx, :args, :ann)
 const PREALLOCATE_SLOTS = (:algo, :ctx, :args)
 
-const MESSAGE_KEYWORDS = (:node, :towards, :algorithm, :args, :body, :inplace, :preallocate, :pure, :ctx)
+const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :pure, :ctx)
 const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
 
 """
-    @define_message_update_rule(node = ..., towards = ..., args = (...), body = (...) -> ..., ...)
+    @define_message_update_rule(node = ..., target = ..., args = (...), body = (...) -> ..., ...)
 
 Define the rule for the message a node sends towards one of its interfaces.
 
-- `towards`: `:out`, or `(:m, k)` for member `k` of the group `m`; writing `k` binds the
+- `target`: `:out`, or `(:m, k)` for member `k` of the group `m`; writing `k` binds the
   index in `body`.
 - `args`: the inputs the rule consumes, in the spelling of its dependencies: `m[:μ]::T` for
   a message, `q[:μ]::T` for a marginal, `q[(:y, :x)]::T` or `q[:y, :x]::T` for a structural
@@ -31,7 +31,7 @@ Define the rule for the message a node sends towards one of its interfaces.
 ```julia
 @define_message_update_rule(
     node    = NormalMeanVariance,
-    towards = :out,
+    target = :out,
     args    = (m[:μ]::PointMass, m[:v]::PointMass),
     body    = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
 )
@@ -42,10 +42,10 @@ macro define_message_update_rule(args...)
 end
 
 """
-    @define_marginal_update_rule(node = ..., towards = (:y, :x), args = (...), body = ...)
+    @define_marginal_update_rule(node = ..., target = (:y, :x), args = (...), body = ...)
 
 Define the rule for the marginal of a structural cluster. Takes the same keywords as
-[`@define_message_update_rule`](@ref); `towards` lists the cluster members in interface
+[`@define_message_update_rule`](@ref); `target` lists the cluster members in interface
 order.
 """
 macro define_marginal_update_rule(args...)
@@ -56,7 +56,7 @@ end
     @define_average_energy(node = ..., args = (...), body = ...)
 
 Define a node's average energy. Takes the keywords of
-[`@define_message_update_rule`](@ref) except `towards`, `inplace` and `preallocate`.
+[`@define_message_update_rule`](@ref) except `target`, `inplace` and `preallocate`.
 """
 macro define_average_energy(args...)
     return esc(define_rule_expr(:average_energy, __source__, args))
@@ -71,11 +71,11 @@ const RULE_MACRO_NAMES = Dict(
 function define_rule_expr(kind, source, macroargs)
     name = RULE_MACRO_NAMES[kind]
     allowed = kind === :average_energy ? AVERAGE_ENERGY_KEYWORDS : MESSAGE_KEYWORDS
-    required = kind === :average_energy ? (:node, :args, :body) : (:node, :towards, :args, :body)
+    required = kind === :average_energy ? (:node, :args, :body) : (:node, :target, :args, :body)
     keywords = parse_keywords(name, macroargs, allowed, required)
 
     node = keywords[:node]
-    target, index_name = kind === :average_energy ? (nothing, nothing) : parse_towards(name, kind, keywords[:towards])
+    target, index_name = kind === :average_energy ? (nothing, nothing) : parse_target(name, kind, keywords[:target])
     inputs = parse_rule_args(name, keywords[:args], index_name)
     inplace = get(keywords, :inplace, false)
     inplace isa Bool || error("@$name: `inplace` must be `true` or `false`")
@@ -161,16 +161,16 @@ end
 algorithm_dispatch_type(algorithm::Type) = algorithm
 algorithm_dispatch_type(algorithm) = typeof(algorithm)
 
-function parse_towards(name, kind, ex)
+function parse_target(name, kind, ex)
     symbol = quoted_symbol(ex)
     if symbol !== nothing
         kind === :marginal &&
-            error("@$name: `towards` of a marginal rule is a cluster like `(:y, :x)`, got `$ex`")
+            error("@$name: `target` of a marginal rule is a cluster like `(:y, :x)`, got `$ex`")
         return (:($Target{$(QuoteNode(symbol))}), nothing)
     end
     if ex isa Expr && ex.head === :tuple && length(ex.args) >= 1 && all(a -> quoted_symbol(a) !== nothing, ex.args)
         kind === :marginal ||
-            error("@$name: `towards` of a message rule is `:out` or `(:m, k)`, got `$ex`")
+            error("@$name: `target` of a message rule is `:out` or `(:m, k)`, got `$ex`")
         members = Tuple(quoted_symbol.(ex.args))
         return (:($ClusterTarget{$members}), nothing)
     end
@@ -179,7 +179,7 @@ function parse_towards(name, kind, ex)
         return (:($IndexedTarget{$(QuoteNode(quoted_symbol(ex.args[1])))}), ex.args[2])
     end
     shapes = kind === :marginal ? "a cluster like `(:y, :x)`" : "`:out` or `(:m, k)`"
-    return error("@$name: `towards` must be $shapes, got `$ex`")
+    return error("@$name: `target` must be $shapes, got `$ex`")
 end
 
 function parse_services(name, ex)
@@ -255,7 +255,7 @@ function parse_member_selection(name, ref, type, index_name)
     (container in (:m, :q) && key !== nothing) ||
         error("@$name: a group member is selected as `m[:p][k]`, got `$ref`")
     index_name === nothing &&
-        error("@$name: `$ref` selects by the target's index, which needs an indexed target like `towards = (:$key, k)`")
+        error("@$name: `$ref` selects by the target's index, which needs an indexed target like `target = (:$key, k)`")
     selection = if selector === index_name
         :aligned
     elseif selector isa Expr && selector.head === :call && selector.args == [:!, index_name]

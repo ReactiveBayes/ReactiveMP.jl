@@ -96,7 +96,7 @@ arguments object** — not a body the macro rewrites. One form, used by every ru
 ```julia
 @define_message_update_rule(
     node    = NormalMeanVariance,
-    towards = :out,
+    target = :out,
     args    = (m[:μ]::PointMass, m[:v]::PointMass),
     body    = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
 )
@@ -107,7 +107,7 @@ With an algorithm, a variadic group and a log scale:
 ```julia
 @define_message_update_rule(
     node      = Mixture,
-    towards   = :switch,
+    target   = :switch,
     algorithm = BP,
     pure      = false,
     args      = (m[:out]::Any, m[:inputs...]::Any),
@@ -122,7 +122,7 @@ With an algorithm, a variadic group and a log scale:
 **Why symbols.** In a real lambda, `args.m[μ]` is an `UndefVarError` — `μ` is not a
 variable. Only `args.m[:μ]` works, so the body is *forced* to symbols; the declaration
 follows, because declaration/body agreement is the whole reason `m[]`/`q[]` was adopted over
-name mangling; and consistency carries symbols into `towards` and into `@define_factor_node`.
+name mangling; and consistency carries symbols into `target` and into `@define_factor_node`.
 The colon is therefore load-bearing, not decoration. Measured: `args.m[:μ]` on a
 NamedTuple-backed container is type-stable and allocation-free.
 
@@ -132,7 +132,7 @@ NamedTuple-backed container is type-stable and allocation-free.
 - **A cluster is the tuple of its members**: `q[(:y, :x)]`, with `q[:y, :x]` as shorthand.
   Inside a cluster a group's name means all of its members jointly, so `q[(:in,)]` is
   Delta's joint over its inputs (v6's `q_ins`) and `q[:out, :in]` mixes a single interface
-  with a group. A marginal rule computing it is `towards = (:in,)`. `q[:in]` stays the tuple
+  with a group. A marginal rule computing it is `target = (:in,)`. `q[:in]` stays the tuple
   of the members' own marginals. A one-member cluster of a *single* interface is rejected
   rather than accepted as a second spelling of `q[:μ]`. Added in Phase 4.5; the access runs
   through the same type-level `Val` key, measured allocation-free in `gate:containers`.
@@ -149,7 +149,10 @@ NamedTuple-backed container is type-stable and allocation-free.
   was not needed (`DISCUSSION.md` §3.16).
 - `m[:inputs...]` is a variadic group, replacing `ManyOf{N,T}` plus its `where {N}`.
   Verified to parse.
-- The outbound target is `towards = :out`, or `towards = (:m, k)` for a member of a group.
+- The outbound target is `target = :out`, or `target = (:m, k)` for a member of a group.
+  *(The keyword was `towards` until 2026-09-23, when the user renamed it: a marginal rule's
+  target is a cluster, and nothing is sent "towards" it. The rename covers every rule
+  macro, the interactive `call_*`/`which_*` functions and the test tooling.)*
 - Message, marginal and average-energy definitions retain their distinct roles and return
   contracts. They lower onto **three separate generic functions** (see Naming) that share
   one registry, one error path, one ambiguity checker and one test macro — shared
@@ -173,7 +176,7 @@ be breaking. An unrecognised name is an error naming the valid set. `output` app
 when `inplace = true`.
 
 **The target is threaded to every body, but is not one of the slots.** An indexed target
-`towards = (:m, k)` binds `k` in the body, and `k` is a runtime value the lowered body cannot
+`target = (:m, k)` binds `k` in the body, and `k` is a runtime value the lowered body cannot
 close over — so the call carries the target and the macro emits `k = index(target)` as an
 ordinary binding when the declaration names an index. Writing `k` is how you ask for it;
 there is no `target` slot to request. This mirrors v6, which injects `k = on[2]` at macro
@@ -374,7 +377,7 @@ default algorithm. Written in the same `m[]`/`q[]` vocabulary as rules:
 ```
 
 The left-hand side is a **target** — `:out`, or `(:m, k)` for a member of a group — spelled
-exactly as `towards` spells it. The right-hand side is a tuple of container lookups, spelled
+exactly as `target` spells it. The right-hand side is a tuple of container lookups, spelled
 exactly as a rule's `args` spells them.
 
 For the default dependency scheme, two axes separate:
@@ -483,7 +486,7 @@ already allocated), the shape must be declared:
 ```julia
 @define_message_update_rule(
     node        = NormalMixture,
-    towards     = :out,
+    target     = :out,
     inplace     = true,
     args        = (m[:out]::MvNormalMeanPrecision, q[:m...]::Any, q[:p...]::Any),
     preallocate = (args) -> MvNormalMeanPrecision(
@@ -860,7 +863,7 @@ The dispatch result, ownership contracts and early engine integration are separa
 
 1. ~~**Rule syntax final form.**~~ **RESOLVED.** The surface is fully keyword-based with an
    ordinary lambda body over a real arguments object, symbols throughout
-   (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members as `q[:p][k]`,
+   (`target = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members as `q[:p][k]`,
    indexed targets as `(:m, k)`, body slots `(output, algo, ctx, args, ann)` (originally
    with a sixth, `node`, dropped by #12) in
    canonical order, and dispatch carried by the `algorithm` keyword. `@allocate` and

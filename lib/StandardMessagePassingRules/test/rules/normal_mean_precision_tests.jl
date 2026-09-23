@@ -6,7 +6,7 @@
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     @test_message_update_rule(
-        node = NormalMeanPrecision, towards = :out,
+        node = NormalMeanPrecision, target = :out,
         cases = [
             (m = (μ = PointMass(1.0), τ = PointMass(2.0)),) => NormalMeanPrecision(1.0, 2.0),
             (m = (μ = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),) => ExpectedWithAnnotations(NormalMeanPrecision(0.0, 2 / 3); logscale = 0),
@@ -22,7 +22,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     @test_message_update_rule(
-        node = NormalMeanPrecision, towards = :μ,
+        node = NormalMeanPrecision, target = :μ,
         cases = [
             (m = (out = PointMass(1.0), τ = PointMass(2.0)),) => NormalMeanPrecision(1.0, 2.0),
             (m = (out = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),) => ExpectedWithAnnotations(NormalMeanVariance(0.0, 1.5); logscale = 0),
@@ -38,7 +38,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     @test_message_update_rule(
-        node = NormalMeanPrecision, towards = :τ,
+        node = NormalMeanPrecision, target = :τ,
         cases = [
             # θ = 2 / (1 + 2 + 1²)
             (q = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(0.0, 2.0)),) => Gamma(1.5, 0.5),
@@ -52,7 +52,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     @test_marginal_update_rule(
-        node = NormalMeanPrecision, towards = (:out, :μ),
+        node = NormalMeanPrecision, target = (:out, :μ),
         cases = [
             (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 0.5)), q = (τ = PointMass(2.0),)) =>
                 MvNormalWeightedMeanPrecision([1.0, 4.0], [3.0 -2.0; -2.0 4.0]),
@@ -78,9 +78,9 @@ end
 @testitem "rules:NormalMeanPrecision:verification" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
-    @verify_message_update_rule(node = NormalMeanPrecision, towards = :out, m = (μ = NormalMeanVariance(0.5, 1.5), τ = PointMass(2.0)))
-    @verify_message_update_rule(node = NormalMeanPrecision, towards = :μ, m = (out = NormalMeanVariance(-1.0, 0.5), τ = PointMass(3.0)))
-    @verify_message_update_rule(node = NormalMeanPrecision, towards = :out, q = (μ = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)))
-    @verify_message_update_rule(node = NormalMeanPrecision, towards = :μ, q = (out = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)))
-    @verify_message_update_rule(node = NormalMeanPrecision, towards = :τ, q = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(0.0, 2.0)))
+    @verify_message_update_rule(node = NormalMeanPrecision, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), τ = PointMass(2.0)))
+    @verify_message_update_rule(node = NormalMeanPrecision, target = :μ, m = (out = NormalMeanVariance(-1.0, 0.5), τ = PointMass(3.0)))
+    @verify_message_update_rule(node = NormalMeanPrecision, target = :out, q = (μ = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)))
+    @verify_message_update_rule(node = NormalMeanPrecision, target = :μ, q = (out = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)))
+    @verify_message_update_rule(node = NormalMeanPrecision, target = :τ, q = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(0.0, 2.0)))
 end

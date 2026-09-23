@@ -569,7 +569,7 @@ arguments object** rather than a body the macro rewrites:
 ```julia
 @define_message_update_rule(
     node    = NormalMeanVariance,
-    towards = :out,
+    target = :out,
     args    = (m[:μ]::PointMass, m[:v]::PointMass),
     body    = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
 )
@@ -584,7 +584,7 @@ variable. Only `args.m[:μ]` works. So:
 1. the body is *forced* to symbols;
 2. the declaration must match, because declaration/body agreement is the entire reason
    `m[]`/`q[]` was adopted over name mangling (§3.2);
-3. consistency then carries symbols into `towards = :out` and into
+3. consistency then carries symbols into `target = :out` and into
    `@define_factor_node(interfaces = [:out, ...])`.
 
 Under the old macro-rewritten body, bare names were fine and the colon really was
@@ -597,7 +597,7 @@ the colon load-bearing. The right observation, the opposite conclusion.
 - `q[:p[:k]]` parses, but as `(:p)[:k]` — *indexing a Symbol*. So a group member is spelled
   **`q[:p][k]`**, which parses as `(q[:p])[k]` and matches runtime access exactly. This is
   better than the previous `q[p[k]]` regardless of the colon question.
-- An indexed target is `towards = (:m, k)`, matching today's `@rule NormalMixture((:m, k))`.
+- An indexed target is `target = (:m, k)`, matching today's `@rule NormalMixture((:m, k))`.
 - Keyword macro arguments arrive as `Expr(:(=), name, value)`, order-independent.
 - Body parameter names extract reliably from the lambda, including typed ones.
 
@@ -698,8 +698,8 @@ const pre1  = (args) -> zeros(2)
     flag ? RuleSpec(body1, pre1, "(args) -> args.a + args.b", true, false)
          : RuleSpec(body2, pre1, "(args) -> args.a * args.b", true, false)
 
-function call_rule(node, towards, args, flag)
-    spec = find_rule(node, towards, flag)
+function call_rule(node, target, args, flag)
+    spec = find_rule(node, target, flag)
     return spec.inplace ? spec.body(spec.prealloc(args), args) : spec.body(args)
 end
 
@@ -780,7 +780,7 @@ call-site shapes, and include a negative control that must allocate.
 
 **1. The body slots need the target threaded through.** `PLAN.md` listed six slots
 `(output, algo, ctx, args, ann, node)` *(five since §3.16)* and no target — but an indexed target
-`towards = (:m, k)` has to bind `k`, which is a runtime value the lowered body cannot close
+`target = (:m, k)` has to bind `k`, which is a runtime value the lowered body cannot close
 over. Resolution: thread `target` to every body and let the macro emit `k = index(target)`
 as an ordinary binding when the declaration names an index. It stays out of the user-facing
 slot list; writing `k` is how you ask for it. This mirrors v6, which injects `k = on[2]` at
@@ -1138,6 +1138,12 @@ in `PHASES.md` § Phase 4.5; what matters for later readers is why.
   fields is deliberate: a mutable struct is passed by reference, which can avoid copying. The
   typed annotations stay; the struct kind is decided by benchmarking both representations.
 - **Signed off.** The user accepted the rest of the brief as written (2026-09-23).
+- **`towards` becomes `target`.** Reading the marginal-rule spec, the user found `towards`
+  the wrong word: a marginal rule's `(:out, :μ)` is a cluster the rule computes, not an edge
+  anything is sent towards. `target` fits both kinds of rule and matches the types already
+  used (`Target`, `IndexedTarget`, `ClusterTarget`). It was renamed everywhere, the design
+  documents included; earlier text quoting `towards` now reads `target`. Plain English such
+  as "the message towards `:out`" is kept where it describes a direction.
 - **`FactorizedJoint` alone cannot return a split cluster.** Proposal 5 said a marginal rule
   may return BayesBase's `FactorizedJoint`. Building it showed the gap: the joint is
   positional, so it cannot say which members each block covers. v6's partial splits such as
@@ -1329,7 +1335,7 @@ explicitly accepts `MethodError`s at activation time.
 The original discussion left these questions:
 
 - ~~**Rule syntax final details (#1)**~~ — **RESOLVED**, see §3.14. The outbound-edge
-   spelling is `towards = :out`, and `algorithm` is a top-level keyword on both the rule and
+   spelling is `target = :out`, and `algorithm` is a top-level keyword on both the rule and
    the node. Ten representative rules are still written by hand in Phase 0, but now as
    validation of a decided form rather than as a way of choosing one.
 - **`aligned` selector generality (#2)** — everything in-tree is `k ↔ k`. `q[:p][f(k)]`

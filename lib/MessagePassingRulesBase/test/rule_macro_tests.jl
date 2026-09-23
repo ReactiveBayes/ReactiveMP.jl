@@ -31,7 +31,7 @@
     # 1. The trivial BP case; `algorithm` omitted, so the node's default applies.
     @define_message_update_rule(
         node = NMV,
-        towards = :out,
+        target = :out,
         args = (m[:μ]::Point, m[:v]::Point),
         body = (args) -> Normal(mean(args.m[:μ]), mean(args.m[:v])),
     )
@@ -39,7 +39,7 @@
     # 2. Writing a log scale through `ann`.
     @define_message_update_rule(
         node = NMV,
-        towards = :μ,
+        target = :μ,
         args = (m[:out]::Point, m[:v]::Point),
         body = (args, ann) -> begin
             annotate!(ann, :logscale, 0.0)
@@ -51,7 +51,7 @@
     @define_factor_node(node = +, type = Deterministic, interfaces = [:out, :in1, :in2])
     @define_message_update_rule(
         node = +,
-        towards = :in2,
+        target = :in2,
         algorithm = BP,
         args = (m[:out]::Point, m[:in1]::Point),
         body = (args) -> Point(mean(args.m[:out]) - mean(args.m[:in1])),
@@ -64,7 +64,7 @@
     )
     @define_message_update_rule(
         node = NormalMixture,
-        towards = (:m, k),
+        target = (:m, k),
         args = (q[:out]::Normal, q[:switch]::Categorical, q[:p][k]::Point),
         body = (args) -> Normal(mean(args.q[:out]), mean(args.q[:p][k])),
     )
@@ -74,7 +74,7 @@
     @define_factor_node(node = Mixture, type = Stochastic, interfaces = [:out, :switch, :inputs...])
     @define_message_update_rule(
         node = Mixture,
-        towards = :out,
+        target = :out,
         args = (m[:switch]::Categorical, m[:inputs...]::Normal),
         body = (args) -> sum(map(mean, args.m[:inputs]) .* args.m[:switch].p),
     )
@@ -82,7 +82,7 @@
     # 6. The context service that replaces the engine leak.
     @define_message_update_rule(
         node = Mixture,
-        towards = :switch,
+        target = :switch,
         ctx = (:product,),
         args = (m[:out]::Normal, m[:inputs...]::Normal),
         body = (ctx, args) -> Categorical(collect(map(input -> last(ctx.product(args.m[:out], input)), args.m[:inputs]))),
@@ -94,14 +94,14 @@
     @define_factor_node(node = DeltaFn, type = Deterministic, interfaces = [:out, :in...])
     @define_message_update_rule(
         node = DeltaFn,
-        towards = (:in, k),
+        target = (:in, k),
         algorithm = Linearization{Nothing},
         args = (m[:in][k]::Normal, q[:in...]::Any),
         body = (args) -> Normal(mean(args.m[:in][k]), var(args.m[:in][k]) + k),
     )
     @define_message_update_rule(
         node = DeltaFn,
-        towards = (:in, k),
+        target = (:in, k),
         algorithm = Linearization{<:Function},
         args = (m[:out]::Point,),
         body = (algo, args) -> Point(algo.inverse(mean(args.m[:out]))),
@@ -110,13 +110,13 @@
     # 9. A marginal rule over a structural cluster, and a joint as an input.
     @define_marginal_update_rule(
         node = NMV,
-        towards = (:out, :μ),
+        target = (:out, :μ),
         args = (m[:out]::Point, m[:μ]::Point, q[:v]::Point),
         body = (args) -> (mean(args.m[:out]), mean(args.m[:μ])),
     )
     @define_message_update_rule(
         node = NMV,
-        towards = :v,
+        target = :v,
         args = (q[:out, :μ]::Tuple),
         body = (args) -> Point(abs2(args.q[:out, :μ][1] - args.q[:out, :μ][2])),
     )
@@ -127,7 +127,7 @@
     @define_factor_node(node = Vec, type = Stochastic, interfaces = [:out, :μ])
     @define_message_update_rule(
         node = Vec,
-        towards = :out,
+        target = :out,
         inplace = true,
         args = (m[:μ]::Vector{Float64}, m[:out]::Vector{Float64}),
         preallocate = (args) -> similar(args.m[:μ]),
@@ -139,7 +139,7 @@
     @define_factor_node(node = Stack, type = Stochastic, interfaces = [:out, :x...])
     @define_message_update_rule(
         node = Stack,
-        towards = (:x, k),
+        target = (:x, k),
         inplace = true,
         args = (m[:out]::Vector{Float64},),
         preallocate = (args) -> zeros(k),
@@ -158,7 +158,7 @@
     @define_factor_node(node = Counter, type = Stochastic, interfaces = [:out])
     const COUNT = Ref(0)
     @define_message_update_rule(
-        node = Counter, towards = :out, pure = false, args = (), body = () -> (COUNT[] += 1),
+        node = Counter, target = :out, pure = false, args = (), body = () -> (COUNT[] += 1),
     )
 end
 
@@ -246,9 +246,9 @@ end
     end
     rule(kw...) = expansion_error(Expr(:macrocall, Symbol("@define_message_update_rule"), LineNumberNode(1), kw...))
     kw(k, v) = Expr(:(=), k, v)
-    base = (kw(:node, :X), kw(:towards, QuoteNode(:out)))
+    base = (kw(:node, :X), kw(:target, QuoteNode(:out)))
 
-    @test contains(rule(kw(:towards, QuoteNode(:out)), kw(:args, :(())), kw(:body, :(() -> 1))), "`node` is required")
+    @test contains(rule(kw(:target, QuoteNode(:out)), kw(:args, :(())), kw(:body, :(() -> 1))), "`node` is required")
     @test contains(rule(base..., kw(:args, :(())), kw(:body, :((args, foo) -> 1))), "unknown body slot `foo`")
     @test contains(rule(base..., kw(:args, :(())), kw(:body, :((args, algo) -> 1))), "canonical order")
     @test contains(rule(base..., kw(:args, :(())), kw(:body, :((output, args) -> 1))), "the `output` slot requires `inplace = true`")
@@ -260,5 +260,5 @@ end
     @test contains(rule(base..., kw(:args, :((m[:a], m[:a]))), kw(:body, :((args) -> 1))), "given twice")
     @test contains(rule(base..., kw(:args, :(())), kw(:body, :(1))), "must be a lambda")
     @test contains(rule(base..., kw(:args, :(())), kw(:body, :(() -> 1)), kw(:ctx, :((:gpu,)))), "unknown context service `gpu`")
-    @test contains(rule(kw(:node, :X), kw(:towards, :out), kw(:args, :(())), kw(:body, :(() -> 1))), "`towards` must be")
+    @test contains(rule(kw(:node, :X), kw(:target, :out), kw(:args, :(())), kw(:body, :(() -> 1))), "`target` must be")
 end

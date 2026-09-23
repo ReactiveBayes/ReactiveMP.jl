@@ -199,7 +199,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       wording appealed to "the stated benchmark tolerance", which no document ever stated
 - [x] **rule syntax decided** (open item #1, resolved ahead of the spike): fully
       keyword-based macro, body an ordinary lambda over a real `args` object, symbols
-      throughout (`towards = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members
+      throughout (`target = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members
       `q[:p][k]`, indexed targets `(:m, k)`, body slots
       `(output, algo, ctx, args, ann, node)` in canonical order *(later reduced to five: the
       node moved into `ctx.node` at the Phase 3 sign-off, #12)*, dispatch carried by the
@@ -220,7 +220,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       mixture-switch context service, delta with and without a known inverse, a marginal rule
       over a structural cluster, an in-place rule, and an average energy.
       **One finding.** The canonical body slots `(output, algo, ctx, args, ann, node)` have no
-      target, but an indexed target `towards = (:m, k)` has to bind `k`, which is a runtime
+      target, but an indexed target `target = (:m, k)` has to bind `k`, which is a runtime
       value the lowered body cannot close over. Resolution: thread `target` to every body and
       let the macro emit `k = index(target)` as an ordinary binding when the declaration names
       an index. It stays out of the user-facing slot list — writing `k` is how you ask for it
@@ -757,7 +757,7 @@ What recording found, all **preserved, not fixed**:
 - [x] **a cluster over a whole group.** A cluster is written as the tuple of its members,
       `q[(:y, :x)]`, with `q[:y, :x]` as shorthand. A group's name inside a cluster means all
       of its members jointly: `q[(:in,)]` in `args` and dependencies, `args.q[(:in,)]` in a
-      body, and `towards = (:in,)` for the marginal rule. `validate_dependencies` and
+      body, and `target = (:in,)` for the marginal rule. `validate_dependencies` and
       `check_rules` accept groups in clusters, keep interface order, and reject a one-member
       cluster of a single interface in favour of `q[:μ]`. Tests: `group-cluster:*`, plus
       the tuple and group joints added to `gate:containers` (inferred, 0 bytes, JET-clean)
@@ -802,6 +802,9 @@ Porting conventions:
 - each node gets v6's own tables, verification against its log-density where the tool
   supports the inputs (messages only, or marginals only), and a v6 comparison in
   `compat/v6-comparison/compare_standard.jl`, which CI runs.
+
+**Renamed on 2026-09-23 (user): the rule keyword `towards` is now `target`**, in the macros,
+the interactive functions, the test tooling and every document. See `DISCUSSION.md` §3.19.
 
 Findings so far:
 - **Aqua's piracy check does see rule packages**, contrary to `PLAN.md` § Testing's

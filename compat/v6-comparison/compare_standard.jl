@@ -70,21 +70,21 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
 
 @testset "StandardMessagePassingRules against v6" begin
     @testset "message rules" begin
-        for (id, node, towards, inputs, flagged) in MESSAGE_CASES
+        for (id, node, edge, inputs, flagged) in MESSAGE_CASES
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
             store = AnnotationStore()
-            v7 = call_message_update_rule(node, towards; m, q, ann = store)
-            v6, v6_logscale = v6_message_update(node, towards, m, q)
-            record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = ":$towards", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
+            v7 = call_message_update_rule(node, edge; m, q, ann = store)
+            v6, v6_logscale = v6_message_update(node, edge, m, q)
+            record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = ":$edge", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
             # A declared correction must actually differ, or the declaration is stale.
             @test flagged == (record.outcome === :correction)
         end
     end
     @testset "message rules consuming a joint" begin
-        for (id, node, towards, clusters, flagged) in CLUSTER_MESSAGE_CASES
-            v7 = call_message_update_rule(node, towards; clusters)
-            v6, _ = v6_message_update(node, towards, NamedTuple(), NamedTuple{map(V6Oracle.v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))))
-            record = compare_with_reference(id, v7, v6; inputs = clusters, node = string(node), target = ":$towards", declared = declare(id, flagged))
+        for (id, node, edge, clusters, flagged) in CLUSTER_MESSAGE_CASES
+            v7 = call_message_update_rule(node, edge; clusters)
+            v6, _ = v6_message_update(node, edge, NamedTuple(), NamedTuple{map(V6Oracle.v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))))
+            record = compare_with_reference(id, v7, v6; inputs = clusters, node = string(node), target = ":$edge", declared = declare(id, flagged))
             @test flagged == (record.outcome === :correction)
         end
     end

@@ -75,7 +75,7 @@ function default_points(output)
 end
 
 """
-    verify_message_update(message, logdensity, interfaces, towards; m, q, points, atol, source)
+    verify_message_update(message, logdensity, interfaces, target; m, q, points, atol, source)
 
 Check a message against the node definition it comes from. `message(m, q)` returns the
 outgoing message and its log scale (or `nothing`); `logdensity(; interfaces...)` is the
@@ -92,26 +92,26 @@ Two separate assertions:
   `−logscale`, i.e. the message times `exp(logscale)` is the reference itself. Checked only
   when the shape holds, since otherwise there is no single constant to compare.
 """
-function verify_message_update(message, logdensity, interfaces, towards::Symbol; m = NamedTuple(), q = NamedTuple(), points = nothing, atol = 1.0e-6, source = LineNumberNode(0, :unknown))
+function verify_message_update(message, logdensity, interfaces, target::Symbol; m = NamedTuple(), q = NamedTuple(), points = nothing, atol = 1.0e-6, source = LineNumberNode(0, :unknown))
     (isempty(m) || isempty(q)) ||
         throw(ArgumentError("verification takes messages (belief propagation) or marginals (variational), not both"))
     mode = isempty(q) ? :bp : :vmp
     inputs = mode === :bp ? m : q
-    others = Tuple(name for name in interfaces if name !== towards)
+    others = Tuple(name for name in interfaces if name !== target)
     for name in others
         haskey(inputs, name) || throw(ArgumentError("verification needs an input for every other interface; `$name` is missing"))
     end
     treatments = [input_treatment(name, inputs[name]) for name in others]
     output, logscale = message(m, q)
     test_points = something(points, default_points(output))
-    names = (towards, others...)
+    names = (target, others...)
 
     differences = map(test_points) do x
         g = assignment -> logdensity(; assignment...)
-        reference = reference_value(nt -> g(merge(NamedTuple{(towards,)}((x,)), nt)), others, treatments, mode)
+        reference = reference_value(nt -> g(merge(NamedTuple{(target,)}((x,)), nt)), others, treatments, mode)
         logpdf(output, x) - reference
     end
-    label = "$(mode === :bp ? "belief propagation" : "variational") message towards :$towards"
+    label = "$(mode === :bp ? "belief propagation" : "variational") message target :$target"
     spread = maximum(differences) - minimum(differences)
     shape = record_check(spread <= atol, :(shape_matches_node_definition), () -> "$label: log-ratio to the node definition varies by $spread over the test points; differences $(differences)", source)
     if shape && mode === :bp && logscale !== nothing
@@ -122,30 +122,30 @@ function verify_message_update(message, logdensity, interfaces, towards::Symbol;
 end
 
 """
-    verify_message_update_rule(node, towards; m, q, algorithm, points, atol)
+    verify_message_update_rule(node, target; m, q, algorithm, points, atol)
 
 [`verify_message_update`](@ref) for a rule defined with the base package: its output
 against `nodefunction(node)`, with the log scale it annotates.
 """
-function verify_message_update_rule(node, towards::Symbol; m = NamedTuple(), q = NamedTuple(), algorithm = MessagePassingRulesBase.default_algorithm(node), points = nothing, atol = 1.0e-6, source = LineNumberNode(0, :unknown))
-    target = MessagePassingRulesBase.as_target(towards)
+function verify_message_update_rule(node, target::Symbol; m = NamedTuple(), q = NamedTuple(), algorithm = MessagePassingRulesBase.default_algorithm(node), points = nothing, atol = 1.0e-6, source = LineNumberNode(0, :unknown))
+    resolved_target = MessagePassingRulesBase.as_target(target)
     function message(m, q)
         args = MessagePassingRulesBase.RuleArgs(m = m, q = q)
-        spec = MessagePassingRulesBase.find_message_rule(node, target, algorithm, args)
+        spec = MessagePassingRulesBase.find_message_rule(node, resolved_target, algorithm, args)
         spec isa MessagePassingRulesBase.RuleSpec || throw(MessagePassingRulesBase.RuleNotFoundError(spec))
         record_selected_rule!(spec, source)
         store = MessagePassingRulesBase.AnnotationStore()
-        output = MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, MessagePassingRulesBase.RuleContext(), args, MessagePassingRulesBase.RuleAnnotations(out = store), target)
+        output = MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, MessagePassingRulesBase.RuleContext(), args, MessagePassingRulesBase.RuleAnnotations(out = store), resolved_target)
         return output, MessagePassingRulesBase.getannotation(store, :logscale, nothing)
     end
-    return verify_message_update(message, MessagePassingRulesBase.nodefunction(node), MessagePassingRulesBase.interfaces(node), towards; m, q, points, atol, source)
+    return verify_message_update(message, MessagePassingRulesBase.nodefunction(node), MessagePassingRulesBase.interfaces(node), target; m, q, points, atol, source)
 end
 
 """
-    @verify_message_update_rule(node = ..., towards = ..., m = (...), q = (...), ...)
+    @verify_message_update_rule(node = ..., target = ..., m = (...), q = (...), ...)
 
 [`verify_message_update_rule`](@ref), written with keywords; failures point at this line.
 """
 macro verify_message_update_rule(args...)
-    return esc(table_macro_call("verify_message_update_rule", verify_message_update_rule, (:node, :towards), args, __source__))
+    return esc(table_macro_call("verify_message_update_rule", verify_message_update_rule, (:node, :target), args, __source__))
 end

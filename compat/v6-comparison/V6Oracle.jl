@@ -6,7 +6,7 @@ using ReactiveMP
 
 export v6_message_update, v6_marginal_update, v6_average_energy, v6_logdensity, v6_interfaces
 
-v6_target(towards::Symbol) = Val(towards)
+v6_target(target::Symbol) = Val(target)
 v6_target((edge, k)::Tuple{Symbol, Integer}) = (Val(edge), k)
 
 v6_name(key::Symbol) = key
@@ -22,18 +22,18 @@ function v6_inputs(wrap, inputs::NamedTuple)
 end
 
 """
-    v6_message_update(fform, towards, m, q; meta = nothing)
+    v6_message_update(fform, target, m, q; meta = nothing)
 
-Run v6's `rule` for `fform` towards `towards` on messages `m` and marginals `q`, given as
+Run v6's `rule` for `fform` target `target` on messages `m` and marginals `q`, given as
 the named tuples a v7 rule takes. Returns `(result, logscale)`, `logscale` being `nothing`
 when the rule annotates none.
 """
-function v6_message_update(fform, towards, m::NamedTuple, q::NamedTuple; meta = nothing)
+function v6_message_update(fform, target, m::NamedTuple, q::NamedTuple; meta = nothing)
     mnames, messages = v6_inputs(ReactiveMP.Message, m)
     qnames, marginals = v6_inputs(ReactiveMP.Marginal, q)
     annotations = ReactiveMP.AnnotationDict()
     result = ReactiveMP.rule(
-        fform, v6_target(towards), ReactiveMP.Marginalisation(), mnames, messages, qnames, marginals,
+        fform, v6_target(target), ReactiveMP.Marginalisation(), mnames, messages, qnames, marginals,
         meta, annotations, nothing,
     )
     result isa ReactiveMP.RuleMethodError && throw(result)

@@ -1,11 +1,11 @@
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :out,
+    node = NormalMeanPrecision, target = :out,
     args = (m[:μ]::PointMass, m[:τ]::PointMass),
     body = (args) -> NormalMeanPrecision(mean(args.m[:μ]), mean(args.m[:τ])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :out,
+    node = NormalMeanPrecision, target = :out,
     args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:τ]::PointMass),
     body = (args, ann) -> begin
         annotate!(ann, :logscale, 0)
@@ -15,25 +15,25 @@
 )
 
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :out,
+    node = NormalMeanPrecision, target = :out,
     args = (q[:μ]::PointMass, q[:τ]::PointMass),
     body = (args) -> NormalMeanPrecision(mean(args.q[:μ]), mean(args.q[:τ])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :out,
+    node = NormalMeanPrecision, target = :out,
     args = (q[:μ]::Any, q[:τ]::Any),
     body = (args) -> NormalMeanPrecision(mean(args.q[:μ]), mean(args.q[:τ])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :out,
+    node = NormalMeanPrecision, target = :out,
     args = (m[:μ]::PointMass, q[:τ]::Any),
     body = (args) -> NormalMeanPrecision(mean(args.m[:μ]), mean(args.q[:τ])),
 )
 
 @define_message_update_rule(
-    node = NormalMeanPrecision, towards = :out,
+    node = NormalMeanPrecision, target = :out,
     args = (m[:μ]::UnivariateNormalDistributionsFamily, q[:τ]::Any),
     body = (args) -> begin
         μ_mean, μ_var = mean_var(args.m[:μ])

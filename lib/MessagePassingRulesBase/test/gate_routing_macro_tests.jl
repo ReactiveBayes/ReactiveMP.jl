@@ -8,10 +8,10 @@
 
     struct Gauss end
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :v, :p...])
-    @define_message_update_rule(node = Gauss, towards = :out, args = (m[:μ]::Float64, m[:v]::Float64), body = (args) -> args.m[:μ] + args.m[:v])
-    @define_message_update_rule(node = Gauss, towards = :out, algorithm = VMP, args = (m[:μ]::Float64, m[:v]::Float64), body = (args) -> args.m[:μ] * args.m[:v])
-    @define_message_update_rule(node = Gauss, towards = (:p, k), args = (q[:p][k]::Float64,), body = (args) -> 2 * args.q[:p][k])
-    @define_message_update_rule(node = Gauss, towards = :μ, args = (m[:out]::Float64,), body = (args) -> fill(args.m[:out], 4))
+    @define_message_update_rule(node = Gauss, target = :out, args = (m[:μ]::Float64, m[:v]::Float64), body = (args) -> args.m[:μ] + args.m[:v])
+    @define_message_update_rule(node = Gauss, target = :out, algorithm = VMP, args = (m[:μ]::Float64, m[:v]::Float64), body = (args) -> args.m[:μ] * args.m[:v])
+    @define_message_update_rule(node = Gauss, target = (:p, k), args = (q[:p][k]::Float64,), body = (args) -> 2 * args.q[:p][k])
+    @define_message_update_rule(node = Gauss, target = :μ, args = (m[:out]::Float64,), body = (args) -> fill(args.m[:out], 4))
 
     const POINT = RuleArgs(m = (μ = 1.0, v = 2.0))
     const MEMBER = RuleArgs(q = (p = (nothing, 5.0),))

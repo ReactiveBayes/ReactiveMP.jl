@@ -1,5 +1,5 @@
 @define_marginal_update_rule(
-    node = NormalMeanVariance, towards = (:out, :μ),
+    node = NormalMeanVariance, target = (:out, :μ),
     args = (m[:out]::UnivariateNormalDistributionsFamily, m[:μ]::UnivariateNormalDistributionsFamily, q[:v]::Any),
     body = (args) -> begin
         xi_out, W_out = weightedmean_precision(args.m[:out])

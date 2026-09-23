@@ -9,13 +9,13 @@
     BayesBase.logpdf(d::Gauss, x) = logpdf(Normal(d.μ, d.σ), x)
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :σ])
 
-    @define_message_update_rule(node = Gauss, towards = :out, args = (m[:μ]::PointMass, m[:σ]::PointMass), body = (args) -> Normal(mean(args.m[:μ]), mean(args.m[:σ])))
+    @define_message_update_rule(node = Gauss, target = :out, args = (m[:μ]::PointMass, m[:σ]::PointMass), body = (args) -> Normal(mean(args.m[:μ]), mean(args.m[:σ])))
     @define_message_update_rule(
-        node = Gauss, towards = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
+        node = Gauss, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
         body = (args, ann) -> (annotate!(ann, :logscale, 0.0); Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2))),
     )
     @define_message_update_rule(
-        node = Gauss, towards = :μ, algorithm = VMP, args = (q[:out]::Normal, q[:σ]::PointMass),
+        node = Gauss, target = :μ, algorithm = VMP, args = (q[:out]::Normal, q[:σ]::PointMass),
         body = (args) -> Normal(mean(args.q[:out]), mean(args.q[:σ])),
     )
 
@@ -27,7 +27,7 @@
     BayesBase.logpdf(d::WrongShape, x) = logpdf(Normal(d.μ, d.σ), x)
     @define_factor_node(node = WrongShape, type = Stochastic, interfaces = [:out, :μ, :σ])
     @define_message_update_rule(
-        node = WrongShape, towards = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
+        node = WrongShape, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
         body = (args, ann) -> (annotate!(ann, :logscale, 0.0); Normal(mean(args.m[:out]), mean(args.m[:σ]))),
     )
 
@@ -39,7 +39,7 @@
     BayesBase.logpdf(d::WrongScale, x) = logpdf(Normal(d.μ, d.σ), x)
     @define_factor_node(node = WrongScale, type = Stochastic, interfaces = [:out, :μ, :σ])
     @define_message_update_rule(
-        node = WrongScale, towards = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
+        node = WrongScale, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
         body = (args, ann) -> (annotate!(ann, :logscale, 1.0); Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2))),
     )
 
@@ -51,14 +51,14 @@
     BayesBase.logpdf(d::SumOfTwo, x) = logpdf(Normal(d.a + d.b, 1.0), x)
     @define_factor_node(node = SumOfTwo, type = Stochastic, interfaces = [:out, :a, :b])
     @define_message_update_rule(
-        node = SumOfTwo, towards = :out, args = (m[:a]::Normal, m[:b]::Normal),
+        node = SumOfTwo, target = :out, args = (m[:a]::Normal, m[:b]::Normal),
         body = (args, ann) -> (annotate!(ann, :logscale, 0.0); Normal(mean(args.m[:a]) + mean(args.m[:b]), sqrt(1 + var(args.m[:a]) + var(args.m[:b])))),
     )
 
     # A discrete input, enumerated.
     @define_factor_node(node = Bernoulli, type = Stochastic, interfaces = [:out, :p])
     @define_message_update_rule(
-        node = Bernoulli, towards = :p, algorithm = VMP, args = (q[:out]::Bernoulli,),
+        node = Bernoulli, target = :p, algorithm = VMP, args = (q[:out]::Bernoulli,),
         body = (args) -> Beta(1 + mean(args.q[:out]), 2 - mean(args.q[:out])),
     )
 end
@@ -68,11 +68,11 @@ end
     using MessagePassingRulesBase: VMP
     V = VerifiedRules
     set = Recording.recorded() do
-        @verify_message_update_rule(node = V.Gauss, towards = :out, m = (μ = PointMass(1.0), σ = PointMass(2.0)))
-        @verify_message_update_rule(node = V.Gauss, towards = :μ, m = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
-        @verify_message_update_rule(node = V.Gauss, towards = :μ, algorithm = VMP(), q = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
-        @verify_message_update_rule(node = V.SumOfTwo, towards = :out, m = (a = Normal(1.0, 0.5), b = Normal(-2.0, 0.8)))
-        @verify_message_update_rule(node = Bernoulli, towards = :p, algorithm = VMP(), q = (out = Bernoulli(0.3),))
+        @verify_message_update_rule(node = V.Gauss, target = :out, m = (μ = PointMass(1.0), σ = PointMass(2.0)))
+        @verify_message_update_rule(node = V.Gauss, target = :μ, m = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
+        @verify_message_update_rule(node = V.Gauss, target = :μ, algorithm = VMP(), q = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
+        @verify_message_update_rule(node = V.SumOfTwo, target = :out, m = (a = Normal(1.0, 0.5), b = Normal(-2.0, 0.8)))
+        @verify_message_update_rule(node = Bernoulli, target = :p, algorithm = VMP(), q = (out = Bernoulli(0.3),))
     end
     @test isempty(Recording.failures(set))
     # Shape for all five, scale for the three belief-propagation rules that annotate one.
@@ -84,13 +84,13 @@ end
     V = VerifiedRules
 
     shape = Recording.recorded() do
-        @verify_message_update_rule(node = V.WrongShape, towards = :μ, m = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
+        @verify_message_update_rule(node = V.WrongShape, target = :μ, m = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
     end
     @test length(Recording.failures(shape)) == 1
     @test contains(Recording.failure_text(shape), "log-ratio to the node definition varies")
 
     scale = Recording.recorded() do
-        @verify_message_update_rule(node = V.WrongScale, towards = :μ, m = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
+        @verify_message_update_rule(node = V.WrongScale, target = :μ, m = (out = Normal(0.5, 1.5), σ = PointMass(2.0)))
     end
     @test length(Recording.failures(scale)) == 1
     @test contains(Recording.failure_text(scale), "implies log scale")

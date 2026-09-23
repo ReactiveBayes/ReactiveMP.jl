@@ -135,20 +135,20 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
     if target <: Target
         edge = target.parameters[1]
         if !(edge in names)
-            push!(problems, "`towards = :$edge`: $(spec.node) has no interface `$edge`")
+            push!(problems, "`target = :$edge`: $(spec.node) has no interface `$edge`")
         elseif isgroup(edge)
-            push!(problems, "`towards = :$edge`: `$edge` is a group; its targets are written `(:$edge, k)`")
+            push!(problems, "`target = :$edge`: `$edge` is a group; its targets are written `(:$edge, k)`")
         end
     elseif target <: IndexedTarget
         edge = target.parameters[1]
         (edge in names && isgroup(edge)) ||
-            push!(problems, "`towards = (:$edge, k)`: $(spec.node) has no group `$edge`")
+            push!(problems, "`target = (:$edge, k)`: $(spec.node) has no group `$edge`")
     elseif target <: ClusterTarget
         members = target.parameters[1]
         if lone_single(members)
-            push!(problems, "`towards = $members`: $(lone_message(members))")
+            push!(problems, "`target = $members`: $(lone_message(members))")
         elseif !order_ok(members)
-            push!(problems, "`towards = $members`: a cluster lists existing interfaces in interface order, $(Tuple(names))")
+            push!(problems, "`target = $members`: a cluster lists existing interfaces in interface order, $(Tuple(names))")
         end
     end
 
