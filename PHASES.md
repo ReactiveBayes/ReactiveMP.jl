@@ -41,7 +41,7 @@ Build it test-first, one commit per step, `PHASES.md` updated in each:
    `make test-testutils`, `lib/README.md`;
 2. **done** — the three table macros, each sugar over a function of the same name; `@test` runs inside
    TestUtils, so v6's callback form is gone; self-tested through a recording testset;
-3. registry-backed coverage, recording the rule each check actually selected, and
+3. **done** — registry-backed coverage, recording the rule each check actually selected, and
    `check_rule_coverage(modules...)`;
 4. node-definition verification from `nodefunction`, with shape and scale asserted
    separately and a wrong rule and a wrong log scale as negative controls;
@@ -588,8 +588,10 @@ keying), and #9–#13 (resolve before the API freezes).
       `@test_marginal_update_rule`, `@test_average_energy`; failures point at the table's line
 - [ ] **node-definition verification** — reference update computed from `nodefunction`
       for a bounded initial subset, with separate shape and scale assertions
-- [ ] registry-backed coverage check: every `RuleSpec`/`NodeSpec` has a test; record the
-      actual selected rule so a fallback cannot conceal an untested specialization
+- [x] registry-backed coverage check: every `RuleSpec`/`NodeSpec` has a test; record the
+      actual selected rule so a fallback cannot conceal an untested specialization —
+      `check_rule_coverage(modules...)`; a broader rule answering for a specific one stays
+      reported (`coverage:selected-rule`)
 - [ ] **migration checker**: runs a v6 and a v7 rule on identical inputs and asserts they
       agree — the tool that makes downstream (and agent-driven) migration verifiable
 - [ ] disagreements with v6 investigated and recorded as migration bugs or deliberate
