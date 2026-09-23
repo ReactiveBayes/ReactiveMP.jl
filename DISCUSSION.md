@@ -87,7 +87,8 @@ Why this was a big deal: it meant `Marginalisation`/`MomentMatching` did not nee
 deleted as a special case — that axis simply *is* the algorithm axis, so it disappears. It
 later absorbed two more things (dependencies, purity), and turned
 `RequireMessage`/`RequireMarginal`/`RequireEverythingFunctionalDependencies` from a
-bolted-on mechanism into ordinary algorithms.
+bolted-on mechanism into ordinary algorithms. *(In the end they are deleted, §3.21: their
+dependencies go on a node's algorithm, and their initial values become initialization.)*
 
 `context` was kept strictly separate and **non-dispatching** — it is infrastructure
 (linalg strategy, RNG, buffers, services), not mathematics. An early draft had rules
@@ -157,7 +158,7 @@ confusing runtime `RuleMethodError` with no hint that the *dependency spec* is w
 from it. The original condition required all requested marginals to form a partition.
 **Review correction:** auxiliary beliefs need not be entropy clusters, so that condition
 conflated inputs with scoring. The precise relationship, ordering and conflict handling
-remain open in `PLAN.md` item #9 and must be settled before the API freezes.
+remained open in `PLAN.md` item #9 until the Phase 3 sign-off resolved it (§3.16).
 
 **Constraint discovered:** selectors must have **statically known output arity**, otherwise
 the `ManyOf` length becomes runtime-dependent and `ManyOf{N,T}` cannot specialise. The
@@ -293,7 +294,9 @@ had proposed a `Test` package extension; the user pointed out testing deps belon
 `[extras]`. The assistant's `weakdeps` remark was explaining why its *own* extension idea
 was bad (an extension's deps must be weakdeps of its host, so cubature/Turing would land in
 the base's `Project.toml`) but stated it confusingly. Outcome: separate package, listed
-under `[extras]` by consumers, no weakdeps or extensions involved anywhere.
+under `[extras]` by consumers, no weakdeps or extensions involved anywhere. *(On 1.10 an
+unregistered extra could not resolve, so Phase 4 and 4.5 wired it through a test environment;
+on 1.13, `[extras]` plus `[sources]` does it, §3.22.)*
 
 **Superseded rationale:** the assistant initially treated approximation methods as
 algorithms and proposed moving seven numeric dependencies with them. The later decision
@@ -335,8 +338,9 @@ outright; `ghcubature` follows `multinomial_polya` into the Pólya node package.
 the package **must not** depend on `MessagePassingRulesBase`. They are a utility API that
 algorithms use under the hood. The assistant had argued the opposite (make them algorithms,
 depend on base) on the grounds that they are already shaped like the algorithm axis. The
-user's framing is better: "how do I approximate this integral" is numerics; "which update
-scheme am I running" is an algorithm. The delta algorithm *uses* Unscented; it is not
+user's framing is better: "how do I approximate this integral" is numerics; "which rules
+run" is an algorithm *(originally "which update scheme am I running"; algorithms are not
+schemes, §3.20)*. The delta algorithm *uses* Unscented; it is not
 Unscented. Keeping them siblings leaves the numerics usable outside this ecosystem.
 
 API: no broader numerical redesign. Replace global `cholinv` calls through a minimal
@@ -1042,7 +1046,8 @@ checker. The findings worth keeping:
   free energy v6 computes. The same `mean(q_v)` appears in nine places across `mean.jl`,
   `out.jl` and `marginals.jl`; v6's tests never pass a non-degenerate `q_v`, which is why a
   golden-value table could not see it. Reported as **ReactiveMP.jl#669**, pinned in
-  `KNOWN_V6_FINDINGS`, and to be ported as a declared `:correction` in Phase 5. This is the
+  `KNOWN_V6_FINDINGS`, and ported as a declared `:correction` — in the event, in Phase 4.5
+  step 3, when NMV was ported. This is the
   outcome Phase 4 was built to produce: a test of the mathematics, not of what a rule returned
   the day it was written.
 - **Scale is only meaningful once shape holds.** A rule with the wrong shape has no single
@@ -1100,7 +1105,7 @@ machinery is kept, and what "deleting the v6 engine" removes is the replaced rul
 node-creation and per-node activation paths.)*
 
 The consequence to watch: the design Phase 7 was flagged as missing — group stream wiring,
-the immutable `Message`, edge order in clusters, `EdgeLabel.index`, buffer-reuse
+the `Message` envelope (its mutability now decided by benchmark), edge order in clusters, `EdgeLabel.index`, buffer-reuse
 eligibility — is now due at the *start* of Phase 4.5 rather than after Phase 6. That is
 the point: those are the decisions the rule interface most needs proven against.
 
@@ -1131,7 +1136,8 @@ in `PHASES.md` § Phase 4.5; what matters for later readers is why.
   load-bearing for the correctness of reactive message passing.** The engine reproduces it,
   and the retained-value guarantee starts at materialisation. See §4, item 21.
 - **The slice's rules go into the real packages.** They would have to be ported anyway, and
-  a throwaway port is work Phase 5's tool would repeat. About 45 rules, deduplicated.
+  a throwaway port is work Phase 5's tool would repeat. About 45 rules were estimated; 54
+  were ported (43 message rules, 2 marginal rules, 9 average energies).
 - **A cluster over a whole group.** Delta's `q_ins` is a joint over its `:in...` group, and
   the base package rejected any cluster containing a group. The choice was between extending
   the base package, which is general and makes Delta its first customer, and a Delta-specific
@@ -1236,6 +1242,28 @@ dependencies, written only in the new terms, and a `MIGRATION.md` section that m
 types onto these three pieces. Both are written in Phase 5, with Probit and ContinuousTransition
 ported.
 
+### 3.22 Clean cut, Julia 1.13 only
+
+Two ground rules set by the user before step 4.
+
+**A clean cut, with no transition stage.** The recommendation had been a per-node dual path:
+nodes with a `NodeSpec` take the new route, the rest keep v6's `rule()`, and v6's
+NormalMeanVariance stays until Phase 5, because v6's GCV rules call it and the v7 port covers
+only the slice's rules. The user rejected that: "we delete the old stuff now and do a clean
+cut; I don't care about the transition stage." In step 4 the engine keeps only the new rule
+path and node creation, and every unported node stops working. Its code and tests are not
+deleted, though (user): they move to `legacy/v6/`, mirroring their old paths, never loaded
+and never tested, as the reference Phase 5 ports from. Nothing outside the branch uses it,
+and downstream breakage was already accepted (§3.18), so a dual path would only be code that
+has to be removed later.
+
+**Julia 1.13 only, for now.** The 1.10 floor had cost a develop-at-test-time step for every
+unregistered sibling, a separate `test/Project.toml` for a package that needs the test
+tooling, and a CI matrix to match. The user's decision is to target 1.13 and wire everything
+with `[sources]`, which 1.11+ honours; the floor and its workarounds are reconsidered at
+registration. No CI runs without a PR either, so all work is verified locally, and the
+workflow files are left as they are until then.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1326,6 +1354,9 @@ Claims the assistant made that were **wrong** and should not be revived:
     algorithm does under different factorisations. An algorithm selects rules: a rule
     switcher, or a node's own. Modelling a structured factorisation as a `Structured` algorithm,
     as a test once did, repeats the same mistake. See §3.20.
+24. **"Moving to the new rule system needs a dual path, node by node."** It needs none; nothing
+    outside the branch depends on the old one. The engine switches outright and unported
+    nodes wait in `legacy/v6/`. See §3.22.
 
 ---
 
@@ -1339,7 +1370,10 @@ of them rules: `default_prod_rule` and `prod` for `Uniform`×`Beta`
 (`nodes/predefined/uniform.jl:6,9`) and a `dot` overload for `ForwardDiff.Dual`
 (`fixes.jl:12`). The check can be enabled today.
 
-**But it is vacuous for rules, permanently.** Aqua treats a `DataType` as foreign only if
+**But it is vacuous for *message* rules, permanently.** *(Phase 4.5 found the rest of a rule
+package is flagged — `nodespec`, `nodefunction`, average energies and marginal rules for
+another package's distribution — and declares its node types owned with `treat_as_own`.)*
+Aqua treats a `DataType` as foreign only if
 the type *and every parameter* is foreign, and `is_foreign(::Symbol)` is unconditionally
 `false`. Measured: `is_foreign(Val{:out}) == false`, `is_foreign(Val{1}) == true`. Every
 rule target carries the edge name as a `Symbol` type parameter, so no rule can ever be
@@ -1350,7 +1384,9 @@ split is piracy-clean. **This also removed piracy as an argument for the ruleset
 ReactiveMP ships MIT. Real conflict, propagates to RxInfer, accepted and deferred (§3.9c).
 
 **Approximation usage, updated after the CVI removal decision.** Surviving approximations
-need `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` — **no cubature package**;
+need no cubature package *(the list first given here — ForwardDiff, Distributions, Random,
+LinearAlgebra — was wrong: the ported package is pure numerics on LinearAlgebra and
+FastCholesky, with ForwardDiff arriving with Linearization, Phase 4.5 step 3)*;
 `DiffResults` leaves with old CVI. `Optim` leaves
 ReactiveMP entirely (only `laplace.jl` used it). `FastGaussQuadrature` follows `ghcubature`
 to the Pólya package. `DomainIntegrals` and `HCubature` go to the test-utils package — they
@@ -1418,14 +1454,28 @@ The original discussion left these questions:
    distinct algorithm, not a syntax axis. *(Refined in §3.20: only a node that ignores the
    factorisation needs its own algorithm.)*
 - **The ruleset axis (#4)** — scoped rule tables (`Overlay(mine, standard)`). Introduced by the
-   assistant, never requested. Its piracy argument is now dead (see §5); `algorithm` may
+   assistant, never requested. Its piracy argument is now dead for rules (see §5); `algorithm` may
    already cover the "controllable dispatch" goal. **DEFERRED in Phase 0**, and the
    rule-fallback contract it was holding up was specified independently there (§3.15).
 - **The engine step is under-planned.** The rule layer is designed in detail;
    "rewrite ReactiveMP against the new base" hides the mixture `activate!` work, the
    dependency-to-stream wiring for variadic groups, and the `Message`/`DeferredMessage`
-   envelope changes. Wants its own session. *(It gets one: since the restructuring in §3.18
-   the engine design session opens Phase 4.5.)*
+   envelope changes. Wants its own session. *(Resolved: the Phase 4.5 design brief was
+   signed off, §3.19, and step 4 is planned in `PHASES.md`.)*
+
+Open as of the Phase 4.5 reconciliation:
+
+- **The `Message` representation** — `mutable struct` with `const` fields or immutable, decided
+  by benchmark during step 4.
+- **Delta's own algorithm** — the method and inverse it carries, like `DeltaMeta`, and the
+  engine's `getnodefn`; case (d).
+- **Default initial messages** — how a node declares one for a rule that depends on its own
+  edge (Probit), separately from `dependencies` (§3.21). Needed when Probit is ported.
+- **Log scales** — preserved as v6 has them, gaps included; fixing them is a milestone of its
+  own after the migration.
+- **The models package's name** — deferred to Phase 6.
+- **The Julia floor** — 1.13 only until registration, when 1.10 support is reconsidered
+  (§3.22).
 
 Review added #9–#13 (all but #13 settled at the Phase 3 sign-off, §3.16): belief/entropy separation, buffer ownership, capability metadata,
 context services and the numerical protocol. These block API freeze, not preparation or
@@ -1450,7 +1500,8 @@ in `runtests.jl` — **not** a runner swap). It is independent, low-risk, and co
 every later session runs faster.
 
 Then base package → test utils with a bounded numerical oracle → **Phase 4.5: the engine
-design session and the engine's first cut, refactored in place** (§3.18–3.19) → bulk standard-rule
+design session and the engine's first cut, refactored in place, as a clean cut** (§3.18–3.22) →
+bulk standard-rule
 migration into it → approximations and node packages → completing the engine → coordinated
 release. Start strict downstream CI as soon as
 compatible development revisions exist, rather than waiting until release.

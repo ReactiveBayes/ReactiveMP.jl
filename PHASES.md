@@ -16,41 +16,47 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5 — step 4 of the brief's order: the engine core, on case (a).** The algorithm
-reconciliation that came up before it is done (§ Phase 4.5): one `DefaultAlgorithm`, custom
-algorithms stand alone or extend it. Step 0 is done:
-the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Step 2, the
-base-package additions, is done. Step 3 is done: the slice's rules and numerics are
-ported into `StandardMessagePassingRules` and `MessagePassingRulesApproximations`, and agree with
-v6 (see § Phase 4.5, Step 3). Next is step 4, the engine core, on case (a). The
-design brief in § Phase 4.5 is **signed
-off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
-in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
-and rule definition and creation are replaced. The work is proven on four slice cases
-against fixtures recorded from v6. Work proceeds in the brief's order, one commit per step,
-starting with the fixtures.
+**Phase 4.5, step 4: the engine core, on case (a).** Its plan is § Phase 4.5, *Step 4*.
 
-Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system; `lib/MessagePassingRulesTestUtils`
-is its test tooling; `compat/v6-comparison` holds the v6 oracle and the migration check.
-The first finding the tooling produced is a real v6 bug — the variational
-`NormalMeanVariance` rules use `E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v`
-(ReactiveMP.jl#669) — pinned as known, to be ported as a declared `:correction` in Phase 5.
+Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSION.md`
+§3.18–3.19); the design session itself was step 1. Since then:
+- **step 0** recorded the v6 engine fixtures;
+- **step 2** made the base-package additions;
+- **step 3** ported the slice's rules and numerics, in agreement with v6;
+- the **algorithm reconciliation** replaced `BP`/`VMP` with one `DefaultAlgorithm` (§3.20);
+- `Require*FunctionalDependencies` were dropped (§3.21).
 
-**Picking this up on another machine.** Everything lives in the repository; nothing needed is
-local. With Julia 1.10 and 1.13 installed (juliaup):
+Three ground rules were set on the same day (§3.22):
+- step 4 is a **clean cut**: the engine keeps only the new rule path, and every unported node
+  moves to `legacy/v6/` until Phase 5 ports it;
+- work targets **Julia 1.13 only**, wired with `[sources]`;
+- **no CI runs yet**; everything is verified locally.
+
+Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system;
+`lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules` and
+`lib/MessagePassingRulesApproximations` hold the slice's rules and numerics; and
+`compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures. The
+tooling's first finding was a real v6 bug: the variational `NormalMeanVariance` rules use
+`E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v` (ReactiveMP.jl#669). It was **corrected
+when NMV was ported in step 3**, and the comparison declares it.
+
+**Picking this up on another machine.** Everything lives in the repository. With Julia 1.13
+installed, and 1.10 for the v6 comparison environment until it is moved (step 4, item 1):
 
 ```bash
 git switch refactor/rule-node-system-rewrite && git pull
-make test-base                     # the base package (Julia on PATH)
-make test-testutils                # TestUtils, developing the base at test time
+make test-base test-testutils test-standard test-approximations
 julia +1.10 --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+for s in check compare_standard compare_approximations; do
+    julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
+done
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.19,
-and this file's § Phase 4.5. Working conventions established so far: one commit per step,
-failing test first, `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive
-names rather than generic ones, and no comments that only narrate.
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.22,
+and this file's § Phase 4.5. Working conventions: one commit per step, failing test first,
+`PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive names rather than
+generic ones, and no comments that only narrate.
 
 ---
 
@@ -66,10 +72,10 @@ names rather than generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; steps 0, 2 and 3 done, next the engine core |
-| 5 | `StandardMessagePassingRules` | not started |
-| 6 | `MessagePassingRulesApproximations` + node packages | not started |
-| 7 | Complete the engine — remaining nodes, diagnostics, RxInfer plumbing | not started |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | steps 0–3 and the algorithm reconciliation done; next step 4, the engine core |
+| 5 | `StandardMessagePassingRules` | the slice's six nodes ported in 4.5; the bulk not started |
+| 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5; the rest not started |
+| 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | 8 | Release and downstream coordination | not started |
 
 ---
@@ -106,7 +112,8 @@ names rather than generic ones, and no comments that only narrate.
         symbols, 8 engine-hook families, 2 extensions, 7 rule-level exceptions. Rules
         inherit their node's destination, so only the rules that cannot are listed
   - [x] **231 destinations decided**; `--check` passes. Totals: `standard` 58,
-        `base` 43, `engine` 32, `delete` 21, `node:Flow` 16, `node:Delta` 11,
+        `base` 43, `engine` 32, `delete` 21 *(22, and `standard` 57, since `NormalMixtureNode`
+        became a deletion in Phase 4.5)*, `node:Flow` 16, `node:Delta` 11,
         `models` 11, `node:Polya` 10, `node:Autoregressive` 9, `approximations` 7,
         `node:ContinuousTransition` 5, `node:BIFM` 5, `node:DiscreteTransition` 3.
         `StandardMessagePassingRules` is distributions, arithmetic, logic and mixtures;
@@ -126,7 +133,10 @@ names rather than generic ones, and no comments that only narrate.
 - [x] **Julia floor decided: stays at 1.10.** Nothing in the design requires more. The
       `ScopedValue` in an earlier draft of § Dispatch axes was never necessary — the
       context is an ordinary object passed into the rules, most likely held by
-      `MessageMapping`, and a plain default argument gives the same behaviour
+      `MessageMapping`, and a plain default argument gives the same behaviour.
+      *(Superseded in Phase 4.5, user: work targets Julia 1.13 only, wired with `[sources]`;
+      the floor and the 1.10 workarounds are revisited when the packages are registered.
+      See `DISCUSSION.md` §3.22.)*
 - [x] environment strategy for the v6/v7 comparison harness and before/after doctests
   - [x] **one-process rule comparison strategy selected.** The new rule packages are
         differently named and do not depend on ReactiveMP. The stubs can coexist with
@@ -617,7 +627,8 @@ keying), and #9–#13 (resolve before the API freezes).
       allocating and in-place paths — the mechanism is built (`DeclaredDisagreement`, pinned
       `KNOWN_V6_FINDINGS`) and its first real case investigated: v6's variational
       `NormalMeanVariance` rules are wrong for non-point-mass `q_v` (ReactiveMP.jl#669), a
-      `:correction` for Phase 5. Investigating each ported rule is Phase 5's work, per rule.
+      `:correction` for Phase 5 *(corrected earlier, when Phase 4.5 step 3 ported NMV)*.
+      Investigating each ported rule is Phase 5's work, per rule.
       Derivative checks: `@test_rule_derivatives`, through `rule` and `rule!`
 
 Definition verification lands **before** Phase 5, not after: it is the difference between
@@ -655,16 +666,18 @@ Decided instead:
   engine for the slice's nodes. Phase 7 becomes *complete the engine*.
 - **v6 is a fixture source only.** Fixtures are recorded from `compat/v6-comparison`
   **before anything is deleted**. The v6 rule-call path, node-creation path and per-node
-  activation are replaced in place, with no second copy kept alongside. v6 rules and their
-  tests are deleted per directory as Phase 5 ports them. `src/` never holds two engines, and
-  the suite shrinks rather than going red.
-- **ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`** — `[sources]` on
-  1.11+, developed at test time on 1.10, as TestUtils does. `ci.yml`, `make test` and
-  `make docs` gain the develop step.
+  activation are replaced in place, with no second copy kept alongside. `src/` never holds
+  two engines, and the suite shrinks rather than going red. *(Sharpened by the clean cut,
+  §3.22: step 4 moves every unported node, and the whole v6 rule system, to `legacy/v6/`
+  at once, rather than Phase 5 deleting them directory by directory.)*
+- **ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`**, wired with
+  `[sources]`, on Julia 1.13 *(the 1.10 develop-at-test-time steps are dropped, §3.22)*.
 - **Downstream breakage is accepted until the release.** Only a small internal group uses the
   branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
-**Status: design signed off 2026-09-23; steps 0, 2 and 3 done; next the engine core (step 4).**
+**Status: signed off 2026-09-23. Steps 0 (fixtures), 1 (the design session), 2 (base
+additions) and 3 (rule ports) are done, as is the algorithm reconciliation. Next is step 4,
+the engine core, on case (a).**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -685,11 +698,11 @@ re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
   node/edge; `product` replaces the throwaway `randomvar` in v6's `rules/mixture/switch.jl:11`;
   `linalg` stays unstable (#13 parked).
 - **Missing inputs as v6**: no rule call, no post-rule processors, result `missing`
-  (`execute_rule` docstring, `rulespec.jl:113-116`).
+  (`execute_rule` docstring, `rulespec.jl:136-139`).
 - **Resolution before execution.** `find_message_rule`/`find_marginal_rule`/
   `find_average_energy` return a `RuleSpec` or `RuleNotFound` and never throw; the engine's
   fallback sits on the `RuleNotFound` branch; `execute_rule(spec, output, algorithm, ctx,
-  args, ann, target)` — seven arguments, the target included (`rulespec.jl:107`) — never
+  args, ann, target)` — seven arguments, the target included (`rulespec.jl:141`) — never
   catches. The engine passes it `rule_algorithm(spec, algorithm)`, which is `DefaultAlgorithm()`
   when a `DefaultAlgorithmExtension` inherited the rule (algorithm reconciliation).
 - **Dependencies are declared per algorithm** (`DependenciesSpec`, `dependencies_spec(node,
@@ -733,7 +746,7 @@ seven models into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `b
 `vmp_meanfield`, `vmp_structured`, `normal_mixture` and `delta_unscented`. Each fixture holds
 the free energy per iteration, the final posteriors, and every message-rule call **in the
 order v6 made it**, with its result and log scale. That order is materialisation order, and it
-includes the mixture's. `--check` re-records and compares, and the `v6-comparison` CI job runs it.
+includes the mixture's. `--check` re-records and compares; it runs locally, and the `v6-comparison` CI job would run it on a PR.
 
 The fixture is TestUtils' `EngineTrajectory`, holding `RuleCallRecord`s, written as **TOML**
 (`save_engine_fixture`/`load_engine_fixture`, compared by `compare_engine_trajectory`).
@@ -902,11 +915,72 @@ Findings so far:
       `compare_approximations.jl` agrees with v6 to 1e-12 on 22 checks, the mixed
       scalar, vector and scalar joint included
 
+### Step 4 — the engine core, on case (a): the plan
+
+**Goal:** case (a), belief propagation over `NormalMeanVariance` (`bp_iid`, `bp_iid_missing`
+and `bp_chain`), running end to end through the new rule system and agreeing with the v6
+fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition stage.
+
+1. **Toolchain, Julia 1.13 only.**
+   - ReactiveMP gets `[deps]` + `[sources]` for `MessagePassingRulesBase`, and `[extras]` +
+     `[sources]` for `StandardMessagePassingRules` and `MessagePassingRulesTestUtils`, which
+     are test-only.
+   - Every lib package's `test/Project.toml` or develop step is replaced by `[extras]` +
+     `[sources]`, and the Makefile targets become plain `Pkg.test`.
+   - `julia = "1.11"`, the `[sources]` minimum, tested on 1.13 only.
+   - `compat/v6-comparison` is regenerated on 1.13 and the fixtures re-checked. If v6 will not
+     run there, that environment alone stays on 1.10.
+2. **Move, don't delete** (user). The v6 rule system and every unported node go to
+   `legacy/v6/`, mirroring their old paths, kept for reference and never loaded:
+   - code: `src/rule.jl` (`@rule`, `@marginalrule`, `@call_rule`, `@test_rules`), `src/rules/`,
+     `src/nodes/predefined/`, `@node`, `src/approximations/` and `ext/`;
+   - tests: `test/rules/`, `test/nodes/predefined/` and `test/approximations/`.
+
+   `legacy/` is excluded from the root test filter, since TestItemRunner scans the whole
+   package directory, and from the formatter. A `legacy/README.md` says what it is, and that
+   Phase 5 empties it as each node is ported. `docs/` is left out of the build until it is
+   rewritten. The inventory gate enumerates v6.5.0 from `compat/v6-comparison`, so INVENTORY
+   stays the record of where everything goes.
+3. **Nodes from `NodeSpec`.**
+   - `factornode` takes `(name, index)` interfaces, and clusters as tuples of interface
+     names.
+   - Arity, aliases and `sdtype` come from the NodeSpec, and ReactiveMP's
+     `Stochastic`/`Deterministic` become the base's.
+   - `FactorNodeLocalMarginal` carries its member tuple, never a joined name.
+   - Activation is generic: `dependencies_spec`, or the default scheme when that is
+     `nothing`. `algorithm` replaces `meta` in the activation options.
+4. **The rule-call path.**
+   - `MessageMapping`, `MarginalMapping` and the node score call `find_*` and `execute_rule`
+     with `rule_algorithm`.
+   - `RuleArgs` come from `getdata`. `Val{:out}` becomes `Target{:out}`, `(Val{:m}, k)` becomes
+     `IndexedTarget`, and a cluster becomes a `ClusterTarget`.
+   - Rules get `RuleContext(node = …)`, and `RuleAnnotations(m, q, out = AnnotationDict)`
+     with the base `annotate!`/`getannotation` defined for `AnnotationDict`.
+   - The missing-input short-circuit (`message.jl:684-691`), the callbacks and the pre/post
+     annotation processors are kept exactly.
+5. **Free energy in the engine:** `bethe_free_energy(T, nodes, variables)`, porting RxInfer's
+   assembly (`reactivemp_free_energy.jl:52-128`). It combines the node scores over the declared
+   partition or the factorisation, the variable entropies, and the data/constant degree
+   correction, and emits one value per iteration.
+6. **A test harness** (`test/engine/`). It builds a graph in RxInfer's order: variables;
+   factor nodes in statement order, with interfaces `out, μ, v`; activation; subscriptions;
+   and data fed each iteration. It traces with `after_message_rule_call`, produces an
+   `EngineTrajectory`, and runs `compare_engine_trajectory` against `bp_iid`,
+   `bp_iid_missing` and `bp_chain`.
+7. **The engine's own tests** are rewritten on `@define_factor_node` toy nodes:
+   `message_tests`, `callbacks`, `variables`, `dependencies`, `clusters` and `nodes`. The
+   missing-input pin, the retained-value test and the `Message` benchmark are added here.
+
 ### Design brief — 2026-09-23
 
 Evidence gathered from the v6 engine, the base package and RxInfer 5.5.2; the reasoning is
 in `DISCUSSION.md` §3.19. The whole brief is **signed off** (2026-09-23). The numbered items
-were proposals and were accepted as written, except item 3, which became a benchmark.
+were proposals and were accepted as written, except for four that changed when they were
+built:
+- item 3 became a benchmark;
+- item 5 became `FactorizedCluster`;
+- item 8's structured model is the one the fixture actually records;
+- item 10 was re-sequenced by the clean cut (§3.22).
 
 **Decided**
 
@@ -931,13 +1005,14 @@ were proposals and were accepted as written, except item 3, which became a bench
 - **The slice's rules are ported into the real packages**, not throwaway fixtures: NMV, NMP,
   Gamma(ShapeRate), Categorical, Dirichlet and NormalMixture into
   `lib/StandardMessagePassingRules`, each with TestUtils tables and a v6 comparison;
-  `Unscented` moves unchanged into `lib/MessagePassingRulesApproximations` (standalone, as
-  planned); the Delta node and its rules stay in ReactiveMP until Phase 6 creates their
-  package. About **45** rules, deduplicated.
+  `Unscented` moves into `lib/MessagePassingRulesApproximations` as pure numerics (see step 3);
+  the Delta node and its rules move to `legacy/v6/` in step 4 and are ported for case (d).
+  About 45 rules were estimated; **54** were ported: 43 message rules, 2 marginal rules and 9
+  average energies.
 - **The base package gains a cluster over a whole group** — a joint target and input over
-  `:in...`, validated like any other cluster. Today `validate_dependencies` rejects it
-  (`dependencies.jl:169`), so Delta's `q_ins` joint (`rules/delta/unscented/marginals.jl:4`,
-  `in.jl:3`) cannot be written. Delta is the first customer.
+  `:in...`, validated like any other cluster. `validate_dependencies` used to reject it, so
+  Delta's `q_ins` joint (`rules/delta/unscented/marginals.jl:4`, `in.jl:3`) could not be
+  written; done in step 2, as `q[(:in,)]`. Delta is the first customer.
 
 **Signed off**
 
@@ -959,8 +1034,8 @@ were proposals and were accepted as written, except item 3, which became a bench
    representations through the equality chain and a full slice sweep, and keep whichever
    wins.
 4. **`getnodefn(node, target)` is declared in the base package with no methods** and
-   implemented by the engine's Delta node, which owns the function and its static fold. The
-   base docs already promise it (`nodes.jl:80`, `context.jl:6`).
+   implemented by the engine's Delta node, which owns the function and its static fold.
+   *(Declared in step 2; the engine's Delta node implements it in case (d).)*
 5. **A marginal rule may return a `FactorizedJoint`** (BayesBase) for a cluster that splits,
    replacing v6's NamedTuple returns (`normal_mean_variance/marginals.jl:24`,
    `normal_mean_precision/marginals.jl:58`); the engine distributes it to the cluster members.
@@ -978,26 +1053,35 @@ were proposals and were accepted as written, except item 3, which became a bench
    `InputArgumentsAnnotations`, user fallbacks, buffer reuse (#10: the first cut always
    allocates fresh results).
 8. **Slice models.** (a) BP: `x ~ NMV(c, c)`, `y ~ NMV(x, c)`, `y` observed. (b) VMP:
-   `μ ~ NMP`, `τ ~ GammaShapeRate`, `y[i] ~ NMP(μ, τ)`, mean-field, then structured
-   `q(out, μ)q(τ)`. (c) `y[i] ~ NormalMixture(z[i], (m₁, m₂), (p₁, p₂))`, `z[i] ~ Categorical(π)`,
+   `μ ~ NMP`, `τ ~ GammaShapeRate`, `y[i] ~ NMP(μ, τ)`, mean-field. The structured case, as the
+   `vmp_structured` fixture records it, is a different model: `x[i] ~ NMP(μ, τ)`,
+   `y[i] ~ NMV(x[i], 0.5)`, with `q(x, μ)q(τ)`. (c) `y[i] ~ NormalMixture(z[i], (m₁, m₂), (p₁, p₂))`, `z[i] ~ Categorical(π)`,
    `π ~ Dirichlet`, NMP/GammaShapeRate priors. (d) `x ~ NMV`, `z := f(x)` with Unscented,
-   `y ~ NMV(z, c)` observed; `f(x, c)` with a static input as the stretch.
+   `y ~ NMV(z, c)` observed. The stretch case, `f(x, c)` with a static input, has no fixture
+   yet.
 9. **Fixtures (Step 0).** `compat/v6-comparison` adds RxInfer 5.5.2 (it accepts ReactiveMP
    6.5; installed locally). For each slice model: free energy per iteration, posteriors, and
    the trace (`RxInferTraceCallbacks`, `trace.jl:156-161`) of every `AfterMessageRuleCallEvent`
    — edge, result and log scale, in order (`message.jl:730`). A trajectory-shaped fixture type
    joins `MigrationRecord` in TestUtils. Log scales are compared explicitly, with a tolerance.
    *(Done as Step 0; see above.)*
-10. **Order of work**, one commit per step, test first: Step 0 fixtures → the base-package
-    additions (group cluster, `getnodefn`, `FactorizedJoint` returns) → the rule ports → the
-    engine core (variables, equality chain, generic node activation) on case (a) → free energy
-    → (b) → (c) → (d) → remove the v6 rule-call and node-creation paths the new ones
-    replaced. v6 rules and `rule.jl` do not depend on the engine's streams, so their tables
-    keep passing until Phase 5 deletes them per directory.
+10. **Order of work**, one commit per step, test first:
+    - step 0: the fixtures;
+    - step 1: this design session;
+    - step 2: the base-package additions (group cluster, `getnodefn`, `FactorizedCluster`
+      returns);
+    - step 3: the rule ports;
+    - *(then the algorithm reconciliation, which was not planned)*;
+    - step 4: the engine core on case (a), as a **clean cut** (§3.22), with free energy;
+    - then (b), (c) and (d), each its own step.
+
+    *(An earlier version of this item kept v6's rule system alive beside the new path until
+    Phase 5 deleted it per directory. The clean cut moves it to `legacy/v6/` in step 4
+    instead.)*
 
 ### Exit criteria
 - [x] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted —
-      `compat/v6-comparison/fixtures/engine/`, re-checked in CI
+      `compat/v6-comparison/fixtures/engine/`, re-checked by `record_engine_fixtures.jl --check`
 - [ ] a working end-to-end inference in the new engine over the slice: ordinary belief
       propagation, structured VMP, a mixture (variadic group), and a delta node
 - [ ] free energy agrees with the recorded v6 trajectories on the same models
@@ -1010,8 +1094,10 @@ were proposals and were accepted as written, except item 3, which became a bench
 - [ ] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
 - [ ] mixture emission order agrees with the recorded v6 order (#6)
 - [ ] edge order and group indices preserved through integration (#7)
-- [ ] the replaced v6 rule-call, node-creation and per-node activation paths removed;
-      ReactiveMP depends on `MessagePassingRulesBase`
+- [ ] the v6 rule system and every unported node moved to `legacy/v6/` (step 4); the engine
+      keeps only the new rule path; ReactiveMP depends on `MessagePassingRulesBase`
+- [ ] Delta's own algorithm designed (the method and inverse, like `DeltaMeta`), and
+      `getnodefn` implemented by the engine's Delta node (case (d))
 - [ ] the `Message` representation chosen by benchmark (mutable with `const` fields vs
       immutable), with the numbers recorded
 
@@ -1023,15 +1109,22 @@ Do not start Phase 5 until this passes.
 
 **Goal:** standard distribution nodes plus arithmetic (`+`, `-`, `*`, dot).
 
+Phase 4.5 already ported the slice's six nodes (NMV, NMP, GammaShapeRate, Categorical,
+Dirichlet, NormalMixture) and moved everything else to `legacy/v6/` (step 4). This phase ports
+the rest from there, emptying `legacy/v6/` node by node, with v6.5.0 from
+`compat/v6-comparison` as the oracle. The rules the 4.5 ports found go into `MIGRATION.md`
+first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `FactorizedCluster`,
+`NormalMixture{N}` → groups, promoted pass-through blocks, and #669.
+
 **Exit criteria**
 - [ ] JuliaSyntax-based migration tool, run with ReactiveMP v6 loaded as an oracle for
       `interfaces(fform)` (do **not** regex-guess on `_`)
-- [ ] migrated per rule directory, diffs reviewed per directory; each v6 directory and its
-      tests are deleted in the same commit that ports it (v6 fixtures are recorded first,
-      see Phase 4.5 Step 0)
-- [ ] canary passing: `NormalMixture((:m, k))` — indexed target + group + `where {N}` +
-      aligned dependency
-- [ ] **`MIGRATION.md` written *during* this phase, not after** — the mechanical rules are
+- [ ] migrated per rule directory, diffs reviewed per directory; each directory and its
+      tests leave `legacy/v6/` in the same commit that ports it
+- [x] canary passing: `NormalMixture((:m, k))` — indexed target + group + `where {N}` +
+      aligned dependency *(done in Phase 4.5 step 3)*
+- [ ] **`MIGRATION.md` written *during* this phase, not after**, starting with the rules the 4.5
+      ports found — the mechanical rules are
       discovered while porting, and reconstructing them later leaves gaps exactly where the
       work was fiddly. Derived from the same source as the transform tool, with a test
       asserting the two agree
@@ -1070,15 +1163,17 @@ Do not start Phase 5 until this passes.
       names both the package to install and the method to switch to. First real customer
       for the diagnostics. Per #11, that is the host's `is_delta_node_compatible` guard
       carried over, with the error extended to name the alternative method
-- [ ] `CVIProjection` ships as a weakdep extension of the Delta node package (assumes the
-      Phase 0 layout result; if layouts do not collapse, it needs its own package instead)
-- [ ] `MessagePassingRulesApproximations`: `Unscented`, `Linearization`, `smoothRTS`,
-      `approximations.jl`, `shared.jl`. **Standalone — must not depend on
-      `MessagePassingRulesBase`.** Utilities that algorithms use, not algorithms. Deps:
-      `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` — no cubature package, no
-      `DiffResults` (it leaves with `cvi.jl`), no `Optim`
-- [ ] numerical API carried over without broader redesign; replace global `cholinv` calls
-      through the minimal numerical protocol settled in Phase 3 (open item #13)
+- [ ] `CVIProjection` ships as a weakdep extension of the Delta node package. Phase 0 found
+      the layout collapse real but partial: dependencies absorb input selection, while
+      static gating, the empty group and `q_out` aliasing are engine features
+- [ ] `MessagePassingRulesApproximations`: `Linearization`, the remaining piece. `Unscented`,
+      `smoothRTS`, `approximations.jl` and `shared.jl` were ported in Phase 4.5 step 3, as pure
+      numerics. **Standalone — must not depend on `MessagePassingRulesBase`**, nor on any
+      distribution package. Utilities that algorithms use, not algorithms. The deps today are
+      `LinearAlgebra` and `FastCholesky`, and `Linearization` brings `ForwardDiff`. No cubature
+      package, no `DiffResults` (it leaves with `cvi.jl`), no `Optim`
+- [ ] numerical API carried over without broader redesign. FastCholesky is called directly
+      until the numerical protocol (open item #13, parked) is settled
 - [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
 - [ ] confirm `Optim` no longer appears anywhere
 - [ ] non-standard nodes spun out: Delta, Flow, Autoregressive, GP, BIFM, Pólya, …
@@ -1095,11 +1190,13 @@ ported the rules. The items that moved to Phase 4.5 are group stream wiring, the
 envelope, edge order, `EdgeLabel.index` (#7) and the mixture `reverse` (#6).
 
 Known scope:
-- [ ] every node supported, as Phases 5–6 port their rules — including the remaining
-      mixture `activate!` demolition via variadic groups (~70–85% deletable)
+- [ ] every node supported, as Phases 5–6 port their rules out of `legacy/v6/`. The mixtures'
+      per-node `activate!` is already gone: step 4's generic activation replaces it
 - [ ] `EqualityChain` `BitVector` → `Vector{Bool}`
 - [ ] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
-- [ ] RxInfer plumbing for the new engine
+- [ ] RxInfer adapted to the new engine, as its own major release: node and rule creation,
+      a per-node `algorithm` option (replacing `meta` and v6's `where { dependencies = … }`),
+      and default initial messages
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality — for every ported node, against recorded v6 fixtures
 
@@ -1116,7 +1213,9 @@ this phase requires it to pass for release, rather than being its first executio
       the new packages and their consumers, in which `Pkg.Resolve.ResolverError` is a hard
       failure. Today `.github/workflows/IntegrationTest.yml` catches it and `exit(0)`s, so
       it would report green without running a single downstream test
-- [ ] package registration order decided, compat bounds set, supported Julia versions agreed
+- [ ] package registration order decided, compat bounds set, supported Julia versions agreed.
+      Work targets 1.13 only until then (§3.22); whether the 1.10 floor and its workarounds
+      come back is decided here
 - [ ] RxInfer's default package set updated
 - [ ] documentation links across the three levels updated
 - [ ] downstream migration readiness confirmed — `MIGRATION.md` exercised against a real
@@ -1130,7 +1229,7 @@ Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #3, #8,
 #11, #12 and #14 are resolved (#3 and #9–#12 at the Phase 3 sign-off), and #4 is **deferred by
 decision** (Phase 0; reopened only by a concrete ruleset use case). #13 is **parked** by the
 user and holds back only the `linalg` context service. #6 and #7 are engine integration
-requirements, closed in Phase 4.5. #2 remains deferred unless needed. #5
+requirements, to be closed in Phase 4.5. #2 remains deferred unless needed. #5
 (Reactant/StableCholesky) belongs to a separate effort and does not block this rewrite.
 
 ## Structural note

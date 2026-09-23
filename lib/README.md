@@ -11,9 +11,9 @@ each of the 231 entities in ReactiveMP is destined to land.
 | package | phase | role |
 |---|---|---|
 | `MessagePassingRulesBase` | 3 | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` (not `Message`/`Marginal` — those stay in the engine) |
-| `MessagePassingRulesTestUtils` | 4 | test tooling, consumed via `[extras]`: table tests, coverage, verification against the node definition, derivative checks, the migration checker |
-| `StandardMessagePassingRules` | 5 | distributions, arithmetic, logic, mixtures |
-| `MessagePassingRulesApproximations` | 6 | numerical utilities; **standalone, must not depend on the base** |
+| `MessagePassingRulesTestUtils` | 4 | test tooling, consumed via `[extras]` and `[sources]`: table tests, coverage, verification against the node definition, derivative checks, the migration checker |
+| `StandardMessagePassingRules` | 4.5 (the slice's six nodes), then 5 | distributions, arithmetic, logic, mixtures |
+| `MessagePassingRulesApproximations` | 4.5 (`Unscented`, `smoothRTS`), then 6 (`Linearization`) | numerical utilities over means and covariances; **standalone, must not depend on the base**, nor on a distribution package: `LinearAlgebra` and `FastCholesky` |
 
 The domain-models package (`GCV`, `Probit`, `SoftDot`, `GaussianCoupling`) is not created
 yet; its name is deliberately deferred to Phase 6, and `INVENTORY.md` records its

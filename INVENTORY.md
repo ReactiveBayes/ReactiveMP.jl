@@ -104,7 +104,7 @@ replacement".
 |---|---|---|---|---|
 | `@average_energy` | `macro` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
 | `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
-| `@call_rule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
+| `@call_rule` | `macro` | `src/rule.jl` | `base` | renamed `@call_message_update_rule`, with `@call_marginal_update_rule` and `@call_average_energy`; see PLAN.md § Naming |
 | `@logscale` | `macro` | `src/rule.jl` | `base` | deleted as a macro; becomes `annotate!(ann, :logscale, v)` on the annotations body slot |
 | `@marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
 | `@node` | `macro` | `src/nodes/nodes.jl` | `base` | renamed `@define_factor_node` |
@@ -128,7 +128,7 @@ replacement".
 | `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
 | `BinomialPolya` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
 | `BinomialPolyaMeta` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
-| `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias |
+| `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias; becomes ContinuousTransition's own algorithm, declaring its dependencies (DISCUSSION §3.21) |
 | `CTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias |
 | `CVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection`; `ProdCVI`'s own docstring already says so |
 | `CVIProjection` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
@@ -140,14 +140,14 @@ replacement".
 | `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` |  |
 | `ConstVariable` | `type` | `src/variables/constant.jl` | `engine` |  |
 | `ContinuousTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` |  |
-| `ContinuousTransitionMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` |  |
+| `ContinuousTransitionMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | becomes ContinuousTransition's own algorithm, declaring its dependencies (DISCUSSION §3.21) |
 | `DataVariable` | `type` | `src/variables/data.jl` | `engine` |  |
 | `DataVariableActivationOptions` | `type` | `src/variables/data.jl` | `engine` |  |
 | `DefaultFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | replaced by the declarative dependency language; the default needs no declaration |
 | `DeferredMessage` | `type` | `src/message.jl` | `engine` | caches a stream result; belongs with the observables |
 | `DeltaFn` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
 | `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | replace the graph object with an engine-independent node definition; runtime wiring stays in the engine, conditional on the layout spike |
-| `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` |  |
+| `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | becomes Delta's own algorithm: the approximation method and the optional inverse (case (d)) |
 | `Deterministic` | `type` | `src/nodes/nodes.jl` | `base` |  |
 | `DifferentialEntropy` | `type` | `src/score/score.jl` | `base` | entropy operation retained separately from average energy |
 | `DiscreteTransition` | `type` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` |  |
@@ -194,14 +194,14 @@ replacement".
 | `NOT` | `type` | `src/nodes/predefined/not.jl` | `standard` |  |
 | `NodeFunctionRuleFallback` | `type` | `src/rules/fallbacks.jl` | `base` |  |
 | `NormalMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` |  |
-| `NormalMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` |  |
+| `NormalMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `OR` | `type` | `src/nodes/predefined/or.jl` | `standard` |  |
 | `PermutationLayer` | `type` | `src/nodes/predefined/flow/layers/permutation_layer.jl` | `node:Flow` |  |
 | `PermutationMatrix` | `type` | `src/helpers/algebra/permutation_matrix.jl` | `node:Flow` | only consumer is Flow's `permutation_layer.jl`; its over-broad `*` methods cause 137 Aqua ambiguities and should be narrowed first |
 | `PlanarFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/planar_flow.jl` | `node:Flow` |  |
 | `Poisson` | `type` | `src/nodes/predefined/poisson.jl` | `standard` |  |
 | `Probit` | `type` | `src/nodes/predefined/probit.jl` | `models` |  |
-| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `models` |  |
+| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `models` | becomes Probit's own algorithm (its moment matching), declaring its dependencies (DISCUSSION §3.21) |
 | `ProdCVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection` |
 | `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
 | `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
@@ -275,12 +275,12 @@ replacement".
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
 | `form constraints` | `hook` | `src/constraints/form.jl` | `engine` | constrains a variable's marginal inside the graph; an engine concept, not a rule one |
-| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `base` | the fallback protocol is rule dispatch; the `FactorNodeActivationOptions` wiring stays in the engine. Phase 0 must specify it: an exception inside a selected rule must propagate, never trigger fallback |
+| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `base` | the fallback protocol is resolution-based: `find_*` returns `RuleNotFound` and never throws, so an exception inside a selected rule never reaches a fallback (specified in Phase 0); user fallbacks are out of the first engine cut |
 | `callbacks` | `hook` | `src/callbacks.jl` | `engine` | 10 event types, all message-passing lifecycle. Exports nothing but is documented public API (`lib/callbacks.md`) |
 | `stream postprocessors` | `hook` | `src/postprocessors.jl` | `engine` | Rocket streams. Exports nothing but is documented public API (`lib/stream-postprocessors.md`) |
 | `scoring` | `hook` | `src/score/` | `base` | `@average_energy`, `AverageEnergy` and `DifferentialEntropy` move to base; `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, since they walk the graph |
 | `node traits (@node-generated)` | `hook` | `src/nodes/nodes.jl` | `base` | `@define_factor_node` emits a `NodeSpec` alongside the 8 method kinds generated today |
-| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 tests whether the dependency language absorbs all four layouts; if it does not, this needs its own design |
+| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec |
 | `CVI optimiser hooks` | `hook` | `src/approximations/cvi.jl` | `delete` | `cvi_setup!`/`cvi_update!` belong to the superseded `ProdCVI`, not to `CVIProjection` |
 
 ## Extensions
@@ -290,7 +290,7 @@ replacement".
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
 | `ReactiveMPOptimisersExt` | `ext` | `ext/ReactiveMPOptimisersExt/` | `delete` | exists solely to supply `cvi_setup`/`cvi_update!` for the old `ProdCVI`; predates `CVIProjection` by over a year |
-| `ReactiveMPProjectionExt` | `ext` | `ext/ReactiveMPProjectionExt/` | `node:Delta` | becomes a weakdep extension of the Delta package, conditional on the Phase 0 layout result |
+| `ReactiveMPProjectionExt` | `ext` | `ext/ReactiveMPProjectionExt/` | `node:Delta` | becomes a weakdep extension of the Delta package; the Phase 0 layout result made that possible |
 
 ## Rule-level exceptions
 

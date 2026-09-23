@@ -49,7 +49,7 @@ As Phase 3 onwards creates them, add them by relative path from the repository r
 julia> using Pkg
 julia> Pkg.activate("compat/v6-comparison")
 julia> Pkg.develop(path = "lib/MessagePassingRulesBase")
-julia> Pkg.develop(path = "lib/StandardMessagePassingRules")   # once Phase 5 creates it
+julia> Pkg.develop(path = "lib/StandardMessagePassingRules")
 ```
 
 `Pkg.develop` resolves its path against the working directory, not the activated project,
@@ -71,7 +71,7 @@ The fixtures are `fixtures/engine/<model>.toml`, one per slice model, written by
 the final posteriors, and every message-rule call in the order v6 made it, which is
 materialisation order, with its result and log scale. They are **TOML, not `Serialization`**,
 so ReactiveMP's tests can read them on every Julia version in the CI matrix. `--check`
-re-records the fixtures and compares them with the committed files; CI runs it. The header's
+re-records the fixtures and compares them with the committed files; it is run locally, and CI would run it on a PR. The header's
 `notes` say what the recording could not capture: log scales are recorded only where v6
 produces them, which is `bp_iid` alone. See `PHASES.md` § Phase 4.5, Step 0.
 
@@ -86,13 +86,26 @@ this rewrite would make this environment unresolvable and silently cost us the m
 instrument for verifying 490 ported rules. If a breaking BayesBase change becomes
 unavoidable, redesign this harness first, not afterwards.
 
-## The migration checker
+## The migration checker, and the comparisons
 
-`check.jl` runs here, on the 1.10 floor, and in CI (`LibTests.yml`, job `v6-comparison`):
+These run here, on Julia 1.10, and are verified locally (no CI runs until a PR):
 
 ```bash
 julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_approximations.jl
+julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/slice_rule_inventory.jl
 ```
+
+- `check.jl`: the Phase 4 checker's own demonstration, and v6 rules verified against their
+  node definitions.
+- `compare_standard.jl`: every rule ported into `StandardMessagePassingRules` against its v6
+  original, with #669 declared as a correction.
+- `compare_approximations.jl`: `MessagePassingRulesApproximations` against v6's
+  `src/approximations/`.
+- `slice_rule_inventory.jl`: every v6 rule the slice models select, with its declared types.
+
+*(Phase 4.5 step 4 plans to move this environment to 1.13 if v6 runs there; see `PHASES.md`.)*
 
 - `V6Oracle.jl` calls a v6 rule from the inputs a v7 rule takes, and returns its result and
   log scale. It is the only code in the repository that names ReactiveMP v6's internals.
@@ -103,5 +116,5 @@ julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-compariso
   Failures there are findings about v6, pinned in `KNOWN_V6_FINDINGS` with their
   explanation, so a new one fails the run until it is understood.
 
-`MessagePassingRulesBase` and `MessagePassingRulesTestUtils` are dev'd into this
-environment by relative path and recorded in the committed manifest, resolved on 1.10.
+All four `lib/` packages are dev'd into this environment by relative path and recorded in the
+committed manifest, resolved on 1.10.

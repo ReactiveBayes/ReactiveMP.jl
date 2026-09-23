@@ -55,7 +55,7 @@ All via `make` (run `make help` for the list).
 
 ```bash
 make test                                  # the fast subset: everything except `:slow`
-make test-all                              # everything, which is what CI runs
+make test-all                              # everything, including `:slow`
 make test test_args="rules:normal_mean_variance"   # one directory
 make test test_args="rules:beta:out"               # one file
 make test test_args="tag:rules"                    # by tag
@@ -69,8 +69,13 @@ make test-base                             # lib/MessagePassingRulesBase's own s
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
 make test-standard                         # lib/StandardMessagePassingRules, from its test/Project.toml
 make test-approximations                   # lib/MessagePassingRulesApproximations, which depends on no sibling
-julia +1.10 --project=compat/v6-comparison compat/v6-comparison/check.jl   # v6 comparison, on the floor
+# the v6 oracle environment (still pinned on 1.10): comparisons and engine fixtures
+for s in check compare_standard compare_approximations; do julia +1.10 --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
+julia +1.10 --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
+
+Work targets **Julia 1.13** for now, and **no CI runs** until a PR is opened: every check above
+is run locally. The workflow files under `.github/` are left as they are until registration.
 
 `test_args` takes three kinds of entry, and they compose:
 
@@ -100,14 +105,16 @@ imported by the caller.
 
 ## Conventions
 
-- **`CHANGELOG.md` must be updated** in every PR — CI enforces it.
-- Formatting is **Runic**, checked in CI (`make check-format`). It is zero-config — there is
+- **`CHANGELOG.md` must be updated** in every change (CI enforces it on a PR).
+- Formatting is **Runic** (`make check-format`; CI checks it on a PR). It is zero-config — there is
   no style file, and `.JuliaFormatter.toml` is gone — and deterministic: measured, it produces
   byte-identical output on Julia 1.10 and 1.13, which is what JuliaFormatter could not do. The
   version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
   between releases; use `make scripts_update` to bump it deliberately, and run `make format`
   over the repo in the same commit. `docs/` is excluded, as it was before.
-- Julia compat floor is currently 1.10.
+- Julia: work targets **1.13 only**, and siblings are wired with `[sources]`. The 1.10 floor
+  and its workarounds (develop-at-test-time, `test/Project.toml` for test-only siblings) are
+  revisited when the packages are registered; see `DISCUSSION.md` §3.22.
 
 ## Gotchas
 
@@ -118,14 +125,14 @@ imported by the caller.
 - Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (322 pairs,
   revisited after the split — see `PHASES.md` § Phase 2). `piracies` is on, with two owners
   declared through `treat_as_own`, and `deps_compat` checks `[extras]` too.
-- `lib/` holds the new packages. `MessagePassingRulesBase` and `MessagePassingRulesTestUtils`
-  have their own suites (`make test-base`, `make test-testutils`, same `test_args` syntax),
-  run by `LibTests.yml`; `StandardMessagePassingRules` (`make test-standard`) and
-  `MessagePassingRulesApproximations` (`make test-approximations`) are being filled in Phase
-  4.5, with the rules and numerics the engine slice needs. TestUtils depends on the
-  unregistered base through `[deps]` and `[sources]` (honoured on 1.11+); on 1.10 it is
-  `Pkg.develop`ed at test time. No Manifest under `lib/` is committed — the local ones are
-  gitignored.
+- `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
+  `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
+  (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
+  six nodes so far) and `MessagePassingRulesApproximations` (`make test-approximations`;
+  `Unscented` and `smoothRTS`, pure numerics). Siblings are wired with `[deps]` and
+  `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
+- From Phase 4.5 step 4, `legacy/v6/` holds the v6 rule system and every node not yet
+  ported: never loaded, never tested, kept as the reference Phase 5 ports from.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 
@@ -149,9 +156,9 @@ treat `main` as the whole story.
 
 The current work is the rule/node rewrite. From Phase 4.5 on, the engine in `src/` is
 **refactored in place**, not bridged. Its reactive machinery is kept, and rule lookup and
-invocation plus node and rule definition and creation are replaced. v6 code and tests are
-deleted as they are replaced, after their behaviour has been recorded as fixtures in
-`compat/v6-comparison`. Breaking downstream
+invocation plus node and rule definition and creation are replaced. Step 4 is a **clean
+cut**: the v6 rule system and every unported node move to `legacy/v6/` (moved, not deleted),
+after their behaviour was recorded as fixtures in `compat/v6-comparison`. Breaking downstream
 packages before the release is accepted.
 
 When work is in progress, update `PHASES.md` **in the same commit as the change it

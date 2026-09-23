@@ -19,7 +19,8 @@ Goals: extract the rule/node layer into standalone packages so `AutoregressiveNo
 layer from the ground up rather than porting it. Clean break, new major version of
 everything, no backwards compatibility. **The Julia floor stays at 1.10** — nothing in
 this design requires a newer one (see Dispatch axes on why `ScopedValues` is not used),
-so the floor moves only when something concrete needs it to.
+so the floor moves only when something concrete needs it to. *(Superseded in Phase 4.5, user: work targets 1.13
+only, wired with `[sources]`; the floor is revisited at registration. See § Repository layout.)*
 
 Verified problems driving the redesign:
 
@@ -323,10 +324,14 @@ inputs and algorithm as live values. Distinguish the two failure classes that ar
 currently indistinguishable — *no rule of this shape* (wrong dependency/factorisation)
 vs *type mismatch* (rule exists, arguments don't fit). Add `check_rules()` (validates
 specs against node specs, and dependency specs against rule signatures) and
-`check_rule_ambiguities()` (group by input-name set, `typeintersect` within groups only).
+`check_rule_ambiguities()` (group by input-name set, then Julia's `Base.isambiguous` on each
+pair's own methods — a hand-made `typeintersect` reports every disjoint pair, since the
+intersection of two disjoint input tuples is a valid, empty type rather than `Union{}`).
 
 Removing the macro-expansion-time registry query means `@define_factor_node` and the rule
-definition macros may appear in any order, in any package, including weak-dep extensions.
+definition macros may appear in any order, in any package, including weak-dep extensions —
+with one exception: a rule that omits `algorithm` reads its node's default at load time, so it
+must load after the node.
 
 **The `RuleSpec` is the execution vehicle, not only registry data.** Dispatch at the call
 site resolves `(node, target, algorithm, args)` to a `RuleSpec`, and the spec knows how to
@@ -458,7 +463,7 @@ be tested against the mixture and delta layouts in Phase 0; selector coverage al
 not establish that the layouts can be replaced.
 
 For custom algorithms, dependencies may constrain the factorisation rather than derive
-from it. **The precise contract remains open (#9):** requesting `q[:a, :b]` identifies a
+from it. **The contract (#9, resolved at the Phase 3 sign-off):** requesting `q[:a, :b]` identifies a
 joint belief, but an auxiliary belief need not be a separately counted entropy cluster.
 Define the consumed beliefs and the entropy partition separately, including ordering and
 conflicts with user-supplied factorisation, before freezing the macro surface. Algorithms
@@ -558,9 +563,9 @@ already allocated), the shape must be declared:
   required (open item #10). Equality-chain caches hold messages across iterations, so edges
   feeding one need a buffer per cache slot or exclusion from reuse.
 
-Separately and with no ownership reasoning required: make `Message` immutable (all four
-fields are already `const`; re-benchmark the comment claiming mutable is faster — it may
-have been measured on `DeferredMessage`, which does need it), make annotations a type
+Separately and with no ownership reasoning required: decide whether `Message` is immutable
+or a `mutable struct` with `const` fields **by benchmark** (Phase 4.5, user: the mutable form
+is deliberate, since pass-by-reference can avoid copies), make annotations a type
 parameter with a zero-field `NoAnnotations` default, and fold products over raw
 distributions rather than `Message`s. That removes 2–3 of the 4 fixed allocations per
 message and the `2(d-1)` per variable.
@@ -613,9 +618,9 @@ algorithms out of the core. Sorting today's 28 deps:
 | `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` — **not** `Message`/`Marginal`, which stay in the engine | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
 | `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
 | *(name deferred to Phase 6)* | domain-specific models: `GCV`, `Probit`, `SoftDot`, `GaussianCoupling` | light; `StatsFuns` and the standard rules |
-| `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery. **Standalone — does *not* depend on the base package** | `ForwardDiff`, `Distributions`, `Random`, `LinearAlgebra` |
+| `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery, over means and covariances. **Standalone — does *not* depend on the base package, nor on any distribution package** | `LinearAlgebra`, `FastCholesky`; `ForwardDiff` with `Linearization` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
-| `ReactiveMP` | engine | `Rocket`, `UUIDs` |
+| `ReactiveMP` | engine | `Rocket`, `UUIDs`, `MessagePassingRulesBase` |
 
 The base package is genuinely thin. Two current deps are single-node-specific and should
 follow their nodes out: `Tullio` (only `DiscreteTransition`) and `PolyaGammaHybridSamplers`
@@ -652,10 +657,17 @@ ReactiveMP.jl/
     MessagePassingRulesTestUtils/
     StandardMessagePassingRules/
     MessagePassingRulesApproximations/
-  compat/v6-comparison/     # ReactiveMP@6.5.0 + the new packages, for the migration checker
+  compat/v6-comparison/     # ReactiveMP@6.5.0, RxInfer 5.5.2 and the new packages: the v6
+                            # oracle, the comparisons and the recorded engine fixtures
+  legacy/v6/                # step 4 onwards: the unported v6 rules and nodes, never loaded
 ```
 
-**One cost of the 1.10 floor, found while building this:** `[sources]`, the tidy way for a
+**Julia 1.13 only, for now** (Phase 4.5, user; `DISCUSSION.md` §3.22). Every inter-package
+dependency is wired with `[sources]`, test-only ones included, via `[extras]`. The floor, and
+the 1.10 workarounds described next, are revisited when the packages are registered. Until
+then nothing runs in CI without a PR, and everything is verified locally.
+
+*(What follows describes the 1.10 wiring used until Phase 4.5.)* **One cost of the 1.10 floor, found while building this:** `[sources]`, the tidy way for a
 `Project.toml` to point at a sibling directory, requires Julia 1.11. On 1.10 an
 inter-package dependency inside `lib/` is listed in `[deps]` — and in `[sources]`, which
 1.11+ honours and 1.10 ignores — and the sibling is `Pkg.develop`ed into the environment
@@ -695,7 +707,7 @@ the signed-off design brief is in `PHASES.md` § Phase 4.5).
 
 `MessagePassingRulesApproximations` is **not** part of the algorithm hierarchy and does not
 depend on `MessagePassingRulesBase`. They are siblings. "How do I approximate this integral"
-is a numerical utility; "which message update scheme am I running" is an algorithm. The
+is a numerical utility; "which rules run" is an algorithm. The
 delta node's algorithm *uses* `Unscented`; it is not `Unscented`. Delta's algorithm is a
 Delta-owned value holding the approximation method and the optional known inverse, as v6's
 `DeltaMeta(method, inverse)` did; it is designed when case (d) ports Delta. Keeping them separate
@@ -728,8 +740,11 @@ Dependency consequences: **`Optim` leaves ReactiveMP entirely** (only `laplace.j
 `StandardMessagePassingRules` (`normal_mean_variance/var.jl`, `gamma_shape_rate/a.jl`).
 
 What survives is small: `Unscented`, `Linearization`, `smoothRTS` and the shared
-point/weight machinery, needing only `ForwardDiff`, `Random`, `LinearAlgebra` and
-`Distributions` — **no cubature package at all**.
+point/weight machinery — **no cubature package at all**. *(An earlier version said they need
+only ForwardDiff, Random, LinearAlgebra and Distributions. Porting found that `unscented.jl`
+also used ExponentialFamily, for `JointNormal`, and FastCholesky. The package is now pure
+numerics over means and covariances: `LinearAlgebra` and `FastCholesky`, with `ForwardDiff`
+arriving with `Linearization`.)*
 
 **A capability regression — accepted, with conditions.** (An earlier draft called it *the
 only* one. That was wrong: `srcubature`, `LaplaceApproximation` and
@@ -873,22 +888,23 @@ The dispatch result, ownership contracts and early engine integration are separa
 
 ## Files
 
-- `src/rule.jl` (1984 lines) — replaced. Macros, generic functions, error machinery,
-  `@test_rules`. Delete `showerror` string decoding (`:1635-1763`, `:1862-1956`).
-- `src/nodes/nodes.jl` — split: traits/registry/`@node` go down, `FactorNode`/`activate!`
-  stay in the engine. Relax `prepare_interfaces_check_adjacent_duplicates` (`:241-256`)
-  and `prepare_interfaces_check_num_inputarguments` (`:264-270`) for group members while
-  keeping the "you passed `x` instead of `x[i]`" diagnostic for non-group interfaces.
-- `src/nodes/dependencies.jl` — `__collect_latest_updates` (`:19-33`) must collapse
-  consecutive same-name interfaces into one `ManyOf` name; generalise
-  `combineLatestMessagesInUpdates` to marginals.
-- `src/nodes/predefined/{mixture,normal_mixture,gamma_mixture}.jl` — ~70–85% deleted.
-  Retain: aligned-group dependency, construction validation (N≥2, equal lengths,
-  mean-field), `ManyOf`-aware entropy. Delete as dead: the three `…NodeFactorisation`
-  singletons, `Mixture`'s `RequireMarginal` path (3-arg method unreachable from the 4-arg
-  caller; ~130 lines incl. `collect_latest_*`), unreachable `@average_energy Mixture`.
-- `src/nodes/predefined/delta/` — heaviest engine coupling; its layout system is more
-  custom than the mixtures'.
+*(Rewritten at the Phase 4.5 reconciliation for the clean cut, §3.22.)*
+
+- `src/rule.jl` (1984 lines), `src/rules/`, `src/nodes/predefined/`, `src/approximations/`,
+  `ext/` — **moved to `legacy/v6/` in Phase 4.5 step 4**, never loaded, kept for reference.
+  Phase 5 and 6 port them out of there, node by node.
+- `src/nodes/nodes.jl` — `@node` and the v6 traits go to `legacy/v6/`; `FactorNode`,
+  `factornode` and `activate!` stay in the engine and are rebuilt on the `NodeSpec`:
+  `(name, index)` interfaces, clusters as interface-name tuples, arity and aliases from the
+  spec, generic activation with no per-node override.
+- `src/nodes/dependencies.jl`, `src/nodes/clusters.jl` — the default scheme stays; the
+  per-algorithm `dependencies_spec` replaces `functional_dependencies`; a local marginal
+  carries its member tuple, never a joined name.
+- The mixtures' per-node `factornode`/`activate!`/`collect_latest_*` are not ported: groups and
+  declared dependencies replace them (brief item 2).
+- `src/nodes/predefined/delta/` — moved; its layouts become a Delta-owned algorithm and
+  engine features keyed off the spec (static gating, `q_out` aliasing, the empty group), in
+  case (d).
 - `src/message.jl`, `src/marginal.jl` — stay in the engine, value types included. Rules see
   raw distributions in `args`, annotations in `ann` and the node in `ctx.node`, so the
   envelope (`is_clamped`, `is_initial`, annotations) is unwrapped by the engine before a rule
@@ -920,7 +936,8 @@ The dispatch result, ownership contracts and early engine integration are separa
 4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`). **DEFERRED in Phase 0.**
    A downstream package that wants its own rule for a standard node and edge declares its own
    algorithm and gets it, with no shadowing and no ambiguity, because the algorithm is part of
-   the signature. The piracy argument for the axis was already dead (see § Testing). Adding
+   the signature. The piracy argument for the axis was already dead for rules (see § Testing;
+   node declarations are flagged and declared owned). Adding
    the axis later is a new keyword rather than a resurfacing, so it waits for a concrete use
    case. *(Since the Phase 4.5 algorithm reconciliation a `DefaultAlgorithmExtension` gives a
    one-level overlay without any ruleset keyword: its own rules first, the default's for the
@@ -1049,7 +1066,7 @@ The dispatch result, ownership contracts and early engine integration are separa
     exceptions — including the five hook families that export nothing yet are documented
     public API (callbacks, stream postprocessors, delta layouts, the CVI optimiser hooks,
     and the `@node`-generated traits). Rules inherit their node's destination; only the
-    ones that cannot are listed individually. All 18 exported deletions (21 deletion rows overall) carry a
+    ones that cannot are listed individually. All 18 exported deletions (21 deletion rows at the time; 22 since `NormalMixtureNode` joined them in Phase 4.5) carry a
     migration note, including where the answer is "no replacement".
 
     Generated and validated by `scripts/inventory.jl`, gated in CI by
@@ -1076,7 +1093,7 @@ The dispatch result, ownership contracts and early engine integration are separa
 - Hand-written: `mixture/switch.jl`, the ~15 rules touching raw `messages[i]`/`marginals[i]`
   tuples, the 5 `MessageMapping` construction sites and 4 delta layout files.
 - Canary: `NormalMixture((:m, k))` — indexed target + `ManyOf` marginals + `where {N}` +
-  aligned group dependency in one rule.
+  aligned group dependency in one rule. *(Ported in Phase 4.5 step 3.)*
 
 ## Migration guide (published, for downstream authors)
 
@@ -1156,7 +1173,11 @@ Applies to **both** the new packages and ReactiveMP itself.
     mathematical special case that arguably belongs in ExponentialFamily) and a `dot`
     overload for `ForwardDiff.Dual` (`fixes.jl:12`, an explicit upstream hotfix with issue
     links). Move them or list them in `treat_as_own`, and turn the check on.
-  - **Caveat, also measured: the piracy check is vacuous for rules, and always will be.**
+  - **Caveat, also measured: the piracy check is vacuous for *message* rules, and always will
+    be.** *(Phase 4.5 found it is not vacuous for a rule package as a whole: `nodespec`,
+    `nodefunction`, average energies and marginal rules for another package's distribution
+    are flagged, so `StandardMessagePassingRules` declares its node types owned with
+    `treat_as_own`. Only message rules escape, through their target's `Symbol`.)*
     Aqua's rule is that a `DataType` is foreign only if the type *and every one of its
     parameters* is foreign, and `is_foreign(::Symbol) = false` unconditionally. Verified:
     `is_foreign(Val{:out}, pkg) == false` while `is_foreign(Val{1}, pkg) == true`. Since
@@ -1173,7 +1194,7 @@ Applies to **both** the new packages and ReactiveMP itself.
 
 Lives in **its own package, `MessagePassingRulesTestUtils`**, not in `src/` as it does
 today. Consumers — `StandardMessagePassingRules`, a hypothetical `AutoregressiveNode` —
-list it under `[extras]` and the `test` target, so its dependencies (quadrature, sampling,
+list it under `[extras]` and the `test` target, with `[sources]` while it is unregistered, so its dependencies (quadrature, sampling,
 possibly Turing) never reach a node package's runtime. No weakdeps and no package
 extensions are involved anywhere in this.
 
@@ -1280,8 +1301,8 @@ half-maintained copies that drift.
 
 ## Verification
 
-- `@test_rules` numerical regression per rule, unchanged semantics, run per directory
-  during migration.
+- Numerical regression per rule, with `@test_message_update_rule` (the `@test_rules`
+  successor) and the v6 comparison, run per directory during migration.
 - **Go/no-go gate before bulk rule migration:** use hand-written rules in Phase 0 to check
   with `@code_typed`/JET that the new routing machinery devirtualizes — specifically
   **through the `RuleSpec`**, including the in-place branch the spec owns, since a spec whose
@@ -1298,8 +1319,8 @@ half-maintained copies that drift.
   `test/rules/mv_normal_mean_scale_precision/out_tests.jl:129-136`.
 - Buffer lifetime checks: run the full suite in checked mode as a separate CI job and test
   retained results across multiple updates. Poisoning alone does not prove safe reuse.
-- Mixture rewrite: pin current behaviour (including the `reverse` quirk) with regression
-  tests first, then delete.
+- Mixture rewrite: pin current behaviour (including the `reverse` quirk) first, then delete.
+  *(Done by recording v6's emission order as the `normal_mixture` fixture, Phase 4.5 step 0.)*
 - *(Scope, set by the user at Phase 4.5: log scales are a niche feature with known gaps. The
   rewrite preserves v6's behaviour, gaps included, and checks log scales only where v6
   produces them. Fixing them is a separate milestone after the migration. See `PHASES.md`
