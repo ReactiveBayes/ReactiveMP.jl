@@ -7,7 +7,7 @@ export message_passing_marginalrule, message_passing_marginalrule!
 export message_passing_average_energy
 export @define_factor_node, Stochastic, Deterministic, getnodefn
 export AbstractAlgorithm, DefaultAlgorithm, DefaultAlgorithmExtension
-export FactorizedCluster, public_equivalent
+export FactorizedCluster, public_equivalent, matrix_correction
 export @define_message_update_rule, @define_marginal_update_rule, @define_average_energy
 export @define_dependencies
 export @call_message_update_rule, @call_marginal_update_rule, @call_average_energy

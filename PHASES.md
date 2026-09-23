@@ -22,8 +22,8 @@ re-check before relying on one.
 **Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot`. Signed off by the user; § Phase 5,
 *Step 7 brief* has the counts, the v6 mistakes to correct, the four decisions (the matrix
 correction's `nothing` as "not set", sampling through `ctx.rng`, the corrected `*` log-scale,
-the functions as nodes; `DISCUSSION.md` §3.31–3.33), the defaults and the progress. `+` and
-`-` are done; next `dot`, then the engine's `rng` default and `*`.
+the functions as nodes; `DISCUSSION.md` §3.31–3.33), the defaults and the progress. `+`, `-` and
+`dot` are done; next the engine's `rng` default, then `*`, which closes the step.
 Steps 1–6 are done; step 6 is summarised in § Phase 5, *Step 6 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1747,6 +1747,13 @@ the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs,
     are ported, 18 of them, which asserted the error, recomputed from the weighted-mean formula.
     The messages with two weighted-mean inputs, which reach #677 in v6 through the redirects,
     are declared too. 639 checks agree, the corrections declared.
+  - *`dot` — done.* `MessagePassingRulesBase` has `matrix_correction(ctx, default)`, and its
+    context documents `nothing` as not set; MvNormalMeanPrecision's Λ rules read the service
+    through it with no default, so they are unchanged. `dot`'s rank-one precision falls back to
+    v6's `ReplaceZeroDiagonalEntries(tiny)`, tested with and without a correction, and
+    `NoCorrection()` keeping the zero. v6's `meta` in its 102 table cases becomes
+    `ctx.matrix_correction`. The SoftDot hints stay, and the marginal takes the univariate
+    `out` its message rule handles. Nothing differs from v6 (655 checks).
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,

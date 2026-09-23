@@ -12,7 +12,7 @@ factorisation declares an algorithm of its own, as [`NormalMixture`](@ref) does.
 module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
-using MessagePassingRulesBase: annotate!
+using MessagePassingRulesBase: annotate!, matrix_correction
 using StatsFuns: log2π, logπ
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma
 using Base.Broadcast: BroadcastFunction
@@ -21,7 +21,7 @@ using LogExpFunctions: softmax!
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 using LinearAlgebra: I, Hermitian, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
-using MatrixCorrectionTools: correction!
+using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
 import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily, covmats
 import DomainSets
 
@@ -35,7 +35,7 @@ const NODES = [
     NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
     MvNormalMeanCovariance, MvNormalMeanPrecision, MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision,
     MvNormalMeanScaleMatrixPrecision, Wishart, InverseWishart, DirichletCollection, MvNormalGamma,
-    MvNormalWishart, MatrixNormal, MatrixNormalWishart, +, -,
+    MvNormalWishart, MatrixNormal, MatrixNormalWishart, +, -, dot,
 ]
 
 include("nodes/normal_mean_variance.jl")
@@ -155,6 +155,11 @@ include("rules/subtraction/out.jl")
 include("rules/subtraction/in1.jl")
 include("rules/subtraction/in2.jl")
 include("rules/subtraction/marginals.jl")
+include("nodes/dot_product.jl")
+include("rules/dot_product/out.jl")
+include("rules/dot_product/in1.jl")
+include("rules/dot_product/in2.jl")
+include("rules/dot_product/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")

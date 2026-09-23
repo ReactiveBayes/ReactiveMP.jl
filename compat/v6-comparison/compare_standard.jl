@@ -9,6 +9,7 @@ using .V6Oracle, Test
 using ExponentialFamily, BayesBase, Distributions
 using MessagePassingRulesBase, MessagePassingRulesTestUtils, StandardMessagePassingRules
 using MessagePassingRulesBase: AnnotationStore, getannotation
+using LinearAlgebra: dot
 
 # ReactiveMP.jl#669: v6's variational NormalMeanVariance rules take the variance a `q_v`
 # contributes as E[v]; naive VMP gives 1/E[1/v], which the ports use. They agree for a point
@@ -239,6 +240,12 @@ const MESSAGE_CASES = [
     ("-:out:two-weighted", -, :out, (m = (in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), ADDITION_SIGN),
     ("-:in1:two-weighted", -, :in1, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), false),
     ("-:in2:two-weighted", -, :in2, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), ADDITION_SIGN),
+    ("dot:out:point-mass-normal", dot, :out, (m = (in1 = PointMass(2.0), in2 = NormalMeanVariance(1.0, 2.0)),), false),
+    ("dot:out:point-mass-mv-normal", dot, :out, (m = (in1 = PointMass([2.0, 0.5]), in2 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("dot:out:mv-normal-point-mass", dot, :out, (m = (in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = PointMass([2.0, 0.5])),), false),
+    ("dot:in2:scalar", dot, :in2, (m = (out = NormalMeanVariance(1.0, 2.0), in1 = PointMass(2.0)),), false),
+    ("dot:in2:vector", dot, :in2, (m = (out = NormalMeanPrecision(2.0, 3.0), in1 = PointMass([2.0, 0.5])),), false),
+    ("dot:in1:vector", dot, :in1, (m = (out = NormalWeightedMeanPrecision(2.0, 3.0), in2 = PointMass([1.0, -0.5])),), false),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -328,6 +335,8 @@ const MARGINAL_CASES = [
     ("-:(in1,in2):mv-point-mass-in1", -, (:in1, :in2), (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = PointMass([1.0, 2.0]), in2 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), SUBTRACTION_MARGINAL),
     ("-:(in1,in2):normals", -, (:in1, :in2), (m = (out = NormalMeanVariance(1.0, 2.0), in1 = NormalMeanPrecision(3.0, 0.5), in2 = NormalMeanVariance(0.0, 1.0)),), false),
     ("-:(in1,in2):mv-normals", -, (:in1, :in2), (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), false),
+    ("dot:(in1,in2):point-mass-in1", dot, (:in1, :in2), (m = (out = NormalMeanVariance(1.0, 2.0), in1 = PointMass([2.0, 0.5]), in2 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("dot:(in1,in2):point-mass-in2", dot, (:in1, :in2), (m = (out = NormalMeanVariance(1.0, 2.0), in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = PointMass([2.0, 0.5])),), false),
     ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
