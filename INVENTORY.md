@@ -207,9 +207,9 @@ replacement".
 | `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
 | `RandomVariable` | `type` | `src/variables/random.jl` | `engine` |  |
 | `RandomVariableActivationOptions` | `type` | `src/variables/random.jl` | `engine` |  |
-| `RequireEverythingFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes a `DefaultAlgorithmExtension` with its own dependency declaration, inheriting the default rules |
-| `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes a `DefaultAlgorithmExtension` with its own dependency declaration, inheriting the default rules |
-| `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes a `DefaultAlgorithmExtension` with its own dependency declaration, inheriting the default rules |
+| `RequireEverythingFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
+| `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
+| `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
 | `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `models` |  |
 | `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; 85 Aqua ambiguities, narrow first |

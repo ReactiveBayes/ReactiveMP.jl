@@ -1043,6 +1043,15 @@ Do not start Phase 5 until this passes.
       guess, how to verify, when to stop
 - [ ] hand-written cases done: `mixture/switch.jl`, the ~15 rules touching raw
       `messages[i]`/`marginals[i]`
+- [ ] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).
+      Probit and ContinuousTransition (Phase 6, `models` and `node:ContinuousTransition`) get
+      their own algorithms from `ProbitMeta` and `CTMeta`, declaring their dependencies. Probit's
+      self-dependency gets a default initial message declared on its node, separately from
+      `dependencies`. Two pages are written with the port:
+      - a documentation page on declaring dependencies, in the new terms only (the default
+        scheme, a node's own algorithm, an extension for one model, initial messages);
+      - a `MIGRATION.md` section mapping the old types to those pieces, including RxInfer's
+        `where { dependencies = … }`, which becomes choosing an algorithm for the node
 
 ---
 

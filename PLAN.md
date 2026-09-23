@@ -65,7 +65,21 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   kernels). Naming it `algorithm`, giving it a default and making it swappable absorbs
   `Marginalisation`/`MomentMatching` — that axis disappears rather than being deleted
   separately. It also absorbs `RequireMessage`/`RequireMarginal`/
-  `RequireEverythingFunctionalDependencies` (see Dependencies).
+  `RequireEverythingFunctionalDependencies` (see Dependencies), which are **deleted**, not
+  ported (user, Phase 4.5). They bundled three things, each of which now has its own home:
+  - *what a node's rules consume* is declared on the node's algorithm. The two in-tree users
+    already carry one: Probit's `ProbitMeta(p)` (its moment matching) and ContinuousTransition's
+    `CTMeta(transformation)` become those nodes' own algorithms, with their dependencies
+    declared on them;
+  - *a per-model override for one node*, v6's `where { dependencies = … }`, becomes choosing an
+    algorithm for that node: a `DefaultAlgorithmExtension` that declares different
+    dependencies and inherits every rule;
+  - *an initial value*, such as Probit's `in = NormalMeanPrecision(0, 100)` for a rule that
+    depends on its own edge, is **initialization**, not a dependency. A node may declare a
+    default initial message on its definition, separately from `dependencies`.
+  Mixture's `RequireMarginal` path was unreachable in v6 and goes with them. The user
+  documentation is written in Phase 5: a page on declaring dependencies in the new terms
+  only, and a `MIGRATION.md` section mapping the old types to the new pieces.
 - **There is one algorithm, `DefaultAlgorithm()`, and it is not an inference scheme.**
   Bethe free energy minimisation. Belief propagation, variational message passing and their
   structured forms all come from the **factorisation**, through the engine's default

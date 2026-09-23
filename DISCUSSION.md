@@ -1212,6 +1212,30 @@ It also settles two older open points. #3's "a distinct algorithm for factorisat
 selection" was only ever needed for nodes that ignore the factorisation. And an extension is a
 one-level version of #4's `Overlay(mine, standard)`, needing no new keyword.
 
+### 3.21 `Require*FunctionalDependencies` are deleted, not ported
+
+The user asked whether the three types are needed at all. In v6, Probit defaults to
+`RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`, and
+ContinuousTransition defaults to `RequireMarginalFunctionalDependencies(a = nothing)`.
+Mixture's `RequireMarginal` path is dead code. RxInfer documents
+`where { dependencies = RequireMessageFunctionalDependencies(…) }`, and its Probit, binomial and
+multinomial regression tests use it. So they are used, and they bundle three things:
+
+- **what a rule consumes**, which belongs on an algorithm. Both in-tree users already have
+  one, as the user pointed out: Probit's `ProbitMeta(p)` drives its moment matching and
+  ContinuousTransition's `CTMeta(transformation)` its transformation. Each becomes the node's
+  own algorithm, declaring its dependencies;
+- **a per-model override**, which becomes selecting an algorithm for the node, a
+  `DefaultAlgorithmExtension` with different dependencies (§3.20);
+- **an initial value** for a rule that depends on its own edge, which is initialization.
+  Decided (user): dependencies stay pure declarations. A node may declare a default initial
+  message on its definition, separately, so Probit still works out of the box.
+
+So the types are deleted. Documentation (user): one page explaining how to declare
+dependencies, written only in the new terms, and a `MIGRATION.md` section that maps the old
+types onto these three pieces. Both are written in Phase 5, with Probit and ContinuousTransition
+ported.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
