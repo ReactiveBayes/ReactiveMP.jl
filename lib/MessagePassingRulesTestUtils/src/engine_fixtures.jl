@@ -18,6 +18,11 @@ encode_fixture_value(x::AbstractVector{<:Real}) = Float64.(x)
 encode_fixture_value(x::AbstractVector) = Any[encode_fixture_value(v) for v in x]
 encode_fixture_value(x::AbstractMatrix) = Any[encode_fixture_value(collect(row)) for row in eachrow(x)]
 encode_fixture_value(x::Tuple) = Any[encode_fixture_value(v) for v in x]
+encode_fixture_value(x::FactorizedCluster) = Dict{String, Any}(
+    "type" => "FactorizedCluster",
+    "blocks" => Any[String.(collect(block)) for block in cluster_blocks(x)],
+    "components" => encode_fixture_value(BayesBase.components(x)),
+)
 encode_fixture_value(x::PointMass) = Dict{String, Any}("type" => "PointMass", "params" => Any[encode_fixture_value(mean(x))])
 encode_fixture_value(x::Distribution) =
     Dict{String, Any}("type" => string(nameof(typeof(x))), "params" => Any[encode_fixture_value(p) for p in params(x)])

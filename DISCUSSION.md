@@ -1138,6 +1138,15 @@ in `PHASES.md` § Phase 4.5; what matters for later readers is why.
   fields is deliberate: a mutable struct is passed by reference, which can avoid copying. The
   typed annotations stay; the struct kind is decided by benchmarking both representations.
 - **Signed off.** The user accepted the rest of the brief as written (2026-09-23).
+- **`FactorizedJoint` alone cannot return a split cluster.** Proposal 5 said a marginal rule
+  may return BayesBase's `FactorizedJoint`. Building it showed the gap: the joint is
+  positional, so it cannot say which members each block covers. v6's partial splits such as
+  `(out_μ = MvNormal, v = m_v)` would be lost, and v6 recovers them only by splitting `out_μ`
+  on `_` (`score/score.jl:14-60`), which is unsafe once names may contain underscores. The
+  user chose member-tuple labels, and then that the labels *wrap* a `FactorizedJoint`
+  rather than duplicate it. `FactorizedCluster` holds the labels, and the joint remains the
+  distribution, with BayesBase's entropy and float-type conversion. Upstreaming labels
+  into BayesBase was the alternative; it would put a BayesBase release on Phase 4.5's path.
 - **Log scales: preserve, do not fix.** Recording the fixtures found three gaps in v6's log
   scales (`PHASES.md` § Phase 4.5, Step 0). The user's position: log scales are
   underdeveloped, niche, and used by a few research papers. The rewrite keeps v6's

@@ -1,5 +1,5 @@
 @testitem "engine-fixtures:encoding" tags = [:testutils] begin
-    using MessagePassingRulesTestUtils, Distributions, BayesBase
+    using MessagePassingRulesTestUtils, MessagePassingRulesBase, Distributions, BayesBase
 
     @test encode_fixture_value(1) == 1.0
     @test encode_fixture_value(Normal(0.5, 2.0)) == Dict("type" => "Normal", "params" => [0.5, 2.0])
@@ -9,6 +9,8 @@
     @test encode_fixture_value(MvNormal([0.0, 1.0], [2.0 0.5; 0.5 1.0]))["params"] == [[0.0, 1.0], [[2.0, 0.5], [0.5, 1.0]]]
     @test encode_fixture_value((Normal(0.0, 1.0), PointMass(1.0))) == [encode_fixture_value(Normal(0.0, 1.0)), encode_fixture_value(PointMass(1.0))]
     @test encode_fixture_value(nothing) == Dict("type" => "nothing")
+    @test encode_fixture_value(MessagePassingRulesBase.FactorizedCluster((:out, :μ) => PointMass([1.0, 2.0]), (:v,) => PointMass(3.0))) ==
+        Dict("type" => "FactorizedCluster", "blocks" => [["out", "μ"], ["v"]], "components" => [encode_fixture_value(PointMass([1.0, 2.0])), encode_fixture_value(PointMass(3.0))])
     # A rule call skipped for a missing input records `missing`, which is not `nothing`.
     @test encode_fixture_value(missing) == Dict("type" => "missing")
 end

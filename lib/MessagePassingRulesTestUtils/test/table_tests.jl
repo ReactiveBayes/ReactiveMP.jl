@@ -86,3 +86,26 @@ end
 
     @test_throws ArgumentError test_message_update_rule(T.Gauss, :out; cases = [(mm = (μ = 1,),) => 1])
 end
+
+@testitem "tables:factorized-cluster" tags = [:testutils] setup = [ToyRules, Recording] begin
+    using MessagePassingRulesTestUtils, MessagePassingRulesBase, Distributions, BayesBase
+    T = ToyRules
+    inputs = (m = (out = Normal(1.0, 1.0), μ = Normal(2.0, 1.0), σ = PointMass(3.0)),)
+
+    set = Recording.recorded() do
+        @test_marginal_update_rule(
+            node = T.Gauss, towards = (:out, :μ, :σ),
+            cases = [inputs => FactorizedCluster((:out, :μ) => PointMass([1.0, 2.0]), (:σ,) => PointMass(3.0))],
+        )
+    end
+    @test isempty(Recording.failures(set))
+
+    # Other blocks are a different result, even with the same numbers.
+    set = Recording.recorded() do
+        @test_marginal_update_rule(
+            node = T.Gauss, towards = (:out, :μ, :σ), check_type_promotion = false,
+            cases = [inputs => FactorizedCluster((:out,) => PointMass(1.0), (:μ, :σ) => PointMass([2.0, 3.0]))],
+        )
+    end
+    @test !isempty(Recording.failures(set))
+end

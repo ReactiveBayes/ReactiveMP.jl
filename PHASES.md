@@ -17,9 +17,10 @@ relying on one.
 ## Next action
 
 **Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
-the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. The
-cluster over a whole group and `getnodefn` are done; next are `FactorizedJoint` marginal
-returns. The
+the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Step 2, the
+base-package additions, is done: a cluster over a whole group, `getnodefn`, and
+`FactorizedCluster` marginal returns. Next is step 3, porting the slice's rules into
+`StandardMessagePassingRules` and `MessagePassingRulesApproximations`. The
 design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
 in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
@@ -63,7 +64,7 @@ names rather than generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; Step 0 done, next the base-package additions |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; Steps 0 and 2 done, next the rule ports |
 | 5 | `StandardMessagePassingRules` | not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | not started |
 | 7 | Complete the engine — remaining nodes, diagnostics, RxInfer plumbing | not started |
@@ -658,7 +659,7 @@ Decided instead:
 - **Downstream breakage is accepted until the release.** Only a small internal group uses the
   branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
-**Status: design signed off 2026-09-23; Step 0 done; next the base-package additions.**
+**Status: design signed off 2026-09-23; Step 0 and step 2 done; next the rule ports (step 3).**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -764,7 +765,18 @@ What recording found, all **preserved, not fixed**:
 - [x] `getnodefn(node, target)` declared and exported, with no methods: `Target(:out)` is
       the forward function with static inputs folded, `IndexedTarget(:in, k)` the known
       inverse; the engine's node implements it. Test: `nodes:getnodefn`
-- [ ] a marginal rule may return a `FactorizedJoint`
+- [x] **a marginal rule may return a factorised cluster.** Built as
+      `FactorizedCluster((:out, :μ) => q_outμ, (:v,) => q_v)`: a BayesBase `FactorizedJoint`
+      of the blocks, labelled with the member tuple each block covers. The labels are
+      carried in the type, and `fc[(:out, :μ)]` reads a block. Entropy, `paramfloattype` and
+      `convert_paramfloattype` delegate to the joint. `check_factorized_cluster(target, fc)`
+      confirms the blocks partition the cluster in its order. Built from literal labels in a
+      rule body, it is inferred and allocation-free on 1.10 and 1.13
+      (`gate:factorized-cluster`). TestUtils compares it by labels and blocks, and encodes it
+      for engine fixtures. Tests: `factorized-cluster:*`, `tables:factorized-cluster`.
+      **For Phase 5:** the promotion check rejects a block that passes an input through
+      unchanged, as v6's `v = m_v` does, because the output must carry the promoted float
+      type of every input. Ported rules must convert such blocks
 
 ### Design brief — 2026-09-23
 
@@ -828,6 +840,10 @@ were proposals and were accepted as written, except item 3, which became a bench
 5. **A marginal rule may return a `FactorizedJoint`** (BayesBase) for a cluster that splits,
    replacing v6's NamedTuple returns (`normal_mean_variance/marginals.jl:24`,
    `normal_mean_precision/marginals.jl:58`); the engine distributes it to the cluster members.
+   *(Refined while building it, user: a bare `FactorizedJoint` is positional and cannot say
+   which members a block covers, so v6's partial splits like `(out_μ = …, v = …)` would be
+   lost. The result is a `FactorizedCluster`, the member-tuple labels over a `FactorizedJoint`,
+   which remains the distribution. See step 2.)*
 6. **The engine assembles Bethe free energy itself** — per node, average energy over the
    declared partition minus entropies, and per variable, the degree-weighted entropy — as a
    stream per iteration. In v6 the assembly is RxInfer's (`reactivemp_free_energy.jl:52-128`);

@@ -20,6 +20,16 @@
         node = Gauss, towards = (:out, :μ), args = (m[:out]::Normal, m[:μ]::Normal, q[:σ]::PointMass),
         body = (args) -> promote(mean(args.m[:out]), mean(args.m[:μ])) .* one(mean(args.q[:σ])),
     )
+    # A cluster that factorises: q(out, μ, σ) = q(out, μ) q(σ). Every block carries the
+    # promoted float type of all the inputs, so the `(:σ,)` block cannot pass `m[:σ]` through
+    # unchanged the way v6's `v = m_v` does.
+    @define_marginal_update_rule(
+        node = Gauss, towards = (:out, :μ, :σ), args = (m[:out]::Normal, m[:μ]::Normal, m[:σ]::PointMass),
+        body = (args) -> begin
+            out, μ, σ = promote(mean(args.m[:out]), mean(args.m[:μ]), mean(args.m[:σ]))
+            FactorizedCluster((:out, :μ) => PointMass([out, μ]), (:σ,) => PointMass(σ))
+        end,
+    )
     @define_average_energy(
         node = Gauss, args = (q[:out]::Normal, q[:μ]::Normal, q[:σ]::PointMass),
         body = (args) -> (var(args.q[:out]) + var(args.q[:μ]) + abs2(mean(args.q[:out]) - mean(args.q[:μ]))) / (2 * mean(args.q[:σ])^2),

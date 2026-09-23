@@ -26,4 +26,6 @@ values_close(a::NamedTuple, b::NamedTuple; atol, rtol) = keys(a) == keys(b) && v
 values_close(a::PointMass, b::PointMass; atol, rtol) = values_close(mean(a), mean(b); atol, rtol)
 values_close(a::Distribution, b::Distribution; atol, rtol) = values_close(params(a), params(b); atol, rtol)
 values_close(::Nothing, ::Nothing; atol, rtol) = true
+values_close(a::FactorizedCluster, b::FactorizedCluster; atol, rtol) =
+    cluster_blocks(a) == cluster_blocks(b) && values_close(BayesBase.components(a), BayesBase.components(b); atol, rtol)
 values_close(a, b; atol, rtol) = a == b
