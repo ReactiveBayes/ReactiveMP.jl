@@ -22,8 +22,8 @@ re-check before relying on one.
 **Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot`. Signed off by the user; § Phase 5,
 *Step 7 brief* has the counts, the v6 mistakes to correct, the four decisions (the matrix
 correction's `nothing` as "not set", sampling through `ctx.rng`, the corrected `*` log-scale,
-the functions as nodes; `DISCUSSION.md` §3.31–3.33), the defaults and the progress. `+` is
-done; next `-`, then `dot`.
+the functions as nodes; `DISCUSSION.md` §3.31–3.33), the defaults and the progress. `+` and
+`-` are done; next `dot`, then the engine's `rng` default and `*`.
 Steps 1–6 are done; step 6 is summarised in § Phase 5, *Step 6 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1740,6 +1740,13 @@ the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs,
     ported, and the difference is declared (ReactiveMP.jl#677). v6's 172 table cases pass,
     with new cases for that specialisation and for `convolve`; Aqua lists `typeof(+)` as owned.
     587 checks agree, the correction declared.
+  - *`-` — done.* Its rules are `+`'s helpers in the order the difference needs, where v6 had
+    catch-alls calling `+`'s rules, so the Aqua ambiguities they caused are gone. v6's `-`
+    marginal took in2's likelihood at out − in1 for a known in1; it is in1 − out, as v6's own
+    `:in2` message rule gives, corrected and declared (ReactiveMP.jl#678). v6's 170 table cases
+    are ported, 18 of them, which asserted the error, recomputed from the weighted-mean formula.
+    The messages with two weighted-mean inputs, which reach #677 in v6 through the redirects,
+    are declared too. 639 checks agree, the corrections declared.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
