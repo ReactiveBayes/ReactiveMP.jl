@@ -67,11 +67,11 @@ make check-format                          # verify only, no writes
 make docs                                  # build documentation
 make test-base                             # lib/MessagePassingRulesBase's own suite
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
-make test-standard                         # lib/StandardMessagePassingRules, from its test/Project.toml
+make test-standard                         # lib/StandardMessagePassingRules
 make test-approximations                   # lib/MessagePassingRulesApproximations, which depends on no sibling
-# the v6 oracle environment (still pinned on 1.10): comparisons and engine fixtures
-for s in check compare_standard compare_approximations; do julia +1.10 --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
-julia +1.10 --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
+# the v6 oracle environment: comparisons and engine fixtures
+for s in check compare_standard compare_approximations; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
+julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
 Work targets **Julia 1.13** for now, and **no CI runs** until a PR is opened: every check above
@@ -112,9 +112,9 @@ imported by the caller.
   version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
   between releases; use `make scripts_update` to bump it deliberately, and run `make format`
   over the repo in the same commit. `docs/` is excluded, as it was before.
-- Julia: work targets **1.13 only**, and siblings are wired with `[sources]`. The 1.10 floor
-  and its workarounds (develop-at-test-time, `test/Project.toml` for test-only siblings) are
-  revisited when the packages are registered; see `DISCUSSION.md` §3.22.
+- Julia: work targets **1.13 only**, and siblings are wired with `[sources]`, test-only ones via
+  `[extras]` too; the comparison environment is resolved on 1.13 as well. The 1.10 floor and
+  its old workarounds are reconsidered when the packages are registered (`DISCUSSION.md` §3.22).
 
 ## Gotchas
 

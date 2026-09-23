@@ -40,17 +40,16 @@ tooling's first finding was a real v6 bug: the variational `NormalMeanVariance` 
 `E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v` (ReactiveMP.jl#669). It was **corrected
 when NMV was ported in step 3**, and the comparison declares it.
 
-**Picking this up on another machine.** Everything lives in the repository. With Julia 1.13
-installed, and 1.10 for the v6 comparison environment until it is moved (step 4, item 1):
+**Picking this up on another machine.** Everything lives in the repository. With Julia 1.13:
 
 ```bash
 git switch refactor/rule-node-system-rewrite && git pull
 make test-base test-testutils test-standard test-approximations
-julia +1.10 --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
+julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
 for s in check compare_standard compare_approximations; do
-    julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
+    julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
 done
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
 Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.22,
@@ -921,7 +920,12 @@ Findings so far:
 and `bp_chain`), running end to end through the new rule system and agreeing with the v6
 fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition stage.
 
-1. **Toolchain, Julia 1.13 only.**
+1. [x] **Toolchain, Julia 1.13 only.** *Done:* every lib package tests with plain `Pkg.test`,
+   `[sources]` wiring the siblings (test-only ones through `[extras]`), `julia = "1.11"`;
+   Standard's `test/Project.toml` is gone. `compat/v6-comparison` is resolved on 1.13: v6.5.0
+   and RxInfer 5.5.2 run there, the fixtures recorded on 1.10.12 reproduce exactly, and every
+   comparison is unchanged. ReactiveMP's own `[deps]` entry lands with item 4, where it is
+   first used.
    - ReactiveMP gets `[deps]` + `[sources]` for `MessagePassingRulesBase`, and `[extras]` +
      `[sources]` for `StandardMessagePassingRules` and `MessagePassingRulesTestUtils`, which
      are test-only.

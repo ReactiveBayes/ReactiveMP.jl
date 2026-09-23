@@ -1,7 +1,7 @@
 # The rules ported into StandardMessagePassingRules, compared with their v6 originals on
 # identical inputs. A difference fails unless it is declared, with its reasoning.
 #
-#   julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
+#   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
 
 include(joinpath(@__DIR__, "V6Oracle.jl"))
 

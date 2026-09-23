@@ -2,7 +2,7 @@
 # and average energy selected while recording the engine fixtures, with the v6 method it
 # resolved to. This is the porting list for the slice.
 #
-#   julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/slice_rule_inventory.jl
+#   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/slice_rule_inventory.jl
 #
 # Message rules are found from the recorder's rule-call events, by asking `which` with the
 # arguments v6 dispatched on (`message.jl:692-703`). Marginal rules and average energies

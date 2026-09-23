@@ -2,7 +2,7 @@
 # The multi-input unscented path matters most: it builds its joint from concatenated means
 # and a block-diagonal covariance, where v6 went through ExponentialFamily's JointNormal.
 #
-#   julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_approximations.jl
+#   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_approximations.jl
 
 using Test, LinearAlgebra
 import ReactiveMP

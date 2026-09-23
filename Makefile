@@ -39,14 +39,11 @@ test-all: ## Run everything, including `:slow`. This is what CI runs
 test-base: ## Test lib/MessagePassingRulesBase. Takes test_args like `test`, e.g. test_args="tag:quality"
 	julia --startup-file=no --project=lib/MessagePassingRulesBase -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
-test-testutils: ## Test lib/MessagePassingRulesTestUtils against the local MessagePassingRulesBase. Takes test_args like `test`
-	rm -f lib/MessagePassingRulesTestUtils/Manifest.toml
-	julia --startup-file=no --project=lib/MessagePassingRulesTestUtils -e 'import Pkg; Pkg.develop(path = "lib/MessagePassingRulesBase"); Pkg.test(test_args = split("$(test_args)") .|> string)'
+test-testutils: ## Test lib/MessagePassingRulesTestUtils against the local MessagePassingRulesBase ([sources]). Takes test_args like `test`
+	julia --startup-file=no --project=lib/MessagePassingRulesTestUtils -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
-test-standard: ## Test lib/StandardMessagePassingRules from its test environment, developing the local lib packages. Takes test_args like `test`
-	rm -f lib/StandardMessagePassingRules/test/Manifest.toml
-	julia --startup-file=no --project=lib/StandardMessagePassingRules/test -e 'import Pkg; Pkg.develop([Pkg.PackageSpec(path = p) for p in ("lib/MessagePassingRulesBase", "lib/MessagePassingRulesTestUtils", "lib/StandardMessagePassingRules")]); Pkg.instantiate()'
-	julia --startup-file=no --project=lib/StandardMessagePassingRules/test lib/StandardMessagePassingRules/test/runtests.jl $(test_args)
+test-standard: ## Test lib/StandardMessagePassingRules against the local lib packages ([sources]). Takes test_args like `test`
+	julia --startup-file=no --project=lib/StandardMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 test-approximations: ## Test lib/MessagePassingRulesApproximations, which depends on no sibling. Takes test_args like `test`
 	julia --startup-file=no --project=lib/MessagePassingRulesApproximations -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'

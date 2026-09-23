@@ -1,8 +1,8 @@
 # The migration checker end to end: v7 ports compared with their v6 originals in one
 # process, fixtures written and read back, and v6 rules verified against their own node
-# definitions. Run on the 1.10 floor:
+# definitions:
 #
-#   julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+#   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
 
 include(joinpath(@__DIR__, "V6Oracle.jl"))
 

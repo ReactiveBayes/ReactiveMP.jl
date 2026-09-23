@@ -1,8 +1,8 @@
 # Phase 4.5, Step 0: engine fixtures recorded from full v6 runs, for the new engine to be
 # compared against once v6 is gone. One TOML file per slice model under `fixtures/engine/`.
 #
-#   julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl
-#   julia +1.10 ... record_engine_fixtures.jl --check     # re-record and compare with the committed files
+#   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl
+#   julia ... record_engine_fixtures.jl --check     # re-record and compare with the committed files
 
 using RxInfer, ReactiveMP, Test
 using ReactiveMP: getannotations, has_annotation, get_annotation

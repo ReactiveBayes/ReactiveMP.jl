@@ -16,24 +16,28 @@ free-energy trajectories, retained values) therefore need separate pinned proces
 fixtures recorded from full v6 runs. That is why the Phase 4 checker must *capture* results
 rather than only assert equality: Phases 4.5 and 7 consume those recordings.
 
-## Why the manifest is pinned to Julia 1.10
+## The Julia version
 
-**The committed `Manifest.toml` is generated on Julia 1.10.12, matching the declared floor,
-and this is load-bearing.** An earlier version was generated on 1.13 and failed to load on
-1.10 with a `PrecompileTools`/`StaticData` `UndefVarError`. Manifests are not portable
-downwards: resolving on a newer Julia can select stdlib versions and package versions that
-the floor cannot load.
+**The committed `Manifest.toml` is resolved on Julia 1.13**, the version all work targets
+for now (Phase 4.5 step 4; `DISCUSSION.md` §3.22). Until then it was pinned to 1.10.12, the old
+floor, because a manifest resolved on a newer Julia can select versions an older one cannot
+load. ReactiveMP 6.5.0 and RxInfer 5.5.2 run on 1.13, and the engine fixtures recorded on
+1.10.12 reproduce there exactly (`record_engine_fixtures.jl --check`).
 
-Since the whole point of this environment is reproducibility, regenerate it on the floor:
+Regenerate it, developing the four lib packages in one call so Pkg never resolves with only
+some of them:
 
 ```bash
-julia +1.10 --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
+julia --startup-file=no --project=compat/v6-comparison -e '
+using Pkg
+Pkg.develop([PackageSpec(path = joinpath("lib", p)) for p in ("MessagePassingRulesBase", "MessagePassingRulesTestUtils", "StandardMessagePassingRules", "MessagePassingRulesApproximations")])
+Pkg.instantiate()'
 ```
 
-Verify it afterwards, on the floor, and confirm the source is the registry:
+Then confirm that ReactiveMP comes from the registry:
 
 ```bash
-julia +1.10 --startup-file=no --project=compat/v6-comparison -e '
+julia --startup-file=no --project=compat/v6-comparison -e '
 using ReactiveMP
 println(pkgversion(ReactiveMP), "  ", pathof(ReactiveMP))'
 ```
@@ -62,8 +66,8 @@ before any v6 code is deleted this environment records engine-level fixtures fro
 runs, through **RxInfer 5.5.2** (pinned, `=5.5.2`; it accepts ReactiveMP 6.5):
 
 ```bash
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl          # record
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check  # compare
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl          # record
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check  # compare
 ```
 
 The fixtures are `fixtures/engine/<model>.toml`, one per slice model, written by
@@ -88,13 +92,13 @@ unavoidable, redesign this harness first, not afterwards.
 
 ## The migration checker, and the comparisons
 
-These run here, on Julia 1.10, and are verified locally (no CI runs until a PR):
+These run here and are verified locally (no CI runs until a PR):
 
 ```bash
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_approximations.jl
-julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/slice_rule_inventory.jl
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_approximations.jl
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/slice_rule_inventory.jl
 ```
 
 - `check.jl`: the Phase 4 checker's own demonstration, and v6 rules verified against their
@@ -105,7 +109,6 @@ julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-compariso
   `src/approximations/`.
 - `slice_rule_inventory.jl`: every v6 rule the slice models select, with its declared types.
 
-*(Phase 4.5 step 4 plans to move this environment to 1.13 if v6 runs there; see `PHASES.md`.)*
 
 - `V6Oracle.jl` calls a v6 rule from the inputs a v7 rule takes, and returns its result and
   log scale. It is the only code in the repository that names ReactiveMP v6's internals.
@@ -117,4 +120,4 @@ julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-compariso
   explanation, so a new one fails the run until it is understood.
 
 All four `lib/` packages are dev'd into this environment by relative path and recorded in the
-committed manifest, resolved on 1.10.
+committed manifest, resolved on 1.13.

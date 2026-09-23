@@ -31,36 +31,20 @@ destination as the placeholder token `models`.
 
 ## Wiring the inter-package dependencies
 
-These packages are unregistered, and `[sources]` — the tidy way to point a `Project.toml` at
-a sibling directory — requires Julia 1.11, while the floor is 1.10. So a package that depends
-on another one here lists it in `[deps]` like any other dependency — and in `[sources]`,
-which 1.11+ honours and 1.10 ignores — and the sibling is **developed into its environment
-at test time**:
-
-```julia
-julia> using Pkg
-julia> Pkg.activate("lib/MessagePassingRulesTestUtils")
-julia> Pkg.develop(path = "lib/MessagePassingRulesBase")
-julia> Pkg.test()
-```
-
-`make test-testutils` and `LibTests.yml` do exactly this. No `Manifest.toml` under `lib/` is
-committed: each Julia version resolves for itself, which a manifest resolved on 1.10 could not
-do for 1.11 and 1.12. Run the example from the repository root, since `Pkg.activate` changes
-the active environment, not the working directory.
-
-### A package that needs the test tooling
-
-`MessagePassingRulesTestUtils` is a test-only dependency, and unregistered. On the 1.10
-floor, developing it into a package's own project would make it a runtime dependency. So a
-rule package such as `StandardMessagePassingRules` keeps its test dependencies in
-`test/Project.toml`, with `[sources]` for 1.11+, and runs its suite from that environment
-after developing the siblings into it. TestItemRunner finds the package from the test
-file's location, not from the active project:
+These packages are unregistered, so a package that depends on a sibling lists it in `[deps]`
+like any other dependency, and in `[sources]` with its relative path. A test-only sibling,
+such as `MessagePassingRulesTestUtils` for a rule package, goes in `[extras]` and `[sources]`
+the same way. Plain `Pkg.test()` then works, and so does every `make test-*` target:
 
 ```bash
-make test-standard     # does exactly this; LibTests.yml's `standard` job too
+make test-base test-testutils test-standard test-approximations
 ```
+
+Work targets **Julia 1.13**, where `[sources]` is honoured (1.11+). On the old 1.10 floor it was
+ignored, which cost a develop-at-test-time step for every sibling and a separate
+`test/Project.toml` for a test-only one; both are gone since Phase 4.5 step 4, and 1.10 support
+is reconsidered at registration (`DISCUSSION.md` §3.22). No `Manifest.toml` under `lib/` is
+committed; the local ones are gitignored.
 
 ## Promotion to separate repositories
 
