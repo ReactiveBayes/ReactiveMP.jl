@@ -39,7 +39,7 @@ Build it test-first, one commit per step, `PHASES.md` updated in each:
 
 1. **done** — package wiring — dependencies, harness, `LibTests.yml` entry with a develop step,
    `make test-testutils`, `lib/README.md`;
-2. the three table macros, each sugar over a function of the same name; `@test` runs inside
+2. **done** — the three table macros, each sugar over a function of the same name; `@test` runs inside
    TestUtils, so v6's callback form is gone; self-tested through a recording testset;
 3. registry-backed coverage, recording the rule each check actually selected, and
    `check_rule_coverage(modules...)`;
@@ -583,8 +583,9 @@ keying), and #9–#13 (resolve before the API freezes).
 **Goal:** test tooling as its own package, consumed via `[extras]`.
 
 **Exit criteria**
-- [ ] `@test_rules` successor: numerical output, type promotion (default on),
-      `rule`/`rule!` agreement, optional non-allocating flag
+- [x] `@test_rules` successor: numerical output, type promotion (default on),
+      `rule`/`rule!` agreement, optional non-allocating flag — `@test_message_update_rule`,
+      `@test_marginal_update_rule`, `@test_average_energy`; failures point at the table's line
 - [ ] **node-definition verification** — reference update computed from `nodefunction`
       for a bounded initial subset, with separate shape and scale assertions
 - [ ] registry-backed coverage check: every `RuleSpec`/`NodeSpec` has a test; record the

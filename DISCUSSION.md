@@ -1003,6 +1003,19 @@ Three more decisions were taken while planning Phase 3's execution:
   run-time choice between two algorithm *values* is a small union, which Julia splits, and
   each branch then resolves to one rule statically. JET reports nothing on the one-rule and
   indexed routes. The generated adapters — slot selection, the `k` binding — cost nothing.
+- **Phase 4 step 2: the table macros.** Three things found while building them:
+  - Julia's `Test` can record a result against a *given* source line (`Test.do_test` with a
+    `Test.Returned`), identical on 1.10 and 1.13. So a failure reports the user's
+    `@test_message_update_rule` line with a sentence describing the case, and the
+    caller-splices-`@test` coupling that forced v6's callback form is gone. It is an internal
+    of `Test`, used in exactly one function so a change there is one edit.
+  - Measuring a rule's allocations must go through the public entry points with the node's
+    type specialised (`node::N where {N}`). Through the spec's `::Function` field, or with the
+    node passed on as a `DataType`, the call turns dynamic and 1.10 reports 16 bytes the rule
+    never allocated — the same trap the Phase 0 spike recorded.
+  - The promotion contract is v6's: an output carries the promoted float type of *all* its
+    inputs. It caught a toy marginal rule returning `(mean(out), mean(μ))` unpromoted, which
+    is exactly the class of rule that breaks `ForwardDiff.Dual` propagation.
 - **`preallocate` receives the target** (`(algo, ctx, args, target)` in the lowered form),
   so an in-place rule towards a group member can size its buffer by `k` exactly as its
   body can. The first cut raised an error in that case instead; it was fixed before

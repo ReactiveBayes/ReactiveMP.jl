@@ -40,6 +40,7 @@ test-base: ## Test lib/MessagePassingRulesBase. Takes test_args like `test`, e.g
 	julia --startup-file=no --project=lib/MessagePassingRulesBase -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 test-testutils: ## Test lib/MessagePassingRulesTestUtils against the local MessagePassingRulesBase. Takes test_args like `test`
+	rm -f lib/MessagePassingRulesTestUtils/Manifest.toml
 	julia --startup-file=no --project=lib/MessagePassingRulesTestUtils -e 'import Pkg; Pkg.develop(path = "lib/MessagePassingRulesBase"); Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 help:  ## Display this help
