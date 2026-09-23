@@ -1468,6 +1468,19 @@ help, and **Phase C**, before the release, removes them, keeping any reason a re
 in present terms, and removes the working documents themselves. Its criteria are in
 `PHASES.md` § Phase C.
 
+### 3.28 The matrix correction is a context service (user, 2026-09-23)
+
+v6 passed MatrixCorrectionTools' strategies as a rule's `meta`: MvNormalMeanPrecision's
+precision rule calls `correction!(meta, …)`, with `nothing` as its default, and `*` and `dot`
+default to `ReplaceZeroDiagonalEntries(tiny)`. Since `meta` became the algorithm (§3.20), the
+question was whether the strategy should be an algorithm, a `DefaultAlgorithmExtension` field
+for instance. The user decided it is neither: it is a setting of the context,
+`ctx.matrix_correction` (named for precision over `correction`), next to the future Cholesky
+strategy of `linalg` and `rng`. It changes numerics, not which rule runs, which is what the
+context is for; an algorithm would multiply the rule table by every strategy. `nothing` is the
+identity, the engine passes it until Phase 7 lets a user set it per node, and step 7 decides
+how `*` and `dot` keep v6's default. The step 5 brief in `PHASES.md` § Phase 5 has the details.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

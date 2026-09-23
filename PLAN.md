@@ -1086,7 +1086,9 @@ The dispatch result, ownership contracts and early engine integration are separa
     - The context holds a reference to the node, `ctx.node`, so the `node` body slot is
       dropped: slots are `(output, algo, ctx, args, ann)`. Nothing dispatches on the node.
     - `nodefn` is therefore not a service: a delta rule calls `getnodefn(ctx.node, …)`.
-    - Services a rule may declare with `ctx = (...)`: `node`, `product`, `linalg`, `rng`.
+    - Services a rule may declare with `ctx = (...)`: `node`, `product`, `linalg`, `rng`, and,
+      since Phase 5 step 5 (user), `matrix_correction`, a MatrixCorrectionTools strategy that
+      `nothing` leaves off.
       The concrete `ctx` type may be parameterised so services specialise.
     - The Cholesky side of `linalg` is not designed yet — it is parked together with #13.
     - **Missing inputs behave exactly as in v6** (user, closing Phase 3): when any input is

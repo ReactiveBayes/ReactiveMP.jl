@@ -19,10 +19,11 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance, MvNormalMeanPrecision
-(with the correction strategy in `precision.jl`), MvNormalMeanScalePrecision and its matrix
-form, MvNormalWeightedMeanPrecision, then NormalMixture's multivariate branches. Steps 1–4 are
-done. Phase 5's plan is its entry brief (§ Phase 5, `DISCUSSION.md` §3.26).
+**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance, MvNormalMeanPrecision,
+MvNormalMeanScalePrecision and its matrix form, MvNormalWeightedMeanPrecision, then
+NormalMixture's multivariate branches. Its brief is in § Phase 5, *Step 5 brief*: the counts, the
+matrix correction as the context service `ctx.matrix_correction` (user), and the defaults for
+the step. It starts with the base package's new service. Steps 1–4 are done.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -1449,7 +1450,67 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
    posteriors and free energy included (`engine:fixture:logic_bp`).
 5. **Multivariate normals**: MvNormalMeanCovariance, MvNormalMeanPrecision (whose `precision.jl`
    uses the correction strategy), MvNormalMeanScalePrecision and its matrix form,
-   MvNormalWeightedMeanPrecision; then NormalMixture's multivariate branches.
+   MvNormalWeightedMeanPrecision; then NormalMixture's multivariate branches. *Briefed* (the
+   step 5 brief below, `DISCUSSION.md` §3.28).
+
+### Step 5 brief — the multivariate normals
+
+**Scope, counted** from `legacy/v6/`: 48 message rules, 27 marginal rules (23 of them split,
+so `FactorizedCluster`s) and 11 average energies, in five nodes, then NormalMixture's
+multivariate branches.
+
+| node | interfaces (aliases) | message | marginal (split) | energies |
+|---|---|---|---|---|
+| MvNormalMeanCovariance | out, μ (mean), Σ (cov) | 14 | 6 (5) | 2 |
+| MvNormalMeanPrecision | out, μ (mean), Λ (invcov, precision) | 16 | 8 (7) | 4 |
+| MvNormalMeanScalePrecision | out, μ (mean), γ (precision) | 8 | 6 (5) | 2 |
+| MvNormalMeanScaleMatrixPrecision | out, μ (mean), γ (scale), G (matrix) | 8 | 6 (5) | 2 |
+| MvNormalWeightedMeanPrecision | out, ξ (xi, weightedmean), Λ (invcov, precision) | 2 | 1 (1) | 1 |
+
+**Decided (user): the matrix correction is a context service, `ctx.matrix_correction`**, beside
+`linalg` (the future Cholesky strategy) and `rng`. It is not an algorithm.
+- `MessagePassingRulesBase` gains the `RuleContext` field and the `CONTEXT_SERVICES` entry
+  `matrix_correction`, documented as a strategy from MatrixCorrectionTools
+  (`ReplaceZeroDiagonalEntries`, `AddToDiagonalEntries`, `ClampDiagonalEntries`, …).
+- A rule declares `ctx = (:matrix_correction,)` and calls `correction!(ctx.matrix_correction,
+  M)`. `nothing` is the identity, which is also v6's default for MvNormalMeanPrecision, whose
+  `default_meta` was `nothing`.
+- The engine passes `nothing` until Phase 7 lets a user set it per node, through
+  `FactorNodeActivationOptions` and RxInfer.
+- Step 7 settles how `*` and `dot` keep v6's default, `ReplaceZeroDiagonalEntries(tiny)`, when
+  the service is `nothing`.
+- MatrixCorrectionTools 1.2 joins Standard's dependencies, with LinearAlgebra and
+  FastCholesky.
+
+**Defaults for the step**, open to the user's correction:
+- **Order:** one commit per node, MvNormalMeanPrecision before NormalMixture's branches, which
+  call its energy.
+- **Helpers:** `diageye` becomes a Standard helper, and INVENTORY's destination for it changes
+  from `base` to `standard`. The 2d×2d joint-precision builder, which v6 writes five times,
+  and the ΔΔ' block computation, which it writes eight times, become helpers too.
+- **Not ported here:**
+  - the two `TerminalProdArgument` marginal rules, which are BIFM's, stay in `legacy/v6/` for
+    Phase 6's `node:BIFM`;
+  - the belief-propagation rules v6 lacks for the two scale nodes are not invented;
+  - v6's `@allocated` "Performance" tests are dropped.
+- **v6's mistakes:**
+  - MvNormalWeightedMeanPrecision's marginal returns the keys `m_out`, `m_ξ`, `m_Λ` in v6. It is
+    ported with the right blocks and declared, with a special case in `as_v7`.
+  - Any other disagreement a hand-derived check finds is declared, as #669 and #672 were.
+- **Kept from v6:** the `Wishart` specialisations, which read `params(q_Λ)` rather than build
+  the mean matrix.
+- **Float types:** the energies use one convention, `promote_paramfloattype`; v6 mixed it with
+  `promote_samplefloattype`.
+- **MvNormalMeanScaleMatrixPrecision** is not a distribution type in ExponentialFamily 2.6: its
+  constructor returns an `MvNormalMeanPrecision`. It serves as the node type only.
+- **Tests:** v6 has no tables for any of the 27 marginal rules, so all get hand-derived cases.
+  `@verify_message_update_rule` is used where the inputs allow, and its limits with Wishart
+  and InverseWishart messages are recorded. TestUtils' default promotion checks (Float32,
+  BigFloat) are new for these nodes.
+- **NormalMixture:** its multivariate path goes through helpers dispatching on `variate_form`.
+  An `mv_normal_mean_precision_energy` helper is shared with the MvNormalMeanPrecision node,
+  and v6's Float64 lock (`init = 0.0`) goes. Today its rules take `::Any` and compute
+  univariate math, so a multivariate input is wrong rather than refused.
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection.
 7. **Arithmetic**: `+`, `-`, `*`, `dot`. Two questions are settled in that step: v6's
