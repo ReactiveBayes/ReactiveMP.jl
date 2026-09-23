@@ -19,12 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot`. Signed off by the user; § Phase 5,
-*Step 7 brief* has the counts, the v6 mistakes to correct, the four decisions (the matrix
-correction's `nothing` as "not set", sampling through `ctx.rng`, the corrected `*` log-scale,
-the functions as nodes; `DISCUSSION.md` §3.31–3.33), the defaults and the progress. `+`, `-`,
-`dot` and the engine's `rng` default are done; next `*`, which closes the step.
-Steps 1–6 are done; step 6 is summarised in § Phase 5, *Step 6 brief*.
+**Phase 5, step 8: Mixtures** — GammaMixture, a clone of NormalMixture, then the hand-written
+`Mixture`, whose switch rule builds a product with log scale and whose rules read incoming log
+scales (§ Phase 5). It needs a brief first, as steps 5–7 had. Steps 1–7 are done; step 7,
+arithmetic, is summarised in § Phase 5, *Step 7 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -45,6 +43,7 @@ Steps 1–6 are done; step 6 is summarised in § Phase 5, *Step 6 brief*.
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | the RNG as an activation option (the engine passes `Random.default_rng()` until then), and `*`'s number of samples (3000, v6's) configurable | Phase 7 | `DISCUSSION.md` §3.32 |
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
+| MIGRATION.md: `*` refuses the non-commuting products v6 computed as in·A (a matrix operand with a Gaussian `A`, a matrix `in` towards `A`); v6's argument-reversed `*` `:in` rules, reachable only through `@call_rule`, are gone | step 9, with MIGRATION.md | § Phase 5, *Step 7 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -1758,6 +1757,18 @@ the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs,
     `rule_context(node)`, which passes `Random.default_rng()` as `ctx.rng`; Random moves from
     the engine's test extras to its dependencies. A test runs a rule declaring `ctx = (:rng,)`
     through a `MessageMapping`.
+  - *`*` — done, which closes step 7.* 26 message rules and 2 marginal rules, down from v6's 39
+    and 3: the argument-reversed `:in` rules collapse into the live ones, the wrong
+    `(m_A::Normal, m_out::PointMass)` swap is not ported, and the rules that computed in·A for
+    A·in with a matrix operand, or `in \ out` for a matrix `in` towards A, are refused.
+    Helpers `scaled` and `unscaled` carry the forward and backward messages, the latter through
+    the correction (`ReplaceZeroDiagonalEntries(tiny)` by default). Two v6 errors are corrected
+    and declared: the sampled messages towards a factor weighted each draw by |y|
+    (ReactiveMP.jl#679), and the scalar `:in` log-scale, now −d·log|a| (#680). The sampled
+    rules draw from `ctx.rng`; `besselmod` is float-type generic. The closure messages are
+    tested against quadrature (HCubature, and StableRNGs for the draws, join Standard's test
+    extras), and so is the v6 comparison, with a midpoint rule and a seeded Xoshiro, since the
+    oracle environment has neither. 729 checks agree, the corrections declared.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
@@ -1766,6 +1777,7 @@ the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs,
    §3.31–3.33). The two questions recorded here are settled there: v6's
    `default_meta = ReplaceZeroDiagonalEntries(tiny)` is the rules' default for an unset
    `ctx.matrix_correction`, not an algorithm, and the sampling rules draw from `ctx.rng`.
+   **Done.**
 8. **Mixtures**: GammaMixture, a clone of NormalMixture; then `Mixture`, hand-written: its
    switch rule builds a `randomvar` for a product with log scale (the `product` context
    service instead), and its rules read incoming log scales (`ann.m`).

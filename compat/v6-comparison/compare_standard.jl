@@ -10,6 +10,8 @@ using ExponentialFamily, BayesBase, Distributions
 using MessagePassingRulesBase, MessagePassingRulesTestUtils, StandardMessagePassingRules
 using MessagePassingRulesBase: AnnotationStore, getannotation
 using LinearAlgebra: dot
+import LinearAlgebra, Random
+using MessagePassingRulesBase: RuleContext
 
 # ReactiveMP.jl#669: v6's variational NormalMeanVariance rules take the variance a `q_v`
 # contributes as E[v]; naive VMP gives 1/E[1/v], which the ports use. They agree for a point
@@ -38,6 +40,9 @@ const MVNG_OUT = "ReactiveMP.jl#676: v6's MvNormalGamma out rule drops tr(E[Λ] 
 const ADDITION_SIGN = "ReactiveMP.jl#677: v6's `+` in1 rule for two weighted-mean normals computes E[in2] - E[out]; it is E[out] - E[in2], as v6's generic rule gives"
 # v6's `-` marginal shifts in2 by out - in1 when in1 is known; out = in1 - in2 gives in1 - out.
 const SUBTRACTION_MARGINAL = "ReactiveMP.jl#678: v6's `-` marginal takes in2's likelihood at out - in1 for a known in1; it is in1 - out, as v6's own `-` in2 message rule gives"
+# v6's `*` `:in` log-scale for a scalar A is -logdet(a) = -log a; m(x) = N_out(a x) integrates
+# to |a|^(-d), so it is -d log |a|. They agree for d = 1 and a > 0; v6 throws for a < 0.
+const MULTIPLICATION_LOGSCALE = "ReactiveMP.jl#680: v6's `*` in log-scale for a scalar a is -log a; the message integrates to |a|^(-d), so it is -d log |a|"
 const I2 = [1.0 0.0; 0.0 1.0]
 const INVERSE_WISHART = InverseWishart(5.0, [2.0 0.3; 0.3 2.0])
 const WISHART = Wishart(4.0, [1.0 0.2; 0.2 0.5])
@@ -246,6 +251,32 @@ const MESSAGE_CASES = [
     ("dot:in2:scalar", dot, :in2, (m = (out = NormalMeanVariance(1.0, 2.0), in1 = PointMass(2.0)),), false),
     ("dot:in2:vector", dot, :in2, (m = (out = NormalMeanPrecision(2.0, 3.0), in1 = PointMass([2.0, 0.5])),), false),
     ("dot:in1:vector", dot, :in1, (m = (out = NormalWeightedMeanPrecision(2.0, 3.0), in2 = PointMass([1.0, -0.5])),), false),
+    ("*:out:scalar-normal", *, :out, (m = (A = PointMass(2.0), in = NormalMeanVariance(1.0, 2.0)),), false),
+    ("*:out:scalar-mv-covariance", *, :out, (m = (A = PointMass(-1.5), in = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("*:out:scalar-mv-precision", *, :out, (m = (A = PointMass(0.5), in = MvNormalMeanPrecision([1.0, 2.0], [3.0 0.5; 0.5 2.0])),), false),
+    ("*:out:scalar-mv-weighted", *, :out, (m = (A = PointMass(2.0), in = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0])),), false),
+    ("*:out:normal-scalar", *, :out, (m = (A = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), in = PointMass(2.0)),), false),
+    ("*:out:uniform-scaling", *, :out, (m = (A = PointMass(2.0 * LinearAlgebra.I), in = MvNormalMeanPrecision([1.0, 2.0], [3.0 0.5; 0.5 2.0])),), false),
+    ("*:out:matrix-normal", *, :out, (m = (A = PointMass([1.0 2.0; 0.5 2.0]), in = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0])),), false),
+    ("*:out:vector-normal", *, :out, (m = (A = PointMass([2.0, 0.5]), in = NormalMeanVariance(1.0, 2.0)),), false),
+    ("*:out:normal-vector", *, :out, (m = (A = NormalMeanVariance(1.0, 2.0), in = PointMass([2.0, 0.5])),), false),
+    ("*:out:scalar-gamma", *, :out, (m = (A = PointMass(2.0), in = GammaShapeRate(3.0, 2.0)),), false),
+    ("*:out:gamma-scalar", *, :out, (m = (A = GammaShapeRate(3.0, 2.0), in = PointMass(2.0)),), false),
+    ("*:out:point-masses", *, :out, (m = (A = PointMass([1.0 2.0; 0.5 2.0]), in = PointMass([1.0, 2.0])),), false),
+    ("*:in:normal-scalar", *, :in, (m = (out = NormalMeanVariance(1.0, 2.0), A = PointMass(2.0)),), false),
+    ("*:in:mv-normal-scalar", *, :in, (m = (out = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), A = PointMass(2.0)),), MULTIPLICATION_LOGSCALE),
+    # No `*:in` case for a UniformScaling A: v6's rule for it takes its arguments in reverse order, which v6's dispatch never reaches.
+    ("*:in:mv-weighted-matrix", *, :in, (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), A = PointMass([1.0 2.0; 0.5 2.0])),), false),
+    ("*:in:mv-covariance-matrix", *, :in, (m = (out = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), A = PointMass([1.0 2.0; 0.5 2.0])),), false),
+    ("*:in:mv-precision-vector", *, :in, (m = (out = MvNormalMeanPrecision([1.0, 2.0], [3.0 0.5; 0.5 2.0]), A = PointMass([2.0, 0.5])),), false),
+    ("*:in:mv-covariance-vector", *, :in, (m = (out = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), A = PointMass([2.0, 0.5])),), false),
+    ("*:in:gamma-scalar", *, :in, (m = (out = GammaShapeRate(3.0, 2.0), A = PointMass(2.0)),), false),
+    ("*:in:point-masses", *, :in, (m = (out = PointMass([3.0, 1.0]), A = PointMass([1.0 2.0; 0.5 2.0])),), false),
+    ("*:A:normal-scalar", *, :A, (m = (out = NormalMeanVariance(1.0, 2.0), in = PointMass(2.0)),), false),
+    ("*:A:mv-precision-vector", *, :A, (m = (out = MvNormalMeanPrecision([1.0, 2.0], [3.0 0.5; 0.5 2.0]), in = PointMass([2.0, 0.5])),), false),
+    ("*:A:mv-covariance-vector", *, :A, (m = (out = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), in = PointMass([2.0, 0.5])),), false),
+    ("*:A:gamma-scalar", *, :A, (m = (out = GammaShapeRate(3.0, 2.0), in = PointMass(2.0)),), false),
+    ("*:A:point-masses", *, :A, (m = (out = PointMass(6.0), in = PointMass(2.0)),), false),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -337,6 +368,9 @@ const MARGINAL_CASES = [
     ("-:(in1,in2):mv-normals", -, (:in1, :in2), (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in1 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0]), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.5])),), false),
     ("dot:(in1,in2):point-mass-in1", dot, (:in1, :in2), (m = (out = NormalMeanVariance(1.0, 2.0), in1 = PointMass([2.0, 0.5]), in2 = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
     ("dot:(in1,in2):point-mass-in2", dot, (:in1, :in2), (m = (out = NormalMeanVariance(1.0, 2.0), in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), in2 = PointMass([2.0, 0.5])),), false),
+    ("*:(A,in):point-mass-A", *, (:A, :in), (m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], [2.0 0.3; 0.3 1.0]), A = PointMass([1.0 2.0; 0.5 2.0]), in = MvNormalMeanCovariance([1.0, -1.0], [1.0 0.2; 0.2 2.0])),), false),
+    ("*:(A,in):point-mass-in", *, (:A, :in), (m = (out = NormalMeanVariance(1.0, 2.0), A = NormalMeanPrecision(1.0, 2.0), in = PointMass(2.0)),), false),
+    ("*:(A,in):mv-precision-vector", *, (:A, :in), (m = (out = MvNormalMeanPrecision([1.0, 2.0], [3.0 0.5; 0.5 2.0]), A = NormalMeanPrecision(1.0, 2.0), in = PointMass([2.0, 0.5])),), false),
     ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
@@ -468,6 +502,43 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
             v7 = call_message_update_rule(NormalMeanVariance, :v; m)
             v6, _ = v6_message_update(NormalMeanVariance, :v, m, NamedTuple())
             @test all(v -> logpdf(v7, v) ≈ logpdf(v6, v), (0.1, 1.0, 3.5, 10.0))
+        end
+    end
+    # `*`'s messages without a closed form are log-densities: both versions are evaluated against
+    # a midpoint rule over their defining integrals, whose integrands are bounded here. v6's
+    # sampled rules draw from its global generator, seeded; the port's from a seeded Xoshiro.
+    # The tolerances hold for any stream. v6's sampled message towards a factor weights each
+    # draw by |y|, the density of out/y, so only it misses its integral.
+    @testset "* log-density messages" begin
+        integral(f, lo, hi) = (h = (hi - lo) / 100_000; h * sum(k -> f(lo + (k - 1 / 2) * h), 1:100_000))
+        m_out, m_y = NormalMeanVariance(1.5, 0.5), NormalMeanVariance(0.8, 0.3)
+        v7 = call_message_update_rule(*, :in; m = (out = m_out, A = m_y))
+        v6, _ = v6_message_update(*, :in, (out = m_out, A = m_y), NamedTuple())
+        for x in (-2.0, 0.7, 1.9)
+            @test logpdf(v7, x) ≈ logpdf(v6, x)
+        end
+        m_A, m_in = NormalMeanVariance(1.0, 0.5), NormalMeanVariance(0.5, 0.4)
+        v7 = call_message_update_rule(*, :out; m = (A = m_A, in = m_in))
+        v6, _ = v6_message_update(*, :out, (A = m_A, in = m_in), NamedTuple())
+        for z in (-1.0, 0.3, 2.5)
+            @test logpdf(v7, z) ≈ logpdf(v6, z)
+        end
+        g, b = GammaShapeRate(3.0, 2.0), Beta(2.0, 3.0)
+        Random.seed!(42)
+        v6_in, _ = v6_message_update(*, :in, (out = g, A = b), NamedTuple())
+        v7_in = call_message_update_rule(*, :in; m = (out = g, A = b), ctx = RuleContext(rng = Random.Xoshiro(42)))
+        for x in (0.5, 2.0, 4.0)
+            exact = log(integral(y -> pdf(g, x * y) * pdf(b, y), 0.0, 1.0)) + log(3000)
+            @test logpdf(v7_in, x) ≈ exact atol = 0.05
+            @test !isapprox(logpdf(v6_in, x), exact; atol = 0.3)
+        end
+        @info "known disagreement `*:in:sampled` (correction): ReactiveMP.jl#679: v6 weights each draw of the other factor by |y|, the density of out/y; the message is ∫ p_out(x y) p_y(y) dy"
+        v6_out, _ = v6_message_update(*, :out, (A = b, in = g), NamedTuple())
+        v7_out = call_message_update_rule(*, :out; m = (A = b, in = g), ctx = RuleContext(rng = Random.Xoshiro(42)))
+        for z in (0.3, 1.0, 2.0)
+            exact = log(integral(a -> pdf(b, a) * pdf(g, z / a) / a, 0.0, 1.0)) + log(3000)
+            @test logpdf(v7_out, z) ≈ exact atol = 0.05
+            @test logpdf(v6_out, z) ≈ exact atol = 0.05
         end
     end
     @testset "marginal rules" begin

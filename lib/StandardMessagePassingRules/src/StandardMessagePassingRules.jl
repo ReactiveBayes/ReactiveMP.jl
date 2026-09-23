@@ -14,12 +14,12 @@ module StandardMessagePassingRules
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: annotate!, matrix_correction
 using StatsFuns: log2π, logπ
-using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma
+using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma, besselk
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
 using LogExpFunctions: softmax!
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
-using LinearAlgebra: I, Hermitian, tr, logdet, dot
+using LinearAlgebra: I, Hermitian, UniformScaling, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
 using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
 import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily, covmats
@@ -35,7 +35,7 @@ const NODES = [
     NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
     MvNormalMeanCovariance, MvNormalMeanPrecision, MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision,
     MvNormalMeanScaleMatrixPrecision, Wishart, InverseWishart, DirichletCollection, MvNormalGamma,
-    MvNormalWishart, MatrixNormal, MatrixNormalWishart, +, -, dot,
+    MvNormalWishart, MatrixNormal, MatrixNormalWishart, +, -, dot, *,
 ]
 
 include("nodes/normal_mean_variance.jl")
@@ -160,6 +160,11 @@ include("rules/dot_product/out.jl")
 include("rules/dot_product/in1.jl")
 include("rules/dot_product/in2.jl")
 include("rules/dot_product/marginals.jl")
+include("nodes/multiplication.jl")
+include("rules/multiplication/out.jl")
+include("rules/multiplication/in.jl")
+include("rules/multiplication/A.jl")
+include("rules/multiplication/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")
