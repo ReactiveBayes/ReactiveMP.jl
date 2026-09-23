@@ -67,6 +67,7 @@ make check-format                          # verify only, no writes
 make docs                                  # build documentation
 make test-base                             # lib/MessagePassingRulesBase's own suite
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
+make test-standard                         # lib/StandardMessagePassingRules, from its test/Project.toml
 julia +1.10 --project=compat/v6-comparison compat/v6-comparison/check.jl   # v6 comparison, on the floor
 ```
 
@@ -118,7 +119,8 @@ imported by the caller.
   declared through `treat_as_own`, and `deps_compat` checks `[extras]` too.
 - `lib/` holds the new packages. `MessagePassingRulesBase` and `MessagePassingRulesTestUtils`
   have their own suites (`make test-base`, `make test-testutils`, same `test_args` syntax),
-  run by `LibTests.yml`; the other two are still empty stubs. TestUtils depends on the
+  run by `LibTests.yml`; `StandardMessagePassingRules` (`make test-standard`) is
+  being filled in Phase 4.5, and `MessagePassingRulesApproximations` is still an empty stub. TestUtils depends on the
   unregistered base through `[deps]` and `[sources]` (honoured on 1.11+); on 1.10 it is
   `Pkg.develop`ed at test time. No Manifest under `lib/` is committed — the local ones are
   gitignored.

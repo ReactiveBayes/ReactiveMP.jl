@@ -51,6 +51,36 @@ jobs:
             "${{ matrix.package }}" == "MessagePassingRulesBase" || Pkg.develop(path = "lib/MessagePassingRulesBase")
             Pkg.test()'
 
+  standard:
+    # Tested from its test/Project.toml: the test tooling is unregistered, and on 1.10, where
+    # [sources] is ignored, developing it into the package itself would make it a runtime
+    # dependency. So the siblings are developed into the test environment instead.
+    name: StandardMessagePassingRules - Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.10'
+          - '1.11'
+          - '1.12'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      - name: Test
+        env:
+          TEST_ALL: true
+        run: |
+          julia --startup-file=no --project=lib/StandardMessagePassingRules/test -e '
+            import Pkg
+            Pkg.develop([Pkg.PackageSpec(path = p) for p in ("lib/MessagePassingRulesBase", "lib/MessagePassingRulesTestUtils", "lib/StandardMessagePassingRules")])
+            Pkg.instantiate()'
+          julia --startup-file=no --project=lib/StandardMessagePassingRules/test lib/StandardMessagePassingRules/test/runtests.jl
+
   v6-comparison:
     name: v6 comparison - Julia 1.10
     runs-on: ubuntu-latest

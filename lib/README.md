@@ -2,7 +2,8 @@
 
 The packages of the rule/node rewrite, created as stubs in Phase P. `MessagePassingRulesBase`
 (Phase 3) and `MessagePassingRulesTestUtils` (Phase 4) are implemented, each with its own
-test suite; `StandardMessagePassingRules` and `MessagePassingRulesApproximations` are still a
+test suite. `StandardMessagePassingRules` is being filled in Phase 4.5, starting with the
+rules the engine slice needs, and `MessagePassingRulesApproximations` is still a
 `Project.toml` plus an empty module.
 
 Read `PLAN.md` for the design, `PHASES.md` for what is next, and `INVENTORY.md` for where
@@ -48,6 +49,19 @@ julia> Pkg.test()
 committed: each Julia version resolves for itself, which a manifest resolved on 1.10 could not
 do for 1.11 and 1.12. Run the example from the repository root, since `Pkg.activate` changes
 the active environment, not the working directory.
+
+### A package that needs the test tooling
+
+`MessagePassingRulesTestUtils` is a test-only dependency, and unregistered. On the 1.10
+floor, developing it into a package's own project would make it a runtime dependency. So a
+rule package such as `StandardMessagePassingRules` keeps its test dependencies in
+`test/Project.toml`, with `[sources]` for 1.11+, and runs its suite from that environment
+after developing the siblings into it. TestItemRunner finds the package from the test
+file's location, not from the active project:
+
+```bash
+make test-standard     # does exactly this; LibTests.yml's `standard` job too
+```
 
 ## Promotion to separate repositories
 

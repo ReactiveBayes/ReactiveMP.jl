@@ -28,7 +28,7 @@ doc_init:
 docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl
 
-.PHONY: test test-all test-base test-testutils
+.PHONY: test test-all test-base test-testutils test-standard
 
 test: ## Run the fast subset (skips `:slow`). test_args="rules:beta:out", "tag:rules", "name:Beta" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
@@ -42,6 +42,11 @@ test-base: ## Test lib/MessagePassingRulesBase. Takes test_args like `test`, e.g
 test-testutils: ## Test lib/MessagePassingRulesTestUtils against the local MessagePassingRulesBase. Takes test_args like `test`
 	rm -f lib/MessagePassingRulesTestUtils/Manifest.toml
 	julia --startup-file=no --project=lib/MessagePassingRulesTestUtils -e 'import Pkg; Pkg.develop(path = "lib/MessagePassingRulesBase"); Pkg.test(test_args = split("$(test_args)") .|> string)'
+
+test-standard: ## Test lib/StandardMessagePassingRules from its test environment, developing the local lib packages. Takes test_args like `test`
+	rm -f lib/StandardMessagePassingRules/test/Manifest.toml
+	julia --startup-file=no --project=lib/StandardMessagePassingRules/test -e 'import Pkg; Pkg.develop([Pkg.PackageSpec(path = p) for p in ("lib/MessagePassingRulesBase", "lib/MessagePassingRulesTestUtils", "lib/StandardMessagePassingRules")]); Pkg.instantiate()'
+	julia --startup-file=no --project=lib/StandardMessagePassingRules/test lib/StandardMessagePassingRules/test/runtests.jl $(test_args)
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

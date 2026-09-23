@@ -2,17 +2,26 @@ name = "StandardMessagePassingRules"
 uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
 version = "0.1.0-DEV"
 
-# Scaffolding only -- Phase 5 fills this in. See PLAN.md and INVENTORY.md.
-#
-# Scope: distribution nodes, arithmetic (+, -, *, dot), logic (AND, OR, NOT, IMPLY) and the
+# Distribution nodes, arithmetic (+, -, *, dot), logic (AND, OR, NOT, IMPLY) and the
 # mixtures. Domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) belong to a
 # sibling package whose name is deferred to Phase 6; INVENTORY.md records them as `models`.
+#
+# Tests run from test/Project.toml, not from [extras]: MessagePassingRulesTestUtils is
+# unregistered, and on the 1.10 floor, where [sources] is ignored, developing it into this
+# project would make it a runtime dependency. See lib/README.md.
+
+[deps]
+BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
+MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+
+[sources]
+MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 
 [compat]
+BayesBase = "1.5"
+Distributions = "0.25"
+ExponentialFamily = "2.5"
+MessagePassingRulesBase = "0.1"
 julia = "1.10"
-
-# Depends on MessagePassingRulesBase. Not declared yet: it is unregistered, and
-# [sources] -- the clean way to point at a sibling in a monorepo -- needs Julia 1.11 while
-# our floor is 1.10. From the repository root, activate this project and use
-# `Pkg.develop(path = "lib/MessagePassingRulesBase")`
-# and commits the resulting Manifest. See lib/README.md.

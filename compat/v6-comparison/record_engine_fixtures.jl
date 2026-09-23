@@ -18,6 +18,10 @@ target_text((tag, index)::Tuple{Val{S}, Int}) where {S} = "(:$S, $index)"
 
 logscale_of(ann) = has_annotation(ann, :logscale) ? Float64(get_annotation(ann, :logscale)) : nothing
 
+# Called with every after-rule-call event when set; `slice_rule_inventory.jl` uses it to
+# find which v6 rule each call selected. Recording itself leaves it unset.
+const RULE_CALL_HOOK = Ref{Any}(nothing)
+
 # Records every rule call, in the order v6 makes them, tagged with the iteration it
 # happened in. A deferred message is computed when it is materialised, so this is
 # materialisation order.
@@ -28,6 +32,7 @@ function tracing_callbacks()
         before_iteration = (event) -> (iteration[] += 1; nothing),
         after_message_rule_call = (event) -> begin
             push!(trace, RuleCallRecord(iteration[], node_text(event.mapping), target_text(event.mapping.vtag), event.result, logscale_of(event.annotations)))
+            RULE_CALL_HOOK[] === nothing || RULE_CALL_HOOK[](event)
             nothing
         end,
     )
@@ -206,4 +211,6 @@ function run_all(; check::Bool)
     end
 end
 
-run_all(; check = "--check" in ARGS)
+if abspath(PROGRAM_FILE) == @__FILE__
+    run_all(; check = "--check" in ARGS)
+end
