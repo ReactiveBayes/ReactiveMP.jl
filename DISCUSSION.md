@@ -1553,6 +1553,30 @@ for a fallback otherwise: the node types `Addition`, `Subtraction`, `Multiplicat
 functions is that Standard adds methods on Base's function types, which Aqua's piracy check
 lists as owned, as it already does for ExponentialFamily's node types.
 
+
+### 3.34 The `product` service returns the product's own log scale (user, 2026-09-23)
+
+`Mixture`'s switch rule needs, for each input k, the log scale of `m_out × m_inputs[k]`. v6
+built a throwaway `randomvar` and a `MessageProductContext` with `LogScaleAnnotations` to get
+it, and the result summed three terms: the two incoming log scales and the product's own
+normalisation (`compute_logscale`). Phase 0 had already settled the service's signature,
+`product : (left, right) -> (dist, logscale)`; what was open is which log scale it returns.
+The user decided it returns **only the product's own**. The service stays pure distribution
+algebra over two distributions, and the rule adds the incoming log scales it reads from
+`ann.m`, so what it sums is written in the rule. The alternative, the service adding the
+inputs' log scales as v6's context did, would have made it take annotated messages rather
+than distributions. The engine supplies it from `rule_context`, with v6's `GenericProd`.
+
+### 3.35 Mixture has no average energy, and runs under `MixtureBP` (user, 2026-09-23)
+
+v6's `Mixture` energy logs a warning and returns 0.0 on every call, so a free energy of a model
+with a Mixture was silently wrong. The user decided the port defines **no** average energy: a
+free energy then raises the base package's `RuleNotFound`, naming the node, instead of a wrong
+number. It is a gap, recorded for MIGRATION.md. Keeping v6's placeholder was rejected.
+
+The node's rules are sum-product over the incoming messages whatever the factorisation, so it
+runs under an algorithm of its own, as NormalMixture does. The sketches called it
+`MixtureVMP`, which mislabels it; the user chose **`MixtureBP`**.
 ---
 
 ## 4. Corrections — read this before re-proposing anything

@@ -19,10 +19,11 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 8: Mixtures** — GammaMixture, a clone of NormalMixture, then the hand-written
-`Mixture`, whose switch rule builds a product with log scale and whose rules read incoming log
-scales (§ Phase 5). It needs a brief first, as steps 5–7 had. Steps 1–7 are done; step 7,
-arithmetic, is summarised in § Phase 5, *Step 7 brief*.
+**Phase 5, step 8: Mixtures** — GammaMixture, then `Mixture`. **Briefed**, awaiting the user's
+sign-off: § Phase 5, *Step 8 brief* has the counts, the four decisions (the `product` service
+returning the product's own log scale, no Mixture energy, `MixtureBP`, a `mixture_bp` fixture;
+`DISCUSSION.md` §3.34–3.35) and the defaults. Steps 1–7 are done; step 7 is summarised in
+§ Phase 5, *Step 7 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -44,6 +45,9 @@ arithmetic, is summarised in § Phase 5, *Step 7 brief*.
 | the RNG as an activation option (the engine passes `Random.default_rng()` until then), and `*`'s number of samples (3000, v6's) configurable | Phase 7 | `DISCUSSION.md` §3.32 |
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
 | MIGRATION.md: `*` refuses the non-commuting products v6 computed as in·A (a matrix operand with a Gaussian `A`, a matrix `in` towards `A`); v6's argument-reversed `*` `:in` rules, reachable only through `@call_rule`, are gone | step 9, with MIGRATION.md | § Phase 5, *Step 7 brief* |
+| MIGRATION.md: `Mixture` has no average energy, so a free energy of a model with one raises `RuleNotFound`, where v6 warned and returned 0.0 | step 9, with MIGRATION.md | `DISCUSSION.md` §3.35 |
+| `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
+| the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -1770,6 +1774,64 @@ the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs,
     extras), and so is the v6 comparison, with a midpoint rule and a seeded Xoshiro, since the
     oracle environment has neither. 729 checks agree, the corrections declared.
 
+### Step 8 brief — Mixtures
+
+**Scope, counted** from `legacy/v6/`:
+
+| node | message rules | marginal | energies | v6 tests |
+|---|---|---|---|---|
+| GammaMixture | 4: `:out`, `:switch`, `(:a, k)`, `(:b, k)`, all variational | 0 | 1 | 4 rule items (7 cases); 8 node items, mostly machinery |
+| Mixture | 5: `(:inputs, k)` ×2, `:out` ×2, `:switch`, over messages; the two taking `q_switch::PointMass` are dead | 0 | 1, a placeholder | none; 1 node item, machinery |
+
+Both are hand-written in v6 (`GammaMixtureNode{N}`, `MixtureNode{N}`, with their own
+`factornode`, `activate!` and functional dependencies); groups replace all of it, as they did
+for NormalMixture. The Mixture rules read raw `messages[i]` and incoming log scales, and its
+switch rule builds a throwaway `randomvar` for a product's log scale
+(`rules/mixture/switch.jl:11`). The engine passes no `product` service yet, never calls
+`missing_services`, and does fill `ann.m`; the tables cannot feed incoming annotations.
+
+**Decided (user):**
+- **`ctx.product` returns the product's own log scale** (§3.34): the engine's `rule_context`
+  passes `product = (l, r) -> (d, compute_logscale(d, l, r))` with `d = prod(GenericProd(), l,
+  r)`, and a rule adds the incoming log scales from `ann.m`.
+- **Mixture has no average energy** (§3.35): a free energy of a model with one raises
+  `RuleNotFound`, naming the node, instead of v6's warning and 0.0.
+- **Mixture runs under `MixtureBP`** (§3.35), renamed from the sketches' `MixtureVMP`.
+- **A v6 engine fixture, `mixture_bp`**, recorded with log scales, compared call by call.
+
+**Defaults for the step**, open to the user's correction:
+- **GammaMixture**, on NormalMixture's pattern: `struct GammaMixture end`, interfaces
+  `[:out, :switch, :a..., :b...]`, its own `GammaMixtureVMP`, and dependencies declaring the
+  rates before the shapes (`:out => (q[:switch], q[:b...], q[:a...])`, `(:a, k) => (q[:out],
+  q[:switch], q[:b][k])`, …), which is v6's `reverse(bs), reverse(as)` schedule without the
+  reversal inside a group, which changes nothing (§3.24). The four rules keep v6's math: the
+  switch rule renormalises after clamping, and `(:a, k)`, `(:b, k)` do not clamp, as in v6.
+  The switch rule and the energy share `gamma_shape_rate_energy`, with no `score` call; the
+  energy drops `init = 0.0` and takes any Gamma `q_b`, as the rules do. `INTEGER_SWITCH`
+  guards as NormalMixture's, where v6 had none. Tests: v6's 7 cases, and v6's energy and
+  GammaShapeLikelihood node items; its machinery items go with the machinery.
+- **Mixture:** `struct Mixture end`, `[:out, :switch, :inputs...]`, `algorithm = MixtureBP`,
+  dependencies over messages: `:out => (m[:switch], m[:inputs...])`, `:switch => (m[:out],
+  m[:inputs...])`, `(:inputs, k) => (m[:out], m[:switch])`. The rules read incoming log scales
+  as `getannotation(ann.m[:out], :logscale)` and so on, in place of `messages[i]`; a missing
+  one is an error naming `LogScaleAnnotations`, where v6 raised a `KeyError`. The switch rule
+  declares `ctx = (:product,)` and adds `last(ctx.product(m_out, m_inputs[k]))` to the two
+  incoming log scales, then `logsumexp` and `softmax` (LogExpFunctions). v6's two
+  `q_switch::PointMass` rules are not ported: only the deleted `RequireMarginal` path reached
+  them. v6's math is kept and checked by hand-derived cases through
+  `call_message_update_rule(...; ann = RuleAnnotations(m = …))`, and by the fixture. The
+  `@define_factor_node` docstring's `MixtureVMP` example is renamed with the port.
+- **The engine:** `rule_context` passes the `product` service, tested through a
+  `MessageMapping`, as `ctx.rng` is.
+- **INVENTORY:** `GammaMixtureNode`, `MixtureNode` and the `GaussianMixtureNode` alias are
+  `delete`, as `NormalMixtureNode` is; the two mixture-rule notes point to the product service
+  and `ann.m`.
+- **Recorded, not done:** table cases taking incoming annotations; the engine calling
+  `missing_services` (the follow-up table above).
+- **Order:** GammaMixture; the engine's `product` service; Mixture, with the fixture and the
+  docstring rename, closing the step. Each port gets comparison cases, and an issue tagging
+  @Nimrais for any v6 mismatch.
+
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
    `DISCUSSION.md` §3.29).
@@ -1780,7 +1842,8 @@ the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs,
    **Done.**
 8. **Mixtures**: GammaMixture, a clone of NormalMixture; then `Mixture`, hand-written: its
    switch rule builds a `randomvar` for a product with log scale (the `product` context
-   service instead), and its rules read incoming log scales (`ann.m`).
+   service instead), and its rules read incoming log scales (`ann.m`). *Briefed* (the step 8
+   brief below, `DISCUSSION.md` §3.34–3.35).
 9. **Close**: `MIGRATION.md` complete, `docs/` rewritten and back in the build, `legacy/v6/`
    holding only Phase 6's nodes.
 

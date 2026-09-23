@@ -163,12 +163,12 @@ replacement".
 | `GCV` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` |  |
 | `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` |  |
 | `GammaMixture` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
-| `GammaMixtureNode` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
+| `GammaMixtureNode` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `GaussHermiteCubature` | `type` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
 | `GaussLaguerreQuadrature` | `type` | `src/approximations/gausslaguerre.jl` | `delete` | no in-tree consumer; takes DomainIntegrals with it; no replacement |
 | `GaussianCoupling` | `type` | `src/nodes/predefined/gaussian_coupling.jl` | `node:GaussianCoupling` |  |
 | `GaussianMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` | alias |
-| `GaussianMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` | alias |
+| `GaussianMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `delete` | the alias of `NormalMixtureNode`, which is deleted |
 | `HalfNormal` | `type` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
 | `IMPLY` | `type` | `src/nodes/predefined/implication.jl` | `standard` |  |
 | `ImportanceSamplingApproximation` | `type` | `src/approximations/importance.jl` | `delete` | no in-tree consumer; no replacement |
@@ -183,7 +183,7 @@ replacement".
 | `MeanBased` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
 | `Message` | `type` | `src/message.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Mixture` | `type` | `src/nodes/predefined/mixture.jl` | `standard` |  |
-| `MixtureNode` | `type` | `src/nodes/predefined/mixture.jl` | `standard` |  |
+| `MixtureNode` | `type` | `src/nodes/predefined/mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `MomentMatching` | `type` | `src/nodes/nodes.jl` | `delete` | defined and exported but dispatched on nowhere; absorbed by the algorithm axis |
 | `MultinomialPolya` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
 | `MultinomialPolyaMeta` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
@@ -297,10 +297,10 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `mixture/switch.jl` | `rule` | `src/rules/mixture/switch.jl` | `standard` | the one engine leak in the rules tree: allocates a throwaway `randomvar` to reach product-with-log-scale. Becomes a context service (open item #12) |
+| `mixture/switch.jl` | `rule` | `src/rules/mixture/switch.jl` | `standard` | the one engine leak in the rules tree: allocates a throwaway `randomvar` to reach product-with-log-scale. Becomes the `product` context service, which returns the product's own log scale; the rule adds the incoming ones from `ann.m` (Phase 5 step 8, DISCUSSION §3.34) |
 | `delta layout: default` | `rule` | `src/nodes/predefined/delta/layouts/default.jl` | `node:Delta` | includes the known-inverse variant, which the original count missed |
 | `delta layout: cvi` | `rule` | `src/nodes/predefined/delta/layouts/cvi.jl` | `delete` | old `ProdCVI` |
 | `delta layout: cvi-projection` | `rule` | `ext/ReactiveMPProjectionExt/layout/cvi_projection.jl` | `node:Delta` | moves into the Delta package's extension once its engine half is gone |
-| `mixture rules indexing raw inputs` | `rule` | `src/rules/mixture/` | `standard` | raw message access in switch/out/inputs; hand-migrate with annotation checks |
+| `mixture rules indexing raw inputs` | `rule` | `src/rules/mixture/` | `standard` | raw message access in switch/out/inputs; hand-migrated in Phase 5 step 8, reading incoming log scales from `ann.m` |
 | `discrete_transition rules indexing raw inputs` | `rule` | `src/rules/discrete_transition/` | `node:DiscreteTransition` | raw message/marginal access in categoricals and marginals; hand-migrate with the node, not standard rules |
 | `MessageMapping construction sites` | `rule` | `src/message.jl` | `engine` | 5 sites; engine wiring |

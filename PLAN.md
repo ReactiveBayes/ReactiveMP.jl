@@ -142,8 +142,8 @@ With a node's own algorithm, a variadic group and a log scale:
 @define_message_update_rule(
     node      = Mixture,
     target    = :switch,
-    algorithm = MixtureVMP,
-    pure      = false,
+    algorithm = MixtureBP,
+    ctx       = (:product,),
     args      = (m[:out]::Any, m[:inputs...]::Any),
     body      = (ctx, args, ann) -> begin
         ...
@@ -243,7 +243,7 @@ end
     node       = Mixture,
     type       = Stochastic,
     interfaces = [:out, :switch, :inputs...],
-    algorithm  = MixtureVMP,   # omitted for almost every node: DefaultAlgorithm
+    algorithm  = MixtureBP,    # omitted for almost every node: DefaultAlgorithm
 )
 ```
 
@@ -1074,7 +1074,8 @@ The dispatch result, ownership contracts and early engine integration are separa
 
 12. ~~**Context service contracts.**~~ Phase 0 turned both hard cases into signatures, each
     demonstrated as a standalone call with no graph and no Rocket:
-    `product : (left, right) -> (dist, logscale::Real)` and
+    `product : (left, right) -> (dist, logscale::Real)`, the log scale being the product's own
+    and not the inputs' (Phase 5 step 8, `DISCUSSION.md` §3.34), and
     `nodefn : (ctx, target) -> a callable of the free arguments only`. Neither carries an
     engine type. **Still open: incoming annotations have no declared route.** The switch rule
     needs the log scales that *arrived* with its messages, but `args` holds message data and
