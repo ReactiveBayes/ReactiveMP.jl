@@ -28,8 +28,12 @@ message difference, and `std(d) / sqrt(length(d))` estimates its Monte Carlo
 standard error. Normal-approximation confidence intervals require finite
 variance and sufficiently many samples.
 """
-function test_generic_vmp_rule(rng, log_node_function::F, index_to_remove, N_samples, q_s...) where {F}
-    samples = map(q -> isnothing(q) ? nothing : [rand(rng, q) for _ in 1:N_samples], q_s)
+function test_generic_vmp_rule(
+    rng, log_node_function::F, index_to_remove, N_samples, q_s...
+) where {F}
+    samples = map(
+        q -> isnothing(q) ? nothing : [rand(rng, q) for _ in 1:N_samples], q_s
+    )
 
     return function (x)
         return map(1:N_samples) do s
