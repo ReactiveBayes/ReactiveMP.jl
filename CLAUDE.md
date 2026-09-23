@@ -150,7 +150,7 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
-  six nodes, the univariate distributions and the logic nodes so far), `MessagePassingRulesApproximations` (`make test-approximations`;
+  six nodes, the univariate distributions, the logic nodes and the multivariate normals so far), `MessagePassingRulesApproximations` (`make test-approximations`;
   `Unscented` and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation` and its Unscented
   rules). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
@@ -178,7 +178,7 @@ and read whichever exist before proposing changes:
 **If none of these files exist, the repository has no unfinished business** and you can
 treat `main` as the whole story.
 
-The current work is the rule/node rewrite; Phase 4.5 is closed, and Phase 5 is in progress (steps 1–4
+The current work is the rule/node rewrite; Phase 4.5 is closed, and Phase 5 is in progress (steps 1–5
 done). From
 Phase 4.5 on, the engine in `src/` is
 **refactored in place**, not bridged. Its reactive machinery is kept, and rule lookup and

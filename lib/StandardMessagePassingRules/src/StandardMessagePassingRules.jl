@@ -25,7 +25,7 @@ using MatrixCorrectionTools: correction!
 import ExponentialFamily: InverseWishartFast, WishartFast
 import DomainSets
 
-export NormalMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
+export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
 export AND, OR, NOT, IMPLY
 
 include("helpers.jl")

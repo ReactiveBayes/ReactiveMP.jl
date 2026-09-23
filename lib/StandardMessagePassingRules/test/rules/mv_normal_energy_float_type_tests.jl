@@ -22,6 +22,7 @@
     for (node, inputs) in cases
         @test call_average_energy(node; inputs...) isa Float32
     end
-    # ExponentialFamily 2.4's E[log |Σ|] for an InverseWishart computes `d * log(2)`, a Float64.
+    # ExponentialFamily 2.6's E[log |Σ|] for an InverseWishart computes `d * log(2)`, a Float64
+    # (ExponentialFamily.jl#322).
     @test_broken call_average_energy(MvNormalMeanCovariance; q = (out = x, μ = y, Σ = InverseWishart(4.0f0, I2))) isa Float32
 end

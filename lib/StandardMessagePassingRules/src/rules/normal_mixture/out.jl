@@ -7,6 +7,6 @@
         means = map(mean, args.q[:m])
         W = sum(k -> πs[k] * precisions[k], eachindex(precisions))
         ξ = sum(k -> πs[k] * precisions[k] * means[k], eachindex(precisions))
-        NormalWeightedMeanPrecision(ξ, W)
+        promote_variate_type(variate_form(typeof(first(args.q[:m]))), NormalWeightedMeanPrecision)(ξ, W)
     end,
 )

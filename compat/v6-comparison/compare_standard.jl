@@ -277,6 +277,12 @@ aligned(group, k) = group[k]
 
 const MIXTURE_COMPONENTS = (m = (NormalMeanVariance(0.0, 1.0), NormalWeightedMeanPrecision(2.0, 1.5)), p = (GammaShapeRate(2.0, 1.0), GammaShapeRate(3.0, 2.0)))
 const MIXTURE_SWITCH = Categorical([0.3, 0.7])
+# The multivariate form: Wishart precisions and a two-dimensional `out`.
+const MV_MIXTURE_COMPONENTS = (
+    m = (MvNormalMeanCovariance([0.0, 1.0], [1.0 0.2; 0.2 2.0]), MvNormalWeightedMeanPrecision([2.0, 1.0], [1.5 0.0; 0.0 1.0])),
+    p = (Wishart(3.0, [1.0 0.1; 0.1 0.5]), Wishart(4.0, [0.5 0.0; 0.0 1.0])),
+)
+const MV_MIXTURE_OUT = MvNormalMeanCovariance([1.5, 0.5], [0.5 0.1; 0.1 0.3])
 
 const MIXTURE_CASES = [
     ("NormalMixture:(m,1)", (:m, 1), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, p = (MIXTURE_COMPONENTS.p[1], nothing)),), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, p = MIXTURE_COMPONENTS.p[1]),)),
@@ -285,6 +291,12 @@ const MIXTURE_CASES = [
     ("NormalMixture:(p,2)", (:p, 2), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, m = (nothing, MIXTURE_COMPONENTS.m[2])),), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, m = MIXTURE_COMPONENTS.m[2]),)),
     ("NormalMixture:switch", :switch, (q = (out = PointMass(1.5), MIXTURE_COMPONENTS...),), (q = (out = PointMass(1.5), MIXTURE_COMPONENTS...),)),
     ("NormalMixture:out", :out, (q = (switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...),), (q = (switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...),)),
+    ("NormalMixture:mv:(m,1)", (:m, 1), (q = (out = MV_MIXTURE_OUT, switch = MIXTURE_SWITCH, p = (MV_MIXTURE_COMPONENTS.p[1], nothing)),), (q = (out = MV_MIXTURE_OUT, switch = MIXTURE_SWITCH, p = MV_MIXTURE_COMPONENTS.p[1]),)),
+    ("NormalMixture:mv:(m,2)", (:m, 2), (q = (out = PointMass([1.0, 2.0]), switch = MIXTURE_SWITCH, p = (nothing, MV_MIXTURE_COMPONENTS.p[2])),), (q = (out = PointMass([1.0, 2.0]), switch = MIXTURE_SWITCH, p = MV_MIXTURE_COMPONENTS.p[2]),)),
+    ("NormalMixture:mv:(p,1)", (:p, 1), (q = (out = MV_MIXTURE_OUT, switch = MIXTURE_SWITCH, m = (MV_MIXTURE_COMPONENTS.m[1], nothing)),), (q = (out = MV_MIXTURE_OUT, switch = MIXTURE_SWITCH, m = MV_MIXTURE_COMPONENTS.m[1]),)),
+    ("NormalMixture:mv:(p,2)", (:p, 2), (q = (out = PointMass([1.0, 2.0]), switch = MIXTURE_SWITCH, m = (nothing, MV_MIXTURE_COMPONENTS.m[2])),), (q = (out = PointMass([1.0, 2.0]), switch = MIXTURE_SWITCH, m = MV_MIXTURE_COMPONENTS.m[2]),)),
+    ("NormalMixture:mv:switch", :switch, (q = (out = MV_MIXTURE_OUT, MV_MIXTURE_COMPONENTS...),), (q = (out = MV_MIXTURE_OUT, MV_MIXTURE_COMPONENTS...),)),
+    ("NormalMixture:mv:out", :out, (q = (switch = MIXTURE_SWITCH, MV_MIXTURE_COMPONENTS...),), (q = (switch = MIXTURE_SWITCH, MV_MIXTURE_COMPONENTS...),)),
 ]
 
 # `flagged` is `false`, `true` for #669, or the reason of another declared correction.
@@ -319,10 +331,14 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
             v6, _ = v6_message_update(V6_NORMAL_MIXTURE, target, NamedTuple(), v6_inputs.q)
             @test compare_with_reference(id, v7, v6; inputs = v7_inputs, node = "NormalMixture", target = string(target)).outcome === :agree
         end
-        q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...)
-        v7 = call_average_energy(NormalMixture; q)
-        v6 = v6_average_energy(V6_NORMAL_MIXTURE, q)
-        @test compare_with_reference("NormalMixture:energy", v7, v6; node = "NormalMixture", target = "energy").outcome === :agree
+        for (id, q) in [
+                ("NormalMixture:energy", (out = PointMass(1.5), switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...)),
+                ("NormalMixture:mv:energy", (out = MV_MIXTURE_OUT, switch = MIXTURE_SWITCH, MV_MIXTURE_COMPONENTS...)),
+            ]
+            v7 = call_average_energy(NormalMixture; q)
+            v6 = v6_average_energy(V6_NORMAL_MIXTURE, q)
+            @test compare_with_reference(id, v7, v6; node = "NormalMixture", target = "energy").outcome === :agree
+        end
     end
     # Belief propagation towards NMV's `v` is a log-density on the half line with no family;
     # the port and v6 are compared by evaluating it.

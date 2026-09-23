@@ -19,11 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance, MvNormalMeanPrecision,
-MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision and MvNormalMeanScaleMatrixPrecision
-done; next NormalMixture's multivariate branches, which close the step. Its brief is in § Phase 5, *Step 5 brief*: the counts, the
-matrix correction as the context service `ctx.matrix_correction` (user), and the defaults for
-the step. Steps 1–4 are done.
+**Phase 5, step 6: Matrix and Wishart** — Wishart, InverseWishart, MatrixNormal,
+MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection (§ Phase 5). It
+needs a brief first, as step 5 had. Steps 1–5 are done; step 5, the multivariate normals and
+NormalMixture's multivariate branches, is summarised in § Phase 5, *Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -40,7 +39,7 @@ the step. Steps 1–4 are done.
 | `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | the log-scale milestone, Phase 7 | Phase 5 review |
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
-| ExponentialFamily 2.4's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard) | upstream, an ExponentialFamily patch release | Phase 5, step 5 |
+| ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -950,8 +949,8 @@ Findings so far:
       algorithm `NormalMixtureVMP` (`VMP` until the algorithm reconciliation), always
       variational whatever the factorisation, with its
       dependencies, `(:m, k) => (q[:out], q[:switch], q[:p][k])` and so on. Its rules towards
-      `(:m, k)`, `(:p, k)`, `:switch` and `:out` and its average energy are univariate for now;
-      the multivariate branches wait for `MvNormalMeanPrecision`. The switch rule and the
+      `(:m, k)`, `(:p, k)`, `:switch` and `:out` and its average energy were univariate here;
+      the multivariate branches came in step 5. The switch rule and the
       energy share `normal_mean_precision_energy` with NMP. The v6 comparison agrees on
       every case, with v6 given the aligned member alone where v7 passes the whole group.
       The package's `quality:rules` now asserts that `check_rules` and
@@ -1451,7 +1450,7 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
    posteriors and free energy included (`engine:fixture:logic_bp`).
 5. **Multivariate normals**: MvNormalMeanCovariance, MvNormalMeanPrecision (whose `precision.jl`
    uses the correction strategy), MvNormalMeanScalePrecision and its matrix form,
-   MvNormalWeightedMeanPrecision; then NormalMixture's multivariate branches. *Briefed* (the
+   MvNormalWeightedMeanPrecision; then NormalMixture's multivariate branches. **Done** (the
    step 5 brief below, `DISCUSSION.md` §3.28).
 
 ### Step 5 brief — the multivariate normals
@@ -1539,10 +1538,16 @@ multivariate branches.
     `series_precision` helper, and the `G` rule symmetrises its scale so a generic-float
     `cholinv` passes `Wishart`'s check. The comparison's joint cases take the marginals outside
     the joint too; nothing differs from v6 (431 checks).
-- **NormalMixture:** its multivariate path goes through helpers dispatching on `variate_form`.
-  An `mv_normal_mean_precision_energy` helper is shared with the MvNormalMeanPrecision node,
-  and v6's Float64 lock (`init = 0.0`) goes. Today its rules take `::Any` and compute
-  univariate math, so a multivariate input is wrong rather than refused.
+- **NormalMixture — done, which closes step 5.** Its multivariate path goes through helpers
+  dispatching on `variate_form`: `mixture_component_energy` (the switch rule and the energy,
+  sharing `mv_normal_mean_precision_energy`), `mixture_precision_likelihood` (a Wishart with
+  1 + z + d degrees of freedom), and `promote_variate_type` for the `(:m, k)` and `:out`
+  messages. v6's Float64 lock (`init = 0.0`) is gone. v6's multivariate tables are ported
+  except two `(:p, k)` cases whose precisions are not positive definite; the `GaussianMixture`
+  alias comes along. The comparison adds six multivariate rule cases and the energy; 445
+  checks agree. Found on the way: every multivariate energy was a Float64 whatever its inputs
+  (`d * log2π`), fixed in its own commit; ExponentialFamily's InverseWishart has the same bug
+  upstream (ExponentialFamily.jl#322).
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection.
 7. **Arithmetic**: `+`, `-`, `*`, `dot`. Two questions are settled in that step: v6's

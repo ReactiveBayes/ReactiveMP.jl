@@ -6,7 +6,8 @@ const INTEGER_SWITCH = "Cannot handle switch with Integer values. The switch var
     body = (args) -> begin
         pv = probvec(args.q[:switch])
         z = clamp(pv[k], tiny, one(eltype(pv)) - tiny)
-        NormalMeanPrecision(mean(args.q[:out]), z * mean(args.q[:p][k]))
+        normal = promote_variate_type(variate_form(typeof(args.q[:out])), NormalMeanPrecision)
+        normal(mean(args.q[:out]), z * mean(args.q[:p][k]))
     end,
 )
 
