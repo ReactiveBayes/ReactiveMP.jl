@@ -19,10 +19,11 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 8: Mixtures** — GammaMixture, then `Mixture`. **Briefed**, awaiting the user's
-sign-off: § Phase 5, *Step 8 brief* has the counts, the four decisions (the `product` service
-returning the product's own log scale, no Mixture energy, `MixtureBP`, a `mixture_bp` fixture;
-`DISCUSSION.md` §3.34–3.35) and the defaults. Steps 1–7 are done; step 7 is summarised in
+**Phase 5, step 8: Mixtures** — GammaMixture, then `Mixture`. Signed off by the user; § Phase 5,
+*Step 8 brief* has the counts, the four decisions (the `product` service returning the
+product's own log scale, no Mixture energy, `MixtureBP`, a `mixture_bp` fixture;
+`DISCUSSION.md` §3.34–3.35), the defaults and the progress. GammaMixture is done; next the
+engine's `product` service, then `Mixture`. Steps 1–7 are done; step 7 is summarised in
 § Phase 5, *Step 7 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -40,7 +41,7 @@ returning the product's own log scale, no Mixture energy, `MixtureBP`, a `mixtur
 | `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | the log-scale milestone, Phase 7 | Phase 5 review |
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
-| ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
+| ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only), and its `mean(loggamma, ::GammaShapeRate)` is a Float64 (GammaMixture's switch and energy tables run in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | the RNG as an activation option (the engine passes `Random.default_rng()` until then), and `*`'s number of samples (3000, v6's) configurable | Phase 7 | `DISCUSSION.md` §3.32 |
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
@@ -1831,6 +1832,14 @@ switch rule builds a throwaway `randomvar` for a product's log scale
 - **Order:** GammaMixture; the engine's `product` service; Mixture, with the fixture and the
   docstring rename, closing the step. Each port gets comparison cases, and an issue tagging
   @Nimrais for any v6 mismatch.
+- **Progress:**
+  - *GammaMixture — done.* 4 message rules (6 with the `INTEGER_SWITCH` guards) and the
+    energy, on NormalMixture's pattern under `GammaMixtureVMP`, the rates declared before the
+    shapes. The switch rule and the energy share `gamma_shape_rate_energy`. v6's 7 cases and
+    its energy and GammaShapeLikelihood node items are ported; the switch rule and the energy
+    are checked in Float64 only, since ExponentialFamily's E[log Γ(a)] for a GammaShapeRate is
+    a Float64 (a `0.5 *` literal, added to ExponentialFamily.jl#322) and a Categorical cannot
+    go to BigFloat. Nothing differs from v6 (739 checks).
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,

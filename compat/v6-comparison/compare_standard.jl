@@ -450,6 +450,16 @@ const MIXTURE_CASES = [
     ("NormalMixture:mv:out", :out, (q = (switch = MIXTURE_SWITCH, MV_MIXTURE_COMPONENTS...),), (q = (switch = MIXTURE_SWITCH, MV_MIXTURE_COMPONENTS...),)),
 ]
 
+const V6_GAMMA_MIXTURE = V6Oracle.ReactiveMP.GammaMixture{2}
+const GAMMA_COMPONENTS = (a = (GammaShapeRate(2.0, 3.0), PointMass(4.0)), b = (GammaShapeRate(1.5, 2.5), GammaShapeRate(3.5, 4.5)))
+const GAMMA_SWITCH = Categorical([0.3, 0.7])
+const GAMMA_MIXTURE_CASES = [
+    ("GammaMixture:(a,1)", (:a, 1), (q = (out = GammaShapeRate(2.0, 1.0), switch = GAMMA_SWITCH, b = (GAMMA_COMPONENTS.b[1], nothing)),), (q = (out = GammaShapeRate(2.0, 1.0), switch = GAMMA_SWITCH, b = GAMMA_COMPONENTS.b[1]),)),
+    ("GammaMixture:(b,2)", (:b, 2), (q = (out = GammaShapeRate(2.0, 1.0), switch = GAMMA_SWITCH, a = (nothing, GAMMA_COMPONENTS.a[2])),), (q = (out = GammaShapeRate(2.0, 1.0), switch = GAMMA_SWITCH, a = GAMMA_COMPONENTS.a[2]),)),
+    ("GammaMixture:out", :out, (q = (switch = GAMMA_SWITCH, GAMMA_COMPONENTS...),), (q = (switch = GAMMA_SWITCH, GAMMA_COMPONENTS...),)),
+    ("GammaMixture:switch", :switch, (q = (out = GammaShapeRate(2.0, 1.0), GAMMA_COMPONENTS...),), (q = (out = GammaShapeRate(2.0, 1.0), GAMMA_COMPONENTS...),)),
+]
+
 # `flagged` is `false`, `true` for #669, or the reason of another declared correction.
 declared_reason(flagged::Bool) = NMV_669
 declared_reason(flagged::AbstractString) = flagged
@@ -490,6 +500,16 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
             v6 = v6_average_energy(V6_NORMAL_MIXTURE, q)
             @test compare_with_reference(id, v7, v6; node = "NormalMixture", target = "energy").outcome === :agree
         end
+    end
+    @testset "GammaMixture" begin
+        for (id, target, v7_inputs, v6_inputs) in GAMMA_MIXTURE_CASES
+            v7 = call_message_update_rule(GammaMixture, target; q = v7_inputs.q)
+            v6, _ = v6_message_update(V6_GAMMA_MIXTURE, target, NamedTuple(), v6_inputs.q)
+            @test compare_with_reference(id, v7, as_v7(GammaMixture, v6); inputs = v7_inputs, node = "GammaMixture", target = string(target)).outcome === :agree
+        end
+        # v6's energy takes GammaShapeRate rates only.
+        q = (out = GammaShapeRate(2.0, 1.0), switch = GAMMA_SWITCH, GAMMA_COMPONENTS...)
+        @test compare_with_reference("GammaMixture:energy", call_average_energy(GammaMixture; q), v6_average_energy(V6_GAMMA_MIXTURE, q); node = "GammaMixture", target = "energy").outcome === :agree
     end
     # Belief propagation towards NMV's `v` is a log-density on the half line with no family;
     # the port and v6 are compared by evaluating it.

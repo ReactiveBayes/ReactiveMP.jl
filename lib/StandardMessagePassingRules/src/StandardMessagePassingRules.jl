@@ -17,7 +17,7 @@ using StatsFuns: log2π, logπ
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma, besselk
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
-using LogExpFunctions: softmax!
+using LogExpFunctions: softmax!, softmax
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 using LinearAlgebra: I, Hermitian, UniformScaling, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
@@ -25,7 +25,7 @@ using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
 import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily, covmats
 import DomainSets
 
-export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
+export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
 export AND, OR, NOT, IMPLY
 
 include("helpers.jl")
@@ -177,5 +177,10 @@ include("rules/normal_mixture/m.jl")
 include("rules/normal_mixture/p.jl")
 include("rules/normal_mixture/switch.jl")
 include("rules/normal_mixture/out.jl")
+include("nodes/gamma_mixture.jl")
+include("rules/gamma_mixture/a.jl")
+include("rules/gamma_mixture/b.jl")
+include("rules/gamma_mixture/out.jl")
+include("rules/gamma_mixture/switch.jl")
 
 end
