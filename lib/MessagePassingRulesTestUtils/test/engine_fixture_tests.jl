@@ -4,6 +4,9 @@
     @test encode_fixture_value(1) == 1.0
     @test encode_fixture_value(Normal(0.5, 2.0)) == Dict("type" => "Normal", "params" => [0.5, 2.0])
     @test encode_fixture_value(PointMass(3.0)) == Dict("type" => "PointMass", "params" => [3.0])
+    @test encode_fixture_value(MixtureDistribution([Normal(0.0, 1.0), Normal(2.0, 0.5)], [0.25, 0.75])) == Dict(
+        "type" => "MixtureDistribution", "components" => Any[Dict("type" => "Normal", "params" => [0.0, 1.0]), Dict("type" => "Normal", "params" => [2.0, 0.5])], "weights" => [0.25, 0.75],
+    )
     @test encode_fixture_value(Dirichlet([1.0, 2.0])) == Dict("type" => "Dirichlet", "params" => [[1.0, 2.0]])
     # Matrices are stored row by row, so a covariance survives a text round trip.
     @test encode_fixture_value(MvNormal([0.0, 1.0], [2.0 0.5; 0.5 1.0]))["params"] == [[0.0, 1.0], [[2.0, 0.5], [0.5, 1.0]]]

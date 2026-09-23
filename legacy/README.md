@@ -22,7 +22,7 @@ packages), and deletes what it ported. Already gone: Delta's Unscented rules (Ph
 (d)), `approximations/unscented.jl` and `rts.jl`, whose ports are in
 `lib/MessagePassingRulesApproximations`, the univariate distributions (Phase 5 step 3) and
 the logic nodes (step 4), the multivariate normals and `normal_mixture` (step 5), the matrix
-and Wishart nodes (step 6), and the arithmetic nodes (step 7). Kept on
+and Wishart nodes (step 6), the arithmetic nodes (step 7), and the mixtures (step 8). Kept on
 purpose although partly ported:
 - `approximations/approximations.jl` and `shared.jl`, which unported files here still use;
 - `nodes/predefined/delta/` and `rules/delta/`, for `Linearization` and CVI (Phase 6);

@@ -20,12 +20,12 @@ Declare a factor node.
 @define_factor_node(node = NormalMeanVariance, type = Stochastic, interfaces = [:out, :μ, :v])
 
 # A node whose rules ignore the factorisation, and so declares an algorithm of its own:
-struct MixtureVMP <: AbstractAlgorithm end
+struct MixtureBP <: AbstractAlgorithm end
 @define_factor_node(
     node       = Mixture,
     type       = Stochastic,
     interfaces = [:out, :switch, :inputs...],
-    algorithm  = MixtureVMP,
+    algorithm  = MixtureBP,
 )
 ```
 """

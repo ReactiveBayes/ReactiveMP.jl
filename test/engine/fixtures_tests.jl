@@ -269,3 +269,38 @@ end
     )
     @test compare_engine_trajectory(trajectory, H.fixture("logic_bp"); atol = 1.0e-9) === :agree
 end
+
+@testitem "engine:fixture:mixture_bp" tags = [:engine] setup = [EngineHarness] begin
+    using ExponentialFamily, StandardMessagePassingRules, MessagePassingRulesTestUtils, Distributions
+    import ReactiveMP: LogScaleAnnotations
+    H = EngineHarness
+
+    # Mixture's rules read their inputs' log scales, through `ann.m`, and its switch rule
+    # multiplies messages through `ctx.product`; v6 recorded every call's log scale.
+    graph = H.Graph()
+    s = H.random!(graph)
+    x = [H.random!(graph), H.random!(graph)]
+    z = H.random!(graph)
+    y = H.data!(graph)
+    H.node!(graph, Categorical, [(:out, s), (:p, H.constant!(graph, [0.3, 0.7]))])
+    H.node!(graph, NormalMeanVariance, [(:out, x[1]), (:μ, H.constant!(graph, -2.0)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, NormalMeanVariance, [(:out, x[2]), (:μ, H.constant!(graph, 2.0)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, Mixture, [(:out, z), (:switch, s), ((:inputs, 1), x[1]), ((:inputs, 2), x[2])])
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, z), (:v, H.constant!(graph, 0.5))])
+
+    trajectory = H.run(
+        graph; id = "mixture_bp", data = [y => 1.5], iterations = 2,
+        posteriors = [:s => s, :x => x], annotations = (LogScaleAnnotations(),), free_energy = false,
+    )
+    # v6 makes three calls the port does not, all with values the port computes too: it
+    # materialises the two priors' deferred messages a second time in iteration 0, once for the
+    # posterior of x[k] and once more through the variable's equality chain, and RxInfer computes
+    # z's marginal once when the data arrives, which calls Mixture(:out) in iteration 1; nothing
+    # in the port asks for that message, whose rule has hand-derived cases of its own. The rest
+    # must agree exactly, in order, log scales included.
+    v6 = H.fixture("mixture_bp")
+    extra = [4, 5, findfirst(r -> (r.node, r.target) == ("Mixture", ":out"), v6.trace)]
+    @test all(k -> (v6.trace[k].iteration, v6.trace[k].node, v6.trace[k].target) == (0, "NormalMeanVariance", ":out"), 4:5)
+    expected = EngineTrajectory("mixture_bp"; free_energy = v6.free_energy, posteriors = v6.posteriors, trace = v6.trace[setdiff(eachindex(v6.trace), extra)])
+    @test compare_engine_trajectory(trajectory, expected; atol = 1.0e-9) === :agree
+end

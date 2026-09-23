@@ -103,6 +103,14 @@ end
     end
 end
 
+@model function mixture_bp(y)
+    s ~ Categorical([0.3, 0.7])
+    x[1] ~ NormalMeanVariance(-2.0, 1.0)
+    x[2] ~ NormalMeanVariance(2.0, 1.0)
+    z ~ Mixture(switch = s, inputs = x)
+    y ~ NormalMeanVariance(z, 0.5)
+end
+
 square_plus_one(x) = x^2 + 1.0
 
 @model function delta_unscented(y)
@@ -223,13 +231,18 @@ const MODELS = [
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
         ),
     ),
+    (
+        "mixture_bp",
+        "s ~ Categorical([0.3, 0.7]), x[1] ~ NMV(-2, 1), x[2] ~ NMV(2, 1), z ~ Mixture(switch = s, inputs = x), y ~ NMV(z, 0.5) observed at 1.5; BP with v6's LogScaleAnnotations, which the Mixture rules need (a data variable's message carries no log scale in v6, hence y through NMV). No free energy: v6's Mixture energy is a placeholder returning 0.0, and the port defines none.",
+        () -> record("mixture_bp"; description = "", model = mixture_bp(), data = (y = 1.5,), iterations = 2, returnvars = (:s, :x), annotations = (LogScaleAnnotations(),), free_energy = false),
+    ),
 ]
 
 # Found while recording, and deliberately preserved rather than fixed — log scales are a
 # niche feature, to be revisited as its own milestone after the migration.
 const NOTES = """
 Recorded from ReactiveMP $(PACKAGES["ReactiveMP"]) through RxInfer $(PACKAGES["RxInfer"]), unmodified.
-Log scales are recorded only for bp_iid. v6 cannot annotate the others: NormalMeanVariance(:μ)
+Log scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)
 with (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40
 does. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass
 fallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""

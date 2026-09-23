@@ -12,12 +12,12 @@ factorisation declares an algorithm of its own, as [`NormalMixture`](@ref) does.
 module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
-using MessagePassingRulesBase: annotate!, matrix_correction
+using MessagePassingRulesBase: annotate!, matrix_correction, hasannotation, getannotation
 using StatsFuns: log2π, logπ
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma, besselk
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
-using LogExpFunctions: softmax!, softmax
+using LogExpFunctions: softmax!, softmax, logsumexp
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 using LinearAlgebra: I, Hermitian, UniformScaling, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
@@ -25,7 +25,7 @@ using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
 import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily, covmats
 import DomainSets
 
-export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
+export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, Mixture, MixtureBP, GammaShapeLikelihood, HalfNormal, Uninformative
 export AND, OR, NOT, IMPLY
 
 include("helpers.jl")
@@ -182,5 +182,9 @@ include("rules/gamma_mixture/a.jl")
 include("rules/gamma_mixture/b.jl")
 include("rules/gamma_mixture/out.jl")
 include("rules/gamma_mixture/switch.jl")
+include("nodes/mixture.jl")
+include("rules/mixture/inputs.jl")
+include("rules/mixture/out.jl")
+include("rules/mixture/switch.jl")
 
 end

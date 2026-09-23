@@ -19,12 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 8: Mixtures** — GammaMixture, then `Mixture`. Signed off by the user; § Phase 5,
-*Step 8 brief* has the counts, the four decisions (the `product` service returning the
-product's own log scale, no Mixture energy, `MixtureBP`, a `mixture_bp` fixture;
-`DISCUSSION.md` §3.34–3.35), the defaults and the progress. GammaMixture and the engine's
-`product` service are done; next `Mixture`, which closes the step. Steps 1–7 are done; step 7 is summarised in
-§ Phase 5, *Step 7 brief*.
+**Phase 5, step 9: Close** — `MIGRATION.md` complete, `docs/` rewritten and back in the build,
+and `legacy/v6/` holding only Phase 6's nodes (§ Phase 5). Its follow-ups for MIGRATION.md are
+in the table below. Steps 1–8 are done; step 8, the mixtures, is summarised in § Phase 5,
+*Step 8 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -803,8 +801,8 @@ mutated in place.
 ### Step 0 — record the v6 fixtures, before anything is deleted
 
 **Done.** `compat/v6-comparison` pins RxInfer 5.5.2, and `record_engine_fixtures.jl` records
-seven models *(nine since: `delta_unscented_static` in case (d) and `logic_bp` in Phase 5 step
-4; the script takes model ids to record or check only those)* into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `bp_chain`,
+seven models *(ten since: `delta_unscented_static` in case (d), `logic_bp` in Phase 5 step
+4 and `mixture_bp` in step 8; the script takes model ids to record or check only those)* into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `bp_chain`,
 `vmp_meanfield`, `vmp_structured`, `normal_mixture` and `delta_unscented`. Each fixture holds
 the free energy per iteration, the final posteriors, and every message-rule call **in the
 order v6 made it**, with its result and log scale. That order is materialisation order, and it
@@ -1844,6 +1842,18 @@ switch rule builds a throwaway `randomvar` for a product's log scale
     multiplies with `GenericProd` and returns the product with `compute_logscale` of it alone.
     A test runs a rule declaring `ctx = (:product,)` through a `MessageMapping`, the log scale
     checked against ∫ N(x; 1, 2)² dx.
+  - *Mixture — done, which closes step 8.* 3 message rules under `MixtureBP`, over messages,
+    reading their inputs' log scales from `ann.m` (`incoming_logscale`, whose error names
+    `LogScaleAnnotations`); the switch rule's evidence adds `ctx.product`'s log scale to the two
+    incoming ones. No energy, so a free energy raises `RuleNotFoundError`. Hand-derived cases
+    run through `call_message_update_rule(...; ann)`. The `mixture_bp` v6 fixture (log scales
+    on; y observed through a NormalMeanVariance, since a data variable's message has no log
+    scale in v6; no free energy) agrees exactly, log scales included, once three v6 calls the
+    port does not make are set aside, each named in the test: the priors' deferred messages
+    materialised a second time by v6's equality chain, and one `Mixture(:out)` from RxInfer
+    computing z's marginal. TestUtils' fixture format gains `MixtureDistribution`. No
+    rule-by-rule v6 comparison: v6's Mixture rules need annotated messages, which the oracle's
+    calls do not carry; the fixture covers them.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
@@ -1855,7 +1865,7 @@ switch rule builds a throwaway `randomvar` for a product's log scale
    **Done.**
 8. **Mixtures**: GammaMixture, a clone of NormalMixture; then `Mixture`, hand-written: its
    switch rule builds a `randomvar` for a product with log scale (the `product` context
-   service instead), and its rules read incoming log scales (`ann.m`). *Briefed* (the step 8
+   service instead), and its rules read incoming log scales (`ann.m`). **Done** (the step 8
    brief below, `DISCUSSION.md` §3.34–3.35).
 9. **Close**: `MIGRATION.md` complete, `docs/` rewritten and back in the build, `legacy/v6/`
    holding only Phase 6's nodes.

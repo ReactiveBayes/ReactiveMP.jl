@@ -24,6 +24,11 @@ encode_fixture_value(x::FactorizedCluster) = Dict{String, Any}(
     "components" => encode_fixture_value(BayesBase.components(x)),
 )
 encode_fixture_value(x::PointMass) = Dict{String, Any}("type" => "PointMass", "params" => Any[encode_fixture_value(mean(x))])
+encode_fixture_value(x::BayesBase.MixtureDistribution) = Dict{String, Any}(
+    "type" => "MixtureDistribution",
+    "components" => encode_fixture_value(collect(BayesBase.components(x))),
+    "weights" => encode_fixture_value(collect(BayesBase.weights(x))),
+)
 encode_fixture_value(x::Distribution) =
     Dict{String, Any}("type" => string(nameof(typeof(x))), "params" => Any[encode_fixture_value(p) for p in params(x)])
 

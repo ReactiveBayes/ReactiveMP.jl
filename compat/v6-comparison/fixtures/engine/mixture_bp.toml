@@ -1,0 +1,161 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "s ~ Categorical([0.3, 0.7]), x[1] ~ NMV(-2, 1), x[2] ~ NMV(2, 1), z ~ Mixture(switch = s, inputs = x), y ~ NMV(z, 0.5) observed at 1.5; BP with v6's LogScaleAnnotations, which the Mixture rules need (a data variable's message carries no log scale in v6, hence y through NMV). No free energy: v6's Mixture energy is a placeholder returning 0.0, and the port defines none."
+free_energy = []
+id = "mixture_bp"
+
+    [trajectory.posteriors]
+    "logscale(s)" = -1.5538604525242345
+
+        [trajectory.posteriors.s]
+        params = [[0.007788423827314574, 0.9922115761726854]]
+        type = "DiscreteNonParametric"
+
+        [[trajectory.posteriors.x]]
+        params = [1.0, 3.0]
+        type = "NormalWeightedMeanPrecision"
+        [[trajectory.posteriors.x]]
+        params = [5.0, 3.0]
+        type = "NormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 0
+    logscale = 0.0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [-2.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    logscale = 0.0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    logscale = 0.0
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.3, 0.7]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 0
+    logscale = 0.0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [-2.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    logscale = 0.0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = 0.0
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -1.1868544926742786
+    node = "Mixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.017986209962091555, 0.9820137900379085]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -1.2039728043259361
+    node = "Mixture"
+    target = "(:inputs, 1)"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.35667494393873245
+    node = "Mixture"
+    target = "(:inputs, 2)"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -1.1102230246251565e-16
+    node = "Mixture"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "MixtureDistribution"
+        weights = [0.3, 0.7]
+
+            [[trajectory.trace.result.components]]
+            params = [-2.0, 1.0]
+            type = "NormalMeanVariance"
+            [[trajectory.trace.result.components]]
+            params = [2.0, 1.0]
+            type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = 0.0
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -1.1868544926742786
+    node = "Mixture"
+    target = ":switch"
+
+        [trajectory.trace.result]
+        params = [[0.017986209962091555, 0.9820137900379085]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -1.2039728043259361
+    node = "Mixture"
+    target = "(:inputs, 1)"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.35667494393873245
+    node = "Mixture"
+    target = "(:inputs, 2)"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
