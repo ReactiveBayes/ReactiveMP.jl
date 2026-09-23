@@ -19,10 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 9: Close** — `MIGRATION.md` complete, `docs/` rewritten and back in the build,
-and `legacy/v6/` holding only Phase 6's nodes (§ Phase 5). Its follow-ups for MIGRATION.md are
-in the table below. Steps 1–8 are done; step 8, the mixtures, is summarised in § Phase 5,
-*Step 8 brief*.
+**Phase 5, step 9: Close** — the v6 → v7 migration guide, `docs/` rewritten and back in the
+build, and `legacy/v6/` holding only what Phase 6 ports from. **Briefed**, awaiting the user's
+sign-off: § Phase 5, *Step 9 brief* has the four decisions (`DISCUSSION.md` §3.36), the scope
+and the order. Steps 1–8 are done.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -1855,6 +1855,71 @@ switch rule builds a throwaway `randomvar` for a product's log scale
     rule-by-rule v6 comparison: v6's Mixture rules need annotated messages, which the oracle's
     calls do not carry; the fixture covers them.
 
+### Step 9 brief — Close
+
+**Scope, surveyed:** none of the three deliverables exists. There is no migration guide; all of
+`docs/`'s ~30 pages describe v6 (`@node`, `@rule`, `meta`, `ManyOf`, functional dependencies,
+`to_marginal`, …) and `@docs` names the engine no longer defines, `docs/make.jl` documents
+`ReactiveMP` alone, and `make docs` exits 1, so CI's docs job fails; the engine's eight
+`jldoctest`s run nowhere. `legacy/v6/` still holds the v6 engine and rule-system files
+(`rule.jl`, `nodes/{nodes,dependencies,clusters}.jl`, `score/`, their tests), the rule
+fallbacks (`fallbacks.jl`, `base`, unported), `StandaloneDistributionNode` (no inventory row),
+helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/shared.jl`,
+`fixes.jl`), and stale include lists.
+
+**Decided (user, §3.36):**
+- **The guide is the docs page `migration-guides/v6-to-v7.md`**, with no `MIGRATION.md`.
+- **Only v7 code runs**: each pair's v6 side is plain code, its v7 side a doctest in the docs
+  build. v6 is run nowhere.
+- **Rewrite what is ported; drop the Phase 6 node pages**; keep the v5 → v6 guide as history.
+- **`legacy/v6/`**: delete the v6 engine and rule-system files; mark the rule fallbacks and
+  `StandaloneDistributionNode` not carried over (INVENTORY `delete`, with notes for the guide);
+  keep the helpers the Phase 6 nodes use, with legacy/README saying whose they are.
+
+**Defaults for the step**, open to the user's correction:
+- **The docs build:** `docs/Project.toml` takes the lib packages through `[sources]`, and
+  `docs/make.jl` documents `ReactiveMP` and the five lib packages, doctests on and `checkdocs`
+  strict. The engine exports without docstrings (`tiny`, `huge`, `functionalform`,
+  `getinterfaces`, `FactorBoundFreeEnergy`, `VariableBoundEntropy`, `DifferentialEntropy`) get
+  them. Stale dependencies go (Optim, Parameters, Plots, StatsPlots, … if no page uses them).
+  `make docs` runs the build again (`doc_init` then `docs/make.jl`), and CLAUDE.md and AGENTS.md
+  say so. The root suite gains a `quality:doctests` item, as each lib package has, so the
+  engine's doctests run with the tests too. The `.github/` workflows stay as they are until the
+  first PR (Phase 7); the Delta package's missing LibTests job is recorded there.
+- **The pages:** Introduction (the packages and how they fit); Concepts (factor graphs, message
+  passing, reactive programming, the inference lifecycle, in the new terms); **Defining nodes
+  and rules** (`@define_factor_node`, the rule macros, targets and groups, `FactorizedCluster`,
+  annotations, the context services, `public_equivalent`); **Algorithms and dependencies** (the
+  default scheme, a node's own algorithm, `DefaultAlgorithmExtension`, declared dependencies,
+  the registry as introspection only); **Testing rules** (TestUtils' tables, verification, the
+  comparison tools); the engine (factor nodes, `factornode` and `FactorNodeActivationOptions`,
+  variables, messages, marginals, callbacks, postprocessors, annotations and log scales, the
+  Bethe free energy, form constraints, helpers); the rule packages (Standard's nodes,
+  Approximations, Delta); the migration guides (v6 → v7, new; v5 → v6, kept); Extra
+  (contributing, exported methods). Removed: the Phase 6 node pages, `algebra.md` (its helpers
+  are gone), `extensions.md` (both extensions dropped), the orphan `nodes/equality.md`.
+- **The guide** follows PLAN § Migration guide: a preamble for an agent (what to read, what
+  never to guess, how to verify, when to stop); mechanical pairs (`@node` →
+  `@define_factor_node`, `@rule`/`@marginalrule`/`@average_energy` → the `@define_*` macros,
+  `m_x`/`q_x` → `m[:x]`/`q[:x]`, `q_y_x` → `q[:y, :x]`, `ManyOf` → groups and `(:in, k)`,
+  `Marginalisation` dropped, `meta` → an algorithm or a context service, `@logscale` →
+  `annotate!`, `@call_rule` → a helper or `@call_message_update_rule`, NamedTuple marginals →
+  `FactorizedCluster`, functional dependencies and RxInfer's `where { dependencies = … }` →
+  declared dependencies and a node's algorithm, `to_marginal` → `public_equivalent`,
+  `default_meta` → a rule's default, `DeltaMeta` → `DeltaApproximation`); the cases that cannot be
+  translated mechanically, with stop-and-ask (raw `messages[i]`, graph objects built in rules,
+  `meta` as mutable workspace); how to verify (the tables, `@verify_message_update_rule`, and
+  `compare_with_reference` while a v6 is at hand); and the behaviour changes: the corrected v6
+  errors (#669, #672–#680), the refused non-commuting `*` products, Mixture's missing energy,
+  Delta's reduced method set, and the deleted exports with INVENTORY's notes.
+- **Exit criteria:** "migrated per rule directory" and "hand-written cases done" are ticked
+  with the close, as steps 1–8 did both; the `Require*` criterion's two pages are the
+  dependencies page and the guide's section, written here, with Probit's and
+  ContinuousTransition's algorithms left to their Phase 6 ports.
+- **Order:** the legacy triage; the docs build back (infrastructure, docstrings, the root
+  doctest item, and the pages' skeleton); the pages, a commit per section; the guide; the close
+  (exit criteria ticked, CLAUDE.md's § Ongoing work to Phase 6).
+
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
    `DISCUSSION.md` §3.29).
@@ -1867,8 +1932,9 @@ switch rule builds a throwaway `randomvar` for a product's log scale
    switch rule builds a `randomvar` for a product with log scale (the `product` context
    service instead), and its rules read incoming log scales (`ann.m`). **Done** (the step 8
    brief below, `DISCUSSION.md` §3.34–3.35).
-9. **Close**: `MIGRATION.md` complete, `docs/` rewritten and back in the build, `legacy/v6/`
-   holding only Phase 6's nodes.
+9. **Close**: the migration guide complete, `docs/` rewritten and back in the build, `legacy/v6/`
+   holding only Phase 6's nodes. *Briefed* (the step 9 brief below, `DISCUSSION.md` §3.36):
+   the guide is the docs page `migration-guides/v6-to-v7.md`, not a `MIGRATION.md`.
 
 **Found while counting, to settle in the step that meets them:**
 - `nodes/predefined/distribution/distribution.jl` (`StandaloneDistributionNode`) has no

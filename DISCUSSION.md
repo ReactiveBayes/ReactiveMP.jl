@@ -1577,6 +1577,24 @@ number. It is a gap, recorded for MIGRATION.md. Keeping v6's placeholder was rej
 The node's rules are sum-product over the incoming messages whatever the factorisation, so it
 runs under an algorithm of its own, as NormalMixture does. The sketches called it
 `MixtureVMP`, which mislabels it; the user chose **`MixtureBP`**.
+
+### 3.36 Closing Phase 5: the guide, the docs, and what leaves `legacy/` (user, 2026-09-23)
+
+Four questions shaped step 9, and the user decided each:
+- **The migration guide is a docs page**, `docs/src/migration-guides/v6-to-v7.md`, beside the
+  v5 → v6 one. PLAN had it as `MIGRATION.md` in the base package, but most of what it maps is
+  the engine's, Standard's or Delta's, and a docs page is where downstream authors look.
+- **Only v7 code runs.** Each before/after pair shows the v6 side as plain code and the v7 side
+  as a doctest. The v6 code serves the migration only and is deleted with the refactor, so it
+  is run nowhere, in CI or in a second environment; a runner pairing 6.5.0 with the new
+  packages was rejected as complication for a side that will not exist.
+- **The docs are rewritten for what is ported**: the concept, engine and library pages, and the
+  pages the exit criteria name. The pages of nodes Phase 6 has not ported are removed, and each
+  node package writes its own with its port; the v5 → v6 guide stays as history.
+- **`legacy/v6/` keeps only what Phase 6 ports from.** The v6 engine and rule-system files are
+  deleted, being replaced and kept by git and by the 6.5.0 release. v6's rule fallbacks and
+  `StandaloneDistributionNode` are not carried over, and the guide says so. The helpers the
+  unported nodes still use stay, as those nodes' material.
 ---
 
 ## 4. Corrections — read this before re-proposing anything

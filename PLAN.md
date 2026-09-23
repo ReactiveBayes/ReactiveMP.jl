@@ -1166,8 +1166,10 @@ rules — RxGP, and colleagues with custom rules in their own codebases. It must
 human reading it *and* for an AI agent pointed at it, since that is how much of the
 downstream migration will actually happen.
 
-Lives as `MIGRATION.md` in `MessagePassingRulesBase`, surfaced in its docs and linked from
-ReactiveMP and RxInfer.
+Lives as a page of ReactiveMP's docs, `docs/src/migration-guides/v6-to-v7.md`, next to the
+v5 → v6 guide, and is linked from RxInfer (user, Phase 5 step 9, `DISCUSSION.md` §3.36; there is
+no separate `MIGRATION.md`). Only its v7 code runs: the v6 side of each pair is shown for the
+reader and never executed, since v6 leaves the repository with the refactor.
 
 **Requirements that make it usable by an agent, not just readable:**
 
@@ -1186,9 +1188,9 @@ ReactiveMP and RxInfer.
   asserts agreement. This is what makes agent-driven migration trustworthy rather than
   hopeful: an agent that can check its own work is a different proposition from one that can
   only pattern-match. Node-definition verification is the stronger form where it applies.
-- **Executable examples.** Every before/after pair is a doctest that CI runs. Migration
-  guides rot precisely because they are written once against a design that then moves;
-  `doctest = true` is already a decision, so this costs nothing and prevents drift.
+- **Executable examples.** The v7 side of every pair is a doctest that the docs build runs,
+  so the guide cannot drift from the code. The v6 side is shown as plain code: it is not run,
+  in CI or elsewhere (user, Phase 5 step 9).
 - **A short preamble addressed to an agent** — what to read first, what to never guess at,
   how to verify, when to stop and ask.
 
