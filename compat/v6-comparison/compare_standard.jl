@@ -33,6 +33,11 @@ const WISHART = Wishart(4.0, [1.0 0.2; 0.2 0.5])
 # v6 returns a split cluster as a NamedTuple and the port as a `FactorizedCluster`; its shape
 # likelihood is v6's own type. Both are read as the port's before comparing.
 as_v7(node, v6::NamedTuple) = FactorizedCluster(v6_cluster_blocks(node, v6)...)
+# v6's MvNormalWeightedMeanPrecision marginal keys its blocks by its argument names, `m_out`
+# and so on (ReactiveMP.jl#674); the values are right, so the keys are read without the prefix.
+as_v7(::Type{MvNormalWeightedMeanPrecision}, v6::NamedTuple) =
+    as_v7(nothing, NamedTuple{map(k -> Symbol(replace(string(k), r"^m_" => "")), keys(v6))}(values(v6)), MvNormalWeightedMeanPrecision)
+as_v7(::Nothing, v6::NamedTuple, node) = FactorizedCluster(v6_cluster_blocks(node, v6)...)
 as_v7(node, v6::V6Oracle.ReactiveMP.GammaShapeLikelihood) = GammaShapeLikelihood(params(v6)...)
 as_v7(node, v6) = v6
 
@@ -136,6 +141,8 @@ const MESSAGE_CASES = [
     ("MvNMP:μ:q-wishart", MvNormalMeanPrecision, :μ, (q = (out = PointMass([1.0, 2.0]), Λ = WISHART),), false),
     ("MvNMP:Λ:q", MvNormalMeanPrecision, :Λ, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0])),), false),
     ("MvNMP:Λ:q-point-mass-out", MvNormalMeanPrecision, :Λ, (q = (out = PointMass([1.0, 2.0]), μ = MvNormalWeightedMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0])),), false),
+    ("MvNWMP:out:m", MvNormalWeightedMeanPrecision, :out, (m = (ξ = PointMass([1.0, 3.0]), Λ = PointMass([3.0 2.0; 2.0 4.0])),), false),
+    ("MvNWMP:out:q", MvNormalWeightedMeanPrecision, :out, (q = (ξ = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), Λ = WISHART),), false),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -195,6 +202,7 @@ const MARGINAL_CASES = [
     ("MvNMP:(out,μ,Λ):point-mass-μ", MvNormalMeanPrecision, (:out, :μ, :Λ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = PointMass([1.0, 1.0]), Λ = PointMass(I2 / 2)),), false),
     ("MvNMP:(out,μ,Λ):point-mass-out", MvNormalMeanPrecision, (:out, :μ, :Λ), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), Λ = PointMass(I2 / 2)),), false),
     ("MvNMP:(out,μ,Λ):normals", MvNormalMeanPrecision, (:out, :μ, :Λ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0]), Λ = PointMass(I2 / 2)),), false),
+    ("MvNWMP:(out,ξ,Λ)", MvNormalWeightedMeanPrecision, (:out, :ξ, :Λ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), ξ = PointMass([0.5, 0.5]), Λ = PointMass(2 * I2)),), false),
     ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
@@ -215,6 +223,7 @@ const AVERAGE_ENERGY_CASES = [
     ("MvNMP:energy:point-mass-Λ", MvNormalMeanPrecision, (q = (out = PointMass([1.0, 1.0]), μ = MvNormalMeanPrecision([1.0, 1.0], I2), Λ = PointMass(2 * I2)),), false),
     ("MvNMP:energy:joint-wishart", MvNormalMeanPrecision, (q = (Λ = WISHART,), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
     ("MvNMP:energy:joint-point-mass", MvNormalMeanPrecision, (q = (Λ = PointMass(I2 / 2),), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
+    ("MvNWMP:energy", MvNormalWeightedMeanPrecision, (q = (out = MvNormalMeanCovariance([0.2, 0.4], [1.0 0.1; 0.1 0.7]), ξ = MvNormalMeanCovariance([0.5, -1.0], I2), Λ = PointMass([2.0 0.3; 0.3 1.5])),), false),
     ("Beta:energy", Beta, (q = (out = Beta(2.0, 3.0), a = PointMass(1.5), b = PointMass(2.5)),), false),
     ("Bernoulli:energy", Bernoulli, (q = (out = Bernoulli(0.3), p = Beta(2.0, 3.0)),), false),
     ("Gamma:energy:point-mass-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = PointMass(2.0), θ = PointMass(1.0)),), false),

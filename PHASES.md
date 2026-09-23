@@ -19,8 +19,8 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance and
-MvNormalMeanPrecision done; next
+**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance, MvNormalMeanPrecision
+and MvNormalWeightedMeanPrecision done; next
 MvNormalMeanScalePrecision and its matrix form, MvNormalWeightedMeanPrecision, then
 NormalMixture's multivariate branches. Its brief is in § Phase 5, *Step 5 brief*: the counts, the
 matrix correction as the context service `ctx.matrix_correction` (user), and the defaults for
@@ -1527,6 +1527,11 @@ multivariate branches.
     `ctx.matrix_correction`, tested with `ReplaceZeroDiagonalEntries`; MatrixCorrectionTools
     joins Standard's dependencies. A `q_Λ` rightly contributes E[Λ], so nothing differs from
     v6: `compare_standard.jl` agrees on all 363 checks.
+  - *MvNormalWeightedMeanPrecision — done.* 2 message rules, 1 marginal rule and the average
+    energy. v6's marginal keyed its blocks `m_out`, `m_ξ`, `m_Λ`, which broke the node's free
+    energy for that cluster; the port labels them `out`, `ξ`, `Λ` (ReactiveMP.jl#674), and the
+    comparison reads v6's keys without the prefix. The energy's E[log |Λ|] is `mean(logdet, ·)`,
+    which v6's `chollogdet` equals for a point mass. 371 checks agree.
 - **NormalMixture:** its multivariate path goes through helpers dispatching on `variate_form`.
   An `mv_normal_mean_precision_energy` helper is shared with the MvNormalMeanPrecision node,
   and v6's Float64 lock (`init = 0.0`) goes. Today its rules take `::Any` and compute
