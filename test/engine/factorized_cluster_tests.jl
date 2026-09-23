@@ -23,6 +23,16 @@
     ann = rule_marginals(getannotations, Val(((:out, :μ), :v)), (split, v))
     @test ann[:out] isa AnnotationDict && ann[:out] === ann[:μ]
 
+    # Blocks that do not cover the cluster's members once each, in its order, are an error,
+    # never a silent renaming. The helpers the generator calls are defined above it, so this
+    # holds without a package image too (`julia --compiled-modules=no`).
+    wrong = Marginal(FactorizedCluster((:out,) => PointMass(1.0), (:v,) => PointMass(2.0)), false, false)
+    @test_throws "do not cover the cluster's members" rule_marginals(getdata, Val(((:out, :μ), :v)), (wrong, v))
+    swapped = Marginal(FactorizedCluster((:μ,) => Normal(0.0, 2.0), (:out,) => PointMass(1.0)), false, false)
+    @test_throws "do not cover the cluster's members" rule_marginals(getdata, Val(((:out, :μ),)), (swapped,))
+    renamed = Marginal(FactorizedCluster((:out,) => PointMass(1.0), (:μ,) => Normal(0.0, 2.0)), false, false)
+    @test_throws "do not cover the cluster's members" rule_marginals(getdata, Val(((:a, :b),)), (renamed,))
+
     # A joint that does not split is passed as it is.
     whole = Marginal(joint, false, false)
     @test rule_marginals(getdata, Val(((:out, :μ),)), (whole,))[:out, :μ] === joint
@@ -64,7 +74,12 @@ end
     @test fc[(:out,)] == PointMass(1.0)
     @test mean(fc[(:μ,)]) ≈ (0 / 4 + 1 / 2) / (1 / 4 + 1 / 2) && var(fc[(:μ,)]) ≈ 1 / (1 / 4 + 1 / 2)
 
-    expected = call_average_energy(NormalMeanVariance; q = (out = fc[(:out,)], μ = fc[(:μ,)], v = PointMass(2.0))) - entropy(fc) - entropy(PointMass(2.0))
-    @test float(only(energies)) ≈ float(expected)
+    # By hand: the average energy log(2π)/2 + log(2)/2 + E[(out - μ)²]/(2v), with
+    # E[(out - μ)²] = (1 - 2/3)² + 4/3, minus the entropy of μ's block, log(2πe·4/3)/2. The two
+    # point-mass entropies each carry an infinity, which the free energy counts separately, so
+    # the finite part and the count are compared apart.
+    energy = only(energies)
+    @test energy.value ≈ log(2) / 2 + ((1 / 3)^2 + 4 / 3) / 4 - 1 / 2 - log(4 / 3) / 2
+    @test energy.infinities == 2
     foreach(unsubscribe!, subscriptions)
 end

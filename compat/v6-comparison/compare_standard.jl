@@ -15,6 +15,11 @@ using MessagePassingRulesBase: AnnotationStore, getannotation
 # mass, and the ports verify against the node definition (StandardMessagePassingRules tests).
 const NMV_669 = "ReactiveMP.jl#669: v6 uses E[v] for the variance a non-point-mass q_v contributes; naive VMP gives 1/E[1/v], and the port verifies against the node definition"
 
+# v6's Gamma and GammaInverse average energies take E[x/θ] as E[x]/E[θ] and E[θ/x] as θ/E[x];
+# for independent factors they are E[x]·E[1/θ] and θ·E[1/x]. They agree for point masses.
+const GAMMA_ENERGY = "ReactiveMP.jl#672: v6's Gamma energy uses E[x]/E[θ] for E[x/θ]; it is E[x]·E[1/θ], and the two agree only for a point-mass q_θ"
+const GAMMA_INVERSE_ENERGY = "ReactiveMP.jl#672: v6's GammaInverse energy uses θ/E[x] for E[θ/x]; it is θ·E[1/x], and the two agree only for a point-mass q_out"
+
 const INVERSE_GAMMA = InverseGamma(3.0, 4.0)
 
 # v6 returns a split cluster as a NamedTuple and the port as a `FactorizedCluster`; its shape
@@ -160,7 +165,8 @@ const AVERAGE_ENERGY_CASES = [
     ("Bernoulli:energy", Bernoulli, (q = (out = Bernoulli(0.3), p = Beta(2.0, 3.0)),), false),
     ("Gamma:energy:point-mass-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = PointMass(2.0), θ = PointMass(1.0)),), false),
     ("Gamma:energy:gamma-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = GammaShapeRate(4.0, 2.0), θ = PointMass(1.0)),), false),
-    ("GammaInverse:energy", GammaInverse, (q = (out = GammaInverse(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0)),), false),
+    ("Gamma:energy:gamma-θ", Gamma, (q = (out = Gamma(3.0, 2.0), α = PointMass(2.0), θ = Gamma(3.0, 2.0)),), GAMMA_ENERGY),
+    ("GammaInverse:energy", GammaInverse, (q = (out = GammaInverse(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0)),), GAMMA_INVERSE_ENERGY),
     ("HalfNormal:energy", HalfNormal, (q = (out = GammaShapeRate(2.0, 1.0), v = PointMass(2.0)),), false),
     ("Poisson:energy:point-masses", Poisson, (q = (out = PointMass(3), l = PointMass(2.0)),), false),
     ("Poisson:energy:poisson-out", Poisson, (q = (out = Poisson(4.0), l = GammaShapeRate(2.0, 1.0)),), false),
@@ -187,7 +193,10 @@ const MIXTURE_CASES = [
     ("NormalMixture:out", :out, (q = (switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...),), (q = (switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...),)),
 ]
 
-declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, reasoning = NMV_669)] : DeclaredDisagreement[]
+# `flagged` is `false`, `true` for #669, or the reason of another declared correction.
+declared_reason(flagged::Bool) = NMV_669
+declared_reason(flagged::AbstractString) = flagged
+declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDisagreement(id; kind = :correction, reasoning = declared_reason(flagged))]
 
 @testset "StandardMessagePassingRules against v6" begin
     @testset "message rules" begin
@@ -198,7 +207,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             v6, v6_logscale = v6_message_update(v6_node(node), edge, m, q)
             record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = ":$edge", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
             # A declared correction must actually differ, or the declaration is stale.
-            @test flagged == (record.outcome === :correction)
+            @test (flagged !== false) == (record.outcome === :correction)
         end
     end
     @testset "message rules consuming a joint" begin
@@ -206,7 +215,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             v7 = call_message_update_rule(node, edge; clusters)
             v6, _ = v6_message_update(node, edge, NamedTuple(), NamedTuple{map(V6Oracle.v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))))
             record = compare_with_reference(id, v7, v6; inputs = clusters, node = string(node), target = ":$edge", declared = declare(id, flagged))
-            @test flagged == (record.outcome === :correction)
+            @test (flagged !== false) == (record.outcome === :correction)
         end
     end
     @testset "NormalMixture" begin
@@ -239,7 +248,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             v7 = call_marginal_update_rule(node, members; m, q)
             v6 = v6_marginal_update(v6_node(node), members, m, q)
             record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = string(members), declared = declare(id, flagged))
-            @test flagged == (record.outcome === :correction)
+            @test (flagged !== false) == (record.outcome === :correction)
         end
     end
     @testset "average energies" begin
@@ -248,7 +257,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             v7 = call_average_energy(node; q, clusters)
             v6 = v6_average_energy(v6_node(node), q, clusters)
             record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = "energy", declared = declare(id, flagged))
-            @test flagged == (record.outcome === :correction)
+            @test (flagged !== false) == (record.outcome === :correction)
         end
     end
 end

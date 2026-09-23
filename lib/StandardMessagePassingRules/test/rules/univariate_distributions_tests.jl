@@ -69,6 +69,7 @@ end
 
 @testitem "rules:Gamma-GammaInverse" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using SpecialFunctions: digamma, loggamma
 
     @test_message_update_rule(
         node = Gamma, target = :out,
@@ -77,11 +78,23 @@ end
             (q = (α = PointMass(2.0), θ = PointMass(0.5)),) => Gamma(2.0, 0.5),
         ],
     )
+    # Gamma(2, scale 1) times Gamma(2, scale 1) is Gamma(3, scale 1/2).
     @test_marginal_update_rule(
-        node = Gamma, target = (:out, :α, :θ), check_type_promotion = false,
+        node = Gamma, target = (:out, :α, :θ),
         cases = [
             (m = (out = Gamma(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0)),) =>
-                FactorizedCluster((:out,) => prod(ClosedProd(), Gamma(2.0, 1.0), Gamma(2.0, 1.0)), (:α,) => PointMass(2.0), (:θ,) => PointMass(1.0)),
+                FactorizedCluster((:out,) => Gamma(3.0, 0.5), (:α,) => PointMass(2.0), (:θ,) => PointMass(1.0)),
+        ],
+    )
+    # The energy's E[x/θ] is E[x]·E[1/θ], here 6 · 1/4 for out ~ Gamma(3, scale 2) and
+    # θ ~ Gamma(3, scale 2), where v6 took E[x]/E[θ] = 1. E[log x] = digamma(3) + log(2).
+    @test_average_energy(
+        node = Gamma,
+        cases = [
+            (q = (out = Gamma(3.0, 2.0), α = PointMass(2.0), θ = Gamma(3.0, 2.0)),) =>
+                loggamma(2.0) + 2 * (digamma(3.0) + log(2.0)) - (2 - 1) * (digamma(3.0) + log(2.0)) + 6 * (1 / 4),
+            (q = (out = Gamma(3.0, 2.0), α = PointMass(2.0), θ = PointMass(0.5)),) =>
+                loggamma(2.0) + 2 * log(0.5) - (2 - 1) * (digamma(3.0) + log(2.0)) + 6 / 0.5,
         ],
     )
     @test_message_update_rule(
@@ -92,15 +105,19 @@ end
         ],
     )
     @test_marginal_update_rule(
-        node = GammaInverse, target = (:out, :α, :θ), check_type_promotion = false,
+        node = GammaInverse, target = (:out, :α, :θ),
         cases = [
             (m = (out = GammaInverse(1.0, 2.0), α = PointMass(1.0), θ = PointMass(2.0)),) =>
                 FactorizedCluster((:out,) => GammaInverse(3.0, 4.0), (:α,) => PointMass(1.0), (:θ,) => PointMass(2.0)),
         ],
     )
-    # v6's node tests.
-    @test call_average_energy(GammaInverse; q = (out = GammaInverse(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0))) ≈ -0.26835300529540684
-    @test call_average_energy(GammaInverse; q = (out = GammaInverse(42.0, 42.0), α = PointMass(42.0), θ = PointMass(42.0))) ≈ -1.433976171558072
+    # By hand: -α log θ + loggamma(α) + (α + 1) E[log x] + θ E[1/x], with, for x ~ InvGamma(a, b),
+    # E[log x] = log(b) - digamma(a) and E[1/x] = a/b. v6's node tests expected θ/E[x] in the
+    # last term, so their values (-0.268…, -1.434…) are not reproduced.
+    inverse_gamma_energy(α, θ, a, b) = -α * log(θ) + loggamma(α) + (α + 1) * (log(b) - digamma(a)) + θ * a / b
+    @test call_average_energy(GammaInverse; q = (out = GammaInverse(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0))) ≈ inverse_gamma_energy(2.0, 1.0, 2.0, 1.0)
+    @test call_average_energy(GammaInverse; q = (out = GammaInverse(42.0, 42.0), α = PointMass(42.0), θ = PointMass(42.0))) ≈ inverse_gamma_energy(42.0, 42.0, 42.0, 42.0)
+    @test inverse_gamma_energy(2.0, 1.0, 2.0, 1.0) ≈ 0.7316469947045985 rtol = 1.0e-9
 end
 
 @testitem "rules:HalfNormal" tags = [:rules] begin

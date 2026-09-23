@@ -1571,6 +1571,13 @@ Claims the assistant made that were **wrong** and should not be revived:
     groups, precisions before means, is the VMP update schedule, and changing it changes the
     trajectory: the same optimum, reached in about 7 iterations instead of about 13. Measured
     in case (c). See §3.24.
+27. **"Ported with v6's own tables and node tests" means ported correctly.** Not when v6's
+    tests pin v6's errors. Phase 5 step 3 ported the Gamma and GammaInverse average energies
+    with their v6 math (E[x]/E[θ] for E[x/θ], θ/E[x] for E[θ/x]), and the copied node-test
+    values agreed, because they were computed with the same mistake. A review against the
+    density caught it; both are corrected and declared (ReactiveMP.jl#672). A v6 expected value
+    is evidence of what v6 does, not of what is right: hand-derive, or verify against the node
+    definition, where the tooling allows.
 
 ---
 

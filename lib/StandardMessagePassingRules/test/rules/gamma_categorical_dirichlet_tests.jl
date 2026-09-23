@@ -96,7 +96,7 @@ end
         ],
     )
     @test_marginal_update_rule(
-        node = GammaShapeRate, target = (:out, :α, :β), check_type_promotion = false,
+        node = GammaShapeRate, target = (:out, :α, :β),
         cases = [
             (m = (out = GammaShapeRate(1.0, 2.0), α = PointMass(1.0), β = PointMass(2.0)),) =>
                 FactorizedCluster((:out,) => GammaShapeRate(1.0, 4.0), (:α,) => PointMass(1.0), (:β,) => PointMass(2.0)),
@@ -123,7 +123,7 @@ end
         ],
     )
     @test_marginal_update_rule(
-        node = Categorical, target = (:out, :p), check_type_promotion = false,
+        node = Categorical, target = (:out, :p), float_types = (Float32, Float64),
         cases = [
             (m = (out = Categorical([0.2, 0.8]), p = PointMass([0.0, 1.0])),) =>
                 FactorizedCluster((:out,) => Categorical([tiny, 0.8] ./ (tiny + 0.8)), (:p,) => PointMass([0.0, 1.0])),

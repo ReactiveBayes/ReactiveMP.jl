@@ -1,7 +1,9 @@
 @define_factor_node(node = Gamma, type = Stochastic, interfaces = [:out, (:α, aliases = [:shape]), (:θ, aliases = [:scale])])
 
+# E[x/θ] = E[x]·E[1/θ] for independent x and θ. v6 wrote E[x]/E[θ], which is right only for
+# a point-mass θ (ReactiveMP.jl#672); the v6 comparison declares the difference.
 gamma_energy(q_out, q_α, q_θ) =
-    mean(loggamma, q_α) + mean(q_α) * mean(log, q_θ) - (mean(q_α) - 1) * mean(log, q_out) + mean(q_out) / mean(q_θ)
+    mean(loggamma, q_α) + mean(q_α) * mean(log, q_θ) - (mean(q_α) - 1) * mean(log, q_out) + mean(q_out) * mean(inv, q_θ)
 
 @define_average_energy(
     node = Gamma,

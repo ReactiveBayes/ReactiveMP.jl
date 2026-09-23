@@ -112,11 +112,31 @@ decomposed its NamedTuple joints the same way, for the average energy only.
 """
 rule_marginals(f::F, ::Nothing, ::Nothing) where {F} = Marginals(NamedTuple())
 
+# Defined before the generated function below, whose generator calls them: a generator sees only
+# the methods that existed when it was defined. They are closed; no other method is expected.
+# The block labels of a marginal holding a `FactorizedCluster`, or `nothing`.
+factorized_blocks(::Type) = nothing
+factorized_blocks(::Type{<:Marginal{<:MessagePassingRulesBase.FactorizedCluster{K}}}) where {K} = K
+
+# A block's value is its part of the cluster; its annotations are the joint's.
+block_value(::typeof(getdata), marginal, block) = getdata(marginal)[block]
+block_value(f::F, marginal, block) where {F} = f(marginal)
+
+# A factorised cluster's blocks must cover the cluster's members, each once and in its order.
+partitions(blocks, members) = Tuple(Iterators.flatten(blocks)) == members
+
 @generated function rule_marginals(f::F, ::Val{N}, inputs::Tuple) where {F, N}
     singlekeys, singlevalues, jointkeys, jointvalues, i = Symbol[], Any[], Any[], Any[], 1
     for name in N
         blocks = name isa Tuple ? factorized_blocks(inputs.parameters[i]) : nothing
         if blocks !== nothing
+            partitions(blocks, name) || return :(
+                throw(
+                    ArgumentError(
+                        $("the marginal of the cluster $(name) is a FactorizedCluster with the blocks $(blocks), which do not cover the cluster's members once each, in its order"),
+                    ),
+                )
+            )
             for block in blocks
                 value = :(block_value(f, inputs[$i], Val($(QuoteNode(block)))))
                 isone(length(block)) ? (push!(singlekeys, only(block)); push!(singlevalues, value)) : (push!(jointkeys, block); push!(jointvalues, value))
@@ -136,13 +156,6 @@ rule_marginals(f::F, ::Nothing, ::Nothing) where {F} = Marginals(NamedTuple())
     return :(Marginals(NamedTuple{$(Tuple(singlekeys))}($(Expr(:tuple, singlevalues...))), Val($(Tuple(jointkeys))), $(Expr(:tuple, jointvalues...))))
 end
 
-# The block labels of a marginal holding a `FactorizedCluster`, or `nothing`.
-factorized_blocks(::Type) = nothing
-factorized_blocks(::Type{<:Marginal{<:MessagePassingRulesBase.FactorizedCluster{K}}}) where {K} = K
-
-# A block's value is its part of the cluster; its annotations are the joint's.
-block_value(::typeof(getdata), marginal, block) = getdata(marginal)[block]
-block_value(f::F, marginal, block) where {F} = f(marginal)
 
 """
     ReactiveMP.rule_arguments(messages_names, messages, marginals_names, marginals)

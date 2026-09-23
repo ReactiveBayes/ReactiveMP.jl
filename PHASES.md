@@ -36,6 +36,8 @@ done. Phase 5's plan is its entry brief (§ Phase 5, `DISCUSSION.md` §3.26).
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
+| `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | the log-scale milestone, Phase 7 | Phase 5 review |
+| `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
@@ -1418,8 +1420,11 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
    Poisson, Uniform and Uninformative: 24 message rules, 6 marginal rules and 10 average
    energies, with v6's own tables and node tests, and `compare_standard.jl` now agrees on 241
    checks with no new disagreement. `HalfNormal` and `Uninformative` are Standard's own
-   exported types. The eight nodes have left `legacy/v6/`. Two product questions, decided with
-   the user:
+   exported types. The eight nodes have left `legacy/v6/`. *(Corrected after the Phase 5
+   review: the Gamma and GammaInverse average energies had been ported with v6's math errors,
+   E[x]/E[θ] for E[x/θ] and θ/E[x] for E[θ/x], and v6's node tests pinned the wrong values.
+   Both are corrected, verified by hand and by Monte Carlo, and declared in the v6 comparison;
+   ReactiveMP.jl#672.)* Two product questions, decided with the user:
    - **`Uninformative`'s product.** v6 made it the identity with generic
      `prod(::PreserveTypeProd{T}, ::Uninformative, ::T)` methods, which were eleven method
      ambiguities with BayesBase. Standard now returns its own strategy, `UninformativeProd`,
