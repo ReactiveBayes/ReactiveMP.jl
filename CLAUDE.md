@@ -143,9 +143,11 @@ and read whichever exist before proposing changes:
 **If none of these files exist, the repository has no unfinished business** and you can
 treat `main` as the whole story.
 
-The current work is the rule/node rewrite. From Phase 4.5 on, the v6 engine in `src/` is
-**replaced in place**, not bridged: v6 code and tests are deleted as they are replaced, after
-their behaviour has been recorded as fixtures in `compat/v6-comparison`. Breaking downstream
+The current work is the rule/node rewrite. From Phase 4.5 on, the engine in `src/` is
+**refactored in place**, not bridged. Its reactive machinery is kept, and rule lookup and
+invocation plus node and rule definition and creation are replaced. v6 code and tests are
+deleted as they are replaced, after their behaviour has been recorded as fixtures in
+`compat/v6-comparison`. Breaking downstream
 packages before the release is accepted.
 
 When work is in progress, update `PHASES.md` **in the same commit as the change it

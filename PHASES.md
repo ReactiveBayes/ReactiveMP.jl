@@ -16,12 +16,12 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5 — the engine design session, then the first cut of the v7 engine.** Phase 4.5
-was restructured on 2026-09-23 (`DISCUSSION.md` §3.18): there is no bridge into the v6
-engine. The new engine is written directly in `src/`, built first for four slice cases, and
-compared against fixtures recorded from v6. The design session is under way: § Phase 4.5's design brief
-records what is decided and ten proposals awaiting sign-off. Code starts, with Step 0's
-fixtures, once they are signed off.
+**Phase 4.5 — Step 0: record the v6 fixtures.** The design brief in § Phase 4.5 is **signed
+off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
+in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
+and rule definition and creation are replaced. The work is proven on four slice cases
+against fixtures recorded from v6. Work proceeds in the brief's order, one commit per step,
+starting with the fixtures.
 
 Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system; `lib/MessagePassingRulesTestUtils`
 is its test tooling; `compat/v6-comparison` holds the v6 oracle and the migration check.
@@ -59,7 +59,7 @@ names rather than generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the real v7 engine, for four slice cases *(absorbs the start of 7)* | not started; next is the design session |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | design signed off; next is Step 0 |
 | 5 | `StandardMessagePassingRules` | not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | not started |
 | 7 | Complete the engine — remaining nodes, diagnostics, RxInfer plumbing | not started |
@@ -618,9 +618,17 @@ it to surface rules that were already wrong.
 
 ## Phase 4.5 — Engine design and first cut
 
-**Goal:** the first cut of the real v7 engine, written directly in `src/` and built for four
-slice cases, so that the rule/engine *interface* is proven against the engine that will ship
-before hundreds of rules are ported against it.
+**Goal:** the v7 engine's first cut, refactored in place in `src/` and built for four slice
+cases, so that the rule/engine *interface* is proven against the engine that will ship before
+hundreds of rules are ported against it.
+
+**What v7 changes in the engine, and what it keeps** (user, 2026-09-23). The underlying
+reactive machinery is kept: Rocket streams, variables, the equality chain, message products,
+deferred messages and scores. What is replaced is how rules are found, fetched and called, and
+how nodes and rules are defined and created. That covers the per-node activation overrides,
+the positional edge handling, and the rule-call path in `MessageMapping`/`MarginalMapping`.
+It is an improvement of the rule-call behaviour plus a clean-up, not a new engine. RxInfer
+needs adjusting where node and rule creation changes, and little elsewhere.
 
 Rule kernels and test utilities can be developed without an engine. That does not
 establish that their interface with the engine is correct — **this is the single largest
@@ -636,17 +644,17 @@ Decided instead:
 - **Phase 4.5 absorbs the start of Phase 7.** One engine design session, then the real
   engine for the slice's nodes. Phase 7 becomes *complete the engine*.
 - **v6 is a fixture source only.** Fixtures are recorded from `compat/v6-comparison`
-  **before anything is deleted**. The v6 engine is deleted when the new one lands; v6 rules
-  and their tests are deleted per directory as Phase 5 ports them. `src/` never holds two
-  engines, and the suite shrinks rather than going red.
+  **before anything is deleted**. The v6 rule-call path, node-creation path and per-node
+  activation are replaced in place, with no second copy kept alongside. v6 rules and their
+  tests are deleted per directory as Phase 5 ports them. `src/` never holds two engines, and
+  the suite shrinks rather than going red.
 - **ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`** — `[sources]` on
   1.11+, developed at test time on 1.10, as TestUtils does. `ci.yml`, `make test` and
   `make docs` gain the develop step.
 - **Downstream breakage is accepted until the release.** Only a small internal group uses the
   branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
-**Status: design session under way.** The design brief below records what is decided and
-what is proposed; code starts once the proposals are signed off.
+**Status: design signed off 2026-09-23; next is Step 0.**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -715,17 +723,20 @@ emission order (the mixture `reverse` order included) and the missing-input beha
 ### Design brief — 2026-09-23
 
 Evidence gathered from the v6 engine, the base package and RxInfer 5.5.2; the reasoning is
-in `DISCUSSION.md` §3.19. **Decided** items were settled by the user; **proposed** items
-await sign-off and are not yet binding.
+in `DISCUSSION.md` §3.19. The whole brief is **signed off** (2026-09-23). The numbered items
+were proposals and were accepted as written, except item 3, which became a benchmark.
 
 **Decided**
 
-- **RxInfer is not a constraint.** It is refactored for the new engine as its own major
-  release, so v7 does not keep RxInfer 5.x's surface (variable constructors, activation-option
-  structs, `score` streams of `CountingReal`, the force-marginal plugin's reach into node
-  internals). The slice runs on a graph-construction API the engine owns; RxInfer's
-  adaptation is later work.
-- **Rocket stays the substrate.** The engine is rewritten on Rocket observables, not replaced
+- **RxInfer adapts, as its own major release — but the adaptation is expected to be
+  small.** The engine's machinery is kept, so most of what RxInfer 5.5.2 uses keeps working
+  (streams, `set_initial_*`, `new_observation!`, `score`, callbacks and form constraints). What
+  breaks is node and rule creation and definition: `factornode(fform, interfaces,
+  factorization)` with positional edges, `FactorNodeActivationOptions`, the `@node` traits
+  that GraphPPL reads, and the force-marginal plugin's reach into node internals. RxInfer is
+  adjusted there. The slice's tests build graphs through the engine's own API, and RxInfer
+  5.5.2 records the v6 fixtures.
+- **Rocket stays the substrate.** The engine keeps its Rocket observables and is not replaced
   by an explicit scheduler — `PLAN.md` § Package split already lists Rocket as the engine's
   dependency, and v6's emission order stays comparable.
 - **Deferred messages materialise exactly as in v6.** A deferred message holds its source
@@ -746,7 +757,7 @@ await sign-off and are not yet binding.
   (`dependencies.jl:169`), so Delta's `q_ins` joint (`rules/delta/unscented/marginals.jl:4`,
   `in.jl:3`) cannot be written. Delta is the first customer.
 
-**Proposed**
+**Signed off**
 
 1. **Edge identity is explicit.** The engine's construction API takes interfaces as
    `(name, index)` — the index supplied by the caller (GraphPPL's `EdgeLabel.index`), never
@@ -758,8 +769,13 @@ await sign-off and are not yet binding.
    become groups plus declared dependencies. Delta's three non-dependency behaviours are
    engine features keyed off the spec: static gating (`static_inputs = :fold`), `q_out`
    aliasing (a singleton cluster's marginal *is* the variable's), and the empty-group case.
-3. **`Message` becomes immutable with typed annotations** (`Message{D, A}`); v6's mutable
-   `AnnotationDict` (`annotations.jl:12`), which tests mutate in place, goes.
+3. **`Message` carries typed annotations** (`Message{D, A}`); v6's mutable `AnnotationDict`
+   (`annotations.jl:12`), which tests mutate in place, goes. **Whether the struct itself is
+   `mutable` with `const` fields or immutable is decided by a benchmark, not by taste**
+   (user). v6's `mutable struct … const` fields (`Message`, `message.jl:77`) are deliberate:
+   a mutable struct is passed by reference, which can avoid copying. Measure both
+   representations through the equality chain and a full slice sweep, and keep whichever
+   wins.
 4. **`getnodefn(node, target)` is declared in the base package with no methods** and
    implemented by the engine's Delta node, which owns the function and its static fold. The
    base docs already promise it (`nodes.jl:80`, `context.jl:6`).
@@ -788,8 +804,9 @@ await sign-off and are not yet binding.
 10. **Order of work**, one commit per step, test first: Step 0 fixtures → the base-package
     additions (group cluster, `getnodefn`, `FactorizedJoint` returns) → the rule ports → the
     engine core (variables, equality chain, generic node activation) on case (a) → free energy
-    → (b) → (c) → (d) → delete the v6 engine. v6 rules and `rule.jl` do not depend on the
-    engine's streams, so their tables keep passing until Phase 5 deletes them per directory.
+    → (b) → (c) → (d) → remove the v6 rule-call and node-creation paths the new ones
+    replaced. v6 rules and `rule.jl` do not depend on the engine's streams, so their tables
+    keep passing until Phase 5 deletes them per directory.
 
 ### Exit criteria
 - [ ] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted
@@ -804,7 +821,10 @@ await sign-off and are not yet binding.
 - [ ] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
 - [ ] mixture emission order agrees with the recorded v6 order (#6)
 - [ ] edge order and group indices preserved through integration (#7)
-- [ ] the v6 engine deleted; ReactiveMP depends on `MessagePassingRulesBase`
+- [ ] the replaced v6 rule-call, node-creation and per-node activation paths removed;
+      ReactiveMP depends on `MessagePassingRulesBase`
+- [ ] the `Message` representation chosen by benchmark (mutable with `const` fields vs
+      immutable), with the numbers recorded
 
 Do not start Phase 5 until this passes.
 

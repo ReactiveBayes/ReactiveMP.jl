@@ -1091,6 +1091,10 @@ Decided:
 - **Downstream breakage before the release is accepted.** `IntegrationTest.yml` is not a gate
   for this branch; the coordinated downstream CI remains the Phase 8 requirement.
 
+*(Refined in §3.19: "the real engine" means the v6 engine refactored in place. Its reactive
+machinery is kept, and what "deleting the v6 engine" removes is the replaced rule-call,
+node-creation and per-node activation paths.)*
+
 The consequence to watch: the design Phase 7 was flagged as missing — group stream wiring,
 the immutable `Message`, edge order in clusters, `EdgeLabel.index`, buffer-reuse
 eligibility — is now due at the *start* of Phase 4.5 rather than after Phase 6. That is
@@ -1102,13 +1106,18 @@ Three read-only investigations fed it, of RxInfer 5.5.2's use of ReactiveMP, the
 data flow and retainers, and what the four slice cases need. The outcome is the design brief
 in `PHASES.md` § Phase 4.5; what matters for later readers is why.
 
-- **RxInfer stopped being a constraint.** RxInfer reaches deep into v6: variable
-  constructors, three positional activation-option structs, `score` streams of
-  `CountingReal`, and a force-marginal plugin that walks node internals
-  (`reactivemp_force_marginal_computation_plugin.jl`). Keeping all of that would have made the
-  new engine a re-implementation of v6's surface. The user settled it: RxInfer is refactored
-  for the new engine as its own major release. So the engine owns its construction API, and
-  the slice runs without RxInfer. RxInfer 5.5.2 is still what records the v6 fixtures.
+- **An evolution of the engine, not a new one.** The investigation mapped how deep RxInfer
+  reaches into v6: variable constructors, three positional activation-option structs, `score`
+  streams of `CountingReal`, and a force-marginal plugin that walks node internals
+  (`reactivemp_force_marginal_computation_plugin.jl`). The assistant first read the user's
+  "RxInfer will also be refactored" as licence to drop that whole surface. **The user
+  corrected the framing:** v7 replaces how rules are found, fetched and called, and how nodes
+  and rules are defined and created. The underlying machinery — streams, variables, the
+  equality chain, products, deferred messages, scores — is kept. The change is an
+  improvement of the rule-call behaviour plus a clean-up. So RxInfer's major release adjusts
+  where node and rule creation breaks, and is expected to be small elsewhere. The slice's
+  tests build graphs through the engine's own API; RxInfer 5.5.2 records the v6 fixtures.
+  See §4, item 22.
 - **Rocket stays.** An explicit scheduler was the alternative. Rocket keeps v6's emission
   order comparable against fixtures, and the package table already assumed it.
 - **Deferred messages materialise as in v6, by requirement.** The engine investigation
@@ -1124,6 +1133,11 @@ in `PHASES.md` § Phase 4.5; what matters for later readers is why.
   the base package, which is general and makes Delta its first customer, and a Delta-specific
   synthetic interface, which is the kind of special-casing the rewrite removes. The user chose
   the extension.
+- **`Message`: mutable or immutable is measured, not argued.** The assistant proposed an
+  immutable `Message{D, A}`. The user pointed out that v6's `mutable struct` with `const`
+  fields is deliberate: a mutable struct is passed by reference, which can avoid copying. The
+  typed annotations stay; the struct kind is decided by benchmarking both representations.
+- **Signed off.** The user accepted the rest of the brief as written (2026-09-23).
 - **What the investigation found, and the proposals answer.** Clusters and group indices in
   v6 are positions in a flat interface list, re-derived from neighbour order, never from
   GraphPPL's `EdgeLabel.index` (#7). Five node types override activation. `getnodefn` is
@@ -1214,6 +1228,10 @@ Claims the assistant made that were **wrong** and should not be revived:
     source observables and reads their latest values at materialisation, and that is
     load-bearing for the correctness of reactive message passing, not a defect. The new
     engine materialises exactly as v6 does. See §3.19.
+22. **"RxInfer is being refactored too, so the engine can drop its surface and own a new
+    construction API wholesale."** An over-reading. v7 keeps the reactive machinery and
+    replaces rule lookup and invocation plus node and rule definition and creation. RxInfer
+    adapts where that breaks it, and the adaptation is expected to be small. See §3.19.
 
 ---
 
@@ -1337,7 +1355,7 @@ in `runtests.jl` — **not** a runner swap). It is independent, low-risk, and co
 every later session runs faster.
 
 Then base package → test utils with a bounded numerical oracle → **Phase 4.5: the engine
-design session and the first cut of the real v7 engine** (§3.18) → bulk standard-rule
+design session and the engine's first cut, refactored in place** (§3.18–3.19) → bulk standard-rule
 migration into it → approximations and node packages → completing the engine → coordinated
 release. Start strict downstream CI as soon as
 compatible development revisions exist, rather than waiting until release.
