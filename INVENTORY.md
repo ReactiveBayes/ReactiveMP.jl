@@ -207,9 +207,9 @@ replacement".
 | `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
 | `RandomVariable` | `type` | `src/variables/random.jl` | `engine` |  |
 | `RandomVariableActivationOptions` | `type` | `src/variables/random.jl` | `engine` |  |
-| `RequireEverythingFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes an ordinary algorithm with a dependency declaration |
-| `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes an ordinary algorithm with a dependency declaration |
-| `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes an ordinary algorithm with a dependency declaration |
+| `RequireEverythingFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes a `DefaultAlgorithmExtension` with its own dependency declaration, inheriting the default rules |
+| `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes a `DefaultAlgorithmExtension` with its own dependency declaration, inheriting the default rules |
+| `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | becomes a `DefaultAlgorithmExtension` with its own dependency declaration, inheriting the default rules |
 | `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
 | `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `models` |  |
 | `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; 85 Aqua ambiguities, narrow first |

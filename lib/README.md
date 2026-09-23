@@ -26,7 +26,7 @@ destination as the placeholder token `models`.
   additions must ship as non-breaking **1.x** releases, or `compat/v6-comparison` stops
   resolving and the Phase 4 migration checker goes with it.
 - `MessagePassingRulesApproximations` must **never** depend on `MessagePassingRulesBase`.
-  They are siblings: approximating an integral is numerics, choosing an update scheme is an
+  They are siblings: approximating an integral is numerics, choosing which rules run is an
   algorithm.
 
 ## Wiring the inter-package dependencies

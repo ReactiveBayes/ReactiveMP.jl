@@ -62,10 +62,29 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
 
 - **`algorithm` replaces `meta`.** `meta` today is already two things fused: an algorithm
   selector (`Unscented` vs `Linearization` vs `CVI`) and a parameter bag (AR order,
-  kernels). Naming it `algorithm`, giving it a per-node default and making it swappable
-  absorbs `Marginalisation`/`MomentMatching` — that axis disappears rather than being
-  deleted separately. It also absorbs `RequireMessage`/`RequireMarginal`/
+  kernels). Naming it `algorithm`, giving it a default and making it swappable absorbs
+  `Marginalisation`/`MomentMatching` — that axis disappears rather than being deleted
+  separately. It also absorbs `RequireMessage`/`RequireMarginal`/
   `RequireEverythingFunctionalDependencies` (see Dependencies).
+- **There is one algorithm, `DefaultAlgorithm()`, and it is not an inference scheme.**
+  Bethe free energy minimisation. Belief propagation, variational message passing and their
+  structured forms all come from the **factorisation**, through the engine's default
+  dependency scheme: a rule gets the messages inside its own cluster and the marginals of the
+  other clusters. Every node runs under `DefaultAlgorithm` unless it declares otherwise, and
+  its rules name no algorithm. A custom algorithm exists for exactly two reasons: a **rule
+  switcher**, when someone wants a different set of rules, or a **node's own algorithm**, for
+  a node that genuinely needs one, such as Delta (its approximation method and inverse),
+  Autoregressive (its order) or the mixtures (always variational, whatever the factorisation).
+  *(Until the Phase 4.5 reconciliation this was misread as `BP` and `VMP` algorithms; see
+  `DISCUSSION.md` §3.20.)*
+- **Two kinds of custom algorithm.** A direct subtype of `AbstractAlgorithm` **stands alone**:
+  only its own rules and dependencies apply. A subtype of `DefaultAlgorithmExtension`
+  **extends the default**: resolution looks for its own rule first and falls back to the
+  default's, and likewise for dependencies. The fallback is a second lookup in the untyped
+  `find_*` fallbacks, not dispatch on a supertype, which would make an override with broader
+  inputs ambiguous with the default rule it replaces. An inherited rule runs with
+  `DefaultAlgorithm()` in its `algo` slot, the algorithm it was written for
+  (`rule_algorithm(spec, algorithm)` gives the engine that value).
 - **`context` (`ctx`) is infrastructure, never dispatched on**: a reference to the node
   itself (`ctx.node`), linear-algebra strategy (replacing the global `cholinv` calls — 48 lines in `src/`
   mention it; counting every FastCholesky function outside `approximations/` gives 46;
@@ -102,13 +121,13 @@ arguments object** — not a body the macro rewrites. One form, used by every ru
 )
 ```
 
-With an algorithm, a variadic group and a log scale:
+With a node's own algorithm, a variadic group and a log scale:
 
 ```julia
 @define_message_update_rule(
     node      = Mixture,
-    target   = :switch,
-    algorithm = BP,
+    target    = :switch,
+    algorithm = MixtureVMP,
     pure      = false,
     args      = (m[:out]::Any, m[:inputs...]::Any),
     body      = (ctx, args, ann) -> begin
@@ -185,7 +204,7 @@ expansion. Found in Phase 0.
 `algo` is **read access to the algorithm value** (AR order, kernels, inducing points — the
 parameter-bag half of the old `meta`). It is *not* the dispatch mechanism: dispatch is the
 `algorithm` keyword, which types the generated method's algorithm argument. A rule that
-omits `algorithm` inherits the node's declared default.
+omits `algorithm` belongs to its node's default, `DefaultAlgorithm` for almost every node.
 
 `ctx` and `ann` are deliberately separate: `ctx` is immutable infrastructure the rule
 *reads*; `ann` carries annotations in **both** directions — the incoming ones, keyed exactly
@@ -209,12 +228,12 @@ end
     node       = Mixture,
     type       = Stochastic,
     interfaces = [:out, :switch, :inputs...],
-    algorithm  = BP,
+    algorithm  = MixtureVMP,   # omitted for almost every node: DefaultAlgorithm
 )
 ```
 
-The node declares the default algorithm, so the ~350 rules running under it omit
-`algorithm` entirely and only the ones that deviate name it.
+Almost every node omits `algorithm` and runs under `DefaultAlgorithm`, so the ~350 rules
+omit it too; only a rule switcher's or a node's own algorithm is named.
 
 **The cost, stated plainly.** A one-line rule becomes roughly six, across ~490 definitions.
 That is accepted deliberately in exchange for one uniform surface with no in-body macros.
@@ -263,11 +282,11 @@ built on it.
   energy by hand at all), each with a function form of the same name.
 - **Querying the registry**: `list_rules(NormalMeanVariance)`, `list_rules(NormalMeanVariance, :out)`,
   filtering by algorithm, and `@which_message_update_rule` (which `RuleSpec` fires for these inputs, with
-  source location). "Does this node support VMP or only structured?" becomes a query,
-  because the algorithm axis and the dependency spec are now data.
-- **Rule coverage matrix** — edges × algorithms for a node, cells showing which rules exist.
-  Simultaneously a teaching artifact ("when can I use VMP here?") and a development one
-  ("what is missing in the port?").
+  source location). "Which factorisations does this node support?" becomes a query: the
+  rules' declared inputs say which combinations of messages, marginals and clusters exist.
+- **Rule coverage matrix** — edges × rule sets (the default and any custom algorithm) for a
+  node, cells showing which rules exist. Simultaneously a teaching artifact and a
+  development one ("what is missing in the port?").
 - **Rich display via `Base.show` MIME methods** — `text/plain` for the REPL, `text/html` for
   notebooks, since the course uses them. Zero dependencies, works everywhere.
 - **Visualisation via the extension mechanism**, following GraphPPL's pattern: diagrams of a
@@ -360,15 +379,17 @@ comparison across representations.
 
 ### Dependencies as a language
 
-Dependencies become a **property of the algorithm**, not the node; a node declares a
-default algorithm. Written in the same `m[]`/`q[]` vocabulary as rules:
+Dependencies become a **property of the algorithm**, not the node. Under `DefaultAlgorithm`
+they follow the factorisation and are rarely declared; a node whose rules need something
+else declares its own algorithm and its dependencies. Written in the same `m[]`/`q[]`
+vocabulary as rules:
 
 ```julia
 @define_factor_node(
     node       = NormalMixture,
     type       = Stochastic,
     interfaces = [:out, :switch, :m..., :p...],
-    algorithm  = VMP,
+    algorithm  = NormalMixtureVMP,
     dependencies = [
         (:m, k) => (q[:out], q[:switch], q[:p][k]),
         (:p, k) => (q[:out], q[:switch], q[:m][k]),
@@ -432,7 +453,7 @@ outside the standard free-energy construction need an explicit scoring contract.
 ### Purity
 
 `pure` is declared on the **algorithm**, inherited by its rules, overridable per rule.
-`BP` is pure, so the ~350 already-pure rules need no annotation; impure algorithms such as
+`DefaultAlgorithm` is pure, so the ~350 already-pure rules need no annotation; impure algorithms such as
 `BIFM` carry the marker once rather than once per rule. Narrowing (pure rule under impure
 algorithm) is always safe; **widening must taint the graph-level check**, or the
 inheritance is unsound in the direction that matters. Multithreading is not implemented —
@@ -661,7 +682,9 @@ the signed-off design brief is in `PHASES.md` § Phase 4.5).
 `MessagePassingRulesApproximations` is **not** part of the algorithm hierarchy and does not
 depend on `MessagePassingRulesBase`. They are siblings. "How do I approximate this integral"
 is a numerical utility; "which message update scheme am I running" is an algorithm. The
-delta node's algorithm *uses* `Unscented`; it is not `Unscented`. Keeping them separate
+delta node's algorithm *uses* `Unscented`; it is not `Unscented`. Delta's algorithm is a
+Delta-owned value holding the approximation method and the optional known inverse, as v6's
+`DeltaMeta(method, inverse)` did; it is designed when case (d) ports Delta. Keeping them separate
 leaves the numerics usable outside this ecosystem and keeps the dependency graph flat.
 
 Node packages (Delta, Flow) depend on both.
@@ -876,12 +899,19 @@ The dispatch result, ownership contracts and early engine integration are separa
    the mixtures reject anything but mean-field, and `Mixture` ignores the factorisation. Since
    dependencies belong to the algorithm, selection that genuinely varies with factorisation is
    written as a distinct algorithm. The door stays open without a syntax axis.
+   *(Refined at the Phase 4.5 algorithm reconciliation: under `DefaultAlgorithm` the engine's
+   default scheme already follows the factorisation, so no algorithm is needed for that. A
+   node that **ignores** the factorisation, as the mixtures do, declares its own algorithm,
+   e.g. `NormalMixtureVMP`.)*
 4. **Ruleset axis** (`StandardRules()`, `Overlay(mine, standard)`). **DEFERRED in Phase 0.**
    A downstream package that wants its own rule for a standard node and edge declares its own
    algorithm and gets it, with no shadowing and no ambiguity, because the algorithm is part of
    the signature. The piracy argument for the axis was already dead (see § Testing). Adding
    the axis later is a new keyword rather than a resurfacing, so it waits for a concrete use
-   case. The rule-fallback contract was specified independently, as required:
+   case. *(Since the Phase 4.5 algorithm reconciliation a `DefaultAlgorithmExtension` gives a
+   one-level overlay without any ruleset keyword: its own rules first, the default's for the
+   rest. The general `Overlay(mine, standard)` stays deferred.)* The rule-fallback contract was
+   specified independently, as required:
    **resolution is a separate, total function** — `find_rule` returns a spec or a
    `RuleNotFound`, never throws and never runs anything, and the fallback is consulted on the
    not-found branch only, which is decided before any body runs. An exception from inside a

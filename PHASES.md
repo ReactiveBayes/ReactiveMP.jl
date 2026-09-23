@@ -16,7 +16,9 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5 — step 4 of the brief's order: the engine core, on case (a).** Step 0 is done:
+**Phase 4.5 — step 4 of the brief's order: the engine core, on case (a).** The algorithm
+reconciliation that came up before it is done (§ Phase 4.5): one `DefaultAlgorithm`, custom
+algorithms stand alone or extend it. Step 0 is done:
 the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Step 2, the
 base-package additions, is done. Step 3 is done: the slice's rules and numerics are
 ported into `StandardMessagePassingRules` and `MessagePassingRulesApproximations`, and agree with
@@ -179,7 +181,8 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       edge, with no shadowing and no ambiguity, because the algorithm is part of the
       signature. The piracy argument for the axis was already dead (`DISCUSSION.md` §5).
       Nothing in tree needs scoped rule tables, and adding the axis later is a new keyword
-      rather than a resurfacing
+      rather than a resurfacing. *(Since the algorithm reconciliation, a
+      `DefaultAlgorithmExtension` gives a one-level overlay without one.)*
 - [x] **specify existing rule-fallback behavior regardless of the ruleset decision**:
       distinguish a missing rule from an exception inside a selected rule. Such an
       exception must propagate, never trigger fallback.
@@ -454,7 +457,9 @@ proposal. Citations are as of `545425a2`.
   ignores the factorisation entirely (`mixture.jl:73-96`).
 - *Proposed.* Keep it per target. Dependencies belong to the **algorithm**, so selection that
   genuinely varies with factorisation is a distinct algorithm, not a new syntax axis. That
-  keeps the one-way door closed without building anything.
+  keeps the one-way door closed without building anything. *(Refined at the algorithm
+  reconciliation: the default scheme already follows the factorisation; only a node that
+  ignores it declares its own algorithm.)*
 
 **#9 — beliefs consumed vs. the partition whose entropy is counted**
 - *Evidence.* Free energy iterates only the cluster marginals
@@ -685,10 +690,13 @@ re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
   `find_average_energy` return a `RuleSpec` or `RuleNotFound` and never throw; the engine's
   fallback sits on the `RuleNotFound` branch; `execute_rule(spec, output, algorithm, ctx,
   args, ann, target)` — seven arguments, the target included (`rulespec.jl:107`) — never
-  catches.
+  catches. The engine passes it `rule_algorithm(spec, algorithm)`, which is `DefaultAlgorithm()`
+  when a `DefaultAlgorithmExtension` inherited the rule (algorithm reconciliation).
 - **Dependencies are declared per algorithm** (`DependenciesSpec`, `dependencies_spec(node,
   algorithm)`); `nothing` means the engine's default scheme (own cluster → messages minus
-  self, other clusters → marginals). Consumed inputs and the free-energy partition are
+  self, other clusters → marginals). Under `DefaultAlgorithm` that is the usual case, and
+  the scheme follows the factorisation; an extension without its own declaration inherits
+  the default's. Consumed inputs and the free-energy partition are
   separate (#9). `static_inputs = :fold` is the delta static-gating policy; a singleton
   cluster's marginal *is* the variable's marginal (`q_out` aliasing, engine invariant).
 - **Buffers are engine internals** (#10): reuse is unspecified; outsiders copy; getters copy
@@ -806,7 +814,11 @@ it is a rule switcher, or a node's own algorithm where a node needs one. See
       kinds, not the algorithm; `check.jl` calls `DefaultAlgorithm()`. Labels naming v6's inference
       modes (`check.jl`, the fixture ids) describe the mathematics and stay. Every suite and
       every v6 comparison is unchanged
-- [ ] the documents follow
+- [x] the documents follow: PLAN § Dispatch axes states the model, and its examples, queries,
+      dependencies, purity, #3, #4 and Delta passages match it. DISCUSSION has §3.20 and
+      Corrections 23, with notes at the older passages. This file's conventions, contracts
+      and #3/#4 notes are updated too, as are lib/README, the INVENTORY notes for `Require*` and
+      the CHANGELOG. Mathematical uses of BP and VMP stay
 
 ### Step 3 — the slice's rules, ported
 

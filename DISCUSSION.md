@@ -218,7 +218,7 @@ gradient correctness. Requiring it in a checked workflow is a project policy; de
 tests are separate. The audit sits alongside `check_everything_inplace` and checked buffers.
 
 Inheritance model (user's): declared on the algorithm, inherited by its rules, overridable
-per rule. `BP` is pure so ~350 rules need no annotation; BIFM and, in the original design,
+per rule. `BP` is pure *(now `DefaultAlgorithm`, §3.20)* so ~350 rules need no annotation; BIFM and, in the original design,
 old CVI mark the algorithm once rather than each rule. CVI is subsequently removed (§3.9b-ii).
 Assistant added: narrowing is safe, **widening must taint the graph-level check** or the
 inheritance is unsound in the direction that matters.
@@ -473,7 +473,7 @@ Raised late by the user: the system is taught in the BMLIP course at TU/e, and i
 rules manually is a good teaching device. Promoted to a first-class goal.
 
 Almost free, because it is all registry queries: rule listings, `@which_rule`, a
-**coverage matrix** (edges × algorithms, showing which rules exist) that serves students
+**coverage matrix** (edges × algorithms — rule sets, not schemes, §3.20 — showing which rules exist) that serves students
 and developers equally, `Base.show` MIME methods for REPL and notebooks, and visualisations
 behind the extension mechanism following GraphPPL's pattern. Error messages count as
 pedagogy — the near-miss display with per-slot diffs is a teaching tool.
@@ -850,7 +850,10 @@ One more thing the runs settled: **layout in v6 is a function of `(method, inver
 `method` alone**, so `method` and `layout` are already two axes. The new design collapses
 both into one algorithm *value* with the inverse as a field, after which
 `Linearization{Nothing}` and `Linearization{<:Function}` select different rules by ordinary
-dispatch — which the hand-written rules 7 and 8 confirm.
+dispatch — which the hand-written rules 7 and 8 confirm. *(Named in §3.20's terms, that value is
+Delta's own algorithm holding the method and the inverse, as v6's `DeltaMeta` did; the
+approximation itself, `Linearization` or `Unscented`, is a utility inside it, not the
+algorithm. The base tests' toy is now `ToyDelta{I}`.)*
 
 #### Context service contracts (open item #12)
 
@@ -879,7 +882,8 @@ from the code, plus a proposed position each — `PHASES.md` § Phase 3). Outcom
 reasons where the user changed or rejected the proposal:
 
 - **#3 and #9 accepted as proposed.** Group selection is keyed per target; factorisation-
-  dependent selection is a distinct algorithm. Consumed beliefs and the scored partition are
+  dependent selection is a distinct algorithm *(refined in §3.20: the default scheme already
+  follows the factorisation; only a node that ignores it declares its own)*. Consumed beliefs and the scored partition are
   separate declarations, and a joint must list its members in interface-declaration order,
   rejected otherwise rather than permuted.
 - **#10 accepted and made stricter (user).** The proposal said published results are owned
@@ -1168,6 +1172,46 @@ in `PHASES.md` § Phase 4.5; what matters for later readers is why.
   runs more than one pass or computes free energy: every trajectory v6 has ever produced came
   through RxInfer.
 
+### 3.20 One DefaultAlgorithm — `BP` and `VMP` were a misreading
+
+Found by the user while reading the tests, before step 4: the base package shipped two
+built-in algorithms, `BP` and `VMP`, the node default was `BP()`, the standard nodes declared
+`algorithm = BP` or `VMP`, and a test modelled a structured factorisation as a `Structured`
+algorithm. That contradicts both v6 and §3.1's own intent. There is **one** algorithm, Bethe
+free energy minimisation. Belief propagation, variational message passing and their
+structured forms come from the *factorisation*, through the engine's default dependency
+scheme. `algorithm` replaces `meta`, which was a rule selector plus a parameter bag. So a
+custom algorithm exists only as a rule switcher or as a node's own algorithm (Delta,
+Autoregressive, the mixtures). The slip happened because "algorithm" invites naming schemes,
+and the early examples did exactly that; nothing forced it.
+
+Decided (user):
+- **`DefaultAlgorithm()`** is every node's default; rules omit `algorithm` almost always.
+- **Two kinds of custom algorithm.** A direct subtype of `AbstractAlgorithm` stands alone. A
+  subtype of `DefaultAlgorithmExtension` inherits the default rules and dependencies for
+  whatever it does not define.
+- **An inherited rule's `algo` is `DefaultAlgorithm()`**, the algorithm it was written for,
+  not the extension's value.
+- **`NormalMixture` runs under its own standalone `NormalMixtureVMP`**, documented as always
+  variational whatever the factorisation: its rules consume marginals only, as v6's did.
+- **Delta's algorithm** is a Delta-owned value holding the method and the optional inverse,
+  like `DeltaMeta`; it is built with case (d).
+
+**Why inheritance is a second lookup and not subtype dispatch.** The obvious design would let
+default rules dispatch on an abstract supertype that extensions subtype. But then an
+extension's rule with *broader* inputs than a default rule for the same edge would be more
+specific in the algorithm and less specific in the inputs. Julia reports that as a method
+ambiguity, and resolution must never throw. Instead, the untyped `find_*` and
+`dependencies_spec` fallbacks, which returned `RuleNotFound` or `nothing`, retry with
+`DefaultAlgorithm()` for an extension. The extension's own typed rules always win, and no
+ambiguity is possible because `DefaultAlgorithm` is concrete and a supertype of nothing. The
+routing gate measures the fallback call: inferred, JET-clean, 0 bytes on 1.10 and 1.13. The
+test `algorithm:extension-inherits` pins the broader-override case.
+
+It also settles two older open points. #3's "a distinct algorithm for factorisation-dependent
+selection" was only ever needed for nodes that ignore the factorisation. And an extension is a
+one-level version of #4's `Overlay(mine, standard)`, needing no new keyword.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1254,6 +1298,10 @@ Claims the assistant made that were **wrong** and should not be revived:
     construction API wholesale."** An over-reading. v7 keeps the reactive machinery and
     replaces rule lookup and invocation plus node and rule definition and creation. RxInfer
     adapts where that breaks it, and the adaptation is expected to be small. See §3.19.
+23. **"`BP` and `VMP` are algorithms."** They are not; they are what the one default
+    algorithm does under different factorisations. An algorithm selects rules: a rule
+    switcher, or a node's own. Modelling a structured factorisation as a `Structured` algorithm,
+    as a test once did, repeats the same mistake. See §3.20.
 
 ---
 
@@ -1343,7 +1391,8 @@ The original discussion left these questions:
    which parses as `(:p)[f(k)]` — indexing a `Symbol`. See §3.14.)
 - ~~**Per-(target, factorisation) group selection (#3)**~~ — **RESOLVED at the Phase 3
    sign-off: per target** (§3.16). Selection that genuinely varies with factorisation is a
-   distinct algorithm, not a syntax axis.
+   distinct algorithm, not a syntax axis. *(Refined in §3.20: only a node that ignores the
+   factorisation needs its own algorithm.)*
 - **The ruleset axis (#4)** — scoped rule tables (`Overlay(mine, standard)`). Introduced by the
    assistant, never requested. Its piracy argument is now dead (see §5); `algorithm` may
    already cover the "controllable dispatch" goal. **DEFERRED in Phase 0**, and the
