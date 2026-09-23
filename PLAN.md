@@ -1122,6 +1122,13 @@ The dispatch result, ownership contracts and early engine integration are separa
 
 ## Migration
 
+*(Revised at the Phase 5 entry brief, user: **no transform tool**. The rules are ported by hand
+or by agent, per directory, each gated by v6's own tables, a `compare_standard.jl` case per
+rule, verification against the node definition where it applies, and `check_rules`. The first
+three bullets below are the tool's plan, kept for the record; the `y_x` question they raise is
+answered per rule by reading the v6 node's interfaces. See `DISCUSSION.md` §3.26 and
+`PHASES.md` § Phase 5.)*
+
 - 490 rule definitions (384 + 106) + 172 `@call_rule`/`@test_rules` sites in tests. Build the transform on
   **JuliaSyntax** (source-preserving green tree), not regex and not MacroTools — bodies
   contain arbitrary code, `where` clauses and comments worth keeping.
@@ -1130,6 +1137,8 @@ The dispatch result, ownership contracts and early engine integration are separa
   you are regex-guessing on `_`, which is the exact bug class being deleted.
 - Migrate per rule directory (50 of them), reviewing diffs directory-by-directory.
   `@test_rules` gives per-rule numerical regression coverage for free.
+- A rule that calls another rule (`@call_rule` in a body) calls a helper function holding the
+  shared mathematics instead (user, Phase 5).
 - Hand-written: `mixture/switch.jl`, the ~15 rules touching raw `messages[i]`/`marginals[i]`
   tuples, the 5 `MessageMapping` construction sites and 4 delta layout files.
 - Canary: `NormalMixture((:m, k))` — indexed target + `ManyOf` marginals + `where {N}` +
@@ -1173,7 +1182,8 @@ ReactiveMP and RxInfer.
 porting our own rules; reconstructing them later from memory guarantees the guide is
 incomplete in exactly the places that were fiddly. **The tool and the guide should be
 derived from one source** — if the transform encodes a rule, the guide documents that same
-rule, with a test asserting they agree.
+rule, with a test asserting they agree. *(Dropped with the tool at the Phase 5 entry brief:
+the guide is written from what the hand ports find, its pairs as doctests.)*
 
 ## Testing infrastructure
 

@@ -1430,6 +1430,33 @@ and a data input. Both agree with v6 call by call. What was decided:
   found; the `RuleNotFoundError` lists the `DeltaApproximation` rules as near misses. v6 raised
   a dedicated error; nothing here needed one.
 
+### 3.26 The Phase 5 entry brief: no transform tool (2026-09-23)
+
+Phase 5 was counted before it was planned. 36 of the 50 rule directories in `legacy/v6/` go to
+`StandardMessagePassingRules`: 250 message rules, 82 marginal rules and 38 average energies,
+of which Phase 4.5 ported 43, 2 and 9, leaving 207, 80 and 29. About 50 of the marginal rules
+return a NamedTuple and become `FactorizedCluster`s.
+
+**No transform tool (user).** PLAN had called for a JuliaSyntax transform, run with v6 loaded
+so that `interfaces(fform)` could decide whether `q_y_x` is one interface or a cluster. The
+alternative offered was a minimal tool for the mechanical part. The user chose neither: the
+rules are ported by hand or by agent. The slice's 54 rules were ported that way, and what
+remains is dominated by work a tool would only flag: `FactorizedCluster` returns, algorithm
+questions such as the correction strategy, helper extraction, and tests that do not exist in
+v6. The gates stay strict, per directory: v6's tables, a `compare_standard.jl` case per rule,
+verification against the node definition where it applies, and `check_rules`. `MIGRATION.md`
+is written from what the ports find, with its pairs as doctests; the requirement that the tool
+and the guide derive from one source goes with the tool.
+
+**Rule-to-rule calls become helper functions (user).** About twenty v6 bodies call another
+rule with `@call_rule`, which has no in-body equivalent. Calling the interactive
+`call_message_update_rule` from a body was the alternative; it would go through rule lookup at
+run time, which the purity and devirtualisation gates never measured. A helper holding the
+shared mathematics, called by both rules, is static and already the pattern
+(`normal_mean_precision_energy`).
+
+The order of work, and the gaps found while counting, are in `PHASES.md` § Phase 5.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

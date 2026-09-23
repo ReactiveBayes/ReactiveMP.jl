@@ -19,11 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5: `StandardMessagePassingRules`, the bulk port.** Phase 4.5 is closed: all four
-slice cases run through the new engine and agree with v6 (§ Phase 4.5, *Exit criteria*). Phase
-5 is not planned session by session yet; its first session should plan it, starting from its
-exit criteria: `MIGRATION.md`, begun with the rules the 4.5 ports found, the JuliaSyntax
-migration tool, and the order in which rule directories leave `legacy/v6/`.
+**Phase 5, step 1: finish the slice nodes** — the rules of NMV, NMP, GammaShapeRate,
+Categorical and Dirichlet that Phase 4.5 did not need, so that their directories leave
+`legacy/v6/`. Phase 4.5 is closed (§ Phase 4.5, *Exit criteria*); Phase 5's plan is its entry
+brief below, signed off on 2026-09-23 (`DISCUSSION.md` §3.26).
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -114,7 +113,7 @@ generic ones, and no comments that only narrate.
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
-| 5 | `StandardMessagePassingRules` | the slice's six nodes ported in 4.5; the bulk not started |
+| 5 | `StandardMessagePassingRules` | entry brief signed off; step 1, finishing the slice nodes, next |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | 8 | Release and downstream coordination | not started |
@@ -931,7 +930,9 @@ Findings so far:
       and both average energies. It needs no correction: `E[τ]` is right for a precision. v6's
       scalar `cholinv` becomes `inv`, and the v6 comparison agrees on every case
 - [x] `GammaShapeRate`, `Categorical`, `Dirichlet`: every v6 rule and average energy of the
-      three nodes, and v6's private `isonehot` helper. One easy win beyond v6: the softened
+      three nodes that the slice models select *(not every one, as this line first said: GSR's
+      `a.jl`, `b.jl` and marginal, Categorical's two marginals and catch-all `p.jl` rule, and
+      Dirichlet's marginal are Phase 5 step 1)*, and v6's private `isonehot` helper. One easy win beyond v6: the softened
       `Categorical(:out)` rule for `q[:p]::Dirichlet` clamped to `[tiny, Inf]`, which turned
       every input into `Float64`, so v6 tested no Categorical rule for type promotion.
       `max(ρ, tiny)` gives the same numbers and keeps the input's precision. The v6
@@ -1345,16 +1346,86 @@ Do not start Phase 5 until this passes.
 
 **Goal:** standard distribution nodes plus arithmetic (`+`, `-`, `*`, dot).
 
-Phase 4.5 already ported the slice's six nodes (NMV, NMP, GammaShapeRate, Categorical,
-Dirichlet, NormalMixture) and moved everything else to `legacy/v6/` (step 4). This phase ports
-the rest from there, emptying `legacy/v6/` node by node, with v6.5.0 from
+Phase 4.5 already ported the rules the slice's six nodes (NMV, NMP, GammaShapeRate,
+Categorical, Dirichlet, NormalMixture) needed, and moved everything else to `legacy/v6/` (step
+4). This phase ports the rest from there, emptying `legacy/v6/` node by node, with v6.5.0 from
 `compat/v6-comparison` as the oracle. The rules the 4.5 ports found go into `MIGRATION.md`
 first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `FactorizedCluster`,
 `NormalMixture{N}` → groups, promoted pass-through blocks, and #669.
 
+### Entry brief — signed off 2026-09-23
+
+**Scope, counted** (`legacy/v6/src/rules/` and `nodes/predefined/`, destinations from
+`INVENTORY.md`). 36 directories go to `standard`: 250 message rules, 82 marginal rules and 38
+average energies, of which Phase 4.5 ported 43, 2 and 9. **Left: 207, 80 and 29.** About 50 of
+the marginal rules return a NamedTuple, which becomes a `FactorizedCluster`. The other 14
+directories are Phase 6's. PLAN's "384 + 106" counted a commented-out rule and hand-written
+methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
+
+**Decided (user):**
+- **Port by hand or by agent, without a transform tool.** PLAN called for a JuliaSyntax
+  transform run with v6 as an oracle. The slice's 54 rules were ported by hand, and the
+  remaining work is dominated by what a tool would only flag: `FactorizedCluster` returns,
+  algorithm questions, helper extraction and new tests. Each directory is instead gated by:
+  - v6's own tables, ported as `@test_message_update_rule`/`@test_marginal_update_rule`/
+    `@test_average_energy`;
+  - a case per rule in `compat/v6-comparison/compare_standard.jl` through
+    `compare_with_reference`, any disagreement declared with its reason;
+  - `@verify_message_update_rule` against the node's log-density, where the inputs allow;
+  - `check_rules` and `check_rule_ambiguities` finding nothing (`quality:rules`).
+  `MIGRATION.md` is written from what the ports find, its pairs as doctests; the requirement
+  that tool and guide derive from one source goes with the tool.
+- **A rule that called another rule calls a helper function instead.** The shared
+  mathematics becomes an ordinary function both rules call, as `NormalMixture` already reuses
+  `normal_mean_precision_energy`: subtraction → addition, AND/OR `in2` → `in1`, the
+  multiplication and dot-product self-calls, later GCV → NMV. No rule lookup from inside a
+  body.
+
+**Order of work**, one commit per step or per node, each with `PHASES.md` and `CHANGELOG.md`:
+1. **Finish the slice nodes**: NMV (`var.jl`, 5 marginals), NMP (5 marginals), GammaShapeRate
+   (`a.jl`, `b.jl`, its marginal), Categorical (2 marginals, the catch-all `p.jl`), Dirichlet
+   (1 marginal). Their directories leave `legacy/v6/`; NormalMixture's stays for its
+   multivariate branches (step 5).
+2. **Engine: distribute a `FactorizedCluster`** to the consumers of each block, and split its
+   entropy (v6's `score(DifferentialEntropy(), ::Marginal{<:NamedTuple})`). Step 1's split
+   marginals are the first to need it; tested on a toy graph.
+3. **Univariate distributions**: Beta, Bernoulli, Gamma, GammaInverse, HalfNormal, Poisson,
+   Uniform (whose Uniform×Beta `prod` is an Aqua piracy, decided then), Uninformative (a
+   zero-input rule).
+4. **Logic**: AND, OR, NOT, IMPLY, deterministic nodes under the default scheme.
+5. **Multivariate normals**: MvNormalMeanCovariance, MvNormalMeanPrecision (whose `precision.jl`
+   uses the correction strategy), MvNormalMeanScalePrecision and its matrix form,
+   MvNormalWeightedMeanPrecision; then NormalMixture's multivariate branches.
+6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
+   MvNormalGamma, MvNormalWishart, DirichletCollection.
+7. **Arithmetic**: `+`, `-`, `*`, `dot`. Two questions are settled in that step: v6's
+   `meta::AbstractCorrectionStrategy` with `default_meta = ReplaceZeroDiagonalEntries(tiny)`
+   (most likely a `DefaultAlgorithmExtension` or an algorithm parameter), and the two
+   multiplication rules that sample with the global RNG (`pure = false`, or `ctx.rng`).
+8. **Mixtures**: GammaMixture, a clone of NormalMixture; then `Mixture`, hand-written: its
+   switch rule builds a `randomvar` for a product with log scale (the `product` context
+   service instead), and its rules read incoming log scales (`ann.m`).
+9. **Close**: `MIGRATION.md` complete, `docs/` rewritten and back in the build, `legacy/v6/`
+   holding only Phase 6's nodes.
+
+**Found while counting, to settle in the step that meets them:**
+- `nodes/predefined/distribution/distribution.jl` (`StandaloneDistributionNode`) has no
+  `INVENTORY.md` row and no engine handling.
+- `GammaShapeLikelihood`, which GammaShapeRate's `a.jl` needs, is defined in v6's
+  `gamma_mixture.jl`; it moves into Standard as a helper type in step 1.
+- dirichlet_collection, gamma, mixture and uninformative have no v6 rule tables; they get
+  verification against the node definition or hand-derived cases.
+- Standard grows dependencies as its nodes need them: LinearAlgebra and FastCholesky (the
+  multivariate and matrix nodes), MatrixCorrectionTools (the correction strategy), DomainSets
+  (NMV's `var.jl`, if its `HalfLine` log-pdf survives).
+- The algebra helpers `diageye` (INVENTORY: `base`), `mul_trace` and `mul_inplace!` are needed by
+  steps 5–7.
+- The "~15 rules touching raw `messages[i]`/`marginals[i]`" are three in `standard`, the
+  `Mixture` rules of step 8; the rest are DiscreteTransition's, Phase 6.
+
 **Exit criteria**
-- [ ] JuliaSyntax-based migration tool, run with ReactiveMP v6 loaded as an oracle for
-      `interfaces(fform)` (do **not** regex-guess on `_`)
+- [x] ~~JuliaSyntax-based migration tool~~ — **dropped** (user, entry brief): ports by hand or
+      agent, gated per directory as the brief says
 - [ ] migrated per rule directory, diffs reviewed per directory; each directory and its
       tests leave `legacy/v6/` in the same commit that ports it
 - [x] canary passing: `NormalMixture((:m, k))` — indexed target + group + `where {N}` +
@@ -1362,8 +1433,7 @@ first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `Fa
 - [ ] **`MIGRATION.md` written *during* this phase, not after**, starting with the rules the 4.5
       ports found — the mechanical rules are
       discovered while porting, and reconstructing them later leaves gaps exactly where the
-      work was fiddly. Derived from the same source as the transform tool, with a test
-      asserting the two agree
+      work was fiddly. *(Its derivation from the transform tool went with the tool.)*
 - [ ] every before/after pair in the guide is an executable doctest run by CI
 - [ ] guide covers the untranslatable cases explicitly (raw `messages[i]` indexing, rules
       constructing graph objects, `meta`-as-mutable-workspace) and tells the reader — human
@@ -1378,8 +1448,8 @@ first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `Fa
 - [ ] the engine distributes a `FactorizedCluster` to its members, with the first port whose
       marginal rule returns one (the `PointMass` variants of NMV's and NMP's `(:out, :μ)`);
       no slice model selects one (§ Phase 4.5, case (b))
-- [ ] hand-written cases done: `mixture/switch.jl`, the ~15 rules touching raw
-      `messages[i]`/`marginals[i]`
+- [ ] hand-written cases done: `mixture/switch.jl` and the `Mixture` rules reading raw
+      `messages[i]` (step 8)
 - [ ] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).
       Probit and ContinuousTransition (Phase 6, `models` and `node:ContinuousTransition`) get
       their own algorithms from `ProbitMeta` and `CTMeta`, declaring their dependencies. Probit's
