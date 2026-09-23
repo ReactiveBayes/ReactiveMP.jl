@@ -71,3 +71,14 @@ The covariance a marginal `q_Σ` of a covariance contributes under naive VMP, E[
 E[Σ] (ReactiveMP.jl#673, the multivariate form of #669). They agree for a point mass.
 """
 variational_covariance(q_Σ) = cholinv(mean(cholinv, q_Σ))
+
+"""
+    series_precision(m, Λ_f)
+
+The Gaussian message `m` through Gaussian noise of precision `Λ_f`: the mean of `m` and the
+precision (Λ⁻¹ + Λ_f⁻¹)⁻¹, computed as Λ - Λ (Λ + Λ_f)⁻¹ Λ with one Cholesky factorisation.
+"""
+function series_precision(m, Λ_f)
+    μ, Λ = mean_precision(m)
+    return MvNormalMeanPrecision(μ, Λ - Λ * (fastcholesky(Λ + Λ_f) \ Λ))
+end

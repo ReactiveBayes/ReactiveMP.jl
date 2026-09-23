@@ -20,9 +20,8 @@ re-check before relying on one.
 ## Next action
 
 **Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance, MvNormalMeanPrecision,
-MvNormalWeightedMeanPrecision and MvNormalMeanScalePrecision done; next
-MvNormalMeanScalePrecision and its matrix form, MvNormalWeightedMeanPrecision, then
-NormalMixture's multivariate branches. Its brief is in § Phase 5, *Step 5 brief*: the counts, the
+MvNormalWeightedMeanPrecision, MvNormalMeanScalePrecision and MvNormalMeanScaleMatrixPrecision
+done; next NormalMixture's multivariate branches, which close the step. Its brief is in § Phase 5, *Step 5 brief*: the counts, the
 matrix correction as the context service `ctx.matrix_correction` (user), and the defaults for
 the step. Steps 1–4 are done.
 
@@ -1534,6 +1533,11 @@ multivariate branches.
     which v6's `chollogdet` equals for a point mass. 371 checks agree.
   - *MvNormalMeanScalePrecision — done.* 8 message rules (variational only, as in v6), 6
     marginal rules and 2 average energies; nothing differs from v6 (399 checks).
+  - *MvNormalMeanScaleMatrixPrecision — done.* 8 message rules (variational only, as in v6), 6
+    marginal rules and 2 average energies. The Gaussian-message rules share a
+    `series_precision` helper, and the `G` rule symmetrises its scale so a generic-float
+    `cholinv` passes `Wishart`'s check. The comparison's joint cases take the marginals outside
+    the joint too; nothing differs from v6 (431 checks).
 - **NormalMixture:** its multivariate path goes through helpers dispatching on `variate_form`.
   An `mv_normal_mean_precision_energy` helper is shared with the MvNormalMeanPrecision node,
   and v6's Float64 lock (`init = 0.0`) goes. Today its rules take `::Any` and compute

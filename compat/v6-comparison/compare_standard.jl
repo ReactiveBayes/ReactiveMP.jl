@@ -148,6 +148,12 @@ const MESSAGE_CASES = [
     ("MvNMSP:out:m-scale-precision", MvNormalMeanScalePrecision, :out, (m = (μ = MvNormalMeanScalePrecision([2.0, 1.0], 3.0),), q = (γ = GammaShapeRate(2.0, 1.0),)), false),
     ("MvNMSP:μ:m-normal", MvNormalMeanScalePrecision, :μ, (m = (out = MvNormalWeightedMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]),), q = (γ = GammaShapeRate(2.0, 1.0),)), false),
     ("MvNMSP:γ:q", MvNormalMeanScalePrecision, :γ, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0])),), false),
+    ("MvNMSMP:out:q", MvNormalMeanScaleMatrixPrecision, :out, (q = (μ = MvNormalMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]), γ = Gamma(3.0, 2.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])),), false),
+    ("MvNMSMP:out:m-normal", MvNormalMeanScaleMatrixPrecision, :out, (m = (μ = MvNormalMeanCovariance([0.0, 1.0], [2.0 -1.0; -1.0 4.0]),), q = (γ = GammaShapeRate(3.0, 2.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0]))), false),
+    ("MvNMSMP:μ:q", MvNormalMeanScaleMatrixPrecision, :μ, (q = (out = MvNormalWeightedMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]), γ = GammaShapeRate(2.0, 1.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])),), false),
+    ("MvNMSMP:μ:m-normal", MvNormalMeanScaleMatrixPrecision, :μ, (m = (out = MvNormalWeightedMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]),), q = (γ = GammaShapeRate(2.0, 1.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0]))), false),
+    ("MvNMSMP:γ:q", MvNormalMeanScaleMatrixPrecision, :γ, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0]), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])),), false),
+    ("MvNMSMP:G:q", MvNormalMeanScaleMatrixPrecision, :G, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0]), γ = GammaShapeRate(2.0, 4.0)),), false),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -161,11 +167,14 @@ const MESSAGE_CASES = [
     ("IMPLY:in2", IMPLY, :in2, (m = (out = Bernoulli(0.3), in1 = Bernoulli(0.4)),), false),
 ]
 
+# (id, node, target, clusters, flagged), then the marginals outside the joint, if any.
 const CLUSTER_MESSAGE_CASES = [
     ("NMP:τ:q-joint", NormalMeanPrecision, :τ, ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),), false),
     ("MvNMC:Σ:q-joint", MvNormalMeanCovariance, :Σ, ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),), false),
     ("MvNMP:Λ:q-joint", MvNormalMeanPrecision, :Λ, ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),), false),
     ("MvNMSP:γ:q-joint", MvNormalMeanScalePrecision, :γ, ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),), false),
+    ("MvNMSMP:γ:q-joint", MvNormalMeanScaleMatrixPrecision, :γ, ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),), false, (G = Wishart(4.0, [3.0 0.5; 0.5 2.0]),)),
+    ("MvNMSMP:G:q-joint", MvNormalMeanScaleMatrixPrecision, :G, ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),), false, (γ = GammaShapeRate(2.0, 4.0),)),
     ("NMV:v:q-joint", NormalMeanVariance, :v, ((:out, :μ) => MvNormalMeanCovariance([2.0, 3.0], [2.0 -0.1; -0.1 3.0]),), false),
 ]
 
@@ -215,6 +224,12 @@ const MARGINAL_CASES = [
     ("MvNMSP:(out,μ,γ):point-mass-μ", MvNormalMeanScalePrecision, (:out, :μ, :γ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = PointMass([1.0, 1.0]), γ = PointMass(0.5)),), false),
     ("MvNMSP:(out,μ,γ):point-mass-out", MvNormalMeanScalePrecision, (:out, :μ, :γ), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), γ = PointMass(0.5)),), false),
     ("MvNMSP:(out,μ,γ):normals", MvNormalMeanScalePrecision, (:out, :μ, :γ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0]), γ = PointMass(0.5)),), false),
+    ("MvNMSMP:(out,μ):gamma-γ", MvNormalMeanScaleMatrixPrecision, (:out, :μ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0])), q = (γ = GammaShapeRate(2.0, 3.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0]))), false),
+    ("MvNMSMP:(out,μ):point-mass-out", MvNormalMeanScaleMatrixPrecision, (:out, :μ), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2)), q = (γ = GammaShapeRate(2.0, 3.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0]))), false),
+    ("MvNMSMP:(out,μ):point-mass-μ", MvNormalMeanScaleMatrixPrecision, (:out, :μ), (m = (out = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), μ = PointMass([1.0, 1.0])), q = (γ = PointMass(0.5), G = PointMass([2.0 0.5; 0.5 1.0]))), false),
+    ("MvNMSMP:(out,μ,γ,G):point-mass-μ", MvNormalMeanScaleMatrixPrecision, (:out, :μ, :γ, :G), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = PointMass([1.0, 1.0]), γ = PointMass(0.5), G = PointMass([2.0 0.5; 0.5 1.0])),), false),
+    ("MvNMSMP:(out,μ,γ,G):point-mass-out", MvNormalMeanScaleMatrixPrecision, (:out, :μ, :γ, :G), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), γ = PointMass(0.5), G = PointMass([2.0 0.5; 0.5 1.0])),), false),
+    ("MvNMSMP:(out,μ,γ,G):normals", MvNormalMeanScaleMatrixPrecision, (:out, :μ, :γ, :G), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0]), γ = PointMass(0.5), G = PointMass([2.0 0.5; 0.5 1.0])),), false),
     ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
@@ -238,6 +253,8 @@ const AVERAGE_ENERGY_CASES = [
     ("MvNWMP:energy", MvNormalWeightedMeanPrecision, (q = (out = MvNormalMeanCovariance([0.2, 0.4], [1.0 0.1; 0.1 0.7]), ξ = MvNormalMeanCovariance([0.5, -1.0], I2), Λ = PointMass([2.0 0.3; 0.3 1.5])),), false),
     ("MvNMSP:energy", MvNormalMeanScalePrecision, (q = (out = MvNormalMeanCovariance([1.5, 0.5], [1.0 0.2; 0.2 0.5]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), γ = GammaShapeRate(2.0, 4.0)),), false),
     ("MvNMSP:energy:joint", MvNormalMeanScalePrecision, (q = (γ = GammaShapeRate(2.0, 4.0),), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
+    ("MvNMSMP:energy", MvNormalMeanScaleMatrixPrecision, (q = (out = MvNormalMeanCovariance([1.5, 0.5], [1.0 0.2; 0.2 0.5]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), γ = GammaShapeRate(2.0, 4.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])),), false),
+    ("MvNMSMP:energy:joint", MvNormalMeanScaleMatrixPrecision, (q = (γ = GammaShapeRate(2.0, 4.0), G = Wishart(4.0, [3.0 0.5; 0.5 2.0])), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
     ("Beta:energy", Beta, (q = (out = Beta(2.0, 3.0), a = PointMass(1.5), b = PointMass(2.5)),), false),
     ("Bernoulli:energy", Bernoulli, (q = (out = Bernoulli(0.3), p = Beta(2.0, 3.0)),), false),
     ("Gamma:energy:point-mass-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = PointMass(2.0), θ = PointMass(1.0)),), false),
@@ -288,9 +305,10 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
         end
     end
     @testset "message rules consuming a joint" begin
-        for (id, node, edge, clusters, flagged) in CLUSTER_MESSAGE_CASES
-            v7 = call_message_update_rule(node, edge; clusters)
-            v6, _ = v6_message_update(node, edge, NamedTuple(), NamedTuple{map(V6Oracle.v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))))
+        for (id, node, edge, clusters, flagged, q...) in CLUSTER_MESSAGE_CASES
+            q = isempty(q) ? NamedTuple() : only(q)
+            v7 = call_message_update_rule(node, edge; q, clusters)
+            v6, _ = v6_message_update(node, edge, NamedTuple(), merge(NamedTuple{map(V6Oracle.v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))), q))
             record = compare_with_reference(id, v7, v6; inputs = clusters, node = string(node), target = ":$edge", declared = declare(id, flagged))
             @test (flagged !== false) == (record.outcome === :correction)
         end
