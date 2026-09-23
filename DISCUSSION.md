@@ -1513,6 +1513,46 @@ instead, as Flow, BIFM, the Pólya nodes and the transitions do. The placeholder
 `node:Probit`, `node:SoftDot` and `node:GaussianCoupling`, and the deferred naming question
 closes with it.
 
+### 3.31 An unset matrix correction is the rule's default (user, 2026-09-23)
+
+§3.28 made the matrix correction a context service with `nothing` as the identity, which was
+v6's default for MvNormalMeanPrecision. `*` and `dot` default to `ReplaceZeroDiagonalEntries(tiny)`
+in v6, so one meaning of `nothing` cannot serve both. The user decided that `nothing` means
+**not set**, and each rule falls back to its own default: v6's `default_meta`, which is the
+correction for `*` and `dot` and none for MvNormalMeanPrecision, so no behaviour changes. An
+explicit identity is MatrixCorrectionTools' `NoCorrection()`. A rule reads the service through
+`matrix_correction(ctx, default)`, a helper of `MessagePassingRulesBase` beside the service.
+Two alternatives were rejected: a node-level default the engine would put into the context,
+which is more machinery for the same effect, and dropping v6's default for `*` and `dot`,
+which changes results whenever a precision has zero diagonal entries.
+
+### 3.32 Sampling draws from `ctx.rng`, which the engine supplies (user, 2026-09-23)
+
+Two `*` rules, towards `:out` and `:A` for general univariate inputs, approximate their
+messages with 3000 draws from the global RNG. The Phase 3 decision is that randomness comes
+from `ctx.rng`, owned by the caller (PLAN § RNG ownership). The engine passed `rng = nothing`,
+so the rules would have had nothing to draw from. The user decided the rules declare
+`ctx = (:rng,)`, and the engine passes `Random.default_rng()` until Phase 7 makes the RNG an
+activation option, so behaviour matches v6. The number of draws stays v6's 3000; making it
+configurable is recorded for Phase 7 with the RNG option. `Random.default_rng()` changes its
+stream between Julia versions, so the user asked that no test pins a number drawn from it:
+the tests pass a `StableRNG`, and the sampled messages are checked against quadrature of their
+defining integrals, which is also how the v6 comparison checks them, since two versions'
+draws cannot match. Keeping the global RNG with `pure = false`, or leaving the rules unusable
+until Phase 7, were rejected.
+
+### 3.33 The arithmetic nodes are the functions themselves (user, 2026-09-23)
+
+v6 declared `+`, `-`, `*` and `dot` as nodes on `typeof(+)` and so on. The base package
+needs nothing special for that: `@define_factor_node(node = +,
+…)` dispatches on `typeof(+)` through `node_dispatch_type`, as Delta's tests already exercise.
+The user decided to keep the functions as the nodes if that works without hacks, and asked
+for a fallback otherwise: the node types `Addition`, `Subtraction`, `Multiplication` and
+`DotProduct` in Standard, with a base hook `node_type(::typeof(+)) = Addition` that
+`factornode` would apply. The port of `+` is where this is checked. The one cost of the
+functions is that Standard adds methods on Base's function types, which Aqua's piracy check
+lists as owned, as it already does for ExponentialFamily's node types.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

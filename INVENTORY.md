@@ -230,7 +230,7 @@ replacement".
 | `datavar` | `function` | `src/variables/data.jl` | `engine` |  |
 | `default_form_check_strategy` | `function` | `src/constraints/form.jl` | `engine` |  |
 | `default_prod_constraint` | `function` | `src/constraints/form.jl` | `engine` |  |
-| `diageye` | `function` | `src/helpers/algebra/common.jl` | `base` |  |
+| `diageye` | `function` | `src/helpers/algebra/common.jl` | `standard` | a Standard helper since Phase 5 step 5 |
 | `dot` | `function` | `src/nodes/predefined/dot_product.jl` | `standard` |  |
 | `factorisation` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `factornode` | `function` | `src/nodes/nodes.jl` | `engine` |  |

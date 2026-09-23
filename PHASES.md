@@ -19,11 +19,11 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot` (§ Phase 5). It needs a brief first, as
-steps 5 and 6 had; two questions are already known to settle there: how `*` and `dot` keep
-v6's default `ReplaceZeroDiagonalEntries(tiny)` now that the correction is `ctx.matrix_correction`,
-and the two multiplication rules that sample with the global RNG. Steps 1–6 are done; step 6,
-Matrix and Wishart, is summarised in § Phase 5, *Step 6 brief*.
+**Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot`. **Briefed**, awaiting the user's
+sign-off: § Phase 5, *Step 7 brief* has the counts, the v6 mistakes to correct, the four
+decisions (the matrix correction's `nothing` as "not set", sampling through `ctx.rng`, the
+corrected `*` log-scale, the functions as nodes; `DISCUSSION.md` §3.31–3.33) and the defaults.
+Steps 1–6 are done; step 6 is summarised in § Phase 5, *Step 6 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -42,6 +42,8 @@ Matrix and Wishart, is summarised in § Phase 5, *Step 6 brief*.
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
+| the RNG as an activation option (the engine passes `Random.default_rng()` until then), and `*`'s number of samples (3000, v6's) configurable | Phase 7 | `DISCUSSION.md` §3.32 |
+| `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -1653,13 +1655,87 @@ extending it, is recorded for Phase 8.
     into its MatrixNormal factor, written out, and its Wishart factor, from the Wishart node's
     own energy. 535 checks agree.
 
+### Step 7 brief — Arithmetic
+
+**Scope, counted** from `legacy/v6/`: 79 message rules, all belief propagation (3 of them only
+throw), 25 marginal rules and no average energies, in four Deterministic nodes. The pattern is
+the logic nodes' (step 4): belief-propagation rules, a marginal over the inputs, no energy.
+
+| node | interfaces | message | marginal | notes |
+|---|---|---|---|---|
+| `+` | out, in1, in2 | 30 (out 15, in1 14, in2 1) | 10 (`(:in1, :in2)`) | a generic `convolve` rule; BLAS specialisations |
+| `-` | out, in1, in2 | 3 (catch-alls calling `+`) | 10 | |
+| `*` | out, A, in | 39 (out 15, in 15, A 9) | 3 (`(:A, :in)`) | `ReplaceZeroDiagonalEntries(tiny)` by default; 2 sampling rules; 11 `@logscale` |
+| `dot` | out, in1, in2 | 7 (3 `error`s pointing to SoftDot) | 2 | `ReplaceZeroDiagonalEntries(tiny)` by default |
+
+**Decided (user):**
+- **The functions are the nodes** (§3.33): `@define_factor_node(node = +, …)`, dispatching on
+  `typeof(+)`. Aqua's piracy check lists the four function types as owned. If the `+` port
+  finds a function node needs a hack, it stops and switches to types (`Addition`, …) that a
+  base hook `node_type` translates to.
+- **An unset `ctx.matrix_correction` is the rule's default** (§3.31): `nothing` means not set,
+  `matrix_correction(ctx, default)` in the base package falls back to the rule's default
+  (`ReplaceZeroDiagonalEntries(tiny)` for `*` and `dot`, none for MvNormalMeanPrecision, whose
+  `precision.jl` switches to the helper), and `NoCorrection()` is an explicit identity.
+- **Sampling draws from `ctx.rng`** (§3.32): the rules declare `ctx = (:rng,)`, the engine's
+  three `RuleContext`s pass `Random.default_rng()` until Phase 7, and the 3000 draws stay.
+  Tests use a `StableRNG`, never a number drawn from the default RNG, whose stream changes
+  between Julia versions.
+- **The live `*` `:in` log-scale is corrected and declared:** v6's `-logdet(a)` on a scalar
+  throws for a < 0 and is off by a factor d; it is −d·log|a|.
+
+**Defaults for the step**, open to the user's correction:
+- **v6's mistakes**, corrected and declared, each with an issue tagging @Nimrais:
+  - `+` `:in1` for two BLAS `MvNormalWeightedMeanPrecision`s computes μ_in2 − μ_out
+    (`rules/addition/in1.jl:88`); `-` `:out` and `:in2` reach it through their redirects.
+    Untested in v6.
+  - `-`'s marginals shift `in2` by out − in1 where `in2 = in1 − out`
+    (`rules/subtraction/marginals.jl:31,103,121,134`); the `-` `:in2` message rule is right,
+    and v6's tests assert the wrong value.
+  - `*` `:A`'s sampled message weights each sample by |x|, the density of out/in, where the
+    message is ∫ p_out(a·x) p_in(x) dx, as v6's own analytic Gaussian `:A` rule computes
+    (`rules/multiplication/A.jl:113`). The sampled `:out` rule is right.
+  - the `*` `:in` log-scale above.
+- **Not ported:**
+  - `*` `:in` for `(m_A::Normal, m_out::PointMass)`, which swaps `A` and `out` (`in.jl:156`);
+    the message for in = c/A is not Gaussian. Unreachable in v6.
+  - the rules that compute in·A for A·in with a matrix operand (`out.jl:43`, `A.jl:15-24`,
+    `A.jl:54-67`); refused, recorded in MIGRATION.md and in the `*` issue. Scalar and
+    `UniformScaling` operands, which commute, keep their swaps as helpers.
+  - `+`'s BLAS specialisations: the generic rules compute the same, and one carried the sign
+    error; performance is RxInferBenchmarks' job.
+  - the `(Any, Any, meta::Any)` catch-alls of `-` and `+ :in2`, the source of the recorded
+    Aqua ambiguities: `-` is written with `+`'s helpers and a negation, `+ :in2` shares
+    `:in1`'s helper, and `*`'s commuting swaps and `dot`'s `:in1` → `:in2` are helpers too.
+- **Collapsed:** v6 dispatches on argument order, so `*`'s `(m_A, m_out)` rules (`in.jl:112-154`,
+  `@logscale 0`, moment outputs) are reachable only through `@call_rule`. Arguments are keyed
+  by name here, so each input set has one rule: the live one (`in.jl:40`, weighted-mean output,
+  the correction, the corrected log-scale).
+- **Kept:** `+`'s generic `convolve` rule; `dot`'s three SoftDot hints, more useful than a
+  `RuleNotFound`; `*`'s rank-1 `(PM{Vector}, UniN)` `:out` rule, with v6's TODO restated;
+  `dot`'s rank-1 `:in2` precision, through the correction; `+` and `-`'s stacked joint over
+  `(:in1, :in2)` as one joint marginal, the point-mass marginals as `FactorizedCluster`s;
+  `dot`'s marginal narrowed to the univariate `m_out` its `:in2` rule handles.
+- **Numerics:** `0.5 * log(2π …)` becomes `log2π`; `besselmod` becomes float-type generic (no
+  `term2 = 0.0`, no Int `factorial(2n)` overflow, no Irrational×Int), with v6's truncation and
+  jitter; the sampled closures keep v6's unnormalised sums, a log-scale gap recorded above.
+- **Tests:** v6's tables, about 600 cases. The `ContinuousUnivariateLogPdf` messages are
+  evaluated at points against quadrature of their defining integrals, not against their own
+  closed forms as v6's tautological tests did; the sampling rules the same way with a
+  `StableRNG` and a stated tolerance, which is also how the v6 comparison checks them. `*` and
+  `dot` with and without a correction, `NoCorrection()` included; the corrected log-scale for
+  a < 0 and d > 1.
+- **Order:** `+` (with the helpers `-` needs, and the check that function nodes need no hack),
+  `-`, `dot` (with `matrix_correction(ctx, default)`), the engine's `rng` default, `*`. Each
+  node gets comparison cases, and each commit updates this file and the CHANGELOG.
+
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
    `DISCUSSION.md` §3.29).
-7. **Arithmetic**: `+`, `-`, `*`, `dot`. Two questions are settled in that step: v6's
-   `meta::AbstractCorrectionStrategy` with `default_meta = ReplaceZeroDiagonalEntries(tiny)`
-   (most likely a `DefaultAlgorithmExtension` or an algorithm parameter), and the two
-   multiplication rules that sample with the global RNG (`pure = false`, or `ctx.rng`).
+7. **Arithmetic**: `+`, `-`, `*`, `dot`. *Briefed* (the step 7 brief below, `DISCUSSION.md`
+   §3.31–3.33). The two questions recorded here are settled there: v6's
+   `default_meta = ReplaceZeroDiagonalEntries(tiny)` is the rules' default for an unset
+   `ctx.matrix_correction`, not an algorithm, and the sampling rules draw from `ctx.rng`.
 8. **Mixtures**: GammaMixture, a clone of NormalMixture; then `Mixture`, hand-written: its
    switch rule builds a `randomvar` for a product with log scale (the `product` context
    service instead), and its rules read incoming log scales (`ann.m`).

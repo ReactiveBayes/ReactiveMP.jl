@@ -525,6 +525,8 @@ covering both the allocating and in-place paths.
 owned by the caller. An algorithm that carries its own RNG — today `CVIProjection` defaults to
 `MersenneTwister(42)` and `BinomialPolyaMeta` to `default_rng()`, neither ever reset — is
 `pure = false`. `CVIProjection`'s mutable proposal state makes it impure independently.
+Since Phase 5 step 7 (user, `DISCUSSION.md` §3.32), the engine supplies `Random.default_rng()`
+as `ctx.rng` until Phase 7 makes the RNG an activation option; tests pass a `StableRNG`.
 
 ### In-place rules
 
@@ -1088,8 +1090,10 @@ The dispatch result, ownership contracts and early engine integration are separa
       dropped: slots are `(output, algo, ctx, args, ann)`. Nothing dispatches on the node.
     - `nodefn` is therefore not a service: a delta rule calls `getnodefn(ctx.node, …)`.
     - Services a rule may declare with `ctx = (...)`: `node`, `product`, `linalg`, `rng`, and,
-      since Phase 5 step 5 (user), `matrix_correction`, a MatrixCorrectionTools strategy that
-      `nothing` leaves off.
+      since Phase 5 step 5 (user), `matrix_correction`, a MatrixCorrectionTools strategy. Since
+      step 7 (user, `DISCUSSION.md` §3.31), `nothing` means not set: a rule reads it through
+      `matrix_correction(ctx, default)`, falling back to its own default, and an explicit
+      identity is `NoCorrection()`.
       The concrete `ctx` type may be parameterised so services specialise.
     - The Cholesky side of `linalg` is not designed yet — it is parked together with #13.
     - **Missing inputs behave exactly as in v6** (user, closing Phase 3): when any input is
