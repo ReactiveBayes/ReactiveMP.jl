@@ -17,8 +17,9 @@ relying on one.
 ## Next action
 
 **Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
-the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Next is
-the cluster over a whole group, `getnodefn` and `FactorizedJoint` marginal returns. The
+the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. The
+cluster over a whole group is done; next are `getnodefn` and `FactorizedJoint` marginal
+returns. The
 design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
 in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
@@ -750,6 +751,18 @@ What recording found, all **preserved, not fixed**:
   rises to 10.41462 at iteration 5. Recorded as is; not investigated.
 - The trace holds message-rule calls only. Marginal-rule calls fire no event through
   RxInfer's callbacks, so their order is not recorded.
+
+### Step 2 — base-package additions
+
+- [x] **a cluster over a whole group.** A cluster is written as the tuple of its members,
+      `q[(:y, :x)]`, with `q[:y, :x]` as shorthand. A group's name inside a cluster means all
+      of its members jointly: `q[(:in,)]` in `args` and dependencies, `args.q[(:in,)]` in a
+      body, and `towards = (:in,)` for the marginal rule. `validate_dependencies` and
+      `check_rules` accept groups in clusters, keep interface order, and reject a one-member
+      cluster of a single interface in favour of `q[:μ]`. Tests: `group-cluster:*`, plus
+      the tuple and group joints added to `gate:containers` (inferred, 0 bytes, JET-clean)
+- [ ] `getnodefn(node, target)` declared, with no methods
+- [ ] a marginal rule may return a `FactorizedJoint`
 
 ### Design brief — 2026-09-23
 

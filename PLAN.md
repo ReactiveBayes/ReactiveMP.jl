@@ -129,6 +129,13 @@ NamedTuple-backed container is type-stable and allocation-free.
 - `m[:μ]` and `q[:μ]` in one signature is unremarkable — different containers.
 - `q[:y, :x]` is a structural cluster; `q[:p][k]` is a member of the group `p`. **Not**
   `q[:p[:k]]`, which parses as `(:p)[:k]` — indexing a `Symbol`.
+- **A cluster is the tuple of its members**: `q[(:y, :x)]`, with `q[:y, :x]` as shorthand.
+  Inside a cluster a group's name means all of its members jointly, so `q[(:in,)]` is
+  Delta's joint over its inputs (v6's `q_ins`) and `q[:out, :in]` mixes a single interface
+  with a group. A marginal rule computing it is `towards = (:in,)`. `q[:in]` stays the tuple
+  of the members' own marginals. A one-member cluster of a *single* interface is rejected
+  rather than accepted as a second spelling of `q[:μ]`. Added in Phase 4.5; the access runs
+  through the same type-level `Val` key, measured allocation-free in `gate:containers`.
 - **No symbol is ever built at run time.** A joint is keyed by the *tuple of member symbols
   carried in the type*: `q[:y, :x]` is an `@inline` forwarder to `getindex(q, Val((:y, :x)))`,
   constant propagation of the literal symbols makes that `Val` static, and a `@generated`

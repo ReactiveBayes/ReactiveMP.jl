@@ -36,8 +36,10 @@ end
     Marginals
 
 The marginals a rule receives. Single interfaces and groups are reached like messages,
-`args.q[:name]` and `args.q[:p][k]`. A structural cluster is reached by its members,
-`args.q[:y, :x]`, in interface-declaration order.
+`args.q[:name]` and `args.q[:p][k]`. A structural cluster is reached by the tuple of its
+members, in interface-declaration order: `args.q[(:y, :x)]`, or `args.q[:y, :x]` for short.
+Inside a cluster a group's name stands for all its members jointly, so `args.q[(:in,)]` is
+the joint over the group `in`, and `args.q[:in]` is the tuple of its members' marginals.
 
 A cluster's key is the tuple of its member names, carried in the type (`J`). It is never
 turned into a symbol, so no name is ever derived and none can collide.
@@ -47,8 +49,8 @@ julia> using MessagePassingRulesBase: Marginals
 
 julia> q = Marginals((τ = 2.0, y_x = 1.0), Val(((:y, :x),)), (0.5,));
 
-julia> q[:τ], q[:y, :x], q[:y_x]
-(2.0, 0.5, 1.0)
+julia> q[:τ], q[:y, :x], q[(:y, :x)], q[:y_x]
+(2.0, 0.5, 0.5, 1.0)
 ```
 """
 struct Marginals{N, T <: Tuple, J, JT <: Tuple}
@@ -80,6 +82,7 @@ Base.keys(::Marginals{N}) where {N} = N
     return getfield(q.singles, key)
 end
 
+@inline Base.getindex(q::Marginals, members::Tuple{Vararg{Symbol}}) = q[Val(members)]
 @inline Base.getindex(q::Marginals, a::Symbol, b::Symbol) = q[Val((a, b))]
 @inline Base.getindex(q::Marginals, a::Symbol, b::Symbol, c::Symbol) = q[Val((a, b, c))]
 @inline Base.getindex(q::Marginals, a::Symbol, b::Symbol, c::Symbol, rest::Symbol...) =

@@ -12,8 +12,9 @@ Define the rule for the message a node sends towards one of its interfaces.
 - `towards`: `:out`, or `(:m, k)` for member `k` of the group `m`; writing `k` binds the
   index in `body`.
 - `args`: the inputs the rule consumes, in the spelling of its dependencies: `m[:μ]::T` for
-  a message, `q[:μ]::T` for a marginal, `q[:y, :x]::T` for a structural cluster (members in
-  interface order), and for a group `m[:in...]::T` (all members), `m[:in][k]::T` (the
+  a message, `q[:μ]::T` for a marginal, `q[(:y, :x)]::T` or `q[:y, :x]::T` for a structural
+  cluster (members in interface order; a group in a cluster means all its members jointly,
+  so `q[(:in,)]` is the joint over the group `in`), and for a group `m[:in...]::T` (all members), `m[:in][k]::T` (the
   target's own member) or `m[:in][!k]::T` (all but it). A group arrives as a tuple in member
   order with `nothing` where the selection leaves a member out, so `args.m[:in][k]` means
   member `k` whatever was selected. An omitted type is `Any`.
@@ -212,7 +213,11 @@ function parse_rule_args(name, ex, index_name)
             error("@$name: each entry of `args` is `m[...]` or `q[...]`, like `m[:μ]::T`; got `$entry`")
         container, keys = ref.args[1], ref.args[2:end]
         isempty(keys) && error("@$name: `$ref` names no interface")
-        if length(keys) == 1
+        if length(keys) == 1 && keys[1] isa Expr && keys[1].head === :tuple
+            keys = keys[1].args
+            isempty(keys) && error("@$name: `$ref` names no interface")
+            push!(inputs, (container = container, key = cluster_members(name, ref, container, keys), selection = :cluster, type = type))
+        elseif length(keys) == 1
             key = keys[1]
             if key isa Expr && key.head === :ref
                 error("@$name: `$ref` indexes a Symbol; select member `k` of a group as `$(container)[:p][k]`")
@@ -222,13 +227,7 @@ function parse_rule_args(name, ex, index_name)
             symbol === nothing && error("@$name: an interface in `args` is a symbol like `:μ`, got `$key`")
             push!(inputs, (container = container, key = symbol, selection = group ? :all : :single, type = type))
         else
-            container === :q || error("@$name: `$ref`: only marginals have structural clusters; use `q[...]`")
-            members = map(keys) do key
-                symbol = quoted_symbol(key)
-                symbol === nothing && error("@$name: a cluster member is a symbol like `:y`, got `$key`")
-                symbol
-            end
-            push!(inputs, (container = container, key = Tuple(members), selection = :cluster, type = type))
+            push!(inputs, (container = container, key = cluster_members(name, ref, container, keys), selection = :cluster, type = type))
         end
     end
     seen = Set()
@@ -238,6 +237,16 @@ function parse_rule_args(name, ex, index_name)
         push!(seen, id)
     end
     return inputs
+end
+
+function cluster_members(name, ref, container, keys)
+    container === :q || error("@$name: `$ref`: only marginals have structural clusters; use `q[...]`")
+    members = map(keys) do key
+        symbol = quoted_symbol(key)
+        symbol === nothing && error("@$name: a cluster member is a symbol like `:y`, got `$key`")
+        symbol
+    end
+    return Tuple(members)
 end
 
 function parse_member_selection(name, ref, type, index_name)

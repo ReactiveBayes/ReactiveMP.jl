@@ -164,10 +164,9 @@ function validate_dependencies(spec::NodeSpec, declaration::DependenciesSpec)
                 throw(ArgumentError("`$(input.container)[$(input.key)]` is listed twice for target `$(entry.edge)`"))
             push!(seen_inputs, (input.container, input.key))
             if input.key isa Tuple
-                for member in input.key
-                    known(member)
-                    isgroup(member) && throw(ArgumentError("a cluster cannot contain the group `$member`"))
-                end
+                foreach(known, input.key)
+                length(input.key) == 1 && !isgroup(only(input.key)) &&
+                    throw(ArgumentError("`q[($(repr(only(input.key))),)]` is a one-member cluster of a single interface, which is its marginal; write `q[$(repr(only(input.key)))]`"))
                 positions = map(member -> findfirst(==(member), names), input.key)
                 issorted(positions) ||
                     throw(ArgumentError("the cluster `q[$(join(repr.(input.key), ", "))]` must list its members in interface order, $(Tuple(names[sort(collect(positions))]))"))
@@ -251,7 +250,10 @@ function parse_dependency_input(name, entry, index)
     end
     container = inner
     container in (:m, :q) || error("@$name: a dependency input is `m[...]` or `q[...]`, got `$entry`")
-    if length(selectors) == 1
+    if length(selectors) == 1 && selectors[1] isa Expr && selectors[1].head === :tuple
+        selectors = selectors[1].args
+        isempty(selectors) && error("@$name: `$entry` names no interface")
+    elseif length(selectors) == 1
         key = selectors[1]
         if key isa Expr && key.head === :... && length(key.args) == 1 && quoted_symbol(key.args[1]) !== nothing
             return :($Dependency($(QuoteNode(container)), $(QuoteNode(quoted_symbol(key.args[1]))), $AllGroupMembers()))
@@ -292,8 +294,8 @@ const DEPENDENCY_KEYWORDS = (:node, :algorithm, :dependencies, :free_energy_part
     @define_dependencies(node = ..., algorithm = ..., dependencies = [...], free_energy_partition = [...])
 
 Declare what `node`'s rules consume under `algorithm`. Each entry is `target => (inputs...)`
-in the vocabulary of a rule's `args`: `m[:μ]`, `q[:μ]`, a cluster `q[:y, :x]` (members in
-interface order), and for a group `m[:in...]` (all members), `m[:in][k]` (the target's own
+in the vocabulary of a rule's `args`: `m[:μ]`, `q[:μ]`, a cluster `q[(:y, :x)]` or
+`q[:y, :x]` (members in interface order; `q[(:in,)]` is the joint over the group `in`), and for a group `m[:in...]` (all members), `m[:in][k]` (the target's own
 index), `m[:in][!k]` (all but it) or `m[:in][select_group_members(f; arity)]`. A target with no inputs
 is written `target => ()`.
 

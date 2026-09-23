@@ -42,7 +42,7 @@ end
 
     @test has("has no interface `nope`")
     @test has("`p` is a group; its targets are written `(:p, k)`")
-    @test has("`q[:τ, :out]`: a cluster lists existing, non-group interfaces in interface order")
+    @test has("`q[:τ, :out]`: a cluster lists existing interfaces in interface order")
     @test has("`m[:p]`: `p` is a group")
     @test has("`m[:μ...]`: `μ` is not a group")
     @test has("`towards = (:μ, :out)`: a cluster lists existing interfaces in interface order")

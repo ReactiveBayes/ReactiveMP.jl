@@ -1,6 +1,7 @@
 # What is wrong when no rule fits, and what is inconsistent among the rules that exist.
 
 function input_label(container, key, selection = :single)
+    selection === :cluster && length(key) == 1 && return "$container[($(repr(only(key))),)]"
     selection === :cluster && return "$container[$(join(repr.(key), ", "))]"
     selection === :all && return "$container[:$key...]"
     selection === :aligned && return "$container[:$key][k]"
@@ -127,6 +128,8 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
     names = map(i -> i.name, node.interfaces)
     isgroup(name) = any(i -> i.name === name && i.group, node.interfaces)
     order_ok(members) = all(in(names), members) && issorted(map(m -> findfirst(==(m), names), members))
+    lone_single(members) = length(members) == 1 && only(members) in names && !isgroup(only(members))
+    lone_message(members) = "a one-member cluster of a single interface is its marginal; write `q[$(repr(only(members)))]`"
 
     target = spec.target
     if target <: Target
@@ -142,15 +145,20 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
             push!(problems, "`towards = (:$edge, k)`: $(spec.node) has no group `$edge`")
     elseif target <: ClusterTarget
         members = target.parameters[1]
-        order_ok(members) ||
+        if lone_single(members)
+            push!(problems, "`towards = $members`: $(lone_message(members))")
+        elseif !order_ok(members)
             push!(problems, "`towards = $members`: a cluster lists existing interfaces in interface order, $(Tuple(names))")
+        end
     end
 
     for input in spec.inputs
         label = input_label(input.container, input.key, input.selection)
-        if input.selection === :cluster
-            order_ok(input.key) && !any(isgroup, input.key) ||
-                push!(problems, "`$label`: a cluster lists existing, non-group interfaces in interface order, $(Tuple(names))")
+        if input.selection === :cluster && lone_single(input.key)
+            push!(problems, "`$label`: $(lone_message(input.key))")
+        elseif input.selection === :cluster
+            order_ok(input.key) ||
+                push!(problems, "`$label`: a cluster lists existing interfaces in interface order, $(Tuple(names))")
         elseif !(input.key in names)
             push!(problems, "`$label`: $(spec.node) has no interface `$(input.key)`")
         elseif input.selection === :single && isgroup(input.key)
