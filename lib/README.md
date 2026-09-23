@@ -1,10 +1,11 @@
 # `lib/` — the new message-passing rule packages
 
-The packages of the rule/node rewrite, created as stubs in Phase P. `MessagePassingRulesBase`
-(Phase 3) and `MessagePassingRulesTestUtils` (Phase 4) are implemented, each with its own
-test suite. `StandardMessagePassingRules`, `MessagePassingRulesApproximations` and
-`DeltaMessagePassingRules` were filled in Phase 4.5 with the rules and the numerics the
-engine slice needs, and are completed in Phases 5 and 6.
+The packages of the rule/node rewrite. The first four were created as stubs in Phase P:
+`MessagePassingRulesBase` (Phase 3) and `MessagePassingRulesTestUtils` (Phase 4) are
+implemented, each with its own test suite, and `StandardMessagePassingRules` and
+`MessagePassingRulesApproximations` were filled in Phase 4.5 with the rules and the numerics
+the engine slice needs. `DeltaMessagePassingRules` was created in Phase 4.5 case (d). Phases 5
+and 6 complete them.
 
 Read `PLAN.md` for the design, `PHASES.md` for what is next, and `INVENTORY.md` for where
 each of the 231 entities in ReactiveMP is destined to land.
@@ -50,6 +51,6 @@ committed; the local ones are gitignored.
 
 ## Promotion to separate repositories
 
-Planned for **Phase 6**, once Phase 3 freezes the base API and Phase 4.5 proves the engine
+Planned for **Phase 6**, once Phase 3 froze the base API and Phase 4.5 proved the engine
 interface. Until then a change spanning two packages is one commit; afterwards it is two
 pull requests and a version pin. That is the trade this layout is making deliberately.

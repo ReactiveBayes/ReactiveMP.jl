@@ -24,8 +24,9 @@ floor, because a manifest resolved on a newer Julia can select versions an older
 load. ReactiveMP 6.5.0 and RxInfer 5.5.2 run on 1.13, and the engine fixtures recorded on
 1.10.12 reproduce there exactly (`record_engine_fixtures.jl --check`).
 
-Regenerate it, developing the four lib packages in one call so Pkg never resolves with only
-some of them:
+Regenerate it, developing the four lib packages the comparisons load in one call so Pkg never
+resolves with only some of them (`DeltaMessagePassingRules` is not among them; it joins when
+Phase 6 writes its v6 comparison):
 
 ```bash
 julia --startup-file=no --project=compat/v6-comparison -e '
@@ -46,7 +47,8 @@ The path must be under `~/.julia/packages/`. If it points into this repository, 
 has dev-linked the local copy and the comparison is measuring v7 against itself.
 
 `Pkg.develop` resolves its path against the working directory, not the activated project,
-so run this from the repository root. A new lib package joins the same single `develop` call.
+so run this from the repository root. A lib package a comparison starts to load joins the
+same single `develop` call.
 
 ## Engine fixtures (Phase 4.5)
 
@@ -57,6 +59,7 @@ runs, through **RxInfer 5.5.2** (pinned, `=5.5.2`; it accepts ReactiveMP 6.5):
 ```bash
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl          # record
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check  # compare
+julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl delta_unscented_static  # only the named models
 ```
 
 The fixtures are `fixtures/engine/<model>.toml`, one per slice model, written by
@@ -117,5 +120,5 @@ Phase 4.5 step 4 only v6.5.0 still has all of it. The root suite's `:quality` it
 The engine fixtures in `fixtures/engine/` are what `test/engine/` in the root suite compares
 the new engine with.
 
-All four `lib/` packages are dev'd into this environment by relative path and recorded in the
+The four `lib/` packages the comparisons load are dev'd into this environment by relative path and recorded in the
 committed manifest, resolved on 1.13.

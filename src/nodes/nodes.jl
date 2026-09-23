@@ -265,9 +265,9 @@ include("static_inputs.jl")
 Wires the node's message and marginal streams into the graph.
 
 1. **Clusters** — each cluster of the factorisation gets a
-   [`ReactiveMP.FactorNodeLocalMarginal`](@ref). A single-interface cluster shares the
-   variable's own marginal stream; a larger one computes its joint with the node's marginal
-   rule.
+   [`ReactiveMP.FactorNodeLocalMarginal`](@ref). A cluster keyed by a single name shares the
+   variable's own marginal stream; a joint, keyed by a tuple (a whole group's included, even
+   of one member), is computed with the node's marginal rule.
 2. **Outbound messages** — for every interface connected to a random or data variable, the
    inbound messages and local marginals the rule needs are combined with `combineLatest`, and
    each update is turned into a [`ReactiveMP.DeferredMessage`](@ref) by a

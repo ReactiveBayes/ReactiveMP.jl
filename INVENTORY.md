@@ -280,7 +280,7 @@ replacement".
 | `stream postprocessors` | `hook` | `src/postprocessors.jl` | `engine` | Rocket streams. Exports nothing but is documented public API (`lib/stream-postprocessors.md`) |
 | `scoring` | `hook` | `src/score/` | `base` | `@average_energy`, `AverageEnergy` and `DifferentialEntropy` move to base; `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, since they walk the graph |
 | `node traits (@node-generated)` | `hook` | `src/nodes/nodes.jl` | `base` | `@define_factor_node` emits a `NodeSpec` alongside the 8 method kinds generated today |
-| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec. Done in case (d): the unknown- and known-inverse layouts are two dependency declarations of `DeltaApproximation`; CVI's is not ported |
+| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec. Done in case (d): the unknown- and known-inverse layouts are two dependency declarations of `DeltaApproximation`; the old CVI layout is deleted, and CVI projection's is Phase 6 |
 | `CVI optimiser hooks` | `hook` | `src/approximations/cvi.jl` | `delete` | `cvi_setup!`/`cvi_update!` belong to the superseded `ProdCVI`, not to `CVIProjection` |
 
 ## Extensions

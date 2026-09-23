@@ -32,9 +32,10 @@ src/
   variables/           randomvar, constvar, datavar
   nodes/
     nodes.jl           FactorNode, factornode (from a @define_factor_node declaration), activate!
-    interfaces.jl      NodeInterface, IndexedNodeInterface, ManyOf
+    interfaces.jl      NodeInterface, IndexedNodeInterface
     clusters.jl        local marginals / factorisation clusters, keyed :μ or (:out, :μ)
-    dependencies.jl    the default dependency scheme; stream wiring
+    dependencies.jl    declared and default dependencies; group inputs; stream wiring
+    static_inputs.jl   StaticFold, getnodefn on FactorNode, with_statics
     equality.jl        equality-chain optimisation for high-degree variables
   annotations.jl       AnnotationDict, the per-message annotation store
   annotations/         per-message metadata (log scale, input arguments)

@@ -119,33 +119,33 @@ end
     using MessagePassingRulesBase: AbstractAlgorithm, RuleArgs, RuleContext, Target, IndexedTarget, getnodefn
 
     # The base package only declares `getnodefn`; an engine's node implements it. Here a toy
-    # engine node carries a forward function with its static inputs already folded in, and
-    # a known inverse per input.
+    # engine node carries a forward function with its static inputs already folded in. A known
+    # inverse is not the node's: it belongs to the algorithm, and a rule reads it from `algo`.
     struct DeltaToy end
     @define_factor_node(node = DeltaToy, type = Deterministic, interfaces = [:out, :in...])
-    struct EngineNode{F, I}
+    struct EngineNode{F}
         f::F
-        inverses::I
     end
     MessagePassingRulesBase.getnodefn(node::EngineNode, ::Target{:out}) = node.f
-    MessagePassingRulesBase.getnodefn(node::EngineNode, target::IndexedTarget{:in}) = node.inverses[target.index]
 
-    struct Point <: AbstractAlgorithm end
+    struct Point{I} <: AbstractAlgorithm
+        inverses::I
+    end
     @define_message_update_rule(
         node = DeltaToy, target = :out, algorithm = Point, ctx = (:node,),
         args = (m[:in...]::Float64,),
         body = (ctx, args) -> getnodefn(ctx.node, Target(:out))(args.m[:in]...),
     )
     @define_message_update_rule(
-        node = DeltaToy, target = (:in, k), algorithm = Point, ctx = (:node,),
+        node = DeltaToy, target = (:in, k), algorithm = Point,
         args = (m[:out]::Float64,),
-        body = (ctx, args) -> getnodefn(ctx.node, IndexedTarget(:in, k))(args.m[:out]),
+        body = (algo, args) -> algo.inverses[k](args.m[:out]),
     )
 
-    node = EngineNode((x, y) -> x + 2y, (z -> z - 2, z -> z / 2))
-    ctx = RuleContext(node = node)
-    @test message_passing_rule(DeltaToy, Target(:out), Point(), RuleArgs(m = (in = (1.0, 3.0),)), ctx) == 7.0
-    @test message_passing_rule(DeltaToy, IndexedTarget(:in, 2), Point(), RuleArgs(m = (out = 7.0,)), ctx) == 3.5
+    algorithm = Point((z -> z - 2, z -> z / 2))
+    ctx = RuleContext(node = EngineNode((x, y) -> x + 2y))
+    @test message_passing_rule(DeltaToy, Target(:out), algorithm, RuleArgs(m = (in = (1.0, 3.0),)), ctx) == 7.0
+    @test message_passing_rule(DeltaToy, IndexedTarget(:in, 2), algorithm, RuleArgs(m = (out = 7.0,))) == 3.5
 
     # Declared, with no methods of its own.
     @test isempty(methods(getnodefn, Tuple{Any, Any}, MessagePassingRulesBase))

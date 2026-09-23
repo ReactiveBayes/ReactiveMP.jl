@@ -286,8 +286,8 @@ Good news: GraphPPL already supports multiple, non-trailing variadic groups, so
 ### 3.9 Packages
 
 Current package names: `MessagePassingRulesBase` + `StandardMessagePassingRules` +
-`MessagePassingRulesApproximations` + `MessagePassingRulesTestUtils` + the `ReactiveMP`
-engine. The approximation package's contents and layering changed below.
+`MessagePassingRulesApproximations` + `MessagePassingRulesTestUtils` +
+`DeltaMessagePassingRules` (since Phase 4.5 case (d), §3.25) + the `ReactiveMP` engine. The approximation package's contents and layering changed below.
 
 **Pivot (user):** test tooling is its own **package**, not part of the base. The assistant
 had proposed a `Test` package extension; the user pointed out testing deps belong in
@@ -974,7 +974,8 @@ Three more decisions were taken while planning Phase 3's execution:
   policy, `static_inputs = :fold`: which inputs are static is known only from the graph, so
   the base package records the policy and the engine folds and waits. A selection of no
   members is an empty tuple the engine must treat as satisfied, which removes delta's
-  `N === 1` branch. And `q_out` aliasing needs no representation at all: v6's generic
+  `N === 1` branch. *(As built in case (d): it takes no stream, and the rule receives a tuple
+  of `nothing`s, `(nothing,)` for one member; §3.25.)* And `q_out` aliasing needs no representation at all: v6's generic
   clusters already give a singleton cluster the variable's own marginal stream
   (`clusters.jl:116`); delta needed its own copy only because its layout bypassed clusters.
 - **Naming (user).** The dependency declaration is `DependenciesSpec`, beside `RuleSpec` and
@@ -1204,7 +1205,7 @@ Decided (user):
 - **`NormalMixture` runs under its own standalone `NormalMixtureVMP`**, documented as always
   variational whatever the factorisation: its rules consume marginals only, as v6's did.
 - **Delta's algorithm** is a Delta-owned value holding the method and the optional inverse,
-  like `DeltaMeta`; it is built with case (d).
+  like `DeltaMeta`; it is built with case (d). *(Built: `DeltaApproximation`, §3.25.)*
 
 **Why inheritance is a second lookup and not subtype dispatch.** The obvious design would let
 default rules dispatch on an abstract supertype that extensions subtype. But then an
@@ -1649,14 +1650,21 @@ Open as of the Phase 4.5 reconciliation:
 - **Typed annotations** (`Message{D, A}`, brief item 3) — not built in step 4, which kept the
   `AnnotationDict` so as to change one thing at a time; the retained-value test pins that
   nothing mutates it after materialisation. Revisit with the log-scale milestone (§3.23).
-- **Declared dependencies, groups and a declared free-energy partition in the engine** — case
-  (c). Until then `activate!` refuses a node with either, rather than wiring the default
-  scheme in their place (§3.23).
+- ~~**Declared dependencies, groups and a declared free-energy partition in the engine**~~ —
+  **RESOLVED in case (c)** (§3.24).
 - **User rule sets beyond one-level extensions** — the registry stays introspection only
   (decided, §3.23). If extensions ever need to overlay a node's own algorithm, the recommended
   form is `AlgorithmExtension{Parent}`, not a registry axis. Folded into #4.
-- **Delta's own algorithm** — the method and inverse it carries, like `DeltaMeta`, and the
-  engine's `getnodefn`; case (d).
+- ~~**Delta's own algorithm**~~ — **RESOLVED in case (d)**: `DeltaApproximation` and the
+  engine's `getnodefn` (§3.25).
+- **Distributing a `FactorizedCluster`** to the consumers of each block, with its entropy
+  split — no slice model returns one; the first Phase 5 port that does brings it (§3.24 notes
+  on case (b), `PHASES.md` § Phase 5).
+- **A joint holding only some members of a group** with other interfaces — `activate!` refuses
+  it; built when a node needs one.
+- **#11's two follow-ups** — `DeltaApproximation`'s positional constructor bypasses the
+  compatibility guard, and the error names neither a package nor an alternative method;
+  Phase 6, with `CVIProjection`.
 - **Default initial messages** — how a node declares one for a rule that depends on its own
   edge (Probit), separately from `dependencies` (§3.21). Needed when Probit is ported.
 - **Log scales** — preserved as v6 has them, gaps included; fixing them is a milestone of its
@@ -1669,7 +1677,8 @@ Review added #9–#13 (all but #13 settled at the Phase 3 sign-off, §3.16): bel
 context services and the numerical protocol. These block API freeze, not preparation or
 the spike. #14 was the preparation inventory, resolved in Phase P. Purity/RNG contracts and derivative checks
 are separate requirements. Reactant/StableCholesky (#5) remain a separate effort; mixture
-regressions and edge identity (#6–#7) are engine integration requirements.
+regressions and edge identity (#6–#7) were engine integration requirements, resolved in
+Phase 4.5 case (c) (§3.24; #7's RxInfer side is Phase 7).
 
 ---
 
@@ -1688,7 +1697,7 @@ in `runtests.jl` — **not** a runner swap). It is independent, low-risk, and co
 every later session runs faster.
 
 Then base package → test utils with a bounded numerical oracle → **Phase 4.5: the engine
-design session and the engine's first cut, refactored in place, as a clean cut** (§3.18–3.22) →
+design session and the engine's first cut, refactored in place, as a clean cut** (§3.18–3.25; closed) →
 bulk standard-rule
 migration into it → approximations and node packages → completing the engine → coordinated
 release. Start strict downstream CI as soon as

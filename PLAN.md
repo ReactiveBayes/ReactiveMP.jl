@@ -459,13 +459,14 @@ the two agree.
 
 (Syntax and names decided at Phase 3 step 7. Declared with `@define_dependencies(node, algorithm,
 dependencies, free_energy_partition)`, or with `dependencies = [...]` on the node for its default
-algorithm. Two engine contracts go with it: **a selection of no members is an empty tuple and
-is already satisfied** — the one-input delta case needs no special branch — and **a singleton
+algorithm. Two engine contracts go with it: **a selection of no members takes no stream and is
+already satisfied, and reaches the rule as a tuple of `nothing`s** (`(nothing,)` for one member,
+case (d)) — the one-input delta case needs no special branch — and **a singleton
 cluster's marginal is the variable's marginal**, which is what delta's `q_out` aliasing was.
 Static gating is the node-level `static_inputs = :fold` policy.)
 
 **Hard constraint: selectors must have statically known output arity.** Otherwise the
-`ManyOf` length is runtime-dependent, `ManyOf{N,T}` can't specialise, and dispatch
+group tuple's length is runtime-dependent, the rule's signature can't specialise, and dispatch
 destabilises downstream. A boundary-dependent lambda like `k -> (k-1,)` violates this at
 `k=1`; supported resolutions are a total selector (wrap/clamp/pad) or a distinct target
 type for the boundary. Length-unions are unsupported.
@@ -632,8 +633,9 @@ algorithms out of the core. Sorting today's 28 deps:
 | `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
 | *(name deferred to Phase 6)* | domain-specific models: `GCV`, `Probit`, `SoftDot`, `GaussianCoupling` | light; `StatsFuns` and the standard rules |
 | `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery, over means and covariances. **Standalone — does *not* depend on the base package, nor on any distribution package** | `LinearAlgebra`, `FastCholesky`; `ForwardDiff` with `Linearization` |
+| `DeltaMessagePassingRules` | the Delta node `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules (created in Phase 4.5 case (d)) | the base, `MessagePassingRulesApproximations`, `ExponentialFamily`, `Distributions`, `BayesBase` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
-| `ReactiveMP` | engine | `Rocket`, `UUIDs`, `MessagePassingRulesBase` |
+| `ReactiveMP` | engine | `Rocket`, `MessagePassingRulesBase`, `BayesBase`, `Distributions`, `LinearAlgebra`, `MacroTools`, `TinyHugeNumbers`, `TupleTools`, `UUIDs` |
 
 The base package is genuinely thin. Two current deps are single-node-specific and should
 follow their nodes out: `Tullio` (only `DiscreteTransition`) and `PolyaGammaHybridSamplers`
@@ -645,8 +647,10 @@ sibling package whose **name is deliberately not fixed until Phase 6**, when it 
 built; `INVENTORY.md` records its destination as the placeholder token `models`. A node
 leaves for its own package only for a stated reason, and every such reason is recorded in
 `INVENTORY.md`: a heavy or licence-bearing dependency (`DiscreteTransition`/Tullio,
-Pólya/GPL-3), impurity (`BIFM` mutates its meta from inside message rules), engine coupling
-(`Delta`), or an explicit decision (`ContinuousTransition`).
+Pólya/GPL-3), impurity (`BIFM` mutates its meta from inside message rules), keeping a distribution package
+out of the engine and the standard/node split (`Delta`, `DISCUSSION.md` §3.25; the engine
+coupling once expected turned out to be the engine owning the node's function), or an
+explicit decision (`ContinuousTransition`).
 
 **The full assignment lives in `INVENTORY.md`**, not here: 231 entities — 49 nodes, 165
 exported symbols, 8 engine-hook families, 2 extensions and 7 rule-level exceptions — each
@@ -660,7 +664,7 @@ consult when moving code.
 **Monorepo now, split at Phase 6.** The new packages live as subdirectories of this
 repository under `lib/` while the API is in flux, and are promoted to their own
 `ReactiveBayes/*` repositories once Phase 3 freezes the base API and Phase 4.5 proves the
-engine interface.
+engine interface. Phase 4.5 proved it; the split waits for Phase 6.
 
 ```
 ReactiveMP.jl/
@@ -671,6 +675,7 @@ ReactiveMP.jl/
     MessagePassingRulesTestUtils/
     StandardMessagePassingRules/
     MessagePassingRulesApproximations/
+    DeltaMessagePassingRules/
   compat/v6-comparison/     # ReactiveMP@6.5.0, RxInfer 5.5.2 and the new packages: the v6
                             # oracle, the comparisons and the recorded engine fixtures
   legacy/v6/                # step 4 onwards: the unported v6 rules and nodes, never loaded
@@ -725,7 +730,8 @@ depend on `MessagePassingRulesBase`. They are siblings. "How do I approximate th
 is a numerical utility; "which rules run" is an algorithm. The
 delta node's algorithm *uses* `Unscented`; it is not `Unscented`. Delta's algorithm is a
 Delta-owned value holding the approximation method and the optional known inverse, as v6's
-`DeltaMeta(method, inverse)` did; it is designed when case (d) ports Delta. Keeping them separate
+`DeltaMeta(method, inverse)` did; case (d) built it as `DeltaApproximation(; method, inverse)`
+in `lib/DeltaMessagePassingRules`. Keeping them separate
 leaves the numerics usable outside this ecosystem and keeps the dependency graph flat.
 
 Node packages (Delta, Flow) depend on both.
@@ -790,7 +796,7 @@ supersedes it) but it moves behind an install.
 
 ### CVI projection, and a hypothesis about delta layouts
 
-`CVIProjection` spans awkward territory today: the type lives in `src/approximations/`, the
+`CVIProjection` spans awkward territory today: the type lives in `legacy/v6/src/approximations/` (v6's `src/approximations/`), the
 rules and a *layout* live in `ReactiveMPProjectionExt`, and the layout is engine code — it
 constructs `MessageMapping`, calls `connect!`, wires Rocket streams.
 
@@ -819,7 +825,8 @@ in `MessagePassingRulesBase`, or it lands back in the engine and takes the layou
 See `DISCUSSION.md` §3.15.
 
 **On that condition the plan is**: collapse layouts into dependency declarations
-first, after which `CVIProjection` has no engine half at all — just an algorithm struct, a
+first *(done for the default and known-inverse layouts in Phase 4.5 case (d): two
+declarations of `DeltaApproximation`; the CVI-projection layout remains, Phase 6)*, after which `CVIProjection` has no engine half at all — just an algorithm struct, a
 dependency declaration, and rules. It then ships as a **weakdep extension of the Delta node
 package**, keeping today's pattern, and no separate package is needed. A standalone package
 stays the cheap upgrade later if anyone needs to depend on the projection rules, if compat
@@ -917,9 +924,12 @@ The dispatch result, ownership contracts and early engine integration are separa
   carries its member tuple, never a joined name.
 - The mixtures' per-node `factornode`/`activate!`/`collect_latest_*` are not ported: groups and
   declared dependencies replace them (brief item 2).
-- `src/nodes/predefined/delta/` — moved; its layouts become a Delta-owned algorithm and
-  engine features keyed off the spec (static gating, `q_out` aliasing, the empty group), in
-  case (d).
+- `src/nodes/predefined/delta/` — moved; in case (d) its layouts became a Delta-owned
+  algorithm, `DeltaApproximation` in `lib/DeltaMessagePassingRules`, and engine features keyed
+  off the spec: static folding and gating (`src/nodes/static_inputs.jl`), `q_out` aliasing and
+  the empty group.
+- `src/nodes/interfaces.jl` — v6's `ManyOf` and its helpers are deleted (case (c)); a group
+  reaches a rule as a tuple.
 - `src/message.jl`, `src/marginal.jl` — stay in the engine, value types included. Rules see
   raw distributions in `args`, annotations in `ann` and the node in `ctx.node`, so the
   envelope (`is_clamped`, `is_initial`, annotations) is unwrapped by the engine before a rule
@@ -985,7 +995,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    pin it before touching, because bit-identical scheduling is what Phase 4.5 compares.
    Since the v6 wiring is replaced rather than bridged, "pinning" means recording v6's
    emission order as a fixture (Phase 4.5 Step 0) that the new engine must reproduce.
-7. **`EdgeLabel.index`** exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
+7. ~~**`EdgeLabel.index`**~~ **RESOLVED on the engine side** (Phase 4.5 case (c)). It exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
    group indices from position, silently depending on neighbour order. Plumb it through.
    *(Engine side resolved in Phase 4.5: `factornode` takes `((:m, k), variable)` and the index
    reaches the rule's `k`, verified by case (c). RxInfer passing `EdgeLabel.index` as `k` is
@@ -1050,6 +1060,10 @@ The dispatch result, ownership contracts and early engine integration are separa
     moves: the error must also name the method to switch to (today it names only the
     package), and the check belongs in an inner constructor, since the positional
     `DeltaMeta{M, I}(…)` bypasses it (nothing in-tree calls it that way).
+    *(Case (d) moved the guard to `DeltaApproximation(; method, inverse)`
+    (`lib/DeltaMessagePassingRules/src/node.jl`). Both follow-ups are still open, for Phase 6
+    with `CVIProjection`: the positional `DeltaApproximation(method, inverse)` bypasses the
+    check, and the error names neither a package nor an alternative method.)*
 
 12. ~~**Context service contracts.**~~ Phase 0 turned both hard cases into signatures, each
     demonstrated as a standalone call with no graph and no Rocket:

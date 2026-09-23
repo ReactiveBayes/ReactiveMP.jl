@@ -9,7 +9,7 @@ without a diff alongside it is how a tracking file starts lying.
 Branch: `refactor/rule-node-system-rewrite`
 
 `file:line` citations in the three documents were last re-verified against the code after
-step 4 (`94f84efd`). Citations into v6 code name ReactiveMP 6.5.0's layout; the nodes, rules,
+Phase 4.5 closed (`0b8f1caa`). Citations into v6 code name ReactiveMP 6.5.0's layout; the nodes, rules,
 `clusters.jl`, `dependencies.jl`, `score/` and the fallbacks are in `legacy/v6/` under the
 same paths, while v6's `message.jl` and `marginal.jl` were rewritten in place, so their v6
 line numbers are only in the 6.5.0 release. A later reformat or edit moves them again, so
@@ -72,9 +72,10 @@ Three ground rules were set on the same day (§3.22):
 - work targets **Julia 1.13 only**, wired with `[sources]`;
 - **no CI runs yet**; everything is verified locally.
 
-Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system;
-`lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules` and
-`lib/MessagePassingRulesApproximations` hold the slice's rules and numerics; and
+Phases 0–4.5 are closed. `lib/MessagePassingRulesBase` is the rule system;
+`lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules`,
+`lib/MessagePassingRulesApproximations` and `lib/DeltaMessagePassingRules` hold the slice's
+rules and numerics; and
 `compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures. ReactiveMP
 itself is the engine on the new rule system; what it cannot run yet is in `legacy/v6/`. The
 tooling's first finding was a real v6 bug: the variational `NormalMeanVariance` rules use
@@ -85,7 +86,7 @@ when NMV was ported in step 3**, and the comparison declares it.
 
 ```bash
 git switch refactor/rule-node-system-rewrite && git pull
-make test test-base test-testutils test-standard test-approximations
+make test test-base test-testutils test-standard test-approximations test-delta
 julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
 for s in check compare_standard compare_approximations; do
     julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
@@ -93,7 +94,7 @@ done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.23,
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.25,
 and this file's § Phase 4.5. Working conventions: one commit per step, failing test first,
 `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive names rather than
 generic ones, and no comments that only narrate.
@@ -381,7 +382,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       without widening or allocation — the property that makes `ForwardDiff.Dual` work
       through a rule. Specialization growth: six group sizes add 20 specializations, and
       growth is **multiplicative in (group size × element type)**. That is a property of the
-      tuple rather than of the new design — `ManyOf{N,T}` has it today — and it is the price
+      tuple rather than of the new design — `ManyOf{N,T}` had it — and it is the price
       of the statically known group arity `PLAN.md` § Dependencies already requires. It is
       the number to watch if compile time becomes the complaint in Phase 5
 
@@ -731,8 +732,9 @@ re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
   single keys and type-level cluster keys (`q[:y, :x]`), built with
   `MessagePassingRulesBase.RuleArgs`/`Messages`/`Marginals`.
 - **Groups arrive full length.** A group input is a tuple in member order with `nothing`
-  where the dependency's selection leaves a member out; an empty selection is `()` and is
-  already satisfied — it must never stall a stream combination.
+  where the dependency's selection leaves a member out; an empty selection takes no stream,
+  so it never stalls a combination, and reaches the rule as a tuple of `nothing`s,
+  `(nothing,)` for one member (`EmptyGroup`, case (d)).
 - **Annotations are two-way.** The engine builds `RuleAnnotations(m = …, q = …, out = …)`:
   the annotations that arrived with each input, keyed like the inputs, plus the sink the rule
   writes. v6's `AnnotationDict` and its post-rule processors map onto `out`.
@@ -788,7 +790,8 @@ mutated in place.
 ### Step 0 — record the v6 fixtures, before anything is deleted
 
 **Done.** `compat/v6-comparison` pins RxInfer 5.5.2, and `record_engine_fixtures.jl` records
-seven models into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `bp_chain`,
+seven models *(eight since case (d) added `delta_unscented_static`; the script takes model ids
+to record or check only those)* into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `bp_chain`,
 `vmp_meanfield`, `vmp_structured`, `normal_mixture` and `delta_unscented`. Each fixture holds
 the free energy per iteration, the final posteriors, and every message-rule call **in the
 order v6 made it**, with its result and log scale. That order is materialisation order, and it
@@ -831,8 +834,9 @@ What recording found, all **preserved, not fixed**:
       cluster of a single interface in favour of `q[:μ]`. Tests: `group-cluster:*`, plus
       the tuple and group joints added to `gate:containers` (inferred, 0 bytes, JET-clean)
 - [x] `getnodefn(node, target)` declared and exported, with no methods: `Target(:out)` is
-      the forward function with static inputs folded, `IndexedTarget(:in, k)` the known
-      inverse; the engine's node implements it. Test: `nodes:getnodefn`
+      the forward function with static inputs folded; the engine's node implements it. Test:
+      `nodes:getnodefn`. *(The known inverse, first planned as `IndexedTarget(:in, k)`, is the
+      algorithm's since case (d), §3.25.)*
 - [x] **a marginal rule may return a factorised cluster.** Built as
       `FactorizedCluster((:out, :μ) => q_outμ, (:v,) => q_v)`: a BayesBase `FactorizedJoint`
       of the blocks, labelled with the member tuple each block covers. The labels are
@@ -883,7 +887,7 @@ it is a rule switcher, or a node's own algorithm where a node needs one. See
 ### Step 3 — the slice's rules, ported
 
 The porting list is exact, not estimated: `compat/v6-comparison/slice_rule_inventory.jl`
-records every message rule, marginal rule and average energy the seven slice models select
+records every message rule, marginal rule and average energy the seven slice models *(recorded in step 0)* select
 in v6, with the input types the selected rule declares. Deduplicated, it is:
 
 | node | message rules | marginal rules | average energies |
@@ -958,7 +962,7 @@ Findings so far:
       and FastCholesky alone; ForwardDiff comes back with `Linearization` in Phase 6. The
       distribution-level `approximate(::Unscented, f, ::NTuple{N, NormalDistributionsFamily})`
       and `is_delta_node_compatible` move to the Delta rules, and the Delta node stays in
-      ReactiveMP for the engine to port in case (d). v6's numeric tests are ported, and
+      ReactiveMP for the engine to port in case (d) *(done, in `lib/DeltaMessagePassingRules`)*. v6's numeric tests are ported, and
       `compare_approximations.jl` agrees with v6 to 1e-12 on 22 checks, the mixed
       scalar, vector and scalar joint included
 
@@ -1023,7 +1027,7 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    dependency policy are gone. **`activate!` refuses a node with a declared
    `dependencies_spec` or an interface group**, with an error saying so, rather than wiring
    them wrongly: the default scheme is the only one wired, and declared dependencies and
-   groups are case (c)'s work.
+   groups are case (c)'s work. *(Case (c) lifted both refusals.)*
 4. [x] **The rule-call path.**
    - `MessageMapping`, `MarginalMapping` and the node score call `find_*` and `execute_rule`
      with `rule_algorithm`.
@@ -1072,7 +1076,7 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    **missing-input pin** (no rule call, the pre-rule processors run, the post-rule ones do
    not); the default scheme per factorisation; the case-(c) refusals; and
    `engine:retained-values`, which holds materialised messages and marginals across further
-   updates. The root suite is 115 items, 14 857 tests, all passing, Aqua included.
+   updates. The root suite was 115 items at step 4, 14 857 tests, all passing, Aqua included.
 
    **The `Message` benchmark** (`scripts/benchmark_message_representation.jl`, Julia 1.13,
    M-series Mac; the data-feeding loop only, minimum of seven runs, `Message` and `Marginal`
@@ -1089,11 +1093,11 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    Typed annotations (`Message{D, A}`, brief item 3) are not done: the `AnnotationDict` stays,
    and the retained-value test pins that nothing mutates one after materialisation.
 
-### Cases (b)–(d): what each still needs
+### Cases (b)–(d): what each did
 
-Not yet planned session by session; this is what step 4 left for each, so the plan for the
-next case starts from it. Each case is its own step: one commit, test first, the fixture
-comparison as its gate, `PHASES.md` and `CHANGELOG.md` in the same commit.
+Written after step 4 as what each case still needed, and completed as each was done. Each case
+was its own step: one commit, test first, the fixture comparison as its gate, `PHASES.md` and
+`CHANGELOG.md` in the same commit.
 
 **Common to all three.** `test/engine/harness.jl` takes a `factorisation` per node
 (`node!(…; factorisation)`, default Bethe, with `meanfield_factorisation`) and
@@ -1149,7 +1153,8 @@ its iteration with the same result; their order within an iteration differs by d
 - **A declared free-energy partition** must be the factorisation, block for block (a group's
   name standing for all of its members), or `activate!` raises an error naming the algorithm
   (#9); `bethe_free_energy` then scores over it as it does over any factorisation.
-- `activate!` still refuses a **joint cluster over group members**; Delta's `(:in,)` is case (d).
+- `activate!` still refused a **joint cluster over group members**; Delta's `(:in,)` was case
+  (d), which lifted it for whole groups.
 - **#6, the mixture's `reverse(...)`, is resolved by not reproducing it** (user; `DISCUSSION.md`
   §3.24). Inputs are subscribed in declaration order, and in VMP that order is the update
   schedule. v6 subscribed `(out, p₂, p₁, m₂, m₁)` for `:switch`. The group order, precisions
@@ -1281,8 +1286,8 @@ built:
    `vmp_structured` fixture records it, is a different model: `x[i] ~ NMP(μ, τ)`,
    `y[i] ~ NMV(x[i], 0.5)`, with `q(x, μ)q(τ)`. (c) `y[i] ~ NormalMixture(z[i], (m₁, m₂), (p₁, p₂))`, `z[i] ~ Categorical(π)`,
    `π ~ Dirichlet`, NMP/GammaShapeRate priors. (d) `x ~ NMV`, `z := f(x)` with Unscented,
-   `y ~ NMV(z, c)` observed. The stretch case, `f(x, c)` with a static input, has no fixture
-   yet.
+   `y ~ NMV(z, c)` observed. The stretch case, `f(x, c)` with a static input, had no fixture;
+   case (d) recorded one, `delta_unscented_static`, `z := f(2.0, x, s)`.
 9. **Fixtures (Step 0).** `compat/v6-comparison` adds RxInfer 5.5.2 (it accepts ReactiveMP
    6.5; installed locally). For each slice model: free energy per iteration, posteriors, and
    the trace (`RxInferTraceCallbacks`, `trace.jl:156-161`) of every `AfterMessageRuleCallEvent`
@@ -1420,7 +1425,8 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
       until the numerical protocol (open item #13, parked) is settled
 - [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
 - [ ] confirm `Optim` no longer appears anywhere
-- [ ] non-standard nodes spun out: Delta, Flow, Autoregressive, GP, BIFM, Pólya, …
+- [ ] non-standard nodes spun out: Flow, Autoregressive, GP, BIFM, Pólya, … (Delta already, in
+      Phase 4.5 case (d))
 - [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
       becomes honest again (see `PLAN.md` § Licensing)
 - [ ] surviving impure algorithms (BIFM and stateful projection algorithms) carry the
@@ -1428,7 +1434,7 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
 
 ## Phase 7 — Complete the engine
 
-Phase 4.5 now builds the engine's first cut and settles its design (restructured
+Phase 4.5 built the engine's first cut and settled its design (restructured
 2026-09-23, `DISCUSSION.md` §3.18); what remains here is completing it once Phases 5–6 have
 ported the rules. The items that moved to Phase 4.5 are group stream wiring, the `Message`
 envelope, edge order, `EdgeLabel.index` (#7) and the mixture `reverse` (#6).
@@ -1459,8 +1465,9 @@ Known scope:
         callbacks do (`compat/v6-comparison/record_engine_fixtures.jl` reads `vtag`);
       - the force-marginal plugin (`reactivemp_force_marginal_computation_plugin.jl:60-74`)
         calls v6's `marginalrule` with a `clustername` tag over `get_node_local_marginals`. It
-        becomes a `MarginalMapping` with a `ClusterTarget`, as the engine's deterministic score
-        does, and the local marginals are now keyed `:μ` or `(:out, :μ)`
+        becomes a `MarginalMapping` with a `ClusterTarget`, as `activate_cluster!` builds a joint
+        (`src/nodes/clusters.jl`), and the local marginals are now keyed `:μ`, `(:out, :μ)` or,
+        for a whole group, `(:in,)`
 - [ ] Aqua's `ambiguities` check re-measured on the new code and re-enabled, or its remaining
       pairs budgeted; it was 322 pairs on `main`, most in code now in `legacy/`
 - [ ] the log-scale milestone, after the migration (user): v6's gaps were preserved
@@ -1499,8 +1506,9 @@ this phase requires it to pass for release, rather than being its first executio
 Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #3, #8, #9, #10,
 #11, #12 and #14 are resolved (#3 and #9–#12 at the Phase 3 sign-off), and #4 is **deferred by
 decision** (Phase 0; reopened only by a concrete ruleset use case). #13 is **parked** by the
-user and holds back only the `linalg` context service. #6 and #7 are engine integration
-requirements, to be closed in Phase 4.5. #2 remains deferred unless needed. #5
+user and holds back only the `linalg` context service. #6 and #7 were engine integration
+requirements, closed in Phase 4.5 case (c) (#7's RxInfer side, passing `EdgeLabel.index`, is
+Phase 7). #2 remains deferred unless needed. #5
 (Reactant/StableCholesky) belongs to a separate effort and does not block this rewrite.
 
 ## Structural note
