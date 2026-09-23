@@ -2,7 +2,7 @@
 # `EngineTrajectory`, to be compared with the trajectories v6 recorded through RxInfer.
 
 @testmodule EngineHarness begin
-    using ReactiveMP, Rocket, BayesBase
+    using ReactiveMP, Rocket, BayesBase, MessagePassingRulesBase
     using MessagePassingRulesTestUtils: EngineTrajectory, RuleCallRecord, load_engine_fixture
     import ReactiveMP:
         activate!, israndom, isdata, getdata, getannotations, has_annotation, get_annotation, message_mapping_fform,
@@ -11,6 +11,12 @@
     import MessagePassingRulesBase: Target, IndexedTarget
 
     const FIXTURES = joinpath(pkgdir(ReactiveMP), "compat", "v6-comparison", "fixtures", "engine")
+
+    # `out := in`, for a graph that needs a variable to receive a point mass.
+    struct Copy end
+    MessagePassingRulesBase.@define_factor_node(node = Copy, type = Deterministic, interfaces = [:out, :in])
+    MessagePassingRulesBase.@define_message_update_rule(node = Copy, target = :out, args = (m[:in]::Any,), body = (args) -> args.m[:in])
+    MessagePassingRulesBase.@define_message_update_rule(node = Copy, target = :in, args = (m[:out]::Any,), body = (args) -> args.m[:out])
 
     fixture(id) = last(load_engine_fixture(joinpath(FIXTURES, "$id.toml")))
 

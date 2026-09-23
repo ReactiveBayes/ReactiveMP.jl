@@ -104,12 +104,26 @@ end
 The `Marginals` a rule reads, each value `f` of the marginal. A marginal keyed by a symbol is
 the marginal of one interface; one keyed by a tuple of names is the joint of a cluster; a group
 is one tuple under its name (see [`ReactiveMP.GroupInputs`](@ref)).
+
+A joint whose value is a `FactorizedCluster` reaches the rule as its blocks instead: a block
+of one member as that member's marginal, `q[:out]`, and a larger one as a joint,
+`q[:out, :μ]`. The labels are in the cluster's type, so this is decided at compile time. v6
+decomposed its NamedTuple joints the same way, for the average energy only.
 """
 rule_marginals(f::F, ::Nothing, ::Nothing) where {F} = Marginals(NamedTuple())
 
 @generated function rule_marginals(f::F, ::Val{N}, inputs::Tuple) where {F, N}
     singlekeys, singlevalues, jointkeys, jointvalues, i = Symbol[], Any[], Any[], Any[], 1
     for name in N
+        blocks = name isa Tuple ? factorized_blocks(inputs.parameters[i]) : nothing
+        if blocks !== nothing
+            for block in blocks
+                value = :(block_value(f, inputs[$i], Val($(QuoteNode(block)))))
+                isone(length(block)) ? (push!(singlekeys, only(block)); push!(singlevalues, value)) : (push!(jointkeys, block); push!(jointvalues, value))
+            end
+            i += 1
+            continue
+        end
         value, i = input_value(name, i)
         if name isa Tuple
             push!(jointkeys, name)
@@ -121,6 +135,14 @@ rule_marginals(f::F, ::Nothing, ::Nothing) where {F} = Marginals(NamedTuple())
     end
     return :(Marginals(NamedTuple{$(Tuple(singlekeys))}($(Expr(:tuple, singlevalues...))), Val($(Tuple(jointkeys))), $(Expr(:tuple, jointvalues...))))
 end
+
+# The block labels of a marginal holding a `FactorizedCluster`, or `nothing`.
+factorized_blocks(::Type) = nothing
+factorized_blocks(::Type{<:Marginal{<:MessagePassingRulesBase.FactorizedCluster{K}}}) where {K} = K
+
+# A block's value is its part of the cluster; its annotations are the joint's.
+block_value(::typeof(getdata), marginal, block) = getdata(marginal)[block]
+block_value(f::F, marginal, block) where {F} = f(marginal)
 
 """
     ReactiveMP.rule_arguments(messages_names, messages, marginals_names, marginals)

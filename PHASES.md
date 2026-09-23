@@ -19,16 +19,16 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 2: the engine distributes a `FactorizedCluster`** to the consumers of each
-block, and splits its entropy. Step 1 is done: the slice nodes are finished and their
-directories have left `legacy/v6/`, and their split marginals are the first rules to return a
-`FactorizedCluster`. Phase 5's plan is its entry brief (§ Phase 5, `DISCUSSION.md` §3.26).
+**Phase 5, step 3: the univariate distributions** — Beta, Bernoulli, Gamma, GammaInverse,
+HalfNormal, Poisson, Uniform and Uninformative, ported from `legacy/v6/` as step 1 did. Steps 1
+and 2 are done: the slice nodes are finished, and the engine hands each block of a
+`FactorizedCluster` to whoever reads the cluster. Phase 5's plan is its entry brief (§ Phase 5,
+`DISCUSSION.md` §3.26).
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
 | What | Where it lands | Recorded in |
 |---|---|---|
-| distributing a `FactorizedCluster` joint to its members; no slice model selects one | Phase 5, the first port that returns one | § *Cases (b)–(d)*, case (b); brief item 5 |
 | a joint cluster holding some members of a group with other interfaces (`activate!` refuses it) | when a node needs one | § *Cases (b)–(d)*, case (d) |
 | Delta's `Linearization` rules and `CVIProjection` | Phase 6 | § Phase 6 |
 | a v6 rule-by-rule comparison for the Delta rules (they are checked by v6's own tables and the two engine fixtures) | Phase 6, with `Linearization` | § *Cases (b)–(d)*, case (d) |
@@ -113,7 +113,7 @@ generic ones, and no comments that only narrate.
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
-| 5 | `StandardMessagePassingRules` | entry brief signed off; step 1 done; step 2, distributing a `FactorizedCluster`, next |
+| 5 | `StandardMessagePassingRules` | entry brief signed off; steps 1–2 done; step 3, the univariate distributions, next |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | 8 | Release and downstream coordination | not started |
@@ -1401,9 +1401,18 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
      declared;
    - the committed comparison manifest pinned the lib packages by absolute paths from one
      machine; they are relative now, as its README says.
-2. **Engine: distribute a `FactorizedCluster`** to the consumers of each block, and split its
-   entropy (v6's `score(DifferentialEntropy(), ::Marginal{<:NamedTuple})`). Step 1's split
-   marginals are the first to need it; tested on a toy graph.
+2. **Engine: distribute a `FactorizedCluster`** — *done*. A joint input whose value is a
+   `FactorizedCluster` reaches the rule as its blocks, a one-member block as that member's
+   marginal (`q[:out]`) and a larger one as a joint (`q[:out, :μ]`), each carrying the joint's
+   annotations. It is decided in the generated `rule_marginals` from the labels in the
+   cluster's type, so it costs nothing at run time, and serves message rules and the average
+   energy alike. v6 decomposed its NamedTuple joints for the average energy only; a message
+   rule reading one had no v6 path. The entropy needed no engine code: BayesBase's
+   `FactorizedJoint` sums its blocks, so v6's `score(DifferentialEntropy(),
+   ::Marginal{<:NamedTuple})` is deleted. Tests: `engine:factorized-cluster:arguments`, and
+   `engine:factorized-cluster:graph`, where `x := copy(1.0)` sends a point mass into NMV's
+   `q(out, μ)`, which splits, and the node's free energy reads the blocks. No v6 fixture can
+   check it, since v6 could not run a message rule on a split joint.
 3. **Univariate distributions**: Beta, Bernoulli, Gamma, GammaInverse, HalfNormal, Poisson,
    Uniform (whose Uniform×Beta `prod` is an Aqua piracy, decided then), Uninformative (a
    zero-input rule).
@@ -1460,9 +1469,8 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
       and rules with the base macros, `factornode` and `FactorNodeActivationOptions`, algorithms
       and extensions, `bethe_free_energy`, and the registry as introspection only
       (`DISCUSSION.md` §3.23)
-- [ ] the engine distributes a `FactorizedCluster` to its members, with the first port whose
-      marginal rule returns one (the `PointMass` variants of NMV's and NMP's `(:out, :μ)`);
-      no slice model selects one (§ Phase 4.5, case (b))
+- [x] the engine distributes a `FactorizedCluster` to its members (step 2), first returned by
+      the `PointMass` variants of NMV's and NMP's `(:out, :μ)` (step 1)
 - [ ] hand-written cases done: `mixture/switch.jl` and the `Mixture` rules reading raw
       `messages[i]` (step 8)
 - [ ] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).

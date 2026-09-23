@@ -10,21 +10,9 @@ struct KLDivergence end
 
 ## Differential entropy function helpers
 
+# A `FactorizedCluster`'s entropy is the sum over its blocks, which BayesBase's
+# `FactorizedJoint` gives; v6 needed a method of its own for its NamedTuple joints.
 score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
-
-function score(::DifferentialEntropy, marginal::Marginal{<:NamedTuple})
-    compute_score =
-    let is_marginal_clamped = is_clamped(marginal),
-            is_marginal_initial = is_initial(marginal)
-
-        (data) -> score(
-            DifferentialEntropy(),
-            Marginal(data, is_marginal_clamped, is_marginal_initial),
-        )
-    end
-
-    return mapreduce(compute_score, +, values(getdata(marginal)))
-end
 
 ## Kl KlDivergence
 

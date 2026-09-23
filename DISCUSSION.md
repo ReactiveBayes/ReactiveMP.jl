@@ -1684,9 +1684,9 @@ Open as of the Phase 4.5 reconciliation:
   form is `AlgorithmExtension{Parent}`, not a registry axis. Folded into #4.
 - ~~**Delta's own algorithm**~~ — **RESOLVED in case (d)**: `DeltaApproximation` and the
   engine's `getnodefn` (§3.25).
-- **Distributing a `FactorizedCluster`** to the consumers of each block, with its entropy
-  split — no slice model returns one; the first Phase 5 port that does brings it (§3.24 notes
-  on case (b), `PHASES.md` § Phase 5).
+- ~~**Distributing a `FactorizedCluster`**~~ — **RESOLVED in Phase 5 step 2**: a joint input
+  holding one reaches every rule as its blocks, message rules as well as the average energy,
+  where v6 decomposed only for the average energy (`PHASES.md` § Phase 5).
 - **A joint holding only some members of a group** with other interfaces — `activate!` refuses
   it; built when a node needs one.
 - **#11's two follow-ups** — `DeltaApproximation`'s positional constructor bypasses the
