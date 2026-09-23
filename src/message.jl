@@ -74,9 +74,11 @@ This is intentional: annotations are out-of-band metadata about *how* a message 
 not part of the belief the message represents. Compare `getannotations` explicitly when you
 need annotation-sensitive equality.
 """
-mutable struct Message{D} <: AbstractMessage    # `mutable` structure here appears to be more performance
-    const data::D                      # in `RxInfer` benchmarks
-    const is_clamped::Bool                   # could be revised at some point though
+# Measured against an immutable struct: faster through the equality chain and lighter
+# everywhere (`scripts/benchmark_message_representation.jl`, PHASES.md § Phase 4.5).
+mutable struct Message{D} <: AbstractMessage
+    const data::D
+    const is_clamped::Bool
     const is_initial::Bool
     const annotations::AnnotationDict
 end
@@ -551,31 +553,26 @@ end
 ## https://github.com/JuliaLang/julia/issues/42559
 ## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
 ## We create a lambda-like callable structure to improve type inference and make it more stable
-## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 """
     MessageMapping
 
-A callable structure representing a deferred computation of a message in the
-variational message passing framework. It stores all contextual information
-necessary to compute a message later, such as variable tags, constraints,
-annotations, and the associated factor node.
+A callable structure representing a deferred computation of a message. It stores what is
+needed to compute the message later: the node type, the rule's target, the names of the
+messages and marginals it depends on, the algorithm, the annotation processors, the factor
+node and the callbacks.
 
-`MessageMapping` replaces the original lambda-based implementation to improve
-type stability and inference. When invoked as a function, it computes an
-outgoing `Message` from given input messages and marginals using the appropriate
-`@rule`.
+When invoked, it resolves the rule with `find_message_rule` and runs it with `execute_rule`,
+unless an input is `missing`, in which case the message is `missing` and no rule runs.
 
 See also: [`Message`](@ref), [`DeferredMessage`](@ref)
 """
-struct MessageMapping{F, T, C, N, M, A, X, R, K, E}
-    vtag::T
-    vconstraint::C
+struct MessageMapping{F, T, N, M, A, X, R, E}
+    target::T
     msgs_names::N
     marginals_names::M
-    meta::A
+    algorithm::A
     annotations::X
     factornode::R
-    rulefallback::K
     callbacks::E
 end
 
@@ -585,74 +582,25 @@ message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 function Base.show(io::IO, mapping::MessageMapping)
     print(io, "MessageMapping(")
     print(io, message_mapping_fform(mapping))
-    print(io, ", ", repr(mapping.vtag))
+    print(io, ", ", repr(mapping.target))
     if mapping.msgs_names !== nothing
         print(io, ", msgs=", collect(unval(mapping.msgs_names)))
     end
     if mapping.marginals_names !== nothing
         print(io, ", marginals=", collect(unval(mapping.marginals_names)))
     end
-    if !get(io, :compact, false)
-        if mapping.vconstraint !== nothing
-            print(io, ", vconstraint=", mapping.vconstraint)
-        end
-        if mapping.meta !== nothing
-            print(io, ", meta=", mapping.meta)
-        end
+    if !get(io, :compact, false) && mapping.algorithm !== nothing
+        print(io, ", algorithm=", mapping.algorithm)
     end
     print(io, ")")
     return nothing
 end
 
-function MessageMapping(
-        ::Type{F},
-        vtag::T,
-        vconstraint::C,
-        msgs_names::N,
-        marginals_names::M,
-        meta::A,
-        annotations::X,
-        factornode::R,
-        rulefallback::K,
-        callbacks::E,
-    ) where {F, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
-        vtag,
-        vconstraint,
-        msgs_names,
-        marginals_names,
-        meta,
-        annotations,
-        factornode,
-        rulefallback,
-        callbacks,
-    )
-end
+MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E) where {F, T, N, M, A, X, R, E} =
+    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks)
 
-function MessageMapping(
-        ::F,
-        vtag::T,
-        vconstraint::C,
-        msgs_names::N,
-        marginals_names::M,
-        meta::A,
-        annotations::X,
-        factornode::R,
-        rulefallback::K,
-        callbacks::E,
-    ) where {F <: Function, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
-        vtag,
-        vconstraint,
-        msgs_names,
-        marginals_names,
-        meta,
-        annotations,
-        factornode,
-        rulefallback,
-        callbacks,
-    )
-end
+MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E) where {F <: Function, T, N, M, A, X, R, E} =
+    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks)
 
 function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
@@ -681,38 +629,16 @@ function (mapping::MessageMapping)(messages, marginals)
         end
     end
 
-    result =
-    if !isnothing(messages) &&
-            any(ismissing, TupleTools.flatten(getdata.(messages)))
-        missing
-    elseif !isnothing(marginals) &&
-            any(ismissing, TupleTools.flatten(getdata.(marginals)))
+    result = if has_missing_inputs(messages) || has_missing_inputs(marginals)
         missing
     else
-        ruleargs = (
-            message_mapping_fform(mapping),
-            mapping.vtag,
-            mapping.vconstraint,
-            mapping.msgs_names,
-            messages,
-            mapping.marginals_names,
-            marginals,
-            mapping.meta,
-            annotations,
-            mapping.factornode,
-        )
-        ruleoutput = rule(ruleargs...)
-        # if `@rule` is not defined, the default behaviour is to return
-        # the `RuleMethodError` object
-        if ruleoutput isa RuleMethodError
-            if !isnothing(mapping.rulefallback)
-                mapping.rulefallback(ruleargs...)
-            else
-                throw(ruleoutput)
-            end
-        else
-            ruleoutput
-        end
+        fform = message_mapping_fform(mapping)
+        args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
+        spec = resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args))
+        ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
+        ctx = RuleContext(node = mapping.factornode)
+        algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+        MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, ctx, args, ann, mapping.target)
     end
 
     # Run annotation processors after the rule has been executed

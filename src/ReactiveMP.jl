@@ -2,11 +2,12 @@
 module ReactiveMP
 
 # List global dependencies here
-using TinyHugeNumbers, MatrixCorrectionTools, FastCholesky, LinearAlgebra
-using BayesBase, ExponentialFamily
+using TinyHugeNumbers, LinearAlgebra
+using BayesBase
 using UUIDs
 
-import MatrixCorrectionTools: AbstractCorrectionStrategy, correction!
+import MessagePassingRulesBase
+
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
@@ -14,11 +15,6 @@ export tiny, huge
 include("fixes.jl")
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
-
-include("helpers/algebra/companion_matrix.jl")
-include("helpers/algebra/common.jl")
-include("helpers/algebra/permutation_matrix.jl")
-include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/form.jl")
 
@@ -54,19 +50,7 @@ getdata(collection::AbstractArray) = map(getdata, collection)
 is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
 is_initial(tuple::Tuple) = TupleTools.prod(map(is_initial, tuple))
 
-include("approximations/approximations.jl")
-include("approximations/shared.jl")
-include("approximations/gausshermite.jl")
-include("approximations/gausslaguerre.jl")
-include("approximations/sphericalradial.jl")
-include("approximations/laplace.jl")
-include("approximations/importance.jl")
-include("approximations/optimizers.jl")
-include("approximations/rts.jl")
-include("approximations/linearization.jl")
-include("approximations/unscented.jl")
-include("approximations/cvi.jl")
-include("approximations/cvi_projection.jl")
+include("rule_arguments.jl")
 
 # Predefined postprocessors
 include("postprocessors/scheduled.jl")
@@ -79,30 +63,16 @@ include("variables/constant.jl")
 include("variables/data.jl")
 
 include("nodes/nodes.jl")
-include("rule.jl")
 
 include("score/score.jl")
 include("score/variable.jl")
 include("score/node.jl")
-
-include("nodes/predefined.jl")
-include("rules/predefined.jl")
-include("rules/fallbacks.jl")
+include("score/bethe.jl")
 
 function __init__()
     Base.Experimental.register_error_hint(
         MethodError
     ) do io, exc, argtypes, kwargs
-        if exc.f == ReactiveMP.factornode &&
-                length(argtypes) >= 2 &&
-                argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
-            errmsg = """
-            `$(argtypes[2])` has been used but the `ReactiveMP` backend does not support `$(argtypes[2])` as a factor node.
-
-            Please refer to the [factor nodes](https://reactivebayes.github.io/ReactiveMP.jl/stable/lib/nodes/) section of the documentation for more details.
-            """
-            println(io, errmsg)
-        end
         if exc.f === ReactiveMP.handle_event && length(argtypes) >= 2
             event_type = argtypes[2]
             event_hint = if event_type <: ReactiveMP.Event

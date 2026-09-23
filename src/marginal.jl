@@ -66,9 +66,11 @@ This is intentional: annotations are out-of-band metadata about *how* a marginal
 not part of the belief it represents. Compare `getannotations` explicitly when you need
 annotation-sensitive equality.
 """
-mutable struct Marginal{D}      # `mutable` structure here appears to be more performance
-    const data::D      # in `RxInfer` benchmarks
-    const is_clamped::Bool   # could be revised at some point though
+# Measured against an immutable struct: faster through the equality chain and lighter
+# everywhere (`scripts/benchmark_message_representation.jl`, PHASES.md § Phase 4.5).
+mutable struct Marginal{D}
+    const data::D
+    const is_clamped::Bool
     const is_initial::Bool
     const annotations::AnnotationDict
 end
@@ -246,39 +248,28 @@ end
 ## https://github.com/JuliaLang/julia/issues/42559
 ## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
 ## We create a lambda-like callable structure to improve type inference and make it more stable
-## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
+"""
+    MarginalMapping
 
+A callable structure computing the joint marginal of a cluster of a factor node: it resolves
+the node's marginal rule for the cluster with `find_marginal_rule` and runs it.
+"""
 struct MarginalMapping{F, T, N, M, A, R}
-    vtag::T
+    target::T
     msgs_names::N
     marginals_names::M
-    meta::A
+    algorithm::A
     factornode::R
 end
 
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
 marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
-function MarginalMapping(
-        ::Type{F},
-        vtag::T,
-        msgs_names::N,
-        marginals_names::M,
-        meta::A,
-        factornode::R,
-    ) where {F, T, N, M, A, R}
-    return MarginalMapping{F, T, N, M, A, R}(
-        vtag, msgs_names, marginals_names, meta, factornode
-    )
-end
+MarginalMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R) where {F, T, N, M, A, R} =
+    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode)
 
-function MarginalMapping(
-        ::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R
-    ) where {F <: Function, T, N, M, A, R}
-    return MarginalMapping{F, T, N, M, A, R}(
-        vtag, msgs_names, marginals_names, meta, factornode
-    )
-end
+MarginalMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R) where {F <: Function, T, N, M, A, R} =
+    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode)
 
 function (mapping::MarginalMapping)(dependencies)
     messages = getrecent(dependencies[1])
@@ -295,27 +286,23 @@ function (mapping::MarginalMapping)(dependencies)
             __check_all(is_clamped_or_initial, marginals)
     )
 
-    marginal =
-    if !isnothing(messages) &&
-            any(ismissing, TupleTools.flatten(getdata.(messages)))
-        missing
-    elseif !isnothing(marginals) &&
-            any(ismissing, TupleTools.flatten(getdata.(marginals)))
+    marginal = if has_missing_inputs(messages) || has_missing_inputs(marginals)
         missing
     else
-        marginalrule(
-            marginal_mapping_fform(mapping),
-            mapping.vtag,
-            mapping.msgs_names,
-            messages,
-            mapping.marginals_names,
-            marginals,
-            mapping.meta,
-            mapping.factornode,
-        )
+        compute_marginal(mapping, messages, marginals)
     end
 
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
+end
+
+function compute_marginal(mapping::MarginalMapping, messages, marginals)
+    fform = marginal_mapping_fform(mapping)
+    args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
+    spec = resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args))
+    ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
+    ctx = RuleContext(node = mapping.factornode)
+    algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+    return MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, ctx, args, ann, mapping.target)
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =

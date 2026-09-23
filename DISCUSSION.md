@@ -1465,8 +1465,16 @@ The original discussion left these questions:
 
 Open as of the Phase 4.5 reconciliation:
 
-- **The `Message` representation** — `mutable struct` with `const` fields or immutable, decided
-  by benchmark during step 4.
+- ~~**The `Message` representation**~~ — **RESOLVED in step 4 by benchmark: `mutable` with
+  `const` fields stays.** Through the equality chain it was about 10% faster and 40% lighter
+  than an immutable struct; on a BP chain the immutable one was 6–8% faster but still 25%
+  heavier. The numbers are in `PHASES.md` § Phase 4.5, step 4.
+- **Typed annotations** (`Message{D, A}`, brief item 3) — not built in step 4, which kept the
+  `AnnotationDict` so as to change one thing at a time; the retained-value test pins that
+  nothing mutates it after materialisation. Revisit with the log-scale milestone.
+- **Declared dependencies, groups and a declared free-energy partition in the engine** — case
+  (c). Until then `activate!` refuses a node with either, rather than wiring the default
+  scheme in their place.
 - **Delta's own algorithm** — the method and inverse it carries, like `DeltaMeta`, and the
   engine's `getnodefn`; case (d).
 - **Default initial messages** — how a node declares one for a rule that depends on its own

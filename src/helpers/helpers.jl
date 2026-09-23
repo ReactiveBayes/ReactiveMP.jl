@@ -1,6 +1,5 @@
 export skipindex
 
-using SpecialFunctions
 using Rocket
 
 import Base: show, similar

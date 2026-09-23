@@ -25,29 +25,29 @@ incoming messages/marginals.
 ```
 src/
   ReactiveMP.jl        module root; include order matters (see below)
-  rule.jl              @rule, @marginalrule, @call_rule, @test_rules, rule errors   (large)
   message.jl           Message, DeferredMessage, MessageObservable, MessageMapping
   marginal.jl          Marginal, MarginalObservable, MarginalMapping
+  rule_arguments.jl    RuleArgs/RuleAnnotations built from the latest messages and marginals
   variable.jl          AbstractVariable API
   variables/           randomvar, constvar, datavar
   nodes/
-    nodes.jl           node traits, FactorNode, activate!, the @node macro
+    nodes.jl           FactorNode, factornode (from a @define_factor_node declaration), activate!
     interfaces.jl      NodeInterface, IndexedNodeInterface, ManyOf
-    clusters.jl        local marginals / factorisation clusters
-    dependencies.jl    which messages+marginals a rule receives; stream wiring
+    clusters.jl        local marginals / factorisation clusters, keyed :μ or (:out, :μ)
+    dependencies.jl    the default dependency scheme; stream wiring
     equality.jl        equality-chain optimisation for high-degree variables
-    predefined/        ~45 node definitions (@node + @average_energy)
-  rules/               ~171 files, one directory per node, one file per target edge
-  approximations/      Unscented, Linearization, CVI, quadrature rules
-  annotations/         per-message metadata (@logscale and friends)
-  score/               free energy: AverageEnergy, DifferentialEntropy
-ext/                   weakdep extensions (Optimisers, ExponentialFamilyProjection)
-test/                  mirrors src/ exactly
+  annotations/         per-message metadata (log scale, input arguments)
+  score/               node scores, variable entropies, bethe_free_energy
+lib/                   the new packages: the rule system, its test tooling, rules, numerics
+compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
+legacy/v6/             the v6 rule system and unported nodes, for reference; never loaded
+test/                  mirrors src/; test/engine/ runs whole graphs against the v6 fixtures
 ```
 
 Include order in `src/ReactiveMP.jl` is load-bearing: `nodes/equality.jl` must precede
-`variables/`, and all `@node` definitions must precede all `@rule` definitions (the `@rule`
-macro queries the node registry at *macro expansion time*).
+`variables/`. Nodes and rules are defined with `MessagePassingRulesBase`'s macros
+(`@define_factor_node`, `@define_message_update_rule`, …), and a rule that omits `algorithm`
+must load after its node's declaration.
 
 ## Running things
 
@@ -56,15 +56,15 @@ All via `make` (run `make help` for the list).
 ```bash
 make test                                  # the fast subset: everything except `:slow`
 make test-all                              # everything, including `:slow`
-make test test_args="rules:normal_mean_variance"   # one directory
-make test test_args="rules:beta:out"               # one file
-make test test_args="tag:rules"                    # by tag
-make test test_args="name:NormalMixture"           # by test-item name
-make test test_args="tag:rules name:Beta"          # combined
+make test test_args="nodes"                        # one directory
+make test test_args="engine:fixtures"              # one file
+make test test_args="tag:engine"                   # by tag
+make test test_args="name:MessageMapping"          # by test-item name
+make test test_args="tag:nodes name:factornode"    # combined
 RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
-make docs                                  # build documentation
+make docs                                  # refuses: docs/ describes v6 and is being rewritten
 make test-base                             # lib/MessagePassingRulesBase's own suite
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
 make test-standard                         # lib/StandardMessagePassingRules
@@ -85,12 +85,15 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (414 of them across ~231 files), each self-contained and
-independently runnable. Naming convention is `"rules:<Node>:<edge>"` for rule tests.
+Tests are `@testitem` blocks (115 of them across 19 files), each self-contained and
+independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
+TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
+directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:rules` (196), `:nodes` (84), `:engine`
-(133 — everything that is not a rule or node test), plus `:alloc` on the six items that
-assert allocation counts and `:quality` on the inventory gate. `:slow` exists and is
+**Every test item carries a tag.** The taxonomy is `:nodes` (19) and `:engine` (95 —
+everything that is not a node test), plus `:alloc` on the two items that assert allocation
+counts and `:quality` on the inventory gate. `:rules` went with the v6 rule tests; rules are
+tested in the lib suites now. `:slow` exists and is
 **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
 The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
 `:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`, and `LibTests.yml` runs it. When
@@ -99,9 +102,10 @@ items are tagged `:slow` they disappear from `make test` and stay in `make test-
 The fast default must never become a coverage reduction — CI sets `TEST_ALL=true`, so a
 `:slow` tag changes what *you* run locally, never what CI runs.
 
-Rule tests are table-driven via `@test_rules`, which is defined in `src/rule.jl` (not in
-`test/`) and is unexported — tests do `import ReactiveMP: @test_rules`. `Test` must be
-imported by the caller.
+Rule tests live with the rules, in the lib packages, and are table-driven via
+`MessagePassingRulesTestUtils` (`@test_message_update_rule`). The engine's own tests declare
+toy nodes and rules with the base package's macros. `test/engine/harness.jl` builds a graph the
+way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtures.
 
 ## Conventions
 
@@ -118,21 +122,24 @@ imported by the caller.
 
 ## Gotchas
 
-- Interface names in `@node` **may not contain underscores** — `_` is the separator used to
-  parse joint-marginal names like `q_y_x` back into a cluster.
-- `Marginalisation` in every `@rule` signature is a dead dispatch axis; it is hardcoded
-  everywhere and `MomentMatching` is never dispatched on.
-- Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (322 pairs,
-  revisited after the split — see `PHASES.md` § Phase 2). `piracies` is on, with two owners
-  declared through `treat_as_own`, and `deps_compat` checks `[extras]` too.
+- `factornode` takes interfaces as `(name, variable)` or `((group, k), variable)` and a
+  factorisation as tuples of those keys, `((:out, :μ), (:v,))` — never positions. It puts
+  everything in declaration order. A joint local marginal is keyed by its member tuple,
+  `(:out, :μ)`, so interface names may contain underscores.
+- `activate!` wires only the default dependency scheme for now: a node that declares its own
+  dependencies, or has an interface group, is refused until case (c) of Phase 4.5.
+- Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (it was 322
+  pairs on `main`, most in code now in `legacy/`; to be re-measured). `piracies` is on, and
+  `deps_compat` checks `[extras]` too.
 - `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
   six nodes so far) and `MessagePassingRulesApproximations` (`make test-approximations`;
   `Unscented` and `smoothRTS`, pure numerics). Siblings are wired with `[deps]` and
   `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
-- From Phase 4.5 step 4, `legacy/v6/` holds the v6 rule system and every node not yet
-  ported: never loaded, never tested, kept as the reference Phase 5 ports from.
+- `legacy/v6/` holds the v6 rule system and every node not yet ported: never loaded, never
+  tested, kept as the reference Phase 5 ports from. The inventory gate runs in
+  `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 
@@ -148,8 +155,8 @@ and read whichever exist before proposing changes:
 3. **`PHASES.md`** — current state: what is done, what is next, what is blocked.
 4. **`INVENTORY.md`** — where every node, exported symbol and engine hook is going once
    the package split happens. Generated by `scripts/inventory.jl`: edit only the
-   `destination` and `note` columns, then run `julia --project=. scripts/inventory.jl
-   --check` to confirm nothing is left `undecided`.
+   `destination` and `note` columns, then run `julia --project=compat/v6-comparison
+   scripts/inventory.jl --check` to confirm nothing is left `undecided`.
 
 **If none of these files exist, the repository has no unfinished business** and you can
 treat `main` as the whole story.

@@ -189,7 +189,10 @@ end
     :engine,
 ] begin
     using BayesBase, Distributions, ExponentialFamily, LinearAlgebra
-    import ReactiveMP: DataVariable, datavar, new_observation!, Uninformative
+    import ReactiveMP: DataVariable, datavar, new_observation!
+
+    # An object that is not an observation, as the prior `Uninformative()` was in #588
+    struct Uninformative end
 
     # `PointMass` defines `variate_form` -- and therefore a usable `mean` -- only for reals,
     # arrays of reals and `UniformScaling`. Wrapping anything else builds a `PointMass` that

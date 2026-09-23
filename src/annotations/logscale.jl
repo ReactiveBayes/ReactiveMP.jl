@@ -4,7 +4,7 @@ export LogScaleAnnotations, getlogscale, AddonLogScale
     LogScaleAnnotations <: AbstractAnnotations
 
 Annotation processor that tracks the log-scale factor of a message.
-Writes the `:logscale` annotation during rule execution (via `@logscale`) and
+A rule writes the `:logscale` annotation with `annotate!(ann, :logscale, value)`; this
 merges it across message products by summing the left and right log-scales and
 adding the normalisation correction from `compute_logscale`.
 """
@@ -17,17 +17,6 @@ Return the log-scale value stored in `ann`. Throws `KeyError` if the logscale
 annotation has not been set.
 """
 getlogscale(ann::AnnotationDict) = get_annotation(ann, :logscale)
-
-"""
-    @logscale value
-
-Set the log-scale annotation on the current rule's annotation dict.
-Intended to be called inside a `@rule` body. Expands to
-`annotate!(getannotations(), :logscale, value)`.
-"""
-macro logscale(value)
-    return esc(:(ReactiveMP.annotate!(getannotations(), :logscale, $(value))))
-end
 
 function pre_rule_annotations!(
         ::LogScaleAnnotations, ann::AnnotationDict, mapping, messages, marginals

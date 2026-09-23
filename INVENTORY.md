@@ -9,8 +9,8 @@ engine hook, extension and rule-level exception carries either a destination pac
 a deliberate deletion, so that the package split is a lookup rather than a judgement
 call made 400 times under time pressure.
 
-Regenerate with `julia --project=. scripts/inventory.jl --generate`.
-Validate with `julia --project=. scripts/inventory.jl --check`.
+Regenerate with `julia --project=compat/v6-comparison scripts/inventory.jl --generate`.
+Validate with `julia --project=compat/v6-comparison scripts/inventory.jl --check`.
 
 ## Destinations
 

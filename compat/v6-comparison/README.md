@@ -109,6 +109,12 @@ julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/slic
   `src/approximations/`.
 - `slice_rule_inventory.jl`: every v6 rule the slice models select, with its declared types.
 
+The disposition inventory runs here too, `julia --project=compat/v6-comparison
+scripts/inventory.jl --check`: it records where everything in ReactiveMP 6.5.0 goes, and since
+Phase 4.5 step 4 only v6.5.0 still has all of it. The root suite's `:quality` item runs it.
+The engine fixtures in `fixtures/engine/` are what `test/engine/` in the root suite compares
+the new engine with.
+
 
 - `V6Oracle.jl` calls a v6 rule from the inputs a v7 rule takes, and returns its result and
   log scale. It is the only code in the repository that names ReactiveMP v6's internals.

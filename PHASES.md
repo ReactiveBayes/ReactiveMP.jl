@@ -16,7 +16,14 @@ relying on one.
 
 ## Next action
 
-**Phase 4.5, step 4: the engine core, on case (a).** Its plan is § Phase 4.5, *Step 4*.
+**Phase 4.5, case (b): VMP** — mean-field (`vmp_meanfield`) and structured
+(`vmp_structured`), through the engine step 4 built. Structured VMP brings the first joint
+marginal whose rule returns a `FactorizedCluster`, which the engine must distribute to the
+cluster's members (brief item 5).
+
+Step 4, the engine core on case (a), is done (§ Phase 4.5, *Step 4*): the v6 rule system is in
+`legacy/v6/`, the engine finds and runs rules through `MessagePassingRulesBase`, and
+`bp_iid`, `bp_iid_missing` and `bp_chain` agree with v6 call by call.
 
 Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSION.md`
 §3.18–3.19); the design session itself was step 1. Since then:
@@ -24,7 +31,8 @@ Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSI
 - **step 2** made the base-package additions;
 - **step 3** ported the slice's rules and numerics, in agreement with v6;
 - the **algorithm reconciliation** replaced `BP`/`VMP` with one `DefaultAlgorithm` (§3.20);
-- `Require*FunctionalDependencies` were dropped (§3.21).
+- `Require*FunctionalDependencies` were dropped (§3.21);
+- **step 4** made the clean cut and ran case (a) through the new engine.
 
 Three ground rules were set on the same day (§3.22):
 - step 4 is a **clean cut**: the engine keeps only the new rule path, and every unported node
@@ -35,7 +43,8 @@ Three ground rules were set on the same day (§3.22):
 Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system;
 `lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules` and
 `lib/MessagePassingRulesApproximations` hold the slice's rules and numerics; and
-`compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures. The
+`compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures. ReactiveMP
+itself is the engine on the new rule system; what it cannot run yet is in `legacy/v6/`. The
 tooling's first finding was a real v6 bug: the variational `NormalMeanVariance` rules use
 `E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v` (ReactiveMP.jl#669). It was **corrected
 when NMV was ported in step 3**, and the comparison declares it.
@@ -44,7 +53,7 @@ when NMV was ported in step 3**, and the comparison declares it.
 
 ```bash
 git switch refactor/rule-node-system-rewrite && git pull
-make test-base test-testutils test-standard test-approximations
+make test test-base test-testutils test-standard test-approximations
 julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
 for s in check compare_standard compare_approximations; do
     julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
@@ -71,7 +80,7 @@ generic ones, and no comments that only narrate.
 | 2 | Tooling migration on ReactiveMP | **done** |
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
-| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | steps 0–3 and the algorithm reconciliation done; next step 4, the engine core |
+| 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | steps 0–4 and the algorithm reconciliation done, case (a) running; next case (b) |
 | 5 | `StandardMessagePassingRules` | the slice's six nodes ported in 4.5; the bulk not started |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
@@ -675,8 +684,8 @@ Decided instead:
   branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
 **Status: signed off 2026-09-23. Steps 0 (fixtures), 1 (the design session), 2 (base
-additions) and 3 (rule ports) are done, as is the algorithm reconciliation. Next is step 4,
-the engine core, on case (a).**
+additions), 3 (rule ports) and 4 (the engine core, case (a)) are done, as is the algorithm
+reconciliation. Next is case (b), VMP.**
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -934,7 +943,7 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    - `julia = "1.11"`, the `[sources]` minimum, tested on 1.13 only.
    - `compat/v6-comparison` is regenerated on 1.13 and the fixtures re-checked. If v6 will not
      run there, that environment alone stays on 1.10.
-2. **Move, don't delete** (user). The v6 rule system and every unported node go to
+2. [x] **Move, don't delete** (user). The v6 rule system and every unported node go to
    `legacy/v6/`, mirroring their old paths, kept for reference and never loaded:
    - code: `src/rule.jl` (`@rule`, `@marginalrule`, `@call_rule`, `@test_rules`), `src/rules/`,
      `src/nodes/predefined/`, `@node`, `src/approximations/` and `ext/`;
@@ -945,7 +954,18 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    Phase 5 empties it as each node is ported. `docs/` is left out of the build until it is
    rewritten. The inventory gate enumerates v6.5.0 from `compat/v6-comparison`, so INVENTORY
    stays the record of where everything goes.
-3. **Nodes from `NodeSpec`.**
+
+   *Done.* Also moved: the v6 algebra helpers, `src/fixes.jl`'s `ForwardDiff` hot-fix (only the
+   approximations needed it), and the tests of all of these. `@node`, its traits, the
+   `Require*` dependencies and `@average_energy` left with the pre-step-4 copies of
+   `nodes.jl`, `dependencies.jl`, `clusters.jl` and `score/`, kept beside them. `@logscale` is
+   gone too: it expanded to v6's rule-scoped `getannotations()`, and a rule now writes
+   `annotate!(ann, :logscale, value)`. ReactiveMP's `[deps]` shrank to BayesBase,
+   Distributions, LinearAlgebra, MacroTools, MessagePassingRulesBase, Rocket, TinyHugeNumbers,
+   TupleTools and UUIDs; the version is `7.0.0-DEV`. The root test filter also skips `lib/` and
+   `compat/`, which have suites of their own, and `make docs` refuses with a pointer here.
+   Regenerating INVENTORY from v6.5.0 reproduces it byte for byte.
+3. [x] **Nodes from `NodeSpec`.**
    - `factornode` takes `(name, index)` interfaces, and clusters as tuples of interface
      names.
    - Arity, aliases and `sdtype` come from the NodeSpec, and ReactiveMP's
@@ -953,7 +973,19 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    - `FactorNodeLocalMarginal` carries its member tuple, never a joined name.
    - Activation is generic: `dependencies_spec`, or the default scheme when that is
      `nothing`. `algorithm` replaces `meta` in the activation options.
-4. **The rule-call path.**
+
+   *Done, with two parts left to case (c).* `factornode(fform, interfaces, factorisation =
+   nothing)` takes `(name, variable)` and `((group, k), variable)`, names or aliases in any
+   order, and puts them in declaration order; the factorisation is tuples of the same keys,
+   `nothing` meaning one cluster, and a deterministic node always gets one. Errors name the
+   node and the offending key. A local marginal is keyed `:μ` for one interface and `(:out,
+   :μ)` for a joint. `FactorNodeActivationOptions(; algorithm, postprocessor, annotations,
+   callbacks)` replaced the six positional fields; `rulefallback`, `metadata` and the
+   dependency policy are gone. **`activate!` refuses a node with a declared
+   `dependencies_spec` or an interface group**, with an error saying so, rather than wiring
+   them wrongly: the default scheme is the only one wired, and declared dependencies and
+   groups are case (c)'s work.
+4. [x] **The rule-call path.**
    - `MessageMapping`, `MarginalMapping` and the node score call `find_*` and `execute_rule`
      with `rule_algorithm`.
    - `RuleArgs` come from `getdata`. `Val{:out}` becomes `Target{:out}`, `(Val{:m}, k)` becomes
@@ -962,18 +994,61 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
      with the base `annotate!`/`getannotation` defined for `AnnotationDict`.
    - The missing-input short-circuit (`message.jl:684-691`), the callbacks and the pre/post
      annotation processors are kept exactly.
-5. **Free energy in the engine:** `bethe_free_energy(T, nodes, variables)`, porting RxInfer's
+
+   *Done* (`src/rule_arguments.jl`, `MessageMapping`, `MarginalMapping`, `score/node.jl`). A
+   rule's `ann.m` and `ann.q` carry the inputs' `AnnotationDict`s, keyed like the arguments. No
+   rule found raises `MessagePassingRulesBase.RuleNotFoundError`, with its near misses; there
+   is no fallback. A node's average energy is found with `find_average_energy`; v6's
+   decomposition of `NamedTuple` joints went with the generic `score(AverageEnergy(), …)`,
+   since `FactorizedCluster` replaces it (case (b)).
+5. [x] **Free energy in the engine:** `bethe_free_energy(T, nodes, variables)`, porting RxInfer's
    assembly (`reactivemp_free_energy.jl:52-128`). It combines the node scores over the declared
    partition or the factorisation, the variable entropies, and the data/constant degree
    correction, and emits one value per iteration.
-6. **A test harness** (`test/engine/`). It builds a graph in RxInfer's order: variables;
+
+   *Done* (`src/score/bethe.jl`): `bethe_free_energy(T, factornodes, variables; algorithm =
+   node -> nothing)`, the algorithm per node being the one it was activated with. Node scores
+   run over the factorisation; a declared partition arrives with declared dependencies in
+   case (c).
+6. [x] **A test harness** (`test/engine/`). It builds a graph in RxInfer's order: variables;
    factor nodes in statement order, with interfaces `out, μ, v`; activation; subscriptions;
    and data fed each iteration. It traces with `after_message_rule_call`, produces an
    `EngineTrajectory`, and runs `compare_engine_trajectory` against `bp_iid`,
    `bp_iid_missing` and `bp_chain`.
-7. **The engine's own tests** are rewritten on `@define_factor_node` toy nodes:
+
+   *Done* (`test/engine/harness.jl`, `fixtures_tests.jl`). **All three agree with v6 at
+   `atol = 1e-9`**: every rule call in order with its result, the log scales of `bp_iid`, the
+   posteriors and the free energy (8.288494360822888 and 9.679161779955816 per iteration). As
+   RxInfer does, the harness activates data variables with predictions on, subscribes to the
+   predictions only of data with a `missing`, and factorises random interfaces jointly and
+   each data or constant interface alone.
+7. [x] **The engine's own tests** are rewritten on `@define_factor_node` toy nodes:
    `message_tests`, `callbacks`, `variables`, `dependencies`, `clusters` and `nodes`. The
    missing-input pin, the retained-value test and the `Message` benchmark are added here.
+
+   *Done.* `nodes_tests` tests `factornode` itself now; `@node`'s own tests went to
+   `legacy/v6/test/nodes/`, as the base package tests `@define_factor_node`. The v6 tests of
+   `Require*` and meta-driven dependencies went with them. New: `MessageMapping` resolving and
+   running a rule, with the algorithm and node it receives; `RuleNotFoundError`; the
+   **missing-input pin** (no rule call, the pre-rule processors run, the post-rule ones do
+   not); the default scheme per factorisation; the case-(c) refusals; and
+   `engine:retained-values`, which holds materialised messages and marginals across further
+   updates. The root suite is 115 items, 14 857 tests, all passing, Aqua included.
+
+   **The `Message` benchmark** (`scripts/benchmark_message_representation.jl`, Julia 1.13,
+   M-series Mac; the data-feeding loop only, minimum of seven runs, `Message` and `Marginal`
+   changed together):
+
+   | graph, 10 iterations | `mutable`, `const` fields | immutable |
+   |---|---|---|
+   | iid, n = 1000 (equality chain of degree 1001) | 2.9 ms, 5.65 MiB | 3.2 ms, 9.62 MiB |
+   | iid, n = 10 000 | 41–45 ms, 56.5 MiB | 49–50 ms, 96.1 MiB |
+   | chain, n = 300 | 12.6 ms, 12.5 MiB | 11.7–11.9 ms, 15.7 MiB |
+
+   **`mutable` stays**: about 10% faster and 40% lighter through the equality chain, which is
+   where the brief said to measure; immutable wins 6–8% on the chain but allocates 25% more.
+   Typed annotations (`Message{D, A}`, brief item 3) are not done: the `AnnotationDict` stays,
+   and the retained-value test pins that nothing mutates one after materialisation.
 
 ### Design brief — 2026-09-23
 
@@ -1087,23 +1162,26 @@ built:
 - [x] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted —
       `compat/v6-comparison/fixtures/engine/`, re-checked by `record_engine_fixtures.jl --check`
 - [ ] a working end-to-end inference in the new engine over the slice: ordinary belief
-      propagation, structured VMP, a mixture (variadic group), and a delta node
-- [ ] free energy agrees with the recorded v6 trajectories on the same models
-- [ ] annotations and log scales agree with the recorded ones, compared explicitly (see the
+      propagation, structured VMP, a mixture (variadic group), and a delta node — *belief
+      propagation done (case (a), step 4)*
+- [ ] free energy agrees with the recorded v6 trajectories on the same models — *case (a)
+      agrees (`bp_iid`, `bp_chain`)*
+- [x] annotations and log scales agree with the recorded ones, compared explicitly (see the
       annotation gate in `PLAN.md`), **where v6 records them** (`bp_iid`). Elsewhere v6's
-      behaviour is preserved, gaps included
-- [ ] a retained-value test: hold a materialised message across several updates and confirm
+      behaviour is preserved, gaps included — `engine:fixture:bp_iid`
+- [x] a retained-value test: hold a materialised message across several updates and confirm
       neither its value nor its annotations change underneath you (deferred messages materialise
-      as in v6, so the guarantee starts at materialisation)
-- [ ] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
+      as in v6, so the guarantee starts at materialisation) — `engine:retained-values`
+- [x] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
+      — `MessageMapping short-circuits a missing input`, and `bp_iid_missing` end to end
 - [ ] mixture emission order agrees with the recorded v6 order (#6)
 - [ ] edge order and group indices preserved through integration (#7)
-- [ ] the v6 rule system and every unported node moved to `legacy/v6/` (step 4); the engine
+- [x] the v6 rule system and every unported node moved to `legacy/v6/` (step 4); the engine
       keeps only the new rule path; ReactiveMP depends on `MessagePassingRulesBase`
 - [ ] Delta's own algorithm designed (the method and inverse, like `DeltaMeta`), and
       `getnodefn` implemented by the engine's Delta node (case (d))
-- [ ] the `Message` representation chosen by benchmark (mutable with `const` fields vs
-      immutable), with the numbers recorded
+- [x] the `Message` representation chosen by benchmark (mutable with `const` fields vs
+      immutable), with the numbers recorded — `mutable` stays; numbers under step 4, item 7
 
 Do not start Phase 5 until this passes.
 

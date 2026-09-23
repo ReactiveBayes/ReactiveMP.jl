@@ -332,102 +332,106 @@ end
     end
 end
 
-@testitem "MessageMapping should call `rulefallback` is no rule is available" tags = [
-    :engine,
-] begin
-    import ReactiveMP: MessageMapping, getdata, AnnotationDict
+@testmodule MessageMappingNodes begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: annotate!
 
-    struct SomeArbitraryNodeForRuleFallback end
+    struct Increment end
+    @define_factor_node(node = Increment, type = Stochastic, interfaces = [:out, :in])
 
-    @node SomeArbitraryNodeForRuleFallback Stochastic [out, in]
+    const CALLS = Ref(0)
 
-    struct NonexistingDistribution end
-
-    meta = "meta"
-    annotations = nothing
-
-    mapping_no_rule_fallback = MessageMapping(
-        SomeArbitraryNodeForRuleFallback,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        nothing,
-        meta,
-        annotations,
-        SomeArbitraryNodeForRuleFallback(),
-        nothing,
-        nothing,
+    @define_message_update_rule(
+        node = Increment, target = :out, args = (m[:in]::Int,),
+        body = (args, ann) -> begin
+            CALLS[] += 1
+            annotate!(ann, :called, true)
+            args.m[:in] + 1
+        end,
     )
 
-    messages = (Message(NonexistingDistribution(), false, false),)
-    marginals = nothing
-
-    @test_throws ReactiveMP.RuleMethodError mapping_no_rule_fallback(
-        messages, marginals
+    # Reports the algorithm it was run under and the node it was given.
+    @define_message_update_rule(
+        node = Increment, target = :in, args = (q[:out]::Int,), ctx = (:node,),
+        body = (algo, ctx, args) -> (algo, ctx.node, args.q[:out] - 1),
     )
 
-    rulefallback = (args...) -> (args)
-
-    mapping_with_fallback = MessageMapping(
-        SomeArbitraryNodeForRuleFallback,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        nothing,
-        meta,
-        annotations,
-        SomeArbitraryNodeForRuleFallback(),
-        rulefallback,
-        nothing,
-    )
-
-    @test getdata(mapping_with_fallback(messages, marginals)) == (
-        SomeArbitraryNodeForRuleFallback,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        messages,
-        nothing,
-        marginals,
-        meta,
-        AnnotationDict(),
-        SomeArbitraryNodeForRuleFallback(),
-    )
+    struct Stranger end
 end
 
-@testitem "MessageMapping should call provided callbacks handler" tags = [
-    :engine,
-] begin
+@testitem "MessageMapping resolves and runs the rule" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, getdata, getannotations, get_annotation
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    node = N.Increment()
+    towards_out = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, node, nothing)
+    result = towards_out((Message(1, false, false),), nothing)
+    @test getdata(result) === 2
+    # What the rule annotates is on the message it produced
+    @test get_annotation(getannotations(result), :called) === true
+
+    towards_in = MessageMapping(N.Increment, Target{:in}(), nothing, Val((:out,)), DefaultAlgorithm(), nothing, node, nothing)
+    @test getdata(towards_in(nothing, (Marginal(3, false, false),))) === (DefaultAlgorithm(), node, 2)
+end
+
+@testitem "MessageMapping throws a RuleNotFoundError when no rule fits" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, RuleNotFoundError
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    mapping = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Increment(), nothing)
+    @test_throws RuleNotFoundError mapping((Message(N.Stranger(), false, false),), nothing)
+    error = try
+        mapping((Message(N.Stranger(), false, false),), nothing)
+    catch caught
+        caught
+    end
+    @test contains(sprint(showerror, error), "type mismatch")
+end
+
+@testitem "MessageMapping short-circuits a missing input" tags = [:engine] setup = [MessageMappingNodes] begin
+    # A missing input yields a `missing` message without calling the rule. The annotation
+    # processors that run before a rule still run; the ones that run after it do not.
+    import ReactiveMP: MessageMapping, AbstractAnnotations, AnnotationDict, getdata, getannotations, has_annotation
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    struct RecordingProcessor <: AbstractAnnotations
+        log::Vector{Symbol}
+    end
+    ReactiveMP.pre_rule_annotations!(p::RecordingProcessor, ann::AnnotationDict, mapping, messages, marginals) = push!(p.log, :pre)
+    ReactiveMP.post_rule_annotations!(p::RecordingProcessor, ann::AnnotationDict, mapping, messages, marginals, result) = push!(p.log, :post)
+
+    processor = RecordingProcessor(Symbol[])
+    mapping = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), (processor,), N.Increment(), nothing)
+
+    calls = N.CALLS[]
+    result = mapping((Message(missing, false, false),), nothing)
+    @test getdata(result) === missing
+    @test N.CALLS[] == calls
+    @test processor.log == [:pre]
+    @test !has_annotation(getannotations(result), :called)
+
+    result = mapping((Message(1, false, false),), nothing)
+    @test getdata(result) === 2
+    @test N.CALLS[] == calls + 1
+    @test processor.log == [:pre, :pre, :post]
+end
+
+@testitem "MessageMapping should call provided callbacks handler" tags = [:engine] setup = [MessageMappingNodes] begin
     import ReactiveMP: MessageMapping, getdata, AnnotationDict
-
-    struct SomeArbitraryNodeCallbacksTests end
-
-    @node SomeArbitraryNodeCallbacksTests Stochastic [out, in]
-
-    @rule SomeArbitraryNodeCallbacksTests(:out, Marginalisation) (m_in::Int,) =
-        m_in + 1
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
 
     events = []
-
     callbacks = (
-        before_message_rule_call = (event) ->
-        push!(events, (event = :before_message_rule_call, data = event)),
-        after_message_rule_call = (event) ->
-        push!(events, (event = :after_message_rule_call, data = event)),
+        before_message_rule_call = (event) -> push!(events, (event = :before_message_rule_call, data = event)),
+        after_message_rule_call = (event) -> push!(events, (event = :after_message_rule_call, data = event)),
     )
 
-    mapping = MessageMapping(
-        SomeArbitraryNodeCallbacksTests,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        nothing,
-        nothing,
-        (),
-        SomeArbitraryNodeCallbacksTests(),
-        nothing,
-        callbacks,
-    )
+    node = N.Increment()
+    mapping = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), (), node, callbacks)
 
     messages = (Message(1, false, false),)
     marginals = nothing
@@ -435,14 +439,12 @@ end
     @test getdata(mapping(messages, marginals)) == 2
 
     @test events[1].event == :before_message_rule_call
-    @test events[1].data.mapping.factornode ===
-        SomeArbitraryNodeCallbacksTests()
+    @test events[1].data.mapping.factornode === node
     @test events[1].data.messages === messages
     @test events[1].data.marginals === marginals
 
     @test events[2].event == :after_message_rule_call
-    @test events[2].data.mapping.factornode ===
-        SomeArbitraryNodeCallbacksTests()
+    @test events[2].data.mapping.factornode === node
     @test events[2].data.messages === messages
     @test events[2].data.marginals === marginals
     @test events[2].data.result === 2

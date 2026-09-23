@@ -1,6 +1,6 @@
 
 @testitem "Variable" tags = [:engine] begin
-    using ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
+    using ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily, MessagePassingRulesBase
 
     import ReactiveMP:
         activate!,
@@ -10,8 +10,10 @@
         set_initial_message!
 
     struct CustomDeterministicNodeForVariableTests end
+    @define_factor_node(node = CustomDeterministicNodeForVariableTests, type = Deterministic, interfaces = [:out, :x])
 
-    @node CustomDeterministicNodeForVariableTests Deterministic [out, x]
+    function sum_of_inputs end
+    @define_factor_node(node = sum_of_inputs, type = Deterministic, interfaces = [:out, :in...])
 
     function test_variable_set_method(variable, dist::T, k) where {T}
         test_out_var = randomvar()
@@ -21,7 +23,6 @@
             factornode(
                 CustomDeterministicNodeForVariableTests,
                 [(:out, test_out_var), (:x, variable)],
-                ((1, 2),),
             )
         end
 
@@ -91,9 +92,8 @@
 
         for _ in 1:k
             factornode(
-                (x) -> sum(x...),
-                [(:out, test_out_var), map(var -> (:in, var), variables)...],
-                nothing,
+                sum_of_inputs,
+                [(:out, test_out_var), (((:in, i), input) for (i, input) in enumerate(variables))...],
             )
         end
 

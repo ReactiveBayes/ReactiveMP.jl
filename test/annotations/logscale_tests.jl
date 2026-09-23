@@ -29,16 +29,21 @@ end
     @test_throws KeyError getlogscale(ann)
 end
 
-@testitem "@logscale macro sets logscale annotation via getannotations" tags = [
-    :engine,
-] begin
-    import ReactiveMP: AnnotationDict, getlogscale, @logscale
+@testitem "a rule sets the log scale with the base package's annotate!" tags = [:engine] begin
+    import ReactiveMP: MessageMapping, LogScaleAnnotations, getlogscale, getannotations
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: annotate!
 
-    _annotations = AnnotationDict()
-    getannotations = () -> _annotations
-    @logscale 2.5
+    struct NodeThatScales end
+    @define_factor_node(node = NodeThatScales, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(
+        node = NodeThatScales, target = :out, args = (m[:in]::Float64,),
+        body = (args, ann) -> (annotate!(ann, :logscale, 2.5); args.m[:in]),
+    )
 
-    @test getlogscale(_annotations) == 2.5
+    mapping = MessageMapping(NodeThatScales, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), (LogScaleAnnotations(),), NodeThatScales(), nothing)
+    @test getlogscale(getannotations(mapping((Message(1.0, false, false),), nothing))) == 2.5
 end
 
 @testitem "post_rule_annotations! is no-op when logscale already annotated" tags = [
@@ -157,33 +162,28 @@ end
         activate!,
         RandomVariableActivationOptions
 
-    struct NodeForDeferredLogScaleTest end
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    using MessagePassingRulesBase
 
-    @node NodeForDeferredLogScaleTest Stochastic [out, in]
+    struct NodeForDeferredLogScaleTest end
+    @define_factor_node(node = NodeForDeferredLogScaleTest, type = Stochastic, interfaces = [:out, :in])
 
     # A rule whose input is *not* a `PointMass`, so `LogScaleAnnotations` cannot fall back
     # to `:logscale = 0` and would `error()` if it ran. The rule body itself deliberately
-    # never sets `@logscale`.
-    @rule NodeForDeferredLogScaleTest(:out, Marginalisation) (m_in::NormalMeanVariance,) = NormalMeanVariance(
-        mean(m_in), var(m_in)
+    # never sets the log scale.
+    @define_message_update_rule(
+        node = NodeForDeferredLogScaleTest, target = :out, args = (m[:in]::NormalMeanVariance,),
+        body = (args) -> NormalMeanVariance(mean(args.m[:in]), var(args.m[:in])),
     )
 
     mapping = MessageMapping(
-        NodeForDeferredLogScaleTest,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        nothing,
-        nothing,
-        (LogScaleAnnotations(),),
-        NodeForDeferredLogScaleTest(),
-        nothing,
-        nothing,
+        NodeForDeferredLogScaleTest, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(),
+        (LogScaleAnnotations(),), NodeForDeferredLogScaleTest(), nothing,
     )
 
     @testset "a concrete message still goes through the processor" begin
         # Sanity check that the setup is right: with a real (non-PointMass) message and no
-        # `@logscale` in the rule body, the processor is reached and does error. This is what
+        # log scale set in the rule body, the processor is reached and does error. This is what
         # makes the `missing` case below meaningful rather than vacuous.
         @test_throws "Log-scale annotation has not been set" mapping(
             (Message(NormalMeanVariance(0.0, 1.0), false, false),), nothing

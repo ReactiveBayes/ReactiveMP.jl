@@ -3,20 +3,9 @@ using Aqua, TestItemRunner, ReactiveMP
 if get(ENV, "RUN_AQUA", "true") == "true"
     Aqua.test_all(
         ReactiveMP;
-        # `ambiguities` stays off for now: 322 pairs on `main`, and 253 of them come from
-        # `src/helpers/algebra/*`, which the split moves out with Flow/AR anyway. Enabling it
-        # is tracked separately in PHASES.md § Phase 2 -- it is a budgeted cleanup, not a flag.
+        # `ambiguities` stays off for now: it was 322 pairs on `main`, most of them in the
+        # algebra helpers that moved to `legacy/`. Re-measuring it is tracked in PHASES.md.
         ambiguities = false,
-        # Two deliberate pirate methods, both documented where they are defined:
-        # `default_prod_rule`/`prod` for `Uniform`x`Beta` (nodes/predefined/uniform.jl:6,9), a
-        # mathematical special case that arguably belongs in ExponentialFamily, and a `dot`
-        # overload for `ForwardDiff.Dual` (fixes.jl:12), an upstream hotfix that leaves when
-        # `src/fixes.jl` does. Measured: with these two owners declared, zero pirates remain.
-        piracies = (;
-            treat_as_own = [
-                ReactiveMP.Distributions.Uniform, ReactiveMP.ForwardDiff.Dual,
-            ],
-        ),
         deps_compat = (; check_extras = true, check_weakdeps = true),
     )
 end
@@ -58,7 +47,15 @@ for arg in ARGS
     end
 end
 
+# `legacy/` is the v6 code kept for reference, which nothing loads; `lib/` holds packages
+# with suites of their own; `compat/` runs against v6. TestItemRunner scans the whole
+# directory, so each is excluded here.
+const EXCLUDED_DIRS = ("legacy", "lib", "compat")
+
+is_excluded(filename) = any(dir -> occursin(joinpath(pkgdir(ReactiveMP), dir) * "/", filename), EXCLUDED_DIRS)
+
 function test_item_filter(ti)
+    is_excluded(ti.filename) && return false
     isempty(SELECTED_PATHS) ||
         any(p -> occursin(p, ti.filename), SELECTED_PATHS) ||
         return false

@@ -144,10 +144,9 @@ function Base.show(io::IO, record::RuleInputArgumentsRecord)
     mapping = record.mapping
     println(io, pad, "Rule input arguments:")
     println(io, pad, "  node:       ", message_mapping_fform(mapping))
-    println(io, pad, "  interface:  ", mapping.vtag)
-    println(io, pad, "  constraint: ", mapping.vconstraint)
-    if !isnothing(mapping.meta)
-        println(io, pad, "  meta:       ", mapping.meta)
+    println(io, pad, "  target:     ", mapping.target)
+    if !isnothing(mapping.algorithm)
+        println(io, pad, "  algorithm:  ", mapping.algorithm)
     end
     if !isnothing(record.messages)
         names = unval(mapping.msgs_names)

@@ -315,21 +315,20 @@ end
 end
 
 @testitem "Base.show for RuleInputArgumentsRecord" tags = [:engine] begin
-    import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
+    import ReactiveMP: RuleInputArgumentsRecord, MessageMapping
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
     import BayesBase: PointMass
 
     struct ShowRecordNode end
 
     mapping = MessageMapping(
         ShowRecordNode,
-        Val(:out),
-        Marginalisation(),
+        Target{:out}(),
         Val((:in1, :in2)),
         Val((:q1,)),
-        "some-meta",
+        DefaultAlgorithm(),
         nothing,
         ShowRecordNode(),
-        nothing,
         nothing,
     )
 
@@ -342,12 +341,10 @@ end
     @test occursin("Rule input arguments:", output)
     @test occursin("node:", output)
     @test occursin("ShowRecordNode", output)
-    @test occursin("interface:", output)
+    @test occursin("target:", output)
     @test occursin(":out", output)
-    @test occursin("constraint:", output)
-    @test occursin("Marginalisation", output)
-    @test occursin("meta:", output)
-    @test occursin("some-meta", output)
+    @test occursin("algorithm:", output)
+    @test occursin("DefaultAlgorithm()", output)
     @test occursin("msg(in1) = BayesBase.PointMass{Float64}(1.0)", output)
     @test occursin("msg(in2) = 2.0", output)
     @test occursin("q(q1) = 10.0", output)
@@ -355,50 +352,48 @@ end
     @test occursin("42.0", output)
 end
 
-@testitem "Base.show for RuleInputArgumentsRecord skips meta when nothing" tags = [
+@testitem "Base.show for RuleInputArgumentsRecord skips the algorithm when nothing" tags = [
     :engine,
 ] begin
-    import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
+    import ReactiveMP: RuleInputArgumentsRecord, MessageMapping
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
 
     struct ShowRecordNoMetaNode end
 
     mapping = MessageMapping(
         ShowRecordNoMetaNode,
-        Val(:out),
-        Marginalisation(),
+        Target{:out}(),
         Val((:in,)),
         nothing,
         nothing,
         nothing,
         ShowRecordNoMetaNode(),
         nothing,
-        nothing,
     )
 
     record = RuleInputArgumentsRecord(mapping, (1.0,), nothing, 2.0)
     output = sprint(show, record)
 
-    @test !occursin("meta:", output)
+    @test !occursin("algorithm:", output)
     @test occursin("msg(in) = 1.0", output)
 end
 
 @testitem "Base.show for RuleInputArgumentsRecord skips messages/marginals when nothing" tags = [
     :engine,
 ] begin
-    import ReactiveMP: RuleInputArgumentsRecord, MessageMapping, Marginalisation
+    import ReactiveMP: RuleInputArgumentsRecord, MessageMapping
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
 
     struct ShowRecordEmptyInputsNode end
 
     mapping = MessageMapping(
         ShowRecordEmptyInputsNode,
-        Val(:out),
-        Marginalisation(),
+        Target{:out}(),
         nothing,
         nothing,
         nothing,
         nothing,
         ShowRecordEmptyInputsNode(),
-        nothing,
         nothing,
     )
 
@@ -415,35 +410,31 @@ end
     import ReactiveMP:
         RuleInputArgumentsRecord,
         ProductInputArgumentsRecord,
-        MessageMapping,
-        Marginalisation
+        MessageMapping
+    import MessagePassingRulesBase: Target
 
     struct ShowProductNodeA end
     struct ShowProductNodeB end
 
     mapping_a = MessageMapping(
         ShowProductNodeA,
-        Val(:out),
-        Marginalisation(),
+        Target{:out}(),
         Val((:in,)),
         nothing,
         nothing,
         nothing,
         ShowProductNodeA(),
         nothing,
-        nothing,
     )
 
     mapping_b = MessageMapping(
         ShowProductNodeB,
-        Val(:mean),
-        Marginalisation(),
+        Target{:mean}(),
         Val((:x,)),
         nothing,
         nothing,
         nothing,
         ShowProductNodeB(),
-        nothing,
         nothing,
     )
 

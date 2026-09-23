@@ -1,7 +1,7 @@
 # Disposition inventory generator and checker.
 #
-#   julia --project=. scripts/inventory.jl --generate
-#   julia --project=. scripts/inventory.jl --check
+#   julia --project=compat/v6-comparison scripts/inventory.jl --generate
+#   julia --project=compat/v6-comparison scripts/inventory.jl --check
 #
 # `--generate` enumerates every node, exported symbol, engine hook, extension and
 # rule-level exception in ReactiveMP and writes INVENTORY.md. It PRESERVES the
@@ -12,12 +12,15 @@
 # `undecided`, when a row refers to something that no longer exists, or when an exported
 # deletion has no migration note. Phase P is complete exactly when `--check` exits 0.
 #
-# Run from the repository root.
+# Run from the repository root, in the v6 comparison environment: the inventory is the
+# record of where everything in ReactiveMP 6.5.0 goes, and since step 4 of Phase 4.5 moved
+# the v6 rule system to `legacy/v6/`, only v6.5.0 itself still has all of it.
 
 using ReactiveMP
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 const INVENTORY = joinpath(ROOT, "INVENTORY.md")
+const SOURCE = pkgdir(ReactiveMP)
 
 const DESTINATIONS = [
     "base",             # MessagePassingRulesBase
@@ -38,11 +41,11 @@ isvaliddestination(d) = d in DESTINATIONS || startswith(d, "node:")
 # ---------------------------------------------------------------------------------------
 
 relpath_of(p) =
-    replace(string(p), ROOT * "/" => "", r"^.*ReactiveMP\.jl/" => "")
+    replace(string(p), SOURCE * "/" => "", ROOT * "/" => "", r"^.*ReactiveMP\.jl/" => "")
 
 srcfiles() = sort!(
     [
-        joinpath(r, f) for (r, _, fs) in walkdir(joinpath(ROOT, "src")) for
+        joinpath(r, f) for (r, _, fs) in walkdir(joinpath(SOURCE, "src")) for
             f in fs if endswith(f, ".jl")
     ]
 )
@@ -289,8 +292,8 @@ function generate()
         a deliberate deletion, so that the package split is a lookup rather than a judgement
         call made 400 times under time pressure.
 
-        Regenerate with `julia --project=. scripts/inventory.jl --generate`.
-        Validate with `julia --project=. scripts/inventory.jl --check`.
+        Regenerate with `julia --project=compat/v6-comparison scripts/inventory.jl --generate`.
+        Validate with `julia --project=compat/v6-comparison scripts/inventory.jl --check`.
 
         ## Destinations
 

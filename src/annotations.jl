@@ -1,5 +1,7 @@
 export getannotations
 
+import MessagePassingRulesBase: annotate!
+
 """
     AnnotationDict()
     AnnotationDict(other::AnnotationDict)
@@ -98,6 +100,12 @@ Return the value stored under `key`, converted to type `T`. Throws `KeyError` if
 function get_annotation(ann::AnnotationDict, ::Type{T}, key::Symbol) where {T}
     return convert(T, get_annotation(ann, key))::T
 end
+
+# A rule reads and writes annotations through the base package's functions.
+MessagePassingRulesBase.hasannotation(ann::AnnotationDict, key::Symbol) = has_annotation(ann, key)
+MessagePassingRulesBase.getannotation(ann::AnnotationDict, key::Symbol) = get_annotation(ann, key)
+MessagePassingRulesBase.getannotation(ann::AnnotationDict, key::Symbol, default) =
+    has_annotation(ann, key) ? get_annotation(ann, key) : default
 
 """
     AbstractAnnotations

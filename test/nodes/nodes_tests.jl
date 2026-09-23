@@ -1,533 +1,118 @@
-@testitem "GenericFactorNode constructor" tags = [:nodes] begin
+@testmodule EngineNodes begin
+    using MessagePassingRulesBase
+
+    struct Gaussian end
+    @define_factor_node(node = Gaussian, type = Stochastic, interfaces = [:out, (:μ, aliases = [:mean]), (:v, aliases = [:var])])
+
+    function shift end
+    @define_factor_node(node = shift, type = Deterministic, interfaces = [:out, :in])
+
+    struct Mixture end
+    @define_factor_node(node = Mixture, type = Stochastic, interfaces = [:out, :switch, :m...])
+
+    struct NotANode end
+end
+
+@testitem "factornode keeps the node type and its interfaces" tags = [:nodes] setup = [EngineNodes] begin
     import ReactiveMP: functionalform, getinterfaces, getinterface, name
+    N = EngineNodes
 
-    struct ArbitraryNodeType end
+    gaussian = factornode(N.Gaussian, [(:out, randomvar()), (:μ, randomvar()), (:v, constvar(1.0))])
+    @test @inferred(functionalform(gaussian)) === N.Gaussian
+    @test name.(getinterfaces(gaussian)) == [:out, :μ, :v]
+    @test name(getinterface(gaussian, 2)) === :μ
 
-    @node ArbitraryNodeType Stochastic [a, b, c]
-
-    function foo end
-
-    @node typeof(foo) Deterministic [a, b, c]
-
-    a = randomvar()
-    b = datavar()
-    c = constvar(1)
-
-    @testset "functionalform" begin
-        @test @inferred(
-            functionalform(
-                factornode(
-                    ArbitraryNodeType, [(:a, a), (:b, b), (:c, c)], ((1, 2, 3),)
-                ),
-            )
-        ) === ArbitraryNodeType
-        @test @inferred(
-            functionalform(
-                factornode(foo, [(:a, a), (:b, b), (:c, c)], ((1, 2, 3),))
-            )
-        ) === foo
-    end
-
-    @testset "getinterfaces" for fform in (ArbitraryNodeType, foo)
-        let node = factornode(fform, [(:a, a), (:b, b), (:c, c)], ((1, 2, 3),))
-            @test name.(getinterfaces(node)) == [:a, :b, :c]
-            @test name(getinterface(node, 1)) == :a
-            @test name(getinterface(node, 2)) == :b
-            @test name(getinterface(node, 3)) == :c
-        end
-    end
+    shifted = factornode(N.shift, [(:out, randomvar()), (:in, randomvar())])
+    @test @inferred(functionalform(shifted)) === N.shift
+    @test name.(getinterfaces(shifted)) == [:out, :in]
 end
 
-@testitem "sdtype" tags = [:nodes] begin
-    using Distributions
+@testitem "sdtype comes from the node declaration" tags = [:nodes] setup = [EngineNodes] begin
+    N = EngineNodes
 
-    @test isdeterministic(Deterministic()) === true
-    @test isdeterministic(Deterministic) === true
-    @test isdeterministic(Stochastic()) === false
-    @test isdeterministic(Stochastic) === false
-    @test isstochastic(Deterministic()) === false
-    @test isstochastic(Deterministic) === false
-    @test isstochastic(Stochastic()) === true
-    @test isstochastic(Stochastic) === true
+    @test isdeterministic(Deterministic()) && isdeterministic(Deterministic)
+    @test !isdeterministic(Stochastic()) && !isdeterministic(Stochastic)
+    @test isstochastic(Stochastic()) && isstochastic(Stochastic)
+    @test !isstochastic(Deterministic()) && !isstochastic(Deterministic)
 
-    @test sdtype(() -> nothing) === Deterministic()
-    @test sdtype(Normal(0.0, 1.0)) === Stochastic()
-
-    @test_throws "Unknown if an object of type `Vector{Float64}` is stochastic or deterministic." sdtype(
-        [
-            1.0, 2.0, 3.0,
-        ]
-    )
-    @test_throws "Unknown if an object of type `Matrix{Float64}` is stochastic or deterministic." sdtype(
-        [1.0 0.0; 0.0 1.0]
-    )
-    @test_throws "Unknown if an object of type `Int64` is stochastic or deterministic." sdtype(
-        0
-    )
+    @test sdtype(N.Gaussian) === Stochastic()
+    @test sdtype(N.shift) === Deterministic()
+    @test sdtype(factornode(N.shift, [(:out, randomvar()), (:in, randomvar())])) === Deterministic()
+    # The engine's and the base package's are the same types
+    @test Stochastic === ReactiveMP.MessagePassingRulesBase.Stochastic
 end
 
-@testitem "is_predefined_node" tags = [:nodes] begin
-    import ReactiveMP:
-        is_predefined_node,
-        PredefinedNodeFunctionalForm,
-        UndefinedNodeFunctionalForm
+@testitem "factornode puts the interfaces in declaration order and resolves aliases" tags = [:nodes] setup = [EngineNodes] begin
+    import ReactiveMP: getinterfaces, getvariable, name
+    N = EngineNodes
 
-    @test is_predefined_node(() -> nothing) === UndefinedNodeFunctionalForm()
-    @test is_predefined_node(2) === UndefinedNodeFunctionalForm()
-
-    struct ArbitraryFactorNodeForIsPredefinedTest end
-
-    @node ArbitraryFactorNodeForIsPredefinedTest Stochastic [out, in]
-
-    @test is_predefined_node(ArbitraryFactorNodeForIsPredefinedTest) ===
-        PredefinedNodeFunctionalForm()
+    out, μ, v = randomvar(), randomvar(), randomvar()
+    node = factornode(N.Gaussian, [(:var, v), (:out, out), (:mean, μ)])
+    @test name.(getinterfaces(node)) == [:out, :μ, :v]
+    @test getvariable.(getinterfaces(node)) == [out, μ, v]
 end
 
-@testitem "@node macro" tags = [:nodes] begin
-    import ReactiveMP: alias_interface
+@testitem "factornode takes a group's members by index" tags = [:nodes] setup = [EngineNodes] begin
+    import ReactiveMP: getinterfaces, getvariable, name, index, IndexedNodeInterface
+    N = EngineNodes
 
-    struct CustomStochasticNode end
+    out, switch, m1, m2, m3 = randomvar(), randomvar(), randomvar(), randomvar(), randomvar()
+    node = factornode(N.Mixture, [((:m, 2), m2), (:out, out), ((:m, 3), m3), (:switch, switch), ((:m, 1), m1)])
+    interfaces = getinterfaces(node)
+    @test name.(interfaces) == [:out, :switch, :m, :m, :m]
+    @test all(i -> i isa IndexedNodeInterface, interfaces[3:5])
+    @test index.(interfaces[3:5]) == [1, 2, 3]
+    @test getvariable.(interfaces) == [out, switch, m1, m2, m3]
 
-    @node CustomStochasticNode Stochastic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
-    ]
-
-    function customstochasticnode end
-
-    @node typeof(customstochasticnode) Stochastic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
-    ]
-
-    struct CustomDeterministicNode end
-
-    CustomDeterministicNode(x, y, z) = x + y + z
-
-    @node CustomDeterministicNode Deterministic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
-    ]
-
-    function customdeterministicnode end
-
-    customdeterministicnode(x, y, z) = x + y + z
-
-    @node typeof(customdeterministicnode) Deterministic [
-        out, (x, aliases = [xx]), (y, aliases = [yy]), z,
-    ]
-
-    @test ReactiveMP.sdtype(CustomStochasticNode) === Stochastic()
-    @test ReactiveMP.sdtype(customstochasticnode) === Stochastic()
-    @test ReactiveMP.sdtype(CustomDeterministicNode) === Deterministic()
-    @test ReactiveMP.sdtype(customdeterministicnode) === Deterministic()
-
-    for node in [
-            CustomStochasticNode,
-            customstochasticnode,
-            CustomDeterministicNode,
-            customdeterministicnode,
-        ]
-        @test alias_interface(node, 1, :out) === :out
-        @test alias_interface(node, 2, :x) === :x
-        @test alias_interface(node, 2, :xx) === :x
-        @test alias_interface(node, 3, :y) === :y
-        @test alias_interface(node, 3, :yy) === :y
-        @test_throws ErrorException alias_interface(node, 4, :out) === :x
-        @test_throws ErrorException alias_interface(node, 4, :x) === :x
-        @test_throws ErrorException alias_interface(node, 4, :y) === :x
-        @test_throws ErrorException alias_interface(node, 4, :zz)
-    end
-
-    struct DummyStruct end
-
-    @test_throws Exception eval(
-        :(@node DummyStruct NotStochasticAndNotDeterministic [out, in, x])
-    )
-    @test_throws Exception eval(:(@node DummyStruct Stochastic [1, in, x]))
-    @test_throws Exception eval(
-        :(@node DummyStruct Stochastic [p, in, x] aliases = [([z], y, x)])
-    )
-    @test_throws Exception eval(
-        :(@node DummyStruct Stochastic [(out, aliases = [1]), in, x])
-    )
-    @test_throws Exception eval(:(@node DummyStruct Stochastic []))
+    @test_throws "must be `1:n`" factornode(N.Mixture, [(:out, out), (:switch, switch), ((:m, 2), m2)])
+    @test_throws "needs at least one member" factornode(N.Mixture, [(:out, out), (:switch, switch)])
 end
 
-@testitem "sdtype of an arbitrary distribution is Stochastic" tags = [:nodes] begin
-    using Distributions
+@testitem "factornode checks the interfaces it is given" tags = [:nodes] setup = [EngineNodes] begin
+    N = EngineNodes
+    out, μ, v, w = randomvar(), randomvar(), randomvar(), randomvar()
 
-    struct DummyDistribution <: Distribution{Univariate, Continuous} end
-
-    @test sdtype(DummyDistribution) === Stochastic()
+    @test_throws "is not a factor node" factornode(N.NotANode, [(:out, out)])
+    @test_throws "at least one interface" factornode(N.Gaussian, [])
+    @test_throws "needs a variable for its interface `v`" factornode(N.Gaussian, [(:out, out), (:μ, μ)])
+    @test_throws "has no interface or alias `w`" factornode(N.Gaussian, [(:out, out), (:μ, μ), (:v, v), (:w, w)])
+    @test_throws r"duplicate entry for interface `:μ`. Did you pass an array \(e.g. `x`\) instead of an array element \(e\.g\. `x\[i\]`\)\?" factornode(
+        N.Gaussian, [(:out, out), (:μ, μ), (:mean, w), (:v, v)],
+    )
+    @test_throws "is `:name` or `(:group, k)`" factornode(N.Gaussian, [(1, out), (:μ, μ), (:v, v)])
 end
 
-# This is a limitation of the current implementation, which can be removed in the future
-@testitem "@node macro (in the current implementation) should not support interface names with underscores" tags = [
-    :nodes,
-] begin
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
-        quote
-            struct DummyNode1 end
+@testitem "factornode reads the factorisation by interface names" tags = [:nodes] setup = [EngineNodes] begin
+    import ReactiveMP: getlocalclusters, getfactorization, get_node_local_marginals, name
+    N = EngineNodes
+    variables() = [(:out, randomvar()), (:μ, randomvar()), (:v, randomvar())]
+    clusters(node) = getfactorization(getlocalclusters(node))
+    keys(node) = map(name, get_node_local_marginals(getlocalclusters(node)))
 
-            @node DummyNode1 Stochastic [out, c_d]
-        end
+    full = factornode(N.Gaussian, variables())
+    @test clusters(full) == ((1, 2, 3),)
+    @test keys(full) == ((:out, :μ, :v),)
+
+    meanfield = factornode(N.Gaussian, variables(), ((:out,), (:μ,), (:v,)))
+    @test clusters(meanfield) == ((1,), (2,), (3,))
+    @test keys(meanfield) == (:out, :μ, :v)
+
+    # Members are sorted into declaration order, clusters by their first member; aliases work
+    structured = factornode(N.Gaussian, variables(), ((:var,), (:mean, :out)))
+    @test clusters(structured) == ((1, 2), (3,))
+    @test keys(structured) == ((:out, :μ), :v)
+
+    # A deterministic node always has one cluster over all its interfaces
+    shifted = factornode(N.shift, [(:out, randomvar()), (:in, randomvar())], ((:out,), (:in,)))
+    @test clusters(shifted) == ((1, 2),)
+
+    grouped = factornode(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out,), (:switch,), ((:m, 1),), ((:m, 2),)))
+    @test clusters(grouped) == ((1,), (2,), (3,), (4,))
+
+    @test_throws "names `(:m, 3)`, which is not one of its interfaces" factornode(
+        N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar())], ((:out, :switch, (:m, 1)), ((:m, 3),)),
     )
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `d_b_a`" eval(
-        quote
-            struct DummyNode2 end
-
-            @node DummyNode2 Stochastic [out, c, d_b_a]
-        end
-    )
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
-        quote
-            struct DummyNode3 end
-
-            @node DummyNode3 Stochastic [out, (c, aliases = [c_d])]
-        end
-    )
-end
-
-@testitem "@node macro should generate a documentation entry for a newly specified node" tags = [
-    :nodes,
-] begin
-    using REPL # `REPL` changes the docstring output format
-
-    struct DummyNodeForDocumentationStochastic end
-    struct DummyNodeForDocumentationDeterministic end
-
-    @node DummyNodeForDocumentationStochastic Stochastic [
-        out, x, (y, aliases = [yy]),
-    ]
-
-    @node DummyNodeForDocumentationDeterministic Deterministic [
-        out, (x, aliases = [xx, xxx]), y,
-    ]
-
-    binding = @doc(ReactiveMP.is_predefined_node)
-    @test !isnothing(binding)
-
-    documentation = string(binding)
-    @test occursin(
-        r"DummyNodeForDocumentationStochastic.*Stochastic.*out, x, y \(or yy\)",
-        documentation,
-    )
-    @test occursin(
-        r"DummyNodeForDocumentationDeterministic.*Deterministic.*out, x \(or xx, xxx\), y",
-        documentation,
-    )
-end
-
-@testitem "Predefined nodes should check the arguments supplied" tags = [:nodes] begin
-    struct StochasticNodeWithThreeArguments end
-    struct DeterministicNodeWithFourArguments end
-
-    @node StochasticNodeWithThreeArguments Stochastic [out, x, y, z]
-    @node DeterministicNodeWithFourArguments Deterministic [out, x, y, z, w]
-
-    out = randomvar()
-    x = randomvar()
-    y = randomvar()
-    z = randomvar()
-    w = randomvar()
-
-    @test factornode(
-        StochasticNodeWithThreeArguments,
-        [(:out, out), (:x, x), (:y, y), (:z, z)],
-        ((1, 2, 3),),
-    ) isa ReactiveMP.FactorNode
-    @test factornode(
-        DeterministicNodeWithFourArguments,
-        [(:out, out), (:x, x), (:y, y), (:z, z), (:w, w)],
-        ((1, 2, 3, 4),),
-    ) isa ReactiveMP.FactorNode
-
-    @test_throws r"At least one argument is required for a factor node. Got none for `.*StochasticNodeWithThreeArguments`" factornode(
-        StochasticNodeWithThreeArguments, [], ()
-    )
-    @test_throws r"At least one argument is required for a factor node. Got none for `.*DeterministicNodeWithFourArguments`" factornode(
-        DeterministicNodeWithFourArguments, [], ()
-    )
-    @test_throws r"Expected 3 input arguments for `.*StochasticNodeWithThreeArguments`, got 1: x" factornode(
-        StochasticNodeWithThreeArguments, [(:out, out), (:x, x)], ((1,),)
-    )
-    @test_throws r"Expected 3 input arguments for `.*StochasticNodeWithThreeArguments`, got 2: x, y" factornode(
-        StochasticNodeWithThreeArguments,
-        [(:out, out), (:x, x), (:y, y)],
-        ((1, 2),),
-    )
-    @test_throws r"Expected 3 input arguments for `.*StochasticNodeWithThreeArguments`, got 4: x, y, z, w" factornode(
-        StochasticNodeWithThreeArguments,
-        [(:out, out), (:x, x), (:y, y), (:z, z), (:w, w)],
-        ((1, 2, 3, 4),),
-    )
-    @test_throws r"Expected 4 input arguments for `.*DeterministicNodeWithFourArguments`, got 1: x" factornode(
-        DeterministicNodeWithFourArguments, [(:out, out), (:x, x)], ((1,),)
-    )
-    @test_throws r"Expected 4 input arguments for `.*DeterministicNodeWithFourArguments`, got 2: x, y" factornode(
-        DeterministicNodeWithFourArguments,
-        [(:out, out), (:x, x), (:y, y)],
-        ((1, 2),),
-    )
-    @test_throws r"Expected 4 input arguments for `.*DeterministicNodeWithFourArguments`, got 3: x, y, z" factornode(
-        DeterministicNodeWithFourArguments,
-        [(:out, out), (:x, x), (:y, y), (:z, z)],
-        ((1, 2, 3),),
-    )
-
-    @test_throws r"`.*StochasticNodeWithThreeArguments` has duplicate entry for interface `w`. Did you pass an array \(e.g. `x`\) instead of an array element \(e\.g\. `x\[i\]`\)\? Check your variable indices\." factornode(
-        StochasticNodeWithThreeArguments,
-        [(:out, out), (:x, x), (:w, w), (:w, w)],
-        ((1, 2, 3, 4),),
-    )
-    @test_throws r"`.*StochasticNodeWithThreeArguments` has duplicate entry for interface `w`. Did you pass an array \(e.g. `x`\) instead of an array element \(e\.g\. `x\[i\]`\)\? Check your variable indices\." factornode(
-        StochasticNodeWithThreeArguments,
-        [(:out, out), (:x, x), (:y, y), (:z, z), (:w, w), (:w, w)],
-        ((1, 2, 3, 4, 5, 6),),
-    )
-end
-
-@testitem "Generic node construction checks should not allocate" tags = [
-    :nodes, :alloc,
-] begin
-    import ReactiveMP:
-        prepare_interfaces_check_adjacent_duplicates,
-        prepare_interfaces_check_nonempty,
-        prepare_interfaces_check_numarguments
-
-    struct NodeForCheckDuplicatesTest end
-    @node NodeForCheckDuplicatesTest Stochastic [out, x, y, z]
-
-    out = randomvar()
-    x = randomvar()
-    y = randomvar()
-    z = randomvar()
-
-    interfaces = [(:out, out), (:x, x), (:y, y), (:z, z)]
-    # compile first
-    function foo(interfaces)
-        prepare_interfaces_check_nonempty(
-            NodeForCheckDuplicatesTest, interfaces
-        )
-        prepare_interfaces_check_adjacent_duplicates(
-            NodeForCheckDuplicatesTest, interfaces
-        )
-        prepare_interfaces_check_numarguments(
-            NodeForCheckDuplicatesTest, interfaces
-        )
-    end
-    foo(interfaces)
-    @test (@allocated(foo(interfaces)) == 0)
-    @test (@allocations(foo(interfaces)) == 0)
-end
-
-@testitem "`@node` macro should generate the node function in all directions for `Stochastic` nodes" tags = [
-    :nodes,
-] begin
-    @testset "For a regular node a user needs to define a node function" begin
-        struct DummyNodeForNodeFunction end
-
-        @node DummyNodeForNodeFunction Stochastic [out, x, y, z]
-
-        nodefunction = (out, x, y, z) -> out^4 + x^3 + y^2 + z
-
-        ReactiveMP.nodefunction(::Type{DummyNodeForNodeFunction}) =
-            (; out, x, y, z) -> nodefunction(out, x, y, z)
-
-        for out in (-1, 1), x in (-1, 1), y in (-1, 1), z in (-1, 1)
-            @test ReactiveMP.nodefunction(
-                DummyNodeForNodeFunction, Val(:out), x = x, y = y, z = z
-            )(
-                out
-            ) ≈ nodefunction(out, x, y, z)
-            @test ReactiveMP.nodefunction(
-                DummyNodeForNodeFunction, Val(:x), out = out, y = y, z = z
-            )(
-                x
-            ) ≈ nodefunction(out, x, y, z)
-            @test ReactiveMP.nodefunction(
-                DummyNodeForNodeFunction, Val(:y), out = out, x = x, z = z
-            )(
-                y
-            ) ≈ nodefunction(out, x, y, z)
-            @test ReactiveMP.nodefunction(
-                DummyNodeForNodeFunction, Val(:z), out = out, x = x, y = y
-            )(
-                z
-            ) ≈ nodefunction(out, x, y, z)
-        end
-    end
-
-    @testset "Distributions are the special case and they simple call the `logpdf` as their node function" begin
-        using Distributions
-
-        struct DummyNodeForNodeFunctionAsDistribution <:
-            Distributions.ContinuousUnivariateDistribution
-            mean
-            var
-        end
-
-        @node DummyNodeForNodeFunctionAsDistribution Stochastic [out, mean, var]
-
-        Distributions.logpdf(
-            node::DummyNodeForNodeFunctionAsDistribution, out
-        ) = Distributions.logpdf(Distributions.Normal(node.mean, node.var), out)
-
-        nodefunction =
-            (out, mean, var) ->
-        Distributions.logpdf(Distributions.Normal(mean, var), out)
-
-        for out in (-1, 1), mean in (-1, 1), var in (1, 2)
-            @test ReactiveMP.nodefunction(
-                DummyNodeForNodeFunctionAsDistribution,
-                Val(:out),
-                mean = mean,
-                var = var,
-            )(
-                out
-            ) ≈ nodefunction(out, mean, var)
-            @test ReactiveMP.nodefunction(
-                DummyNodeForNodeFunctionAsDistribution,
-                Val(:mean),
-                out = out,
-                var = var,
-            )(
-                mean
-            ) ≈ nodefunction(out, mean, var)
-            @test ReactiveMP.nodefunction(
-                DummyNodeForNodeFunctionAsDistribution,
-                Val(:var),
-                out = out,
-                mean = mean,
-            )(
-                var
-            ) ≈ nodefunction(out, mean, var)
-        end
-    end
-end
-
-@testitem "`factornode` should throw an error if the functional form is not defined with the `@node` macro" tags = [
-    :nodes,
-] begin
-    struct UnknownDistribution end
-
-    out = randomvar()
-    alpha = randomvar()
-    beta = randomvar()
-
-    interfaces = [(:out, out), (:alpha, alpha), (:beta, beta)]
-
-    @test_throws r"`.*UnknownDistribution.*` has been used but the `ReactiveMP` backend does not support `.*UnknownDistribution.*` as a factor node." factornode(
-        UnknownDistribution, interfaces, ((1, 2, 3),)
-    )
-end
-
-@testitem "new node defined with `@node` macro should define Symbol -> Node function mapping" tags = [
-    :nodes,
-] begin
-    struct DummyNodeToTestSymbolToNodeFunctionMapping end
-
-    @node DummyNodeToTestSymbolToNodeFunctionMapping Stochastic [out, x, y, z]
-
-    @test ReactiveMP.nodesymbol_to_nodefform(
-        Val(:DummyNodeToTestSymbolToNodeFunctionMapping)
-    ) == DummyNodeToTestSymbolToNodeFunctionMapping
-end
-
-@testitem "nodesymbol_to_nodefform returns nothing for an unknown node symbol" tags = [
-    :nodes,
-] begin
-    @test ReactiveMP.nodesymbol_to_nodefform(Val(:UnknownNode)) === nothing
-end
-
-@testitem "`@node` macro should error if defined a rule for undefined interface" tags = [
-    :nodes,
-] begin
-    struct DummyNodeToTestRuleForUndefinedInterface end
-
-    @node DummyNodeToTestRuleForUndefinedInterface Stochastic [out, x]
-
-    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:out, Marginalisation)" eval(
-        quote
-            @rule DummyNodeToTestRuleForUndefinedInterface(
-                :out, Marginalisation
-            ) (m_y::PointMass,) = 0.0
-        end,
-    )
-    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:out, Marginalisation)" eval(
-        quote
-            @rule DummyNodeToTestRuleForUndefinedInterface(
-                :out, Marginalisation
-            ) (q_y::PointMass,) = 0.0
-        end,
-    )
-    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation)" eval(
-        quote
-            @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation) (
-                m_y::PointMass,
-            ) = 0.0
-        end,
-    )
-    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation)" eval(
-        quote
-            @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation) (
-                q_y::PointMass,
-            ) = 0.0
-        end,
-    )
-
-    @test_throws "Interface mismatch for @marginalrule DummyNodeToTestRuleForUndefinedInterface(:out) (m_y::Any, m_x::Any)" eval(
-        quote
-            @marginalrule DummyNodeToTestRuleForUndefinedInterface(:out) (
-                m_y::Any, m_x::Any,
-            ) = 0.0
-        end,
-    )
-
-    @test_throws "Interface mismatch for @average_energy DummyNodeToTestRuleForUndefinedInterface (q_y::Any, q_x::Any)" eval(
-        quote
-            @average_energy DummyNodeToTestRuleForUndefinedInterface (
-                q_y::Any, q_x::Any,
-            ) = 0.0
-        end,
-    )
-
-    function dummynodetestruleforundefinedinterface end
-
-    @node typeof(dummynodetestruleforundefinedinterface) Stochastic [out, x]
-
-    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:out, Marginalisation)" eval(
-        quote
-            @rule typeof(dummynodetestruleforundefinedinterface)(
-                :out, Marginalisation
-            ) (m_y::PointMass,) = 0.0
-        end,
-    )
-    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:out, Marginalisation)" eval(
-        quote
-            @rule typeof(dummynodetestruleforundefinedinterface)(
-                :out, Marginalisation
-            ) (q_y::PointMass,) = 0.0
-        end,
-    )
-    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:x, Marginalisation)" eval(
-        quote
-            @rule typeof(dummynodetestruleforundefinedinterface)(
-                :x, Marginalisation
-            ) (m_y::PointMass,) = 0.0
-        end,
-    )
-    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:x, Marginalisation)" eval(
-        quote
-            @rule typeof(dummynodetestruleforundefinedinterface)(
-                :x, Marginalisation
-            ) (q_y::PointMass,) = 0.0
-        end,
-    )
-
-    @test_throws "Interface mismatch for @average_energy typeof(dummynodetestruleforundefinedinterface) (q_y::Any, q_x::Any)" eval(
-        quote
-            @average_energy typeof(dummynodetestruleforundefinedinterface) (
-                q_y::Any, q_x::Any,
-            ) = 0.0
-        end,
-    )
+    @test_throws "has no interface or alias `w`" factornode(N.Gaussian, variables(), ((:out, :μ, :v), (:w,)))
+    @test_throws "is in more than one cluster" factornode(N.Gaussian, variables(), ((:out, :μ), (:μ, :v)))
+    @test_throws "does not cover :v" factornode(N.Gaussian, variables(), ((:out, :μ),))
 end

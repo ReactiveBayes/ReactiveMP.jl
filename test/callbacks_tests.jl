@@ -481,6 +481,7 @@ end
         FormConstraintCheckEach,
         FormConstraintCheckLast,
         MessageProductContext
+    import MessagePassingRulesBase: Target
 
     struct MockVariable
         label::Symbol
@@ -491,19 +492,8 @@ end
 
     # Build a trivial MessageMapping that exercises the new show method.
     # `F = Int` is a stand-in functional form: `show(::Type{Int})` yields "Int64".
-    mapping(; vtag = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing) =
-        MessageMapping(
-        Int,
-        vtag,
-        nothing,
-        msgs,
-        marginals,
-        nothing,
-        nothing,
-        nothing,
-        nothing,
-        nothing,
-    )
+    mapping(; target = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing, algorithm = nothing) =
+        MessageMapping(Int, Target{target}(), msgs, marginals, algorithm, nothing, nothing, nothing)
 
     msg(d) = Message(d, false, false, AnnotationDict())
 
@@ -529,21 +519,25 @@ end
         FormConstraintCheckLast,
         AnnotationDict,
         MessagesProductFromLeftToRight
+    import MessagePassingRulesBase
 
     compact = EventShowTestUtils.compact
 
     # MessageMapping — same shape in both forms. The full form additionally
-    # includes `vconstraint`/`meta` when those are not `nothing`; the test
-    # mapping leaves them as `nothing`, so both forms match here.
+    # includes the algorithm when it is not `nothing`; the test mapping leaves it
+    # as `nothing`, so both forms match here.
     @test repr(EventShowTestUtils.mapping()) ==
         "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
     @test compact(EventShowTestUtils.mapping()) ==
         "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
     @test repr(
         EventShowTestUtils.mapping(
-            vtag = :μ, msgs = Val{(:out, :τ)}(), marginals = Val{(:q,)}()
+            target = :μ, msgs = Val{(:out, :τ)}(), marginals = Val{(:q,)}()
         ),
     ) == "MessageMapping(Int64, :μ, msgs=[:out, :τ], marginals=[:q])"
+    with_algorithm = EventShowTestUtils.mapping(algorithm = MessagePassingRulesBase.DefaultAlgorithm())
+    @test occursin(r"^MessageMapping\(Int64, :out, msgs=\[:μ, :τ\], algorithm=.*DefaultAlgorithm\(\)\)$", repr(with_algorithm))
+    @test compact(with_algorithm) == "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
 
     # MessageProductContext — compact strips `form_constraint`/`prod_constraint`,
     # the full form keeps them.
