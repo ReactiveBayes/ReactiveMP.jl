@@ -45,7 +45,7 @@ Build it test-first, one commit per step, `PHASES.md` updated in each:
    `check_rule_coverage(modules...)`;
 4. **done** — node-definition verification from `nodefunction`, with shape and scale asserted
    separately and a wrong rule and a wrong log scale as negative controls;
-5. derivative checks, ForwardDiff against a central finite difference, on the allocating and
+5. **done** — derivative checks, ForwardDiff against a central finite difference, on the allocating and
    the in-place path;
 6. the migration checker: generic records, fixtures and declared disagreements in TestUtils;
    a `V6Oracle` adapter and a check script in `compat/v6-comparison`, comparing an inline port

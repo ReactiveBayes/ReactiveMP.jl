@@ -40,6 +40,15 @@
         preallocate = (args) -> similar(args.m[:x]),
         body = (output::Vector{Float64}, args) -> (output .= 2 .* args.m[:x]; output),
     )
+    # Generic over the element type, so dual numbers pass through.
+    struct Scaled end
+    @define_factor_node(node = Scaled, type = Deterministic, interfaces = [:out, :x])
+    @define_message_update_rule(
+        node = Scaled, towards = :out, inplace = true, args = (m[:x]::AbstractVector,),
+        preallocate = (args) -> similar(args.m[:x]),
+        body = (output::AbstractVector, args) -> (output .= 2 .* args.m[:x]; output),
+    )
+
     # `rule!` ignores its buffer and allocates: disagrees on identity and allocates.
     @define_message_update_rule(
         node = Buffered, towards = :x, inplace = true, args = (m[:out]::Vector{Float64},),
