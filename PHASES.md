@@ -9,10 +9,10 @@ without a diff alongside it is how a tracking file starts lying.
 Branch: `refactor/rule-node-system-rewrite`
 
 `file:line` citations in the three documents were last re-verified against the code after
-Phase 4.5 closed (`0b8f1caa`). Citations into v6 code name ReactiveMP 6.5.0's layout; the nodes, rules,
+Phase 4.5 closed (`0b8f1caa`). Citations into v6 code name ReactiveMP 6.5.0's layout; the unported nodes and rules,
 `clusters.jl`, `dependencies.jl`, `score/` and the fallbacks are in `legacy/v6/` under the
-same paths, while v6's `message.jl` and `marginal.jl` were rewritten in place, so their v6
-line numbers are only in the 6.5.0 release. A later reformat or edit moves them again, so
+same paths. A ported node's files, and v6's `message.jl` and `marginal.jl`, which were
+rewritten in place, are only in the 6.5.0 release. A later reformat or edit moves them again, so
 re-check before relying on one.
 
 ---
@@ -76,7 +76,7 @@ Three ground rules were set on the same day (§3.22):
 Phases 0–4.5 are closed. `lib/MessagePassingRulesBase` is the rule system;
 `lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules`,
 `lib/MessagePassingRulesApproximations` and `lib/DeltaMessagePassingRules` hold the slice's
-rules and numerics; and
+rules and numerics, and since Phase 5 the univariate and logic nodes; and
 `compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures. ReactiveMP
 itself is the engine on the new rule system; what it cannot run yet is in `legacy/v6/`. The
 tooling's first finding was a real v6 bug: the variational `NormalMeanVariance` rules use
@@ -95,7 +95,7 @@ done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.25,
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.27,
 and this file's § Phase 4.5. Working conventions: one commit per step, failing test first,
 `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive names rather than
 generic ones, and no comments that only narrate.
@@ -792,8 +792,8 @@ mutated in place.
 ### Step 0 — record the v6 fixtures, before anything is deleted
 
 **Done.** `compat/v6-comparison` pins RxInfer 5.5.2, and `record_engine_fixtures.jl` records
-seven models *(eight since case (d) added `delta_unscented_static`; the script takes model ids
-to record or check only those)* into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `bp_chain`,
+seven models *(nine since: `delta_unscented_static` in case (d) and `logic_bp` in Phase 5 step
+4; the script takes model ids to record or check only those)* into `fixtures/engine/<model>.toml`: `bp_iid`, `bp_iid_missing`, `bp_chain`,
 `vmp_meanfield`, `vmp_structured`, `normal_mixture` and `delta_unscented`. Each fixture holds
 the free energy per iteration, the final posteriors, and every message-rule call **in the
 order v6 made it**, with its result and log scale. That order is materialisation order, and it
@@ -1128,7 +1128,8 @@ control, a wrong initial `q(τ)`, fails on the free energy, the posteriors and t
   `ClusterTarget((:out, :μ))` marginal rule, the `τ` rule reading `q[:out, :μ]`, the joint
   average energy and the joint's entropy in the node score all ran end to end for the first
   time.
-- **`FactorizedCluster` (brief item 5) is deferred to Phase 5.** `slice_rule_inventory.jl` shows
+- **`FactorizedCluster` (brief item 5) is deferred to Phase 5.** *(Done in Phase 5 steps 1–2;
+  the NamedTuple entropy method is deleted, and the files cited below are only in v6.5.0.)* `slice_rule_inventory.jl` shows
   the only marginal rules the slice selects are NMV's and NMP's `(:out_μ)` over two Normal
   messages (`bp_chain`, `vmp_structured`) and Delta's `(:ins)`; each returns one joint, never
   v6's NamedTuple split, which needs a `PointMass` message. So no slice model produces a
@@ -1353,7 +1354,7 @@ Phase 4.5 already ported the rules the slice's six nodes (NMV, NMP, GammaShapeRa
 Categorical, Dirichlet, NormalMixture) needed, and moved everything else to `legacy/v6/` (step
 4). This phase ports the rest from there, emptying `legacy/v6/` node by node, with v6.5.0 from
 `compat/v6-comparison` as the oracle. The rules the 4.5 ports found go into `MIGRATION.md`
-first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `FactorizedCluster`,
+as the ports go: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `FactorizedCluster`,
 `NormalMixture{N}` → groups, promoted pass-through blocks, and #669.
 
 ### Entry brief — signed off 2026-09-23
@@ -1465,12 +1466,14 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
 - `nodes/predefined/distribution/distribution.jl` (`StandaloneDistributionNode`) has no
   `INVENTORY.md` row and no engine handling.
 - `GammaShapeLikelihood`, which GammaShapeRate's `a.jl` needs, is defined in v6's
-  `gamma_mixture.jl`; it moves into Standard as a helper type in step 1.
+  `gamma_mixture.jl`; it moves into Standard as a helper type in step 1. *(Settled in step 1:
+  an exported type.)*
 - dirichlet_collection, gamma, mixture and uninformative have no v6 rule tables; they get
-  verification against the node definition or hand-derived cases.
+  verification against the node definition or hand-derived cases. *(Gamma and Uninformative
+  settled in step 3, with hand-derived cases.)*
 - Standard grows dependencies as its nodes need them: LinearAlgebra and FastCholesky (the
   multivariate and matrix nodes), MatrixCorrectionTools (the correction strategy), DomainSets
-  (NMV's `var.jl`, if its `HalfLine` log-pdf survives).
+  (NMV's `var.jl`, if its `HalfLine` log-pdf survives). *(DomainSets settled in step 1.)*
 - The algebra helpers `diageye` (INVENTORY: `base`), `mul_trace` and `mul_inplace!` are needed by
   steps 5–7.
 - The "~15 rules touching raw `messages[i]`/`marginals[i]`" are three in `standard`, the

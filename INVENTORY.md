@@ -64,7 +64,7 @@ replacement".
 | `Distributions.Gamma` | `node` | `src/nodes/predefined/gamma.jl` | `standard` |  |
 | `Distributions.InverseGamma` | `node` | `src/nodes/predefined/gamma_inverse.jl` | `standard` | declared as `@node GammaInverse` |
 | `Distributions.MatrixNormal` | `node` | `src/nodes/predefined/matrix_normal.jl` | `standard` |  |
-| `Distributions.Uniform` | `node` | `src/nodes/predefined/uniform.jl` | `standard` | carries 2 of the 3 known Aqua piracies (`uniform.jl:6,9`) |
+| `Distributions.Uniform` | `node` | `src/nodes/predefined/uniform.jl` | `standard` | carries 2 of the 3 known Aqua piracies (`uniform.jl:6,9`); kept in Standard and declared owned, an upstream candidate |
 | `Distributions.Wishart` | `node` | `src/nodes/predefined/wishart.jl` | `standard` |  |
 | `ExponentialFamily.DirichletCollection` | `node` | `src/nodes/predefined/dirichlet_collection.jl` | `standard` |  |
 | `ExponentialFamily.GammaShapeRate` | `node` | `src/nodes/predefined/gamma_shape_rate.jl` | `standard` |  |
@@ -93,7 +93,7 @@ replacement".
 | `Poisson` | `node` | `src/nodes/predefined/poisson.jl` | `standard` |  |
 | `Probit` | `node` | `src/nodes/predefined/probit.jl` | `models` |  |
 | `SoftDot` | `node` | `src/nodes/predefined/softdot.jl` | `models` | declared as `@node softdot` |
-| `Uninformative` | `node` | `src/nodes/predefined/uninformative.jl` | `standard` | source of 11 Aqua ambiguities against BayesBase `prod` |
+| `Uninformative` | `node` | `src/nodes/predefined/uninformative.jl` | `standard` | source of 11 Aqua ambiguities against BayesBase `prod` in v6; Standard's `UninformativeProd` has none, and BayesBase owning the identity is the recorded upstream fix |
 | `dot` | `node` | `src/nodes/predefined/dot_product.jl` | `standard` | arithmetic |
 
 ## Exported symbols

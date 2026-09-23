@@ -62,7 +62,8 @@ julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/reco
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl delta_unscented_static  # only the named models
 ```
 
-The fixtures are `fixtures/engine/<model>.toml`, one per slice model, written by
+The fixtures are `fixtures/engine/<model>.toml`, one per model (the seven slice models,
+`delta_unscented_static` from Phase 4.5 case (d) and `logic_bp` from Phase 5 step 4), written by
 `MessagePassingRulesTestUtils.save_engine_fixture`. Each holds the free energy per iteration,
 the final posteriors, and every message-rule call in the order v6 made it, which is
 materialisation order, with its result and log scale. They are **TOML, not `Serialization`**,

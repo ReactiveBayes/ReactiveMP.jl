@@ -4,8 +4,8 @@ The ReactiveMP 6.5 rule system and every node not yet ported to the new packages
 reference while porting. Nothing here is loaded, tested or formatted: `test/runtests.jl` and
 `scripts/formatter.jl` both skip `legacy/`.
 
-The layout mirrors where each file used to live, so `legacy/v6/src/rules/beta/out.jl` was
-`src/rules/beta/out.jl`:
+The layout mirrors where each file used to live, so `legacy/v6/src/rules/wishart/out.jl` was
+`src/rules/wishart/out.jl`:
 
 - `src/rule.jl` — `@rule`, `@marginalrule`, `@call_rule`, `@test_rules` and the rule errors;
 - `src/rules/`, `src/nodes/predefined/` — the v6 rules and node definitions;
@@ -19,8 +19,9 @@ The layout mirrors where each file used to live, so `legacy/v6/src/rules/beta/ou
 
 Phase 5 ports each node from here into `lib/StandardMessagePassingRules` (or its sibling
 packages), and deletes what it ported. Already gone: Delta's Unscented rules (Phase 4.5 case
-(d)), and `approximations/unscented.jl` and `rts.jl`, whose ports are in
-`lib/MessagePassingRulesApproximations`. Kept on purpose although partly ported:
+(d)), `approximations/unscented.jl` and `rts.jl`, whose ports are in
+`lib/MessagePassingRulesApproximations`, the univariate distributions (Phase 5 step 3) and
+the logic nodes (step 4). Kept on purpose although partly ported:
 - `normal_mixture`, whose multivariate branches wait for `MvNormalMeanPrecision` (Phase 5 step
   5); the other five slice nodes were finished in Phase 5 step 1 and are gone;
 - `approximations/approximations.jl` and `shared.jl`, which unported files here still use;

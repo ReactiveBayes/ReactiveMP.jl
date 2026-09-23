@@ -5,7 +5,8 @@
     # Aqua reports it as piracy, so the node types are declared as owned here. Message rules
     # never show up: their target's `Symbol` parameter makes them look owned to Aqua.
     # An alias such as `Categorical`, a `DiscreteNonParametric` with fixed parameters, is
-    # compared by its underlying type.
+    # compared by its underlying type. The same list covers the Uniform(0, 1)×Beta product,
+    # which is defined here for two types this package does not own (an upstream candidate).
     owned = unique([StandardMessagePassingRules.NODES; map(T -> Base.unwrap_unionall(T).name.wrapper, StandardMessagePassingRules.NODES)])
     Aqua.test_all(StandardMessagePassingRules; piracies = (treat_as_own = owned,))
 end

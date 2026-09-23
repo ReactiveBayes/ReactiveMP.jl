@@ -630,7 +630,7 @@ algorithms out of the core. Sorting today's 28 deps:
 | package | contents | deps |
 |---|---|---|
 | `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` — **not** `Message`/`Marginal`, which stay in the engine | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
-| `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `StatsFuns`, `SpecialFunctions`, `FastCholesky`, `TinyHugeNumbers`, … |
+| `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `BayesBase`, `StatsFuns`, `SpecialFunctions`, `LogExpFunctions`, `DomainSets`; `FastCholesky`, `LinearAlgebra` and `MatrixCorrectionTools` from Phase 5 step 5 |
 | *(name deferred to Phase 6)* | domain-specific models: `GCV`, `Probit`, `SoftDot`, `GaussianCoupling` | light; `StatsFuns` and the standard rules |
 | `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery, over means and covariances. **Standalone — does *not* depend on the base package, nor on any distribution package** | `LinearAlgebra`, `FastCholesky`; `ForwardDiff` with `Linearization` |
 | `DeltaMessagePassingRules` | the Delta node `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules (created in Phase 4.5 case (d)) | the base, `MessagePassingRulesApproximations`, `ExponentialFamily`, `Distributions`, `BayesBase` |
@@ -758,7 +758,8 @@ Dependency consequences: **`Optim` leaves ReactiveMP entirely** (only `laplace.j
 `ghcubature` to the Pólya package; `DomainIntegrals` and `HCubature` go to
 `MessagePassingRulesTestUtils` (they serve the rule-comparison quadrature in
 `src/rule.jl:1464`, which is test machinery); `DomainSets` stays with
-`StandardMessagePassingRules` (`normal_mean_variance/var.jl`, `gamma_shape_rate/a.jl`).
+`StandardMessagePassingRules` (`normal_mean_variance/var.jl`; the ported `gamma_shape_rate/a.jl`
+does not need it).
 
 What survives is small: `Unscented`, `Linearization`, `smoothRTS` and the shared
 point/weight machinery — **no cubature package at all**. *(An earlier version said they need
@@ -1143,7 +1144,9 @@ answered per rule by reading the v6 node's interfaces. See `DISCUSSION.md` §3.2
 - A rule that calls another rule (`@call_rule` in a body) calls a helper function holding the
   shared mathematics instead (user, Phase 5).
 - Hand-written: `mixture/switch.jl`, the ~15 rules touching raw `messages[i]`/`marginals[i]`
-  tuples, the 5 `MessageMapping` construction sites and 4 delta layout files.
+  tuples, the 5 `MessageMapping` construction sites and 4 delta layout files. *(Counted at the
+  Phase 5 brief: three of the raw-indexing rules are in `standard`, the `Mixture` rules; the
+  rest are DiscreteTransition's. The delta layouts were done in Phase 4.5 case (d).)*
 - Canary: `NormalMixture((:m, k))` — indexed target + `ManyOf` marginals + `where {N}` +
   aligned group dependency in one rule. *(Ported in Phase 4.5 step 3.)*
 

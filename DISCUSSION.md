@@ -1612,8 +1612,8 @@ FastCholesky, with ForwardDiff arriving with Linearization, Phase 4.5 step 3)*;
 ReactiveMP entirely (only `laplace.jl` used it). `FastGaussQuadrature` follows `ghcubature`
 to the Pólya package. `DomainIntegrals` and `HCubature` go to the test-utils package — they
 are used by the rule-comparison quadrature at `src/rule.jl:1464,1540`, which is test
-machinery. `DomainSets` stays with the standard rules (`normal_mean_variance/var.jl`,
-`gamma_shape_rate/a.jl`).
+machinery. `DomainSets` stays with the standard rules (`normal_mean_variance/var.jl`; the ported
+`gamma_shape_rate/a.jl` does not need it).
 
 **BayesBase coverage.** The `ExponentialFamily` ban holds. Across every prospective base
 file the only `ExponentialFamily` mentions are inside docstring examples. All 37 names the
