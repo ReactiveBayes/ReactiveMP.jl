@@ -126,6 +126,9 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   factorisation as tuples of those keys, `((:out, :μ), (:v,))` — never positions. It puts
   everything in declaration order. A joint local marginal is keyed by its member tuple,
   `(:out, :μ)`, so interface names may contain underscores.
+- Rule lookup is the base package's method table (`find_message_rule` and friends), global
+  across every loaded package. The per-module `__message_passing_registry__` is introspection
+  only, per module because of precompilation; the engine never reads it (`DISCUSSION.md` §3.23).
 - `activate!` wires only the default dependency scheme for now: a node that declares its own
   dependencies, or has an interface group, is refused until case (c) of Phase 4.5.
 - Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (it was 322

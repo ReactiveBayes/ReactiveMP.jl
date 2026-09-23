@@ -319,6 +319,13 @@ alongside the method, stored as a per-module `const` and discovered by scanning 
 ReactiveMP-owned global — a downstream package's top-level `push!` runs during *its*
 precompile and lands only in its own image.
 
+**Two mechanisms, not one** (clarified with the user after Phase 4.5 step 4, `DISCUSSION.md`
+§3.23, kept as is). *Lookup* is the base package's method table: each definition adds a method
+to `find_message_rule`/`find_marginal_rule`/`find_average_energy`, so every loaded rule, from
+any package, is in one global table resolved by static dispatch. The per-module *registry* is
+**introspection only** (listings, `check_rules`, ambiguity checks, coverage, near-miss errors),
+and the engine never reads it. No registry keyword and no registry dispatch axis.
+
 This replaces `arg_decl_parts` string decoding entirely: "no rule found" has the target,
 inputs and algorithm as live values. Distinguish the two failure classes that are
 currently indistinguishable — *no rule of this shape* (wrong dependency/factorisation)
@@ -941,7 +948,10 @@ The dispatch result, ownership contracts and early engine integration are separa
    the axis later is a new keyword rather than a resurfacing, so it waits for a concrete use
    case. *(Since the Phase 4.5 algorithm reconciliation a `DefaultAlgorithmExtension` gives a
    one-level overlay without any ruleset keyword: its own rules first, the default's for the
-   rest. The general `Overlay(mine, standard)` stays deferred.)* The rule-fallback contract was
+   rest. The general `Overlay(mine, standard)` stays deferred. If a use case needs an overlay over
+a node's own algorithm, the recommended form is an extension with an explicit parent,
+`AlgorithmExtension{Parent}`, rather than a registry axis; both are sketched in
+`DISCUSSION.md` §3.23.)* The rule-fallback contract was
    specified independently, as required:
    **resolution is a separate, total function** — `find_rule` returns a spec or a
    `RuleNotFound`, never throws and never runs anything, and the fallback is consulted on the

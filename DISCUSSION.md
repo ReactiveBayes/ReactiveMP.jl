@@ -1264,6 +1264,70 @@ with `[sources]`, which 1.11+ honours; the floor and its workarounds are reconsi
 registration. No CI runs without a PR either, so all work is verified locally, and the
 workflow files are left as they are until then.
 
+### 3.23 Step 4 built: what it settled, and what it left (2026-09-23)
+
+Step 4 made the clean cut and ran case (a), belief propagation over `NormalMeanVariance`,
+through the new engine: `bp_iid`, `bp_iid_missing` and `bp_chain` agree with v6 call by call,
+log scales and free energy included. What was decided while building it:
+
+- **The engine refuses what it cannot wire yet, rather than guessing.** `activate!` knows only
+  the default dependency scheme: the messages inside an interface's own cluster, and the
+  marginals of every other cluster. A node whose algorithm declares its dependencies
+  (`NormalMixture` under `NormalMixtureVMP`), or that has an interface group (`:m...`), is
+  refused with an error that says so. Wiring the default scheme in their place would hand a
+  mixture's rules the wrong inputs and fail somewhere far from the cause. Case (c) lifts both
+  refusals. `bethe_free_energy` likewise scores over the factorisation; a declared partition
+  arrives with declared dependencies.
+- **`Message` stays a `mutable struct` with `const` fields**, by benchmark (the user asked for
+  one, §3.19): through the equality chain it was about 10% faster and 40% lighter than an
+  immutable struct. On a BP chain the immutable one was 6–8% faster but still 25% heavier.
+  Numbers in `PHASES.md` § Phase 4.5, step 4.
+- **Typed annotations (`Message{D, A}`, brief item 3) were not built.** Step 4 changed how rules
+  are called, not the envelope, so `AnnotationDict` stayed, one change at a time. The
+  retained-value test pins that nothing mutates one after materialisation. It belongs with the
+  log-scale milestone, which reopens annotations anyway.
+- **`factornode` takes names, never positions**: `(name, variable)`, `((group, k), variable)`,
+  and a factorisation of the same keys. Brief item 1 asked for exactly this; the engine sorts
+  everything into declaration order, so caller order cannot leak into clusters or emissions.
+- **`@logscale` went to `legacy/`.** It expanded to v6's rule-scoped `getannotations()`; a rule
+  writes `annotate!(ann, :logscale, value)` (already the plan, §3.14).
+
+**The registry, clarified (user, afterwards).** The user asked whether the per-module rule
+registry scopes rules, and whether rules from other packages should land in one default
+registry, perhaps with a registry keyword and a registry-parametrised `find_rule`. The
+answer settled it, and the user decided to **keep the design as it is**:
+
+- **Lookup is Julia's method table, and it is already global.** A rule definition adds a
+  method to the base package's `find_message_rule` (or `find_marginal_rule`,
+  `find_average_energy`). Every rule, from any package or the REPL, joins that one table when it
+  loads, and resolution is ordinary static dispatch. Nothing about lookup is per module.
+- **The per-module `__message_passing_registry__` is introspection only**: `list_rules`,
+  `check_rules`, `check_rule_ambiguities`, coverage and the near-miss error text. The engine
+  never looks rules up in it. It is per module because a package that `push!`es into another
+  package's `const` during its own precompilation saves the entry only in its own image
+  (`PLAN.md` § Registry); `registries()` stitches the shards back into one view.
+
+Two ways to let users bring their own set of rules were sketched and **not taken**. They are
+recorded here for when a concrete use case appears (open item #4):
+
+- **An extension with an explicit parent**, `AlgorithmExtension{Parent} <: AbstractAlgorithm`,
+  with `DefaultAlgorithmExtension = AlgorithmExtension{DefaultAlgorithm}`. The fallback becomes
+  "my rules, then my parent's", the same mechanism already measured at 0 bytes, so it stays
+  static. It closes the one gap today's extensions have, which is composition: an extension can
+  overlay only `DefaultAlgorithm`, never a node's own algorithm such as `NormalMixtureVMP`. It
+  needs no new dispatch axis. This is the recommended form if the gap ever matters.
+- **A registry dispatch axis**, `find_message_rule(registry, node, target, algorithm, args)`,
+  with a default registry and user registries that declare a parent. It can be static (a
+  singleton type carried in `MessageMapping`, like the algorithm), and it would separate *whose
+  rules* from *which inference*, e.g. `infer(...; rules = MyRules())` for a whole run. But it is
+  a second axis doing nearly the algorithm's job. Every lookup becomes registry × algorithm,
+  there are more places for ambiguities, errors read worse, every signature grows, and the
+  Phase 0 gate would need re-measuring.
+
+Either one would also address the one real hazard of a global table. Loading a package that
+defines a `DefaultAlgorithm` rule changes results for everyone, and a second definition of the
+same signature silently replaces the first (`duplicate_rules()` reports it afterwards).
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1357,6 +1421,11 @@ Claims the assistant made that were **wrong** and should not be revived:
 24. **"Moving to the new rule system needs a dual path, node by node."** It needs none; nothing
     outside the branch depends on the old one. The engine switches outright and unported
     nodes wait in `legacy/v6/`. See §3.22.
+25. **"The per-module registry scopes rules; rules should be pushed into one central
+    registry that lookup uses."** Lookup never reads a registry: it is the base package's
+    method table, which is global already. The per-module registries are introspection data,
+    per module only because of precompilation, and `registries()` joins them. Kept as it is
+    (user). See §3.23.
 
 ---
 
@@ -1471,10 +1540,13 @@ Open as of the Phase 4.5 reconciliation:
   heavier. The numbers are in `PHASES.md` § Phase 4.5, step 4.
 - **Typed annotations** (`Message{D, A}`, brief item 3) — not built in step 4, which kept the
   `AnnotationDict` so as to change one thing at a time; the retained-value test pins that
-  nothing mutates it after materialisation. Revisit with the log-scale milestone.
+  nothing mutates it after materialisation. Revisit with the log-scale milestone (§3.23).
 - **Declared dependencies, groups and a declared free-energy partition in the engine** — case
   (c). Until then `activate!` refuses a node with either, rather than wiring the default
-  scheme in their place.
+  scheme in their place (§3.23).
+- **User rule sets beyond one-level extensions** — the registry stays introspection only
+  (decided, §3.23). If extensions ever need to overlay a node's own algorithm, the recommended
+  form is `AlgorithmExtension{Parent}`, not a registry axis. Folded into #4.
 - **Delta's own algorithm** — the method and inverse it carries, like `DeltaMeta`, and the
   engine's `getnodefn`; case (d).
 - **Default initial messages** — how a node declares one for a rule that depends on its own

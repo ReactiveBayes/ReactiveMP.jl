@@ -17,9 +17,29 @@ relying on one.
 ## Next action
 
 **Phase 4.5, case (b): VMP** — mean-field (`vmp_meanfield`) and structured
-(`vmp_structured`), through the engine step 4 built. Structured VMP brings the first joint
-marginal whose rule returns a `FactorizedCluster`, which the engine must distribute to the
-cluster's members (brief item 5).
+(`vmp_structured`), through the engine step 4 built. What each remaining case needs is in
+§ Phase 4.5, *Cases (b)–(d)*; start by extending `test/engine/harness.jl` to take a
+factorisation and initial marginals.
+
+**Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
+
+| What | Where it lands | Recorded in |
+|---|---|---|
+| VMP, mean-field and structured, against `vmp_meanfield` and `vmp_structured` | 4.5 case (b) | § *Cases (b)–(d)* |
+| distributing a `FactorizedCluster` joint to its members, if the slice selects one | 4.5 case (b) | § *Cases (b)–(d)*; brief item 5 |
+| `activate!` refuses declared dependencies and interface groups; wiring both | 4.5 case (c) | § *Cases (b)–(d)*; step 4 item 3; `DISCUSSION.md` §3.23 |
+| a declared free-energy partition in `bethe_free_energy` | 4.5 case (c) | step 4 item 5 |
+| mixture emission order (#6), group indices through integration (#7) | 4.5 case (c) | exit criteria |
+| Delta: its own algorithm, `getnodefn`, `static_inputs = :fold`, `q_out` aliasing, the empty group | 4.5 case (d) | § *Cases (b)–(d)*; brief items 2 and 4 |
+| typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
+| `docs/` rewritten for the new engine (`make docs` refuses until then) | Phase 5 | § Phase 5 |
+| Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
+| RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
+| user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
+
+The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
+the base package's method table, global already, and the per-module registries are
+introspection only (`DISCUSSION.md` §3.23, Correction 25).
 
 Step 4, the engine core on case (a), is done (§ Phase 4.5, *Step 4*): the v6 rule system is in
 `legacy/v6/`, the engine finds and runs rules through `MessagePassingRulesBase`, and
@@ -61,7 +81,7 @@ done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.22,
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.23,
 and this file's § Phase 4.5. Working conventions: one commit per step, failing test first,
 `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive names rather than
 generic ones, and no comments that only narrate.
@@ -1050,6 +1070,68 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    Typed annotations (`Message{D, A}`, brief item 3) are not done: the `AnnotationDict` stays,
    and the retained-value test pins that nothing mutates one after materialisation.
 
+### Cases (b)–(d): what each still needs
+
+Not yet planned session by session; this is what step 4 left for each, so the plan for the
+next case starts from it. Each case is its own step: one commit, test first, the fixture
+comparison as its gate, `PHASES.md` and `CHANGELOG.md` in the same commit.
+
+**Common to all three.** `test/engine/harness.jl` hard-codes RxInfer's default (Bethe)
+factorisation and feeds no initial values. It needs a `factorisation` argument per node (for
+`MeanField()` and `q(x, μ)q(τ)`) and initial marginals, set the way RxInfer does, after the
+variables are activated and before the nodes are (`reactivemp_inference.jl:316-335`). Each
+fixture's model, constraints and initialization are in
+`compat/v6-comparison/record_engine_fixtures.jl`; `slice_rule_inventory.jl` lists every v6 rule
+each model selects, with its input types. Compare with `atol = 1e-9` as for case (a), and
+declare any disagreement rather than loosen the tolerance.
+
+**Case (b), VMP** (`vmp_meanfield`, `vmp_structured`; NMP, GammaShapeRate and NMV, all ported).
+- Mean-field should need nothing new: every cluster is a single interface, so rules read
+  marginals only. `q(τ)` is initialised.
+- Structured, `x[i] ~ NMP(μ, τ)` under `q(x, μ)q(τ)`: the first joint in a VMP run. The
+  `(:out, :μ)` marginal rule and the `q[:out, :μ]` average energy exist. The `τ` rule reads the
+  joint as `q[(:out, :μ)]`, which `rule_marginals` already keys by the member tuple.
+- `FactorizedCluster` (brief item 5): the slice's ported marginal rules return
+  `MvNormalWeightedMeanPrecision`, so this fixture may never produce one. Check with
+  `slice_rule_inventory.jl`. If none is selected, record that and defer the distribution
+  logic to the first port that returns one. If one is, the engine must hand each block to a
+  consumer reading that member, and `score(DifferentialEntropy(), ::Marginal{<:NamedTuple})`
+  (v6's split, still in `src/score/score.jl`) becomes its `FactorizedCluster` counterpart.
+
+**Case (c), the mixture** (`normal_mixture`; NormalMixture, Categorical, Dirichlet, NMP,
+GammaShapeRate, all ported).
+- Lift both `activate!` refusals. Wire a `DependenciesSpec` (`MessagePassingRulesBase.
+  dependencies_spec(fform, algorithm)`) per target: for each declared input, the right
+  message or marginal stream, with the group selectors `all` (`q[:m...]`), `aligned`
+  (`q[:p][k]`) and `all-but-self`. A group reaches a rule as a tuple in member order, with
+  `nothing` where the selection leaves a member out (base docs, `@define_message_update_rule`).
+- Groups in `rule_messages`/`rule_marginals`: today the names are a flat tuple of interface
+  names, and group members would collide under one name. They need `(name, k)` keys that fold
+  into one tuple per group.
+- `IndexedTarget{:m}(k)` targets are already produced by `rule_target`; nothing calls them yet.
+- `bethe_free_energy` over a declared partition, when `DependenciesSpec.partition` is set.
+- Exit criteria: #6, the emission order against the fixture's trace (v6's `reverse(...)` in
+  `normal_mixture.jl:176,183` orders only the `combineLatest` trigger); #7, group indices kept
+  from the caller's `(:m, k)` through to the rule's `k`.
+- The mixture runs under `NormalMixtureVMP`, a standalone algorithm, whatever the
+  factorisation (§3.20). The harness passes `algorithm = NormalMixtureVMP()` for it, as
+  RxInfer's per-node algorithm option will.
+
+**Case (d), Delta** (`delta_unscented`; the Delta node and its rules are in
+`legacy/v6/src/nodes/predefined/delta/` and `legacy/v6/src/rules/delta/`, `Unscented` is ported).
+- Design Delta's own algorithm: the approximation method and the optional inverse, carried as
+  `DeltaMeta` did. Brief item 4: the base declares `getnodefn(node, target)`, and the engine's
+  Delta node implements it, owning the function and its static fold.
+- Engine features keyed off the spec (brief item 2): `static_inputs = :fold` (inputs connected
+  to constants or data are folded into the node function, and every update waits for them);
+  `q_out` aliasing (a single-interface cluster's marginal *is* the variable's, which
+  `initialize_cluster!` already does); the empty group.
+- The deterministic node score is written (`src/score/node.jl`) but never exercised: it asks
+  for the marginal rule of `ClusterTarget` over the inbound interfaces, `(:in,)` for a group,
+  meaning the joint over the group. Case (d) is its first test.
+- The Delta rules' destination is in `INVENTORY.md`; they leave `legacy/v6/` in the commit
+  that ports them.
+
 ### Design brief — 2026-09-23
 
 Evidence gathered from the v6 engine, the base package and RxInfer 5.5.2; the reasoning is
@@ -1216,6 +1298,11 @@ first: `towards` → `target`, dropping `BP`/`VMP`, NamedTuple marginals → `Fa
       or agent — to stop and ask rather than guess
 - [ ] guide opens with a short preamble addressed to an agent: what to read, what never to
       guess, how to verify, when to stop
+- [ ] `docs/` rewritten for the new engine and rule system, and back in the build: it still
+      describes v6, so `make docs` refuses (Phase 4.5 step 4). The pages cover defining nodes
+      and rules with the base macros, `factornode` and `FactorNodeActivationOptions`, algorithms
+      and extensions, `bethe_free_energy`, and the registry as introspection only
+      (`DISCUSSION.md` §3.23)
 - [ ] hand-written cases done: `mixture/switch.jl`, the ~15 rules touching raw
       `messages[i]`/`marginals[i]`
 - [ ] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).
@@ -1278,7 +1365,34 @@ Known scope:
 - [ ] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
 - [ ] RxInfer adapted to the new engine, as its own major release: node and rule creation,
       a per-node `algorithm` option (replacing `meta` and v6's `where { dependencies = … }`),
-      and default initial messages
+      and default initial messages. What step 4 changed under it, all found by reading RxInfer
+      5.5.2 (`src/model/plugins/`):
+      - `factornode(fform, interfaces, factorisation)` takes `(name, variable)` /
+        `((name, k), variable)` and a factorisation of names; RxInfer passes positions
+        (`VariationalConstraintsFactorizationIndicesKey`) and would pass GraphPPL's
+        `EdgeLabel.index` as `k` (#7);
+      - `FactorNodeActivationOptions(; algorithm, postprocessor, annotations, callbacks)`
+        replaces the six positional fields; `metadata`, `dependencies` and `rulefallback` are
+        gone;
+      - free energy: `score(T, FactorBoundFreeEnergy(), node, algorithm, pp)` takes the
+        algorithm where it took `meta`, and `bethe_free_energy` can replace the assembly in
+        `reactivemp_free_energy.jl`;
+      - GraphPPL's node queries (`@node` traits, `sdtype`, `interfaces`, `alias_interface`,
+        `nodesymbol_to_nodefform`) become `MessagePassingRulesBase.nodespec` and its accessors;
+      - callbacks: a `MessageMapping` has `target` (`Target{:out}()`) and `algorithm` where it
+        had `vtag`, `vconstraint` and `meta`. RxInfer itself does not read them, but user
+        callbacks do (`compat/v6-comparison/record_engine_fixtures.jl` reads `vtag`);
+      - the force-marginal plugin (`reactivemp_force_marginal_computation_plugin.jl:60-74`)
+        calls v6's `marginalrule` with a `clustername` tag over `get_node_local_marginals`. It
+        becomes a `MarginalMapping` with a `ClusterTarget`, as the engine's deterministic score
+        does, and the local marginals are now keyed `:μ` or `(:out, :μ)`
+- [ ] Aqua's `ambiguities` check re-measured on the new code and re-enabled, or its remaining
+      pairs budgeted; it was 322 pairs on `main`, most in code now in `legacy/`
+- [ ] the log-scale milestone, after the migration (user): v6's gaps were preserved
+      deliberately, and this is where they are fixed. Typed annotations (`Message{D, A}`, brief
+      item 3) land with it, replacing the mutable `AnnotationDict`
+- [ ] the `.github/` workflows brought up to date before the first PR: they still describe
+      the 1.10 matrix and the pre-step-4 layout (§3.22 left them alone)
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality — for every ported node, against recorded v6 fixtures
 
