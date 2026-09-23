@@ -19,11 +19,12 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance, MvNormalMeanPrecision,
+**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance done; next
+MvNormalMeanPrecision, and after it
 MvNormalMeanScalePrecision and its matrix form, MvNormalWeightedMeanPrecision, then
 NormalMixture's multivariate branches. Its brief is in § Phase 5, *Step 5 brief*: the counts, the
 matrix correction as the context service `ctx.matrix_correction` (user), and the defaults for
-the step. It starts with the base package's new service. Steps 1–4 are done.
+the step. Steps 1–4 are done.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -1501,12 +1502,25 @@ multivariate branches.
   the mean matrix.
 - **Float types:** the energies use one convention, `promote_paramfloattype`; v6 mixed it with
   `promote_samplefloattype`.
+- **Inverses:** a scalar's expectation of the inverse is `mean(inv, q)`, a matrix's
+  `mean(cholinv, q)`, and a matrix is inverted with FastCholesky's `cholinv`, for a symmetric
+  positive-definite result without a general LU (v6's own convention for matrices).
 - **MvNormalMeanScaleMatrixPrecision** is not a distribution type in ExponentialFamily 2.6: its
   constructor returns an `MvNormalMeanPrecision`. It serves as the node type only.
 - **Tests:** v6 has no tables for any of the 27 marginal rules, so all get hand-derived cases.
   `@verify_message_update_rule` is used where the inputs allow, and its limits with Wishart
   and InverseWishart messages are recorded. TestUtils' default promotion checks (Float32,
   BigFloat) are new for these nodes.
+- **Progress:**
+  - *MvNormalMeanCovariance — done.* The base package has the `matrix_correction` service, an
+    optional one: `nothing` is a setting, so `missing_services` never reports it.
+    MvNormalMeanCovariance's 14 message rules, 6 marginal rules and 2 average energies are ported,
+    with the helpers `diageye`, `coupled_precision`, `difference_moment` and
+    `variational_covariance`. v6's variational rules and `(:out, :μ)` marginals took E[Σ] for
+    a `q_Σ`; naive VMP gives E[Σ⁻¹]⁻¹, as v6's own energy for the node does. They are corrected
+    and declared (ReactiveMP.jl#673, the multivariate #669). `compare_standard.jl` agrees on 319
+    checks, the corrections declared. LinearAlgebra and FastCholesky join Standard's
+    dependencies.
 - **NormalMixture:** its multivariate path goes through helpers dispatching on `variate_form`.
   An `mv_normal_mean_precision_energy` helper is shared with the MvNormalMeanPrecision node,
   and v6's Float64 lock (`init = 0.0`) goes. Today its rules take `::Any` and compute

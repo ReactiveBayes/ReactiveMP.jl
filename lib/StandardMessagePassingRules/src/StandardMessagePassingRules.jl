@@ -19,6 +19,9 @@ using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
 using LogExpFunctions: softmax!
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
+using LinearAlgebra: I, tr, logdet
+using FastCholesky: cholinv
+import ExponentialFamily: InverseWishartFast, WishartFast
 import DomainSets
 
 export NormalMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
@@ -27,7 +30,10 @@ export AND, OR, NOT, IMPLY
 include("helpers.jl")
 
 # The nodes this package declares, for types other packages own.
-const NODES = [NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform]
+const NODES = [
+    NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
+    MvNormalMeanCovariance,
+]
 
 include("nodes/normal_mean_variance.jl")
 include("rules/normal_mean_variance/out.jl")
@@ -87,6 +93,12 @@ include("rules/uniform/out.jl")
 
 include("nodes/uninformative.jl")
 include("rules/uninformative/out.jl")
+
+include("nodes/mv_normal_mean_covariance.jl")
+include("rules/mv_normal_mean_covariance/out.jl")
+include("rules/mv_normal_mean_covariance/mean.jl")
+include("rules/mv_normal_mean_covariance/covariance.jl")
+include("rules/mv_normal_mean_covariance/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")

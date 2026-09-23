@@ -204,7 +204,8 @@ end
     missing_services(spec::RuleSpec, ctx::RuleContext)
 
 The context services a rule declares and `ctx` does not provide. Meant to be checked once,
-when a node is set up, rather than on every call.
+when a node is set up, rather than on every call. An optional service, whose `nothing` is a
+setting (`matrix_correction`), is never missing.
 """
 missing_services(spec::RuleSpec, ctx::RuleContext) =
-    filter(service -> getfield(ctx, service) === nothing, spec.services)
+    filter(service -> !(service in OPTIONAL_CONTEXT_SERVICES) && getfield(ctx, service) === nothing, spec.services)

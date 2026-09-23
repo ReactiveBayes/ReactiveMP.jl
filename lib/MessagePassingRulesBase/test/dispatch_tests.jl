@@ -186,3 +186,28 @@ end
     @test (@inferred message_passing_rule(H.Gauss, Target(:out), DefaultAlgorithm(), H.POINT)) === 3.0
     @test H.measure(H.POINT) == 0
 end
+
+@testitem "context:matrix-correction" tags = [:base] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: RuleContext, RuleArgs, Target, find_message_rule, missing_services, CONTEXT_SERVICES
+
+    # A strategy for correcting a matrix, such as MatrixCorrectionTools' ones, reached as
+    # `ctx.matrix_correction`. `nothing` means no correction, so it is never a missing service.
+    struct Corrected end
+    @define_factor_node(node = Corrected, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(
+        node = Corrected, target = :out, ctx = (:matrix_correction,),
+        args = (m[:in]::Float64,),
+        body = (ctx, args) -> ctx.matrix_correction === nothing ? args.m[:in] : ctx.matrix_correction(args.m[:in]),
+    )
+
+    @test :matrix_correction in CONTEXT_SERVICES
+    @test RuleContext().matrix_correction === nothing
+    args = RuleArgs(m = (in = 2.0,))
+    @test message_passing_rule(Corrected, Target(:out), DefaultAlgorithm(), args) == 2.0
+    @test message_passing_rule(Corrected, Target(:out), DefaultAlgorithm(), args, RuleContext(matrix_correction = x -> 10x)) == 20.0
+
+    spec = find_message_rule(Corrected, Target(:out), DefaultAlgorithm(), args)
+    @test spec.services === (:matrix_correction,)
+    @test isempty(missing_services(spec, RuleContext()))
+end
