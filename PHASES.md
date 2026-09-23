@@ -19,13 +19,11 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 6: Matrix and Wishart** — Wishart, InverseWishart, MatrixNormal,
-MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. Signed off by the
-user; § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
-`public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart,
-InverseWishart, DirichletCollection, MvNormalGamma, MvNormalWishart and MatrixNormal are done;
-next MatrixNormalWishart, which closes the step. Steps 1–5 are done; step 5 is summarised
-in § Phase 5, *Step 5 brief*.
+**Phase 5, step 7: Arithmetic** — `+`, `-`, `*`, `dot` (§ Phase 5). It needs a brief first, as
+steps 5 and 6 had; two questions are already known to settle there: how `*` and `dot` keep
+v6's default `ReplaceZeroDiagonalEntries(tiny)` now that the correction is `ctx.matrix_correction`,
+and the two multiplication rules that sample with the global RNG. Steps 1–6 are done; step 6,
+Matrix and Wishart, is summarised in § Phase 5, *Step 6 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -1648,9 +1646,15 @@ extending it, is recorded for Phase 8.
     and the mean-field rules take `Union{PointMass, MatrixNormal}`, so v6's MatrixNormal-only
     `:out` and `:M` rules now also accept a known `M` or `out`. `mul_trace` is `dot(A', B)`.
     Nothing differs from v6 (531 checks).
+  - *MatrixNormalWishart — done, which closes step 6.* Its one message rule, for known
+    parameters, promoting ν with the matrices, and the energy. v6's energy took the parameters as
+    `Any` and used f(E[x]) for E[f(x)]; they are point masses here, where its formula is exact.
+    v6's Monte-Carlo energy test (`rtol = 0.1`) becomes a closed-form one: the energy split
+    into its MatrixNormal factor, written out, and its Wishart factor, from the Wishart node's
+    own energy. 535 checks agree.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
-   MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,
+   MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
    `DISCUSSION.md` §3.29).
 7. **Arithmetic**: `+`, `-`, `*`, `dot`. Two questions are settled in that step: v6's
    `meta::AbstractCorrectionStrategy` with `default_meta = ReplaceZeroDiagonalEntries(tiny)`

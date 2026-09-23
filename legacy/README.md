@@ -21,7 +21,8 @@ Phase 5 ports each node from here into `lib/StandardMessagePassingRules` (or its
 packages), and deletes what it ported. Already gone: Delta's Unscented rules (Phase 4.5 case
 (d)), `approximations/unscented.jl` and `rts.jl`, whose ports are in
 `lib/MessagePassingRulesApproximations`, the univariate distributions (Phase 5 step 3) and
-the logic nodes (step 4), and the multivariate normals and `normal_mixture` (step 5). Kept on
+the logic nodes (step 4), the multivariate normals and `normal_mixture` (step 5), and the
+matrix and Wishart nodes (step 6). Kept on
 purpose although partly ported:
 - `approximations/approximations.jl` and `shared.jl`, which unported files here still use;
 - `nodes/predefined/delta/` and `rules/delta/`, for `Linearization` and CVI (Phase 6);
