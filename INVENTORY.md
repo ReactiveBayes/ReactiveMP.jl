@@ -191,7 +191,7 @@ replacement".
 | `MvNormalMeanScaleMatrixPrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `standard` |  |
 | `MvNormalMeanScalePrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `standard` |  |
 | `NOT` | `type` | `src/nodes/predefined/not.jl` | `standard` |  |
-| `NodeFunctionRuleFallback` | `type` | `src/rules/fallbacks.jl` | `base` |  |
+| `NodeFunctionRuleFallback` | `type` | `src/rules/fallbacks.jl` | `delete` | v6's rule fallbacks are not carried over (Phase 5 step 9, DISCUSSION §3.36): when no rule fits, the base package reports `RuleNotFound`; a migration-guide entry |
 | `NormalMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` |  |
 | `NormalMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `OR` | `type` | `src/nodes/predefined/or.jl` | `standard` |  |
@@ -274,7 +274,7 @@ replacement".
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
 | `form constraints` | `hook` | `src/constraints/form.jl` | `engine` | constrains a variable's marginal inside the graph; an engine concept, not a rule one |
-| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `base` | the fallback protocol is resolution-based: `find_*` returns `RuleNotFound` and never throws, so an exception inside a selected rule never reaches a fallback (specified in Phase 0); user fallbacks are out of the first engine cut |
+| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `delete` | not carried over (Phase 5 step 9, DISCUSSION §3.36): the fallback protocol is resolution-based, `find_*` returning `RuleNotFound` and never throwing, so an exception inside a selected rule never reaches a fallback (specified in Phase 0); a migration-guide entry |
 | `callbacks` | `hook` | `src/callbacks.jl` | `engine` | 10 event types, all message-passing lifecycle. Exports nothing but is documented public API (`lib/callbacks.md`) |
 | `stream postprocessors` | `hook` | `src/postprocessors.jl` | `engine` | Rocket streams. Exports nothing but is documented public API (`lib/stream-postprocessors.md`) |
 | `scoring` | `hook` | `src/score/` | `base` | `@average_energy`, `AverageEnergy` and `DifferentialEntropy` move to base; `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, since they walk the graph |

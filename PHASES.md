@@ -20,9 +20,9 @@ re-check before relying on one.
 ## Next action
 
 **Phase 5, step 9: Close** — the v6 → v7 migration guide, `docs/` rewritten and back in the
-build, and `legacy/v6/` holding only what Phase 6 ports from. **Briefed**, awaiting the user's
-sign-off: § Phase 5, *Step 9 brief* has the four decisions (`DISCUSSION.md` §3.36), the scope
-and the order. Steps 1–8 are done.
+build, and `legacy/v6/` holding only what Phase 6 ports from. Signed off by the user; § Phase 5,
+*Step 9 brief* has the decisions (`DISCUSSION.md` §3.36), the scope, the order and the
+progress. The legacy triage is done; next the docs build. Steps 1–8 are done.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -1919,6 +1919,12 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
 - **Order:** the legacy triage; the docs build back (infrastructure, docstrings, the root
   doctest item, and the pages' skeleton); the pages, a commit per section; the guide; the close
   (exit criteria ticked, CLAUDE.md's § Ongoing work to Phase 6).
+- **Progress:**
+  - *The legacy triage — done.* The v6 engine and rule-system files and their tests, the rule
+    fallbacks, `StandaloneDistributionNode` and the stale include lists leave `legacy/v6/`;
+    INVENTORY marks `NodeFunctionRuleFallback` and the fallback hook `delete`, with notes for
+    the guide. legacy/README lists what stays and whose it is: the unported nodes, the
+    approximations Phase 6 ports or deletes, their helpers, `fixes.jl` and the CVI extensions.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
@@ -1938,7 +1944,8 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
 
 **Found while counting, to settle in the step that meets them:**
 - `nodes/predefined/distribution/distribution.jl` (`StandaloneDistributionNode`) has no
-  `INVENTORY.md` row and no engine handling.
+  `INVENTORY.md` row and no engine handling. *(Settled in step 9: not carried over, and deleted
+  from `legacy/v6/`.)*
 - `GammaShapeLikelihood`, which GammaShapeRate's `a.jl` needs, is defined in v6's
   `gamma_mixture.jl`; it moves into Standard as a helper type in step 1. *(Settled in step 1:
   an exported type.)*
