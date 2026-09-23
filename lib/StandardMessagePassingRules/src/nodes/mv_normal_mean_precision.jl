@@ -7,11 +7,11 @@
 precision `Λ` and `S = E[(out - μ)(out - μ)ᵀ]`. A Wishart `q_Λ` gives E[Λ] as `df · S_Λ`
 without building the mean matrix, as v6 did.
 """
-mv_normal_mean_precision_energy(d, q_Λ, S) = (d * log2π - mean(logdet, q_Λ) + tr(mean(q_Λ) * S)) / 2
+mv_normal_mean_precision_energy(d, q_Λ, S) = gaussian_energy(d, tr(mean(q_Λ) * S) - mean(logdet, q_Λ))
 
 function mv_normal_mean_precision_energy(d, q_Λ::Wishart, S)
     df, S_Λ = params(q_Λ)
-    return (d * log2π - mean(logdet, q_Λ) + df * tr(S_Λ * S)) / 2
+    return gaussian_energy(d, df * tr(S_Λ * S) - mean(logdet, q_Λ))
 end
 
 @define_average_energy(

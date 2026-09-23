@@ -6,7 +6,7 @@
 # The multivariate normal with precision γG:
 # (d log 2π - d E[log γ] - E[log |G|] + E[γ] tr(E[G] S)) / 2.
 mv_normal_mean_scale_matrix_precision_energy(d, q_γ, q_G, S) =
-    (d * log2π - d * mean(log, q_γ) - mean(logdet, q_G) + mean(q_γ) * tr(mean(q_G) * S)) / 2
+    gaussian_energy(d, mean(q_γ) * tr(mean(q_G) * S) - d * mean(log, q_γ) - mean(logdet, q_G))
 
 @define_average_energy(
     node = MvNormalMeanScaleMatrixPrecision,

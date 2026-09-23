@@ -1,7 +1,7 @@
 @define_factor_node(node = MvNormalMeanCovariance, type = Stochastic, interfaces = [:out, (:μ, aliases = [:mean]), (:Σ, aliases = [:cov])])
 
 # (d log 2π + E[log |Σ|] + tr(E[Σ⁻¹] E[(out - μ)(out - μ)ᵀ])) / 2
-mv_normal_mean_covariance_energy(d, q_Σ, S) = (d * log2π + mean(logdet, q_Σ) + tr(mean(cholinv, q_Σ) * S)) / 2
+mv_normal_mean_covariance_energy(d, q_Σ, S) = gaussian_energy(d, mean(logdet, q_Σ) + tr(mean(cholinv, q_Σ) * S))
 
 @define_average_energy(
     node = MvNormalMeanCovariance,

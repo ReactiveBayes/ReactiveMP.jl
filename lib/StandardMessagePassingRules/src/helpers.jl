@@ -82,3 +82,11 @@ function series_precision(m, Λ_f)
     μ, Λ = mean_precision(m)
     return MvNormalMeanPrecision(μ, Λ - Λ * (fastcholesky(Λ + Λ_f) \ Λ))
 end
+
+"""
+    gaussian_energy(d, rest)
+
+(d log 2π + rest) / 2, the average energy of a d-dimensional normal given the rest of it, in
+`rest`'s float type: `d * log2π` alone is a Float64 for an `Int` `d`, whatever the inputs.
+"""
+gaussian_energy(d, rest) = (d * oftype(rest, log2π) + rest) / 2
