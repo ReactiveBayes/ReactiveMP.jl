@@ -29,6 +29,9 @@ const MVNMC_669 = "ReactiveMP.jl#673, the multivariate #669: v6 uses E[Σ] for t
 # v6's variational Wishart `:out` rules take the inverse scale a `q_S` contributes as E[S]⁻¹;
 # naive VMP gives E[S⁻¹], which v6's own Wishart energy uses. They agree for a point mass.
 const WISHART_OUT = "ReactiveMP.jl#675: v6 uses E[S]⁻¹ for the inverse scale a non-point-mass q_S contributes to Wishart's out; naive VMP gives E[S⁻¹], as v6's own Wishart energy does"
+# v6's variational MvNormalGamma `:out` rule passes E[β] as the rate; the expectation of
+# γ (out - μ)ᵀΛ(out - μ)/2 under a `q_μ` adds tr(E[Λ] Cov μ)/2 to it. They agree for a point mass.
+const MVNG_OUT = "ReactiveMP.jl#676: v6's MvNormalGamma out rule drops tr(E[Λ] Cov μ)/2 from the rate for a non-point-mass q_μ"
 const I2 = [1.0 0.0; 0.0 1.0]
 const INVERSE_WISHART = InverseWishart(5.0, [2.0 0.3; 0.3 2.0])
 const WISHART = Wishart(4.0, [1.0 0.2; 0.2 0.5])
@@ -168,6 +171,10 @@ const MESSAGE_CASES = [
     ("InverseWishart:out:q-ν-q-wishart-S", InverseWishart, :out, (q = (ν = PointMass(5.0), S = WISHART),), false),
     ("DirichletCollection:out:m", DirichletCollection, :out, (m = (a = PointMass([1.0 2.0; 3.0 0.5; 2.0 1.5]),),), false),
     ("DirichletCollection:out:q", DirichletCollection, :out, (q = (a = PointMass([1.0 2.0; 3.0 0.5; 2.0 1.5]),),), false),
+    ("MvNormalGamma:out:m-point-masses", MvNormalGamma, :out, (m = (μ = PointMass([0.5, -1.0]), Λ = PointMass([2.0 0.3; 0.3 1.5]), α = PointMass(2.0), β = PointMass(3.0)),), false),
+    ("MvNormalGamma:out:q-point-masses", MvNormalGamma, :out, (q = (μ = PointMass([0.5, -1.0]), Λ = PointMass([2.0 0.3; 0.3 1.5]), α = PointMass(2.0), β = PointMass(3.0)),), false),
+    ("MvNormalGamma:out:q-gamma-α-β", MvNormalGamma, :out, (q = (μ = PointMass([0.5, -1.0]), Λ = WISHART, α = GammaShapeRate(4.0, 2.0), β = GammaShapeRate(6.0, 2.0)),), false),
+    ("MvNormalGamma:out:q-normal-μ", MvNormalGamma, :out, (q = (μ = MvNormalMeanCovariance([0.5, -1.0], [1.0 0.2; 0.2 2.0]), Λ = PointMass([2.0 0.3; 0.3 1.5]), α = PointMass(2.0), β = PointMass(3.0)),), MVNG_OUT),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -278,6 +285,7 @@ const AVERAGE_ENERGY_CASES = [
     ("InverseWishart:energy:wishart-S", InverseWishart, (q = (out = INVERSE_WISHART, ν = PointMass(5.0), S = WISHART),), false),
     ("DirichletCollection:energy", DirichletCollection, (q = (out = DirichletCollection([2.0 1.0; 1.5 3.0; 1.0 2.5]), a = PointMass([1.0 2.0; 3.0 0.5; 2.0 1.5])),), false),
     ("DirichletCollection:energy:rank-3", DirichletCollection, (q = (out = DirichletCollection(reshape(collect(1.0:12.0) ./ 4, 3, 2, 2)), a = PointMass(reshape(collect(12.0:-1.0:1.0) ./ 5, 3, 2, 2))),), false),
+    ("MvNormalGamma:energy", MvNormalGamma, (q = (out = MvNormalGamma([0.3, 0.1], [1.5 0.2; 0.2 1.0], 4.2, 2.5), μ = PointMass([0.5, -1.0]), Λ = PointMass([2.0 0.3; 0.3 1.5]), α = PointMass(2.0), β = PointMass(3.0)),), false),
     ("Beta:energy", Beta, (q = (out = Beta(2.0, 3.0), a = PointMass(1.5), b = PointMass(2.5)),), false),
     ("Bernoulli:energy", Bernoulli, (q = (out = Bernoulli(0.3), p = Beta(2.0, 3.0)),), false),
     ("Gamma:energy:point-mass-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = PointMass(2.0), θ = PointMass(1.0)),), false),

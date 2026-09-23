@@ -23,7 +23,8 @@ re-check before relying on one.
 MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. Signed off by the
 user; § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
 `public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart,
-InverseWishart and DirichletCollection are done; next MvNormalGamma, then MvNormalWishart. Steps 1–5 are done; step 5 is summarised
+InverseWishart, DirichletCollection and MvNormalGamma are done; next MvNormalWishart, then
+MatrixNormal. Steps 1–5 are done; step 5 is summarised
 in § Phase 5, *Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1633,6 +1634,11 @@ extending it, is recorded for Phase 8.
   - *DirichletCollection — done.* 2 message rules, 1 marginal rule and the energy. v6 had no
     rule tests: the cases are hand-derived, and the energy is checked against the Dirichlet
     node's, column by column, for ranks 2 and 3. Nothing differs from v6 (485 checks).
+  - *MvNormalGamma — done.* 2 message rules and the energy. v6's variational `:out` dropped
+    tr(E[Λ] Cov μ)/2 from the rate for a `q_μ`; corrected and declared (ReactiveMP.jl#676).
+    ExponentialFamily's constructor keeps each parameter's float type, so the rules promote
+    them to one. The energy is checked against ExponentialFamily's entropy, which it equals
+    when the prior is q(out). 495 checks agree, the correction declared.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,
