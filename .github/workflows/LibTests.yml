@@ -33,6 +33,7 @@ jobs:
           - '1.12'
         package:
           - MessagePassingRulesBase
+          - MessagePassingRulesTestUtils
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3
@@ -42,4 +43,8 @@ jobs:
       - name: Test
         env:
           TEST_ALL: true
-        run: julia --startup-file=no --project=lib/${{ matrix.package }} -e 'using Pkg; Pkg.test()'
+        run: |
+          julia --startup-file=no --project=lib/${{ matrix.package }} -e '
+            using Pkg
+            "${{ matrix.package }}" == "MessagePassingRulesBase" || Pkg.develop(path = "lib/MessagePassingRulesBase")
+            Pkg.test()'

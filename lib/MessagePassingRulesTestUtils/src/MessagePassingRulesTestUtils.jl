@@ -1,5 +1,6 @@
 module MessagePassingRulesTestUtils
 
-# Scaffolding. Phase 3 onwards fills this in; see PLAN.md and PHASES.md.
+using BayesBase, Distributions, ForwardDiff, HCubature, Serialization, Statistics, Test
+using MessagePassingRulesBase
 
 end

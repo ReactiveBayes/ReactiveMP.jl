@@ -2,17 +2,41 @@ name = "MessagePassingRulesTestUtils"
 uuid = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 version = "0.1.0-DEV"
 
-# Scaffolding only -- Phase 4 fills this in. See PLAN.md.
-#
-# Consumed via [extras] and the test target, never as a runtime dependency and never as a
-# package extension: its quadrature and sampling dependencies must not reach a node
-# package's runtime.
+[deps]
+BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
+MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 
 [compat]
+Aqua = "0.8"
+BayesBase = "1.5"
+Distributions = "0.25"
+Documenter = "1"
+ForwardDiff = "0.10, 1"
+HCubature = "1"
+JET = "0.9, 0.10, 0.11, 0.12"
+MessagePassingRulesBase = "0.1"
+Pkg = "1.10"
+Serialization = "1.10"
+Statistics = "1.10"
+Test = "1.10"
+TestItemRunner = "1"
 julia = "1.10"
 
-# Depends on MessagePassingRulesBase. Not declared yet: it is unregistered, and
-# [sources] -- the clean way to point at a sibling in a monorepo -- needs Julia 1.11 while
-# our floor is 1.10. From the repository root, activate this project and use
-# `Pkg.develop(path = "lib/MessagePassingRulesBase")`
-# and commits the resulting Manifest. See lib/README.md.
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
+
+[targets]
+test = ["Aqua", "Documenter", "JET", "Pkg", "TestItemRunner"]

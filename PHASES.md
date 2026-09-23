@@ -37,7 +37,7 @@ Decided with the user while planning Phase 4:
 
 Build it test-first, one commit per step, `PHASES.md` updated in each:
 
-1. package wiring — dependencies, harness, `LibTests.yml` entry with a develop step,
+1. **done** — package wiring — dependencies, harness, `LibTests.yml` entry with a develop step,
    `make test-testutils`, `lib/README.md`;
 2. the three table macros, each sugar over a function of the same name; `@test` runs inside
    TestUtils, so v6's callback form is gone; self-tested through a recording testset;

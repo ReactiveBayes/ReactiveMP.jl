@@ -10,7 +10,7 @@ each of the 231 entities in ReactiveMP is destined to land.
 | package | phase | role |
 |---|---|---|
 | `MessagePassingRulesBase` | 3 | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` (not `Message`/`Marginal` — those stay in the engine) |
-| `MessagePassingRulesTestUtils` | 4 | test tooling, consumed via `[extras]` |
+| `MessagePassingRulesTestUtils` | 4 | test tooling, consumed via `[extras]`: table tests, coverage, verification against the node definition, derivative checks, the migration checker |
 | `StandardMessagePassingRules` | 5 | distributions, arithmetic, logic, mixtures |
 | `MessagePassingRulesApproximations` | 6 | numerical utilities; **standalone, must not depend on the base** |
 
@@ -30,25 +30,22 @@ destination as the placeholder token `models`.
 
 ## Wiring the inter-package dependencies
 
-These packages are unregistered, and `[sources]` — the tidy way to point a `Project.toml`
-at a sibling directory — requires Julia 1.11, while the floor is 1.10. So a package that
-depends on another here is wired with an explicit dev-link, and the resulting `Manifest.toml`
-is committed so everyone resolves the same way:
+These packages are unregistered, and `[sources]` — the tidy way to point a `Project.toml` at
+a sibling directory — requires Julia 1.11, while the floor is 1.10. So a package that depends
+on another one here lists it in `[deps]` like any other dependency, and the sibling is
+**developed into its environment at test time**:
 
 ```julia
 julia> using Pkg
-julia> Pkg.activate("lib/StandardMessagePassingRules")
+julia> Pkg.activate("lib/MessagePassingRulesTestUtils")
 julia> Pkg.develop(path = "lib/MessagePassingRulesBase")
+julia> Pkg.test()
 ```
 
-Until that happens, the cross-package `[deps]` entries are left out and noted in each
-`Project.toml`, so that every package here instantiates on its own.
-
-Run this example from the repository root: `Pkg.activate` changes the active environment,
-not the working directory. After adding a link, commit both the changed `Project.toml` and
-the resulting manifest. Scratch manifests under `lib/` remain ignored; use
-`git add -f lib/StandardMessagePassingRules/Manifest.toml` to track the deliberate dev-link
-manifest when wiring the dependency, rather than accidentally committing today's stub resolutions.
+`make test-testutils` and `LibTests.yml` do exactly this. No `Manifest.toml` under `lib/` is
+committed: each Julia version resolves for itself, which a manifest resolved on 1.10 could not
+do for 1.11 and 1.12. Run the example from the repository root, since `Pkg.activate` changes
+the active environment, not the working directory.
 
 ## Promotion to separate repositories
 
