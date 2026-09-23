@@ -15,6 +15,9 @@ using StatsFuns: log2π
 using SpecialFunctions: loggamma, logfactorial
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny
+using LogExpFunctions: softmax!
+
+export NormalMixture
 
 include("helpers.jl")
 
@@ -41,5 +44,11 @@ include("rules/categorical/p.jl")
 
 include("nodes/dirichlet.jl")
 include("rules/dirichlet/out.jl")
+
+include("nodes/normal_mixture.jl")
+include("rules/normal_mixture/m.jl")
+include("rules/normal_mixture/p.jl")
+include("rules/normal_mixture/switch.jl")
+include("rules/normal_mixture/out.jl")
 
 end

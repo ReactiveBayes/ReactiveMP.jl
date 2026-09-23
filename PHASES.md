@@ -19,7 +19,7 @@ relying on one.
 **Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
 the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Step 2, the
 base-package additions, is done. Step 3, porting the slice's rules, is under way: its
-checklist is in § Phase 4.5, and the NMV, NMP, GammaShapeRate, Categorical and Dirichlet nodes are ported. The
+checklist is in § Phase 4.5, and every node of `StandardMessagePassingRules`'s share is ported; `Unscented` remains. The
 design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
 in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
@@ -830,7 +830,17 @@ Findings so far:
       comparison agrees on all of it, 100 checks in total. Categorical tables check promotion
       in Float32 and Float64 only, because converting a Categorical whose probabilities sum
       to one only approximately into BigFloat fails Distributions' own check
-- [ ] `NormalMixture`
+- [x] `NormalMixture`, the design's canary: the node is now this package's own
+      `struct NormalMixture end`, with no `{N}`, since the components are the groups' length.
+      It is declared `interfaces = [:out, :switch, :m..., :p...]` under `VMP` with its
+      dependencies, `(:m, k) => (q[:out], q[:switch], q[:p][k])` and so on. Its rules towards
+      `(:m, k)`, `(:p, k)`, `:switch` and `:out` and its average energy are univariate for now;
+      the multivariate branches wait for `MvNormalMeanPrecision`. The switch rule and the
+      energy share `normal_mean_precision_energy` with NMP. The v6 comparison agrees on
+      every case, with v6 given the aligned member alone where v7 passes the whole group.
+      The package's `quality:rules` now asserts that `check_rules` and
+      `check_rule_ambiguities` find nothing. That assertion found a base-package bug:
+      disjoint rules were reported as ambiguous, which `a0682b5e` fixes
 - [ ] `Unscented` into `MessagePassingRulesApproximations` (the Delta node and its rules stay
       in ReactiveMP, for the engine to port in case (d))
 

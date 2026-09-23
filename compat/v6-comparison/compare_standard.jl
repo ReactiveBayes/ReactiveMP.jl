@@ -80,6 +80,24 @@ const AVERAGE_ENERGY_CASES = [
     ("NMP:energy:joint", NormalMeanPrecision, (q = (τ = GammaShapeRate(3.0, 2.0),), clusters = ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),)), false),
 ]
 
+# NormalMixture: v7's node is the new package's own type, v6's is `NormalMixture{N}`. v6 gives
+# an indexed target the aligned member alone (`q_p` for `(:m, k)`), where v7 passes the
+# group in full with `nothing` for the members the dependency leaves out.
+const V6_NORMAL_MIXTURE = V6Oracle.ReactiveMP.NormalMixture{2}
+aligned(group, k) = group[k]
+
+const MIXTURE_COMPONENTS = (m = (NormalMeanVariance(0.0, 1.0), NormalWeightedMeanPrecision(2.0, 1.5)), p = (GammaShapeRate(2.0, 1.0), GammaShapeRate(3.0, 2.0)))
+const MIXTURE_SWITCH = Categorical([0.3, 0.7])
+
+const MIXTURE_CASES = [
+    ("NormalMixture:(m,1)", (:m, 1), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, p = (MIXTURE_COMPONENTS.p[1], nothing)),), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, p = MIXTURE_COMPONENTS.p[1]),)),
+    ("NormalMixture:(m,2)", (:m, 2), (q = (out = NormalMeanVariance(1.0, 0.5), switch = MIXTURE_SWITCH, p = (nothing, MIXTURE_COMPONENTS.p[2])),), (q = (out = NormalMeanVariance(1.0, 0.5), switch = MIXTURE_SWITCH, p = MIXTURE_COMPONENTS.p[2]),)),
+    ("NormalMixture:(p,1)", (:p, 1), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, m = (MIXTURE_COMPONENTS.m[1], nothing)),), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, m = MIXTURE_COMPONENTS.m[1]),)),
+    ("NormalMixture:(p,2)", (:p, 2), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, m = (nothing, MIXTURE_COMPONENTS.m[2])),), (q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, m = MIXTURE_COMPONENTS.m[2]),)),
+    ("NormalMixture:switch", :switch, (q = (out = PointMass(1.5), MIXTURE_COMPONENTS...),), (q = (out = PointMass(1.5), MIXTURE_COMPONENTS...),)),
+    ("NormalMixture:out", :out, (q = (switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...),), (q = (switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...),)),
+]
+
 declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, reasoning = NMV_669)] : DeclaredDisagreement[]
 
 @testset "StandardMessagePassingRules against v6" begin
@@ -101,6 +119,17 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             record = compare_with_reference(id, v7, v6; inputs = clusters, node = string(node), target = ":$edge", declared = declare(id, flagged))
             @test flagged == (record.outcome === :correction)
         end
+    end
+    @testset "NormalMixture" begin
+        for (id, target, v7_inputs, v6_inputs) in MIXTURE_CASES
+            v7 = call_message_update_rule(NormalMixture, target; q = v7_inputs.q)
+            v6, _ = v6_message_update(V6_NORMAL_MIXTURE, target, NamedTuple(), v6_inputs.q)
+            @test compare_with_reference(id, v7, v6; inputs = v7_inputs, node = "NormalMixture", target = string(target)).outcome === :agree
+        end
+        q = (out = PointMass(1.5), switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...)
+        v7 = call_average_energy(NormalMixture; q)
+        v6 = v6_average_energy(V6_NORMAL_MIXTURE, q)
+        @test compare_with_reference("NormalMixture:energy", v7, v6; node = "NormalMixture", target = "energy").outcome === :agree
     end
     @testset "marginal rules" begin
         for (id, node, members, inputs, flagged) in MARGINAL_CASES

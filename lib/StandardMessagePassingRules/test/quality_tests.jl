@@ -34,3 +34,13 @@ end
     DocMeta.setdocmeta!(StandardMessagePassingRules, :DocTestSetup, :(using StandardMessagePassingRules); recursive = true)
     doctest(StandardMessagePassingRules; manual = false)
 end
+
+@testitem "quality:rules" tags = [:quality] begin
+    using StandardMessagePassingRules
+    using MessagePassingRulesBase: check_rules, check_rule_ambiguities
+
+    # Every rule agrees with its node's declaration and with its algorithm's declared
+    # dependencies, and no call could match two rules equally well.
+    @test isempty(check_rules(StandardMessagePassingRules))
+    @test isempty(check_rule_ambiguities(StandardMessagePassingRules))
+end

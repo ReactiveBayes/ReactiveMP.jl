@@ -1060,7 +1060,7 @@ version = "2.9.0"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
 [[deps.StandardMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "LogExpFunctions", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
 path = "../../lib/StandardMessagePassingRules"
 uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
 version = "0.1.0-DEV"
