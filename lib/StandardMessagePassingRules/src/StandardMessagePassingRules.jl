@@ -21,6 +21,7 @@ using LogExpFunctions: softmax!
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 using LinearAlgebra: I, tr, logdet
 using FastCholesky: cholinv
+using MatrixCorrectionTools: correction!
 import ExponentialFamily: InverseWishartFast, WishartFast
 import DomainSets
 
@@ -32,7 +33,7 @@ include("helpers.jl")
 # The nodes this package declares, for types other packages own.
 const NODES = [
     NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform,
-    MvNormalMeanCovariance,
+    MvNormalMeanCovariance, MvNormalMeanPrecision,
 ]
 
 include("nodes/normal_mean_variance.jl")
@@ -99,6 +100,12 @@ include("rules/mv_normal_mean_covariance/out.jl")
 include("rules/mv_normal_mean_covariance/mean.jl")
 include("rules/mv_normal_mean_covariance/covariance.jl")
 include("rules/mv_normal_mean_covariance/marginals.jl")
+
+include("nodes/mv_normal_mean_precision.jl")
+include("rules/mv_normal_mean_precision/out.jl")
+include("rules/mv_normal_mean_precision/mean.jl")
+include("rules/mv_normal_mean_precision/precision.jl")
+include("rules/mv_normal_mean_precision/marginals.jl")
 
 include("nodes/logic.jl")
 include("rules/and/rules.jl")

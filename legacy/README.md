@@ -25,5 +25,7 @@ the logic nodes (step 4). Kept on purpose although partly ported:
 - `normal_mixture`, whose multivariate branches wait for `MvNormalMeanPrecision` (Phase 5 step
   5); the other five slice nodes were finished in Phase 5 step 1 and are gone;
 - `approximations/approximations.jl` and `shared.jl`, which unported files here still use;
-- `nodes/predefined/delta/` and `rules/delta/`, for `Linearization` and CVI (Phase 6). `INVENTORY.md` says where each entity goes. The
+- `nodes/predefined/delta/` and `rules/delta/`, for `Linearization` and CVI (Phase 6);
+- `rules/mv_normal_mean_precision/marginals.jl`, holding only MvNormalMeanPrecision's two
+  marginal rules for BIFM's `TerminalProdArgument`, for the BIFM port (Phase 6). `INVENTORY.md` says where each entity goes. The
 behaviour the ports must reproduce is ReactiveMP 6.5.0's, which `compat/v6-comparison` runs.

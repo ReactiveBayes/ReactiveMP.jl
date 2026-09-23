@@ -28,6 +28,7 @@ const INVERSE_GAMMA = InverseGamma(3.0, 4.0)
 const MVNMC_669 = "ReactiveMP.jl#673, the multivariate #669: v6 uses E[Σ] for the covariance a non-point-mass q_Σ contributes; naive VMP gives E[Σ⁻¹]⁻¹, as v6's own MvNormalMeanCovariance energy does"
 const I2 = [1.0 0.0; 0.0 1.0]
 const INVERSE_WISHART = InverseWishart(5.0, [2.0 0.3; 0.3 2.0])
+const WISHART = Wishart(4.0, [1.0 0.2; 0.2 0.5])
 
 # v6 returns a split cluster as a NamedTuple and the port as a `FactorizedCluster`; its shape
 # likelihood is v6's own type. Both are read as the port's before comparing.
@@ -124,6 +125,17 @@ const MESSAGE_CASES = [
     ("MvNMC:μ:m-point-mass-q-point-mass", MvNormalMeanCovariance, :μ, (m = (out = PointMass([1.0, 3.0]),), q = (Σ = PointMass(2 * I2),)), false),
     ("MvNMC:Σ:q", MvNormalMeanCovariance, :Σ, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanCovariance([3.0, 5.0], [3.0 2.0; 2.0 4.0])),), false),
     ("MvNMC:Σ:q-point-mass-out", MvNormalMeanCovariance, :Σ, (q = (out = PointMass([1.0, 2.0]), μ = MvNormalWeightedMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0])),), false),
+    ("MvNMP:out:m-point-masses", MvNormalMeanPrecision, :out, (m = (μ = PointMass([1.0, 3.0]), Λ = PointMass([3.0 2.0; 2.0 4.0])),), false),
+    ("MvNMP:out:m-normal", MvNormalMeanPrecision, :out, (m = (μ = MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]), Λ = PointMass([1.5 1.0; 1.0 2.0])),), false),
+    ("MvNMP:out:q-point-masses", MvNormalMeanPrecision, :out, (q = (μ = PointMass([1.0, 3.0]), Λ = PointMass([3.0 2.0; 2.0 4.0])),), false),
+    ("MvNMP:out:q-wishart", MvNormalMeanPrecision, :out, (q = (μ = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), Λ = WISHART),), false),
+    ("MvNMP:out:m-point-mass-q-wishart", MvNormalMeanPrecision, :out, (m = (μ = PointMass([1.0, 3.0]),), q = (Λ = WISHART,)), false),
+    ("MvNMP:out:m-normal-q-wishart", MvNormalMeanPrecision, :out, (m = (μ = MvNormalMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]),), q = (Λ = WISHART,)), false),
+    ("MvNMP:out:m-normal-q-point-mass", MvNormalMeanPrecision, :out, (m = (μ = MvNormalMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]),), q = (Λ = PointMass(2 * I2),)), false),
+    ("MvNMP:μ:m-normal-q-wishart", MvNormalMeanPrecision, :μ, (m = (out = MvNormalMeanCovariance([0.0, 0.0], [7.0 -1.0; -1.0 9.0]),), q = (Λ = WISHART,)), false),
+    ("MvNMP:μ:q-wishart", MvNormalMeanPrecision, :μ, (q = (out = PointMass([1.0, 2.0]), Λ = WISHART),), false),
+    ("MvNMP:Λ:q", MvNormalMeanPrecision, :Λ, (q = (out = MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), μ = MvNormalMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0])),), false),
+    ("MvNMP:Λ:q-point-mass-out", MvNormalMeanPrecision, :Λ, (q = (out = PointMass([1.0, 2.0]), μ = MvNormalWeightedMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0])),), false),
     ("AND:out", AND, :out, (m = (in1 = Bernoulli(0.3), in2 = Bernoulli(0.5)),), false),
     ("AND:in1", AND, :in1, (m = (out = Bernoulli(0.3), in2 = Bernoulli(0.4)),), false),
     ("AND:in2", AND, :in2, (m = (out = Bernoulli(0.7), in1 = Bernoulli(0.2)),), false),
@@ -140,6 +152,7 @@ const MESSAGE_CASES = [
 const CLUSTER_MESSAGE_CASES = [
     ("NMP:τ:q-joint", NormalMeanPrecision, :τ, ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),), false),
     ("MvNMC:Σ:q-joint", MvNormalMeanCovariance, :Σ, ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),), false),
+    ("MvNMP:Λ:q-joint", MvNormalMeanPrecision, :Λ, ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),), false),
     ("NMV:v:q-joint", NormalMeanVariance, :v, ((:out, :μ) => MvNormalMeanCovariance([2.0, 3.0], [2.0 -0.1; -0.1 3.0]),), false),
 ]
 
@@ -176,6 +189,12 @@ const MARGINAL_CASES = [
     ("MvNMC:(out,μ,Σ):point-mass-μ", MvNormalMeanCovariance, (:out, :μ, :Σ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = PointMass([1.0, 1.0]), Σ = PointMass(2 * I2)),), false),
     ("MvNMC:(out,μ,Σ):point-mass-out", MvNormalMeanCovariance, (:out, :μ, :Σ), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), Σ = PointMass(2 * I2)),), false),
     ("MvNMC:(out,μ,Σ):normals", MvNormalMeanCovariance, (:out, :μ, :Σ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0]), Σ = PointMass(2 * I2)),), false),
+    ("MvNMP:(out,μ):wishart-Λ", MvNormalMeanPrecision, (:out, :μ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0])), q = (Λ = WISHART,)), false),
+    ("MvNMP:(out,μ):point-mass-out", MvNormalMeanPrecision, (:out, :μ), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2)), q = (Λ = WISHART,)), false),
+    ("MvNMP:(out,μ):point-mass-μ", MvNormalMeanPrecision, (:out, :μ), (m = (out = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), μ = PointMass([1.0, 1.0])), q = (Λ = PointMass(I2 / 2),)), false),
+    ("MvNMP:(out,μ,Λ):point-mass-μ", MvNormalMeanPrecision, (:out, :μ, :Λ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = PointMass([1.0, 1.0]), Λ = PointMass(I2 / 2)),), false),
+    ("MvNMP:(out,μ,Λ):point-mass-out", MvNormalMeanPrecision, (:out, :μ, :Λ), (m = (out = PointMass([1.0, 1.0]), μ = MvNormalWeightedMeanPrecision([3.0, 4.0], I2), Λ = PointMass(I2 / 2)),), false),
+    ("MvNMP:(out,μ,Λ):normals", MvNormalMeanPrecision, (:out, :μ, :Λ), (m = (out = MvNormalWeightedMeanPrecision([1.0, 2.0], I2), μ = MvNormalMeanCovariance([3.0, 4.0], [2.0 0.5; 0.5 1.0]), Λ = PointMass(I2 / 2)),), false),
     ("AND:(in1,in2)", AND, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("OR:(in1,in2)", OR, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
     ("IMPLY:(in1,in2)", IMPLY, (:in1, :in2), (m = (out = Bernoulli(0.2), in1 = Bernoulli(0.8), in2 = Bernoulli(0.4)),), false),
@@ -192,6 +211,10 @@ const AVERAGE_ENERGY_CASES = [
     ("MvNMC:energy:point-mass-Σ", MvNormalMeanCovariance, (q = (out = PointMass([1.0, 1.0]), μ = MvNormalMeanPrecision([1.0, 1.0], I2), Σ = PointMass(2 * I2)),), false),
     ("MvNMC:energy:inverse-wishart-Σ", MvNormalMeanCovariance, (q = (out = MvNormalMeanCovariance([0.5, 1.0], [1.0 0.2; 0.2 0.5]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), Σ = INVERSE_WISHART),), false),
     ("MvNMC:energy:joint", MvNormalMeanCovariance, (q = (Σ = INVERSE_WISHART,), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
+    ("MvNMP:energy:wishart-Λ", MvNormalMeanPrecision, (q = (out = MvNormalMeanCovariance([0.5, 1.0], [1.0 0.2; 0.2 0.5]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), Λ = WISHART),), false),
+    ("MvNMP:energy:point-mass-Λ", MvNormalMeanPrecision, (q = (out = PointMass([1.0, 1.0]), μ = MvNormalMeanPrecision([1.0, 1.0], I2), Λ = PointMass(2 * I2)),), false),
+    ("MvNMP:energy:joint-wishart", MvNormalMeanPrecision, (q = (Λ = WISHART,), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
+    ("MvNMP:energy:joint-point-mass", MvNormalMeanPrecision, (q = (Λ = PointMass(I2 / 2),), clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.5, 2.0, 1.0], [2.0 0.1 0.2 0.0; 0.1 1.5 0.0 0.3; 0.2 0.0 1.0 0.1; 0.0 0.3 0.1 2.5]),)), false),
     ("Beta:energy", Beta, (q = (out = Beta(2.0, 3.0), a = PointMass(1.5), b = PointMass(2.5)),), false),
     ("Bernoulli:energy", Bernoulli, (q = (out = Bernoulli(0.3), p = Beta(2.0, 3.0)),), false),
     ("Gamma:energy:point-mass-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = PointMass(2.0), θ = PointMass(1.0)),), false),

@@ -19,8 +19,8 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance done; next
-MvNormalMeanPrecision, and after it
+**Phase 5, step 5: the multivariate normals** — MvNormalMeanCovariance and
+MvNormalMeanPrecision done; next
 MvNormalMeanScalePrecision and its matrix form, MvNormalWeightedMeanPrecision, then
 NormalMixture's multivariate branches. Its brief is in § Phase 5, *Step 5 brief*: the counts, the
 matrix correction as the context service `ctx.matrix_correction` (user), and the defaults for
@@ -1521,6 +1521,12 @@ multivariate branches.
     and declared (ReactiveMP.jl#673, the multivariate #669). `compare_standard.jl` agrees on 319
     checks, the corrections declared. LinearAlgebra and FastCholesky join Standard's
     dependencies.
+  - *MvNormalMeanPrecision — done.* 16 message rules, 6 marginal rules (v6's two for BIFM's
+    `TerminalProdArgument` stay in `legacy/v6/` for Phase 6) and 4 average energies, two of
+    them one method with a Wishart specialisation. The Λ rules pass their scale matrix through
+    `ctx.matrix_correction`, tested with `ReplaceZeroDiagonalEntries`; MatrixCorrectionTools
+    joins Standard's dependencies. A `q_Λ` rightly contributes E[Λ], so nothing differs from
+    v6: `compare_standard.jl` agrees on all 363 checks.
 - **NormalMixture:** its multivariate path goes through helpers dispatching on `variate_form`.
   An `mv_normal_mean_precision_energy` helper is shared with the MvNormalMeanPrecision node,
   and v6's Float64 lock (`init = 0.0`) goes. Today its rules take `::Any` and compute
