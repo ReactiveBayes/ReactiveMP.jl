@@ -1096,6 +1096,42 @@ the immutable `Message`, edge order in clusters, `EdgeLabel.index`, buffer-reuse
 eligibility — is now due at the *start* of Phase 4.5 rather than after Phase 6. That is
 the point: those are the decisions the rule interface most needs proven against.
 
+### 3.19 The Phase 4.5 design session
+
+Three read-only investigations fed it, of RxInfer 5.5.2's use of ReactiveMP, the v6 engine's
+data flow and retainers, and what the four slice cases need. The outcome is the design brief
+in `PHASES.md` § Phase 4.5; what matters for later readers is why.
+
+- **RxInfer stopped being a constraint.** RxInfer reaches deep into v6: variable
+  constructors, three positional activation-option structs, `score` streams of
+  `CountingReal`, and a force-marginal plugin that walks node internals
+  (`reactivemp_force_marginal_computation_plugin.jl`). Keeping all of that would have made the
+  new engine a re-implementation of v6's surface. The user settled it: RxInfer is refactored
+  for the new engine as its own major release. So the engine owns its construction API, and
+  the slice runs without RxInfer. RxInfer 5.5.2 is still what records the v6 fixtures.
+- **Rocket stays.** An explicit scheduler was the alternative. Rocket keeps v6's emission
+  order comparable against fixtures, and the package table already assumed it.
+- **Deferred messages materialise as in v6, by requirement.** The engine investigation
+  flagged `DeferredMessage` as a staleness trap: it holds source observables, not values, so
+  a message retained and materialised later reads the current values. The assistant proposed
+  snapshotting inputs at emission. **The user rejected it: the lazy materialisation is
+  load-bearing for the correctness of reactive message passing.** The engine reproduces it,
+  and the retained-value guarantee starts at materialisation. See §4, item 21.
+- **The slice's rules go into the real packages.** They would have to be ported anyway, and
+  a throwaway port is work Phase 5's tool would repeat. About 45 rules, deduplicated.
+- **A cluster over a whole group.** Delta's `q_ins` is a joint over its `:in...` group, and
+  the base package rejected any cluster containing a group. The choice was between extending
+  the base package, which is general and makes Delta its first customer, and a Delta-specific
+  synthetic interface, which is the kind of special-casing the rewrite removes. The user chose
+  the extension.
+- **What the investigation found, and the proposals answer.** Clusters and group indices in
+  v6 are positions in a flat interface list, re-derived from neighbour order, never from
+  GraphPPL's `EdgeLabel.index` (#7). Five node types override activation. `getnodefn` is
+  promised by the base docs but defined nowhere. Marginal rules return NamedTuples that split
+  a cluster, which v7's single-valued `ClusterTarget` cannot express. And no ReactiveMP test
+  runs more than one pass or computes free energy: every trajectory v6 has ever produced came
+  through RxInfer.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1174,6 +1210,10 @@ Claims the assistant made that were **wrong** and should not be revived:
     slice's hard cases run through engine code that is being deleted, and a live v6
     comparison is impossible anyway (same UUID), so the bridge would be adapters for dead
     code. The real engine is written directly, against recorded v6 fixtures. See §3.18.
+21. **"`DeferredMessage` is a staleness trap; snapshot its inputs at emission."** It holds
+    source observables and reads their latest values at materialisation, and that is
+    load-bearing for the correctness of reactive message passing, not a defect. The new
+    engine materialises exactly as v6 does. See §3.19.
 
 ---
 

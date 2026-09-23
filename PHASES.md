@@ -19,8 +19,9 @@ relying on one.
 **Phase 4.5 — the engine design session, then the first cut of the v7 engine.** Phase 4.5
 was restructured on 2026-09-23 (`DISCUSSION.md` §3.18): there is no bridge into the v6
 engine. The new engine is written directly in `src/`, built first for four slice cases, and
-compared against fixtures recorded from v6. The design session comes before any code; its
-agenda, the contracts it must honour and the v6 starting points are in § Phase 4.5 below.
+compared against fixtures recorded from v6. The design session is under way: § Phase 4.5's design brief
+records what is decided and ten proposals awaiting sign-off. Code starts, with Step 0's
+fixtures, once they are signed off.
 
 Phases 0–4 are closed. `lib/MessagePassingRulesBase` is the rule system; `lib/MessagePassingRulesTestUtils`
 is its test tooling; `compat/v6-comparison` holds the v6 oracle and the migration check.
@@ -39,7 +40,7 @@ julia +1.10 --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.
 julia +1.10 --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
 ```
 
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.17,
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.19,
 and this file's § Phase 4.5. Working conventions established so far: one commit per step,
 failing test first, `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive
 names rather than generic ones, and no comments that only narrate.
@@ -644,7 +645,8 @@ Decided instead:
 - **Downstream breakage is accepted until the release.** Only a small internal group uses the
   branch, and it is verified locally; `IntegrationTest.yml` is not a gate before Phase 8.
 
-**Status: not started. Next is the design session**, before any code.
+**Status: design session under way.** The design brief below records what is decided and
+what is proposed; code starts once the proposals are signed off.
 
 ### Contracts already made — the engine implements them, it does not revisit them
 
@@ -710,29 +712,84 @@ records, for each slice model: free-energy trajectories, posteriors, per-message
 emission order (the mixture `reverse` order included) and the missing-input behaviour.
 `MigrationRecord` is rule-shaped, so this needs a trajectory-shaped fixture alongside it.
 
-### The design session's agenda
+### Design brief — 2026-09-23
 
-Carried over from the earlier planning questions:
-1. **Which four slice cases** — one each for BP, structured VMP, a mixture (variadic group)
-   and a delta node, and whether the delta one needs `static_inputs = :fold` in the first cut.
-   Proposed: `NormalMeanVariance` BP (its rules are already ported in `check.jl`),
-   `NormalMeanPrecision` VMP, the `NormalMixture((:m, k))` canary, and delta + `Unscented`
-   without `:fold`, static gating as a stretch (Phase 0 has fixtures for it).
-2. **The fixture format and source** — Step 0 above; proposed as stated there.
-3. **How annotations and log scales are compared**: `Message ==` ignores annotations, so the
-   check must be explicit (`PLAN.md` § Verification, annotation gate). Proposed: per-message
-   log scales recorded through callbacks and compared with a tolerance.
+Evidence gathered from the v6 engine, the base package and RxInfer 5.5.2; the reasoning is
+in `DISCUSSION.md` §3.19. **Decided** items were settled by the user; **proposed** items
+await sign-off and are not yet binding.
 
-Moved up from Phase 7:
-4. dependency-to-stream wiring for groups (`__collect_latest_updates` must collapse
-   consecutive same-name interfaces), and with it the mixture `activate!` demolition;
-5. the `Message`/`DeferredMessage` envelope (immutable `Message`, annotations as a type
-   parameter);
-6. preserving edge order when building clusters — GraphPPL's factorisation indexes the
-   original flat list, the single biggest correctness trap — and plumbing `EdgeLabel.index`
-   through RxInfer rather than re-deriving group indices from neighbour position (#7);
-7. buffer-reuse eligibility for the engine's own retainers (#10);
-8. where `RuleContext` is built and held, and where the fallback lives.
+**Decided**
+
+- **RxInfer is not a constraint.** It is refactored for the new engine as its own major
+  release, so v7 does not keep RxInfer 5.x's surface (variable constructors, activation-option
+  structs, `score` streams of `CountingReal`, the force-marginal plugin's reach into node
+  internals). The slice runs on a graph-construction API the engine owns; RxInfer's
+  adaptation is later work.
+- **Rocket stays the substrate.** The engine is rewritten on Rocket observables, not replaced
+  by an explicit scheduler — `PLAN.md` § Package split already lists Rocket as the engine's
+  dependency, and v6's emission order stays comparable.
+- **Deferred messages materialise exactly as in v6.** A deferred message holds its source
+  observables and reads their latest values when it is materialised, then caches
+  (`message.jl:447-494`). This is **load-bearing for the correctness of reactive message
+  passing** (user), not an implementation detail to improve on: the new engine reproduces it,
+  and the v6 fixtures check it. The retained-value criterion therefore starts at
+  materialisation — once materialised, a message's value and annotations never change
+  underneath a holder.
+- **The slice's rules are ported into the real packages**, not throwaway fixtures: NMV, NMP,
+  Gamma(ShapeRate), Categorical, Dirichlet and NormalMixture into
+  `lib/StandardMessagePassingRules`, each with TestUtils tables and a v6 comparison;
+  `Unscented` moves unchanged into `lib/MessagePassingRulesApproximations` (standalone, as
+  planned); the Delta node and its rules stay in ReactiveMP until Phase 6 creates their
+  package. About **45** rules, deduplicated.
+- **The base package gains a cluster over a whole group** — a joint target and input over
+  `:in...`, validated like any other cluster. Today `validate_dependencies` rejects it
+  (`dependencies.jl:169`), so Delta's `q_ins` joint (`rules/delta/unscented/marginals.jl:4`,
+  `in.jl:3`) cannot be written. Delta is the first customer.
+
+**Proposed**
+
+1. **Edge identity is explicit.** The engine's construction API takes interfaces as
+   `(name, index)` — the index supplied by the caller (GraphPPL's `EdgeLabel.index`), never
+   re-derived from neighbour position — and clusters name interfaces, not positions in a flat
+   list. That removes #7 and the edge-order trap (`clusters.jl:77-87`, `dependencies.jl:311-320`,
+   `mixture.jl:84-95`, `delta.jl:170-179`) by construction.
+2. **No per-node `activate!`.** Activation is generic over the `NodeSpec`/`DependenciesSpec`:
+   the mixtures' own `factornode`/`activate!`/`collect_latest_*` (`normal_mixture.jl:56-225`)
+   become groups plus declared dependencies. Delta's three non-dependency behaviours are
+   engine features keyed off the spec: static gating (`static_inputs = :fold`), `q_out`
+   aliasing (a singleton cluster's marginal *is* the variable's), and the empty-group case.
+3. **`Message` becomes immutable with typed annotations** (`Message{D, A}`); v6's mutable
+   `AnnotationDict` (`annotations.jl:12`), which tests mutate in place, goes.
+4. **`getnodefn(node, target)` is declared in the base package with no methods** and
+   implemented by the engine's Delta node, which owns the function and its static fold. The
+   base docs already promise it (`nodes.jl:80`, `context.jl:6`).
+5. **A marginal rule may return a `FactorizedJoint`** (BayesBase) for a cluster that splits,
+   replacing v6's NamedTuple returns (`normal_mean_variance/marginals.jl:24`,
+   `normal_mean_precision/marginals.jl:58`); the engine distributes it to the cluster members.
+6. **The engine assembles Bethe free energy itself** — per node, average energy over the
+   declared partition minus entropies, and per variable, the degree-weighted entropy — as a
+   stream per iteration. In v6 the assembly is RxInfer's (`reactivemp_free_energy.jl:52-128`);
+   the engine needs it to run the slice, and RxInfer later consumes it.
+7. **First-cut scope.** In: annotations (log scale), rule-call callbacks (enough to record
+   emission order), missing inputs, `RuleNotFound` as an error naming the near misses. Out,
+   to Phase 7: form constraints, stream postprocessors and schedulers,
+   `InputArgumentsAnnotations`, user fallbacks, buffer reuse (#10: the first cut always
+   allocates fresh results).
+8. **Slice models.** (a) BP: `x ~ NMV(c, c)`, `y ~ NMV(x, c)`, `y` observed. (b) VMP:
+   `μ ~ NMP`, `τ ~ GammaShapeRate`, `y[i] ~ NMP(μ, τ)`, mean-field, then structured
+   `q(out, μ)q(τ)`. (c) `y[i] ~ NormalMixture(z[i], (m₁, m₂), (p₁, p₂))`, `z[i] ~ Categorical(π)`,
+   `π ~ Dirichlet`, NMP/GammaShapeRate priors. (d) `x ~ NMV`, `z := f(x)` with Unscented,
+   `y ~ NMV(z, c)` observed; `f(x, c)` with a static input as the stretch.
+9. **Fixtures (Step 0).** `compat/v6-comparison` adds RxInfer 5.5.2 (it accepts ReactiveMP
+   6.5; installed locally). For each slice model: free energy per iteration, posteriors, and
+   the trace (`RxInferTraceCallbacks`, `trace.jl:156-161`) of every `AfterMessageRuleCallEvent`
+   — edge, result and log scale, in order (`message.jl:730`). A trajectory-shaped fixture type
+   joins `MigrationRecord` in TestUtils. Log scales are compared explicitly, with a tolerance.
+10. **Order of work**, one commit per step, test first: Step 0 fixtures → the base-package
+    additions (group cluster, `getnodefn`, `FactorizedJoint` returns) → the rule ports → the
+    engine core (variables, equality chain, generic node activation) on case (a) → free energy
+    → (b) → (c) → (d) → delete the v6 engine. v6 rules and `rule.jl` do not depend on the
+    engine's streams, so their tables keep passing until Phase 5 deletes them per directory.
 
 ### Exit criteria
 - [ ] v6 fixtures recorded for the slice models (Step 0), before any v6 code is deleted
@@ -741,8 +798,9 @@ Moved up from Phase 7:
 - [ ] free energy agrees with the recorded v6 trajectories on the same models
 - [ ] annotations and log scales agree with the recorded ones, compared explicitly (see the
       annotation gate in `PLAN.md`)
-- [ ] a retained-value test: hold a message across several updates and confirm it is not
-      mutated underneath you
+- [ ] a retained-value test: hold a materialised message across several updates and confirm
+      neither its value nor its annotations change underneath you (deferred messages materialise
+      as in v6, so the guarantee starts at materialisation)
 - [ ] the missing-input path pinned by a test (rule not called, post-rule processors skipped)
 - [ ] mixture emission order agrees with the recorded v6 order (#6)
 - [ ] edge order and group indices preserved through integration (#7)

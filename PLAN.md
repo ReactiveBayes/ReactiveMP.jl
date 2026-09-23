@@ -639,6 +639,10 @@ deleted as they are replaced, after their fixtures are recorded (`DISCUSSION.md`
 ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`, wired the same way.
 **Downstream breakage before the release is accepted**: only a small internal group uses the
 branch and checks it locally, and the coordinated downstream CI stays a Phase 8 gate.
+RxInfer is refactored for the new engine as its own major release, so the engine owns its
+graph-construction API and does not keep RxInfer 5.x's surface. The engine stays on Rocket, and
+deferred messages materialise exactly as in v6 — that is load-bearing for correctness
+(`DISCUSSION.md` §3.19; the full design brief is in `PHASES.md` § Phase 4.5).
 
 ### Approximations are utilities, not algorithms
 
