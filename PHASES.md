@@ -23,8 +23,8 @@ re-check before relying on one.
 MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. Signed off by the
 user; § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
 `public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart,
-InverseWishart, DirichletCollection, MvNormalGamma and MvNormalWishart are done; next
-MatrixNormal, then MatrixNormalWishart, which close the step. Steps 1–5 are done; step 5 is summarised
+InverseWishart, DirichletCollection, MvNormalGamma, MvNormalWishart and MatrixNormal are done;
+next MatrixNormalWishart, which closes the step. Steps 1–5 are done; step 5 is summarised
 in § Phase 5, *Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1642,6 +1642,12 @@ extending it, is recorded for Phase 8.
   - *MvNormalWishart — done.* Its one message rule, for known parameters, promoting them to
     one float type; no energy, as in v6. v6's test used ν = 1 at d = 2, no Wishart; the port's
     cases use valid ones. It agrees with v6 (497 checks).
+  - *MatrixNormal — done.* 14 message rules, 1 marginal rule and the energy. The second-moment
+    terms go through `row_scatter` and `column_scatter`, dispatching on a point mass or a
+    MatrixNormal, where v6 used `isa` checks that dropped any other type's moments; the energy
+    and the mean-field rules take `Union{PointMass, MatrixNormal}`, so v6's MatrixNormal-only
+    `:out` and `:M` rules now also accept a known `M` or `out`. `mul_trace` is `dot(A', B)`.
+    Nothing differs from v6 (531 checks).
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,
