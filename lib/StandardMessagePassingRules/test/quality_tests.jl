@@ -1,6 +1,10 @@
 @testitem "quality:aqua" tags = [:quality] begin
-    using Aqua, StandardMessagePassingRules
-    Aqua.test_all(StandardMessagePassingRules)
+    using Aqua, StandardMessagePassingRules, ExponentialFamily
+    # A rule package declares nodes, marginal rules and average energies for distributions
+    # another package owns, through functions the base package owns. That is the design, and
+    # Aqua reports it as piracy, so the node types are declared as owned here. Message rules
+    # never show up: their target's `Symbol` parameter makes them look owned to Aqua.
+    Aqua.test_all(StandardMessagePassingRules; piracies = (treat_as_own = StandardMessagePassingRules.NODES,))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

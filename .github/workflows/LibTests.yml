@@ -95,5 +95,7 @@ jobs:
         run: |
           julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
           julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
+      - name: Compare the StandardMessagePassingRules ports with v6
+        run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
       - name: Re-record the v6 engine fixtures and compare with the committed ones
         run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check

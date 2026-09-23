@@ -18,9 +18,8 @@ relying on one.
 
 **Phase 4.5 — the base-package additions (step 2 of the brief's order).** Step 0 is done:
 the v6 engine fixtures are recorded under `compat/v6-comparison/fixtures/engine/`. Step 2, the
-base-package additions, is done: a cluster over a whole group, `getnodefn`, and
-`FactorizedCluster` marginal returns. Next is step 3, porting the slice's rules into
-`StandardMessagePassingRules` and `MessagePassingRulesApproximations`. The
+base-package additions, is done. Step 3, porting the slice's rules, is under way: its
+checklist is in § Phase 4.5, and `NormalMeanVariance` is ported. The
 design brief in § Phase 4.5 is **signed
 off** (2026-09-23; `DISCUSSION.md` §3.18–3.19). There is no bridge: the engine is refactored
 in place in `src/`. Its reactive machinery stays, while rule lookup and invocation and node
@@ -777,6 +776,51 @@ What recording found, all **preserved, not fixed**:
       **For Phase 5:** the promotion check rejects a block that passes an input through
       unchanged, as v6's `v = m_v` does, because the output must carry the promoted float
       type of every input. Ported rules must convert such blocks
+
+### Step 3 — the slice's rules, ported
+
+The porting list is exact, not estimated: `compat/v6-comparison/slice_rule_inventory.jl`
+records every message rule, marginal rule and average energy the seven slice models select
+in v6, with the input types the selected rule declares. Deduplicated, it is:
+
+| node | message rules | marginal rules | average energies |
+|---|---|---|---|
+| `NormalMeanVariance` | `:out` ×3, `:μ` ×2 (+ BP siblings) | `(:out, :μ)` | singles, `(:out, :μ)` joint |
+| `NormalMeanPrecision` | `:out` ×2, `:μ` ×2, `:τ` ×2 | `(:out, :μ)` | singles, `(:out, :μ)` joint |
+| `GammaShapeRate` | `:out` | — | singles |
+| `Categorical` | `:out`, `:p` | — | singles |
+| `Dirichlet` | `:out` | — | singles |
+| `NormalMixture` | `(:m, k)`, `(:p, k)`, `:switch` | — | its own |
+| `DeltaFn` + `Unscented` | `:out`, `(:in, k)` | `(:in,)` | — (engine) |
+
+Porting conventions:
+- a distribution node runs under `BP`; its rules omit `algorithm`, and they combine `m[…]`
+  and `q[…]` as v6's did, under the default dependency scheme;
+- a rule taking a non-point-mass `q_v` is ported with ReactiveMP.jl#669 **corrected**, and the
+  comparison declares it a `:correction`;
+- log scales are kept exactly as v6 has them, gaps included;
+- each node gets v6's own tables, verification against its log-density where the tool
+  supports the inputs (messages only, or marginals only), and a v6 comparison in
+  `compat/v6-comparison/compare_standard.jl`, which CI runs.
+
+Findings so far:
+- **Aqua's piracy check does see rule packages**, contrary to `PLAN.md` § Testing's
+  "vacuous for rules". Message rules escape it, because their target type carries a
+  `Symbol`. But `nodespec`, `nodefunction`, average energies and marginal rules for another
+  package's distribution are flagged. `StandardMessagePassingRules` declares the node types
+  it defines as owned (`NODES`, passed to `treat_as_own`); that is the design, a rule package
+  declaring nodes for distributions it does not own.
+- The verification tool takes messages or marginals, not both, so rules mixing the two are
+  checked by their tables and the v6 comparison only.
+
+- [x] `NormalMeanVariance`: `out.jl`, `mean.jl`, the `(:out, :μ)` marginal and both average
+      energies. 40 cases against v6: agreement everywhere except the seven declared #669
+      corrections, and the corrected rules verify against the node definition
+- [ ] `NormalMeanPrecision`
+- [ ] `GammaShapeRate`, `Categorical`, `Dirichlet`
+- [ ] `NormalMixture`
+- [ ] `Unscented` into `MessagePassingRulesApproximations` (the Delta node and its rules stay
+      in ReactiveMP, for the engine to port in case (d))
 
 ### Design brief — 2026-09-23
 

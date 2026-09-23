@@ -11,5 +11,14 @@ module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: annotate!, BP, VMP
+using StatsFuns: log2π
+
+# The nodes this package declares, for types other packages own.
+const NODES = [NormalMeanVariance]
+
+include("nodes/normal_mean_variance.jl")
+include("rules/normal_mean_variance/out.jl")
+include("rules/normal_mean_variance/mean.jl")
+include("rules/normal_mean_variance/marginals.jl")
 
 end

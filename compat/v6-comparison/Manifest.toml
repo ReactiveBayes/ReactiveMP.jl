@@ -2,7 +2,7 @@
 
 julia_version = "1.10.12"
 manifest_format = "2.0"
-project_hash = "3c79e3a500927cd39fa2cfb5276bb901336c8c3b"
+project_hash = "3830971ee471be37ad529284cc766d9947bb36e8"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -1058,6 +1058,12 @@ version = "2.9.0"
 
     [deps.SpecialFunctions.weakdeps]
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+
+[[deps.StandardMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesBase", "StatsFuns"]
+path = "../../lib/StandardMessagePassingRules"
+uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
+version = "0.1.0-DEV"
 
 [[deps.Static]]
 deps = ["CommonWorldInvalidations", "IfElse", "PrecompileTools", "SciMLPublic"]

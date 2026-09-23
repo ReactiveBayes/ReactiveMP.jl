@@ -4,7 +4,7 @@ module V6Oracle
 
 using ReactiveMP
 
-export v6_message_update, v6_logdensity, v6_interfaces
+export v6_message_update, v6_marginal_update, v6_average_energy, v6_logdensity, v6_interfaces
 
 v6_target(towards::Symbol) = Val(towards)
 v6_target((edge, k)::Tuple{Symbol, Integer}) = (Val(edge), k)
@@ -39,6 +39,39 @@ function v6_message_update(fform, towards, m::NamedTuple, q::NamedTuple; meta = 
     result isa ReactiveMP.RuleMethodError && throw(result)
     logscale = ReactiveMP.has_annotation(annotations, :logscale) ? ReactiveMP.getlogscale(annotations) : nothing
     return result, logscale
+end
+
+"""
+    v6_marginal_update(fform, members, m, q; meta = nothing)
+
+Run v6's `marginalrule` for the cluster `members`, a tuple like `(:out, :μ)`, on messages `m`
+and marginals `q`. v6 names the cluster by joining its members with `_`.
+"""
+function v6_marginal_update(fform, members::Tuple{Vararg{Symbol}}, m::NamedTuple, q::NamedTuple; meta = nothing)
+    mnames, messages = v6_inputs(ReactiveMP.Message, m)
+    qnames, marginals = v6_inputs(ReactiveMP.Marginal, q)
+    return ReactiveMP.marginalrule(fform, Val(v6_name(members)), mnames, messages, qnames, marginals, meta, nothing)
+end
+
+"""
+    v6_average_energy(fform, q, clusters = (); meta = nothing)
+
+Run v6's average energy for `fform` on marginals `q`, and on joint marginals given as
+`members => value` pairs, in the order of the node's interfaces.
+"""
+function v6_average_energy(fform, q::NamedTuple, clusters = (); meta = nothing)
+    inputs = merge(NamedTuple{map(v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))), q)
+    ordered = order_by_interfaces(fform, inputs)
+    names, marginals = v6_inputs(ReactiveMP.Marginal, ordered)
+    return ReactiveMP.score(ReactiveMP.AverageEnergy(), fform, names, marginals, meta)
+end
+
+# v6 dispatches on the names in the node's interface order, a joint `out_μ` by its first member.
+function order_by_interfaces(fform, inputs::NamedTuple)
+    names = collect(v6_interfaces(fform))
+    position(key) = something(findfirst(==(Symbol(first(split(string(key), "_")))), names), length(names) + 1)
+    sorted = sort(collect(keys(inputs)); by = position)
+    return NamedTuple{Tuple(sorted)}(map(k -> inputs[k], Tuple(sorted)))
 end
 
 """The v6 node's log-density, as a keyword function of its interfaces."""
