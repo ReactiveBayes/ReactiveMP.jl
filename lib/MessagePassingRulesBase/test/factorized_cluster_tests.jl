@@ -74,11 +74,11 @@ end
 
 @testitem "factorized-cluster:rule" tags = [:base] begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: RuleArgs, ClusterTarget, BP, FactorizedCluster, check_factorized_cluster
+    using MessagePassingRulesBase: RuleArgs, ClusterTarget, DefaultAlgorithm, FactorizedCluster, check_factorized_cluster
     using BayesBase: PointMass
 
     struct Gauss end
-    @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :v], algorithm = BP)
+    @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :v], algorithm = DefaultAlgorithm)
     # v6's `(out_μ = …, v = m_v)`.
     @define_marginal_update_rule(
         node = Gauss, target = (:out, :μ, :v),
@@ -86,7 +86,7 @@ end
         body = (args) -> FactorizedCluster((:out, :μ) => PointMass([args.m[:out], args.m[:μ]]), (:v,) => PointMass(args.m[:v])),
     )
     target = ClusterTarget((:out, :μ, :v))
-    result = message_passing_marginalrule(Gauss, target, BP(), RuleArgs(m = (out = 1.0, μ = 2.0, v = 3.0)))
+    result = message_passing_marginalrule(Gauss, target, DefaultAlgorithm(), RuleArgs(m = (out = 1.0, μ = 2.0, v = 3.0)))
     @test check_factorized_cluster(target, result)[(:out, :μ)].point == [1.0, 2.0]
 end
 

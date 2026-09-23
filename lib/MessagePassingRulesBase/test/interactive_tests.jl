@@ -1,13 +1,13 @@
 @testitem "interactive:call_message_update_rule" tags = [:base] setup = [SpikeRules] begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: VMP, AnnotationStore, getannotation, RuleContext
+    using MessagePassingRulesBase: AnnotationStore, getannotation, RuleContext
     S = SpikeRules
     P, N = S.Point, S.Normal
 
     @test (@call_message_update_rule(node = S.NMV, target = :out, m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
     # Function form, identical.
     @test call_message_update_rule(S.NMV, :out; m = (μ = P(1.0), v = P(2.0))) == N(1.0, 2.0)
-    # Indexed target and the node's default algorithm (VMP here).
+    # Indexed target and the node's default algorithm (its own, `MixtureVMP`, here).
     @test (@call_message_update_rule(node = S.NormalMixture, target = (:m, 2), q = (out = N(0.5, 1.0), switch = S.Categorical([0.5, 0.5]), p = (nothing, P(20.0))))) == N(0.5, 20.0)
     # A cluster given by its members.
     @test (@call_message_update_rule(node = S.NMV, target = :v, clusters = ((:out, :μ) => (1.0, 4.0),))) == P(9.0)
@@ -22,14 +22,15 @@ end
 
 @testitem "interactive:queries" tags = [:base] setup = [SpikeRules] begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: list_rules, rule_coverage, BP, VMP, RuleSpec
+    using MessagePassingRulesBase: list_rules, rule_coverage, DefaultAlgorithm, RuleSpec
     S = SpikeRules
 
     @test length(list_rules(S.NMV)) == 5
     @test length(list_rules(S.NMV, :out)) == 1
     @test length(list_rules(S.DeltaFn, :in)) == 2
-    @test length(list_rules(S.DeltaFn, :in; algorithm = S.Linearization(nothing))) == 1
-    @test isempty(list_rules(S.NMV, :out; algorithm = VMP()))
+    @test length(list_rules(S.DeltaFn, :in; algorithm = S.ToyDelta(nothing))) == 1
+    # A standalone algorithm with no rules for this node selects none.
+    @test isempty(list_rules(S.NMV, :out; algorithm = S.MixtureVMP()))
 
     spec = @which_message_update_rule(node = S.NMV, target = :out, m = (μ = S.Point(1.0), v = S.Point(2.0)))
     @test spec isa RuleSpec
@@ -41,15 +42,15 @@ end
     @test energy.kind === :average_energy
 
     coverage = rule_coverage(S.NMV)
-    @test coverage.algorithms == [BP]
-    @test coverage.counts[("→ out", BP)] == 1
-    @test coverage.counts[("q(out, μ)", BP)] == 1
-    @test coverage.counts[("average energy", BP)] == 1
-    @test !haskey(coverage.counts, ("→ v", VMP))
+    @test coverage.algorithms == [DefaultAlgorithm]
+    @test coverage.counts[("→ out", DefaultAlgorithm)] == 1
+    @test coverage.counts[("q(out, μ)", DefaultAlgorithm)] == 1
+    @test coverage.counts[("average energy", DefaultAlgorithm)] == 1
+    @test !haskey(coverage.counts, ("→ v", S.MixtureVMP))
 end
 
 @testitem "interactive:display" tags = [:base] setup = [SpikeRules, DependencyNodes] begin
-    using MessagePassingRulesBase: list_rules, nodespec, dependencies_spec, rule_coverage, Target, IndexedTarget, ClusterTarget, VMP
+    using MessagePassingRulesBase: list_rules, nodespec, dependencies_spec, rule_coverage, Target, IndexedTarget, ClusterTarget
     S = SpikeRules
     plain(x) = sprint(show, MIME"text/plain"(), x)
     html(x) = sprint(show, MIME"text/html"(), x)
@@ -71,13 +72,13 @@ end
     node = plain(nodespec(S.NormalMixture))
     @test contains(node, "stochastic")
     @test contains(node, "m...")
-    @test contains(node, "VMP")
+    @test contains(node, "MixtureVMP")
     @test contains(html(nodespec(S.NormalMixture)), "<table")
 
-    deps = plain(dependencies_spec(DependencyNodes.NormalMixture, VMP()))
+    deps = plain(dependencies_spec(DependencyNodes.NormalMixture, DependencyNodes.MixtureVMP()))
     @test contains(deps, "(:m, k)")
     @test contains(deps, "q[:p][k]")
-    @test contains(html(dependencies_spec(DependencyNodes.NormalMixture, VMP())), "<table")
+    @test contains(html(dependencies_spec(DependencyNodes.NormalMixture, DependencyNodes.MixtureVMP())), "<table")
 
     coverage = plain(rule_coverage(S.NMV))
     @test contains(coverage, "→ out")

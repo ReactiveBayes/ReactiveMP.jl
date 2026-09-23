@@ -13,10 +13,10 @@
     struct DeltaToy end
     @define_factor_node(node = DeltaToy, type = Deterministic, interfaces = [:out, :in...])
 
-    struct Unscented <: AbstractAlgorithm end
+    struct ToyDelta <: AbstractAlgorithm end
     @define_dependencies(
         node = DeltaToy,
-        algorithm = Unscented,
+        algorithm = ToyDelta,
         dependencies = [
             :out => (m[:in...],),
             (:in, k) => (q[(:in,)], m[:in][k]),
@@ -26,17 +26,17 @@
 
     # The joint over the group, computed and then consumed.
     @define_marginal_update_rule(
-        node = DeltaToy, target = (:in,), algorithm = Unscented,
+        node = DeltaToy, target = (:in,), algorithm = ToyDelta,
         args = (m[:out]::Float64, m[:in...]::Float64),
         body = (args) -> Joint(collect(args.m[:in]) .+ args.m[:out]),
     )
     @define_message_update_rule(
-        node = DeltaToy, target = (:in, k), algorithm = Unscented,
+        node = DeltaToy, target = (:in, k), algorithm = ToyDelta,
         args = (q[(:in,)]::Joint, m[:in][k]::Float64),
         body = (args) -> args.q[(:in,)].members[k] - args.m[:in][k],
     )
     @define_message_update_rule(
-        node = DeltaToy, target = :out, algorithm = Unscented,
+        node = DeltaToy, target = :out, algorithm = ToyDelta,
         args = (m[:in...]::Float64,),
         body = (args) -> sum(args.m[:in]),
     )
@@ -56,12 +56,12 @@ end
     G = GroupClusterRules
 
     # The joint's rule, towards the cluster `(:in,)`.
-    joint = message_passing_marginalrule(G.DeltaToy, ClusterTarget((:in,)), G.Unscented(), RuleArgs(m = (out = 1.0, in = (2.0, 3.0))))
+    joint = message_passing_marginalrule(G.DeltaToy, ClusterTarget((:in,)), G.ToyDelta(), RuleArgs(m = (out = 1.0, in = (2.0, 3.0))))
     @test joint.members == [3.0, 4.0]
 
     # A rule consuming it: the engine builds the joint under the key `(:in,)`.
     args = RuleArgs(m = (in = (nothing, 3.0),), q = Marginals(NamedTuple(), Val(((:in,),)), (joint,)))
-    @test message_passing_rule(G.DeltaToy, IndexedTarget(:in, 2), G.Unscented(), args) == 1.0
+    @test message_passing_rule(G.DeltaToy, IndexedTarget(:in, 2), G.ToyDelta(), args) == 1.0
 
     mixed = RuleArgs(q = Marginals(NamedTuple(), Val(((:out, :in),)), (G.Joint([7.0, 8.0]),)))
     @test message_passing_rule(G.DeltaToy, Target(:out), G.Mixed(), mixed) == 7.0
@@ -84,7 +84,7 @@ end
     using MessagePassingRulesBase: dependencies_spec, IndexedTarget, target_dependencies, free_energy_partition
     G = GroupClusterRules
 
-    declaration = dependencies_spec(G.DeltaToy, G.Unscented())
+    declaration = dependencies_spec(G.DeltaToy, G.ToyDelta())
     joint, own = target_dependencies(declaration, IndexedTarget(:in, 1))
     @test (joint.container, joint.key) == (:q, (:in,))
     @test free_energy_partition(declaration) == ((:out,), (:in,))
@@ -113,13 +113,13 @@ end
     M = Module()
     definitions = quote
         using MessagePassingRulesBase
-        using MessagePassingRulesBase: BP
+        using MessagePassingRulesBase: DefaultAlgorithm
         struct N end
         @define_factor_node(node = N, type = Deterministic, interfaces = [:out, :μ, :in...])
-        @define_message_update_rule(node = N, target = :out, algorithm = BP, args = (q[(:μ,)]::Any,), body = (args) -> 1)
-        @define_message_update_rule(node = N, target = :μ, algorithm = BP, args = (q[:in, :out]::Any,), body = (args) -> 1)
-        @define_marginal_update_rule(node = N, target = (:μ,), algorithm = BP, args = (m[:out]::Any,), body = (args) -> 1)
-        @define_message_update_rule(node = N, target = :out, algorithm = BP, args = (q[(:in,)]::Any,), body = (args) -> 1)
+        @define_message_update_rule(node = N, target = :out, algorithm = DefaultAlgorithm, args = (q[(:μ,)]::Any,), body = (args) -> 1)
+        @define_message_update_rule(node = N, target = :μ, algorithm = DefaultAlgorithm, args = (q[:in, :out]::Any,), body = (args) -> 1)
+        @define_marginal_update_rule(node = N, target = (:μ,), algorithm = DefaultAlgorithm, args = (m[:out]::Any,), body = (args) -> 1)
+        @define_message_update_rule(node = N, target = :out, algorithm = DefaultAlgorithm, args = (q[(:in,)]::Any,), body = (args) -> 1)
     end
     # Top level, statement by statement, so `using` takes effect before the macros expand.
     Core.eval(M, Expr(:toplevel, definitions.args...))

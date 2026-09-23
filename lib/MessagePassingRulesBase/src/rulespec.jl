@@ -78,23 +78,46 @@ end
     find_message_rule(node, target, algorithm, args)
 
 The [`RuleSpec`](@ref) for a message towards `target`, or a [`RuleNotFound`](@ref). Rule
-definitions add methods to this function; it never runs a rule and never throws.
+definitions add methods to this function; it never runs a rule and never throws. For a
+[`DefaultAlgorithmExtension`](@ref) without a rule of its own, the default's rule is returned;
+a `RuleNotFound` always names the algorithm the call asked for.
 """
-find_message_rule(node, target, algorithm, args) = RuleNotFound(:message, node, target, algorithm, args)
+function find_message_rule(node, target, algorithm, args)
+    algorithm isa DefaultAlgorithmExtension || return RuleNotFound(:message, node, target, algorithm, args)
+    inherited = find_message_rule(node, target, DefaultAlgorithm(), args)
+    return inherited isa RuleSpec ? inherited : RuleNotFound(:message, node, target, algorithm, args)
+end
 
 """
     find_marginal_rule(node, cluster, algorithm, args)
 
 As [`find_message_rule`](@ref), for the marginal of a structural cluster.
 """
-find_marginal_rule(node, cluster, algorithm, args) = RuleNotFound(:marginal, node, cluster, algorithm, args)
+function find_marginal_rule(node, cluster, algorithm, args)
+    algorithm isa DefaultAlgorithmExtension || return RuleNotFound(:marginal, node, cluster, algorithm, args)
+    inherited = find_marginal_rule(node, cluster, DefaultAlgorithm(), args)
+    return inherited isa RuleSpec ? inherited : RuleNotFound(:marginal, node, cluster, algorithm, args)
+end
 
 """
     find_average_energy(node, algorithm, args)
 
 As [`find_message_rule`](@ref), for a node's average energy.
 """
-find_average_energy(node, algorithm, args) = RuleNotFound(:average_energy, node, nothing, algorithm, args)
+function find_average_energy(node, algorithm, args)
+    algorithm isa DefaultAlgorithmExtension || return RuleNotFound(:average_energy, node, nothing, algorithm, args)
+    inherited = find_average_energy(node, DefaultAlgorithm(), args)
+    return inherited isa RuleSpec ? inherited : RuleNotFound(:average_energy, node, nothing, algorithm, args)
+end
+
+"""
+    rule_algorithm(spec::RuleSpec, algorithm)
+
+The algorithm value to run `spec` with, for a call made under `algorithm`: the call's own, or
+`DefaultAlgorithm()` when `spec` was reached through an extension's fallback to the default.
+An engine calls it before [`execute_rule`](@ref), as the `message_passing_*` functions do.
+"""
+@inline rule_algorithm(spec::RuleSpec, algorithm) = algorithm isa spec.algorithm ? algorithm : DefaultAlgorithm()
 
 """
     RuleNotFoundError(notfound::RuleNotFound)
@@ -134,7 +157,7 @@ Resolve the message rule towards `target` and run it, allocating its result.
 """
 @inline function message_passing_rule(node, target, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_message_rule(node, target, algorithm, args))
-    return execute_rule(spec, nothing, algorithm, ctx, args, ann, target)
+    return execute_rule(spec, nothing, rule_algorithm(spec, algorithm), ctx, args, ann, target)
 end
 
 """
@@ -145,7 +168,7 @@ Resolve an in-place message rule and run it into `output`.
 @inline function message_passing_rule!(output, node, target, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_message_rule(node, target, algorithm, args))
     spec.inplace || throw(ArgumentError("the rule for $node towards $target has no in-place form"))
-    return execute_rule(spec, output, algorithm, ctx, args, ann, target)
+    return execute_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, target)
 end
 
 """
@@ -155,7 +178,7 @@ Resolve the marginal rule for `cluster` and run it.
 """
 @inline function message_passing_marginalrule(node, cluster, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_marginal_rule(node, cluster, algorithm, args))
-    return execute_rule(spec, nothing, algorithm, ctx, args, ann, cluster)
+    return execute_rule(spec, nothing, rule_algorithm(spec, algorithm), ctx, args, ann, cluster)
 end
 
 """
@@ -164,7 +187,7 @@ end
 @inline function message_passing_marginalrule!(output, node, cluster, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_marginal_rule(node, cluster, algorithm, args))
     spec.inplace || throw(ArgumentError("the marginal rule for $node over $cluster has no in-place form"))
-    return execute_rule(spec, output, algorithm, ctx, args, ann, cluster)
+    return execute_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, cluster)
 end
 
 """
@@ -174,7 +197,7 @@ Resolve and compute a node's average energy.
 """
 @inline function message_passing_average_energy(node, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_average_energy(node, algorithm, args))
-    return execute_rule(spec, nothing, algorithm, ctx, args, ann, nothing)
+    return execute_rule(spec, nothing, rule_algorithm(spec, algorithm), ctx, args, ann, nothing)
 end
 
 """

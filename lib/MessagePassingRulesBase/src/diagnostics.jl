@@ -61,7 +61,7 @@ function Base.showerror(io::IO, err::RuleNotFoundError)
     end
     provided_keys = Set((c, k) for (c, k, _) in provided)
     same_shape = filter(spec -> Set((i.container, i.key) for i in spec.inputs) == provided_keys, candidates)
-    if any(spec -> nf.algorithm isa spec.algorithm, same_shape)
+    if any(spec -> admits(nf.algorithm, spec.algorithm), same_shape)
         print(io, "\n  a rule of this shape exists, but the input types do not fit (type mismatch)")
     else
         print(io, "\n  no rule consumes this set of inputs under this algorithm (no rule of this shape)")
@@ -70,7 +70,7 @@ function Base.showerror(io::IO, err::RuleNotFoundError)
     for spec in candidates
         print(io, "\n    rule at ", spec.file, ":", spec.line)
         mark(ok) = ok ? "✓" : "✗"
-        print(io, "\n      ", mark(nf.algorithm isa spec.algorithm), " algorithm ", spec.algorithm)
+        print(io, "\n      ", mark(admits(nf.algorithm, spec.algorithm)), " algorithm ", spec.algorithm)
         for input in spec.inputs
             found = findfirst(((c, k, _),) -> c === input.container && k == input.key, provided)
             label = input_label(input.container, input.key, input.selection) * "::" * string(input.type)
@@ -168,8 +168,13 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
         end
     end
 
-    for declaration in declarations
-        (declaration.node === spec.node && spec.algorithm <: declaration.algorithm) || continue
+    # The declaration a rule answers to: its own algorithm's, or for an extension that declares
+    # none, the default's.
+    own = filter(d -> d.node === spec.node && spec.algorithm <: d.algorithm, declarations)
+    if isempty(own) && spec.algorithm <: DefaultAlgorithmExtension
+        own = filter(d -> d.node === spec.node && d.algorithm === DefaultAlgorithm, declarations)
+    end
+    for declaration in own
         spec.kind === :message || continue
         instance = target <: IndexedTarget ? target(1) : target()
         declared = target_dependencies(declaration, instance)

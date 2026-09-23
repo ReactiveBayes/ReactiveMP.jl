@@ -7,19 +7,25 @@ Declare a factor node.
 
 - `interfaces` lists names as symbols, `:out`; a variadic group as `:inputs...`; aliases
   as `(:μ, aliases = [:mean])`. Names may contain underscores.
-- `algorithm` is the default rules run under, `BP()` when omitted. A type is instantiated
-  with no arguments.
+- `algorithm` is the algorithm the node's rules run under unless a call asks for another,
+  [`DefaultAlgorithm`](@ref)`()` when omitted, as it should be for almost every node. A node
+  declares its own only when it genuinely needs one, as a mixture does. A type is
+  instantiated with no arguments.
 - `dependencies` declares what the rules consume under that default algorithm; see
   [`@define_dependencies`](@ref) for the vocabulary.
 - `static_inputs = :fold` folds inputs connected to constants and data into the node function;
   see [`static_inputs`](@ref).
 
 ```julia
+@define_factor_node(node = NormalMeanVariance, type = Stochastic, interfaces = [:out, :μ, :v])
+
+# A node whose rules ignore the factorisation, and so declares an algorithm of its own:
+struct MixtureVMP <: AbstractAlgorithm end
 @define_factor_node(
     node       = Mixture,
     type       = Stochastic,
     interfaces = [:out, :switch, :inputs...],
-    algorithm  = VMP,
+    algorithm  = MixtureVMP,
 )
 ```
 """
@@ -38,7 +44,7 @@ function define_factor_node_expr(mod, source, args)
     type in (:Stochastic, :Deterministic) ||
         error("@define_factor_node: `type` must be Stochastic or Deterministic, got `$type`")
     parsed = parse_interfaces(keywords[:interfaces])
-    algorithm = get(keywords, :algorithm, :($BP))
+    algorithm = get(keywords, :algorithm, :($DefaultAlgorithm))
 
     base = MessagePassingRulesBase
     dispatch = gensym(:dispatch)

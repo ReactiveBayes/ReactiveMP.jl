@@ -117,9 +117,11 @@ end
     dependencies_spec(node, algorithm)
 
 The [`DependenciesSpec`](@ref) for `node` under `algorithm`, or `nothing` when none is
-declared and the engine's default scheme applies.
+declared and the engine's default scheme applies. A [`DefaultAlgorithmExtension`](@ref)
+that declares none gets the default algorithm's.
 """
-dependencies_spec(node, algorithm) = nothing
+dependencies_spec(node, algorithm) =
+    algorithm isa DefaultAlgorithmExtension ? dependencies_spec(node, DefaultAlgorithm()) : nothing
 
 """
     target_dependencies(declaration, target)

@@ -2,23 +2,50 @@
     AbstractAlgorithm
 
 Supertype of every algorithm. An algorithm selects which rules run and carries their
-parameters; a rule reads its value through the `algo` body slot.
+parameters, which a rule reads through its `algo` slot. It is **not** an inference scheme:
+belief propagation, variational message passing and their structured forms all come from the
+factorisation, under one [`DefaultAlgorithm`](@ref).
+
+A custom algorithm is either a rule switcher, when someone wants a different set of rules, or
+a node's own algorithm, when the node needs one. It comes in two kinds:
+- a direct subtype of `AbstractAlgorithm` **stands alone**: only its own rules and
+  dependencies apply to it;
+- a subtype of [`DefaultAlgorithmExtension`](@ref) **extends the default**: where it defines
+  no rule or dependencies of its own, those of `DefaultAlgorithm` apply.
 """
 abstract type AbstractAlgorithm end
 
 """
-    BP()
+    DefaultAlgorithm()
 
-Belief propagation.
+The algorithm every node runs under unless it declares its own: Bethe free energy
+minimisation. Whether a rule behaves as belief propagation, variational message passing or
+their structured form depends on the factorisation, through the engine's default dependency
+scheme, not on the algorithm. A rule that omits `algorithm` belongs to its node's default,
+which is this unless the node declares otherwise.
 """
-struct BP <: AbstractAlgorithm end
+struct DefaultAlgorithm <: AbstractAlgorithm end
 
 """
-    VMP()
+    DefaultAlgorithmExtension
 
-Variational message passing.
+Supertype of the algorithms that extend [`DefaultAlgorithm`](@ref). Resolution looks for the
+extension's own rule first and falls back to the default's, and likewise for dependencies.
+A rule reached through that fallback receives `DefaultAlgorithm()` in its `algo` slot, the
+algorithm it was written for. The fallback is a second lookup, not dispatch on a supertype:
+if default rules dispatched on an abstract type, an extension's rule with broader inputs than
+a default one would be ambiguous with it, and resolution must never throw.
+
+```julia
+struct MyRules <: DefaultAlgorithmExtension end   # override some rules, inherit the rest
+```
 """
-struct VMP <: AbstractAlgorithm end
+abstract type DefaultAlgorithmExtension <: AbstractAlgorithm end
+
+# Whether a rule defined under `rule_algorithm` can serve a call made under `algorithm`,
+# directly or, for an extension, through the fallback to the default.
+admits(algorithm, rule_algorithm::Type) =
+    algorithm isa rule_algorithm || (algorithm isa DefaultAlgorithmExtension && rule_algorithm === DefaultAlgorithm)
 
 """
     ispure(algorithm::Type{<:AbstractAlgorithm})

@@ -22,8 +22,10 @@ Define the rule for the message a node sends towards one of its interfaces.
   named in that order: `args` holds the inputs, `algo` the algorithm value, `ctx` the
   [`RuleContext`](@ref), `ann` the annotations (read `ann.m[:out]`, write with
   [`annotate!`](@ref)) and `output` the buffer of an in-place rule.
-- `algorithm`: the algorithm type the rule runs under. When omitted, the node's default
-  algorithm applies, which requires the node to be declared before the rule is loaded.
+- `algorithm`: the algorithm type the rule runs under. Almost every rule omits it and
+  belongs to its node's default, usually [`DefaultAlgorithm`](@ref), which requires the node
+  to be declared before the rule is loaded. Naming one is for a rule switcher's or a node's
+  own algorithm.
 - `inplace = true` with `preallocate = (args) -> buffer` and a body taking `output` first.
 - `pure = false` marks a rule that has side effects, whatever its algorithm declares.
 - `ctx = (:product, ...)`: the context services the rule needs.

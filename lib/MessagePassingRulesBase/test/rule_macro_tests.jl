@@ -3,7 +3,7 @@
 
 @testmodule SpikeRules begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: BP, VMP, AbstractAlgorithm, annotate!
+    using MessagePassingRulesBase: DefaultAlgorithm, AbstractAlgorithm, annotate!
     import BayesBase: mean, var
 
     struct Point
@@ -20,15 +20,17 @@
         p::Vector{Float64}
     end
 
-    struct Linearization{I} <: AbstractAlgorithm
+    # A delta node's own algorithm, carrying its known inverse or `nothing`.
+    struct ToyDelta{I} <: AbstractAlgorithm
         inverse::I
     end
-    struct Unscented <: AbstractAlgorithm end
+    # The mixture's own algorithm: its rules ignore the factorisation.
+    struct MixtureVMP <: AbstractAlgorithm end
 
     struct NMV end
     @define_factor_node(node = NMV, type = Stochastic, interfaces = [:out, :μ, :v])
 
-    # 1. The trivial BP case; `algorithm` omitted, so the node's default applies.
+    # 1. The trivial case; `algorithm` omitted, so the node's default applies.
     @define_message_update_rule(
         node = NMV,
         target = :out,
@@ -52,15 +54,15 @@
     @define_message_update_rule(
         node = +,
         target = :in2,
-        algorithm = BP,
+        algorithm = DefaultAlgorithm,
         args = (m[:out]::Point, m[:in1]::Point),
         body = (args) -> Point(mean(args.m[:out]) - mean(args.m[:in1])),
     )
 
-    # 4. THE CANARY: indexed target, a group, VMP, and the index bound by writing `k`.
+    # 4. THE CANARY: indexed target, a group, its own algorithm, and the index bound by writing `k`.
     struct NormalMixture end
     @define_factor_node(
-        node = NormalMixture, type = Stochastic, interfaces = [:out, :switch, :m..., :p...], algorithm = VMP,
+        node = NormalMixture, type = Stochastic, interfaces = [:out, :switch, :m..., :p...], algorithm = MixtureVMP,
     )
     @define_message_update_rule(
         node = NormalMixture,
@@ -95,14 +97,14 @@
     @define_message_update_rule(
         node = DeltaFn,
         target = (:in, k),
-        algorithm = Linearization{Nothing},
+        algorithm = ToyDelta{Nothing},
         args = (m[:in][k]::Normal, q[:in...]::Any),
         body = (args) -> Normal(mean(args.m[:in][k]), var(args.m[:in][k]) + k),
     )
     @define_message_update_rule(
         node = DeltaFn,
         target = (:in, k),
-        algorithm = Linearization{<:Function},
+        algorithm = ToyDelta{<:Function},
         args = (m[:out]::Point,),
         body = (algo, args) -> Point(algo.inverse(mean(args.m[:out]))),
     )
@@ -164,61 +166,61 @@ end
 
 @testitem "rules:spike" tags = [:base] setup = [SpikeRules] begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: RuleArgs, Marginals, Target, IndexedTarget, ClusterTarget, BP, VMP,
+    using MessagePassingRulesBase: RuleArgs, Marginals, Target, IndexedTarget, ClusterTarget, DefaultAlgorithm,
         RuleContext, RuleAnnotations, AnnotationStore, getannotation
     S = SpikeRules
     P, N, C = S.Point, S.Normal, S.Categorical
 
-    @test message_passing_rule(S.NMV, Target(:out), BP(), RuleArgs(m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
+    @test message_passing_rule(S.NMV, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
 
     ann = RuleAnnotations(out = AnnotationStore())
-    @test message_passing_rule(S.NMV, Target(:μ), BP(), RuleArgs(m = (out = P(3.0), v = P(1.0))), RuleContext(), ann) == N(3.0, 1.0)
+    @test message_passing_rule(S.NMV, Target(:μ), DefaultAlgorithm(), RuleArgs(m = (out = P(3.0), v = P(1.0))), RuleContext(), ann) == N(3.0, 1.0)
     @test getannotation(ann, :logscale) == 0.0
 
-    @test message_passing_rule(+, Target(:in2), BP(), RuleArgs(m = (out = P(5.0), in1 = P(2.0)))) == P(3.0)
+    @test message_passing_rule(+, Target(:in2), DefaultAlgorithm(), RuleArgs(m = (out = P(5.0), in1 = P(2.0)))) == P(3.0)
 
     # Only member 2 is selected; the rest of the group is `nothing`.
     canary = RuleArgs(q = (out = N(0.5, 1.0), switch = C([0.5, 0.5]), p = (nothing, P(20.0))))
-    @test message_passing_rule(S.NormalMixture, IndexedTarget(:m, 2), VMP(), canary) == N(0.5, 20.0)
+    @test message_passing_rule(S.NormalMixture, IndexedTarget(:m, 2), S.MixtureVMP(), canary) == N(0.5, 20.0)
 
     mix = RuleArgs(m = (switch = C([0.25, 0.75]), inputs = (N(1.0, 1.0), N(3.0, 1.0))))
-    @test message_passing_rule(S.Mixture, Target(:out), BP(), mix) == 0.25 * 1.0 + 0.75 * 3.0
+    @test message_passing_rule(S.Mixture, Target(:out), DefaultAlgorithm(), mix) == 0.25 * 1.0 + 0.75 * 3.0
 
     product = (left, right) -> (nothing, -abs2(S.mean(left) - S.mean(right)))
     switch = RuleArgs(m = (out = N(0.0, 1.0), inputs = (N(1.0, 1.0), N(2.0, 1.0))))
-    @test message_passing_rule(S.Mixture, Target(:switch), BP(), switch, RuleContext(product = product)).p == [-1.0, -4.0]
+    @test message_passing_rule(S.Mixture, Target(:switch), DefaultAlgorithm(), switch, RuleContext(product = product)).p == [-1.0, -4.0]
 
     lin = RuleArgs(m = (in = (nothing, nothing, N(1.0, 2.0)),), q = (in = (1, 2, 3),))
-    @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 3), S.Linearization(nothing), lin) == N(1.0, 5.0)
+    @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 3), S.ToyDelta(nothing), lin) == N(1.0, 5.0)
     inv = RuleArgs(m = (out = P(4.0),))
-    @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 1), S.Linearization(sqrt), inv) == P(2.0)
+    @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 1), S.ToyDelta(sqrt), inv) == P(2.0)
 
-    @test message_passing_marginalrule(S.NMV, ClusterTarget((:out, :μ)), BP(), RuleArgs(m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),))) == (1.0, 2.0)
+    @test message_passing_marginalrule(S.NMV, ClusterTarget((:out, :μ)), DefaultAlgorithm(), RuleArgs(m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),))) == (1.0, 2.0)
     joint = RuleArgs(q = Marginals(NamedTuple(), Val(((:out, :μ),)), ((1.0, 4.0),)))
-    @test message_passing_rule(S.NMV, Target(:v), BP(), joint) == P(9.0)
+    @test message_passing_rule(S.NMV, Target(:v), DefaultAlgorithm(), joint) == P(9.0)
 
     vec_args = RuleArgs(m = (μ = [1.0, 2.0], out = [10.0, 20.0]))
     buffer = zeros(2)
-    @test message_passing_rule!(buffer, S.Vec, Target(:out), BP(), vec_args) === buffer
+    @test message_passing_rule!(buffer, S.Vec, Target(:out), DefaultAlgorithm(), vec_args) === buffer
     @test buffer == [11.0, 22.0]
-    @test message_passing_rule(S.Vec, Target(:out), BP(), vec_args) == [11.0, 22.0]
+    @test message_passing_rule(S.Vec, Target(:out), DefaultAlgorithm(), vec_args) == [11.0, 22.0]
 
-    @test message_passing_rule(S.Stack, IndexedTarget(:x, 2), BP(), RuleArgs(m = (out = [7.0, 8.0, 9.0],))) == [7.0, 8.0]
+    @test message_passing_rule(S.Stack, IndexedTarget(:x, 2), DefaultAlgorithm(), RuleArgs(m = (out = [7.0, 8.0, 9.0],))) == [7.0, 8.0]
 
     energy = RuleArgs(q = (out = N(0.0, 1.0), μ = N(1.0, 2.0), v = P(2.0)))
-    @test message_passing_average_energy(S.NMV, BP(), energy) == (1.0 + 2.0 + 1.0) / 2.0
+    @test message_passing_average_energy(S.NMV, DefaultAlgorithm(), energy) == (1.0 + 2.0 + 1.0) / 2.0
 end
 
 @testitem "rules:specs" tags = [:base] setup = [SpikeRules] begin
-    using MessagePassingRulesBase: find_message_rule, registered_rules, RuleArgs, Target, BP, RuleSpec
+    using MessagePassingRulesBase: find_message_rule, registered_rules, RuleArgs, Target, DefaultAlgorithm, RuleSpec
     S = SpikeRules
     ours = filter(spec -> parentmodule(spec.body) === S || spec.node in (S.NMV, S.NormalMixture, S.Mixture, S.DeltaFn, S.Vec, S.Counter, S.Stack, +), registered_rules())
     @test length(ours) == 14
 
-    spec = find_message_rule(S.NMV, Target(:out), BP(), RuleArgs(m = (μ = S.Point(1.0), v = S.Point(2.0))))
+    spec = find_message_rule(S.NMV, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = S.Point(1.0), v = S.Point(2.0))))
     @test spec isa RuleSpec
     @test spec.kind === :message
-    @test spec.algorithm === BP
+    @test spec.algorithm === DefaultAlgorithm
     @test endswith(String(spec.file), "rule_macro_tests.jl")
     @test spec.line > 0
     @test contains(spec.source, "Normal(mean(args.m[:μ])")

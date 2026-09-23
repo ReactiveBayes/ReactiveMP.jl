@@ -151,13 +151,14 @@ target_edge_of(::Type) = nothing
     list_rules(node[, edge]; algorithm)
 
 The rules defined for `node`: all of them, or the message rules towards `edge` (a group's
-name for its members). With `algorithm`, only those it selects.
+name for its members). With `algorithm`, only those it can select: its own, and for a
+[`DefaultAlgorithmExtension`](@ref) the default's as well.
 """
 function list_rules(node, edge::Union{Nothing, Symbol} = nothing; algorithm = nothing)
     return filter(registered_rules()) do spec
         node_matches(spec, node) &&
             (edge === nothing || (spec.kind === :message && target_edge_of(spec.target) === edge)) &&
-            (algorithm === nothing || algorithm isa spec.algorithm)
+            (algorithm === nothing || admits(algorithm, spec.algorithm))
     end
 end
 

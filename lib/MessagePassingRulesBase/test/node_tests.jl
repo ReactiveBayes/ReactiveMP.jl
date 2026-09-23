@@ -1,6 +1,8 @@
 @testmodule ToyNodes begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: BP, VMP, AbstractAlgorithm
+    using MessagePassingRulesBase: DefaultAlgorithm, AbstractAlgorithm
+
+    struct MixtureVMP <: AbstractAlgorithm end
     import BayesBase
 
     struct Toy
@@ -20,7 +22,7 @@
         node = Mixture,
         type = Stochastic,
         interfaces = [:out, :switch, :inputs...],
-        algorithm = VMP,
+        algorithm = MixtureVMP,
     )
 
     struct Params <: AbstractAlgorithm
@@ -40,17 +42,17 @@ end
 
 @testitem "nodes:traits" tags = [:base] setup = [ToyNodes] begin
     using MessagePassingRulesBase: nodespec, interfaces, interface_groups, sdtype, default_algorithm, alias_interface,
-        nodefunction, Stochastic, Deterministic, BP, VMP, NodeSpec
+        nodefunction, Stochastic, Deterministic, DefaultAlgorithm, NodeSpec
     T = ToyNodes
 
     @test interfaces(T.Toy) === (:out, :μ, :τ)
     @test interface_groups(T.Toy) === ()
     @test sdtype(T.Toy) === Stochastic()
-    @test default_algorithm(T.Toy) === BP()        # the default default
+    @test default_algorithm(T.Toy) === DefaultAlgorithm()        # the default default
 
     @test interfaces(T.Mixture) === (:out, :switch, :inputs)
     @test interface_groups(T.Mixture) === (:inputs,)
-    @test default_algorithm(T.Mixture) === VMP()
+    @test default_algorithm(T.Mixture) === T.MixtureVMP()
 
     # Several non-trailing interface_groups, an underscore in a name, an algorithm with parameters.
     @test interfaces(T.TwoGroups) === (:out, :a, :b, :x_y)

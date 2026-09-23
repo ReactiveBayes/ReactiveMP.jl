@@ -1,6 +1,9 @@
 @testmodule BrokenRules begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: BP, VMP
+    using MessagePassingRulesBase: DefaultAlgorithm, AbstractAlgorithm
+
+    struct MixtureVMP <: AbstractAlgorithm end
+    struct Standalone <: AbstractAlgorithm end
 
     struct Gauss end
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :τ, :p...])
@@ -13,12 +16,12 @@
     @define_marginal_update_rule(node = Gauss, target = (:μ, :out), args = (m[:out]::Any,), body = (args) -> 1)
 
     struct Undeclared end
-    @define_message_update_rule(node = Undeclared, target = :out, algorithm = BP, args = (), body = () -> 1)
+    @define_message_update_rule(node = Undeclared, target = :out, algorithm = DefaultAlgorithm, args = (), body = () -> 1)
 
     # Consistent with dependencies, and then not.
     struct Mix end
     @define_factor_node(
-        node = Mix, type = Stochastic, interfaces = [:out, :m..., :p...], algorithm = VMP,
+        node = Mix, type = Stochastic, interfaces = [:out, :m..., :p...], algorithm = MixtureVMP,
         dependencies = [(:m, k) => (q[:out], q[:p][k]), :out => (q[:m...], q[:p...])],
     )
     @define_message_update_rule(node = Mix, target = (:m, k), args = (q[:out]::Any, q[:p][k]::Any), body = (args) -> 1)
@@ -72,7 +75,7 @@ end
 
 @testitem "diagnostics:rule-not-found" tags = [:base] setup = [BrokenRules] begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: RuleArgs, Target, BP, VMP, RuleNotFoundError
+    using MessagePassingRulesBase: RuleArgs, Target, DefaultAlgorithm, RuleNotFoundError
     B = BrokenRules
     text(f) = try
         f()
@@ -82,23 +85,23 @@ end
     end
 
     # The shape fits, a type does not.
-    mismatch = text(() -> message_passing_rule(B.Gauss, Target(:out), BP(), RuleArgs(m = (μ = 1.0, τ = "x"))))
+    mismatch = text(() -> message_passing_rule(B.Gauss, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = 1.0, τ = "x"))))
     @test contains(mismatch, "type mismatch")
     @test contains(mismatch, "✓ m[:μ]::Real  got Float64")
     @test contains(mismatch, "✗ m[:τ]::Real  got String")
     @test contains(mismatch, "✓ algorithm")
 
     # Wrong inputs altogether.
-    shape = text(() -> message_passing_rule(B.Gauss, Target(:out), BP(), RuleArgs(m = (μ = 1.0,), q = (τ = 1.0,))))
+    shape = text(() -> message_passing_rule(B.Gauss, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = 1.0,), q = (τ = 1.0,))))
     @test contains(shape, "no rule of this shape")
     @test contains(shape, "✗ m[:τ]::Real  not provided")
     @test contains(shape, "✗ q[:τ]::Float64  provided but not consumed")
 
     # Right inputs, wrong algorithm.
-    algorithm = text(() -> message_passing_rule(B.Gauss, Target(:out), VMP(), RuleArgs(m = (μ = 1.0, τ = 2.0))))
+    algorithm = text(() -> message_passing_rule(B.Gauss, Target(:out), B.Standalone(), RuleArgs(m = (μ = 1.0, τ = 2.0))))
     @test contains(algorithm, "no rule of this shape")
     @test contains(algorithm, "✗ algorithm")
 
-    none = text(() -> message_passing_rule(B.Gauss, Target(:nothing_here), BP(), RuleArgs()))
+    none = text(() -> message_passing_rule(B.Gauss, Target(:nothing_here), DefaultAlgorithm(), RuleArgs()))
     @test contains(none, "no rule exists for this node and target")
 end

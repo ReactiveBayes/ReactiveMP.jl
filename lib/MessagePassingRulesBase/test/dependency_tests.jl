@@ -1,13 +1,16 @@
 @testmodule DependencyNodes begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: VMP, BP, AbstractAlgorithm, select_group_members
+    using MessagePassingRulesBase: AbstractAlgorithm, DefaultAlgorithmExtension, select_group_members
+
+    # The mixture's own algorithm: its rules ignore the factorisation.
+    struct MixtureVMP <: AbstractAlgorithm end
 
     struct NormalMixture end
     @define_factor_node(
         node = NormalMixture,
         type = Stochastic,
         interfaces = [:out, :switch, :m..., :p...],
-        algorithm = VMP,
+        algorithm = MixtureVMP,
         dependencies = [
             (:m, k) => (q[:out], q[:switch], q[:p][k]),
             (:p, k) => (q[:out], q[:switch], q[:m][k]),
@@ -17,10 +20,10 @@
     struct DeltaFn end
     @define_factor_node(node = DeltaFn, type = Deterministic, interfaces = [:out, :in...], static_inputs = :fold)
 
-    struct Linearization <: AbstractAlgorithm end
+    struct ToyDelta <: AbstractAlgorithm end
     @define_dependencies(
         node = DeltaFn,
-        algorithm = Linearization,
+        algorithm = ToyDelta,
         dependencies = [
             :out => (m[:in...],),
             (:in, k) => (m[:out], m[:in][!k]),
@@ -34,44 +37,46 @@
         dependencies = [(:in, k) => (m[:in][select_group_members(j -> (mod1(j - 1, 3),); arity = 1)],)],
     )
 
-    struct Structured <: AbstractAlgorithm end
+    # A standalone algorithm that fixes what the node's rules consume and what free energy is
+    # computed over, whatever the factorisation.
+    struct FixedPartition <: AbstractAlgorithm end
     struct Gauss end
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :τ])
     @define_dependencies(
         node = Gauss,
-        algorithm = Structured,
+        algorithm = FixedPartition,
         dependencies = [:τ => (q[:out, :μ],), :out => (m[:μ], q[:τ])],
         free_energy_partition = [(:out, :μ), (:τ,)],
     )
 end
 
 @testitem "dependencies:declared" tags = [:base] setup = [DependencyNodes] begin
-    using MessagePassingRulesBase: dependencies_spec, Target, IndexedTarget, VMP, BP, target_dependencies,
+    using MessagePassingRulesBase: dependencies_spec, Target, IndexedTarget, DefaultAlgorithm, target_dependencies,
         Dependency, AllGroupMembers, AlignedGroupMember, AllGroupMembersButSelf, SingleInterface, CustomGroupSelector, static_inputs, free_energy_partition
     D = DependencyNodes
 
     # The node's own declaration applies to its default algorithm.
-    declaration = dependencies_spec(D.NormalMixture, VMP())
+    declaration = dependencies_spec(D.NormalMixture, D.MixtureVMP())
     @test declaration !== nothing
     m_k = target_dependencies(declaration, IndexedTarget(:m, 2))
     @test map(d -> (d.container, d.key), m_k) == ((:q, :out), (:q, :switch), (:q, :p))
     @test m_k[3].selector isa AlignedGroupMember
 
     # Another algorithm, another declaration; an undeclared algorithm has none.
-    delta = dependencies_spec(D.DeltaFn, D.Linearization())
+    delta = dependencies_spec(D.DeltaFn, D.ToyDelta())
     @test only(target_dependencies(delta, Target(:out))).selector isa AllGroupMembers
     @test target_dependencies(delta, IndexedTarget(:in, 1))[2].selector isa AllGroupMembersButSelf
-    @test dependencies_spec(D.DeltaFn, BP()) === nothing
+    @test dependencies_spec(D.DeltaFn, DefaultAlgorithm()) === nothing
     @test target_dependencies(delta, Target(:nope)) === nothing
 
     @test static_inputs(D.DeltaFn) === :fold
     @test static_inputs(D.NormalMixture) === :none
 
     # Consumed and scored are separate: `τ` consumes the joint, the free_energy_partition says what is scored.
-    structured = dependencies_spec(D.Gauss, D.Structured())
-    τ = only(target_dependencies(structured, Target(:τ)))
+    fixed = dependencies_spec(D.Gauss, D.FixedPartition())
+    τ = only(target_dependencies(fixed, Target(:τ)))
     @test τ.key === (:out, :μ)
-    @test free_energy_partition(structured) === ((:out, :μ), (:τ,))
+    @test free_energy_partition(fixed) === ((:out, :μ), (:τ,))
     @test free_energy_partition(declaration) === nothing
 end
 

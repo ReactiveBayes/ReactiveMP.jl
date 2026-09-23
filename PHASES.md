@@ -778,6 +778,30 @@ What recording found, all **preserved, not fixed**:
       unchanged, as v6's `v = m_v` does, because the output must carry the promoted float
       type of every input. Ported rules must convert such blocks
 
+### Algorithm reconciliation — before step 4
+
+**Found 2026-09-23 (user):** the base package had two built-in algorithms, `BP` and `VMP`, the
+standard nodes declared `algorithm = BP` or `VMP`, and tests modelled a structured
+factorisation as a `Structured` algorithm. That misreads v6. There is **one** algorithm,
+`DefaultAlgorithm`, Bethe free energy minimisation; BP, VMP and structured VMP come from the
+factorisation, through the engine's default dependency scheme. `algorithm` replaces `meta`:
+it is a rule switcher, or a node's own algorithm where a node needs one. See
+`DISCUSSION.md` §3.20.
+
+- [x] base: `BP`/`VMP` removed; `DefaultAlgorithm` is every node's default. Custom
+      algorithms come in two kinds: a direct subtype of `AbstractAlgorithm` stands alone, and a
+      `DefaultAlgorithmExtension` inherits the default rules and dependencies for whatever it
+      does not define. The inheritance is a second lookup in the untyped `find_*` and
+      `dependencies_spec` fallbacks, not subtype dispatch, which would make an override with
+      broader inputs ambiguous. An inherited rule runs with `DefaultAlgorithm()` in its `algo`
+      slot (`rule_algorithm`). Diagnostics, `check_rules` and `list_rules` see inherited rules.
+      The fallback call is inferred, JET-clean and 0 bytes on 1.10 and 1.13
+      (`gate:routing-macros`). Tests: `algorithm:*`; the tests that used `VMP` as a second
+      algorithm now name what they need (`MixtureVMP`, `Standalone`, `Alternative`,
+      `FixedPartition`, `ToyDelta`)
+- [ ] the lib packages and scripts follow (`NormalMixtureVMP`; nodes drop `algorithm = BP`)
+- [ ] the documents follow
+
 ### Step 3 — the slice's rules, ported
 
 The porting list is exact, not estimated: `compat/v6-comparison/slice_rule_inventory.jl`

@@ -1,5 +1,5 @@
 @testitem "registry:in-process" tags = [:base] begin
-    using MessagePassingRulesBase: RuleSpec, RuleArgs, Target, BP, register!, registered_rules, registries,
+    using MessagePassingRulesBase: RuleSpec, RuleArgs, Target, DefaultAlgorithm, register!, registered_rules, registries,
         duplicate_rules, @define_registry
 
     module First
@@ -11,7 +11,7 @@
 
     body1 = (o, a, c, r, n, t) -> 1
     body2 = (o, a, c, r, n, t) -> 2
-    spec(body) = RuleSpec(kind = :message, node = First.Node, target = Target{:out}, algorithm = BP, signature = RuleArgs, body = body)
+    spec(body) = RuleSpec(kind = :message, node = First.Node, target = Target{:out}, algorithm = DefaultAlgorithm, signature = RuleArgs, body = body)
 
     register!(First.__message_passing_registry__, spec(body1))
     ours() = filter(s -> s.node === First.Node, registered_rules())
