@@ -1,0 +1,8 @@
+@define_message_update_rule(
+    node = HalfNormal, target = :out,
+    args = (q[:v]::PointMass,),
+    body = (args) -> begin
+        v = mean(args.q[:v])
+        Truncated(Normal(zero(eltype(args.q[:v])), sqrt(v)), zero(eltype(args.q[:v])), typemax(float(v)))
+    end,
+)

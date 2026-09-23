@@ -19,11 +19,10 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 3: the univariate distributions** — Beta, Bernoulli, Gamma, GammaInverse,
-HalfNormal, Poisson, Uniform and Uninformative, ported from `legacy/v6/` as step 1 did. Steps 1
-and 2 are done: the slice nodes are finished, and the engine hands each block of a
-`FactorizedCluster` to whoever reads the cluster. Phase 5's plan is its entry brief (§ Phase 5,
-`DISCUSSION.md` §3.26).
+**Phase 5, step 4: logic** — AND, OR, NOT and IMPLY, deterministic nodes under the default
+scheme, ported from `legacy/v6/` as steps 1 and 3 did. Steps 1–3 are done: the slice nodes are
+finished, the engine distributes a `FactorizedCluster`, and the univariate distributions are
+ported. Phase 5's plan is its entry brief (§ Phase 5, `DISCUSSION.md` §3.26).
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -37,6 +36,7 @@ and 2 are done: the slice nodes are finished, and the engine hands each block of
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
+| BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -113,7 +113,7 @@ generic ones, and no comments that only narrate.
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
-| 5 | `StandardMessagePassingRules` | entry brief signed off; steps 1–2 done; step 3, the univariate distributions, next |
+| 5 | `StandardMessagePassingRules` | entry brief signed off; steps 1–3 done; step 4, logic, next |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | 8 | Release and downstream coordination | not started |
@@ -1413,9 +1413,25 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
    `engine:factorized-cluster:graph`, where `x := copy(1.0)` sends a point mass into NMV's
    `q(out, μ)`, which splits, and the node's free energy reads the blocks. No v6 fixture can
    check it, since v6 could not run a message rule on a split joint.
-3. **Univariate distributions**: Beta, Bernoulli, Gamma, GammaInverse, HalfNormal, Poisson,
-   Uniform (whose Uniform×Beta `prod` is an Aqua piracy, decided then), Uninformative (a
-   zero-input rule).
+3. **Univariate distributions** — *done*. Beta, Bernoulli, Gamma, GammaInverse, HalfNormal,
+   Poisson, Uniform and Uninformative: 24 message rules, 6 marginal rules and 10 average
+   energies, with v6's own tables and node tests, and `compare_standard.jl` now agrees on 241
+   checks with no new disagreement. `HalfNormal` and `Uninformative` are Standard's own
+   exported types. The eight nodes have left `legacy/v6/`. Two product questions, decided with
+   the user:
+   - **`Uninformative`'s product.** v6 made it the identity with generic
+     `prod(::PreserveTypeProd{T}, ::Uninformative, ::T)` methods, which were eleven method
+     ambiguities with BayesBase. Standard now returns its own strategy, `UninformativeProd`,
+     from `default_prod_rule`, so its `prod` methods cannot collide, and settles the remaining
+     overlaps with BayesBase's own rules (lazy products, mixtures, terminal arguments) by
+     writing their intersections: **0 ambiguities**, and Aqua's check stays on. The weakness is
+     that those intersections encode BayesBase's rules, so a new one there can bring an
+     ambiguity back. **Recorded fix, upstream:** BayesBase owns `Uninformative` as a product
+     identity, one method per built-in strategy, as it already treats `missing`; Standard then
+     only declares the node, and its product methods go.
+   - **Uniform(0, 1) × Beta** is the Beta, v6's special case, defined for types neither
+     package owns: piracy, kept and declared owned in the quality tests as v6 did, and the
+     same upstream candidate (ExponentialFamily).
 4. **Logic**: AND, OR, NOT, IMPLY, deterministic nodes under the default scheme.
 5. **Multivariate normals**: MvNormalMeanCovariance, MvNormalMeanPrecision (whose `precision.jl`
    uses the correction strategy), MvNormalMeanScalePrecision and its matrix form,

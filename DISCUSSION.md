@@ -1689,6 +1689,10 @@ Open as of the Phase 4.5 reconciliation:
   where v6 decomposed only for the average energy (`PHASES.md` § Phase 5).
 - **A joint holding only some members of a group** with other interfaces — `activate!` refuses
   it; built when a node needs one.
+- **`Uninformative` as BayesBase's product identity** — Standard's `UninformativeProd` has 0
+  ambiguities only by writing out its overlaps with BayesBase's own rules; BayesBase owning the
+  identity, as it does `missing`, removes them by construction. The Uniform(0, 1)×Beta product
+  is the same kind of upstream item (Phase 5 step 3, user).
 - **#11's two follow-ups** — `DeltaApproximation`'s positional constructor bypasses the
   compatibility guard, and the error names neither a package nor an alternative method;
   Phase 6, with `CVIProjection`.

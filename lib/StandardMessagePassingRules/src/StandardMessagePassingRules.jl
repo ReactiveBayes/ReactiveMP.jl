@@ -14,19 +14,19 @@ module StandardMessagePassingRules
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: annotate!
 using StatsFuns: log2π
-using SpecialFunctions: loggamma, logfactorial
+using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma
 using Base.Broadcast: BroadcastFunction
-using BayesBase: tiny
+using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
 using LogExpFunctions: softmax!
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 import DomainSets
 
-export NormalMixture, NormalMixtureVMP, GammaShapeLikelihood
+export NormalMixture, NormalMixtureVMP, GammaShapeLikelihood, HalfNormal, Uninformative
 
 include("helpers.jl")
 
 # The nodes this package declares, for types other packages own.
-const NODES = [NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet]
+const NODES = [NormalMeanVariance, NormalMeanPrecision, GammaShapeRate, Categorical, Dirichlet, Beta, Bernoulli, Gamma, GammaInverse, Poisson, Uniform]
 
 include("nodes/normal_mean_variance.jl")
 include("rules/normal_mean_variance/out.jl")
@@ -55,6 +55,37 @@ include("rules/categorical/marginals.jl")
 include("nodes/dirichlet.jl")
 include("rules/dirichlet/out.jl")
 include("rules/dirichlet/marginals.jl")
+
+include("nodes/beta.jl")
+include("rules/beta/out.jl")
+include("rules/beta/marginals.jl")
+
+include("nodes/bernoulli.jl")
+include("rules/bernoulli/out.jl")
+include("rules/bernoulli/p.jl")
+include("rules/bernoulli/marginals.jl")
+
+include("nodes/gamma.jl")
+include("rules/gamma/out.jl")
+include("rules/gamma/marginals.jl")
+
+include("nodes/gamma_inverse.jl")
+include("rules/gamma_inverse/out.jl")
+include("rules/gamma_inverse/marginals.jl")
+
+include("nodes/half_normal.jl")
+include("rules/half_normal/out.jl")
+
+include("nodes/poisson.jl")
+include("rules/poisson/out.jl")
+include("rules/poisson/l.jl")
+include("rules/poisson/marginals.jl")
+
+include("nodes/uniform.jl")
+include("rules/uniform/out.jl")
+
+include("nodes/uninformative.jl")
+include("rules/uninformative/out.jl")
 
 include("nodes/normal_mixture.jl")
 include("rules/normal_mixture/m.jl")

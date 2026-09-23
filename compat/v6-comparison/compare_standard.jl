@@ -23,6 +23,9 @@ as_v7(node, v6::NamedTuple) = FactorizedCluster(v6_cluster_blocks(node, v6)...)
 as_v7(node, v6::V6Oracle.ReactiveMP.GammaShapeLikelihood) = GammaShapeLikelihood(params(v6)...)
 as_v7(node, v6) = v6
 
+# The nodes whose type is the port's own; v6 had its own of the same name.
+v6_node(node) = node === HalfNormal ? V6Oracle.ReactiveMP.HalfNormal : node === Uninformative ? V6Oracle.ReactiveMP.Uninformative : node
+
 # (id, node, target, inputs, declared?)
 const MESSAGE_CASES = [
     ("NMV:out:m-point-masses", NormalMeanVariance, :out, (m = (μ = PointMass(1.0), v = PointMass(2.0)),), false),
@@ -69,6 +72,29 @@ const MESSAGE_CASES = [
     ("Categorical:p:q-one-hot", Categorical, :p, (q = (out = PointMass([0.0, 1.0, 0.0]),),), false),
     ("Dirichlet:out:m", Dirichlet, :out, (m = (a = PointMass([1.0, 2.0]),),), false),
     ("Dirichlet:out:q", Dirichlet, :out, (q = (a = PointMass([1.0, 2.0, 4.0]),),), false),
+    ("Beta:out:m", Beta, :out, (m = (a = PointMass(1.0), b = PointMass(2.0)),), false),
+    ("Beta:out:q", Beta, :out, (q = (a = PointMass(2.5), b = PointMass(0.5)),), false),
+    ("Bernoulli:out:m-beta", Bernoulli, :out, (m = (p = Beta(2.0, 6.0),),), false),
+    ("Bernoulli:out:m-point-mass", Bernoulli, :out, (m = (p = PointMass(0.2),),), false),
+    ("Bernoulli:out:q-point-mass", Bernoulli, :out, (q = (p = PointMass(0.3),),), false),
+    ("Bernoulli:out:q-beta", Bernoulli, :out, (q = (p = Beta(1.5, 3.0),),), false),
+    ("Bernoulli:p:m-point-mass", Bernoulli, :p, (m = (out = PointMass(1.0),),), false),
+    ("Bernoulli:p:q-point-mass", Bernoulli, :p, (q = (out = PointMass(0.0),),), false),
+    ("Bernoulli:p:q-bernoulli", Bernoulli, :p, (q = (out = Bernoulli(0.3),),), false),
+    ("Bernoulli:p:q-categorical", Bernoulli, :p, (q = (out = Categorical([0.7, 0.3]),),), false),
+    ("Gamma:out:m", Gamma, :out, (m = (α = PointMass(2.0), θ = PointMass(3.0)),), false),
+    ("Gamma:out:q", Gamma, :out, (q = (α = GammaShapeRate(4.0, 2.0), θ = PointMass(0.5)),), false),
+    ("GammaInverse:out:m", GammaInverse, :out, (m = (α = PointMass(3.0), θ = PointMass(3.0)),), false),
+    ("GammaInverse:out:q", GammaInverse, :out, (q = (α = Gamma(1.0, 1.0), θ = Beta(1.0, 1.0)),), false),
+    ("HalfNormal:out:q", HalfNormal, :out, (q = (v = PointMass(4.0),),), false),
+    ("Poisson:out:m", Poisson, :out, (m = (l = PointMass(0.2),),), false),
+    ("Poisson:out:q-gamma", Poisson, :out, (q = (l = GammaShapeRate(1.0, 0.5),),), false),
+    ("Poisson:l:m", Poisson, :l, (m = (out = PointMass(3.0),),), false),
+    ("Poisson:l:q", Poisson, :l, (q = (out = Poisson(0.3),),), false),
+    ("Uniform:out:m-m", Uniform, :out, (m = (a = PointMass(1.0), b = PointMass(2.0)),), false),
+    ("Uniform:out:q-m", Uniform, :out, (m = (b = PointMass(2.0),), q = (a = PointMass(1.0),)), false),
+    ("Uniform:out:m-q", Uniform, :out, (m = (a = PointMass(1.0),), q = (b = PointMass(2.0),)), false),
+    ("Uniform:out:q-q", Uniform, :out, (q = (a = PointMass(1.0), b = PointMass(2.0)),), false),
 ]
 
 const CLUSTER_MESSAGE_CASES = [
@@ -96,6 +122,12 @@ const MARGINAL_CASES = [
     ("Categorical:(out,p):point-mass-out", Categorical, (:out, :p), (m = (out = PointMass([0.0, 1.0]), p = Dirichlet([2.0, 1.0])),), false),
     ("Categorical:(out,p):point-mass-p", Categorical, (:out, :p), (m = (out = Categorical([0.2, 0.8]), p = PointMass([0.3, 0.7])),), false),
     ("Dirichlet:(out,a)", Dirichlet, (:out, :a), (m = (out = Dirichlet([2.0, 3.0]), a = PointMass([3.0, 1.0])),), false),
+    ("Beta:(out,a,b)", Beta, (:out, :a, :b), (m = (out = Beta(1.0, 2.0), a = PointMass(1.0), b = PointMass(2.0)),), false),
+    ("Bernoulli:(out,p):point-mass-out", Bernoulli, (:out, :p), (m = (out = PointMass(1.0), p = Beta(2.0, 1.0)),), false),
+    ("Bernoulli:(out,p):point-mass-p", Bernoulli, (:out, :p), (m = (out = Bernoulli(0.8), p = PointMass(0.4)),), false),
+    ("Gamma:(out,α,θ)", Gamma, (:out, :α, :θ), (m = (out = Gamma(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0)),), false),
+    ("GammaInverse:(out,α,θ)", GammaInverse, (:out, :α, :θ), (m = (out = GammaInverse(1.0, 2.0), α = PointMass(1.0), θ = PointMass(2.0)),), false),
+    ("Poisson:(out,l)", Poisson, (:out, :l), (m = (out = PointMass(1.0), l = Gamma(2.0, 1.0)),), false),
 ]
 
 const AVERAGE_ENERGY_CASES = [
@@ -106,6 +138,16 @@ const AVERAGE_ENERGY_CASES = [
     ("GSR:energy:gamma-α", GammaShapeRate, (q = (out = GammaShapeRate(2.0, 3.0), α = GammaShapeRate(4.0, 2.0), β = PointMass(3.0)),), false),
     ("Categorical:energy", Categorical, (q = (out = Categorical([0.3, 0.2, 0.5]), p = Dirichlet([1.0, 3.0, 0.5])),), false),
     ("Dirichlet:energy", Dirichlet, (q = (out = Dirichlet([2.0, 3.0]), a = PointMass([2.0, 1.0])),), false),
+    ("Beta:energy", Beta, (q = (out = Beta(2.0, 3.0), a = PointMass(1.5), b = PointMass(2.5)),), false),
+    ("Bernoulli:energy", Bernoulli, (q = (out = Bernoulli(0.3), p = Beta(2.0, 3.0)),), false),
+    ("Gamma:energy:point-mass-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = PointMass(2.0), θ = PointMass(1.0)),), false),
+    ("Gamma:energy:gamma-α", Gamma, (q = (out = Gamma(2.0, 1.5), α = GammaShapeRate(4.0, 2.0), θ = PointMass(1.0)),), false),
+    ("GammaInverse:energy", GammaInverse, (q = (out = GammaInverse(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0)),), false),
+    ("HalfNormal:energy", HalfNormal, (q = (out = GammaShapeRate(2.0, 1.0), v = PointMass(2.0)),), false),
+    ("Poisson:energy:point-masses", Poisson, (q = (out = PointMass(3), l = PointMass(2.0)),), false),
+    ("Poisson:energy:poisson-out", Poisson, (q = (out = Poisson(4.0), l = GammaShapeRate(2.0, 1.0)),), false),
+    ("Uniform:energy", Uniform, (q = (out = Beta(0.3, 0.7), a = PointMass(0.0), b = PointMass(1.0)),), false),
+    ("Uninformative:energy", Uninformative, (q = (out = NormalMeanVariance(0.0, 1.0),),), false),
     ("NMP:energy:joint", NormalMeanPrecision, (q = (τ = GammaShapeRate(3.0, 2.0),), clusters = ((:out, :μ) => MvNormalWeightedMeanPrecision([1.0, 0.5], [3.0 -1.0; -1.0 2.0]),)), false),
 ]
 
@@ -135,7 +177,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
             store = AnnotationStore()
             v7 = call_message_update_rule(node, edge; m, q, ann = store)
-            v6, v6_logscale = v6_message_update(node, edge, m, q)
+            v6, v6_logscale = v6_message_update(v6_node(node), edge, m, q)
             record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = ":$edge", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
             # A declared correction must actually differ, or the declaration is stale.
             @test flagged == (record.outcome === :correction)
@@ -177,7 +219,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
         for (id, node, members, inputs, flagged) in MARGINAL_CASES
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
             v7 = call_marginal_update_rule(node, members; m, q)
-            v6 = v6_marginal_update(node, members, m, q)
+            v6 = v6_marginal_update(v6_node(node), members, m, q)
             record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = string(members), declared = declare(id, flagged))
             @test flagged == (record.outcome === :correction)
         end
@@ -186,7 +228,7 @@ declare(id, flagged) = flagged ? [DeclaredDisagreement(id; kind = :correction, r
         for (id, node, inputs, flagged) in AVERAGE_ENERGY_CASES
             q, clusters = get(inputs, :q, NamedTuple()), get(inputs, :clusters, ())
             v7 = call_average_energy(node; q, clusters)
-            v6 = v6_average_energy(node, q, clusters)
+            v6 = v6_average_energy(v6_node(node), q, clusters)
             record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = "energy", declared = declare(id, flagged))
             @test flagged == (record.outcome === :correction)
         end
