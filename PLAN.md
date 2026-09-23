@@ -900,7 +900,10 @@ Follow `PHASES.md` for the authoritative order and acceptance criteria: preparat
 baselines → the throwaway dispatch/dependency spike → external feedback and tooling → base
 and test utilities → **Phase 4.5: the engine design session and the first cut of the real v7
 engine, before bulk migration** → standard rules, ported straight into it → approximations
-and node packages → completing the engine → coordinated release. There is no bridge into
+and node packages → completing the engine → **a cleanup that rids the repository of the
+rewrite's historical remarks** (phase and step references, what v6 did, pointers into these
+documents, and these documents themselves; git keeps the history, `PHASES.md` § Phase C) →
+coordinated release. There is no bridge into
 the v6 engine; v6 is a source of recorded fixtures only (`DISCUSSION.md` §3.18).
 The tooling work retains TestItemRunner and adds name/tag filtering, Runic and Aqua checks.
 

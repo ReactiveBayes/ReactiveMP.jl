@@ -116,6 +116,7 @@ generic ones, and no comments that only narrate.
 | 5 | `StandardMessagePassingRules` | entry brief signed off; steps 1–4 done; step 5, the multivariate normals, next |
 | 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
+| C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
 
 ---
@@ -1593,6 +1594,35 @@ Known scope:
       the 1.10 matrix and the pre-step-4 layout (§3.22 left them alone)
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality — for every ported node, against recorded v6 fixtures
+
+---
+
+## Phase C — Cleanup: historical remarks out of the repository
+
+**Goal** (user, 2026-09-23): the released packages read as if written as they are. The
+rewrite leaves remarks in code, docstrings, comments and tests that only make sense as its
+history: phases and steps ("Phase 5, step 3", "case (d)"), the slice, what v6 did, pointers
+into `DISCUSSION.md` or `PHASES.md`, `legacy/` paths. They are irrelevant once the rewrite is
+done, and git keeps the history. Done last, after Phases 5–7 and before the release, so
+that nothing written in between escapes it.
+
+**Exit criteria**
+- [ ] no mention of phases, steps, cases (a)–(d), the slice, `PLAN.md`, `PHASES.md`,
+      `DISCUSSION.md`, `INVENTORY.md` or `legacy/` in `src/`, `lib/*/src`, `lib/*/test`,
+      `test/`, `scripts/` or the docs; checked by a search that the cleanup commit records
+- [ ] a remark that carries a reason keeps the reason, said in present terms: "the
+      precisions come first because that is the update schedule", never "v6 did it this
+      way" or "decided in step 3". A remark that is only history is deleted
+- [ ] a comparison with v6 that still matters for users is kept where users read it, the
+      release notes and `MIGRATION.md`, not in code (ReactiveMP.jl#669 is such a case)
+- [ ] the working documents go: `PLAN.md`, `PHASES.md`, `DISCUSSION.md` and `INVENTORY.md`
+      (with `scripts/inventory.jl` and its `:quality` test item), and `CLAUDE.md` loses its
+      § Ongoing work. What they decided that users need is already in the docs and
+      `MIGRATION.md`; the rest is in git
+- [ ] `compat/v6-comparison` and its fixtures are removed, or kept as a named, documented
+      migration aid, decided then; `legacy/` is already empty and deleted by Phases 5–6
+- [ ] `CHANGELOG.md`'s `[Unreleased]` entries, which record the rewrite step by step, are
+      replaced by release notes that describe the release
 
 ---
 

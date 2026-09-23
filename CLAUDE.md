@@ -186,6 +186,10 @@ cut**: the v6 rule system and every unported node move to `legacy/v6/` (moved, n
 after their behaviour was recorded as fixtures in `compat/v6-comparison`. Breaking downstream
 packages before the release is accepted.
 
+Remarks in code and tests that only record the rewrite's history (phases, steps, cases, what
+v6 did, pointers into these documents) are allowed while it is in progress, and **Phase C**
+removes them before the release, with these documents (`PHASES.md` § Phase C).
+
 When work is in progress, update `PHASES.md` **in the same commit as the change it
 describes**. Never mark something done as a separate act — status claimed without a diff
 alongside it is how a tracking file starts lying.

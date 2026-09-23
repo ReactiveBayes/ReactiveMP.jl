@@ -1457,6 +1457,17 @@ shared mathematics, called by both rules, is static and already the pattern
 
 The order of work, and the gaps found while counting, are in `PHASES.md` § Phase 5.
 
+### 3.27 A cleanup phase for historical remarks (user, 2026-09-23)
+
+The rewrite writes its own history into the code as it goes: a test says "Phase 5, step 4",
+a docstring says what v6 did, a comment points at a section of this document. That is useful
+while the work is in progress, since the reason for a choice sits next to it, and it is
+noise once the work is done, because git already holds the history. The user asked for one
+cleanup at the very end rather than a rule against writing them now: remarks stay while they
+help, and **Phase C**, before the release, removes them, keeping any reason a remark carries
+in present terms, and removes the working documents themselves. Its criteria are in
+`PHASES.md` § Phase C.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1730,8 +1741,8 @@ every later session runs faster.
 Then base package → test utils with a bounded numerical oracle → **Phase 4.5: the engine
 design session and the engine's first cut, refactored in place, as a clean cut** (§3.18–3.25; closed) →
 bulk standard-rule
-migration into it → approximations and node packages → completing the engine → coordinated
-release. Start strict downstream CI as soon as
+migration into it → approximations and node packages → completing the engine → the cleanup
+of historical remarks (Phase C) → coordinated release. Start strict downstream CI as soon as
 compatible development revisions exist, rather than waiting until release.
 
 Rule kernels and test utilities can be developed independently of the engine, but that
