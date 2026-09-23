@@ -22,8 +22,8 @@ re-check before relying on one.
 **Phase 5, step 6: Matrix and Wishart** — Wishart, InverseWishart, MatrixNormal,
 MatrixNormalWishart, MvNormalGamma, MvNormalWishart, DirichletCollection. Signed off by the
 user; § Phase 5, *Step 6 brief* has the counts, the v6 mistakes to correct,
-`public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart and
-InverseWishart are done; next DirichletCollection, then MvNormalGamma. Steps 1–5 are done; step 5 is summarised
+`public_equivalent` (user, `DISCUSSION.md` §3.29), the defaults and the progress. Wishart,
+InverseWishart and DirichletCollection are done; next MvNormalGamma, then MvNormalWishart. Steps 1–5 are done; step 5 is summarised
 in § Phase 5, *Step 5 brief*.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
@@ -1630,6 +1630,9 @@ extending it, is recorded for Phase 8.
     v6 (475 checks). ExponentialFamily's E[out⁻¹] fails for a BigFloat InverseWishart, beside
     its Float64 E[log |out|]; both are on ExponentialFamily.jl#322, so the energy table runs
     in Float64 only.
+  - *DirichletCollection — done.* 2 message rules, 1 marginal rule and the energy. v6 had no
+    rule tests: the cases are hand-derived, and the energy is checked against the Dirichlet
+    node's, column by column, for ranks 2 and 3. Nothing differs from v6 (485 checks).
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. *Briefed* (the step 6 brief below,
