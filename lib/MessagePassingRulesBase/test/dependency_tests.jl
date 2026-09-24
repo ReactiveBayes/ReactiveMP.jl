@@ -48,6 +48,19 @@
         dependencies = [:τ => (q[:out, :μ],), :out => (m[:μ], q[:τ])],
         free_energy_partition = [(:out, :μ), (:τ,)],
     )
+
+    # An algorithm that extends the default scheme: the rule towards `a` also reads `q(a)`, and
+    # the other inputs follow the factorisation, mean-field or `q(y, x)`.
+    struct Transition end
+    struct TransitionVMP <: AbstractAlgorithm end
+    @define_factor_node(node = Transition, type = Stochastic, interfaces = [:y, :x, :a, :W])
+    @define_dependencies(
+        node = Transition, algorithm = TransitionVMP,
+        dependencies = [:y => (default,), :x => default, :a => (default, q[:a]), :W => (default,)],
+    )
+    @define_message_update_rule(node = Transition, target = :a, algorithm = TransitionVMP, args = (q[:y]::Any, q[:x]::Any, q[:a]::Any, q[:W]::Any), body = (args) -> 1)
+    @define_message_update_rule(node = Transition, target = :a, algorithm = TransitionVMP, args = (q[:y, :x]::Any, q[:a]::Any, q[:W]::Any), body = (args) -> 2)
+    @define_message_update_rule(node = Transition, target = :y, algorithm = TransitionVMP, args = (q[:x]::Any, q[:a]::Any, q[:W]::Any), body = (args) -> 3)
 end
 
 @testitem "dependencies:declared" tags = [:base] setup = [DependencyNodes] begin
@@ -78,6 +91,30 @@ end
     @test τ.key === (:out, :μ)
     @test free_energy_partition(fixed) === ((:out, :μ), (:τ,))
     @test free_energy_partition(declaration) === nothing
+end
+
+@testitem "dependencies:extending the default scheme" tags = [:base] setup = [DependencyNodes] begin
+    using MessagePassingRulesBase: dependencies_spec, Target, target_dependencies, extends_default_scheme, SingleInterface
+    D = DependencyNodes
+
+    # `default` is the default scheme's inputs; the target's listed inputs are added to them.
+    declaration = dependencies_spec(D.Transition, D.TransitionVMP())
+    a = only(target_dependencies(declaration, Target(:a)))
+    @test (a.container, a.key) === (:q, :a) && a.selector isa SingleInterface
+    @test target_dependencies(declaration, Target(:y)) === ()
+    @test target_dependencies(declaration, Target(:x)) === ()
+    @test all(t -> extends_default_scheme(declaration, Target(t)), (:y, :x, :a, :W))
+
+    # A declaration without `default` replaces the default scheme; an undeclared target has none.
+    fixed = dependencies_spec(D.Gauss, D.FixedPartition())
+    @test !extends_default_scheme(fixed, Target(:τ))
+    @test !extends_default_scheme(fixed, Target(:μ))
+
+    # The display names the default scheme.
+    plain = sprint(show, MIME("text/plain"), declaration)
+    @test contains(plain, ":a ⇐ default, q[:a]")
+    @test contains(plain, ":y ⇐ default")
+    @test contains(sprint(show, MIME("text/html"), declaration), "default, q[:a]")
 end
 
 @testitem "dependencies:selectors" tags = [:base] setup = [DependencyNodes] begin
@@ -125,6 +162,10 @@ end
     @test failure(node(:([:out => (q[:μ, :out],)]))) |> msg -> contains(msg, "interface order")
     @test failure(node(:([:out => (m[:μ], m[:μ])]))) |> msg -> contains(msg, "twice")
     @test failure(node(:([:out => (m[:μ],), :out => (q[:μ],)]))) |> msg -> contains(msg, "declared twice")
+    # `default` once, and beside it only inputs of a single interface.
+    @test failure(node(:([:out => (default, m[:μ], default)]))) |> msg -> contains(msg, "`default` twice")
+    @test failure(node(:([:out => (default, q[:out, :μ])]))) |> msg -> contains(msg, "extends the default scheme with a single interface")
+    @test failure(node(:([:out => (default, q[:p...])]))) |> msg -> contains(msg, "extends the default scheme with a single interface")
     @test failure(:(struct N end; @define_factor_node(node = N, type = Stochastic, interfaces = [:out], static_inputs = :sometimes))) |>
         msg -> contains(msg, "`static_inputs` must be :none or :fold")
     @test failure(

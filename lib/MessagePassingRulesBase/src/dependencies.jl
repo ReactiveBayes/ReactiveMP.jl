@@ -90,13 +90,18 @@ end
 """
     TargetDependencies
 
-The inputs one target consumes, `edge` being indexed for a group member.
+The inputs one target consumes, `edge` being indexed for a group member. When `default` is
+true, the target was declared with `default`: it consumes the engine's default scheme's inputs,
+which follow the factorisation, and `inputs` are added to them.
 """
 struct TargetDependencies
     edge::Symbol
     indexed::Bool
     inputs::Tuple{Vararg{Dependency}}
+    default::Bool
 end
+
+TargetDependencies(edge::Symbol, indexed::Bool, inputs::Tuple{Vararg{Dependency}}) = TargetDependencies(edge, indexed, inputs, false)
 
 """
     DependenciesSpec
@@ -129,9 +134,26 @@ dependencies_spec(node, algorithm) =
 The inputs `target` consumes under `declaration`, or `nothing` if it declares none for it.
 """
 function target_dependencies(declaration::DependenciesSpec, target)
+    entry = target_entry(declaration, target)
+    return entry === nothing ? nothing : entry.inputs
+end
+
+"""
+    extends_default_scheme(declaration, target)
+
+Whether `target` was declared with `default`, so that it consumes the engine's default scheme's
+inputs plus those [`target_dependencies`](@ref) lists. False for a target the declaration does
+not list.
+"""
+function extends_default_scheme(declaration::DependenciesSpec, target)
+    entry = target_entry(declaration, target)
+    return entry !== nothing && entry.default
+end
+
+function target_entry(declaration::DependenciesSpec, target)
     indexed = target isa IndexedTarget
     for entry in declaration.targets
-        entry.edge === target_edge(target) && entry.indexed === indexed && return entry.inputs
+        entry.edge === target_edge(target) && entry.indexed === indexed && return entry
     end
     return nothing
 end
@@ -165,6 +187,10 @@ function validate_dependencies(spec::NodeSpec, declaration::DependenciesSpec)
             (input.container, input.key) in seen_inputs &&
                 throw(ArgumentError("`$(input.container)[$(input.key)]` is listed twice for target `$(entry.edge)`"))
             push!(seen_inputs, (input.container, input.key))
+            # Beside the default scheme's inputs, only a single interface's: its message or its
+            # marginal, which the engine places among them in interface order.
+            entry.default && (input.key isa Tuple || !(input.selector isa SingleInterface) || isgroup(input.key)) &&
+                throw(ArgumentError("the target `$(entry.edge)` of $node extends the default scheme with a single interface's message or marginal, `m[:x]` or `q[:x]`; got `$(dependency_label(input))`"))
             if input.key isa Tuple
                 foreach(known, input.key)
                 length(input.key) == 1 && !isgroup(only(input.key)) &&
@@ -221,8 +247,11 @@ function parse_dependency_pair(name, item)
         error("@$name: a dependency target is `:out` or `(:m, k)`, got `$lhs`")
     end
     entries = rhs isa Expr && rhs.head === :tuple ? rhs.args : [rhs]
-    inputs = map(entry -> parse_dependency_input(name, entry, index), entries)
-    return :($TargetDependencies($(QuoteNode(edge)), $(index !== nothing), ($(inputs...),)))
+    # `default` stands for the default scheme's inputs, which the listed ones extend.
+    defaults = count(==(:default), entries)
+    defaults > 1 && error("@$name: `default` twice for the target `$lhs`")
+    inputs = map(entry -> parse_dependency_input(name, entry, index), filter(!=(:default), entries))
+    return :($TargetDependencies($(QuoteNode(edge)), $(index !== nothing), ($(inputs...),), $(defaults == 1)))
 end
 
 function parse_dependency_input(name, entry, index)
@@ -300,6 +329,11 @@ in the vocabulary of a rule's `args`: `m[:μ]`, `q[:μ]`, a cluster `q[(:y, :x)]
 `q[:y, :x]` (members in interface order; `q[(:in,)]` is the joint over the group `in`), and for a group `m[:in...]` (all members), `m[:in][k]` (the target's own
 index), `m[:in][!k]` (all but it) or `m[:in][select_group_members(f; arity)]`. A target with no inputs
 is written `target => ()`.
+
+`default` among a target's inputs stands for the engine's default scheme, whose inputs follow
+the factorisation: `:a => (default, q[:a])` is the default scheme's inputs plus `q(a)`, and
+`:y => (default,)` the default scheme alone. The inputs beside it are a single interface's, a
+message or a marginal, and are consumed without being scored.
 
 `free_energy_partition`, optional, lists the clusters free energy is computed over, covering every
 interface once. What a rule consumes need not be a block of it.

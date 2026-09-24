@@ -1,5 +1,5 @@
 @testmodule DependencySchemeNodes begin
-    using MessagePassingRulesBase
+    using MessagePassingRulesBase, ExponentialFamily, Distributions
 
     struct ThreeInterfaces end
     @define_factor_node(node = ThreeInterfaces, type = Stochastic, interfaces = [:a, :b, :c])
@@ -32,6 +32,38 @@
         node = FixedPartition, algorithm = FixedPartitionAlgorithm,
         dependencies = [:out => (q[:μ], q[:τ]), :μ => (q[:out], q[:τ]), :τ => (q[:out], q[:μ])],
         free_energy_partition = [(:out,), (:μ,), (:τ,)],
+    )
+
+    # `y ~ N(a x, 1/W)` with the rule towards `a` reading `q(a)` beside the default scheme's
+    # inputs, as ContinuousTransition's does; `Redundant` adds inputs the default already has,
+    # or a message.
+    struct Transition end
+    struct TransitionVMP <: AbstractAlgorithm end
+    struct Redundant <: AbstractAlgorithm end
+    @define_factor_node(
+        node = Transition, type = Stochastic, interfaces = [:y, :x, :a, :W], algorithm = TransitionVMP,
+        dependencies = [:y => (default,), :x => (default,), :a => (default, q[:a]), :W => (default,)],
+    )
+    # Its mean-field rules, the one towards `a` counting its calls.
+    const READS_OF_A = Ref(0)
+    @define_message_update_rule(
+        node = Transition, target = :x, args = (q[:y]::Any, q[:a]::Any, q[:W]::Any),
+        body = (args) -> NormalWeightedMeanPrecision(mean(args.q[:a]) * mean(args.q[:W]) * mean(args.q[:y]), (mean(args.q[:a])^2 + var(args.q[:a])) * mean(args.q[:W])),
+    )
+    @define_message_update_rule(
+        node = Transition, target = :a, args = (q[:y]::Any, q[:x]::Any, q[:a]::Any, q[:W]::Any),
+        body = (args) -> begin
+            READS_OF_A[] += 1
+            NormalWeightedMeanPrecision(mean(args.q[:x]) * mean(args.q[:W]) * mean(args.q[:y]), (mean(args.q[:x])^2 + var(args.q[:x])) * mean(args.q[:W]))
+        end,
+    )
+    @define_message_update_rule(
+        node = Transition, target = :W, args = (q[:y]::Any, q[:x]::Any, q[:a]::Any),
+        body = (args) -> GammaShapeRate(1.5, (mean(args.q[:y]) - mean(args.q[:a]) * mean(args.q[:x]))^2 / 2 + 0.5),
+    )
+    @define_dependencies(
+        node = Transition, algorithm = Redundant,
+        dependencies = [:y => (default, q[:a]), :x => (default, m[:x]), :a => (default, q[:W], q[:a]), :W => (default, m[:y])],
     )
 end
 
@@ -280,6 +312,78 @@ end
     @test messagelabels == (GroupMember(:m, 1, 3), GroupMember(:m, 3, 3))
     @test marginallabels == (:out, GroupMember(:p, 2, 3))
     @test marginals[1] === out && marginals[2] === p[2]
+end
+
+@testitem "declared dependencies can extend the default scheme" tags = [:nodes] setup = [DependencySchemeNodes] begin
+    import ReactiveMP: declared_dependencies, default_dependencies, getinterfaces, getvariable, name
+    import MessagePassingRulesBase: dependencies_spec
+    using .DependencySchemeNodes: Transition, TransitionVMP, Redundant
+
+    variables() = [(:y, randomvar()), (:x, randomvar()), (:a, randomvar()), (:W, randomvar())]
+    labels(node, spec, i) = map(first, declared_dependencies(node, spec, getinterfaces(node)[i]))
+    spec, redundant = dependencies_spec(Transition, TransitionVMP()), dependencies_spec(Transition, Redundant())
+
+    @testset "mean field: q(a) among the other marginals, in interface order" begin
+        interfaces = variables()
+        node = factornode(Transition, interfaces, ((:y,), (:x,), (:a,), (:W,)))
+        (_, messages), (_, marginals) = declared_dependencies(node, spec, getinterfaces(node)[3])
+        @test labels(node, spec, 3) == ((), (:y, :x, :a, :W))
+        @test isempty(messages)
+        # The auxiliary input is the variable's own marginal, not a cluster of the node's.
+        @test marginals[3] === last(interfaces[3])
+        # `default` alone is the default scheme.
+        for i in (1, 2, 4)
+            @test labels(node, spec, i) == map(first, default_dependencies(node, i))
+        end
+    end
+
+    @testset "structured: q(a) after the joint q(y, x)" begin
+        node = factornode(Transition, variables(), ((:y, :x), (:a,), (:W,)))
+        @test labels(node, spec, 3) == ((), ((:y, :x), :a, :W))
+        @test labels(node, spec, 2) == ((:y,), (:a, :W))
+        @test labels(node, spec, 4) == ((), ((:y, :x), :a))
+    end
+
+    @testset "an input the default scheme has is not added twice; a message goes among the messages" begin
+        node = factornode(Transition, variables(), ((:y,), (:x,), (:a,), (:W,)))
+        @test labels(node, redundant, 1) == ((), (:x, :a, :W))
+        @test labels(node, redundant, 3) == ((), (:y, :x, :a, :W))
+        @test labels(node, redundant, 2) == ((:x,), (:y, :a, :W))
+        structured = factornode(Transition, variables(), ((:y, :x), (:a,), (:W,)))
+        # `x`'s own message after `y`'s, which the joint already gives.
+        @test labels(structured, redundant, 2) == ((:y, :x), (:a, :W))
+        @test labels(structured, redundant, 4) == ((:y,), ((:y, :x), :a))
+    end
+end
+
+@testitem "a rule that reads its own target's marginal runs once per iteration" tags = [:nodes] setup = [DependencySchemeNodes, EngineHarness] begin
+    # y ~ N(a x, 1/W) observed, under mean-field: the message towards `a` updates q(a), which it
+    # reads. `PushNew()` recomputes a message only once all its inputs have refreshed, so the
+    # cycle m(→a) → q(a) → m(→a) does not recurse, as in v6.
+    using ExponentialFamily, BayesBase, StandardMessagePassingRules
+    import ReactiveMP: getlocalclusters, get_node_local_marginals
+    using .DependencySchemeNodes: Transition
+    H = EngineHarness
+
+    graph = H.Graph()
+    y, x, a, W = H.data!(graph), H.random!(graph), H.random!(graph), H.random!(graph)
+    H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 1.0)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, NormalMeanVariance, [(:out, a), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, GammaShapeRate, [(:out, W), (:α, H.constant!(graph, 2.0)), (:β, H.constant!(graph, 1.0))])
+    transition = H.node!(graph, Transition, [(:y, y), (:x, x), (:a, a), (:W, W)]; factorisation = ((:y,), (:x,), (:a,), (:W,)))
+
+    trajectory = H.run(
+        graph; id = "own marginal", data = [y => 2.0], iterations = 4, posteriors = [:a => a, :x => x, :W => W], free_energy = false,
+        initial_marginals = [x => NormalMeanVariance(1.0, 1.0), a => NormalMeanVariance(0.5, 1.0), W => GammaShapeRate(2.0, 1.0)],
+    )
+    # One message towards each of x, a and W per iteration, and each prior's once.
+    calls(target) = [count(r -> r.node == "Transition" && r.target == target && r.iteration == it, trajectory.trace) for it in 1:4]
+    @test calls(":a") == [1, 1, 1, 1]
+    @test calls(":x") == [1, 1, 1, 1]
+    @test calls(":W") == [1, 1, 1, 1]
+    @test DependencySchemeNodes.READS_OF_A[] == 4
+    # q(a) is consumed, never a cluster of the node, so free energy does not score it twice.
+    @test length(get_node_local_marginals(getlocalclusters(transition))) == 4
 end
 
 @testitem "activate! wires declared dependencies, groups and a declared partition" tags = [:nodes] setup = [DependencySchemeNodes] begin

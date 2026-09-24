@@ -68,6 +68,7 @@ ReactiveMP.getalgorithm
 ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)
 ReactiveMP.default_dependencies
 ReactiveMP.declared_dependencies
+ReactiveMP.extended_default_dependencies
 ReactiveMP.rule_target
 ReactiveMP.input_label
 ReactiveMP.GroupMember

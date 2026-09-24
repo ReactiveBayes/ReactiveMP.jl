@@ -98,12 +98,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (142 of them across 22 files), each self-contained and
+Tests are `@testitem` blocks (144 of them across 22 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (24) and `:engine` (116 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (26) and `:engine` (116 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate and the engine's doctests. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
@@ -147,7 +147,9 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - `activate!` wires a node's declared dependencies (`dependencies_spec`) or the default scheme,
   groups included, and subscribes to a target's inputs **in declaration order**, which in VMP
   is the update schedule (`DISCUSSION.md` §3.24). It refuses a joint holding only some members
-  of a group. A deterministic node's clusters are always `out` and the joint over its inputs,
+  of a group. A declaration may write `default` among a target's inputs, `:a => (default, q[:a])`:
+  the default scheme's inputs plus the listed ones, placed in interface order (§3.41). A
+  deterministic node's clusters are always `out` and the joint over its inputs,
   and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)` (§3.25).
 - Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (it was 322
   pairs on `main`, most in code now in `legacy/`; to be re-measured). `piracies` is on, and

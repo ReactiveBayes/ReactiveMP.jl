@@ -27,6 +27,13 @@
     @define_message_update_rule(node = Mix, target = (:m, k), args = (q[:out]::Any, q[:p][k]::Any), body = (args) -> 1)
     @define_message_update_rule(node = Mix, target = :out, args = (q[:m...]::Any,), body = (args) -> 1)
 
+    # A declaration that extends the default scheme with `q(a)`: a rule for `a` must read it.
+    struct Extended <: AbstractAlgorithm end
+    struct Transition end
+    @define_factor_node(node = Transition, type = Stochastic, interfaces = [:y, :x, :a])
+    @define_dependencies(node = Transition, algorithm = Extended, dependencies = [:y => (default,), :x => (default,), :a => (default, q[:a])])
+    @define_message_update_rule(node = Transition, target = :a, algorithm = Extended, args = (q[:y]::Any, q[:x]::Any), body = (args) -> 1)
+
     # Two rules some call matches equally well.
     struct Amb end
     @define_factor_node(node = Amb, type = Stochastic, interfaces = [:out, :a, :b])
@@ -54,7 +61,8 @@ end
     @test has("`target = (:μ, :out)`: a cluster lists existing interfaces in interface order")
     @test has("has no declaration")
     @test has("consumes (q[:m...]) but the dependencies of")
-    @test length(messages) == 8
+    @test has("consumes (q[:x], q[:y]) but the dependencies of Extended add (q[:a]) to the default scheme's inputs")
+    @test length(messages) == 9
 end
 
 @testitem "diagnostics:clean" tags = [:base] setup = [SpikeRules, DependencyNodes, ToyNodes] begin

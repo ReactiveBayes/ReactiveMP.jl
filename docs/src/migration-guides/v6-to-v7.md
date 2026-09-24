@@ -254,6 +254,7 @@ rule the messages in its own cluster and the marginals of the others, needs no d
 | `DefaultFunctionalDependencies` | nothing: the default |
 | a node with its own `functional_dependencies` | an algorithm of the node's own, with `dependencies = [...]` on `@define_factor_node` |
 | `RequireMessageFunctionalDependencies`, `RequireMarginalFunctionalDependencies`, `RequireEverythingFunctionalDependencies` | for one model, a [`DefaultAlgorithmExtension`](@ref) with its own dependencies (`@define_dependencies`); for a node, its own algorithm |
+| `RequireMarginalFunctionalDependencies(a = nothing)`, keeping the default and adding `q(a)` | `:a => (default, q[:a])`, with `default` alone for the other targets ([Extending the default scheme](@ref rules-algorithms-extending)) |
 | RxInfer's `where { dependencies = … }` | choosing the node's algorithm |
 
 A target's inputs are subscribed to in the order they are declared, which is the update

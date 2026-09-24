@@ -93,6 +93,7 @@ function declared_dependencies(factornode, spec::MessagePassingRulesBase.Depende
     inputs === nothing && throw(
         ArgumentError("`$(functionalform(factornode))` declares no dependencies for the target `$(repr(interface_key(interface)))` under $(nameof(spec.algorithm))"),
     )
+    MessagePassingRulesBase.extends_default_scheme(spec, target) && return extended_default_dependencies(factornode, interface, inputs)
     messages, marginals = (Any[], Any[]), (Any[], Any[])
     for input in inputs
         selected = selected_interfaces(factornode, input, interface)
@@ -112,6 +113,45 @@ function declared_dependencies(factornode, spec::MessagePassingRulesBase.Depende
         end
     end
     return map(Tuple, messages), map(Tuple, marginals)
+end
+
+"""
+    ReactiveMP.extended_default_dependencies(factornode, interface, inputs)
+
+A target declared with `default`: the default scheme's inputs, and each of `inputs`, a single
+interface's message or marginal, placed in interface order, where v6's
+`RequireMarginalFunctionalDependencies` put it. A marginal is the variable's own and is never
+scored; an input the default scheme has already is not added twice.
+"""
+function extended_default_dependencies(factornode, interface, inputs)
+    iindex = findfirst(i -> i === interface, getinterfaces(factornode))
+    (messagelabels, messages), (marginallabels, marginals) = default_dependencies(factornode, iindex)
+    messages, messagelabels = collect(Any, messages), collect(Any, messagelabels)
+    marginals, marginallabels = collect(Any, marginals), collect(Any, marginallabels)
+    position(i) = findfirst(j -> j === i, getinterfaces(factornode))
+    clusters = getlocalclusters(factornode)
+    # The default scheme's marginals are the other clusters, in cluster order; each is placed by
+    # the position of its first member.
+    cindex = clusterindex(clusters, iindex)
+    firsts = Any[first(getfactorization(clusters, c)) for c in eachindex(get_node_local_marginals(clusters)) if c != cindex]
+    for input in inputs
+        added = getinterface(factornode, interfaceindex(factornode, input.key))
+        label = input_label(factornode, added)
+        at = position(added)
+        if input.container === :m
+            label in messagelabels && continue
+            k = count(i -> position(i) < at, messages) + 1
+            insert!(messages, k, added)
+            insert!(messagelabels, k, label)
+        else
+            label in marginallabels && continue
+            k = count(<(at), firsts) + 1
+            insert!(marginals, k, getvariable(added))
+            insert!(marginallabels, k, label)
+            insert!(firsts, k, at)
+        end
+    end
+    return (Tuple(messagelabels), Tuple(messages)), (Tuple(marginallabels), Tuple(marginals))
 end
 
 function selected_interfaces(factornode, input::MessagePassingRulesBase.Dependency, interface)

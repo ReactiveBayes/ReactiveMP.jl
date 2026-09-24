@@ -177,12 +177,19 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
     for declaration in own
         spec.kind === :message || continue
         instance = target <: IndexedTarget ? target(1) : target()
-        declared = target_dependencies(declaration, instance)
-        declared === nothing && continue
-        expected = Set(dependency_label(d) for d in declared)
+        entry = target_entry(declaration, instance)
+        entry === nothing && continue
+        expected = Set(dependency_label(d) for d in entry.inputs)
         actual = Set(input_label(i.container, i.key, i.selection) for i in spec.inputs)
-        expected == actual ||
-            push!(problems, "consumes ($(join(sort(collect(actual)), ", "))) but the dependencies of $(declaration.algorithm) declare ($(join(sort(collect(expected)), ", ")))")
+        consumed = "consumes ($(join(sort(collect(actual)), ", "))) but the dependencies of $(nameof(declaration.algorithm))"
+        # Beside `default`, the inputs follow the factorisation, which a rule does not know: only
+        # the added ones are checked.
+        if entry.default
+            issubset(expected, actual) ||
+                push!(problems, "$consumed add ($(join(sort(collect(expected)), ", "))) to the default scheme's inputs")
+        else
+            expected == actual || push!(problems, "$consumed declare ($(join(sort(collect(expected)), ", ")))")
+        end
     end
     return problems
 end

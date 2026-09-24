@@ -79,8 +79,10 @@ Base.show(io::IO, ::MIME"text/html", spec::NodeSpec) = html_table(
 )
 
 dependency_target_label(entry::TargetDependencies) = entry.indexed ? "(:$(entry.edge), k)" : ":$(entry.edge)"
-dependency_inputs_label(entry::TargetDependencies) =
-    isempty(entry.inputs) ? "nothing" : join(map(dependency_label, entry.inputs), ", ")
+function dependency_inputs_label(entry::TargetDependencies)
+    labels = [entry.default ? ["default"] : String[]; map(dependency_label, collect(entry.inputs))]
+    return isempty(labels) ? "nothing" : join(labels, ", ")
+end
 partition_label(spec::DependenciesSpec) =
     spec.partition === nothing ? "from the factorisation" : join(map(repr, spec.partition), ", ")
 

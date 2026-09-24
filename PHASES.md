@@ -2620,7 +2620,30 @@ the closed form. The closed form agrees with Monte Carlo to 0.5% in six cases: `
 
 A commit each.
 
-**Progress:** not started.
+**Progress:**
+- *Auxiliary inputs — done.* In the base package, `default` joins the dependency vocabulary:
+  - `TargetDependencies` records it, keeping a three-argument constructor for the rest;
+  - `extends_default_scheme(declaration, target)` reads it;
+  - the display shows `default, q[:a]`.
+  - The macro refuses `default` twice. `validate_dependencies` refuses beside it anything but a
+    single interface's message or marginal, so groups are left out as well as clusters, until a
+    node needs one.
+  - `check_rules` requires a rule for such a target to read the added inputs.
+
+  In the engine, `extended_default_dependencies` takes `default_dependencies` and places each added
+  input in interface order. A marginal goes after the clusters whose first member precedes it, as
+  v6's `insertafter` did, and it is the variable's, never a cluster, so free energy does not see
+  it. An input the default already has is skipped.
+
+  Tests, failing first:
+  - the declaration, its errors and display, and a `check_rules` case, in the base;
+  - the placement under mean-field and `q(y, x)`, the skipping, and a message added among messages;
+  - a toy `y ~ N(a x, 1/W)` whose rule towards `a` reads `q(a)`. Over four iterations it makes
+    one call per target per iteration, the cycle broken by `PushNew()`, and the node keeps its
+    four clusters.
+
+  Docs: *Algorithms and dependencies › Extending the default scheme*, and the guide's mapping of
+  `RequireMarginalFunctionalDependencies`.
 
 
 

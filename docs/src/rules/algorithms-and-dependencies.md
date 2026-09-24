@@ -72,6 +72,34 @@ MessagePassingRulesBase.selection_arity
 MessagePassingRulesBase.free_energy_partition
 ```
 
+## [Extending the default scheme](@id rules-algorithms-extending)
+
+A rule may need one input the factorisation does not give it, while its other inputs follow the
+factorisation as usual. `default` among a target's inputs stands for the default scheme's, and
+the inputs beside it are added. ContinuousTransition's rule towards `a` reads `q(a)`, the
+expansion point of its transformation, under both of its factorisations, mean-field and
+`q(y, x) q(a) q(W)`:
+
+```julia
+@define_dependencies(
+    node = ContinuousTransition, algorithm = CTVMP,
+    dependencies = [:y => (default,), :x => (default,), :a => (default, q[:a]), :W => (default,)],
+)
+```
+
+Every target is declared, `default` alone where nothing is added. An added input is a single
+interface's message or marginal. The engine places it among the default scheme's inputs in
+interface order, and adds nothing the default scheme already gives. A marginal added this way is
+the variable's, consumed and never scored: free energy is computed over the factorisation.
+
+A rule that reads its own target's marginal is recomputed only once all its inputs have
+refreshed, not each time its own result updates that marginal. `check_rules` checks that such a
+rule reads the added inputs; the rest depend on the factorisation, which a rule does not know.
+
+```@docs
+MessagePassingRulesBase.extends_default_scheme
+```
+
 ## [Initial messages](@id rules-algorithms-initial-messages)
 
 A rule that reads the message on its own edge, as an expectation-propagation rule does, has no
