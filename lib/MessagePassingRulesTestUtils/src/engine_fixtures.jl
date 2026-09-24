@@ -29,6 +29,9 @@ encode_fixture_value(x::BayesBase.MixtureDistribution) = Dict{String, Any}(
     "components" => encode_fixture_value(collect(BayesBase.components(x))),
     "weights" => encode_fixture_value(collect(BayesBase.weights(x))),
 )
+# A marginal passed as a message, as BIFM's forward pass sends them.
+encode_fixture_value(x::BayesBase.TerminalProdArgument) =
+    Dict{String, Any}("type" => "TerminalProdArgument", "argument" => encode_fixture_value(x.argument))
 encode_fixture_value(x::Distribution) =
     Dict{String, Any}("type" => string(nameof(typeof(x))), "params" => Any[encode_fixture_value(p) for p in params(x)])
 

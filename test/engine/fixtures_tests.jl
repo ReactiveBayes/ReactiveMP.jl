@@ -575,3 +575,79 @@ end
     trajectory = H.run(graph; id = "multinomial_regression", data, iterations = 5, posteriors = [:ψ => ψ], initial_messages = [ψ => prior])
     @test compare_engine_trajectory(trajectory, H.fixture("multinomial_regression"); atol = 1.0e-9) === :agree
 end
+
+@testmodule BIFMFixture begin
+    # The RxInferExamples model *RTS vs BIFM Smoothing*, small, as `bifm_smoother` in the recorder:
+    # z[i + 1] = A z[i] + B u[i], y[i] = C z[i + 1] + noise, through BIFM time slices.
+    using ExponentialFamily, StandardMessagePassingRules, BIFMMessagePassingRules
+    import ..EngineHarness as H
+
+    const A, B, C = [0.9 0.1; 0.0 0.8], reshape([1.0, 0.5], 2, 1), [1.0 0.0]
+    const Y = [[0.5], [0.8], [0.3], [-0.1]]
+
+    function bifm(; free_energy = false)
+        graph = H.Graph()
+        z_prior = H.random!(graph)
+        z = [H.random!(graph) for _ in 1:5]
+        u, yt, y = [H.random!(graph) for _ in 1:4], [H.random!(graph) for _ in 1:4], [H.data!(graph) for _ in 1:4]
+        H.node!(graph, MvNormalMeanPrecision, [(:out, z_prior), (:μ, H.constant!(graph, [0.0, 0.0])), (:Λ, H.constant!(graph, [1.0e-5 0.0; 0.0 1.0e-5]))])
+        H.node!(graph, BIFMHelper, [(:out, z[1]), (:in, z_prior)]; factorisation = ((:out,), (:in,)))
+        for i in 1:4
+            H.node!(graph, MvNormalMeanPrecision, [(:out, u[i]), (:μ, H.constant!(graph, [0.0])), (:Λ, H.constant!(graph, [1.0;;]))])
+            H.node!(graph, BIFM, [(:out, yt[i]), (:in, u[i]), (:zprev, z[i]), (:znext, z[i + 1])]; algorithm = BIFMSmoother(A, B, C))
+            H.node!(graph, MvNormalMeanPrecision, [(:out, y[i]), (:μ, yt[i]), (:Λ, H.constant!(graph, [10.0;;]))])
+        end
+        H.node!(graph, MvNormalMeanPrecision, [(:out, z[5]), (:μ, H.constant!(graph, [0.0, 0.0])), (:Λ, H.constant!(graph, [0.0 0.0; 0.0 0.0]))])
+        # `yt`'s posterior too: it is what reads the messages towards `out`, which v6 computed
+        # whether or not anything asked for them.
+        return H.run(graph; id = "bifm_smoother", data = y .=> Y, iterations = 1, posteriors = [:z => z, :u => u, :yt => yt], free_energy)
+    end
+end
+
+@testitem "engine:fixture:bifm_smoother" tags = [:engine] setup = [EngineHarness, BIFMFixture] begin
+    using MessagePassingRulesTestUtils
+    # v6's rule towards `in` read what its rule towards `znext` had cached, so v6 ran `znext` first.
+    # The port's rules read their own messages and do not depend on each other; the engine runs a
+    # slice's `in` before its `znext`, and the order within an iteration is declared free.
+    @test compare_engine_trajectory(BIFMFixture.bifm(), EngineHarness.fixture("bifm_smoother"); atol = 1.0e-9, trace_order = :within_iteration) === :agree
+end
+
+@testitem "engine:bifm is the RTS smoother" tags = [:engine] setup = [EngineHarness, BIFMFixture] begin
+    # The same linear-Gaussian model through Standard's nodes, z[i] = A z[i - 1] + B u[i] and
+    # y[i] ~ N(C z[i], 1/10): belief propagation on a chain is exact, and BIFM must agree, v6 aside.
+    using ExponentialFamily, BayesBase, StandardMessagePassingRules
+    F, H = BIFMFixture, EngineHarness
+
+    graph = H.Graph()
+    z_prev = H.random!(graph)
+    H.node!(graph, MvNormalMeanPrecision, [(:out, z_prev), (:μ, H.constant!(graph, [0.0, 0.0])), (:Λ, H.constant!(graph, [1.0e-5 0.0; 0.0 1.0e-5]))])
+    z, u, y = [H.random!(graph) for _ in 1:4], [H.random!(graph) for _ in 1:4], [H.data!(graph) for _ in 1:4]
+    for i in 1:4
+        H.node!(graph, MvNormalMeanPrecision, [(:out, u[i]), (:μ, H.constant!(graph, [0.0])), (:Λ, H.constant!(graph, [1.0;;]))])
+        Az, Bu, Cz = H.random!(graph), H.random!(graph), H.random!(graph)
+        H.node!(graph, *, [(:out, Az), (:A, H.constant!(graph, F.A)), (:in, i == 1 ? z_prev : z[i - 1])])
+        H.node!(graph, *, [(:out, Bu), (:A, H.constant!(graph, F.B)), (:in, u[i])])
+        H.node!(graph, +, [(:out, z[i]), (:in1, Az), (:in2, Bu)])
+        H.node!(graph, *, [(:out, Cz), (:A, H.constant!(graph, F.C)), (:in, z[i])])
+        H.node!(graph, MvNormalMeanPrecision, [(:out, y[i]), (:μ, Cz), (:Λ, H.constant!(graph, [10.0;;]))])
+    end
+    rts = H.run(graph; id = "rts", data = y .=> F.Y, iterations = 1, posteriors = [:z => z, :u => u], free_energy = false)
+    bifm = F.bifm()
+
+    # BIFM's z[1] is the chain's start, so its z[2:5] are the RTS smoother's z[1:4].
+    unwrap(q) = q isa BayesBase.TerminalProdArgument ? q.argument : q
+    for (q_bifm, q_rts) in zip(bifm.posteriors["z"][2:5], rts.posteriors["z"])
+        @test mean(unwrap(q_bifm)) ≈ mean(q_rts) atol = 1.0e-8
+        @test cov(unwrap(q_bifm)) ≈ cov(q_rts) atol = 1.0e-8
+    end
+    for (q_bifm, q_rts) in zip(bifm.posteriors["u"], rts.posteriors["u"])
+        @test mean(unwrap(q_bifm)) ≈ mean(q_rts) atol = 1.0e-8
+        @test cov(unwrap(q_bifm)) ≈ cov(q_rts) atol = 1.0e-8
+    end
+end
+
+@testitem "engine:bifm's free energy is an error" tags = [:engine] setup = [EngineHarness, BIFMFixture] begin
+    # v6's failed with an `Inf`; the port says what is not supported.
+    using BIFMMessagePassingRules
+    @test_throws BIFMMessagePassingRules.BIFMFreeEnergyError BIFMFixture.bifm(free_energy = true)
+end

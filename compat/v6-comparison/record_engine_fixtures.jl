@@ -203,6 +203,21 @@ end
     end
 end
 
+# The RxInferExamples model *RTS vs BIFM Smoothing*, small: a 2-dimensional state with a
+# 1-dimensional input and output, through BIFM time slices started by BIFMHelper. Without free
+# energy, which 6.5.0 cannot compute for it.
+const BIFM_A, BIFM_B, BIFM_C = [0.9 0.1; 0.0 0.8], reshape([1.0, 0.5], 2, 1), [1.0 0.0]
+@model function bifm_smoother(y)
+    z_prior ~ MvNormalMeanPrecision([0.0, 0.0], [1.0e-5 0.0; 0.0 1.0e-5])
+    z[1] ~ BIFMHelper(z_prior)
+    for i in eachindex(y)
+        u[i] ~ MvNormalMeanPrecision([0.0], [1.0;;])
+        yt[i] ~ BIFM(u[i], z[i], new(z[i + 1])) where {meta = BIFMMeta(BIFM_A, BIFM_B, BIFM_C)}
+        y[i] ~ MvNormalMeanPrecision(yt[i], [10.0;;])
+    end
+    z[end] ~ MvNormalMeanPrecision([0.0, 0.0], [0.0 0.0; 0.0 0.0])
+end
+
 # A Bayesian linear regression through SoftDot: y[i] ~ N(θ ⋅ X[i], 1/γ), with X[i] known.
 @model function softdot_regression(y, X)
     θ ~ MvNormalMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
@@ -417,6 +432,18 @@ const MODELS = [
         () -> record(
             "multinomial_regression"; description = "", model = multinomial_regression(),
             data = (y = [[3, 2, 5], [1, 4, 5], [2, 2, 6]], N = 10), iterations = 5, returnvars = (:ψ,),
+        ),
+    ),
+    (
+        "bifm_smoother",
+        "z_prior ~ MvNMP(0, 1e-5 I), z[1] ~ BIFMHelper(z_prior), u[i] ~ MvNMP(0, 1), yt[i] ~ BIFM(u[i], z[i], z[i+1]) with BIFMMeta(A, B, C), y[i] ~ MvNMP(yt[i], 10) observed at [0.5], [0.8], [0.3], [-0.1], z[end] ~ MvNMP(0, 0); q(z_prior) q(z), no free energy; the posteriors of z, u and yt.",
+        () -> record(
+            "bifm_smoother"; description = "", model = bifm_smoother(), data = (y = [[0.5], [0.8], [0.3], [-0.1]],), iterations = 1, returnvars = (:z, :u, :yt), free_energy = false,
+            constraints = @constraints(
+                begin
+                    q(z_prior, z) = q(z_prior)q(z)
+                end
+            ),
         ),
     ),
     (

@@ -17,6 +17,7 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 # The lib packages are unregistered; `[sources]` (Julia 1.11+) resolves them by path.
 [sources]
+BIFMMessagePassingRules = {path = "lib/BIFMMessagePassingRules"}
 ContinuousTransitionMessagePassingRules = {path = "lib/ContinuousTransitionMessagePassingRules"}
 AutoregressiveMessagePassingRules = {path = "lib/AutoregressiveMessagePassingRules"}
 DeltaMessagePassingRules = {path = "lib/DeltaMessagePassingRules"}
@@ -45,6 +46,7 @@ julia = "1.11"
 # Test-target dependencies. Aqua's `deps_compat` check_extras requires a bound on every
 # `[extras]` entry, not only on the runtime deps.
 Aqua = "0.8"
+BIFMMessagePassingRules = "0.1"
 AutoregressiveMessagePassingRules = "0.1"
 BenchmarkTools = "1"
 ContinuousTransitionMessagePassingRules = "0.1"
@@ -73,6 +75,7 @@ TestItemRunner = "1"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+BIFMMessagePassingRules = "3092217e-9fde-41d8-8729-057ea730fd7c"
 AutoregressiveMessagePassingRules = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 ContinuousTransitionMessagePassingRules = "be169b08-8551-4d4c-a46b-881478acc6d9"
@@ -99,4 +102,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "AutoregressiveMessagePassingRules", "BenchmarkTools", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "PolyaMessagePassingRules", "ProbitMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BIFMMessagePassingRules", "AutoregressiveMessagePassingRules", "BenchmarkTools", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "PolyaMessagePassingRules", "ProbitMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]

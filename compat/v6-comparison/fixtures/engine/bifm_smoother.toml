@@ -1,0 +1,358 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "z_prior ~ MvNMP(0, 1e-5 I), z[1] ~ BIFMHelper(z_prior), u[i] ~ MvNMP(0, 1), yt[i] ~ BIFM(u[i], z[i], z[i+1]) with BIFMMeta(A, B, C), y[i] ~ MvNMP(yt[i], 10) observed at [0.5], [0.8], [0.3], [-0.1], z[end] ~ MvNMP(0, 0); q(z_prior) q(z), no free energy; the posteriors of z, u and yt."
+free_energy = []
+id = "bifm_smoother"
+
+    [[trajectory.posteriors.u]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.u.argument]
+        params = [[-1.0638563876872592e-6], [[0.9999852455063392]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.u]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.u.argument]
+        params = [[0.3683414531004239], [[0.6145593196296969]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.u]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.u.argument]
+        params = [[-0.28689217198874234], [[0.4644460769829678]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.u]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.u.argument]
+        params = [[-0.2726417604964204], [[0.3153685620965456]]]
+        type = "MvNormalMeanCovariance"
+
+    [[trajectory.posteriors.yt]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.yt.argument]
+        params = [[0.5353610745494521], [[0.09644840807048301]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.yt]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.yt.argument]
+        params = [[0.7361155796714001], [[0.08538851966190601]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.yt]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.yt.argument]
+        params = [[0.3027882499517144], [[0.08548258581147516]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.yt]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.yt.argument]
+        params = [[-0.07273582395035787], [[0.09315368562096545]]]
+        type = "MvNormalMeanCovariance"
+
+    [[trajectory.posteriors.z]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.z.argument]
+        params = [[0.4405852923975097, 0.03237404332201797], [[0.7388098733277878, 0.08131377851342304], [0.08131377851342306, 0.02025456712211716]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.posteriors.z]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.z.argument]
+        params = [[0.5353610745494521, -1.1405084052353145], [[0.09644840807048301, -0.4327279914980925], [-0.4327279914980926, 56.36181191276689]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.z]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.z.argument]
+        params = [[0.7361155796714001, -0.7282359976380393], [[0.08538851966190601, 0.12570774880537194], [0.12570774880537183, 32.11950201671676]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.z]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.z.argument]
+        params = [[0.3027882499517144, -0.7260348841048023], [[0.08548258581147516, 0.11880099369548781], [0.11880099369548783, 18.097088676433703]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.posteriors.z]]
+    type = "TerminalProdArgument"
+
+        [trajectory.posteriors.z.argument]
+        params = [[-0.07273582395035787, -0.7171487875320522], [[0.09315368562096545, 0.17362282731112239], [0.17362282731112239, 10.26706633928221]]]
+        type = "MvNormalMeanCovariance"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0], [[1.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0], [[1.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0], [[1.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0], [[1.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[0.0, 0.0], [0.0, 0.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.5], [[10.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8], [[10.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.3], [[10.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.1], [[10.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":zprev"
+
+        [trajectory.trace.result]
+        params = [[-0.08181818181818175, -0.009090909090909084], [[0.7363636363636358, 0.08181818181818175], [0.08181818181818175, 0.009090909090909084]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":zprev"
+
+        [trajectory.trace.result]
+        params = [[0.23551240146125757, 0.0018650259565468495], [[0.73726975581619, 0.08413382041915027], [0.08413382041915027, 0.01500865218227265]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":zprev"
+
+        [trajectory.trace.result]
+        params = [[0.6547502493185866, 0.023179884894362675], [[0.7381203738669099, 0.08244549684741168], [0.08244549684741169, 0.01835967028079369]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":zprev"
+
+        [trajectory.trace.result]
+        params = [[0.4405852923975097, 0.03237404332201797], [[0.7387998733277878, 0.08131377851342304], [0.08131377851342306, 0.02024456712211716]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[1.0e-5, 0.0], [0.0, 1.0e-5]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFMHelper"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.4405852923975097, 0.03237404332201797], [[0.7387998733277878, 0.08131377851342304], [0.08131377851342306, 0.02024456712211716]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFMHelper"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.4405852923975097, 0.03237404332201797], [[0.7388098733277878, 0.08131377851342304], [0.08131377851342306, 0.02025456712211716]]]
+            type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":znext"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.5353610745494521, -1.1405084052353145], [[0.09644840807048301, -0.4327279914980925], [-0.4327279914980926, 56.36181191276689]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":znext"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.7361155796714001, -0.7282359976380393], [[0.08538851966190601, 0.12570774880537194], [0.12570774880537183, 32.11950201671676]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":znext"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.3027882499517144, -0.7260348841048023], [[0.08548258581147516, 0.11880099369548781], [0.11880099369548783, 18.097088676433703]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.5353610745494521], [[0.09644840807048301]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":in"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[-1.0638563876872592e-6], [[0.9999852455063392]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.7361155796714001], [[0.08538851966190601]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":in"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.3683414531004239], [[0.6145593196296969]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[0.3027882499517144], [[0.08548258581147516]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":in"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[-0.28689217198874234], [[0.4644460769829678]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":znext"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[-0.07273582395035787, -0.7171487875320522], [[0.09315368562096545, 0.17362282731112239], [0.17362282731112239, 10.26706633928221]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":in"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[-0.2726417604964204], [[0.3153685620965456]]]
+            type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BIFM"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "TerminalProdArgument"
+
+            [trajectory.trace.result.argument]
+            params = [[-0.07273582395035787], [[0.09315368562096545]]]
+            type = "MvNormalMeanCovariance"

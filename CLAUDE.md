@@ -85,8 +85,9 @@ make test-autoregressive                   # lib/AutoregressiveMessagePassingRul
 make test-softdot                          # lib/SoftDotMessagePassingRules
 make test-continuous-transition            # lib/ContinuousTransitionMessagePassingRules
 make test-polya                            # lib/PolyaMessagePassingRules (GPL-3)
+make test-bifm                             # lib/BIFMMessagePassingRules
 # the v6 oracle environment: comparisons and engine fixtures
-for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
+for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
@@ -101,12 +102,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (149 of them across 22 files), each self-contained and
+Tests are `@testitem` blocks (152 of them across 22 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (26) and `:engine` (121 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (26) and `:engine` (124 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate and the engine's doctests. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
@@ -171,8 +172,9 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   `ARVMP`, which the model must give), `SoftDotMessagePassingRules` (`make test-softdot`,
   independent of AR's package), `ContinuousTransitionMessagePassingRules`
   (`make test-continuous-transition`; `CTVMP(f)`, its rule towards `a` reading `q(a)` beside the
-  default scheme's inputs) and `PolyaMessagePassingRules` (`make test-polya`; BinomialPolya and
-  MultinomialPolya, GPL-3 through PolyaGammaHybridSamplers, the only package that is). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
+  default scheme's inputs), `PolyaMessagePassingRules` (`make test-polya`; BinomialPolya and
+  MultinomialPolya, GPL-3 through PolyaGammaHybridSamplers, the only package that is) and
+  `BIFMMessagePassingRules` (`make test-bifm`; BIFM, stateless, and BIFMHelper; no free energy). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
 - The Standard and Delta suites end with a **rule-coverage gate**: after an unfiltered run
   (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
   find every rule selected by some test. A table case, a verification, a derivative check or

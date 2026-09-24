@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "a0b1b27c6e926b179eebd83ec0331fe663dc1a75"
+project_hash = "5b891eecfd602b4d3415b806181e59e7d7d7637a"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -135,6 +135,12 @@ version = "1.11.0"
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
 path = "../../lib/AutoregressiveMessagePassingRules"
 uuid = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
+version = "0.1.0-DEV"
+
+[[deps.BIFMMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase"]
+path = "../../lib/BIFMMessagePassingRules"
+uuid = "3092217e-9fde-41d8-8729-057ea730fd7c"
 version = "0.1.0-DEV"
 
 [[deps.Base64]]

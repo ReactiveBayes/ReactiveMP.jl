@@ -50,7 +50,7 @@ replacement".
 | `-` | `node` | `src/nodes/predefined/subtraction.jl` | `standard` | arithmetic |
 | `AND` | `node` | `src/nodes/predefined/and.jl` | `standard` | logic |
 | `AR` | `node` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
-| `BIFM` | `node` | `src/nodes/predefined/bifm.jl` | `node:BIFM` | impure: message rules mutate BIFMMeta (setH!, setLambdaz!, ...) |
+| `BIFM` | `node` | `src/nodes/predefined/bifm.jl` | `node:BIFM` | v6's rules mutated BIFMMeta; the port is stateless, its forward rules reading their own edge's message (DISCUSSION §3.44) |
 | `BIFMHelper` | `node` | `src/nodes/predefined/bifm_helper.jl` | `node:BIFM` |  |
 | `BinomialPolya` | `node` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 via PolyaGammaHybridSamplers |
 | `ConjugateAR` | `node` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` |  |
@@ -124,7 +124,7 @@ replacement".
 | `AverageEnergy` | `type` | `src/score/score.jl` | `delete` | replaced by `message_passing_average_energy` / `call_average_energy` in the base package; the v6 → v7 guide maps `score(AverageEnergy(), …)` to `call_average_energy` |
 | `BIFM` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
 | `BIFMHelper` | `type` | `src/nodes/predefined/bifm_helper.jl` | `node:BIFM` |  |
-| `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
+| `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` | becomes the immutable algorithm `BIFMSmoother(A, B, C)`; its five-argument form goes |
 | `BinomialPolya` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
 | `BinomialPolyaMeta` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3; becomes the node's algorithm `BinomialPolyaApproximation(; samples = nothing)`, drawing from `ctx.rng` |
 | `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias; becomes the algorithm `CTVMP(f)`, which the model must give, its rule towards `a` adding `q(a)` to the default scheme (DISCUSSION §3.21, §3.41) |

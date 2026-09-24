@@ -2962,6 +2962,45 @@ guide a third.
   - engine: three calls on one stream build one scratch, and another stream its own.
 
   Docs: *Defining nodes and rules › Scratch*, the testing page and the mappings' API.
+- *BIFM — done.* `lib/BIFMMessagePassingRules` (`make test-bifm`).
+  - BIFM, BIFMHelper, and `BIFMSmoother(A, B, C)` in place of `BIFMMeta`: immutable, with checked
+    sizes and promoted element types.
+  - The declaration adds each forward target's own message: `:out => (default, m[:out])`, and so
+    for `in` and `znext`.
+  - One helper, `bifm_backward!`, computes `ξz`, `Λz`, `H`, `BHBt`, `ξ̃z` and `Λ̃z` in v6's order of
+    operations into the rule's scratch, the first rules to use it. Each of the four rules calls it
+    on its own messages, so they are pure and independent of order.
+  - BIFMHelper's dependencies are declared, `:in => (m[:out],)` and `:out => (default,)`.
+
+  *Found, and not ported:* v6's marginal `(:in, :zprev, :znext)` returned the joint of `in` and
+  `zprev` only, and only the free energy reached it. The cluster's marginal rule now raises
+  `BIFMFreeEnergyError`, as BIFMHelper's energy does, the error the free energy meets. For the same
+  reason MvNormalMeanPrecision's two `TerminalProdArgument` marginals are not ported: only a BIFM
+  model's free energy reached them. This is a deviation from the brief, which moved them to
+  Standard. The free-energy follow-up would restore them.
+
+  *Found, and replaced:* v6's tables towards `in`, `out` and `znext` filled the meta's cache with
+  arbitrary numbers inconsistent with the messages, so a stateless rule cannot reproduce them;
+  only the `zprev` table ported as it was. A subagent wrote the tables anew from 6.5.0, on a fresh
+  meta after v6's `zprev` and `znext` rules on the same messages, and they are pasted as literals:
+  - 23 BIFM cases, with a 3-dimensional state and non-square `B`;
+  - BIFMHelper's two tables, ported;
+  - 419 checks with the scratch reruns and the quality tests.
+
+  `compare_bifm.jl`: 28 checks on the same consistent sequence, over three slice shapes, all
+  agreeing.
+
+  Fixture `bifm_smoother`, the RxInferExamples model, small, without free energy. It agrees with v6
+  in every posterior and rule call, with two things declared:
+  - `:within_iteration`: v6 ran a slice's `znext` before its `in`, which read its cache;
+  - `yt`'s posterior is requested, since only it reads the messages towards `out`, which v6
+    computed whether or not anything asked.
+
+  Independently of v6, an engine test builds the same model from Standard's `*`, `+` and normals,
+  and BIFM's posteriors of `z` and `u` equal the RTS smoother's to 1e-8. A third test pins the
+  free-energy error. `encode_fixture_value` learns `TerminalProdArgument`.
+
+  The ported files have left `legacy/v6/`, with `rules/mv_normal_mean_precision/`.
 
 
 

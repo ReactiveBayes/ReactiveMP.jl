@@ -9,11 +9,11 @@ The layout mirrors where each file used to live, so `legacy/v6/src/rules/gcv/y.j
 deletes after skimming:
 
 - `src/rules/`, `src/nodes/predefined/` — the unported nodes' rules and definitions:
-  BIFM and its helper, DiscreteTransition and Flow (Delta left in Phase 6 step 2,
-  GaussianCoupling, Probit and GCV in step 3, Autoregressive, ConjugateAR and SoftDot in step 4,
-  ContinuousTransition in step 5, and the Pólya nodes in step 6, all ported);
-  `rules/mv_normal_mean_precision/marginals.jl` holds MvNormalMeanPrecision's two marginal
-  rules for BIFM's `TerminalProdArgument`;
+  DiscreteTransition and Flow (Delta left in Phase 6 step 2, GaussianCoupling, Probit and GCV in
+  step 3, Autoregressive, ConjugateAR and SoftDot in step 4, ContinuousTransition in step 5, the
+  Pólya nodes in step 6, and BIFM and its helper in step 7, all ported). MvNormalMeanPrecision's
+  two marginal rules for BIFM's `TerminalProdArgument` left in step 7 too, unported: only the
+  free energy of a BIFM model reached them, and that is not supported;
 - `src/helpers/algebra/` — the permutation matrix, Flow's. The standard-basis vector and the
   companion matrix left with AR in step 4, and `common.jl` in step 1: `mul_trace`,
   `rank1update`, `negate_inplace!` and `mul_inplace!` are Standard's, and the rest had no user;

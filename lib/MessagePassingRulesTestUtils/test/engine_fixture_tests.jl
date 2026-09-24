@@ -143,3 +143,13 @@ end
     end
     @test isempty(Recording.failures(set))
 end
+
+@testitem "engine-fixtures:terminal prod argument" tags = [:testutils] begin
+    using MessagePassingRulesTestUtils, BayesBase, Distributions
+    using BayesBase: TerminalProdArgument
+
+    # A marginal sent as a message encodes as its argument, wrapped, and encodes to itself.
+    encoded = encode_fixture_value(TerminalProdArgument(Normal(1.0, 2.0)))
+    @test encoded == Dict{String, Any}("type" => "TerminalProdArgument", "argument" => Dict{String, Any}("type" => "Normal", "params" => Any[1.0, 2.0]))
+    @test encode_fixture_value(encoded) == encoded
+end
