@@ -126,7 +126,7 @@ replacement".
 | `BIFMHelper` | `type` | `src/nodes/predefined/bifm_helper.jl` | `node:BIFM` |  |
 | `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
 | `BinomialPolya` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
-| `BinomialPolyaMeta` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
+| `BinomialPolyaMeta` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3; becomes the node's algorithm `BinomialPolyaApproximation(; samples = nothing)`, drawing from `ctx.rng` |
 | `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias; becomes the algorithm `CTVMP(f)`, which the model must give, its rule towards `a` adding `q(a)` to the default scheme (DISCUSSION §3.21, §3.41) |
 | `CTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias |
 | `CVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection`; `ProdCVI`'s own docstring already says so |
@@ -186,7 +186,7 @@ replacement".
 | `MixtureNode` | `type` | `src/nodes/predefined/mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `MomentMatching` | `type` | `src/nodes/nodes.jl` | `delete` | defined and exported but dispatched on nowhere; absorbed by the algorithm axis |
 | `MultinomialPolya` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
-| `MultinomialPolyaMeta` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
+| `MultinomialPolyaMeta` | `type` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3; becomes the node's algorithm `MultinomialPolyaApproximation(; points = 21)` |
 | `MvNormalGamma` | `type` | `src/nodes/predefined/mv_normal_gamma.jl` | `standard` |  |
 | `MvNormalMeanScaleMatrixPrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `standard` |  |
 | `MvNormalMeanScalePrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `standard` |  |

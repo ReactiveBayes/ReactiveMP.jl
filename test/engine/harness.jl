@@ -7,7 +7,7 @@
     import ReactiveMP:
         activate!, israndom, isdata, getdata, getannotations, has_annotation, get_annotation, message_mapping_fform,
         FactorNodeActivationOptions, RandomVariableActivationOptions, DataVariableActivationOptions,
-        MessageProductContext, get_stream_of_marginals, get_stream_of_predictions, set_initial_marginal!
+        MessageProductContext, get_stream_of_marginals, get_stream_of_predictions, set_initial_marginal!, set_initial_message!
     import MessagePassingRulesBase: Target, IndexedTarget
 
     const FIXTURES = joinpath(pkgdir(ReactiveMP), "compat", "v6-comparison", "fixtures", "engine")
@@ -64,15 +64,16 @@
     final(histories::Vector{<:Vector}) = map(final, histories)
 
     """
-        run(graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], annotations = nothing, free_energy = true)
+        run(graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
 
     Activate `graph` as RxInfer does (variables, each followed by its entry in
-    `initial_marginals` (variable => distribution), then factor nodes), subscribe to the
+    `initial_marginals` and then in `initial_messages` (variable => distribution), the latter set
+    on every message out of the variable, as RxInfer's `μ(x)` is; then factor nodes), subscribe to the
     `posteriors` (name => variable or vector of variables), then to the `predictions` of data
     variables, then to the free energy, and feed `data` (variable => value, or vectors of
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
     """
-    function run(graph::Graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], annotations = nothing, free_energy = true)
+    function run(graph::Graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
         trace = RuleCallRecord[]
         iteration = Ref(0)
         callbacks = (
@@ -92,6 +93,9 @@
             end
             for (initialised, marginal) in initial_marginals
                 initialised === variable && set_initial_marginal!(variable, marginal)
+            end
+            for (initialised, message) in initial_messages
+                initialised === variable && set_initial_message!(variable, message)
             end
         end
         for node in graph.nodes

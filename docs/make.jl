@@ -2,13 +2,13 @@ using Documenter
 using ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils
 using StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules
 using GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules, SoftDotMessagePassingRules
-using AutoregressiveMessagePassingRules, ContinuousTransitionMessagePassingRules
+using AutoregressiveMessagePassingRules, ContinuousTransitionMessagePassingRules, PolyaMessagePassingRules
 
 const MODULES = [
     ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils,
     StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules,
     GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules, SoftDotMessagePassingRules,
-    AutoregressiveMessagePassingRules, ContinuousTransitionMessagePassingRules,
+    AutoregressiveMessagePassingRules, ContinuousTransitionMessagePassingRules, PolyaMessagePassingRules,
 ]
 
 const SETUP = :(using ReactiveMP, MessagePassingRulesBase, StandardMessagePassingRules, BayesBase, Distributions, ExponentialFamily)
@@ -59,6 +59,7 @@ makedocs(
             "SoftDot" => "packages/softdot.md",
             "Autoregressive" => "packages/autoregressive.md",
             "ContinuousTransition" => "packages/continuous-transition.md",
+            "Pólya" => "packages/polya.md",
         ],
         "Migration guides" => [
             "v6 to v7" => "migration-guides/v6-to-v7.md",

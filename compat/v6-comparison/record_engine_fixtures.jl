@@ -185,6 +185,24 @@ const CT_Y = [[1.0, 0.2], [0.8, 0.5], [0.5, 0.7]]
     end
 end
 
+# Binomial and multinomial regressions through the Pólya-Gamma augmented nodes, as RxInfer's
+# own tests write them: each node's rule towards the weights reads the message on its own edge,
+# so each node is given an initial one.
+const POLYA_PRIOR = MvNormalWeightedMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+@model function binomial_regression(y, X, n)
+    β ~ MvNormalWeightedMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+    for i in eachindex(y)
+        y[i] ~ BinomialPolya(X[i], n[i], β) where {dependencies = RequireMessageFunctionalDependencies(β = POLYA_PRIOR)}
+    end
+end
+
+@model function multinomial_regression(y, N)
+    ψ ~ MvNormalWeightedMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+    for i in eachindex(y)
+        y[i] ~ MultinomialPolya(N, ψ) where {dependencies = RequireMessageFunctionalDependencies(ψ = POLYA_PRIOR)}
+    end
+end
+
 # A Bayesian linear regression through SoftDot: y[i] ~ N(θ ⋅ X[i], 1/γ), with X[i] known.
 @model function softdot_regression(y, X)
     θ ~ MvNormalMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
@@ -383,6 +401,22 @@ const MODELS = [
                     q(x) = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
                 end
             ),
+        ),
+    ),
+    (
+        "binomial_regression",
+        "β ~ MvNWMP(0, I), y[i] ~ BinomialPolya(X[i], n[i], β) with X = [[1, 0.5], [1, -0.3], [1, 1.2]], n = [5, 4, 5] and y = [3, 1, 4] observed; each node's message on β starts at the prior (RequireMessageFunctionalDependencies), the mean path (no meta).",
+        () -> record(
+            "binomial_regression"; description = "", model = binomial_regression(),
+            data = (y = [3.0, 1.0, 4.0], X = [[1.0, 0.5], [1.0, -0.3], [1.0, 1.2]], n = [5.0, 4.0, 5.0]), iterations = 5, returnvars = (:β,),
+        ),
+    ),
+    (
+        "multinomial_regression",
+        "ψ ~ MvNWMP(0, I), y[i] ~ MultinomialPolya(10, ψ) with y = [[3, 2, 5], [1, 4, 5], [2, 2, 6]] observed; each node's message on ψ starts at the prior (RequireMessageFunctionalDependencies), 21 cubature points.",
+        () -> record(
+            "multinomial_regression"; description = "", model = multinomial_regression(),
+            data = (y = [[3, 2, 5], [1, 4, 5], [2, 2, 6]], N = 10), iterations = 5, returnvars = (:ψ,),
         ),
     ),
     (

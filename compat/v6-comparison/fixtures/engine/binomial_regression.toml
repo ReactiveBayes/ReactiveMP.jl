@@ -1,0 +1,146 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "β ~ MvNWMP(0, I), y[i] ~ BinomialPolya(X[i], n[i], β) with X = [[1, 0.5], [1, -0.3], [1, 1.2]], n = [5, 4, 5] and y = [3, 1, 4] observed; each node's message on β starts at the prior (RequireMessageFunctionalDependencies), the mean path (no meta)."
+free_energy = [4.0613680416203, 4.060476161568554, 4.060473505657801, 4.060473527704314, 4.060473527770659]
+id = "binomial_regression"
+
+    [trajectory.posteriors."β"]
+    params = [[1.0, 2.3499999999999996], [[4.479924620342302, 1.8088309330748213], [1.8088309330748213, 3.184612571338007]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalWeightedMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.25], [[1.25, 0.625], [0.625, 0.3125]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[-1.0, 0.3], [[1.0, -0.3], [-0.3, 0.09]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[1.5, 1.7999999999999998], [[1.2389189092376955, 1.4867026910852346], [1.4867026910852346, 1.7840432293022814]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.25], [[1.2430394105408018, 0.6215197052704009], [0.6215197052704009, 0.31075985263520045]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[-1.0, 0.3], [[0.9979943343097151, -0.29939830029291453], [-0.29939830029291453, 0.08981949008787436]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[1.5, 1.7999999999999998], [[1.2389120865173404, 1.4866945038208084], [1.4866945038208084, 1.78403340458497]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.25], [[1.243050063326274, 0.621525031663137], [0.621525031663137, 0.3107625158315685]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[-1.0, 0.3], [[0.9979622475622929, -0.29938867426868787], [-0.29938867426868787, 0.08981660228060635]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[1.5, 1.7999999999999998], [[1.238912087138093, 1.4866945045657116], [1.4866945045657116, 1.7840334054788538]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.25], [[1.2430502355349886, 0.6215251177674943], [0.6215251177674943, 0.31076255888374715]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[-1.0, 0.3], [[0.9979622969649092, -0.29938868908947275], [-0.29938868908947275, 0.08981660672684182]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[1.5, 1.7999999999999998], [[1.238912087306392, 1.4866945047676703], [1.4866945047676703, 1.7840334057212044]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.25], [[1.2430502352724304, 0.6215251176362152], [0.6215251176362152, 0.3107625588181076]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[-1.0, 0.3], [[0.9979622977634941, -0.2993886893290482], [-0.2993886893290482, 0.08981660679871446]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "BinomialPolya"
+    target = ":β"
+
+        [trajectory.trace.result]
+        params = [[1.5, 1.7999999999999998], [[1.2389120873063786, 1.4866945047676543], [1.4866945047676543, 1.784033405721185]]]
+        type = "MvNormalWeightedMeanPrecision"

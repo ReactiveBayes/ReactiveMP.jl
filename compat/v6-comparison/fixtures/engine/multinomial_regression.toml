@@ -1,0 +1,146 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "ψ ~ MvNWMP(0, I), y[i] ~ MultinomialPolya(10, ψ) with y = [[3, 2, 5], [1, 4, 5], [2, 2, 6]] observed; each node's message on ψ starts at the prior (RequireMessageFunctionalDependencies), 21 cubature points."
+free_energy = [11.095101545616588, 11.059237614411385, 11.057655235670474, 11.057536678983555, 11.057527820313814]
+id = "multinomial_regression"
+
+    [trajectory.posteriors."ψ"]
+    params = [[-9.0, -4.0], [[7.844387077670683, 0.0], [0.0, 6.839427425557389]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalWeightedMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-2.0, -1.5], [[2.5, 0.0], [0.0, 1.75]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-4.0, -0.5], [[2.5, 0.0], [0.0, 2.25]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-3.0, -2.0], [[2.310585786300049, 0.0], [0.0, 1.9737532022490398]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-2.0, -1.5], [[2.2359087970373634, 0.0], [0.0, 1.717345787740197]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-4.0, -0.5], [[2.3563643211977268, 0.0], [0.0, 2.1524186310962934]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-3.0, -2.0], [[2.2849070568872794, 0.0], [0.0, 1.972354145160146]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-2.0, -1.5], [[2.2219582673604363, 0.0], [0.0, 1.7161018191932786]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-4.0, -0.5], [[2.3420615842020474, 0.0], [0.0, 2.1510712971402617]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-3.0, -2.0], [[2.2829446391795885, 0.0], [0.0, 1.97232518853669]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-2.0, -1.5], [[2.220563195607177, 0.0], [0.0, 1.7160840280777458]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-4.0, -0.5], [[2.3412167224314, 0.0], [0.0, 2.1510204032713864]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-3.0, -2.0], [[2.2827879540718152, 0.0], [0.0, 1.9723244203979788]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-2.0, -1.5], [[2.2204769669044104, 0.0], [0.0, 1.7160833599796472]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-4.0, -0.5], [[2.341133982779999, 0.0], [0.0, 2.151019660953487]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MultinomialPolya"
+    target = ":ψ"
+
+        [trajectory.trace.result]
+        params = [[-3.0, -2.0], [[2.2827761279862746, 0.0], [0.0, 1.9723244046242543]]]
+        type = "MvNormalWeightedMeanPrecision"

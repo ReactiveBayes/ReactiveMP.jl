@@ -530,3 +530,48 @@ end
     @test compare_engine_trajectory(F.without_free_energy(trajectory), F.without_free_energy(H.fixture("ct_meanfield")); atol = 1.0e-9) === :agree
     @test length(trajectory.free_energy) == 5 && all(isfinite, trajectory.free_energy)
 end
+
+@testitem "engine:fixture:binomial_regression" tags = [:engine] setup = [EngineHarness] begin
+    # β ~ N(0, I), y[i] ~ BinomialPolya(X[i], n[i], β): the rule towards β reads the message on its
+    # own edge, which the model initialises, as `μ(β)` does in RxInfer.
+    using ExponentialFamily, StandardMessagePassingRules, PolyaMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    prior = MvNormalWeightedMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+
+    graph = H.Graph()
+    β = H.random!(graph)
+    H.node!(graph, MvNormalWeightedMeanPrecision, [(:out, β), (:ξ, H.constant!(graph, [0.0, 0.0])), (:Λ, H.constant!(graph, [1.0 0.0; 0.0 1.0]))])
+    ys, Xs, ns = ([H.data!(graph) for _ in 1:3] for _ in 1:3)
+    for i in 1:3
+        H.node!(graph, BinomialPolya, [(:y, ys[i]), (:x, Xs[i]), (:n, ns[i]), (:β, β)])
+    end
+
+    data = [(ys .=> [3.0, 1.0, 4.0])..., (Xs .=> [[1.0, 0.5], [1.0, -0.3], [1.0, 1.2]])..., (ns .=> [5.0, 4.0, 5.0])...]
+    trajectory = H.run(graph; id = "binomial_regression", data, iterations = 5, posteriors = [:β => β], initial_messages = [β => prior])
+    # Every posterior and rule call agrees with v6; v6's energy took softplus at the mean of xᵀβ,
+    # so the free energy is compared apart: the corrected one is higher, by Jensen's inequality.
+    without_free_energy(t) = EngineTrajectory(t.id; description = t.description, free_energy = Float64[], posteriors = t.posteriors, trace = t.trace)
+    v6 = H.fixture("binomial_regression")
+    @test compare_engine_trajectory(without_free_energy(trajectory), without_free_energy(v6); atol = 1.0e-9) === :agree
+    @test length(trajectory.free_energy) == 5 && all(trajectory.free_energy .> v6.free_energy)
+end
+
+@testitem "engine:fixture:multinomial_regression" tags = [:engine] setup = [EngineHarness] begin
+    # ψ ~ N(0, I), y[i] ~ MultinomialPolya(10, ψ) with observed counts, for which v6's energy was
+    # right: everything agrees, the free energy included.
+    using ExponentialFamily, StandardMessagePassingRules, PolyaMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    prior = MvNormalWeightedMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+
+    graph = H.Graph()
+    ψ = H.random!(graph)
+    H.node!(graph, MvNormalWeightedMeanPrecision, [(:out, ψ), (:ξ, H.constant!(graph, [0.0, 0.0])), (:Λ, H.constant!(graph, [1.0 0.0; 0.0 1.0]))])
+    ys, N = [H.data!(graph) for _ in 1:3], H.constant!(graph, 10)
+    for i in 1:3
+        H.node!(graph, MultinomialPolya, [(:x, ys[i]), (:N, N), (:ψ, ψ)])
+    end
+
+    data = ys .=> [[3, 2, 5], [1, 4, 5], [2, 2, 6]]
+    trajectory = H.run(graph; id = "multinomial_regression", data, iterations = 5, posteriors = [:ψ => ψ], initial_messages = [ψ => prior])
+    @test compare_engine_trajectory(trajectory, H.fixture("multinomial_regression"); atol = 1.0e-9) === :agree
+end

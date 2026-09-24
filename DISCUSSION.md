@@ -1714,6 +1714,19 @@ towards `a` takes the offset and the rule towards `W` the energy's expectation. 
 - restricting `f` to linear maps, which breaks the rotation example.
 
 `Ā` and the expansion point are v6's and are not reconsidered.
+
+### 3.43 BinomialPolya's energy is an expectation, and corrections get no issues (user, 2026-09-24)
+
+BinomialPolya's average energy needs `⟨softplus(ψ)⟩` with `ψ = xᵀβ`. v6 meant to take the plug-in
+`softplus(⟨ψ⟩)` by default and a Monte Carlo estimate under a meta, but overwrote the estimate with
+the plug-in. So it always returned the plug-in, which is biased low since softplus is convex:
+1.069 against 1.534 in the case checked. The user chose **Gauss–Hermite** over the normal of `ψ`,
+as MultinomialPolya's energy already computes it: deterministic, and needing no generator. Fixing
+only the overwrite, and keeping the plug-in as the default, was the alternative.
+
+The user also decided that the v6 errors the ports correct get **no issues**. Each is declared in
+its comparison and recorded in `PHASES.md` and the changelog, so an issue would only restate a fix
+already made. The Phase 6 entry brief's "each with an issue" is superseded.
 ---
 
 ## 4. Corrections — read this before re-proposing anything

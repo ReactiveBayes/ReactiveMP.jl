@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "e333bf2d23434cbabe1938f1af02cc6dd7cf2b75"
+project_hash = "a0b1b27c6e926b179eebd83ec0331fe663dc1a75"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -275,7 +275,7 @@ weakdeps = ["IntervalSets", "LinearAlgebra", "StaticArrays"]
     ConstructionBaseStaticArraysExt = "StaticArrays"
 
 [[deps.ContinuousTransitionMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "ForwardDiff", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "ForwardDiff", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules"]
 path = "../../lib/ContinuousTransitionMessagePassingRules"
 uuid = "be169b08-8551-4d4c-a46b-881478acc6d9"
 version = "0.1.0-DEV"
@@ -1008,6 +1008,12 @@ git-tree-sha1 = "9f6139650ff57f9d8528cd809ebc604c7e9738b1"
 registries = "General"
 uuid = "c636ee4f-4591-4d8c-9fae-2dea21daa433"
 version = "1.2.6"
+
+[[deps.PolyaMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "LogExpFunctions", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "PolyaGammaHybridSamplers", "SpecialFunctions"]
+path = "../../lib/PolyaMessagePassingRules"
+uuid = "2d94fc58-1726-4ac3-9db6-3d18f146cabb"
+version = "0.1.0-DEV"
 
 [[deps.PositiveFactorizations]]
 deps = ["LinearAlgebra"]

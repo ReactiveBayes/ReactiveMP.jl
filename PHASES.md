@@ -2793,7 +2793,51 @@ quadrature of `E[softplus(ψ)]`, and exact enumeration over `q(x)`.
 
 A commit for the package with its comparison and fixtures, as in steps 3–5, and one for the guide.
 
-**Progress:** not started.
+**Progress:**
+- *The harness's initial messages — done.* `H.run` takes `initial_messages` (variable =>
+  distribution), set on every message out of the variable after its initial marginal, as RxInfer
+  5.5.2 sets `μ(x)`. v6's per-node `RequireMessageFunctionalDependencies(β = …)` seeds each node's
+  inbound message on `β`; `μ(β)` seeds the same messages and one more, on the prior's edge, which
+  the prior's rule never reads, so the two are equivalent for these models.
+- *The package, its comparison and its fixtures — done.* `lib/PolyaMessagePassingRules`
+  (`make test-polya`), its README and docs page stating GPL-3:
+  - both nodes, with `BinomialPolyaApproximation{S}` and `MultinomialPolyaApproximation` as their
+    algorithms;
+  - the declarations `:β => (default, m[:β])` and `:ψ => (default, m[:ψ])`;
+  - BinomialPolya's rules in two forms, `{Nothing}`, the mean path, and `{Int}` with
+    `ctx = (:rng,)`, so that only sampling needs the generator;
+  - MultinomialPolya's Categorical `q(x)` branch dropped. v6's energy read the size of its scalar
+    mean first and threw, so the branch was unreachable.
+
+  v6's tables were ported by a subagent and reviewed: 108 checks with the energy and quality
+  tests, and the coverage gate.
+
+  *Found:* a node's `algorithm = T` with a parametric `T` binds its inline dependencies and its
+  default rules to the default instance's type, `BinomialPolyaApproximation{Nothing}`, so the
+  sampling variant had neither. BinomialPolya declares both against `T` with `@define_dependencies`
+  and `algorithm = T`; `CLAUDE.md` records it as a gotcha.
+
+  *Corrected, the energies,* as the brief says:
+  - BinomialPolya's by 32-point Gauss–Hermite, against a fine quadrature to 1e-8;
+  - MultinomialPolya's Multinomial branch against enumeration to 1e-6, and v6's 23.76 for observed
+    counts kept, since it was right.
+
+  *Found by the subagent and corrected, a v6 error the tables did not reach:* the sampling path
+  took `eachcol` of a univariate `β`'s draws, one column of `k`, so `dot(x, column)` threw for more
+  than one sample; v6 tested only one. Draws are samples now, with a failing test first.
+
+  `compare_polya.jl`: 60 checks.
+  - The mean paths agree exactly.
+  - The Monte Carlo paths are compared as distributions, 20 000 samples each on different
+    generators, and agree within 2%.
+  - The energies agree for a point-mass `q(β)`, and for observed counts or a single trial; the
+    rest are declared corrections.
+
+  Two fixtures. `multinomial_regression` agrees with v6 in everything, free energy included.
+  `binomial_regression` agrees in every posterior and rule call, and its corrected free energy is
+  above v6's at every iteration, as Jensen's inequality requires of the plug-in.
+
+  The ported files have left `legacy/v6/`.
 
 
 
