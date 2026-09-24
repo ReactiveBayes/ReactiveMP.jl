@@ -26,6 +26,73 @@ The `n`×`n` identity matrix of element type `T`, dense.
 """
 diageye(::Type{T}, n::Integer) where {T} = Matrix{T}(I, n, n)
 
+"""
+    negate_inplace!(A)
+
+`-A`, overwriting `A` when it is an `Array`; any other array, and a number, is left as it is.
+"""
+function negate_inplace! end
+
+negate_inplace!(A::AbstractArray) = -A
+negate_inplace!(A::Real) = -A
+negate_inplace!(A::Array) = map!(-, A, A)
+
+"""
+    mul_inplace!(alpha, A)
+
+`alpha * A`, overwriting `A` when it is an `Array` of `alpha`'s type; any other array, and a
+number, is left as it is.
+"""
+function mul_inplace! end
+
+mul_inplace!(alpha, A::AbstractArray) = alpha * A
+mul_inplace!(alpha, A::Real) = alpha * A
+mul_inplace!(alpha::T, A::Array{T}) where {T <: Real} = LinearAlgebra.lmul!(alpha, A)
+
+"""
+    rank1update(A, x)
+    rank1update(A, x, y)
+
+`A + x * y'` (`y = x` when omitted) in a new matrix, by BLAS for dense matrices of one BLAS
+float type, and by a loop otherwise, as for dual numbers.
+"""
+function rank1update end
+
+rank1update(A::AbstractMatrix, x::AbstractVector) = rank1update(eltype(A), eltype(x), eltype(x), A, x, x)
+rank1update(A::AbstractMatrix, x::AbstractVector, y::AbstractVector) = rank1update(eltype(A), eltype(x), eltype(y), A, x, y)
+rank1update(A::Real, x::Real) = rank1update(A, x, x)
+rank1update(A::Real, x::Real, y::Real) = A + x * y
+
+rank1update(::Type{T}, ::Type{T}, ::Type{T}, A::Matrix, x::Vector, y::Vector) where {T <: LinearAlgebra.BlasFloat} =
+    LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
+
+function rank1update(::Type{T1}, ::Type{T2}, ::Type{T3}, A::AbstractMatrix, x::AbstractVector, y::AbstractVector) where {T1 <: Real, T2 <: Real, T3 <: Real}
+    B = Matrix{promote_type(T1, T2, T3)}(undef, size(A))
+    @inbounds for k2 in axes(A, 2), k1 in axes(A, 1)
+        B[k1, k2] = A[k1, k2] + x[k1] * y[k2]
+    end
+    return B
+end
+
+"""
+    mul_trace(A, B)
+
+`tr(A * B)`, without forming the product.
+"""
+function mul_trace end
+
+mul_trace(A::Real, B::Real) = A * B
+
+function mul_trace(A::AbstractMatrix, B::AbstractMatrix)
+    n = LinearAlgebra.checksquare(A)
+    size(B) == size(A) || throw(DimensionMismatch("mul_trace: sizes $(size(A)) and $(size(B)) differ"))
+    result = zero(promote_type(eltype(A), eltype(B)))
+    @inbounds for i in 1:n, j in 1:n
+        result += A[i, j] * B[j, i]
+    end
+    return result
+end
+
 # The precision of the joint of `out` and `μ` when `out` is normal around `μ` with precision
 # `W_bar` and each carries a message of precision `W_out`, `W_μ`:
 # `[W_out + W_bar  -W_bar; -W_bar  W_μ + W_bar]`, for scalars and matrices alike.

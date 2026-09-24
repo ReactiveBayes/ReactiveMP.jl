@@ -2226,6 +2226,10 @@ theirs; the algebra helpers in Standard; the deletions. A commit each.
   against closed forms, v6's buffer tests, and 14 more checks against 6.5.0 (42 in all). v6's
   display names, which threw, report the number of points. The distribution package stays out
   of the closure.
+- *The algebra helpers — done.* `negate_inplace!`, `mul_inplace!`, `rank1update` and
+  `mul_trace` in Standard, unexported and documented, with v6's tests (`helpers:algebra`);
+  `rank1update!` is folded into `rank1update`'s generic path. `common.jl` and its tests have left
+  `legacy/v6/`.
 
 **Exit criteria**
 - [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,

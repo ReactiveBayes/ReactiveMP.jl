@@ -57,6 +57,14 @@ IMPLY
 
 ## Helpers
 
+Small linear-algebra helpers the rules share, and the node packages take qualified
+(`StandardMessagePassingRules.mul_trace`). The in-place ones overwrite a dense `Array` and
+leave any other argument untouched, so a rule may pass them a view or a number.
+
 ```@docs
 StandardMessagePassingRules.diageye
+StandardMessagePassingRules.negate_inplace!
+StandardMessagePassingRules.mul_inplace!
+StandardMessagePassingRules.rank1update
+StandardMessagePassingRules.mul_trace
 ```

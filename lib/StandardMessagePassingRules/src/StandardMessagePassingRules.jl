@@ -19,6 +19,7 @@ using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
 using LogExpFunctions: softmax!, softmax, logsumexp
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
+import LinearAlgebra
 using LinearAlgebra: I, Hermitian, UniformScaling, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
 using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
