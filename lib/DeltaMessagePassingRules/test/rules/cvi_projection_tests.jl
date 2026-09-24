@@ -216,22 +216,29 @@ end
 end
 
 # The joint rule replaces the proposal with its result, and the next call samples the inputs from
-# it. v6 tested that repeated calls bring the proposal closer to the posterior, by the KL
-# divergence, which is not what the rule does for `x * y` observed at 2: every input is updated
-# from the same samples of the previous proposal, so the two inputs flip between modes of
-# opposite sign, and v6's test held for its generator's stream only (`PHASES.md` § Phase 6,
-# step 2). What holds is that the proposal is the last result.
-@testitem "cvi:joint: the result becomes the proposal" tags = [:rules] setup = [CVIContext] begin
-    using DeltaMessagePassingRules, ExponentialFamily, ExponentialFamilyProjection, BayesBase, Distributions, MessagePassingRulesBase
+# it; within a call the inputs are projected in turn, each against the others' latest
+# projections. Repeated calls then bring the proposal closer to the posterior, by the KL
+# divergence, for `x * y` observed at 2, whose posterior has two modes. v6 projected every input
+# against the same samples of the previous proposal, and there the inputs flip between modes of
+# opposite sign (`PHASES.md` § Phase 6, step 2).
+@testitem "cvi:joint: the proposal converges" tags = [:rules] setup = [CVIContext] begin
+    using DeltaMessagePassingRules, ExponentialFamily, ExponentialFamilyProjection, BayesBase, Distributions, MessagePassingRulesBase, StableRNGs
     using .CVIContext: context
 
-    method = CVIProjection(sampling_strategy = FullSampling(50))
+    method = CVIProjection(sampling_strategy = FullSampling(500))
     algorithm = DeltaApproximation(method = method)
     f(x, y) = x * y
-    inputs = (m = (out = NormalMeanVariance(2.0, 0.1), in = (NormalMeanVariance(0.0, 2.0), NormalMeanVariance(0.0, 2.0))),)
-    @test method.proposal_distribution.distribution === nothing
-    first_result = call_marginal_update_rule(DeltaFn, (:in,); inputs..., algorithm, ctx = context(f))
-    @test method.proposal_distribution.distribution === first_result
-    second_result = call_marginal_update_rule(DeltaFn, (:in,); inputs..., algorithm, ctx = context(f; seed = 7))
-    @test method.proposal_distribution.distribution === second_result !== first_result
+    m_out, m_x, m_y = NormalMeanVariance(2.0, 0.1), NormalMeanVariance(0.0, 2.0), NormalMeanVariance(0.0, 2.0)
+    rng = StableRNG(123)
+    function kl_from_posterior(q)
+        samples = [(rand(rng, component(q, 1)), rand(rng, component(q, 2))) for _ in 1:1000]
+        return mean(logpdf(component(q, 1), x) + logpdf(component(q, 2), y) - (logpdf(m_x, x) + logpdf(m_y, y) + logpdf(m_out, f(x, y))) for (x, y) in samples)
+    end
+    results = map(seed -> call_marginal_update_rule(DeltaFn, (:in,); m = (out = m_out, in = (m_x, m_y)), algorithm, ctx = context(f; seed)), 1:10)
+    divergences = map(kl_from_posterior, results)
+    @test first(divergences) > 2 * last(divergences)
+    # It settles on one mode: both inputs of one sign, as `x * y = 2` requires.
+    @test prod(mean, components(last(results))) > 0.5
+    # And the proposal is the last result.
+    @test method.proposal_distribution.distribution === last(results)
 end

@@ -322,7 +322,10 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   `DeltaApproximation` refuses any other method with an error that lists these three and, for
   `CVIProjection` without its package, says which package to load. `CVIProjection` has no `rng`
   field: it samples from the generator the engine gives the rule, and its joint rule, which
-  keeps its result as the next proposal, is impure.
+  keeps its result as the next proposal, is impure. With several inputs, that rule projects them
+  in turn, each against the others' latest projections, where v6 used the previous proposal for
+  all: its results differ from v6's, and on a posterior with several modes it settles on one
+  where v6's alternated.
 
 ## Removed
 

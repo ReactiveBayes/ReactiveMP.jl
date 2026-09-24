@@ -33,7 +33,6 @@ message first.
 | What | Where it lands | Recorded in |
 |---|---|---|
 | a joint cluster holding some members of a group with other interfaces (`activate!` refuses it) | when a node needs one | § *Cases (b)–(d)*, case (d) |
-| deciding whether `CVIProjection`'s joint rule should update each input from the others' new projections, since the v6 algorithm oscillates between modes (§ Phase 6, *Step 2 brief*) | with the user | § Phase 6 |
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
@@ -2326,11 +2325,13 @@ the guide, which closes the step. A commit each.
   Delta suite's coverage gate covers the extension's module; `engine:function-node:cvi-projection`
   checks, on a linear function, that the product at the variable divides the `DivisionOf` back
   out. *Found, both in v6:*
-  - the joint over several inputs updates each input from the same samples of the previous
-    proposal, so for `x * y` observed at 2 the two inputs flip between modes of opposite sign
-    on successive calls. v6's test that the proposal converges held for its generator's stream
-    only; the port keeps the algorithm, and tests that the result becomes the proposal. Updating
-    each input from the others' new projections would converge; *to decide with the user*;
+  - the joint over several inputs updated each input from the same samples of the previous
+    proposal, so for `x * y` observed at 2 the two inputs flipped between modes of opposite sign
+    on successive calls, and v6's test that the proposal converges held for its generator's
+    stream only. *Corrected (user):* the inputs are projected in turn, each against the others'
+    latest projections, its samples redrawn from its projection before the next input; the KL
+    divergence then falls from about 21 to 6.5 in two calls and the proposal settles on one
+    mode, and v6's convergence test is back, stricter;
   - `optimize_parameters` and `create_density_function` were reached only by their own tests
     and are not ported, nor are v6's JET checks and its benchmark.
   `legacy/v6/` holds nothing of Delta any more.

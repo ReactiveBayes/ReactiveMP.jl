@@ -58,12 +58,13 @@ create_project_to_ins(method::CVIProjection, m_in, k::Int) = create_project_to_i
 generic_logpdf(reference, f) =
     convert(promote_variate_type(variate_form(typeof(reference)), BayesBase.AbstractContinuousGenericLogPdf), BayesBase.UnspecifiedDomain(), f)
 
-# Samples of the inputs, as tuples: from the proposal once there is one, from the messages before.
-input_samples(rng, ::Nothing, m_ins, strategy::FullSampling) = zip(map(m_in -> cvilinearize(rand(rng, m_in, strategy.samples)), m_ins)...)
-input_samples(rng, ::Nothing, m_ins, ::MeanBased) = zip(map(m_in -> [mean(m_in)], m_ins)...)
-input_samples(rng, proposal::FactorizedJoint, m_ins, strategy::FullSampling) =
-    zip(map(q_in -> cvilinearize(rand(rng, q_in, strategy.samples)), components(proposal))...)
-input_samples(rng, proposal::FactorizedJoint, m_ins, ::MeanBased) = zip(map(q_in -> [mean(q_in)], components(proposal))...)
+# Samples of one input, by the strategy: draws, or its mean alone.
+input_samples(rng, distribution, strategy::FullSampling) = collect(cvilinearize(rand(rng, distribution, strategy.samples)))
+input_samples(rng, distribution, ::MeanBased) = [mean(distribution)]
+
+# The inputs to sample first: the proposal once there is one, the messages before.
+sampling_sources(::Nothing, m_ins) = m_ins
+sampling_sources(proposal::FactorizedJoint, m_ins) = components(proposal)
 
 replace_at(t::Tuple, i, z) = ntuple(j -> j == i ? z : t[j], length(t))
 
@@ -87,7 +88,8 @@ replace_at(t::Tuple, i, z) = ntuple(j -> j == i ? z : t[j], length(t))
 )
 
 # The joint over the inputs, a product of their projections. One input is projected directly;
-# several, each against samples of the others, and the result becomes the next proposal.
+# several in turn, each against samples of the others' latest projections, and the result becomes
+# the next proposal.
 @define_marginal_update_rule(
     node = DeltaFn, target = (:in,), algorithm = DeltaApproximation{<:CVIProjection}, ctx = (:node, :rng), pure = false,
     args = (m[:out]::Any, m[:in...]::Any),
@@ -99,20 +101,24 @@ replace_at(t::Tuple, i, z) = ntuple(j -> j == i ? z : t[j], length(t))
             logp = generic_logpdf(m_in, z -> logpdf(m_out, g(z)))
             FactorizedJoint((project_to(create_project_to_ins(method, m_in, 1), logp, m_in),))
         else
-            proposal = method.proposal_distribution
-            samples = input_samples(ctx.rng, proposal.distribution, m_ins, method.sampling_strategy)
+            proposal, strategy = method.proposal_distribution, method.sampling_strategy
+            columns = Any[input_samples(ctx.rng, source, strategy) for source in sampling_sources(proposal.distribution, m_ins)]
             # The expected log-likelihood of `out` with input `i` at `z`, the others sampled.
-            loglikelihood(z, i) = mean(sample -> logpdf(m_out, g(replace_at(sample, i, z)...)), samples)
+            loglikelihood(z, i) = mean(sample -> logpdf(m_out, g(replace_at(sample, i, z)...)), zip(columns...))
+            # The inputs are projected in turn, each against the others' latest projections: an
+            # input's samples are redrawn from its projection before the next is projected.
             projections = ntuple(length(m_ins)) do i
                 m_in = m_ins[i]
                 prj = create_project_to_ins(method, m_in, i)
                 matches = ExponentialFamilyProjection.get_projected_to_type(prj) === ExponentialFamily.exponential_family_typetag(m_in) &&
                     ExponentialFamilyProjection.get_projected_to_dims(prj) == size(m_in)
-                if matches
+                projection = if matches
                     project_to(prj, generic_logpdf(m_in, z -> loglikelihood(z, i)), m_in)
                 else
                     project_to(prj, generic_logpdf(m_in, z -> loglikelihood(z, i) + logpdf(m_in, z)))
                 end
+                columns[i] = input_samples(ctx.rng, projection, strategy)
+                projection
             end
             result = FactorizedJoint(projections)
             proposal.distribution = result
