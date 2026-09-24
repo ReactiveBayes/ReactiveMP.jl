@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "ce742e3e108c42b24cc4493d5b93cb4069344758"
+project_hash = "d274bfeaabc7e573b74ad40ca3051199a51c5d63"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -130,6 +130,12 @@ weakdeps = ["SparseArrays"]
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
+
+[[deps.AutoregressiveMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
+path = "../../lib/AutoregressiveMessagePassingRules"
+uuid = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
+version = "0.1.0-DEV"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -1200,6 +1206,12 @@ version = "0.9.6"
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 version = "1.11.0"
+
+[[deps.SoftDotMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
+path = "../../lib/SoftDotMessagePassingRules"
+uuid = "fdfab25d-afbd-4817-865a-cd280c067f5e"
+version = "0.1.0-DEV"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]

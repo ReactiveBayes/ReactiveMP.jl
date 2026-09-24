@@ -17,6 +17,8 @@ The engine is one of a family of packages:
 | `GaussianCouplingMessagePassingRules` | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
 | `ProbitMessagePassingRules` | the Probit node, a binary output through the normal CDF, by expectation propagation |
 | `GCVMessagePassingRules` | the GCV node, a normal whose log-variance is linear in its inputs |
+| `SoftDotMessagePassingRules` | the SoftDot node, a dot product with Gaussian noise |
+| `AutoregressiveMessagePassingRules` | the autoregressive nodes, AR and ConjugateAR |
 | `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
 
 !!! note
@@ -62,6 +64,8 @@ Pages = [
   "packages/gaussian-coupling.md",
   "packages/probit.md",
   "packages/gcv.md",
+  "packages/softdot.md",
+  "packages/autoregressive.md",
   "migration-guides/v6-to-v7.md",
   "extra/contributing.md",
   "extra/methods.md",

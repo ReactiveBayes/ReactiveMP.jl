@@ -110,7 +110,7 @@ replacement".
 | `@rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
 | `AND` | `type` | `src/nodes/predefined/and.jl` | `standard` |  |
 | `AR` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
-| `ARMeta` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
+| `ARMeta` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` | becomes the algorithm `ARVMP(form, order, stype)`, which the model must give |
 | `ARsafe` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
 | `ARunsafe` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` |  |
 | `AbstractApproximationMethod` | `type` | `src/approximations/approximations.jl` | `approximations` |  |
@@ -136,7 +136,7 @@ replacement".
 | `CompanionMatrixTransposed` | `type` | `src/helpers/algebra/companion_matrix.jl` | `node:Autoregressive` | AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules, and its `ARunsafe` path uses its `inv` and `adjoint`; an earlier search for the type's name missed the constructor (Phase 6 entry brief). Its `*` methods contribute 75 Aqua ambiguities and are narrowed when it moves |
 | `CompiledFlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `CompositeFormConstraint` | `type` | `src/constraints/form.jl` | `engine` |  |
-| `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` |  |
+| `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` | its single-interface `w` marginal is not ported |
 | `ConstVariable` | `type` | `src/variables/constant.jl` | `engine` |  |
 | `ContinuousTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` |  |
 | `ContinuousTransitionMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | becomes ContinuousTransition's own algorithm, declaring its dependencies (DISCUSSION §3.21) |
@@ -210,7 +210,7 @@ replacement".
 | `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
-| `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` |  |
+| `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` | its own package, independent of AR's (`DISCUSSION.md` §3.40) |
 | `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; 85 Aqua ambiguities, narrow first |
 | `Stochastic` | `type` | `src/nodes/nodes.jl` | `base` |  |
 | `UT` | `type` | `src/approximations/unscented.jl` | `approximations` | alias |

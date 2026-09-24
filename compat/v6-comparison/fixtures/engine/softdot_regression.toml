@@ -1,0 +1,278 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "θ ~ MvNMP(0, I), γ ~ GammaShapeRate(2, 1), y[i] ~ softdot(θ, X[i], γ) with X = [[1, 0.5], [0.3, -1], [2, 1]] and y = [1.2, -0.4, 2.1] observed; mean-field."
+free_energy = [4.285676991743091, 4.265313694001589, 4.264186705937162, 4.264130829326329, 4.264128131529819]
+id = "softdot_regression"
+
+    [trajectory.posteriors."γ"]
+    params = [3.5, 1.341337366958241]
+    type = "GammaShapeRate"
+
+    [trajectory.posteriors."θ"]
+    params = [[13.77004180617758, 8.084683636202747], [[14.274528938152251, 5.737517419240659], [5.737517419240659, 6.867915542405219]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[2.4, 1.2], [[2.0, 1.0], [1.0, 0.5]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[-0.24, 0.8], [[0.18, -0.6], [-0.6, 2.0]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[8.4, 4.2], [[8.0, 4.0], [4.0, 2.0]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GammaShapeRate"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.0]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.06577283113557442]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.17284798969473222]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.18945852131419416]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[2.9410130628267437, 1.4705065314133718], [[2.4508442190222866, 1.2254221095111433], [1.2254221095111433, 0.6127110547555716]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[-0.2941013062826744, 0.9803376876089147], [[0.2205759797120058, -0.7352532657066859], [-0.7352532657066859, 2.4508442190222866]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[10.293545719893604, 5.146772859946802], [[9.803376876089146, 4.901688438044573], [4.901688438044573, 2.4508442190222866]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.05521546308563796]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.14949100571331367]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.15534177939374905]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[3.088125737878173, 1.5440628689390865], [[2.5734381148984777, 1.2867190574492389], [1.2867190574492389, 0.6433595287246194]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[-0.30881257378781735, 1.0293752459593912], [[0.23160943034086298, -0.7720314344695433], [-0.7720314344695433, 2.5734381148984777]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[10.808440082573608, 5.404220041286804], [[10.293752459593911, 5.1468762297969555], [5.1468762297969555, 2.5734381148984777]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.052971325356461096]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.14419540532750824]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.1481058768581609]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[3.1220437972594834, 1.5610218986297417], [[2.601703164382903, 1.3008515821914515], [1.3008515821914515, 0.6504257910957257]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[-0.3122043797259484, 1.0406812657531612], [[0.23415328479446126, -0.7805109493148709], [-0.7805109493148709, 2.601703164382903]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[10.927153290408192, 5.463576645204096], [[10.406812657531612, 5.203406328765806], [5.203406328765806, 2.601703164382903]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.0524833262784723]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.14302737828059078]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.14653315123441857]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[3.1295549559494504, 1.5647774779747252], [[2.6079624632912086, 1.3039812316456043], [1.3039812316456043, 0.6519906158228022]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[-0.31295549559494507, 1.0431849853164834], [[0.23471662169620877, -0.7823887389873626], [-0.7823887389873626, 2.6079624632912086]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "SoftDot"
+    target = ":θ"
+
+        [trajectory.trace.result]
+        params = [[10.953442345823076, 5.476721172911538], [[10.431849853164834, 5.215924926582417], [5.215924926582417, 2.6079624632912086]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.0523766611787404]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.14277127917376164]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "SoftDot"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.14618942660573886]
+        type = "GammaShapeRate"

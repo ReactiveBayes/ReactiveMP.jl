@@ -1,12 +1,14 @@
 using Documenter
 using ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils
 using StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules
-using GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules
+using GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules, SoftDotMessagePassingRules
+using AutoregressiveMessagePassingRules
 
 const MODULES = [
     ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils,
     StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules,
-    GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules,
+    GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules, SoftDotMessagePassingRules,
+    AutoregressiveMessagePassingRules,
 ]
 
 const SETUP = :(using ReactiveMP, MessagePassingRulesBase, StandardMessagePassingRules, BayesBase, Distributions, ExponentialFamily)
@@ -54,6 +56,8 @@ makedocs(
             "GaussianCoupling" => "packages/gaussian-coupling.md",
             "Probit" => "packages/probit.md",
             "GCV" => "packages/gcv.md",
+            "SoftDot" => "packages/softdot.md",
+            "Autoregressive" => "packages/autoregressive.md",
         ],
         "Migration guides" => [
             "v6 to v7" => "migration-guides/v6-to-v7.md",

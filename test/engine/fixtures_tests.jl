@@ -385,3 +385,85 @@ end
     )
     @test compare_engine_trajectory(trajectory, H.fixture("gcv_meanfield"); atol = 1.0e-9) === :agree
 end
+
+@testitem "engine:fixture:softdot_regression" tags = [:engine] setup = [EngineHarness] begin
+    # A Bayesian linear regression through SoftDot under mean-field: y[i] ~ N(θ ⋅ X[i], 1/γ).
+    using ExponentialFamily, StandardMessagePassingRules, SoftDotMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    meanfield(interfaces) = Tuple((first(i),) for i in interfaces)
+    node!(graph, fform, interfaces) = H.node!(graph, fform, interfaces; factorisation = meanfield(interfaces))
+
+    graph = H.Graph()
+    θ, γ = H.random!(graph), H.random!(graph)
+    node!(graph, MvNormalMeanPrecision, [(:out, θ), (:μ, H.constant!(graph, [0.0, 0.0])), (:Λ, H.constant!(graph, [1.0 0.0; 0.0 1.0]))])
+    node!(graph, GammaShapeRate, [(:out, γ), (:α, H.constant!(graph, 2.0)), (:β, H.constant!(graph, 1.0))])
+    ys, Xs = [H.data!(graph) for _ in 1:3], [H.data!(graph) for _ in 1:3]
+    for (y, X) in zip(ys, Xs)
+        node!(graph, SoftDot, [(:y, y), (:θ, θ), (:x, X), (:γ, γ)])
+    end
+
+    data = [(Xs .=> [[1.0, 0.5], [0.3, -1.0], [2.0, 1.0]])..., (ys .=> [1.2, -0.4, 2.1])...]
+    trajectory = H.run(
+        # Under mean-field the order of updates is the schedule: v6 updated θ, then γ from the new θ,
+        # and in the engine the posterior subscribed last updates first.
+        graph; id = "softdot_regression", data, iterations = 5, posteriors = [:γ => γ, :θ => θ],
+        initial_marginals = [θ => MvNormalMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0]), γ => GammaShapeRate(2.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("softdot_regression"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:ar_meanfield" tags = [:engine] setup = [EngineHarness] begin
+    # A univariate AR(1) of three steps under mean-field, each step observed through a narrow
+    # normal, with θ and γ learned from the chain.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    meanfield(interfaces) = Tuple((first(i),) for i in interfaces)
+    node!(graph, fform, interfaces; kwargs...) = H.node!(graph, fform, interfaces; factorisation = meanfield(interfaces), kwargs...)
+
+    graph = H.Graph()
+    θ, γ, x0 = H.random!(graph), H.random!(graph), H.random!(graph)
+    node!(graph, NormalMeanVariance, [(:out, θ), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))])
+    node!(graph, GammaShapeRate, [(:out, γ), (:α, H.constant!(graph, 2.0)), (:β, H.constant!(graph, 1.0))])
+    node!(graph, NormalMeanVariance, [(:out, x0), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+    x, y = [H.random!(graph) for _ in 1:3], [H.data!(graph) for _ in 1:3]
+    for i in 1:3
+        node!(graph, AR, [(:y, x[i]), (:x, i == 1 ? x0 : x[i - 1]), (:θ, θ), (:γ, γ)]; algorithm = ARVMP(Univariate, 1, ARsafe()))
+        node!(graph, NormalMeanVariance, [(:out, y[i]), (:μ, x[i]), (:v, H.constant!(graph, 0.1))])
+    end
+
+    trajectory = H.run(
+        # As for softdot_regression, the posterior subscribed last updates first: v6 updated γ
+        # last, from the new θ and x; with γ subscribed first, either order of θ and x reproduces it.
+        graph; id = "ar_meanfield", data = y .=> [0.8, 0.5, 0.3], iterations = 5, posteriors = [:γ => γ, :θ => θ, :x => x],
+        initial_marginals = [θ => NormalMeanVariance(0.5, 1.0), γ => GammaShapeRate(2.0, 1.0), x0 => NormalMeanVariance(0.0, 1.0), (x .=> Ref(NormalMeanVariance(0.0, 1.0)))...],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("ar_meanfield"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:ar2_structured" tags = [:engine] setup = [EngineHarness] begin
+    # An AR(2) of three steps under the structured q(x0, x) q(θ) q(γ): each AR node's joint
+    # q(y, x), the structured θ and γ rules and energy, and the ARsafe joint.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    I2 = [1.0 0.0; 0.0 1.0]
+
+    graph = H.Graph()
+    θ, γ, x0 = H.random!(graph), H.random!(graph), H.random!(graph)
+    H.node!(graph, MvNormalMeanCovariance, [(:out, θ), (:μ, H.constant!(graph, [0.5, 0.0])), (:Σ, H.constant!(graph, I2))])
+    H.node!(graph, GammaShapeRate, [(:out, γ), (:α, H.constant!(graph, 2.0)), (:β, H.constant!(graph, 1.0))])
+    H.node!(graph, MvNormalMeanCovariance, [(:out, x0), (:μ, H.constant!(graph, [0.0, 0.0])), (:Σ, H.constant!(graph, I2))])
+    x, y = [H.random!(graph) for _ in 1:3], [H.data!(graph) for _ in 1:3]
+    for i in 1:3
+        H.node!(
+            graph, AR, [(:y, x[i]), (:x, i == 1 ? x0 : x[i - 1]), (:θ, θ), (:γ, γ)];
+            factorisation = ((:y, :x), (:θ,), (:γ,)), algorithm = ARVMP(Multivariate, 2, ARsafe()),
+        )
+        H.node!(graph, MvNormalMeanCovariance, [(:out, y[i]), (:μ, x[i]), (:Σ, H.constant!(graph, 0.1 * I2))])
+    end
+
+    trajectory = H.run(
+        graph; id = "ar2_structured", data = y .=> [[0.8, 0.1], [0.5, 0.8], [0.3, 0.5]], iterations = 5, posteriors = [:γ => γ, :θ => θ, :x => x],
+        initial_marginals = [θ => MvNormalMeanCovariance([0.5, 0.0], I2), γ => GammaShapeRate(2.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("ar2_structured"); atol = 1.0e-9) === :agree
+end

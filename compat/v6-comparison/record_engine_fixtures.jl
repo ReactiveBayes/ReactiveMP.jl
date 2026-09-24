@@ -140,6 +140,43 @@ cube_minus(x) = x^3 - x
     y ~ NormalMeanVariance(z, 0.1)
 end
 
+# A univariate AR(1) process of three steps under mean-field, each step observed through a
+# narrow normal: θ and γ are learned from the chain.
+@model function ar_meanfield(y)
+    θ ~ NormalMeanVariance(0.5, 1.0)
+    γ ~ GammaShapeRate(2.0, 1.0)
+    x0 ~ NormalMeanVariance(0.0, 1.0)
+    x_prev = x0
+    for i in eachindex(y)
+        x[i] ~ AR(x_prev, θ, γ) where {meta = ARMeta(Univariate, 1, ARsafe())}
+        y[i] ~ NormalMeanVariance(x[i], 0.1)
+        x_prev = x[i]
+    end
+end
+
+# An AR(2) process of three steps under the structured q(x0, x) q(θ) q(γ): the state is the
+# pair (x_t, x_{t-1}), observed through a narrow multivariate normal.
+@model function ar2_structured(y)
+    θ ~ MvNormalMeanCovariance([0.5, 0.0], [1.0 0.0; 0.0 1.0])
+    γ ~ GammaShapeRate(2.0, 1.0)
+    x0 ~ MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+    x_prev = x0
+    for i in eachindex(y)
+        x[i] ~ AR(x_prev, θ, γ) where {meta = ARMeta(Multivariate, 2, ARsafe())}
+        y[i] ~ MvNormalMeanCovariance(x[i], [0.1 0.0; 0.0 0.1])
+        x_prev = x[i]
+    end
+end
+
+# A Bayesian linear regression through SoftDot: y[i] ~ N(θ ⋅ X[i], 1/γ), with X[i] known.
+@model function softdot_regression(y, X)
+    θ ~ MvNormalMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+    γ ~ GammaShapeRate(2.0, 1.0)
+    for i in eachindex(y)
+        y[i] ~ softdot(θ, X[i], γ)
+    end
+end
+
 # GCV under mean-field: the variance of y about x is exp(z - 0.5), with z unknown, and y itself
 # observed through a narrow normal, so that q(y) is a normal and v6's energy applies.
 @model function gcv_meanfield(o)
@@ -263,6 +300,52 @@ const MODELS = [
                 end
             ),
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
+        ),
+    ),
+    (
+        "ar_meanfield",
+        "θ ~ NMV(0.5, 1), γ ~ GammaShapeRate(2, 1), x0 ~ NMV(0, 1), x[i] ~ AR(x[i-1], θ, γ) with ARMeta(Univariate, 1, ARsafe()), y[i] ~ NMV(x[i], 0.1) observed at [0.8, 0.5, 0.3]; mean-field.",
+        () -> record(
+            "ar_meanfield"; description = "", model = ar_meanfield(), data = (y = [0.8, 0.5, 0.3],), iterations = 5, returnvars = (:θ, :γ, :x), constraints = MeanField(),
+            initialization = @initialization(
+                begin
+                    q(θ) = NormalMeanVariance(0.5, 1.0)
+                    q(γ) = GammaShapeRate(2.0, 1.0)
+                    q(x0) = NormalMeanVariance(0.0, 1.0)
+                    q(x) = NormalMeanVariance(0.0, 1.0)
+                end
+            ),
+        ),
+    ),
+    (
+        "ar2_structured",
+        "θ ~ MvNMC([0.5, 0], I), γ ~ GammaShapeRate(2, 1), x0 ~ MvNMC(0, I), x[i] ~ AR(x[i-1], θ, γ) with ARMeta(Multivariate, 2, ARsafe()), y[i] ~ MvNMC(x[i], 0.1 I) observed at [0.8, 0.1], [0.5, 0.8], [0.3, 0.5]; q(x0, x) q(θ) q(γ).",
+        () -> record(
+            "ar2_structured"; description = "", model = ar2_structured(), data = (y = [[0.8, 0.1], [0.5, 0.8], [0.3, 0.5]],), iterations = 5, returnvars = (:θ, :γ, :x),
+            constraints = @constraints(
+                begin
+                    q(x0, x, θ, γ) = q(x0, x)q(θ)q(γ)
+                end
+            ),
+            initialization = @initialization(
+                begin
+                    q(θ) = MvNormalMeanCovariance([0.5, 0.0], [1.0 0.0; 0.0 1.0])
+                    q(γ) = GammaShapeRate(2.0, 1.0)
+                end
+            ),
+        ),
+    ),
+    (
+        "softdot_regression",
+        "θ ~ MvNMP(0, I), γ ~ GammaShapeRate(2, 1), y[i] ~ softdot(θ, X[i], γ) with X = [[1, 0.5], [0.3, -1], [2, 1]] and y = [1.2, -0.4, 2.1] observed; mean-field.",
+        () -> record(
+            "softdot_regression"; description = "", model = softdot_regression(), data = (y = [1.2, -0.4, 2.1], X = [[1.0, 0.5], [0.3, -1.0], [2.0, 1.0]]), iterations = 5, returnvars = (:θ, :γ), constraints = MeanField(),
+            initialization = @initialization(
+                begin
+                    q(θ) = MvNormalMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+                    q(γ) = GammaShapeRate(2.0, 1.0)
+                end
+            ),
         ),
     ),
     (

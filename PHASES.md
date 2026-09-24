@@ -2487,7 +2487,35 @@ and tested on its own; the algebra helpers (`mul_trace`, `rank1update`, …) are
 **Order:** the AR package (algebra types first, then AR, then ConjugateAR); SoftDot; the guide's
 entries, which close the step. A commit each.
 
-**Progress:** not started.
+**Progress:**
+- *AR and ConjugateAR — done.* `lib/AutoregressiveMessagePassingRules` (`make
+  test-autoregressive`), ported by a subagent and reviewed: the two nodes, `ARVMP`, `ARsafe` and
+  `ARunsafe`, the companion matrix and the standard basis vector unexported. Aqua finds no
+  ambiguity, since the algebra types' `*` methods are narrowed and v6's `broadcast!` overloads on
+  `ARPrecisionMatrix` and `ARTransitionMatrix` became `add_precision!` and `add_transition!`.
+  `LazyArrays` is gone. The rules share `ar_towards_y`, `ar_towards_x`, `ar_joint` and `ar_energy`;
+  ConjugateAR calls them with `conjugatear_effective_marginals(q_w)`. 12 854 checks.
+  *Corrected:* v6's `ARunsafe` joint had a Schur complement of the wrong sign and one transpose too
+  many. Checked in 6.5.0 itself for a univariate AR(1), with `m_y = N(1, 1)`, `m_x = N(0, 1)` and
+  `θ = γ = 1`: v6's covariance is `[0.4 0.2; 0.2 0.6]`, where `ARsafe` and the exact inverse give
+  `[0.667 0.333; 0.333 0.667]`. For a multivariate AR it inverted the singular companion matrix and
+  threw. The port uses the Kalman gain, pinned against a closed-form joint. `compare_autoregressive.jl`:
+  188 checks over AR(1), AR(2) and AR(3), both modes, with the `ARunsafe` joint declared a
+  correction. A `y` message from `q(x)` carries each package's own lazy `ARTransitionMatrix`, so
+  the script compares entries. Two fixtures agree with v6 call by call, free energy included:
+  `ar_meanfield`, an AR(1) under mean-field, and `ar2_structured`, the brief's AR(2) under
+  `q(x0, x) q(θ) q(γ)`.
+- *SoftDot — done.* `lib/SoftDotMessagePassingRules` (`make test-softdot`), ported by a subagent and
+  reviewed. It does not depend on AR's package. `split_y_x` replaces v6's `ar_slice`, and `y_from_x`
+  is AR's `y` message reduced to its first component, which reads only the companion matrix's first
+  row, `⟨θ⟩ᵀ`, so the matrix is never formed. 928 checks, ReactiveMP.jl#615's tests included.
+  `compare_softdot.jl`: 66 checks at orders 1 to 3, all agreeing. A `softdot_regression` fixture
+  agrees with v6.
+  *Found:* under mean-field the engine updates the posterior subscribed last first, so the harness
+  subscribes `γ` before `θ` to reproduce v6's schedule, where γ updates last. `ar_meanfield` needs
+  the same.
+- The ported files and their tests have left `legacy/v6/`, with `helpers/algebra/{companion_matrix,
+  standard_basis_vector}.jl`.
 
 
 
