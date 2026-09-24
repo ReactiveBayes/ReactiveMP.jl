@@ -21,20 +21,19 @@ one.
 
 ## Next action
 
-**Phase 6, step 2: Delta** (§ Phase 6, *Entry brief*). The entry brief counts Phase 6 at 123
-message rules, 22 marginal rules and 19 average energies in 13 nodes and 10 packages, with
-Delta's Linearization and `CVIProjection`, and orders it in ten steps, each briefed before it
-starts. Step 1 is done: `Linearization`, Gauss–Hermite cubature and `approximate_meancov` are in
-`MessagePassingRulesApproximations`, the algebra helpers in Standard, and the deleted methods
-have left `legacy/v6/`. Step 2 is briefed (§ Phase 6, *Step 2 brief*): Delta's Linearization
-rules, #11's follow-ups, the Delta v6 comparison, a fixture, and the `CVIProjection` extension.
+**Phase 6, step 3: the small nodes** (§ Phase 6, *Entry brief*): GaussianCoupling, Probit with
+its default initial message, and GCV. Steps 1 and 2 are done: the numerics are in
+`MessagePassingRulesApproximations`, the algebra helpers in Standard, and the Delta node takes
+`Unscented`, `Linearization` and, with ExponentialFamilyProjection, `CVIProjection`, compared with
+v6 rule by rule and in a fixture. Step 3 needs its brief, the design of a node's default initial
+message first.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
 | What | Where it lands | Recorded in |
 |---|---|---|
 | a joint cluster holding some members of a group with other interfaces (`activate!` refuses it) | when a node needs one | § *Cases (b)–(d)*, case (d) |
-| Delta's `Linearization` rules and `CVIProjection` | Phase 6 | § Phase 6 |
+| deciding whether `CVIProjection`'s joint rule should update each input from the others' new projections, since the v6 algorithm oscillates between modes (§ Phase 6, *Step 2 brief*) | with the user | § Phase 6 |
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
@@ -104,7 +103,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; step 1, numerics and deletions, done; step 2, Delta, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics and deletions) and 2 (Delta) done; step 3, the small nodes, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -2335,6 +2334,10 @@ the guide, which closes the step. A commit each.
   - `optimize_parameters` and `create_density_function` were reached only by their own tests
     and are not ported, nor are v6's JET checks and its benchmark.
   `legacy/v6/` holds nothing of Delta any more.
+- *The guide — done, which closes step 2.* The v6 → v7 guide's Delta entry names the three
+  methods, the ones gone with no replacement, the error that refuses them, and `CVIProjection`'s
+  generator and state, the breaking entry the exit criterion asks for; its `meta` section maps
+  `DeltaMeta` with Linearization and an inverse.
 
 
 **Exit criteria**
@@ -2346,7 +2349,7 @@ the guide, which closes the step. A commit each.
       `rules/delta/cvi/*` are not ported from `legacy/v6/` either. *Their dependencies are
       already gone:* step 4 moved `ReactiveMPOptimisersExt` to `legacy/v6/ext/` and dropped
       the `Optimisers` weakdep and `DiffResults` from `Project.toml`
-- [ ] delta node's built-in method set is now `{Unscented, Linearization}` — **an accepted
+- [x] delta node's built-in method set is now `{Unscented, Linearization}` — **an accepted
       capability regression**, alongside exported deletions; it needs (a) an explicit breaking
       entry in the release notes, not folded in with the renames, and (b) an error that
       names both the package to install and the method to switch to. First real customer

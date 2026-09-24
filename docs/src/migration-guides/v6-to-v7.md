@@ -236,7 +236,10 @@ call_message_update_rule(MySum, (:in, 1); m = (out = NormalMeanVariance(3.0, 1.0
 - **What a rule computes**, such as an approximation method, is an **algorithm**: a type
   `struct MyMethod <: AbstractAlgorithm end`, possibly with fields, that the rule names with
   `algorithm = MyMethod` and receives in its `algo` slot. The node's user chooses it per node, as
-  they chose the meta. `DeltaMeta(method = Unscented())` is `DeltaApproximation(method = Unscented())`.
+  they chose the meta. `DeltaMeta(method = Unscented())` is `DeltaApproximation(method = Unscented())`,
+  and `DeltaMeta(method = Linearization(), inverse = f⁻¹)` is `DeltaApproximation(method =
+  Linearization(), inverse = f⁻¹)`; `Unscented` and `Linearization` come from
+  `MessagePassingRulesApproximations`.
 - **How a rule computes it numerically**, such as a matrix correction or a random number
   generator, is a **context service**, declared with `ctx = (:matrix_correction,)` and read as
   `matrix_correction(ctx, default)` or `ctx.rng`. `default_meta` becomes the rule's `default`.
@@ -312,7 +315,14 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   `*` rules towards `in` with their arguments reversed, reachable only through `@call_rule`, are
   gone.
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
-- **The Delta node** supports the `Unscented` method; v6's other methods are not available.
+- **The Delta node takes three methods**: `Unscented()`, `Linearization()` and, once
+  `using ExponentialFamilyProjection` loads its rules, `CVIProjection()`. v6's other methods are
+  gone, with no replacement: `CVI` and `ProdCVI`, `LaplaceApproximation`,
+  `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature` and the spherical-radial cubature.
+  `DeltaApproximation` refuses any other method with an error that lists these three and, for
+  `CVIProjection` without its package, says which package to load. `CVIProjection` has no `rng`
+  field: it samples from the generator the engine gives the rule, and its joint rule, which
+  keeps its result as the next proposal, is impure.
 
 ## Removed
 
