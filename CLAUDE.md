@@ -178,8 +178,8 @@ and read whichever exist before proposing changes:
 **If none of these files exist, the repository has no unfinished business** and you can
 treat `main` as the whole story.
 
-The current work is the rule/node rewrite; Phase 4.5 is closed, and Phase 5 is in progress (steps 1–8
-done). From
+The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, and Phase 6 (the node
+packages) is next. From
 Phase 4.5 on, the engine in `src/` is
 **refactored in place**, not bridged. Its reactive machinery is kept, and rule lookup and
 invocation plus node and rule definition and creation are replaced. Step 4 is a **clean

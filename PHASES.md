@@ -19,10 +19,12 @@ re-check before relying on one.
 
 ## Next action
 
-**Phase 5, step 9: Close** — the v6 → v7 migration guide, `docs/` rewritten and back in the
-build, and `legacy/v6/` holding only what Phase 6 ports from. Signed off by the user; § Phase 5,
-*Step 9 brief* has the decisions (`DISCUSSION.md` §3.36), the scope, the order and the
-progress. The legacy triage is done; next the docs build. Steps 1–8 are done.
+**Phase 6: approximations and node packages** (§ Phase 6). Phase 5 is done: every standard
+node is in `StandardMessagePassingRules`, the docs are rewritten and build again, the v6 → v7
+migration guide is written, and `legacy/v6/` holds only what Phase 6 ports from. Phase 6 needs a
+brief first, as each Phase 5 step had: its node packages (Autoregressive, BIFM, Pólya, the
+transitions, Flow, GCV, Probit, SoftDot, GaussianCoupling), `Linearization` and `CVIProjection`,
+and the deletions it lists.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -1355,7 +1357,7 @@ Do not start Phase 5 until this passes.
 
 ---
 
-## Phase 5 — `StandardMessagePassingRules`
+## Phase 5 — `StandardMessagePassingRules` — **DONE**
 
 **Goal:** standard distribution nodes plus arithmetic (`+`, `-`, `*`, dot).
 
@@ -1938,6 +1940,8 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
     nodes, message and marginal rules, energies, log scales, groups, `meta`, functional
     dependencies and the renames, their v7 side run by the build; what cannot be translated
     mechanically; how to verify a port; the behaviour that changed and what was removed.
+  - *The close — done, which closes Phase 5.* The exit criteria are ticked, and the next action
+    is Phase 6.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
@@ -1952,7 +1956,7 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
    service instead), and its rules read incoming log scales (`ann.m`). **Done** (the step 8
    brief below, `DISCUSSION.md` §3.34–3.35).
 9. **Close**: the migration guide complete, `docs/` rewritten and back in the build, `legacy/v6/`
-   holding only Phase 6's nodes. *Briefed* (the step 9 brief below, `DISCUSSION.md` §3.36):
+   holding only Phase 6's nodes. **Done** (the step 9 brief below, `DISCUSSION.md` §3.36):
    the guide is the docs page `migration-guides/v6-to-v7.md`, not a `MIGRATION.md`.
 
 **Found while counting, to settle in the step that meets them:**
@@ -1976,30 +1980,36 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
 **Exit criteria**
 - [x] ~~JuliaSyntax-based migration tool~~ — **dropped** (user, entry brief): ports by hand or
       agent, gated per directory as the brief says
-- [ ] migrated per rule directory, diffs reviewed per directory; each directory and its
-      tests leave `legacy/v6/` in the same commit that ports it
+- [x] migrated per rule directory, diffs reviewed per directory; each directory and its
+      tests leave `legacy/v6/` in the same commit that ports it *(steps 1–8)*
 - [x] canary passing: `NormalMixture((:m, k))` — indexed target + group + `where {N}` +
       aligned dependency *(done in Phase 4.5 step 3)*
-- [ ] **`MIGRATION.md` written *during* this phase, not after**, starting with the rules the 4.5
+- [x] **`MIGRATION.md` written *during* this phase, not after**, starting with the rules the 4.5
       ports found — the mechanical rules are
       discovered while porting, and reconstructing them later leaves gaps exactly where the
-      work was fiddly. *(Its derivation from the transform tool went with the tool.)*
-- [ ] every before/after pair in the guide is an executable doctest run by CI
-- [ ] guide covers the untranslatable cases explicitly (raw `messages[i]` indexing, rules
+      work was fiddly. *(Its derivation from the transform tool went with the tool. Done in
+      step 9 as the docs page `migration-guides/v6-to-v7.md`, from what steps 1–8 recorded;
+      `DISCUSSION.md` §3.36.)*
+- [x] every before/after pair in the guide is an executable doctest run by CI *(its v7 side,
+      run by the docs build; the v6 side is shown, never run, §3.36)*
+- [x] guide covers the untranslatable cases explicitly (raw `messages[i]` indexing, rules
       constructing graph objects, `meta`-as-mutable-workspace) and tells the reader — human
       or agent — to stop and ask rather than guess
-- [ ] guide opens with a short preamble addressed to an agent: what to read, what never to
+- [x] guide opens with a short preamble addressed to an agent: what to read, what never to
       guess, how to verify, when to stop
-- [ ] `docs/` rewritten for the new engine and rule system, and back in the build: it still
-      describes v6, so `make docs` refuses (Phase 4.5 step 4). The pages cover defining nodes
+- [x] `docs/` rewritten for the new engine and rule system, and back in the build *(step 9;
+      `make docs` builds and runs the doctests)*. The pages cover defining nodes
       and rules with the base macros, `factornode` and `FactorNodeActivationOptions`, algorithms
       and extensions, `bethe_free_energy`, and the registry as introspection only
       (`DISCUSSION.md` §3.23)
 - [x] the engine distributes a `FactorizedCluster` to its members (step 2), first returned by
       the `PointMass` variants of NMV's and NMP's `(:out, :μ)` (step 1)
-- [ ] hand-written cases done: `mixture/switch.jl` and the `Mixture` rules reading raw
+- [x] hand-written cases done: `mixture/switch.jl` and the `Mixture` rules reading raw
       `messages[i]` (step 8)
-- [ ] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).
+- [x] **`Require*FunctionalDependencies` are deleted, not ported** (user; `DISCUSSION.md` §3.21).
+      *(Done for Phase 5 in step 9: the dependencies page and the guide's section are written.
+      Probit's and ContinuousTransition's algorithms and Probit's initial message go with their
+      ports, in § Phase 6.)*
       Probit and ContinuousTransition (Phase 6, `node:Probit` and `node:ContinuousTransition`) get
       their own algorithms from `ProbitMeta` and `CTMeta`, declaring their dependencies. Probit's
       self-dependency gets a default initial message declared on its node, separately from
@@ -2049,6 +2059,10 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
       own package rather than a shared `models` one, `DISCUSSION.md` §3.30)
 - [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
       becomes honest again (see `PLAN.md` § Licensing)
+- [ ] Probit and ContinuousTransition get their own algorithms from `ProbitMeta` and `CTMeta`,
+      declaring their dependencies, and Probit's self-dependency a default initial message
+      declared on its node (moved from Phase 5's `Require*` criterion); the dependencies page
+      gains a section on initial messages
 - [ ] surviving impure algorithms (BIFM and stateful projection algorithms) carry the
       `pure = false` marker under the agreed purity/RNG contract
 
