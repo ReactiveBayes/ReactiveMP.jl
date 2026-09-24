@@ -1694,6 +1694,26 @@ The alternatives:
 The cycle `m(→a) → q(a) → m(→a)` is broken as in v6, by `combineLatest(…, PushNew())`: the message
 is recomputed only once every input has refreshed. `check_rules` checks the auxiliary inputs
 only, since the rest depend on the factorisation (`PHASES.md` § Phase 6, *Step 5 brief*).
+
+### 3.42 ContinuousTransition linearises the same way in every rule (user, 2026-09-24)
+
+Porting ContinuousTransition showed that its rules approximated `A = f(a)` in two different ways:
+- **The rules towards `y` and `x`, the joint and the energy** used the linearisation `Ā`, `f`
+  expanded at the mean of `q(a)` plus a standard deviation and evaluated at the mean, with the
+  Jacobians `Fᵢ` of its rows for the spread.
+- **The rules towards `a` and `W`** took each row as `(Fᵢ a)ᵀ`, linear through the origin.
+
+The two agree for `reshape`, the common case, and there the port agrees with v6. For an affine or
+nonlinear `f` the second form drops the offset `f(m_a) - J m_a`; v6's documented rotation example
+is one such `f`. A Monte Carlo check with an affine `f` confirmed that the `W` rule's
+`E[(y - A x)(y - A x)ᵀ]` was wrong.
+
+The user chose to **correct and declare**: every rule uses the first linearisation, so the rule
+towards `a` takes the offset and the rule towards `W` the energy's expectation. The alternatives:
+- keeping v6's behaviour, documented, with an issue;
+- restricting `f` to linear maps, which breaks the rotation example.
+
+`Ā` and the expansion point are v6's and are not reconsidered.
 ---
 
 ## 4. Corrections — read this before re-proposing anything

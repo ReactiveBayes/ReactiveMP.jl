@@ -19,6 +19,7 @@ The engine is one of a family of packages:
 | `GCVMessagePassingRules` | the GCV node, a normal whose log-variance is linear in its inputs |
 | `SoftDotMessagePassingRules` | the SoftDot node, a dot product with Gaussian noise |
 | `AutoregressiveMessagePassingRules` | the autoregressive nodes, AR and ConjugateAR |
+| `ContinuousTransitionMessagePassingRules` | the ContinuousTransition node, a transition through a matrix built from a vector |
 | `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
 
 !!! note
@@ -66,6 +67,7 @@ Pages = [
   "packages/gcv.md",
   "packages/softdot.md",
   "packages/autoregressive.md",
+  "packages/continuous-transition.md",
   "migration-guides/v6-to-v7.md",
   "extra/contributing.md",
   "extra/methods.md",

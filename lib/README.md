@@ -23,6 +23,7 @@ each of the 231 entities in ReactiveMP is destined to land.
 | `GCVMessagePassingRules` | 6 (step 3) | the GCV node, its `ExponentialLinearQuadratic`, and the normal nodes' rules for it |
 | `AutoregressiveMessagePassingRules` | 6 (step 4) | the AR and ConjugateAR nodes, their algorithm `ARVMP`, and the companion matrix and standard basis vector their rules use |
 | `SoftDotMessagePassingRules` | 6 (step 4) | the SoftDot node, with its own copy of the little AR algebra it needs rather than a dependency on AR's package |
+| `ContinuousTransitionMessagePassingRules` | 6 (step 5) | the ContinuousTransition node and its algorithm `CTVMP(f)`; its rule towards `a` extends the default scheme with `q(a)` |
 
 There is no shared domain-models package: `GCV`, `Probit`, `SoftDot` and `GaussianCoupling`
 each get their own node package in Phase 6, like the other non-standard nodes
@@ -46,7 +47,7 @@ such as `MessagePassingRulesTestUtils` for a rule package, goes in `[extras]` an
 the same way. Plain `Pkg.test()` then works, and so does every `make test-*` target:
 
 ```bash
-make test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv test-autoregressive test-softdot
+make test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv test-autoregressive test-softdot test-continuous-transition
 ```
 
 Work targets **Julia 1.13**, where `[sources]` is honoured (1.11+). On the old 1.10 floor it was

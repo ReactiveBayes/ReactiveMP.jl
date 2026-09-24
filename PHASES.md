@@ -2644,6 +2644,47 @@ A commit each.
 
   Docs: *Algorithms and dependencies › Extending the default scheme*, and the guide's mapping of
   `RequireMarginalFunctionalDependencies`.
+- *The package, its comparison and its fixtures — done.* `lib/ContinuousTransitionMessagePassingRules`
+  (`make test-continuous-transition`):
+  - the node and `CTVMP(f)`, with the declaration `:a => (default, q[:a])` and `default` for the
+    other targets;
+  - the 8 message rules, the joint and the two energies;
+  - one Jacobian of `vec ∘ f` in place of v6's one per row, and `ct_matrix` building a new matrix
+    where v6 added to `f`'s result in place;
+  - `LazyArrays` is gone.
+
+  v6's tables were ported by a subagent and reviewed; with the energy, offset and quality tests
+  the suite is 519 checks.
+
+  *Corrected, the energies:* the closed form, pinned at v6's node-test inputs (13.415, where v6
+  asserted 12.992 and 12.077), against Monte Carlo at `(dy, dx)` = `(1, 2)`, `(2, 3)` and `(3, 2)`
+  within 0.5%, and for Float32 through Standard's `gaussian_energy`.
+
+  *Found, and corrected by the user's decision (`DISCUSSION.md` §3.42):* v6's rules towards `a` and
+  `W` took each row of A as linear through the origin, so for an affine or nonlinear `f` they
+  dropped the offset `f(m_a) - J m_a` that the other rules and the energy keep. A Monte Carlo check
+  with `f = I + [0 a; 0 0]` gave the `W` rule's Δ as `[2.44 -0.54; -0.54 0.62]` against
+  `[3.19 -0.18; -0.18 2.46]`. The two rules now use the same linearisation, the offset
+  `O = Ā - [(Fᵢ m_a)ᵀ]` entering the rule towards `a` as `E[x (y - O x)ᵀ]`, and the rule towards
+  `W` taking the energy's `E[(y - A x)(y - A x)ᵀ]`. `O` is zero for `reshape`, where nothing
+  changes. The test is a reparametrisation: `B + reshape(a)` on `q(y, x)` equals `reshape` on the
+  joint of `(y - B x, x)`, rule by rule and in the energy, to 1e-9. v6's two rotation cases for `a`
+  and `W` moved to a test of their own, asserting a proper result.
+
+  `compare_continuous_transition.jl`: 132 checks over `reshape` at four sizes, a rotation and an
+  affine `f`, with the energies and the nonlinear `a` and `W` rules declared as corrections.
+
+  Two fixtures, `ct_structured` and `ct_meanfield`, record a linear two-dimensional chain under
+  `q(x0, x) q(a) q(W)` and under mean-field. Every posterior and every rule call agrees with v6, with
+  `a` subscribed first. The free energy is set aside, since v6's was wrong.
+  *Found:* the free energy must still be subscribed to. Under `q(x0, x)` only it reads `q(x0)`, so
+  without it the message towards `x0` is never computed and the traces differ by one call per
+  iteration. The corrected free energy is not monotone under v6's schedule either: it rises by
+  0.002 in the structured fixture's last iteration, though not under another subscription order.
+  So v6's rising free energy was no evidence of its energy errors, and the fixture asserts no
+  monotonicity.
+
+  The ported files have left `legacy/v6/`.
 
 
 

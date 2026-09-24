@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "d274bfeaabc7e573b74ad40ca3051199a51c5d63"
+project_hash = "e333bf2d23434cbabe1938f1af02cc6dd7cf2b75"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -273,6 +273,12 @@ weakdeps = ["IntervalSets", "LinearAlgebra", "StaticArrays"]
     ConstructionBaseIntervalSetsExt = "IntervalSets"
     ConstructionBaseLinearAlgebraExt = "LinearAlgebra"
     ConstructionBaseStaticArraysExt = "StaticArrays"
+
+[[deps.ContinuousTransitionMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "ForwardDiff", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
+path = "../../lib/ContinuousTransitionMessagePassingRules"
+uuid = "be169b08-8551-4d4c-a46b-881478acc6d9"
+version = "0.1.0-DEV"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"

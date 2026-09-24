@@ -1,15 +1,13 @@
+# From v6's `test/rules/continuous_transition/marginals_tests.jl`.
 
-@testitem "marginalrules:ContinuousTransition" tags = [:rules] begin
-    using Test,
-        ReactiveMP,
-        BayesBase,
-        Random,
-        ExponentialFamily,
-        Distributions,
-        LinearAlgebra
-    import ReactiveMP: @test_marginalrules
+@testitem "rules:ContinuousTransition:marginals" tags = [:rules] begin
+    using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
+    using BayesBase: tiny
+
+    diageye(n) = Matrix{Float64}(I, n, n)
 
     rng = MersenneTwister(42)
+
     @testset "Linear transformation" begin
         # the following rule is used for testing purposes only
         # It is derived separately by Thijs van de Laar
@@ -41,18 +39,10 @@
                 qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                metal = CTMeta(transformation)
-
-                @test_marginalrules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
-                    :y_x
-                ) [
-                    (
-                        input = (
-                            m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metal,
-                        ),
-                        output = benchmark_rule(mx, my, qW, qA),
-                    ),
-                ]
+                @test_marginal_update_rule(
+                    node = ContinuousTransition, target = (:y, :x), algorithm = CTVMP(transformation), atol = 1.0e-5,
+                    cases = [(m = (y = my, x = mx), q = (a = qa, W = qW)) => benchmark_rule(mx, my, qW, qA)],
+                )
             end
         end
     end
@@ -70,22 +60,18 @@
             qa = MvNormalMeanCovariance(zeros(1), tiny * diageye(1))
             qW = Wishart(dy, diageye(dy))
 
-            metanl = CTMeta(transformation)
-
-            @test_marginalrules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
-                :y_x
-            ) [
-                (
-                    input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metanl),
-                    output = MvNormalWeightedMeanPrecision(
+            @test_marginal_update_rule(
+                node = ContinuousTransition, target = (:y, :x), algorithm = CTVMP(transformation), atol = 1.0e-5,
+                cases = [
+                    (m = (y = my, x = mx), q = (a = qa, W = qW)) => MvNormalWeightedMeanPrecision(
                         zeros(4),
                         [
                             (dy + qW.df - 1) * diageye(dy) -(qW.df)diageye(dx);
                             -(qW.df)diageye(dx) (dy + qW.df - 1)diageye(dy)
                         ],
                     ),
-                ),
-            ]
+                ],
+            )
         end
     end
 end

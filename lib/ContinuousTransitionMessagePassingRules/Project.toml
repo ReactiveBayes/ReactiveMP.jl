@@ -1,0 +1,56 @@
+name = "ContinuousTransitionMessagePassingRules"
+uuid = "be169b08-8551-4d4c-a46b-881478acc6d9"
+version = "0.1.0-DEV"
+
+# The ContinuousTransition node, y ~ N(f(a) x, W⁻¹), with its algorithm CTVMP(f) and its
+# variational rules, mean-field or structured q(y, x). INVENTORY.md records this package as
+# `node:ContinuousTransition`.
+
+[deps]
+BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
+FastCholesky = "2d5283b6-8564-42b6-bb00-83ed8e915756"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+StandardMessagePassingRules = "d166223a-7879-43b1-add3-64af0a178e9e"
+
+[sources]
+MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
+MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
+StandardMessagePassingRules = {path = "../StandardMessagePassingRules"}
+
+[compat]
+Aqua = "0.8"
+BayesBase = "1.5"
+Distributions = "0.25"
+Documenter = "1"
+ExponentialFamily = "2.5"
+FastCholesky = "1.3"
+ForwardDiff = "0.10, 1"
+LinearAlgebra = "1.11"
+MessagePassingRulesBase = "0.1"
+MessagePassingRulesTestUtils = "0.1"
+Pkg = "1.11"
+Random = "1.11"
+SpecialFunctions = "2"
+StableRNGs = "1"
+StandardMessagePassingRules = "0.1"
+Test = "1.11"
+TestItemRunner = "1"
+julia = "1.11"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
+
+[targets]
+test = ["Aqua", "Documenter", "MessagePassingRulesTestUtils", "Pkg", "Random", "SpecialFunctions", "StableRNGs", "Test", "TestItemRunner"]

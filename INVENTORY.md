@@ -127,7 +127,7 @@ replacement".
 | `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
 | `BinomialPolya` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
 | `BinomialPolyaMeta` | `type` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 |
-| `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias; becomes ContinuousTransition's own algorithm, declaring its dependencies (DISCUSSION §3.21) |
+| `CTMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias; becomes the algorithm `CTVMP(f)`, which the model must give, its rule towards `a` adding `q(a)` to the default scheme (DISCUSSION §3.21, §3.41) |
 | `CTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | alias |
 | `CVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection`; `ProdCVI`'s own docstring already says so |
 | `CVIProjection` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
@@ -139,7 +139,7 @@ replacement".
 | `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` | its single-interface `w` marginal is not ported |
 | `ConstVariable` | `type` | `src/variables/constant.jl` | `engine` |  |
 | `ContinuousTransition` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` |  |
-| `ContinuousTransitionMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | becomes ContinuousTransition's own algorithm, declaring its dependencies (DISCUSSION §3.21) |
+| `ContinuousTransitionMeta` | `type` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | becomes the algorithm `CTVMP(f)`, which the model must give, its rule towards `a` adding `q(a)` to the default scheme (DISCUSSION §3.21, §3.41) |
 | `DataVariable` | `type` | `src/variables/data.jl` | `engine` |  |
 | `DataVariableActivationOptions` | `type` | `src/variables/data.jl` | `engine` |  |
 | `DefaultFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | replaced by the declarative dependency language; the default needs no declaration |

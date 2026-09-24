@@ -1,6 +1,7 @@
 [deps]
 AutoregressiveMessagePassingRules = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+ContinuousTransitionMessagePassingRules = "be169b08-8551-4d4c-a46b-881478acc6d9"
 DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
@@ -17,6 +18,7 @@ StandardMessagePassingRules = "d166223a-7879-43b1-add3-64af0a178e9e"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
+ContinuousTransitionMessagePassingRules = {path = "../../lib/ContinuousTransitionMessagePassingRules"}
 AutoregressiveMessagePassingRules = {path = "../../lib/AutoregressiveMessagePassingRules"}
 DeltaMessagePassingRules = {path = "../../lib/DeltaMessagePassingRules"}
 GCVMessagePassingRules = {path = "../../lib/GCVMessagePassingRules"}

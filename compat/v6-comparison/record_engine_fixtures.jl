@@ -168,6 +168,23 @@ end
     end
 end
 
+# A linear ContinuousTransition, A = reshape(a, 2, 2) learned with its precision W, over a
+# two-dimensional chain of three steps observed through a narrow normal. Linear, so v6's rules
+# towards `a` and `W` are exact; only its energy is wrong.
+ct_reshape(a) = reshape(a, 2, 2)
+const CT_Y = [[1.0, 0.2], [0.8, 0.5], [0.5, 0.7]]
+@model function ct_linear(y)
+    a ~ MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0])
+    W ~ Wishart(4, [1.0 0.0; 0.0 1.0])
+    x0 ~ MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+    x_prev = x0
+    for i in eachindex(y)
+        x[i] ~ ContinuousTransition(x_prev, a, W) where {meta = CTMeta(ct_reshape)}
+        y[i] ~ MvNormalMeanCovariance(x[i], [0.1 0.0; 0.0 0.1])
+        x_prev = x[i]
+    end
+end
+
 # A Bayesian linear regression through SoftDot: y[i] ~ N(θ ⋅ X[i], 1/γ), with X[i] known.
 @model function softdot_regression(y, X)
     θ ~ MvNormalMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
@@ -331,6 +348,39 @@ const MODELS = [
                 begin
                     q(θ) = MvNormalMeanCovariance([0.5, 0.0], [1.0 0.0; 0.0 1.0])
                     q(γ) = GammaShapeRate(2.0, 1.0)
+                end
+            ),
+        ),
+    ),
+    (
+        "ct_structured",
+        "a ~ MvNMC([1, 0, 0, 1], I), W ~ Wishart(4, I), x0 ~ MvNMC(0, I), x[i] ~ ContinuousTransition(x[i-1], a, W) with CTMeta(a -> reshape(a, 2, 2)), y[i] ~ MvNMC(x[i], 0.1 I) observed at [1, 0.2], [0.8, 0.5], [0.5, 0.7]; q(x0, x) q(a) q(W).",
+        () -> record(
+            "ct_structured"; description = "", model = ct_linear(), data = (y = CT_Y,), iterations = 5, returnvars = (:a, :W, :x),
+            constraints = @constraints(
+                begin
+                    q(x0, x, a, W) = q(x0, x)q(a)q(W)
+                end
+            ),
+            initialization = @initialization(
+                begin
+                    q(a) = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0])
+                    q(W) = Wishart(4, [1.0 0.0; 0.0 1.0])
+                end
+            ),
+        ),
+    ),
+    (
+        "ct_meanfield",
+        "As ct_structured, under mean-field.",
+        () -> record(
+            "ct_meanfield"; description = "", model = ct_linear(), data = (y = CT_Y,), iterations = 5, returnvars = (:a, :W, :x), constraints = MeanField(),
+            initialization = @initialization(
+                begin
+                    q(a) = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0])
+                    q(W) = Wishart(4, [1.0 0.0; 0.0 1.0])
+                    q(x0) = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+                    q(x) = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
                 end
             ),
         ),

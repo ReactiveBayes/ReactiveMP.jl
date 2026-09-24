@@ -1,15 +1,10 @@
+# From v6's `test/rules/continuous_transition/W_tests.jl`.
 
 @testitem "rules:ContinuousTransition:W" tags = [:rules] begin
-    using Test,
-        ReactiveMP,
-        BayesBase,
-        Random,
-        ExponentialFamily,
-        Distributions,
-        LinearAlgebra
+    using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
+    using ExponentialFamily: WishartFast
 
-    import ReactiveMP:
-        @test_rules, ctcompanion_matrix, getjacobians, WishartFast
+    diageye(n) = Matrix{Float64}(I, n, n)
 
     rng = MersenneTwister(42)
 
@@ -37,54 +32,21 @@
 
         @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, meta::CTMeta)" begin
             for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
-                dydx = dy * dx
                 transformation = (a) -> reshape(a, dy, dx)
                 mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
-                metal = CTMeta(transformation)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μx, Σx = rand(rng, dx), Lx * Lx'
                 μy, Σy = rand(rng, dy), Ly * Ly'
 
-                qyx = MvNormalMeanCovariance(
-                    [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
-                )
+                qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
                 qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
 
-                @test_rules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
-                    :W, Marginalisation
-                ) [
-                    (
-                        input = (q_y_x = qyx, q_a = qa, meta = metal),
-                        output = benchmark_rule_structured(qyx, mA, ΣA, UA),
-                    ),
-                ]
+                @test_message_update_rule(
+                    node = ContinuousTransition, target = :W, algorithm = CTVMP(transformation), atol = 1.0e-5,
+                    cases = [(clusters = ((:y, :x) => qyx,), q = (a = qa,)) => benchmark_rule_structured(qyx, mA, ΣA, UA)],
+                )
             end
-        end
-    end
-
-    @testset "Nonlinear transformation" begin
-        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)" begin
-            dy, dx = 2, 2
-            dydx = dy * dy
-            transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
-
-            metanl = CTMeta(transformation)
-            μx, Σx = zeros(dx), diageye(dx)
-            μy, Σy = zeros(dy), diageye(dy)
-
-            qyx = MvNormalMeanCovariance(
-                [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
-            )
-            qa = MvNormalMeanCovariance(zeros(1), diageye(1))
-            @test_rules [check_type_promotion = true] ContinuousTransition(
-                :W, Marginalisation
-            ) [
-                (
-                    input = (q_y_x = qyx, q_a = qa, meta = metanl),
-                    output = WishartFast(dy + 2, dy * diageye(dy)),
-                ),
-            ]
         end
     end
 
@@ -108,11 +70,9 @@
 
     @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, meta::CTMeta)" begin
         for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
-            dydx = dy * dx
             transformation = (a) -> reshape(a, dy, dx)
             mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
-            metal = CTMeta(transformation)
             Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
             μx, Σx = rand(rng, dx), Lx * Lx'
             μy, Σy = rand(rng, dy), Ly * Ly'
@@ -122,14 +82,37 @@
 
             qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
 
-            @test_rules [check_type_promotion = true, atol = 1.0e-5] ContinuousTransition(
-                :W, Marginalisation
-            ) [
-                (
-                    input = (q_y = qy, q_x = qx, q_a = qa, meta = metal),
-                    output = benchmark_rule_meanfield(qy, qx, mA, ΣA, UA),
-                ),
-            ]
+            @test_message_update_rule(
+                node = ContinuousTransition, target = :W, algorithm = CTVMP(transformation), atol = 1.0e-5,
+                cases = [(q = (y = qy, x = qx, a = qa),) => benchmark_rule_meanfield(qy, qx, mA, ΣA, UA)],
+            )
         end
+    end
+end
+
+# v6's rotation case, whose value v6 took from rows of A linear in `a` through the origin. The
+# port computes E[(y - A x)(y - A x)ᵀ] with the offset f(m_a) - J m_a of a nonlinear f, so its
+# value differs from v6's WishartFast(4, 2 * diageye(2)); the exact tests of the correction are
+# elsewhere, and this one only asserts a proper result.
+@testitem "rules:ContinuousTransition:W, v6's nonlinear cases (corrected)" tags = [:rules] begin
+    using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
+    using ExponentialFamily: WishartFast
+
+    diageye(n) = Matrix{Float64}(I, n, n)
+
+    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, meta::CTMeta)" begin
+        dy, dx = 2, 2
+        transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
+
+        μx, Σx = zeros(dx), diageye(dx)
+        μy, Σy = zeros(dy), diageye(dy)
+
+        qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+        qa = MvNormalMeanCovariance(zeros(1), diageye(1))
+        result = call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => qyx,), q = (a = qa,), algorithm = CTVMP(transformation))
+        @test result isa WishartFast
+        ν, invS = params(result)
+        @test ν == dy + 2
+        @test size(invS) == (dy, dy) && all(isfinite, invS) && isposdef(Matrix(invS))
     end
 end

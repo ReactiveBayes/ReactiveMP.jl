@@ -467,3 +467,66 @@ end
     )
     @test compare_engine_trajectory(trajectory, H.fixture("ar2_structured"); atol = 1.0e-9) === :agree
 end
+
+@testmodule ContinuousTransitionFixture begin
+    # y[i] ~ N(x[i], 0.1 I) observed, x[i] ~ ContinuousTransition(x[i-1], a, W) with
+    # A = reshape(a, 2, 2), as `ct_linear` in the recorder. A linear f, so every rule agrees with
+    # v6's; only the energy was wrong, and the free energy is compared apart.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils
+    import ..EngineHarness as H
+
+    const I2, I4 = [1.0 0.0; 0.0 1.0], [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0]
+    const Y = [[1.0, 0.2], [0.8, 0.5], [0.5, 0.7]]
+
+    function run(id; factorisation, posteriors, initial_marginals, free_energy)
+        graph = H.Graph()
+        a, W, x0 = H.random!(graph), H.random!(graph), H.random!(graph)
+        H.node!(graph, MvNormalMeanCovariance, [(:out, a), (:μ, H.constant!(graph, [1.0, 0.0, 0.0, 1.0])), (:Σ, H.constant!(graph, I4))])
+        H.node!(graph, Wishart, [(:out, W), (:ν, H.constant!(graph, 4.0)), (:S, H.constant!(graph, I2))])
+        H.node!(graph, MvNormalMeanCovariance, [(:out, x0), (:μ, H.constant!(graph, [0.0, 0.0])), (:Σ, H.constant!(graph, I2))])
+        x, y = [H.random!(graph) for _ in 1:3], [H.data!(graph) for _ in 1:3]
+        for i in 1:3
+            H.node!(
+                graph, ContinuousTransition, [(:y, x[i]), (:x, i == 1 ? x0 : x[i - 1]), (:a, a), (:W, W)];
+                factorisation, algorithm = CTVMP(a -> reshape(a, 2, 2)),
+            )
+            H.node!(graph, MvNormalMeanCovariance, [(:out, y[i]), (:μ, x[i]), (:Σ, H.constant!(graph, 0.1 * I2))])
+        end
+        variables = (; a, W, x0, x)
+        return H.run(
+            graph; id, data = y .=> Y, iterations = 5, posteriors = map(name -> name => variables[name], posteriors),
+            initial_marginals = initial_marginals(variables), free_energy,
+        )
+    end
+
+    # Every posterior and every rule call must agree with v6's. The free energy is set aside: v6's
+    # energy was wrong, and the corrected one is pinned in the package, against the closed form and
+    # a Monte Carlo estimate.
+    function without_free_energy(trajectory)
+        return EngineTrajectory(trajectory.id; description = trajectory.description, free_energy = Float64[], posteriors = trajectory.posteriors, trace = trajectory.trace)
+    end
+end
+
+@testitem "engine:fixture:ct_structured" tags = [:engine] setup = [EngineHarness, ContinuousTransitionFixture] begin
+    using ExponentialFamily, Distributions, MessagePassingRulesTestUtils
+    F, H = ContinuousTransitionFixture, EngineHarness
+    initial(v) = [v.a => MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], F.I4), v.W => Wishart(4, F.I2)]
+    # The free energy is subscribed to, as in the recording: it is what reads q(x0), whose message
+    # no rule needs under q(x0, x). As in the other fixtures, the posterior subscribed last updates
+    # first; v6 updated `a` last.
+    trajectory = F.run("ct_structured"; factorisation = ((:y, :x), (:a,), (:W,)), posteriors = [:a, :W, :x], initial_marginals = initial, free_energy = true)
+    @test compare_engine_trajectory(F.without_free_energy(trajectory), F.without_free_energy(H.fixture("ct_structured")); atol = 1.0e-9) === :agree
+    @test length(trajectory.free_energy) == 5 && all(isfinite, trajectory.free_energy)
+end
+
+@testitem "engine:fixture:ct_meanfield" tags = [:engine] setup = [EngineHarness, ContinuousTransitionFixture] begin
+    using ExponentialFamily, Distributions, MessagePassingRulesTestUtils
+    F, H = ContinuousTransitionFixture, EngineHarness
+    initial(v) = [
+        v.a => MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], F.I4), v.W => Wishart(4, F.I2), v.x0 => MvNormalMeanCovariance([0.0, 0.0], F.I2),
+        (v.x .=> Ref(MvNormalMeanCovariance([0.0, 0.0], F.I2)))...,
+    ]
+    trajectory = F.run("ct_meanfield"; factorisation = ((:y,), (:x,), (:a,), (:W,)), posteriors = [:a, :W, :x], initial_marginals = initial, free_energy = true)
+    @test compare_engine_trajectory(F.without_free_energy(trajectory), F.without_free_energy(H.fixture("ct_meanfield")); atol = 1.0e-9) === :agree
+    @test length(trajectory.free_energy) == 5 && all(isfinite, trajectory.free_energy)
+end

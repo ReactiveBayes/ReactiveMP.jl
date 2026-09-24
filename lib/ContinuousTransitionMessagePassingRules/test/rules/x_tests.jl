@@ -1,21 +1,17 @@
+# From v6's `test/rules/continuous_transition/x_tests.jl`.
 
 @testitem "rules:ContinuousTransition:x" tags = [:rules] begin
-    using Test,
-        ReactiveMP,
-        BayesBase,
-        Random,
-        ExponentialFamily,
-        Distributions,
-        LinearAlgebra
+    using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
+    using BayesBase: tiny
 
-    import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians
+    diageye(n) = Matrix{Float64}(I, n, n)
 
     rng = MersenneTwister(42)
 
     @testset "Linear transformation" begin
         # the following rule is used for testing purposes only
         # It is derived separately by Thijs van de Laar
-        function benchmark_rule_strucutred(q_y, q_W, mA, ΣA, UA)
+        function benchmark_rule_structured(q_y, q_W, mA, ΣA, UA)
             my, Vy = mean_cov(q_y)
 
             mW = mean(q_W)
@@ -32,7 +28,6 @@
 
                 mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
-                metal = CTMeta(transformation)
                 Ly = rand(rng, dy, dy)
                 μy, Σy = rand(rng, dy), Ly * Ly' + dydx * I
 
@@ -40,14 +35,10 @@
                 qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                @test_rules [check_type_promotion = true, atol = 1.0e-4] ContinuousTransition(
-                    :x, Marginalisation
-                ) [
-                    (
-                        input = (m_y = qy, q_a = qa, q_W = qW, meta = metal),
-                        output = benchmark_rule_strucutred(qy, qW, mA, ΣA, UA),
-                    ),
-                ]
+                @test_message_update_rule(
+                    node = ContinuousTransition, target = :x, algorithm = CTVMP(transformation), atol = 1.0e-4,
+                    cases = [(m = (y = qy,), q = (a = qa, W = qW)) => benchmark_rule_structured(qy, qW, mA, ΣA, UA)],
+                )
             end
         end
     end
@@ -55,26 +46,18 @@
     @testset "Nonlinear transformation" begin
         @testset "Structured: (m_y::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)" begin
             dy, dx = 2, 2
-            dydx = dy * dy
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
 
-            metanl = CTMeta(transformation)
             μy, Σy = zeros(dy), diageye(dy)
 
             qy = MvNormalMeanCovariance(μy, Σy)
             qa = MvNormalMeanCovariance(zeros(1), tiny * diageye(1))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true] ContinuousTransition(
-                :x, Marginalisation
-            ) [
-                (
-                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metanl),
-                    output = MvGaussianWeightedMeanPrecision(
-                        zeros(dx), 3 / 4 * diageye(dx)
-                    ),
-                ),
-            ]
+            @test_message_update_rule(
+                node = ContinuousTransition, target = :x, algorithm = CTVMP(transformation),
+                cases = [(m = (y = qy,), q = (a = qa, W = qW)) => MvGaussianWeightedMeanPrecision(zeros(dx), 3 / 4 * diageye(dx))],
+            )
         end
     end
 
@@ -95,7 +78,6 @@
 
             mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
-            metal = CTMeta(transformation)
             Ly = rand(rng, dy, dy)
             μy, Σy = rand(rng, dy), Ly * Ly' + dydx * I
 
@@ -103,14 +85,10 @@
             qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true, atol = 1.0e-4] ContinuousTransition(
-                :x, Marginalisation
-            ) [
-                (
-                    input = (q_y = qy, q_a = qa, q_W = qW, meta = metal),
-                    output = benchmark_rule_meanfield(qy, qW, mA, ΣA, UA),
-                ),
-            ]
+            @test_message_update_rule(
+                node = ContinuousTransition, target = :x, algorithm = CTVMP(transformation), atol = 1.0e-4,
+                cases = [(q = (y = qy, a = qa, W = qW),) => benchmark_rule_meanfield(qy, qW, mA, ΣA, UA)],
+            )
         end
     end
 end
