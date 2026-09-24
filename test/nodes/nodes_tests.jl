@@ -17,6 +17,10 @@
         matched_groups = [(:m, :p)], min_group_length = 2, factorisation = :meanfield,
     )
 
+    # The rule towards `in` reads the message on its own edge, seeded by default.
+    struct Seeded end
+    @define_factor_node(node = Seeded, type = Stochastic, interfaces = [:out, :in], initial_messages = [:in => 0.5])
+
     struct NotANode end
 end
 
@@ -152,4 +156,33 @@ end
     @test_throws "has no interface or alias `w`" factornode(N.Gaussian, variables(), ((:out, :μ, :v), (:w,)))
     @test_throws "is in more than one cluster" factornode(N.Gaussian, variables(), ((:out, :μ), (:μ, :v)))
     @test_throws "does not cover :v" factornode(N.Gaussian, variables(), ((:out, :μ),))
+end
+
+@testitem "activate! seeds a declared initial message where the user set none" tags = [:nodes] setup = [EngineNodes] begin
+    import ReactiveMP: getinterfaces, get_stream_of_inbound_messages, getdata, is_initial, set_initial_message!, FactorNodeActivationOptions,
+        activate!, RandomVariableActivationOptions, MessageProductContext
+    import Rocket: getrecent
+    N = EngineNodes
+    inbound(node, i) = get_stream_of_inbound_messages(getinterfaces(node)[i])
+    # Variables first, as a model builder activates them: their messages into the node exist then.
+    function seeded(fform, interfaces; before = nothing)
+        node = factornode(fform, interfaces)
+        foreach(((_, v),) -> activate!(v, RandomVariableActivationOptions(nothing, MessageProductContext(), MessageProductContext())), interfaces)
+        before === nothing || before(node)
+        activate!(node, FactorNodeActivationOptions())
+        return node
+    end
+
+    # Nothing set: the declared message, marked initial.
+    node = seeded(N.Seeded, [(:out, randomvar()), (:in, randomvar())])
+    @test getdata(getrecent(inbound(node, 2))) == 0.5
+    @test is_initial(getrecent(inbound(node, 2)))
+
+    # A user's initial message wins.
+    node = seeded(N.Seeded, [(:out, randomvar()), (:in, randomvar())]; before = node -> set_initial_message!(inbound(node, 2), 2.0))
+    @test getdata(getrecent(inbound(node, 2))) == 2.0
+
+    # A node that declares none seeds nothing.
+    node = seeded(N.Gaussian, [(:out, randomvar()), (:μ, randomvar()), (:v, randomvar())])
+    @test getrecent(inbound(node, 2)) === nothing
 end

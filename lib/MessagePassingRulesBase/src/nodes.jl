@@ -37,6 +37,7 @@ struct NodeSpec
     matched_groups::Tuple{Vararg{Tuple{Vararg{Symbol}}}}
     min_group_length::Int
     factorisation::Symbol
+    initial_messages::Tuple{Vararg{Pair{Symbol}}}
     file::Symbol
     line::Int
 end
@@ -110,6 +111,16 @@ interface each, for a node whose rules are variational whatever the factorisatio
 a mixture. The engine checks it when it creates the node.
 """
 required_factorisation(node) = nodespec(node).factorisation
+
+"""
+    initial_messages(node)
+
+The messages `node` seeds its interfaces with, as `name => message` pairs: for a rule that reads
+the message on its own edge, the value it starts from. The engine sets each on the node's
+inbound message of that interface at activation, unless one was set there already, so a
+user's initialisation wins. Empty unless declared.
+"""
+initial_messages(node) = nodespec(node).initial_messages
 
 """
     alias_interface(node, name)

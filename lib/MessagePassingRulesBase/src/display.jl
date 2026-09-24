@@ -65,6 +65,7 @@ function Base.show(io::IO, ::MIME"text/plain", spec::NodeSpec)
     isempty(spec.matched_groups) || println(io, "  matched groups:    ", join(map(g -> join(g, " = "), spec.matched_groups), ", "))
     spec.min_group_length == 1 || println(io, "  min group length:  ", spec.min_group_length)
     spec.factorisation === :any || println(io, "  factorisation:     ", spec.factorisation)
+    isempty(spec.initial_messages) || println(io, "  initial messages:  ", join(map(p -> "$(first(p)) => $(last(p))", spec.initial_messages), ", "))
     print(io, "  defined:           ", spec.file, ":", spec.line)
     return nothing
 end

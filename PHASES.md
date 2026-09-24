@@ -2390,7 +2390,13 @@ rule directories and tests):
 **Order:** the `initial_messages` declaration and the engine seeding it; GaussianCoupling; Probit;
 GCV; the guide's entries for the three, which close the step. A commit each.
 
-**Progress:** not started.
+**Progress:**
+- *Initial messages — done.* `initial_messages` on `@define_factor_node`, validated at
+  declaration (an interface, not a group, each once), on the `NodeSpec` and its display; the
+  engine's `activate!` seeds each on the node's inbound message, marked initial, where
+  `getrecent` finds none. Tests: the declaration in the base package, and the seeding, a user's
+  value winning and a node without any, in the engine (`nodes_tests.jl`). The dependencies page
+  has a section on it.
 
 
 

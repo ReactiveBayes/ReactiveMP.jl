@@ -49,11 +49,15 @@
         min_group_length = 2,
         factorisation = :meanfield,
     )
+
+    # A rule towards `in` reads the message on its own edge, seeded by default.
+    struct Seeded end
+    @define_factor_node(node = Seeded, type = Stochastic, interfaces = [:out, :in], initial_messages = [:in => 0.5])
 end
 
 @testitem "nodes:traits" tags = [:base] setup = [ToyNodes] begin
     using MessagePassingRulesBase: nodespec, interfaces, interface_groups, sdtype, default_algorithm, alias_interface,
-        nodefunction, Stochastic, Deterministic, DefaultAlgorithm, NodeSpec, matched_groups, min_group_length, required_factorisation
+        nodefunction, Stochastic, Deterministic, DefaultAlgorithm, NodeSpec, matched_groups, min_group_length, required_factorisation, initial_messages
     T = ToyNodes
 
     @test interfaces(T.Toy) === (:out, :μ, :τ)
@@ -86,6 +90,9 @@ end
     @test min_group_length(T.Paired) == 2
     @test required_factorisation(T.Paired) === :meanfield
     @test contains(sprint(show, MIME("text/plain"), nodespec(T.Paired)), "matched groups:    m = p")
+    @test initial_messages(T.Seeded) == (:in => 0.5,)
+    @test initial_messages(T.Mixture) === ()
+    @test contains(sprint(show, MIME("text/plain"), nodespec(T.Seeded)), "initial messages:  in")
     @test !contains(sprint(show, MIME("text/plain"), nodespec(T.Mixture)), "matched groups")
 
     spec = nodespec(T.Toy)
@@ -108,7 +115,7 @@ end
     using MessagePassingRulesBase: registered_nodes
     T = ToyNodes
     ours = filter(spec -> parentmodule(spec.node isa Type ? spec.node : typeof(spec.node)) === T, registered_nodes())
-    @test length(ours) == 5
+    @test length(ours) == 6
 end
 
 @testitem "nodes:malformed" tags = [:base] begin
@@ -143,6 +150,10 @@ end
     @test contains(grouped(:(factorisation = :structured)), ":any or :meanfield")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, :x], min_group_length = 2))), "needs a group")
     @test grouped(:(matched_groups = [(:m, :p)])) == ""
+    @test contains(grouped(:(initial_messages = [:q => 1.0])), "names `q`, which is not an interface")
+    @test contains(grouped(:(initial_messages = [:m => 1.0])), "`m` is a group")
+    @test contains(grouped(:(initial_messages = [:out => 1.0, :out => 2.0])), "more than once")
+    @test contains(grouped(:(initial_messages = (:out => 1.0,))), "must be a vector of pairs")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Deterministic, interfaces = [:out, :x], factorisation = :meanfield))), "cannot require")
 end
 

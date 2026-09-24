@@ -323,6 +323,9 @@ it does not depend on. Interfaces connected to constants are skipped: their mess
 
 An algorithm that declares a free-energy partition requires the factorisation to be that
 partition. A joint cluster may hold a whole group, `(:in,)`, but not only some of its members.
+
+A node that declares `initial_messages` has them set on its inbound messages here, on each
+interface where nothing was set before.
 """
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     fform = functionalform(factornode)
@@ -339,7 +342,20 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
         )
     end
     initialize_clusters!(getlocalclusters(factornode), factornode, options)
+    seed_initial_messages!(factornode)
     return activate_messages!(factornode, options)
+end
+
+# The messages the node declares for its interfaces, set on the inbound message of each where
+# nothing is set yet, so a user's initialisation wins; an interface on a constant has none.
+function seed_initial_messages!(factornode::FactorNode)
+    for (key, message) in MessagePassingRulesBase.initial_messages(functionalform(factornode))
+        interface = getinterface(factornode, interfaceindex(factornode, key))
+        israndom(interface) || isdata(interface) || continue
+        stream = get_stream_of_inbound_messages(interface)
+        Rocket.getrecent(stream) === nothing && set_initial_message!(stream, message)
+    end
+    return nothing
 end
 
 # The factorisation must be the partition the algorithm declares, block for block. A group's

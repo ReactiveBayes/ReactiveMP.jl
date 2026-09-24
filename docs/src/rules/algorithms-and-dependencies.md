@@ -72,6 +72,22 @@ MessagePassingRulesBase.selection_arity
 MessagePassingRulesBase.free_energy_partition
 ```
 
+## [Initial messages](@id rules-algorithms-initial-messages)
+
+A rule that reads the message on its own edge, as an expectation-propagation rule does, has no
+message to start from in a graph with a loop through that edge. The node may declare one, and the
+engine sets it on the node's inbound message at activation, where nothing was set: a model's own
+initialisation wins. Probit declares its v6 default for `in`:
+
+```julia
+@define_factor_node(
+    node = Probit, type = Stochastic, interfaces = [:out, :in], algorithm = ProbitEP,
+    initial_messages = [:in => NormalMeanPrecision(0.0, 100.0)],
+)
+```
+
+It is a default for starting, not a dependency: which inputs a rule reads stays the algorithm's.
+
 ## [Purity](@id rules-algorithms-purity)
 
 A rule is pure unless declared otherwise: its result depends only on its inputs and its

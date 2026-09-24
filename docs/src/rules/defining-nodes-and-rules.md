@@ -87,6 +87,7 @@ MessagePassingRulesBase.static_inputs
 MessagePassingRulesBase.matched_groups
 MessagePassingRulesBase.min_group_length
 MessagePassingRulesBase.required_factorisation
+MessagePassingRulesBase.initial_messages
 MessagePassingRulesBase.interfaces
 MessagePassingRulesBase.interface_groups
 MessagePassingRulesBase.alias_interface

@@ -1,4 +1,4 @@
-const NODE_KEYWORDS = (:node, :type, :interfaces, :algorithm, :dependencies, :static_inputs, :matched_groups, :min_group_length, :factorisation)
+const NODE_KEYWORDS = (:node, :type, :interfaces, :algorithm, :dependencies, :static_inputs, :matched_groups, :min_group_length, :factorisation, :initial_messages)
 
 """
     @define_factor_node(node = ..., type = Stochastic | Deterministic, interfaces = [...], algorithm = ...)
@@ -22,8 +22,11 @@ Declare a factor node.
 - `factorisation = :meanfield` accepts only clusters of one interface each; see
   [`required_factorisation`](@ref).
 
-The engine checks the last three when it creates a node, so a malformed graph is an error
-there rather than a rule silently reading fewer components.
+The engine checks these three when it creates a node, so a malformed graph is an error there
+rather than a rule silently reading fewer components.
+
+- `initial_messages = [:in => NormalMeanPrecision(0.0, 100.0)]` seeds the node's inbound message
+  on an interface when the user sets none; see [`initial_messages`](@ref).
 
 ```julia
 @define_factor_node(node = NormalMeanVariance, type = Stochastic, interfaces = [:out, :μ, :v])
@@ -58,6 +61,7 @@ function define_factor_node_expr(mod, source, args)
     matched = parse_matched_groups(get(keywords, :matched_groups, :([])), groups)
     min_length = parse_min_group_length(get(keywords, :min_group_length, 1), groups)
     factorisation = quoted_symbol(get(keywords, :factorisation, QuoteNode(:any)))
+    seeded = parse_initial_messages(get(keywords, :initial_messages, :([])), parsed)
     factorisation in (:any, :meanfield) ||
         error("@define_factor_node: `factorisation` must be :any or :meanfield, got `$(keywords[:factorisation])`")
     (factorisation === :meanfield && type === :Deterministic) &&
@@ -74,7 +78,7 @@ function define_factor_node_expr(mod, source, args)
         const $spec = $NodeSpec(
             $node, $(type === :Stochastic ? Stochastic() : Deterministic()),
             ($(interface_specs...),), $instantiate_algorithm($algorithm), $static_inputs,
-            $matched, $min_length, $(QuoteNode(factorisation)),
+            $matched, $min_length, $(QuoteNode(factorisation)), $seeded,
             $(QuoteNode(Symbol(something(source.file, :none)))), $(source.line),
         )
         $base.nodespec(::$dispatch) = $spec
@@ -111,6 +115,24 @@ function parse_matched_groups(ex, groups)
         Tuple(names)
     end
     return Tuple(matched)
+end
+
+function parse_initial_messages(ex, parsed)
+    (ex isa Expr && ex.head === :vect) ||
+        error("@define_factor_node: `initial_messages` must be a vector of pairs like `[:in => message]`, got `$ex`")
+    names = Symbol[]
+    pairs = map(ex.args) do item
+        (item isa Expr && item.head === :call && item.args[1] === :(=>) && length(item.args) == 3) ||
+            error("@define_factor_node: an entry of `initial_messages` is `:name => message`, got `$item`")
+        name = quoted_symbol(item.args[2])
+        interface = findfirst(i -> i.name === name, parsed)
+        interface === nothing && error("@define_factor_node: `initial_messages` names `$(something(name, item.args[2]))`, which is not an interface")
+        parsed[interface].group && error("@define_factor_node: `$name` is a group; an initial message is declared for a single interface")
+        name in names && error("@define_factor_node: `initial_messages` names `$name` more than once")
+        push!(names, name)
+        :($(QuoteNode(name)) => $(item.args[3]))
+    end
+    return Expr(:tuple, pairs...)
 end
 
 function parse_min_group_length(ex, groups)
