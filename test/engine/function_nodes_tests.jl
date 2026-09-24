@@ -23,3 +23,37 @@
     @test all(isapprox.(mean_var(q["s"]), (19 / 7, 3 / 7)))
     @test only(trajectory.free_energy) ≈ -logpdf(Normal(1.0, sqrt(3.5)), 3.0)
 end
+
+# `CVIProjection`'s message towards `out` is a `DivisionOf`, the projected marginal of `out` over
+# the message on its edge: the engine's product at the variable, not the rule, divides it out.
+# Through a linear function the posterior is exact: x ~ N(0.5, 1), z = x + 1, y ~ N(z, 0.1)
+# observed at 2 give x a posterior of precision 11 and mean 10.5 / 11.
+@testitem "engine:function-node:cvi-projection" tags = [:engine] setup = [EngineHarness] begin
+    using ExponentialFamily, ExponentialFamilyProjection, StandardMessagePassingRules, DeltaMessagePassingRules, BayesBase
+    import Random
+    H = EngineHarness
+    Random.seed!(42)
+    shift(x) = x + 1
+
+    graph = H.Graph()
+    x, z = H.random!(graph), H.random!(graph)
+    y = H.data!(graph)
+    H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, DeltaFn{typeof(shift)}, [(:out, z), ((:in, 1), x)]; algorithm = DeltaApproximation(method = CVIProjection(outsamples = 2000)), nodefn = shift)
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, z), (:v, H.constant!(graph, 0.1))])
+
+    trajectory = H.run(
+        graph; id = "cvi_projection", data = [y => 2.0], iterations = 10, free_energy = false,
+        posteriors = [:z => z, :x => x], initial_marginals = [z => NormalMeanVariance(1.0, 1.0)],
+    )
+    q_x, q_z = trajectory.posteriors["x"], trajectory.posteriors["z"]
+    # The marginal of `z` is the projection itself, a normal, not a lazy quotient: the product
+    # at the variable divided the message on its edge back out.
+    @test q_z isa UnivariateNormalDistributionsFamily
+    @test mean(q_x) ≈ 10.5 / 11 atol = 0.1
+    @test var(q_x) ≈ 1 / 11 atol = 0.05
+    # The projection of `out` is only as close as sampling and ExponentialFamilyProjection make
+    # it, as v6's own rule tests allow: measured, a mean of 1.86 and a variance of 0.22.
+    @test mean(q_z) ≈ 10.5 / 11 + 1 atol = 0.25
+    @test 0.0 < var(q_z) < 0.5
+end

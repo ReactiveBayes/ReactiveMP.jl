@@ -44,7 +44,10 @@ test_item_filter(ti) = is_selected(ti) || (FILTERED_OUT[] = true; false)
 # Every rule the package defines was selected by some test case, and every node has one.
 if !FILTERED_OUT[]
     @testset "rule coverage" begin
-        gaps = check_rule_coverage(DeltaMessagePassingRules)
+        # The extension's rules register in its own module, loaded by the tests that use it.
+        extension = Base.get_extension(DeltaMessagePassingRules, :DeltaMessagePassingRulesProjectionExt)
+        @test extension !== nothing
+        gaps = check_rule_coverage(DeltaMessagePassingRules, extension)
         foreach(println, gaps)
         @test isempty(gaps)
     end

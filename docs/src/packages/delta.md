@@ -31,3 +31,22 @@ DeltaMessagePassingRules.KnownInverse
 DeltaMessagePassingRules.approximate_normal
 DeltaMessagePassingRules.forward_statistics
 ```
+
+## Projection
+
+`CVIProjection` samples the inputs, pushes the samples through `f`, and projects onto an
+exponential family with ExponentialFamilyProjection, so it handles functions and families the
+Gaussian methods cannot. Its rules are in a package extension, loaded with
+`using ExponentialFamilyProjection`; until then the node does not accept it, and the error says
+so. The samples come from the rule context's generator, which the engine owns, and the joint rule
+keeps its result as the next call's proposal, so the method carries state and its rules are
+impure.
+
+```@docs
+CVIProjection
+CVISamplingStrategy
+FullSampling
+MeanBased
+ProposalDistributionContainer
+DeltaMessagePassingRules.get_kth_in_form
+```

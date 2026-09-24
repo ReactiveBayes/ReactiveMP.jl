@@ -18,9 +18,11 @@ using MessagePassingRulesBase: AbstractAlgorithm, Target, getnodefn
 using MessagePassingRulesApproximations: MessagePassingRulesApproximations, Unscented, Linearization, unscented_statistics, smoothRTS
 
 export DeltaFn, DeltaApproximation, is_delta_node_compatible
+export CVIProjection, CVISamplingStrategy, FullSampling, MeanBased, ProposalDistributionContainer
 
 include("node.jl")
 include("approximate.jl")
 include("rules/gaussian.jl")
+include("cvi_projection.jl")
 
 end

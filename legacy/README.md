@@ -10,23 +10,20 @@ deletes after skimming:
 
 - `src/rules/`, `src/nodes/predefined/` — the unported nodes' rules and definitions:
   Autoregressive, ConjugateAR, BIFM and its helper, the Pólya nodes, the transitions, Flow,
-  GaussianCoupling, GCV, Probit and SoftDot, and Delta's v6 node file with its default layout,
-  the reference for `CVIProjection`'s;
+  GaussianCoupling, GCV, Probit and SoftDot (Delta left in Phase 6 step 2, its last rules
+  ported);
   `rules/mv_normal_mean_precision/marginals.jl` holds MvNormalMeanPrecision's two marginal
   rules for BIFM's `TerminalProdArgument`;
-- `src/approximations/` — `cvi_projection.jl`, for the Delta package's extension in Phase 6
-  step 2. Step 1 ported `Linearization`, the Gauss–Hermite cubature and `approximate_meancov` to
-  `MessagePassingRulesApproximations`, and deleted the methods nothing needs (CVI, Laplace,
-  importance sampling, Gauss–Laguerre, spherical-radial cubature, the optimisers) with the
-  Delta CVI rules and layout;
 - `src/helpers/algebra/` — the permutation matrix, Flow's, and the standard-basis vector and the
   companion matrix, which AR uses. `common.jl` left in Phase 6 step 1: `mul_trace`,
   `rank1update`, `negate_inplace!` and `mul_inplace!` are Standard's, and the rest had no user;
-- `ext/` — `ReactiveMPProjectionExt`, for `CVIProjection`; the optimisers' extension and
-  `src/fixes.jl`, the `ForwardDiff` hot-fix nothing used any more, left in step 1;
 - `test/` — the tests of all of the above.
 
-Gone in step 9: the v6 engine and rule-system files (`rule.jl`, `nodes/{nodes,dependencies,
+Gone in Phase 6: `src/approximations/`, whose methods step 1 ported to
+`MessagePassingRulesApproximations` or deleted, and whose `cvi_projection.jl` step 2 ported to the
+Delta package with its extension; `ext/`; and `src/fixes.jl`, which nothing used any more.
+
+Gone in Phase 5 step 9: the v6 engine and rule-system files (`rule.jl`, `nodes/{nodes,dependencies,
 clusters}.jl`, `score/`), which the new packages replace and git and the 6.5.0 release keep; v6's
 rule fallbacks and `StandaloneDistributionNode`, which are not carried over; and the stale
 include lists. Before that, each Phase 5 step deleted what it ported. `INVENTORY.md` says where each entity goes. The

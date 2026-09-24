@@ -40,6 +40,7 @@ struct DeltaApproximation{M, I} <: AbstractAlgorithm
 
     function DeltaApproximation(method::M, inverse::I) where {M, I}
         is_delta_node_compatible(method) === Val(true) || throw(ArgumentError(incompatible_method_message(method)))
+        check_inverse(method, inverse)
         return new{M, I}(method, inverse)
     end
 end
@@ -53,6 +54,9 @@ What to do about a `method` the Delta node does not take, appended to the error:
 a sentence. A method whose rules live in a package extension says which package to load.
 """
 delta_method_hint(method) = nothing
+
+# A method that has no use for a known inverse says so when given one.
+check_inverse(method, inverse) = nothing
 
 function incompatible_method_message(method)
     message = "`$method` is not an approximation method of the Delta node. It takes `Unscented()` and " *

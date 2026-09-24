@@ -42,6 +42,7 @@ BenchmarkTools = "1"
 DeltaMessagePassingRules = "0.1"
 Documenter = "1"
 ExponentialFamily = "2.5.0"
+ExponentialFamilyProjection = "3"
 InteractiveUtils = "1.11"
 JET = "0.9, 0.10, 0.11, 0.12"
 Logging = "1.11"
@@ -62,6 +63,7 @@ BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
+ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -76,4 +78,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "BenchmarkTools", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "REPL", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BenchmarkTools", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "REPL", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]

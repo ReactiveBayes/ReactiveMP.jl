@@ -2317,6 +2317,24 @@ the guide, which closes the step. A commit each.
   v6 computes the first input's prior message once per subscriber, the same value three times
   where the engine computes it once, so a call-by-call comparison cannot match it; the values
   agree. Recorded for Phase 7's checks on scheduling, and the fixture has one input.
+- *`CVIProjection` — done.* The method type, its sampling strategies and the proposal container
+  are in the Delta package, without v6's `rng` field; its dependencies are declared (`:out` from
+  `m[:out]`, `q[:out]` and `q[(:in,)]`), with no engine change. The extension
+  `DeltaMessagePassingRulesProjectionExt`, on ExponentialFamilyProjection 3, holds `DivisionOf`
+  and its products, `cvilinearize`, the projection families and the three rules, which draw
+  from `ctx.rng`; the joint rule, which replaces the proposal, is `pure = false`. A known
+  inverse is ignored with a warning, as in v6. v6's rule tests are ported with a StableRNG; the
+  Delta suite's coverage gate covers the extension's module; `engine:function-node:cvi-projection`
+  checks, on a linear function, that the product at the variable divides the `DivisionOf` back
+  out. *Found, both in v6:*
+  - the joint over several inputs updates each input from the same samples of the previous
+    proposal, so for `x * y` observed at 2 the two inputs flip between modes of opposite sign
+    on successive calls. v6's test that the proposal converges held for its generator's stream
+    only; the port keeps the algorithm, and tests that the result becomes the proposal. Updating
+    each input from the others' new projections would converge; *to decide with the user*;
+  - `optimize_parameters` and `create_density_function` were reached only by their own tests
+    and are not ported, nor are v6's JET checks and its benchmark.
+  `legacy/v6/` holds nothing of Delta any more.
 
 
 **Exit criteria**
@@ -2334,7 +2352,7 @@ the guide, which closes the step. A commit each.
       names both the package to install and the method to switch to. First real customer
       for the diagnostics. Per #11, that is the host's `is_delta_node_compatible` guard
       carried over, with the error extended to name the alternative method
-- [ ] `CVIProjection` ships as a weakdep extension of the Delta node package. Phase 0 found
+- [x] `CVIProjection` ships as a weakdep extension of the Delta node package *(step 2)*. Phase 0 found
       the layout collapse real but partial: dependencies absorb input selection, while
       static gating, the empty group and `q_out` aliasing are engine features
 - [x] `MessagePassingRulesApproximations`: `Linearization`, the remaining piece. `Unscented`,
