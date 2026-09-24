@@ -1670,6 +1670,30 @@ Counting Phase 6 for its brief raised four questions, and the user decided each:
 
 The order of work, also the user's: the numerics and the deletions first, then the nodes by
 dependency, each step briefed before it starts (`PHASES.md` § Phase 6, *Entry brief*).
+
+### 3.41 A declaration can extend the default scheme (user, 2026-09-24)
+
+ContinuousTransition's rule towards `a` reads `q(a)`, the expansion point of its transformation.
+v6 declared it with `RequireMarginalFunctionalDependencies(a = nothing)`, which kept the default
+scheme and inserted the variable's marginal among the marginal dependencies. Every other target
+follows the factorisation, and v6 documents two of them, mean-field and `q(y, x) q(a) q(W)`.
+§3.21 moved what a rule consumes onto the node's algorithm. A declared dependency spec, however,
+is a fixed list per target, so it can express only one factorisation.
+
+The user chose **auxiliary inputs**. `:a => (default, q[:a])` is the default scheme's inputs plus
+`q(a)`, so the node keeps one algorithm, `CTVMP(f)`, for both factorisations. This is what `PLAN.md`
+§ Open questions 9 anticipated when it separated what a rule consumes from the partition free
+energy is computed over: an auxiliary marginal is consumed and never scored.
+
+The alternatives:
+- **Two algorithms, one per factorisation**, each with a full declaration and a declared partition,
+  so that a mismatch is an activation error. This needs no change to the base or the engine, but
+  a model would name both its constraints and the matching algorithm.
+- **The structured factorisation only**, which drops one v6 documents.
+
+The cycle `m(→a) → q(a) → m(→a)` is broken as in v6, by `combineLatest(…, PushNew())`: the message
+is recomputed only once every input has refreshed. `check_rules` checks the auxiliary inputs
+only, since the rest depend on the factorisation (`PHASES.md` § Phase 6, *Step 5 brief*).
 ---
 
 ## 4. Corrections — read this before re-proposing anything

@@ -22,9 +22,10 @@ one.
 ## Next action
 
 **Phase 6, step 5: ContinuousTransition** (§ Phase 6, *Entry brief*): `CTMeta` becomes the node's
-algorithm and `RequireMarginal` becomes declared dependencies, with the v6 errors the entry brief lists
-(`default_meta` on the wrong type, the energy's dimension when dx ≠ dy). It needs a brief first,
-as each step has had. Steps 1–4 are done:
+algorithm and `RequireMarginal` becomes declared dependencies, with the v6 errors its brief lists
+(`default_meta` on the wrong type, and both energies wrong in three terms). Step 5 is briefed
+(§ Phase 6, *Step 5 brief*): its rule towards `a` reads `q(a)`, which a declaration will add to
+the default scheme's inputs (§3.41). Steps 1–4 are done:
 - the numerics;
 - Delta;
 - GaussianCoupling, Probit and GCV;
@@ -2107,7 +2108,8 @@ Standard normals.
 - **v6 errors found while counting**, corrected, declared in the comparisons, each with an issue:
   BinomialPolya's energy computes its Monte Carlo term and overwrites it on the next line;
   ContinuousTransition's `default_meta` is defined on `CTMeta` instead of the node, and its
-  energy takes the output dimension as half the joint's, which holds only when both are equal;
+  energy takes the output dimension as half the joint's, which holds only when both are equal
+  *(the step 5 brief found both energies wrong in three terms, this one included)*;
   DiscreteTransition's four five-interface `:T2` rules read `m_T2`, their own edge, so they never
   match, its belief-propagation `:T3` rule with a Dirichlet `q_a` normalises over `dims = 1` unlike
   its siblings, and its fast-path marginal on `Val{(:a)}` is `Val{:a}` and unreachable; BIFM's
@@ -2525,6 +2527,100 @@ entries, which close the step. A commit each.
 - *The guide — done, which closes step 4.* The v6 → v7 guide's *Node packages* table gains AR and
   ConjugateAR (`ARMeta` → `ARVMP`) and SoftDot, with a note that no rule runs without `ARVMP`.
   Its behaviour changes gain `ARunsafe`'s corrected joint.
+
+### Step 5 brief — ContinuousTransition
+
+**Scope, surveyed** (`legacy/v6/src/nodes/predefined/continuous_transition.jl`, `rules/continuous_transition/`,
+the tests):
+- **ContinuousTransition** (`y`, `x`, `a`, `W`; alias `CTransition`) is `y ~ N(A(a) x, W⁻¹)`, with
+  `A = f(a)` an `dy × dx` matrix. It has:
+  - 8 message rules, one mean-field and one structured `q(y, x)` for each of `a`, `W`, `x` and `y`;
+  - the marginal rule `(:y, :x)`;
+  - 2 energies.
+- **`CTMeta(f)`**, alias `ContinuousTransitionMeta`, is required and has no default. For a
+  nonlinear `f`, `ctcompanion_matrix` linearises it at `m_a + std(a)` and evaluates the result at
+  `m_a`. The variance terms use the Jacobians `Fᵢ` of `f`'s rows at `m_a`, by ForwardDiff. For a
+  linear `f`, `A = f(m_a)` exactly.
+- **Dependencies:** v6's `RequireMarginalFunctionalDependencies(a = nothing)`. The rule towards
+  `a` reads `q(a)`, its expansion point; every other target follows the factorisation. v6
+  documents both factorisations: mean-field and `q(y, x) q(a) q(W)`.
+- **Tests:** about 49 cases in 5 rule files. The node tests pin both energies against a "manual
+  calculation", and check `ctcompanion_matrix`.
+
+**Found while surveying, checked in 6.5.0** against a Monte Carlo estimate (400 000 draws) and
+the closed form. The closed form agrees with Monte Carlo to 0.5% in six cases: `(dy, dx)` =
+`(2, 2)`, `(1, 2)`, `(2, 3)`, each mean-field and structured.
+- **Both energies are wrong**, by 1.1 to 2.4 nats in those cases. Three terms reproduce v6's value
+  exactly:
+  - `E[log det W]` is not halved;
+  - the `log2π` term's dimension is `div(ndims(q_y), 2) = dy/2` under mean-field, always wrong,
+    and `div(dx + dy, 2)` under the structured factorisation, right only when `dx = dy`. The entry
+    brief knew only this case;
+  - the `q(a)` covariance term `Σᵢⱼ Wᵢⱼ tr(Fᵢᵀ E[xxᵀ] Fⱼ Va)` takes `E[xxᵀ]` as `I + m_x m_xᵀ`,
+    not `V_x + m_x m_xᵀ`.
+- **v6's node test pins its own formula.** Its inputs (zero means, identity covariances,
+  `Wishart(3, I)`) have `V_x = I`, which hides the third term. The exact value is 13.415 (Monte
+  Carlo 13.386), where the test asserts 12.992 structured and 12.077 mean-field.
+- **The rules are consistent with the correct expectation**; only the energies are wrong. The
+  `W` rule's `WishartFast(dy + 2, Δ)` is the likelihood with the halved log-determinant.
+- `default_meta` is defined on `CTMeta`'s type instead of the node's, so its error never fired.
+- `ctcompanion_matrix` adds to `f(a0)`'s result in place.
+- `LazyArrays` is imported and unused.
+
+**Decided (user):**
+- **Auxiliary inputs, 2026-09-24, `DISCUSSION.md` §3.41.** A dependency declaration can add inputs
+  to the default scheme's for a target, so one algorithm serves both factorisations. Two
+  algorithms by factorisation, and dropping mean-field, were the alternatives.
+- **From the entry brief:** a package of its own, and `CTMeta` becomes the node's algorithm.
+
+**Defaults for the step**, open to the user's correction:
+- **The declaration.** `default` is a word of the dependency vocabulary: `:a => (default, q[:a])`
+  is the default scheme's inputs for `a`, plus `q(a)`, and `:y => (default,)` is the default
+  scheme alone.
+  - A target left undeclared under a declared spec stays an error, so the node declares all four.
+  - `TargetDependencies` records that a target extends the default scheme.
+  - `validate_dependencies` refuses `default` twice, or an auxiliary input that is a cluster.
+- **The engine.** `declared_dependencies` takes `default_dependencies` and adds each auxiliary input.
+  - Each goes among the marginals in interface order, where v6's `insertafter` put it; the
+    subscription order is the VMP schedule (§3.24).
+  - An auxiliary input the default already has is not added twice.
+  - An auxiliary marginal is consumed and never scored, as `PLAN.md` § Open questions 9 decided.
+  - The cycle `m(→a) → q(a) → m(→a)` is broken by `combineLatest(…, PushNew())`, as in v6:
+    the message is recomputed once every input has refreshed. An engine test pins it with a toy
+    node, and the partition test checks that `q(a)` is not scored twice.
+- **`check_rules`.** A rule for a target that extends the default scheme must read every auxiliary
+  input. Its other inputs depend on the factorisation and are not checked; the error says so.
+- **Documentation:** a section in *Algorithms and dependencies*, and the guide's mapping of
+  `RequireMarginalFunctionalDependencies` to `default` plus the marginal.
+- **The package.** `ContinuousTransitionMessagePassingRules`, on the Phase 6 template.
+  - It depends on Standard for `rank1update`, `negate_inplace!` and `mul_trace`, and on
+    ForwardDiff and FastCholesky.
+  - `CTMeta(f)` becomes `CTVMP(f)`, and `CTransition` is kept. The node declares no algorithm,
+    as AR and Delta, so under `DefaultAlgorithm` no rule is found: this replaces v6's dead
+    `default_meta` error.
+  - `ctcompanion_matrix` does not modify `f`'s result, and `LazyArrays` goes.
+- **The energies are corrected and declared.** The three terms are fixed, and v6's node-test
+  values are replaced by the closed form, with a Monte Carlo test at `dx ≠ dy`. An issue is opened.
+- **Tests:** v6's tables and node tests, ported by a subagent against the port's API and reviewed,
+  with type-promotion checks where v6 asked for them.
+- **v6 comparison.** `compare_continuous_transition.jl`:
+  - covers a linear `f` (`reshape`) and a nonlinear one (a rotation), with `dx = dy` and
+    `dx ≠ dy`;
+  - covers every rule, the joint and both energies;
+  - declares the energies as corrections.
+- **Engine fixtures,** with free energy: a two-dimensional rotation model under `q(y, x) q(a) q(W)`,
+  and a mean-field one if a small model runs in 6.5.0. The free energy is v6's error, declared;
+  the posteriors and every rule call must agree.
+
+**Order:**
+1. the auxiliary inputs, base and engine together, failing tests first;
+2. the package;
+3. the comparison and the fixtures;
+4. the guide's entries, which close the step.
+
+A commit each.
+
+**Progress:** not started.
 
 
 
