@@ -117,6 +117,32 @@ A rule names its node, its target and its inputs, and gives its body as a lambda
 A rule that reuses another's computation calls a plain helper function both share, rather than
 the other rule.
 
+### [Rules over whatever the factorisation delivers](@id rules-defining-default-args)
+
+A node whose rules are one computation over any factorisation, such as a tensor node,
+declares `default` among a rule's `args`: the rule takes whatever inputs the default scheme
+delivers, and the typed inputs named beside it.
+
+```julia
+@define_message_update_rule(
+    node = DiscreteTransition, target = (:T, k), args = (default, q[:a]::DirichletCollection),
+    body = (args) -> contract(args, axes_of(Target(:T, k))),
+)
+```
+
+The body walks its inputs with [`MessagePassingRulesBase.rule_inputs`](@ref), `key => value`
+pairs: an interface by its name, a group's member as `(:T, k)`, and a joint by its key. A rule
+over the marginal of any cluster names its target with a bare name, `target = members`, bound in
+the body to the cluster's key. A rule with explicit inputs over the same node and target is more
+specific and wins where it applies, so a fast path can sit on top. Missing or mistyped typed
+inputs make the lookup a `RuleNotFound`. There is at most one `default` rule per node, target and
+algorithm; `check_rules` checks its typed inputs only.
+
+```@docs
+MessagePassingRulesBase.rule_inputs
+MessagePassingRulesBase.default_inputs_match
+```
+
 ### [Scratch](@id rules-defining-scratch)
 
 A rule that needs working memory declares how to build it from its inputs, and takes it as its

@@ -170,3 +170,20 @@ end
     @test poison!(scratch) === scratch
     @test all(isnan, scratch.a) && all(isnan, scratch.b[1]) && scratch.c == [1, 2]
 end
+
+@testitem "tables:default arguments" tags = [:testutils] setup = [ToyRules, Recording] begin
+    using MessagePassingRulesTestUtils, BayesBase
+
+    # A rule declared with `default` takes each case's inputs, clusters of part of a group included.
+    set = Recording.recorded() do
+        @test_message_update_rule(
+            node = ToyRules.Summed, target = :out, check_type_promotion = false,
+            cases = [
+                (q = (w = PointMass(1.0), T = (PointMass(2.0), PointMass(3.0))),) => PointMass(6.0),
+                (m = (T = (PointMass(2.0), nothing),), q = (w = PointMass(1.0),)) => PointMass(3.0),
+                (clusters = ((:w, (:T, 2)) => PointMass(4.0),), q = (w = PointMass(1.0), T = (PointMass(2.0), nothing))) => PointMass(7.0),
+            ],
+        )
+    end
+    @test isempty(Recording.failures(set))
+end

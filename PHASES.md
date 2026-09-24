@@ -3253,6 +3253,24 @@ for the guide.
     joints called by hand; `check_rules`' refusals; in the engine, the keys, the default
     dependencies, and a joint computed by its rule while the messages it feeds are computed from
     it. The test that pinned the refusal now pins acceptance.
+- *`default` rule arguments — done.*
+  - `args = (default, q[:a]::T)` makes a rule's method the catch-all for its node, target and
+    algorithm: `RuleArgs` unconstrained. A generated guard, `default_inputs_match`, checks the typed
+    inputs from the argument types alone, so it folds to a constant, and a mismatch is a
+    `RuleNotFound`.
+  - `target = members`, a bare name, is a marginal rule over any cluster, the name bound to the
+    cluster's key as `k` is to a group index.
+  - `rule_inputs(node, args.m)` and `rule_inputs(node, args.q)` give the inputs as `key => value`
+    pairs, a group's members expanded to `(:T, k)` by the node's declaration, and joints by key.
+  - `RuleSpec` carries `default`. `check_rules` skips its declared-consumption check, the rest
+    depending on the factorisation; `check_rule_ambiguities` groups it apart; the display shows it.
+  - *Decided while building:* at most one `default` rule per node, target and algorithm, since two
+    would have one method signature. Variants, such as a Dirichlet or a point-mass `q(a)`, dispatch
+    inside the body.
+  - Tests, failing first: the inputs' pairs; a `default` rule taking belief-propagation,
+    mean-field and partial-joint inputs; the guard's refusals; an explicit rule winning; a group
+    target; a marginal rule over any cluster; an energy; `check_rules` and ambiguities clean; the
+    macro's refusals; a TestUtils table with a partial joint.
 
 
 

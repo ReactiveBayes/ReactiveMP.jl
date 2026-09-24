@@ -20,6 +20,10 @@ Define the rule for the message a node sends towards one of its interfaces.
   target's own member) or `m[:in][!k]::T` (all but it). A group arrives as a tuple in member
   order with `nothing` where the selection leaves a member out, so `args.m[:in][k]` means
   member `k` whatever was selected. An omitted type is `Any`.
+  `default` among them stands for whatever inputs the default scheme delivers: the rule takes
+  them all, with the typed ones beside `default` required, and walks them with
+  [`rule_inputs`](@ref). A marginal rule over any cluster names its target with a bare name,
+  `target = members`, bound in the body to the cluster's key.
 - `body`: an ordinary lambda over some of the slots `(output, scratch, algo, ctx, args, ann)`,
   named in that order: `args` holds the inputs, `algo` the algorithm value, `ctx` the
   [`RuleContext`](@ref), `ann` the annotations (read `ann.m[:out]`, write with
@@ -84,8 +88,10 @@ function define_rule_expr(kind, source, macroargs)
     keywords = parse_keywords(name, macroargs, allowed, required)
 
     node = keywords[:node]
-    target, index_name = kind === :average_energy ? (nothing, nothing) : parse_target(name, kind, keywords[:target])
-    inputs = parse_rule_args(name, keywords[:args], index_name)
+    target, index_name, wildcard = kind === :average_energy ? (nothing, nothing, false) : parse_target(name, kind, keywords[:target])
+    # A group target's index, or for a marginal rule over any cluster the cluster's key.
+    index_fn = wildcard ? cluster_members : target_index
+    inputs, has_default = parse_rule_args(name, keywords[:args], wildcard ? nothing : index_name)
     inplace = get(keywords, :inplace, false)
     inplace isa Bool || error("@$name: `inplace` must be `true` or `false`")
     pure = get(keywords, :pure, nothing)
@@ -111,7 +117,7 @@ function define_rule_expr(kind, source, macroargs)
     adapter_args = [gensym(slot) for slot in BODY_SLOTS]
     target_arg = gensym(:target)
     passed = [adapter_args[findfirst(==(slot), BODY_SLOTS)] for slot in slots]
-    index_arg = index_name === nothing ? () : (:($target_index($target_arg)),)
+    index_arg = index_name === nothing ? () : (:($index_fn($target_arg)),)
 
     prealloc_defs = []
     prealloc = nothing
@@ -122,7 +128,7 @@ function define_rule_expr(kind, source, macroargs)
         pre_args = [gensym(slot) for slot in PREALLOCATE_SLOTS]
         pre_passed = [pre_args[findfirst(==(slot), PREALLOCATE_SLOTS)] for slot in pre_slots]
         pre_target = gensym(:target)
-        pre_index = index_name === nothing ? () : (:($target_index($pre_target)),)
+        pre_index = index_name === nothing ? () : (:($index_fn($pre_target)),)
         push!(prealloc_defs, :(const $user_pre = $(append_parameter(pre, index_name))))
         prealloc = :(($(pre_args...), $pre_target) -> $user_pre($(pre_passed...), $(pre_index...)))
     end
@@ -136,18 +142,33 @@ function define_rule_expr(kind, source, macroargs)
         sc_args = [gensym(slot) for slot in SCRATCH_SLOTS]
         sc_passed = [sc_args[findfirst(==(slot), SCRATCH_SLOTS)] for slot in sc_slots]
         sc_target = gensym(:target)
-        sc_index = index_name === nothing ? () : (:($target_index($sc_target)),)
+        sc_index = index_name === nothing ? () : (:($index_fn($sc_target)),)
         push!(scratch_defs, :(const $user_sc = $(append_parameter(sc, index_name))))
         scratch_fn = :(($(sc_args...), $sc_target) -> $user_sc($(sc_passed...), $(sc_index...)))
     end
 
     algorithm_type = haskey(keywords, :algorithm) ? :($algorithm_dispatch_type($(keywords[:algorithm]))) :
         :(typeof($default_algorithm($node)))
-    signature = rule_signature(inputs)
+    # A rule over the default scheme's inputs takes any arguments for its node, target and
+    # algorithm, and checks the typed ones beside `default` with a guard that folds at compile time.
+    signature = has_default ? RuleArgs : rule_signature(inputs)
     algorithm_sym, signature_sym, spec_sym = gensym(:algorithm), gensym(:signature), gensym(:rulespec)
     dispatch_sym = gensym(:dispatch)
+    required = :($Val(($((:(($(QuoteNode(i.container)), $(QuoteNode(i.key)), $(QuoteNode(i.selection)))) for i in inputs)...),)))
+    required_types = :(Tuple{$((i.type for i in inputs)...)})
 
-    method = if kind === :message
+    method = if has_default
+        target_sym, algo_arg, args_arg = gensym(:target), gensym(:algorithm), gensym(:args)
+        notfound(k, t) = :($RuleNotFound($(QuoteNode(k)), $node, $t, $algo_arg, $args_arg))
+        guarded(k, t) = :($default_inputs_match($args_arg, $required, $required_types) ? $spec_sym : $(notfound(k, t)))
+        if kind === :message
+            :($base.find_message_rule(::$dispatch_sym, $target_sym::$target, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:message, target_sym)))
+        elseif kind === :marginal
+            :($base.find_marginal_rule(::$dispatch_sym, $target_sym::$target, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:marginal, target_sym)))
+        else
+            :($base.find_average_energy(::$dispatch_sym, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:average_energy, nothing)))
+        end
+    elseif kind === :message
         :($base.find_message_rule(::$dispatch_sym, ::$target, ::$algorithm_sym, ::$signature_sym) = $spec_sym)
     elseif kind === :marginal
         :($base.find_marginal_rule(::$dispatch_sym, ::$target, ::$algorithm_sym, ::$signature_sym) = $spec_sym)
@@ -173,6 +194,7 @@ function define_rule_expr(kind, source, macroargs)
             body = ($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...)),
             prealloc = $prealloc,
             scratch = $scratch_fn,
+            default = $has_default,
             inplace = $inplace,
             pure = $pure,
             services = $services,
@@ -194,7 +216,13 @@ function parse_target(name, kind, ex)
     if symbol !== nothing
         kind === :marginal &&
             error("@$name: `target` of a marginal rule is a cluster like `(:y, :x)`, got `$ex`")
-        return (:($Target{$(QuoteNode(symbol))}), nothing)
+        return (:($Target{$(QuoteNode(symbol))}), nothing, false)
+    end
+    # A bare name: a marginal rule over any cluster, the name bound to its key.
+    if ex isa Symbol
+        kind === :marginal ||
+            error("@$name: `target` must be `:out` or `(:m, k)`, got `$ex`; a bare name is a marginal rule's, over any cluster")
+        return (:($ClusterTarget), ex, true)
     end
     # A cluster: interfaces, and members of a group written `(:T, 1)`.
     is_member(a) = a isa Expr && a.head === :tuple && length(a.args) == 2 && quoted_symbol(a.args[1]) !== nothing && a.args[2] isa Integer
@@ -203,11 +231,11 @@ function parse_target(name, kind, ex)
         kind === :marginal ||
             error("@$name: `target` of a message rule is `:out` or `(:m, k)`, got `$ex`")
         members = Tuple(map(a -> quoted_symbol(a) !== nothing ? quoted_symbol(a) : (quoted_symbol(a.args[1]), Int(a.args[2])), ex.args))
-        return (:($ClusterTarget{$members}), nothing)
+        return (:($ClusterTarget{$members}), nothing, false)
     end
     if kind === :message && ex isa Expr && ex.head === :tuple && length(ex.args) == 2 &&
             quoted_symbol(ex.args[1]) !== nothing && ex.args[2] isa Symbol
-        return (:($IndexedTarget{$(QuoteNode(quoted_symbol(ex.args[1])))}), ex.args[2])
+        return (:($IndexedTarget{$(QuoteNode(quoted_symbol(ex.args[1])))}), ex.args[2], false)
     end
     shapes = kind === :marginal ? "a cluster like `(:y, :x)`" : "`:out` or `(:m, k)`"
     return error("@$name: `target` must be $shapes, got `$ex`")
@@ -230,6 +258,10 @@ end
 # members), `m[:in][k]::T` (the target's own member) or `m[:in][!k]::T` (all but it).
 function parse_rule_args(name, ex, index_name)
     entries = ex isa Expr && ex.head === :tuple ? ex.args : [ex]
+    # `default` stands for the inputs the factorisation delivers, whatever they are.
+    defaults = count(==(:default), entries)
+    defaults > 1 && error("@$name: `default` twice in `args`")
+    entries = filter(!=(:default), entries)
     inputs = []
     for entry in entries
         ref, type = entry isa Expr && entry.head === :(::) && length(entry.args) == 2 ?
@@ -267,7 +299,7 @@ function parse_rule_args(name, ex, index_name)
         id in seen && error("@$name: `$(input.container)[$(input.key)]` is given twice in `args`")
         push!(seen, id)
     end
-    return inputs
+    return inputs, defaults == 1
 end
 
 function cluster_members(name, ref, container, keys)

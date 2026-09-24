@@ -74,6 +74,14 @@
         body = (scratch, args) -> (scratch.total[1] += mean(args.m[:out]); PointMass(scratch.total[1])),
     )
 
+    # A rule over whatever inputs the factorisation delivers, with one typed input: it sums them.
+    struct Summed end
+    @define_factor_node(node = Summed, type = Stochastic, interfaces = [:out, :w, :T...])
+    @define_message_update_rule(
+        node = Summed, target = :out, args = (default, q[:w]::PointMass),
+        body = (args) -> PointMass(sum(p -> mean(last(p)), MessagePassingRulesBase.rule_inputs(Summed, args.q)) + sum(p -> mean(last(p)), MessagePassingRulesBase.rule_inputs(Summed, args.m); init = 0.0)),
+    )
+
     # Default rules an extension inherits. Reached under `Extended`, they run with
     # `DefaultAlgorithm()` in their `algo` slot, so a helper typed `::DefaultAlgorithm` is
     # reachable from the body and from `preallocate`.

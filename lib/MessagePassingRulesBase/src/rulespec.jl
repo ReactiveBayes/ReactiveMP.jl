@@ -18,6 +18,9 @@ A rule as data, and the thing that runs. Dispatch resolves a call to a `RuleSpec
 holds the body and the preallocation function and knows whether it is in-place. It has no
 type parameters, so resolution returns one concrete type wherever it can be inferred.
 
+`default` marks a rule declared with `default` among its `args`, which takes whatever inputs the
+factorisation delivers; `inputs` are then its typed ones only.
+
 `kind` is `:message`, `:marginal` or `:average_energy`. The body takes the full slot list
 `(output, scratch, algo, ctx, args, ann, target)`; `prealloc` and `scratch`, when present,
 take `(algo, ctx, args, target)`.
@@ -32,6 +35,7 @@ struct RuleSpec
     body::Function
     prealloc::Union{Nothing, Function}
     scratch::Union{Nothing, Function}
+    default::Bool
     inplace::Bool
     pure::Bool
     services::Tuple{Vararg{Symbol}}
@@ -43,7 +47,7 @@ end
 function RuleSpec(;
         kind::Symbol, node, target, algorithm::Type, signature::Type, body::Function,
         inputs::Tuple{Vararg{InputSpec}} = (),
-        prealloc = nothing, scratch = nothing, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
+        prealloc = nothing, scratch = nothing, default::Bool = false, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
         services::Tuple{Vararg{Symbol}} = (), source::AbstractString = "",
         file::Symbol = :none, line::Integer = 0,
     )
@@ -57,7 +61,7 @@ function RuleSpec(;
     end
     effective = something(pure, algorithm <: AbstractAlgorithm ? ispure(algorithm) : true)
     return RuleSpec(
-        kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, inplace, effective,
+        kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, default, inplace, effective,
         services, String(source), file, Int(line),
     )
 end
@@ -230,3 +234,58 @@ setting (`matrix_correction`), is never missing.
 """
 missing_services(spec::RuleSpec, ctx::RuleContext) =
     filter(service -> !(service in OPTIONAL_CONTEXT_SERVICES) && getfield(ctx, service) === nothing, spec.services)
+
+
+"""
+    default_inputs_match(args::RuleArgs, ::Val{required}, ::Type{types})
+
+Whether `args` holds each input a `default` rule names, `(container, key, selection)`, with its
+type in `types`, for a single interface, a cluster or a whole group. Computed from the types
+alone, so it folds to a constant.
+"""
+@generated function default_inputs_match(args::RuleArgs{M, Q}, ::Val{required}, ::Type{types}) where {M, Q, required, types}
+    mnames, mtypes = M.parameters[1], M.parameters[2].parameters
+    qnames, qtypes = Q.parameters[1], Q.parameters[2].parameters
+    jkeys, jtypes = Q.parameters[3], Q.parameters[4].parameters
+    function held(container, key, selection, type)
+        if selection === :cluster
+            position = findfirst(==(key), jkeys)
+            return position !== nothing && jtypes[position] <: type
+        end
+        names, types = container === :m ? (mnames, mtypes) : (qnames, qtypes)
+        position = findfirst(==(key), names)
+        position === nothing && return false
+        selection === :single && return types[position] <: type
+        return types[position] <: Tuple && all(t -> t <: Union{Nothing, type}, types[position].parameters)
+    end
+    return all(((r, type),) -> held(r..., type), zip(required, types.parameters))
+end
+
+"""
+    rule_inputs(node, container)
+
+The inputs in a rule's `args.m` or `args.q` as `key => value` pairs: an interface by its name, a
+member of a group as `(group, k)`, and a joint by its key, as `(:out, (:T, 1))`. Members a group
+does not deliver are left out. `node` tells which names are groups. It is for a rule declared with
+`default`, whose body walks the inputs the factorisation delivered.
+"""
+function rule_inputs(node, container::Union{Messages, Marginals})
+    groups = Tuple(i.name for i in nodespec(node).interfaces if i.group)
+    singles = container isa Messages ? container.values : container.singles
+    pairs = Any[]
+    for (key, value) in zip(keys(singles), values(singles))
+        if key in groups && value isa Tuple
+            for (k, member) in enumerate(value)
+                member === nothing || push!(pairs, (key, k) => member)
+            end
+        else
+            push!(pairs, key => value)
+        end
+    end
+    if container isa Marginals
+        for (key, value) in zip(typeof(container).parameters[3], container.joints)
+            push!(pairs, key => value)
+        end
+    end
+    return Tuple(pairs)
+end

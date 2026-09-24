@@ -24,9 +24,10 @@ function rule_heading(spec::RuleSpec)
     return heading * " under $(spec.algorithm)"
 end
 
-inputs_label(spec::RuleSpec) =
-    isempty(spec.inputs) ? "none" :
-    join((input_label(i.container, i.key, i.selection) * "::" * string(i.type) for i in spec.inputs), ", ")
+function inputs_label(spec::RuleSpec)
+    labels = [spec.default ? ["default"] : String[]; [input_label(i.container, i.key, i.selection) * "::" * string(i.type) for i in spec.inputs]]
+    return isempty(labels) ? "none" : join(labels, ", ")
+end
 
 Base.show(io::IO, spec::RuleSpec) = print(io, "RuleSpec(", rule_heading(spec), " @ ", spec.file, ":", spec.line, ")")
 

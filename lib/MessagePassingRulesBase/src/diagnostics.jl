@@ -154,6 +154,8 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
         edge = target.parameters[1]
         (edge in names && isgroup(edge)) ||
             push!(problems, "`target = (:$edge, k)`: $(spec.node) has no group `$edge`")
+    elseif target === ClusterTarget
+        # A marginal rule over any cluster: no members to check.
     elseif target <: ClusterTarget
         members = target.parameters[1]
         if lone_single(members)
@@ -188,6 +190,8 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
     end
     for declaration in own
         spec.kind === :message || continue
+        # A rule over the default scheme's inputs consumes whatever the factorisation delivers.
+        spec.default && continue
         instance = target <: IndexedTarget ? target(1) : target()
         entry = target_entry(declaration, instance)
         entry === nothing && continue
@@ -239,7 +243,7 @@ intersection test reports every disjoint pair. `Base.isambiguous` ignores ambigu
 function check_rule_ambiguities(modules::Module...)
     groups = Dict{Any, Vector{RuleSpec}}()
     for spec in registered_rules(modules...)
-        key = (spec.kind, spec.node, spec.target, Set((i.container, i.key) for i in spec.inputs))
+        key = (spec.kind, spec.node, spec.target, spec.default, Set((i.container, i.key) for i in spec.inputs))
         push!(get!(groups, key, RuleSpec[]), spec)
     end
     ambiguous = Tuple{RuleSpec, RuleSpec}[]
