@@ -17,9 +17,9 @@ deletes after skimming:
   Phase 6 deletes rather than ports (`sphericalradial`, `gausslaguerre`, `importance`, `laplace`,
   `cvi`, the optimisers), with `approximations.jl` and `shared.jl`, which they use;
 - `src/helpers/algebra/` — the helpers the unported nodes use (`common.jl`: `mul_trace`,
-  `mul_inplace!`, `v_a_vT`, …; the permutation and standard-basis matrices), and the companion
-  matrix, which nothing uses and `INVENTORY.md` deletes;
-- `src/fixes.jl` — the `ForwardDiff` hot-fix `Linearization` may still need;
+  `mul_inplace!`, `v_a_vT`, …, which Phase 6 moves to Standard; the permutation matrix, Flow's;
+  and the standard-basis vector and the companion matrix, which AR uses);
+- `src/fixes.jl` — the `ForwardDiff` hot-fix, which nothing left uses and Phase 6 drops;
 - `ext/` — the extensions CVI needed;
 - `test/` — the tests of all of the above.
 

@@ -669,7 +669,9 @@ consult when moving code.
 **Monorepo now, split at Phase 6.** The new packages live as subdirectories of this
 repository under `lib/` while the API is in flux, and are promoted to their own
 `ReactiveBayes/*` repositories once Phase 3 freezes the base API and Phase 4.5 proves the
-engine interface. Phase 4.5 proved it; the split waits for Phase 6.
+engine interface. Phase 4.5 proved it; the split waits for Phase 6. *(Superseded by
+`DISCUSSION.md` §3.40: the monorepo stays through Phases 6 and 7, and splits in Phase 8, with
+registration.)*
 
 ```
 ReactiveMP.jl/
@@ -1131,7 +1133,8 @@ The dispatch result, ownership contracts and early engine integration are separa
     Two findings came out of building it, both recorded in the inventory notes:
     `CompanionMatrix`/`CompanionMatrixTransposed` have **no reference in `src/` or
     `test/`** — the autoregressive node uses a companion-matrix representation but through
-    its own `ARTransitionMatrix` (`autoregressive.jl:270`), which superseded them — and the
+    its own `ARTransitionMatrix` (`autoregressive.jl:270`), which superseded them *(wrong: AR
+    builds them with `as_companion_matrix`, and they go to its package; Phase 6 entry brief)* — and the
     three `src/helpers/algebra/` files between them account for **253 of the 322** Aqua
     ambiguities, so that cleanup is entirely separable from the rewrite.
 

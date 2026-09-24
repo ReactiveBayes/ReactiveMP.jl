@@ -52,6 +52,7 @@ committed; the local ones are gitignored.
 
 ## Promotion to separate repositories
 
-Planned for **Phase 6**, once Phase 3 froze the base API and Phase 4.5 proved the engine
-interface. Until then a change spanning two packages is one commit; afterwards it is two
+Planned for **Phase 8**, with registration (`DISCUSSION.md` §3.40); it was Phase 6 until the
+Phase 6 brief, since Phase 3 froze the base API and Phase 4.5 proved the engine interface, but
+the node packages are wired with `[sources]` and run no CI until they are registered. Until then a change spanning two packages is one commit; afterwards it is two
 pull requests and a version pin. That is the trade this layout is making deliberately.

@@ -550,7 +550,7 @@ that the autoregressive node must use it — reasonable, since AR genuinely does
 companion-matrix representation, but through its own `ARTransitionMatrix`
 (`autoregressive.jl:270`), which superseded the shared type and left it exported and
 untested. It accounts for 75 of the 322 ambiguities, so deleting it is worth more than its
-line count suggests.
+line count suggests. *(Wrong, found by the Phase 6 entry brief: AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules; the search looked for the type's name, not its constructor. It goes to the AR package.)*
 
 **One recorded claim was checked and survived.** §5 says `Optim` leaves ReactiveMP entirely
 because only `laplace.jl` uses it. A first grep appeared to contradict this by matching
@@ -1644,6 +1644,32 @@ promotion checks to rules written as direct calls precisely because they do not 
 Instead the base package's interactive calls report the rule they select to observers, and the
 test tooling registers one; an engine resolves rules itself and never reaches them. The gate is
 then zero gaps, which is also `PLAN.md`'s "fail on decrease".
+
+### 3.40 Phase 6's shape: the split waits, SoftDot stands alone, and the numerics' homes (user, 2026-09-24)
+
+Counting Phase 6 for its brief raised four questions, and the user decided each:
+- **The repository split moves to Phase 8.** `PLAN.md` § Repository layout had the monorepo
+  split at Phase 6, once the base API froze and the engine interface was proven. Both have, but
+  Phase 6 adds ten packages, every one wired with `[sources]`, on Julia 1.13 only, with no CI
+  until registration (§3.22). A split now would turn each cross-package change into pull
+  requests and dev pins for packages nobody can yet install; at registration, compat bounds
+  and CI are set anyway, so the split costs least there.
+- **SoftDot does not depend on AR.** Its `y` rule called AR's and it used AR's `ar_slice` and
+  `add_transition`. Depending on the AR package was the alternative, and so was putting SoftDot
+  into it. The user chose neither: SoftDot's package reimplements what it needs and is tested on
+  its own, so the two can change independently.
+- **Gauss–Hermite cubature and `approximate_meancov` go to `MessagePassingRulesApproximations`.**
+  `INVENTORY.md` sent them to the Pólya package as their only user, but Probit's energy and GCV's
+  `ExponentialLinearQuadratic` use them too. The numerics package takes FastGaussQuadrature and
+  the part over means and covariances; the methods that take a distribution stay with the node
+  packages, so it still depends on no distribution package (§3.9b).
+- **The algebra helpers go to `StandardMessagePassingRules`**, not to the numerics package:
+  `mul_trace`, `rank1update`, `negate_inplace!` and `mul_inplace!`, which AR, SoftDot,
+  ContinuousTransition and DiscreteTransition use, beside Standard's `diageye`. Duplicating them
+  per package was the third option.
+
+The order of work, also the user's: the numerics and the deletions first, then the nodes by
+dependency, each step briefed before it starts (`PHASES.md` § Phase 6, *Entry brief*).
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1685,8 +1711,11 @@ Claims the assistant made that were **wrong** and should not be revived:
 11. **"The design needs `ScopedValues`, so the Julia floor must rise to 1.11."** It does
     not. The context is an ordinary object passed into the rules; a default argument gives
     the same behaviour on 1.10. One sentence of a draft was mistaken for a constraint.
-12. **"`CompanionMatrix` must be used by the autoregressive node."** It is not — AR has its
-    own `ARTransitionMatrix`. Plausible from the name and the concept, false in the code.
+12. ~~**"`CompanionMatrix` must be used by the autoregressive node."** It is not — AR has its
+    own `ARTransitionMatrix`. Plausible from the name and the concept, false in the code.~~
+    **This correction was itself wrong** (Phase 6 entry brief): the user's claim was right. AR
+    builds a `CompanionMatrix` with `as_companion_matrix` at seven sites; `ARTransitionMatrix`
+    is its noise covariance. The search behind the correction looked for the type's name.
 13. **"`Optim` is used by `ContinuousTransition`."** No: that grep matched the words
     "Optimized" and "Optimizer". Only `laplace.jl` uses the package.
 14. **"The `:` in `NormalMeanVariance(:out)` is inconsistent decoration, so drop it."** The

@@ -320,6 +320,6 @@ These v6 names have no counterpart: `Marginalisation`, `MomentMatching`, the fun
 dependency types, the per-node node types (`NormalMixtureNode`, `GammaMixtureNode`,
 `MixtureNode`; the checks their constructors made, at least two components, as many of each
 kind, a mean-field factorisation, are the `matched_groups`, `min_group_length` and
-`factorisation` of [`@define_factor_node`](@ref)), `NodeFunctionRuleFallback`, `CompanionMatrix`, and the approximation methods
+`factorisation` of [`@define_factor_node`](@ref)), `NodeFunctionRuleFallback`, and the approximation methods
 with no remaining consumer (`CVI`, `ProdCVI`, `Adam`, `ForwardDiffGrad`, `LaplaceApproximation`,
 `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature`, `srcubature`).

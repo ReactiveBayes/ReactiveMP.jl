@@ -3,8 +3,8 @@ uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
 version = "0.1.0-DEV"
 
 # Distribution nodes, arithmetic (+, -, *, dot), logic (AND, OR, NOT, IMPLY) and the
-# mixtures. Domain-specific models (GCV, Probit, SoftDot, GaussianCoupling) belong to a
-# sibling package whose name is deferred to Phase 6; INVENTORY.md records them as `models`.
+# mixtures. The domain-specific nodes (GCV, Probit, SoftDot, GaussianCoupling) each get their
+# own package in Phase 6; INVENTORY.md records them as `node:<Name>`.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

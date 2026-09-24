@@ -21,12 +21,12 @@ one.
 
 ## Next action
 
-**Phase 6: approximations and node packages** (§ Phase 6). Phase 5 is done: every standard
-node is in `StandardMessagePassingRules`, the docs are rewritten and build again, the v6 → v7
-migration guide is written, and `legacy/v6/` holds only what Phase 6 ports from. Phase 6 needs a
-brief first, as each Phase 5 step had: its node packages (Autoregressive, BIFM, Pólya, the
-transitions, Flow, GCV, Probit, SoftDot, GaussianCoupling), `Linearization` and `CVIProjection`,
-and the deletions it lists.
+**Phase 6, step 1: numerics and deletions** (§ Phase 6, *Entry brief*). The entry brief counts
+Phase 6 at 123 message rules, 22 marginal rules and 19 average energies in 13 nodes and 10
+packages, with Delta's Linearization and `CVIProjection`, and orders it in ten steps, each
+briefed before it starts. Step 1 needs its brief: `Linearization`, Gauss–Hermite cubature and
+`approximate_meancov` into `MessagePassingRulesApproximations`, the algebra helpers into
+Standard, and the deletions.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -104,7 +104,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started, and its brief not yet written |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; step 1, numerics and deletions, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -162,7 +162,8 @@ generic ones, and no comments that only narrate.
 - [x] **repository layout decided: monorepo under `lib/`, split at Phase 6.** Boundaries
       were still moving (#9–#13 were then unresolved API decisions), and a cross-package change is
       one commit in a monorepo versus two pull requests and a dev-pin across repositories.
-      Pay the split cost once, at a known gate. See `PLAN.md` § Repository layout
+      Pay the split cost once, at a known gate. See `PLAN.md` § Repository layout. *(The gate
+      moved to Phase 8, with registration, in the Phase 6 entry brief; `DISCUSSION.md` §3.40.)*
 - [x] **Julia floor decided: stays at 1.10.** Nothing in the design requires more. The
       `ScopedValue` in an earlier draft of § Dispatch axes was never necessary — the
       context is an ordinary object passed into the rules, most likely held by
@@ -443,7 +444,7 @@ omission.
       |---|---|---|
       | 119 | `src/helpers/algebra/permutation_matrix.jl` | custom array types declaring `*`/`dot` against bare `AbstractMatrix`/`AbstractVector`, colliding with `ArrayLayouts`, `PDMats`, `FillArrays` and `LinearAlgebra` |
       | 85 | `src/helpers/algebra/standard_basis_vector.jl` | same shape |
-      | 71 | `src/helpers/algebra/companion_matrix.jl` | same shape — and `CompanionMatrix` has **zero references anywhere in `src/` or `test/`**, so this is entirely dead weight |
+      | 71 | `src/helpers/algebra/companion_matrix.jl` | same shape — and `CompanionMatrix` has **zero references anywhere in `src/` or `test/`**, so this is entirely dead weight *(wrong: AR builds it with `as_companion_matrix`; Phase 6 entry brief)* |
       | 27 / 25 | `delta.jl` / `rule.jl` | **one** repeated shape: the delta catch-all against the `meta::Any` arithmetic rules. The only category the new dispatch design claims to eliminate. **27 distinct pairs, not 52** — 25 of them touch both files. And `rule.jl` here is the `@marginalrule` *template* (`rule.jl:406`), where every generated method reports its location, so it names the arithmetic rules in `src/rules/{addition,subtraction,multiplication}/`, not code in `rule.jl` (see `DISCUSSION.md` §5) |
       | 23 | `src/fixes.jl` | deliberate upstream hot-fixes; they leave when upstream releases |
       | 11 | `nodes/predefined/uninformative.jl` | `prod` for `Uninformative` against BayesBase's `PreserveTypeProd` |
@@ -452,7 +453,7 @@ omission.
 
       **Why not now.** Three files account for the large majority, `INVENTORY.md` already
       sends all three out of this package with Flow/AR and marks `CompanionMatrix` for
-      deletion, and the 27 rule-dispatch pairs are what the rewrite removes by construction.
+      deletion *(it goes to AR since the Phase 6 entry brief)*, and the 27 rule-dispatch pairs are what the rewrite removes by construction.
       Cleaning them here is work on code that is leaving, and a ratchet on a number that is
       about to move on its own would mostly measure the split rather than any regression.
       Revisit once Phases 5–6 have moved the rules and the algebra helpers out; the count to
@@ -2036,6 +2037,131 @@ the engine's (§3.37, where log scales are also marked experimental until Phase 
 `lib/DeltaMessagePassingRules` exists since Phase 4.5 case (d), with the Delta node, its
 algorithm and its Unscented rules; the items below that concern Delta add to it.
 
+### Entry brief — 2026-09-24
+
+**Scope, counted** (`legacy/v6/src/rules/` and `nodes/predefined/`, line-start macros; the
+destinations are `INVENTORY.md`'s). 13 nodes in 10 packages: **123 message rules, 22 marginal
+rules and 19 average energies**, and DiscreteTransition's 3 hand-written `rule`, 3 `marginalrule`
+and 2 `score` methods. Delta adds its Linearization rules (4 message, 1 marginal) and the
+projection extension's (2 and 2). Of the 123, GCV defines 4 on NormalMeanVariance and
+NormalMeanPrecision; of the 22, 2 are MvNormalMeanPrecision's for BIFM and 4 are GCV's on the
+Standard normals.
+
+| package | nodes | rules / marginals / energies | v6 meta → | functional dependencies | extra dependencies | v6 tests |
+|---|---|---|---|---|---|---|
+| Autoregressive | AR, ConjugateAR | 13 / 3 / 3 | `ARMeta(order, ARsafe \| ARunsafe)`, required → an algorithm | — | LazyArrays, StatsFuns | ~41 table cases, 35 node tests |
+| SoftDot | SoftDot | 8 / 1 / 2 | none (builds an `ARMeta` inside) | — | StatsFuns | ~63 cases |
+| GaussianCoupling | GaussianCoupling | 2 / 1 / 1 | none | — | — | ~17 cases, 15 node tests |
+| Probit | Probit | 7 / 1 / 1 | `ProbitMeta(p = 32)` → an algorithm | `in = NormalMeanPrecision(0, 100)`: its own edge, an initial message | StatsFuns, cubature | ~37 cases |
+| GCV | GCV | 14 / 5 / 2 | `GCVMetadata(GaussHermiteCubature(20))` → an algorithm | — | StatsFuns, cubature, `approximate_meancov` | ~110 tests |
+| ContinuousTransition | ContinuousTransition | 8 / 1 / 2 | `CTMeta(f)`, required → an algorithm | `RequireMarginal(a = nothing)` → declared | ForwardDiff, StatsFuns | ~15 cases |
+| Polya | BinomialPolya, MultinomialPolya | 4 / 0 / 2 | `BinomialPolyaMeta(n, rng)`, `MultinomialPolyaMeta(points)` | the β and ψ rules read their own edge | PolyaGammaHybridSamplers (GPL-3), SpecialFunctions, LogExpFunctions, cubature | ~7 cases |
+| BIFM | BIFM, BIFMHelper | 6 / 1 + 2 / 1 | `mutable BIFMMeta`, required, a cache the rules write | BIFMHelper's overridden | — | ~21 cases, 18 node tests |
+| Flow | Flow | 8 / 4 / 0 | `FlowMeta(model, Linearization() \| Unscented(d))` → an algorithm | — | TupleTools | ~54 cases, ~466 model tests |
+| DiscreteTransition | DiscreteTransition | 53 / 3 / 5, + 8 hand-written | ignored | — | Tullio | ~159 cases |
+| Delta (exists) | Linearization, `CVIProjection` | 4 / 1, ext 2 / 2 | `DeltaApproximation` | — | ForwardDiff (via Approximations); ExponentialFamilyProjection (weakdep) | 7 + 3 + 4 cases, ext ~13 |
+
+**Decided (user):**
+- **The monorepo stays through Phases 6 and 7; the split into repositories is Phase 8**, with
+  registration, when compat bounds and CI are set anyway (`DISCUSSION.md` §3.40). `PLAN.md`
+  had it at Phase 6.
+- **SoftDot is independent of AR.** Its `y` rule called AR's, and it used AR's `ar_slice` and
+  `add_transition`; its package reimplements what it needs and is tested on its own (§3.40).
+- **Gauss–Hermite cubature and `approximate_meancov` go to `MessagePassingRulesApproximations`**,
+  which gains FastGaussQuadrature: Pólya, Probit and GCV all use them, where `INVENTORY.md` had
+  Pólya alone. The part over means and covariances moves; the methods that take a distribution
+  stay with the node packages, so the package still depends on no distribution package (§3.40).
+- **The algebra helpers go to `StandardMessagePassingRules`**: `mul_trace`, `rank1update`,
+  `negate_inplace!` and `mul_inplace!`, used by AR, SoftDot, ContinuousTransition and
+  DiscreteTransition, beside its `diageye` (§3.40).
+- **Order**: numerics first, then by dependency, with a brief per step (below).
+- Already decided: a package per node (§3.30); Probit's and ContinuousTransition's own
+  algorithms, and Probit's default initial message (§3.21); the Pólya package carries the GPL-3
+  sampler (`PLAN.md` § Licensing); BIFM and `CVIProjection` are `pure = false` (`PLAN.md`
+  § Purity); CVI, Laplace, importance sampling, Gauss–Laguerre, spherical-radial cubature and
+  the Optimisers extension are deleted, not ported; Delta's methods are `Unscented` and
+  `Linearization`, with `CVIProjection` as an extension, and #11's two follow-ups (§3.16).
+
+**Defaults**, open to the user's correction:
+- **Packages** are `<Node>MessagePassingRules` (`AutoregressiveMessagePassingRules`,
+  `PolyaMessagePassingRules`, …), on Delta's template: `[sources]` to their siblings, the test
+  runner with its coverage gate, `quality_tests.jl` (Aqua, closure, doctests, `quality:rules`), a
+  docs page under *Rule packages*, a `make test-<node>` target, and entries in `docs/make.jl`,
+  `docs/Project.toml`, the root `[extras]` and CLAUDE.md. A package depends on Standard when its
+  rules use Standard's helpers or nodes.
+- **Gates**, as in Phase 5: v6's tables; a case per rule against 6.5.0 through
+  `compare_with_reference`, in a `compare_<node>.jl` per package, disagreements declared with
+  their reasons; `@verify_message_update_rule` where the inputs allow; `check_rules` and
+  `check_rule_ambiguities` finding nothing; the coverage gate at zero; and an engine fixture
+  per node with a small model, recorded from RxInfer 5.5.2. Each directory and its tests leave
+  `legacy/v6/` in the commit that ports it.
+- **Delta's v6 comparison** extends `V6Oracle` to build a v6 `DeltaFnNode` with a `DeltaMeta`,
+  and the new side passes `RuleContext(node = …)`; Delta joins the comparison environment.
+- **Rules on another package's node.** GCV's 8 rules on NormalMeanVariance and
+  NormalMeanPrecision take GCV's own `ExponentialLinearQuadratic`, so they stay in its package;
+  v6 never tested them, and they get tests. BIFM's two MvNormalMeanPrecision marginals over a
+  `TerminalProdArgument` move to Standard, whose types they are.
+- **v6 errors found while counting**, corrected, declared in the comparisons, each with an issue:
+  BinomialPolya's energy computes its Monte Carlo term and overwrites it on the next line;
+  ContinuousTransition's `default_meta` is defined on `CTMeta` instead of the node, and its
+  energy takes the output dimension as half the joint's, which holds only when both are equal;
+  DiscreteTransition's four five-interface `:T2` rules read `m_T2`, their own edge, so they never
+  match, its belief-propagation `:T3` rule with a Dirichlet `q_a` normalises over `dims = 1` unlike
+  its siblings, and its fast-path marginal on `Val{(:a)}` is `Val{:a}` and unreachable; BIFM's
+  MvNormalMeanPrecision marginals call `getdist`, defined nowhere, so they failed in 6.5.0.
+- **Engine and base work the ports meet**, each designed in its step brief:
+  - a default initial message declared on a node, applied at activation to an edge that has
+    none (Probit's `in`); RxInfer's side stays Phase 7;
+  - the Pólya β and ψ rules and Probit read the message on their own edge, which the declared
+    dependencies already express;
+  - DiscreteTransition's `T...` group and its hand-written rules, which read inputs by name:
+    ported by hand, stopping to ask where no mechanical form exists;
+  - BIFM's rules run in an order and share its cache: `pure = false`, and its step checks the
+    schedule the engine gives it;
+  - table cases taking incoming annotations (`ann.m`) if a second node needs them.
+- **`CVIProjection`** is a weakdep extension of the Delta package on ExponentialFamilyProjection;
+  `cvilinearize`, which it takes from the deleted `cvi.jl`, moves into it; its generator becomes
+  `ctx.rng`, and its mutable proposal keeps it `pure = false`.
+- **`legacy/v6/src/fixes.jl`** is dropped: its only users were `laplace.jl` and `cvi.jl`.
+  Linearization never takes a Hessian.
+
+**Order of work**, a brief per step, a commit per node, `PHASES.md` and `CHANGELOG.md` in each:
+1. **Numerics and deletions.** `Linearization` into Approximations, with ForwardDiff: its
+   `approximate(::Linearization, g, x̂)` returns `(A, b)`, where Unscented's returns `(m, V)`, so
+   the Delta side wraps each. Gauss–Hermite cubature, `approximate_meancov` and
+   FastGaussQuadrature into Approximations, with v6's buffer-reuse test (#633). The algebra
+   helpers into Standard. The deletions, and `Optim` confirmed gone.
+2. **Delta**: the Linearization rules, the `CVIProjection` extension, #11's follow-ups (a
+   guarded positional constructor; an error naming the package and the method to switch to),
+   the Delta v6 comparison, a `delta_linearization` fixture, and the guide's Delta section.
+3. **The small nodes**: GaussianCoupling; Probit, with the initial message; GCV, with
+   `ExponentialLinearQuadratic` and its product.
+4. **The autoregressive family**: AR and ConjugateAR, with the companion matrix and the standard
+   basis vector (their `*` methods narrowed first, for the Aqua ambiguities) and `ARMeta` as an
+   algorithm; ConjugateAR's `@call_rule`s become helpers. Then SoftDot, on its own.
+5. **ContinuousTransition**: `CTMeta` as an algorithm, `RequireMarginal` as declared dependencies.
+6. **Pólya**: both nodes, the GPL-3 sampler, BinomialPolya's generator as `ctx.rng`.
+7. **BIFM**: BIFM and BIFMHelper, whose overridden dependencies become declared ones; the
+   Standard marginals; `pure = false`.
+8. **Flow**: `PermutationMatrix`'s `*` methods narrowed first; `FlowMeta` as an algorithm over
+   `Linearization` or `Unscented`; the layers and the model.
+9. **DiscreteTransition**: Tullio, the `T...` group, the fast paths and the hand-written rules.
+10. **Close**: `legacy/` deleted, the guide's node sections complete, the exit criteria ticked.
+
+**Found while counting, to settle in the step that meets them:**
+- the companion matrix is used: AR builds it with `as_companion_matrix` at seven sites.
+  `INVENTORY.md` had it deleted, from a search for the type's name, and the last consistency
+  pass repeated it; it goes to the AR package;
+- Probit's marginal rule and GCV's normal extension have no v6 tests, and BinomialPolya's `y`
+  test item is misnamed `rules:BinomialPolya:beta`;
+- ContinuousTransition imports LazyArrays and does not use it;
+- Flow's layers draw from the global generator when constructed, and its unscented rules read
+  `Unscented(d)`'s weights, which Approximations does not export;
+- BIFMHelper's average energy is the entropy of `q_in`, a bookkeeping device;
+- ConjugateAR's single-interface `w` marginal is reached only by its tests;
+- the `w` message of ConjugateAR can be improper for order ≥ 3, as v6 documents;
+- DiscreteTransition declares its traits by hand, with no `@node`.
+
 **Exit criteria**
 - [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
       `laplace.jl` had no consumer; step 4 moved them and their tests to `legacy/v6/`, and
@@ -2058,11 +2184,14 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
       `smoothRTS`, `approximations.jl` and `shared.jl` were ported in Phase 4.5 step 3, as pure
       numerics. **Standalone — must not depend on `MessagePassingRulesBase`**, nor on any
       distribution package. Utilities that algorithms use, not algorithms. The deps today are
-      `LinearAlgebra` and `FastCholesky`, and `Linearization` brings `ForwardDiff`. No cubature
-      package, no `DiffResults` (it leaves with `cvi.jl`), no `Optim`
+      `LinearAlgebra` and `FastCholesky`; `Linearization` brings `ForwardDiff`, and the
+      Gauss–Hermite cubature `FastGaussQuadrature` (entry brief). No `DiffResults` (it leaves
+      with `cvi.jl`), no `Optim`
 - [ ] numerical API carried over without broader redesign. FastCholesky is called directly
       until the numerical protocol (open item #13, parked) is settled
-- [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
+- [ ] `ghcubature` and `approximate_meancov` move to `MessagePassingRulesApproximations` with
+      `FastGaussQuadrature`, since Pólya, Probit and GCV all use them *(the Pólya package, until
+      the entry brief counted their users)*
 - [ ] confirm `Optim` no longer appears anywhere
 - [ ] non-standard nodes spun out, each into its node package (`INVENTORY.md`'s `node:X`): Flow,
       Autoregressive (with ConjugateAR), BIFM (with its `TerminalProdArgument` rules in
@@ -2072,10 +2201,10 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
       `DISCUSSION.md` §3.30). GP is not among them: it has no node in v6, and RxGP is its own
       package
 - [ ] the helpers in `legacy/v6/src/helpers/algebra/` go with their users, as `INVENTORY.md`
-      says: the permutation matrix to Flow, the standard basis vector to Autoregressive,
-      `common.jl`'s helpers to the nodes that call them, and the companion matrix is deleted;
-      `legacy/v6/src/fixes.jl`, the `ForwardDiff` hot-fix, goes with `Linearization` if it still
-      needs it and is dropped otherwise, so `legacy/` can go
+      says: the permutation matrix to Flow, the standard basis vector and the companion matrix
+      to Autoregressive, and `common.jl`'s helpers the Phase 6 nodes use to Standard;
+      `legacy/v6/src/fixes.jl`, the `ForwardDiff` hot-fix, is dropped, since only the deleted
+      `laplace.jl` and `cvi.jl` took a Hessian, so `legacy/` can go
 - [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
       becomes honest again (see `PLAN.md` § Licensing)
 - [ ] Probit and ContinuousTransition get their own algorithms from `ProbitMeta` and `CTMeta`,
@@ -2084,6 +2213,8 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
       gains a section on initial messages
 - [ ] surviving impure algorithms (BIFM and stateful projection algorithms) carry the
       `pure = false` marker under the agreed purity/RNG contract
+- [ ] the packages stay in the monorepo under `lib/`; the split into repositories is Phase 8
+      (`DISCUSSION.md` §3.40)
 
 ## Phase 7 — Complete the engine
 
@@ -2178,6 +2309,8 @@ this phase requires it to pass for release, rather than being its first executio
       the new packages and their consumers, in which `Pkg.Resolve.ResolverError` is a hard
       failure. Today `.github/workflows/IntegrationTest.yml` catches it and `exit(0)`s, so
       it would report green without running a single downstream test
+- [ ] the monorepo split into `ReactiveBayes/*` repositories, one per package, with their
+      history, at registration (`DISCUSSION.md` §3.40; `PLAN.md` had it at Phase 6)
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed.
       Work targets 1.13 only until then (§3.22); whether the 1.10 floor and its workarounds
       come back is decided here

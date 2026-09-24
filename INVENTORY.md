@@ -75,14 +75,14 @@ replacement".
 | `ExponentialFamily.NormalMeanPrecision` | `node` | `src/nodes/predefined/normal_mean_precision.jl` | `standard` |  |
 | `ExponentialFamily.NormalMeanVariance` | `node` | `src/nodes/predefined/normal_mean_variance.jl` | `standard` |  |
 | `Flow` | `node` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
-| `GCV` | `node` | `src/nodes/predefined/gcv.jl` | `node:GCV` | needs only StatsFuns |
+| `GCV` | `node` | `src/nodes/predefined/gcv.jl` | `node:GCV` | needs StatsFuns, and Gauss–Hermite cubature and `approximate_meancov` from `MessagePassingRulesApproximations` for its `ExponentialLinearQuadratic` (Phase 6 entry brief) |
 | `GammaMixture` | `node` | `src/nodes/predefined/gamma_mixture.jl` | `standard` | ~250-line clone of NormalMixture; collapses with groups |
 | `GaussianCoupling` | `node` | `src/nodes/predefined/gaussian_coupling.jl` | `node:GaussianCoupling` |  |
 | `HalfNormal` | `node` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
 | `IMPLY` | `node` | `src/nodes/predefined/implication.jl` | `standard` | logic |
 | `InverseWishart` | `node` | `src/nodes/predefined/wishart_inverse.jl` | `standard` |  |
 | `Mixture` | `node` | `src/nodes/predefined/mixture.jl` | `standard` | escapes `@node` entirely today; variadic groups delete ~70-85% |
-| `MultinomialPolya` | `node` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 via PolyaGammaHybridSamplers; also pulls ghcubature |
+| `MultinomialPolya` | `node` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 via PolyaGammaHybridSamplers; its energy uses Gauss–Hermite cubature, from `MessagePassingRulesApproximations` |
 | `MvNormalGamma` | `node` | `src/nodes/predefined/mv_normal_gamma.jl` | `standard` |  |
 | `MvNormalMeanScaleMatrixPrecision` | `node` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `standard` |  |
 | `MvNormalMeanScalePrecision` | `node` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `standard` |  |
@@ -132,8 +132,8 @@ replacement".
 | `CVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection`; `ProdCVI`'s own docstring already says so |
 | `CVIProjection` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
 | `CVISamplingStrategy` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
-| `CompanionMatrix` | `type` | `src/helpers/algebra/companion_matrix.jl` | `delete` | **no reference in `src/` or `test/`.** AR uses a companion-matrix representation but via its own `ARTransitionMatrix` (`autoregressive.jl:270`), which superseded this. Contributes 75 Aqua ambiguities. No replacement |
-| `CompanionMatrixTransposed` | `type` | `src/helpers/algebra/companion_matrix.jl` | `delete` | **no reference in `src/` or `test/`.** AR uses a companion-matrix representation but via its own `ARTransitionMatrix` (`autoregressive.jl:270`), which superseded this. Contributes 75 Aqua ambiguities. No replacement |
+| `CompanionMatrix` | `type` | `src/helpers/algebra/companion_matrix.jl` | `node:Autoregressive` | AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules, and its `ARunsafe` path uses its `inv` and `adjoint`; an earlier search for the type's name missed the constructor (Phase 6 entry brief). Its `*` methods contribute 75 Aqua ambiguities and are narrowed when it moves |
+| `CompanionMatrixTransposed` | `type` | `src/helpers/algebra/companion_matrix.jl` | `node:Autoregressive` | AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules, and its `ARunsafe` path uses its `inv` and `adjoint`; an earlier search for the type's name missed the constructor (Phase 6 entry brief). Its `*` methods contribute 75 Aqua ambiguities and are narrowed when it moves |
 | `CompiledFlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `CompositeFormConstraint` | `type` | `src/constraints/form.jl` | `engine` |  |
 | `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` |  |
@@ -164,7 +164,7 @@ replacement".
 | `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` |  |
 | `GammaMixture` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
 | `GammaMixtureNode` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
-| `GaussHermiteCubature` | `type` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
+| `GaussHermiteCubature` | `type` | `src/approximations/gausshermite.jl` | `approximations` | Pólya, Probit and GCV use it, so it goes to the numerics package with FastGaussQuadrature, over means and covariances only (Phase 6 entry brief, `DISCUSSION.md` §3.40) |
 | `GaussLaguerreQuadrature` | `type` | `src/approximations/gausslaguerre.jl` | `delete` | no in-tree consumer; takes DomainIntegrals with it; no replacement |
 | `GaussianCoupling` | `type` | `src/nodes/predefined/gaussian_coupling.jl` | `node:GaussianCoupling` |  |
 | `GaussianMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` | alias |
@@ -244,7 +244,7 @@ replacement".
 | `getlayers` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `getlogscale` | `function` | `src/annotations/logscale.jl` | `engine` | reads the engine's `AnnotationDict`; stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
 | `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
-| `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
+| `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `approximations` | Pólya, Probit and GCV use it, so it goes to the numerics package with FastGaussQuadrature, over means and covariances only (Phase 6 entry brief, `DISCUSSION.md` §3.40) |
 | `huge` | `const` | `src/ReactiveMP.jl` | `engine` | re-exported from TinyHugeNumbers by the engine; the rule packages take it from BayesBase |
 | `is_clamped` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `is_initial` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
