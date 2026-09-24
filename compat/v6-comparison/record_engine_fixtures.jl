@@ -140,6 +140,14 @@ cube_minus(x) = x^3 - x
     y ~ NormalMeanVariance(z, 0.1)
 end
 
+# Two Probit outputs of one weight: each rule towards `w` reads the message on its own edge,
+# which the other's message feeds, so they start from Probit's default initial message.
+@model function probit_ep(y)
+    w ~ NormalMeanVariance(0.0, 1.0)
+    y[1] ~ Probit(w)
+    y[2] ~ Probit(w)
+end
+
 # GaussianCoupling's improper message towards `c`, made proper by the observation's likelihood.
 @model function gaussian_coupling(y)
     x ~ NormalMeanPrecision(0.5, 2.0)
@@ -243,6 +251,11 @@ const MODELS = [
             ),
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
         ),
+    ),
+    (
+        "probit_ep",
+        "w ~ NMV(0, 1), y[1] ~ Probit(w) and y[2] ~ Probit(w) observed at 1 and 0; expectation propagation, each rule towards w starting from Probit's default initial message NMP(0, 100).",
+        () -> record("probit_ep"; description = "", model = probit_ep(), data = (y = [1.0, 0.0],), iterations = 5, returnvars = (:w,)),
     ),
     (
         "gaussian_coupling",

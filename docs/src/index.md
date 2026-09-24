@@ -15,6 +15,7 @@ The engine is one of a family of packages:
 | `MessagePassingRulesApproximations` | numerics for propagating moments through functions: the unscented transform, smoothing |
 | `DeltaMessagePassingRules` | the Delta node, for deterministic functions |
 | `GaussianCouplingMessagePassingRules` | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
+| `ProbitMessagePassingRules` | the Probit node, a binary output through the normal CDF, by expectation propagation |
 | `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
 
 !!! note
@@ -58,6 +59,7 @@ Pages = [
   "packages/approximations.md",
   "packages/delta.md",
   "packages/gaussian-coupling.md",
+  "packages/probit.md",
   "migration-guides/v6-to-v7.md",
   "extra/contributing.md",
   "extra/methods.md",

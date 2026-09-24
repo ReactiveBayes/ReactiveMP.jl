@@ -344,3 +344,20 @@ end
     # other, in another order within an iteration. The values agree.
     @test compare_engine_trajectory(trajectory, H.fixture("gaussian_coupling"); atol = 1.0e-9, trace_order = :within_iteration, collapse_repeats = true) === :agree
 end
+
+@testitem "engine:fixture:probit_ep" tags = [:engine] setup = [EngineHarness] begin
+    # Each Probit's rule towards `w` reads the message on its own edge, which the other Probit's
+    # message feeds: they start from the node's default initial message, NMP(0, 100).
+    using ExponentialFamily, StandardMessagePassingRules, ProbitMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    w = H.random!(graph)
+    y1, y2 = H.data!(graph), H.data!(graph)
+    H.node!(graph, NormalMeanVariance, [(:out, w), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, Probit, [(:out, y1), (:in, w)])
+    H.node!(graph, Probit, [(:out, y2), (:in, w)])
+
+    trajectory = H.run(graph; id = "probit_ep", data = [y1 => 1.0, y2 => 0.0], iterations = 5, posteriors = [:w => w])
+    @test compare_engine_trajectory(trajectory, H.fixture("probit_ep"); atol = 1.0e-9) === :agree
+end

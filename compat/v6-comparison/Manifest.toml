@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "86459a80958b17b4effef0500896b682fd86b812"
+project_hash = "b5c2ff00581bc0daa5d767c2b8d8aea18aa67b8f"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -1016,6 +1016,12 @@ version = "1.6.0"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 version = "1.11.0"
+
+[[deps.ProbitMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "StatsFuns"]
+path = "../../lib/ProbitMessagePassingRules"
+uuid = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
+version = "0.1.0-DEV"
 
 [[deps.ProgressMeter]]
 deps = ["Distributed", "Printf"]

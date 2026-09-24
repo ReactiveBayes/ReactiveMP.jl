@@ -73,9 +73,9 @@ when NMV was ported in step 3**, and the comparison declares it.
 
 ```bash
 git switch refactor/rule-node-system-rewrite && git pull
-make test test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling
+make test test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit
 julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling; do
+for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit; do
     julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
 done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
@@ -2407,6 +2407,20 @@ GCV; the guide's entries for the three, which close the step. A commit each.
   the node's two messages otherwise within an iteration, so `compare_engine_trajectory` gains
   `collapse_repeats`, declaring the repeats, and the test declares both. The docs page is
   *Rule packages › GaussianCoupling*.
+- *Probit — done.* `lib/ProbitMessagePassingRules` (`make test-probit`): the node, with
+  `initial_messages = [:in => NormalMeanPrecision(0.0, 100.0)]`, and its algorithm `ProbitEP(; p =
+  32)`, declaring `:out => (m[:in],)` and `:in => (m[:out], m[:in])`. *Found:* `check_rules`
+  requires a rule under an algorithm to consume exactly its declared inputs, so v6's rules that
+  read `q_out`, `q_in`, or `m_out` alone cannot be `ProbitEP`'s. They are `DefaultAlgorithm`'s,
+  the default scheme choosing between messages and marginals by the factorisation, as v6's
+  non-EP behaviour did; only the `(q_out, m_in)` forwarding rule, which no algorithm reaches, is
+  not ported. The energy is under both, with 32 points under the default. *Corrected:* the energy
+  took `log(normcdf(x))`, which underflows at far cubature points: Inf, or NaN for a point-mass
+  output, for a wide `q(in)` and 100 points; it takes `normlogcdf`, declared in the comparison.
+  v6's tables pass with their promotion checks; the marginal, untested in v6, is checked against
+  the cavity times the EP message and against the closed form. `compare_probit.jl`: 205 checks,
+  the underflow cases declared. `probit_ep`, two Probit outputs of one weight, agrees with v6
+  call by call, which only the declared initial message makes possible.
 
 
 

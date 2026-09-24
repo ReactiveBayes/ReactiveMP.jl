@@ -22,6 +22,7 @@ GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassin
 MessagePassingRulesApproximations = {path = "lib/MessagePassingRulesApproximations"}
 MessagePassingRulesBase = {path = "lib/MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "lib/MessagePassingRulesTestUtils"}
+ProbitMessagePassingRules = {path = "lib/ProbitMessagePassingRules"}
 StandardMessagePassingRules = {path = "lib/StandardMessagePassingRules"}
 
 [compat]
@@ -45,6 +46,7 @@ Documenter = "1"
 ExponentialFamily = "2.5.0"
 ExponentialFamilyProjection = "3"
 GaussianCouplingMessagePassingRules = "0.1"
+ProbitMessagePassingRules = "0.1"
 InteractiveUtils = "1.11"
 JET = "0.9, 0.10, 0.11, 0.12"
 Logging = "1.11"
@@ -73,6 +75,7 @@ Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+ProbitMessagePassingRules = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
@@ -81,4 +84,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "BenchmarkTools", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "REPL", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BenchmarkTools", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "ProbitMessagePassingRules", "REPL", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]

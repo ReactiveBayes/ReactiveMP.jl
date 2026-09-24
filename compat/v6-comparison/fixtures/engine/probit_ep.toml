@@ -1,0 +1,106 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "w ~ NMV(0, 1), y[1] ~ Probit(w) and y[2] ~ Probit(w) observed at 1 and 0; expectation propagation, each rule towards w starting from Probit's default initial message NMP(0, 100)."
+free_energy = [1.7922843762490417, 1.7917882558964977, 1.791788143729154, 1.7917881440804457, 1.7917881440795143]
+id = "probit_ep"
+
+    [trajectory.posteriors.w]
+    params = [-1.48991929904696e-13, 2.2195926157418486]
+    type = "NormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.7989607940560118, 0.6343147978113848]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [-0.8461722734169282, 0.6054898210399018]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.8468530045776794, 0.6096745348373132]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [-0.8467602215878851, 0.6098038775507253]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.8467573593545193, 0.6097966851030339]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [-0.846757518518535, 0.609796297021165]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.8467575271065457, 0.6097963068884593]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [-0.8467575268881883, 0.6097963078787809]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.8467575268662734, 0.6097963078720507]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Probit"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [-0.8467575268664224, 0.6097963078697979]
+        type = "NormalWeightedMeanPrecision"

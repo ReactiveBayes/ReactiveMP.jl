@@ -1,0 +1,45 @@
+name = "ProbitMessagePassingRules"
+uuid = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
+version = "0.1.0-DEV"
+
+# The Probit node, a binary output through the standard normal CDF of its input, with its own
+# algorithm, expectation propagation. INVENTORY.md records this package as `node:Probit`.
+
+[deps]
+BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
+MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
+MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+
+[sources]
+MessagePassingRulesApproximations = {path = "../MessagePassingRulesApproximations"}
+MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
+MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
+
+[compat]
+Aqua = "0.8"
+BayesBase = "1.5"
+Distributions = "0.25"
+Documenter = "1"
+ExponentialFamily = "2.5"
+MessagePassingRulesApproximations = "0.1"
+MessagePassingRulesBase = "0.1"
+MessagePassingRulesTestUtils = "0.1"
+Pkg = "1.11"
+StatsFuns = "1"
+Test = "1.11"
+TestItemRunner = "1"
+julia = "1.11"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
+
+[targets]
+test = ["Aqua", "Documenter", "MessagePassingRulesTestUtils", "Pkg", "Test", "TestItemRunner"]
