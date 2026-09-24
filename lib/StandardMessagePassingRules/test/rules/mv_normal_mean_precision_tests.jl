@@ -17,6 +17,8 @@
                 (q = m(PointMass([-1.0, 2.0]), PointMass([7.0 -1.0; -1.0 9.0])),) => MvNormalMeanPrecision([-1.0, 2.0], [7.0 -1.0; -1.0 9.0]),
                 (q = m(MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), PointMass([2.0 0.0; 0.0 2.0])),) => MvNormalMeanPrecision([1.0, 2.0], [2.0 0.0; 0.0 2.0]),
                 (m = NamedTuple{(other,)}((PointMass([1.0, 3.0]),)), q = (Λ = PointMass([2.0 0.0; 0.0 2.0]),)) => MvNormalMeanPrecision([1.0, 3.0], [2.0 0.0; 0.0 2.0]),
+                (m = NamedTuple{(other,)}((MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]),)), q = (Λ = PointMass([6.0 4.0; 4.0 8.0] ./ 4),)) =>
+                    MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0] + inv([6.0 4.0; 4.0 8.0] ./ 4)),
             ],
         )
         @test_message_update_rule(

@@ -135,7 +135,7 @@ function verify_message_update_rule(node, target::Symbol; m = NamedTuple(), q = 
         spec isa MessagePassingRulesBase.RuleSpec || throw(MessagePassingRulesBase.RuleNotFoundError(spec))
         record_selected_rule!(spec, source)
         store = MessagePassingRulesBase.AnnotationStore()
-        output = MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, MessagePassingRulesBase.RuleContext(), args, MessagePassingRulesBase.RuleAnnotations(out = store), resolved_target)
+        output = MessagePassingRulesBase.execute_rule(spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), MessagePassingRulesBase.RuleContext(), args, MessagePassingRulesBase.RuleAnnotations(out = store), resolved_target)
         return output, MessagePassingRulesBase.getannotation(store, :logscale, nothing)
     end
     return verify_message_update(message, MessagePassingRulesBase.nodefunction(node), MessagePassingRulesBase.interfaces(node), target; m, q, points, atol, source)

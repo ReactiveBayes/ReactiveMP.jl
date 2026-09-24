@@ -97,6 +97,11 @@ end
                 loggamma(2.0) + 2 * log(0.5) - (2 - 1) * (digamma(3.0) + log(2.0)) + 6 / 0.5,
         ],
     )
+    # A Gamma q_α, E[α] = 2: E[loggamma(α)] has no closed form, and is ExponentialFamily's, which
+    # is Float64 only (ExponentialFamily.jl#322).
+    q_α = GammaShapeRate(4.0, 2.0)
+    @test call_average_energy(Gamma; q = (out = Gamma(3.0, 2.0), α = q_α, θ = PointMass(0.5))) ≈
+        mean(loggamma, q_α) + 2 * log(0.5) - (2 - 1) * (digamma(3.0) + log(2.0)) + 6 / 0.5
     @test_message_update_rule(
         node = GammaInverse, target = :out,
         cases = [

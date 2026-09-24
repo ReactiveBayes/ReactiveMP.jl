@@ -62,6 +62,9 @@ function Base.show(io::IO, ::MIME"text/plain", spec::NodeSpec)
     println(io, "  interfaces:        ", join(map(interface_label, spec.interfaces), ", "))
     println(io, "  default algorithm: ", spec.algorithm)
     println(io, "  static inputs:     ", spec.static_inputs)
+    isempty(spec.matched_groups) || println(io, "  matched groups:    ", join(map(g -> join(g, " = "), spec.matched_groups), ", "))
+    spec.min_group_length == 1 || println(io, "  min group length:  ", spec.min_group_length)
+    spec.factorisation === :any || println(io, "  factorisation:     ", spec.factorisation)
     print(io, "  defined:           ", spec.file, ":", spec.line)
     return nothing
 end

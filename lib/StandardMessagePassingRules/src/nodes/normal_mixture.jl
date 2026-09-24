@@ -5,7 +5,8 @@ A mixture of normals: `out` is drawn from the component `switch` selects, with m
 precisions `p`, both groups with one member per component. A component is a
 `NormalMeanPrecision` or, when `out` is a vector, an `MvNormalMeanPrecision`, whose precision
 is Wishart rather than Gamma. v6 called it `NormalMixture{N}`; the number of components is now
-the groups' length, not a type parameter.
+the groups' length, not a type parameter. A node needs at least two components, as many
+means as precisions, and a mean-field factorisation.
 
 Its rules run under its own algorithm, [`NormalMixtureVMP`](@ref), and are always variational:
 they consume marginals only, whatever the factorisation.
@@ -41,6 +42,9 @@ struct NormalMixtureVMP <: AbstractAlgorithm end
     type = Stochastic,
     interfaces = [:out, :switch, :m..., :p...],
     algorithm = NormalMixtureVMP,
+    matched_groups = [(:m, :p)],
+    min_group_length = 2,
+    factorisation = :meanfield,
     dependencies = [
         :out => (q[:switch], q[:p...], q[:m...]),
         :switch => (q[:out], q[:p...], q[:m...]),

@@ -83,6 +83,10 @@ Create a factor node of type `fform` connected to variables.
 - `nodefn` is the function the node computes, which a rule reaches with
   `MessagePassingRulesBase.getnodefn(ctx.node, Target(:out))`.
 
+What the node's declaration requires of the graph is checked here: its `matched_groups` must
+have as many members as each other, every group at least `min_group_length`, and a node
+declared `factorisation = :meanfield` accepts only clusters of one interface each.
+
 A node declared with `static_inputs = :fold` must be given `nodefn`. The members of its group
 connected to a constant or to data are folded into it: they get no interface, the others are
 numbered `1:n` in their order, and every update waits for the folded values.
@@ -95,7 +99,9 @@ function factornode(fform::F, interfaces, factorisation = nothing; nodefn = noth
     given = resolve_interfaces(fform, interfaces)
     given, statics = fold_static_inputs(fform, spec, given)
     processed = prepare_interfaces(fform, spec, given)
+    check_group_lengths(fform, spec, processed)
     clusters = collect_factorisation(fform, spec, processed, factorisation)
+    check_factorisation(fform, spec, clusters)
     return FactorNode(fform, processed, FactorNodeLocalClusters(processed, clusters), node_function(fform, spec, nodefn, statics))
 end
 
@@ -207,6 +213,30 @@ function prepare_interfaces(fform, spec::NodeSpec, given::AbstractDict)
     end
     isempty(given) || throw(ArgumentError("`$(fform)` has no interfaces $(join(repr.(collect(keys(given))), ", ")); its interfaces are $(MessagePassingRulesBase.interfaces(fform))"))
     return [processed...]
+end
+
+# What the declaration requires of the groups: at least `min_group_length` members each, and
+# as many members as each other within a set of `matched_groups`.
+function check_group_lengths(fform, spec::NodeSpec, interfaces)
+    lengths = Dict(i.name => count(interface -> interface isa IndexedNodeInterface && name(interface) === i.name, interfaces) for i in spec.interfaces if i.group)
+    for (group, n) in lengths
+        n >= spec.min_group_length || throw(ArgumentError("`$(fform)`: the group `$(group)` needs at least $(spec.min_group_length) members, got $(n)"))
+    end
+    for matched in spec.matched_groups
+        counts = map(group -> lengths[group], matched)
+        allequal(counts) || throw(
+            ArgumentError("`$(fform)`: the groups $(join(map(g -> "`$g`", matched), " and ")) must have as many members as each other, got $(join(counts, " and "))"),
+        )
+    end
+    return nothing
+end
+
+# A node declared `factorisation = :meanfield` accepts only clusters of one interface each.
+function check_factorisation(fform, spec::NodeSpec, clusters)
+    spec.factorisation === :meanfield && any(cluster -> length(cluster) > 1, clusters) && throw(
+        ArgumentError("`$(fform)` accepts only a mean-field factorisation, each interface in a cluster of its own; got clusters of $(join(map(length, clusters), ", ")) interfaces"),
+    )
+    return nothing
 end
 
 # The clusters as tuples of positions into the processed interfaces, sorted within each

@@ -118,3 +118,16 @@ A *message mapping* defines how messages are transformed or mapped during the pr
 ```@docs
 ReactiveMP.MessageMapping
 ```
+
+### [Rule arguments](@id lib-messages-rule-arguments)
+
+A mapping hands a rule the data of the messages and marginals it depends on, keyed as the rule
+declares them, and their annotations alongside.
+
+```@docs
+ReactiveMP.rule_arguments
+ReactiveMP.rule_messages
+ReactiveMP.rule_marginals
+ReactiveMP.rule_annotations
+ReactiveMP.EmptyGroup
+```

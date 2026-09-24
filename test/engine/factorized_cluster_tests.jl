@@ -4,6 +4,7 @@
 
 @testitem "engine:factorized-cluster:arguments" tags = [:engine] begin
     using BayesBase, Distributions, ExponentialFamily, MessagePassingRulesBase
+    using MessagePassingRulesBase: check_factorized_cluster, ClusterTarget
     import ReactiveMP: rule_marginals, rule_arguments, getdata, getannotations, Marginal, AnnotationDict
 
     split = Marginal(FactorizedCluster((:out,) => PointMass(1.0), (:μ,) => Normal(0.0, 2.0)), false, false)
@@ -23,15 +24,25 @@
     ann = rule_marginals(getannotations, Val(((:out, :μ), :v)), (split, v))
     @test ann[:out] isa AnnotationDict && ann[:out] === ann[:μ]
 
-    # Blocks that do not cover the cluster's members once each, in its order, are an error,
-    # never a silent renaming. The helpers the generator calls are defined above it, so this
-    # holds without a package image too (`julia --compiled-modules=no`).
-    wrong = Marginal(FactorizedCluster((:out,) => PointMass(1.0), (:v,) => PointMass(2.0)), false, false)
-    @test_throws "do not cover the cluster's members" rule_marginals(getdata, Val(((:out, :μ), :v)), (wrong, v))
+    # Any partition `check_factorized_cluster` accepts is distributed: the blocks may come in
+    # any order and a block need not be contiguous, since each is found by its labels.
     swapped = Marginal(FactorizedCluster((:μ,) => Normal(0.0, 2.0), (:out,) => PointMass(1.0)), false, false)
-    @test_throws "do not cover the cluster's members" rule_marginals(getdata, Val(((:out, :μ),)), (swapped,))
+    q = rule_marginals(getdata, Val(((:out, :μ),)), (swapped,))
+    @test q[:out] === PointMass(1.0) && q[:μ] === Normal(0.0, 2.0)
+    apart = FactorizedCluster((:a, :c) => joint, (:b,) => PointMass(2.0))
+    @test check_factorized_cluster(ClusterTarget((:a, :b, :c)), apart) === apart
+    q = rule_marginals(getdata, Val(((:a, :b, :c),)), (Marginal(apart, false, false),))
+    @test q[:a, :c] === joint && q[:b] === PointMass(2.0)
+
+    # Blocks that are not a partition of the cluster's members, each in its order, are an
+    # error, never a silent renaming. The helpers the generator calls are defined above it,
+    # so this holds without a package image too (`julia --compiled-modules=no`).
+    wrong = Marginal(FactorizedCluster((:out,) => PointMass(1.0), (:v,) => PointMass(2.0)), false, false)
+    @test_throws "are not a partition of the cluster's members" rule_marginals(getdata, Val(((:out, :μ), :v)), (wrong, v))
     renamed = Marginal(FactorizedCluster((:out,) => PointMass(1.0), (:μ,) => Normal(0.0, 2.0)), false, false)
-    @test_throws "do not cover the cluster's members" rule_marginals(getdata, Val(((:a, :b),)), (renamed,))
+    @test_throws "are not a partition of the cluster's members" rule_marginals(getdata, Val(((:a, :b),)), (renamed,))
+    unordered = Marginal(FactorizedCluster((:c, :a) => joint, (:b,) => PointMass(2.0)), false, false)
+    @test_throws "are not a partition of the cluster's members" rule_marginals(getdata, Val(((:a, :b, :c),)), (unordered,))
 
     # A joint that does not split is passed as it is.
     whole = Marginal(joint, false, false)

@@ -80,7 +80,9 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
     default initial message on its definition, separately from `dependencies`.
   Mixture's `RequireMarginal` path was unreachable in v6 and goes with them. The user
   documentation is written in Phase 5: a page on declaring dependencies in the new terms
-  only, and a `MIGRATION.md` section mapping the old types to the new pieces.
+  only, and a `MIGRATION.md` section mapping the old types to the new pieces. *(The guide is
+  the docs page `docs/src/migration-guides/v6-to-v7.md`, not a `MIGRATION.md`, `DISCUSSION.md` §3.36; both were
+  written in Phase 5 step 9.)*
 - **There is one algorithm, `DefaultAlgorithm()`, and it is not an inference scheme.**
   Bethe free energy minimisation. Belief propagation, variational message passing and their
   structured forms all come from the **factorisation**, through the engine's default
@@ -709,7 +711,8 @@ once, at a known gate, beats paying a coordination cost on every commit until th
 ReactiveMP, and they are differently named, so `ReactiveMP@6.5.0` and
 `StandardMessagePassingRules` coexist happily: the Phase 4 migration checker can call
 `ReactiveMP.rule(...)` and `message_passing_rule(...)` in one process, and `MIGRATION.md`'s
-before/after doctests can both execute. What cannot coexist is ReactiveMP v7 against v6 —
+before/after doctests can both execute. *(Superseded by `DISCUSSION.md` §3.36: the guide is a docs
+page whose v7 side alone runs; its v6 side is shown, never executed.)* What cannot coexist is ReactiveMP v7 against v6 —
 same package name. **So Phase 4.5 and Phase 7 engine comparisons must run against values
 recorded from v6, not a live side-by-side**, which is why that checker must
 capture results rather than only assert equality. The engine itself is rewritten in place
@@ -1160,8 +1163,8 @@ answered per rule by reading the v6 node's interfaces. See `DISCUSSION.md` §3.2
 
 ## Migration guide (published, for downstream authors)
 
-Distinct from the internal transform above. That is a one-off tool we run over our own 490
-rule definitions; **this is a durable, published document** for anyone maintaining their own nodes and
+Distinct from the internal transform above, which was dropped (Phase 5 entry brief), the rules
+being ported by hand or by agent instead; **this is a durable, published document** for anyone maintaining their own nodes and
 rules — RxGP, and colleagues with custom rules in their own codebases. It must work for a
 human reading it *and* for an AI agent pointed at it, since that is how much of the
 downstream migration will actually happen.
@@ -1332,8 +1335,10 @@ need special handling. A property test complementing the tables, tagged `:slow`.
   system can do this, since rules exist only as methods.
   **Coverage must record the rule actually selected**, not merely that a test mentions some
   node and edge. Otherwise a broad fallback satisfies the check while the specialised rule
-  it was meant to cover never executes.
-- Coverage floor, fail on decrease.
+  it was meant to cover never executes. *(Enforced since the Phase 5 post-close review: the
+  Standard and Delta suites run `check_rule_coverage` after an unfiltered run, and a direct
+  `call_*` records its rule as a table case does, `DISCUSSION.md` §3.39.)*
+- Coverage floor, fail on decrease. *(The gate requires zero gaps, which is the floor.)*
 
 ## Documentation
 

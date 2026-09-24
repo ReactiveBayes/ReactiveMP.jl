@@ -80,6 +80,7 @@ Random variables represent latent (unobserved) quantities in the model. During i
 ```@docs
 ReactiveMP.RandomVariable
 ReactiveMP.EqualityChain
+ReactiveMP.EqualityNode
 ReactiveMP.randomvar
 ```
 

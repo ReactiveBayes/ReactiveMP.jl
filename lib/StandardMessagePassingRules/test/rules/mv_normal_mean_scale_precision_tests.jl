@@ -18,6 +18,7 @@
         cases = [
             (q = (out = MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]), γ = GammaShapeRate(1.0, 1.0)),) => MvNormalMeanScalePrecision([2.0, 1.0], 1.0),
             (m = (out = MvNormalMeanCovariance([0.0, 0.0], [7.0 -1.0; -1.0 9.0]),), q = (γ = GammaShapeRate(4.0, 2.0),)) => MvNormalMeanCovariance([0.0, 0.0], [7.5 -1.0; -1.0 9.5]),
+            (m = (out = MvNormalMeanScalePrecision([2.0, 1.0], 3.0),), q = (γ = Gamma(1.0, 1.0),)) => MvNormalMeanScalePrecision([2.0, 1.0], 3.0 * 1.0 / (3.0 + 1.0)),
         ],
     )
     @test_message_update_rule(

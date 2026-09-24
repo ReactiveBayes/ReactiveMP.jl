@@ -21,4 +21,9 @@ include("derivatives.jl")
 include("migration.jl")
 include("engine_fixtures.jl")
 
+function __init__()
+    push!(MessagePassingRulesBase.INTERACTIVE_SELECTION_OBSERVERS, record_direct_call!)
+    return nothing
+end
+
 end

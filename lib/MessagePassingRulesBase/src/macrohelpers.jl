@@ -18,12 +18,8 @@ end
 
 quoted_symbol(ex) = ex isa QuoteNode && ex.value isa Symbol ? ex.value : nothing
 
-"""
-    node_dispatch_type(node)
-
-The argument type rules and traits dispatch on for a node: `Type{<:node}` for a type,
-`typeof(node)` for a function.
-"""
+# The argument type rules and traits dispatch on for a node: `Type{<:node}` for a type,
+# `typeof(node)` for a function.
 node_dispatch_type(node::Type) = Type{<:node}
 node_dispatch_type(node) = typeof(node)
 

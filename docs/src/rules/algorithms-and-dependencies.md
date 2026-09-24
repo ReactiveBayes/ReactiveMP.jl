@@ -52,6 +52,26 @@ MessagePassingRulesBase.DependenciesSpec
 MessagePassingRulesBase.dependencies_spec
 ```
 
+An engine reads a declaration through its parts: each target's inputs, each input selecting an
+interface, a whole group, a group's aligned member, every member but the target, or members a
+function picks.
+
+```@docs
+MessagePassingRulesBase.TargetDependencies
+MessagePassingRulesBase.target_dependencies
+MessagePassingRulesBase.Dependency
+MessagePassingRulesBase.DependencySelector
+MessagePassingRulesBase.SingleInterface
+MessagePassingRulesBase.AllGroupMembers
+MessagePassingRulesBase.AlignedGroupMember
+MessagePassingRulesBase.AllGroupMembersButSelf
+MessagePassingRulesBase.CustomGroupSelector
+MessagePassingRulesBase.select_group_members
+MessagePassingRulesBase.selected_indices
+MessagePassingRulesBase.selection_arity
+MessagePassingRulesBase.free_energy_partition
+```
+
 ## [Purity](@id rules-algorithms-purity)
 
 A rule is pure unless declared otherwise: its result depends only on its inputs and its
@@ -72,12 +92,30 @@ the closest candidates.
 
 ```@docs
 MessagePassingRulesBase.RuleSpec
+MessagePassingRulesBase.InputSpec
 MessagePassingRulesBase.RuleNotFound
 MessagePassingRulesBase.RuleNotFoundError
 MessagePassingRulesBase.find_message_rule
-MessagePassingRulesBase.registered_rules
+MessagePassingRulesBase.find_marginal_rule
+MessagePassingRulesBase.find_average_energy
+MessagePassingRulesBase.rule_algorithm
 MessagePassingRulesBase.missing_services
 MessagePassingRulesBase.check_rules
 MessagePassingRulesBase.RuleIssue
 MessagePassingRulesBase.check_rule_ambiguities
+```
+
+The registries list what each package defined, for listings, coverage and display.
+
+```@docs
+MessagePassingRulesBase.Registry
+MessagePassingRulesBase.registries
+MessagePassingRulesBase.registered_rules
+MessagePassingRulesBase.registered_nodes
+MessagePassingRulesBase.registered_dependencies
+MessagePassingRulesBase.list_rules
+MessagePassingRulesBase.duplicate_rules
+MessagePassingRulesBase.RuleCoverage
+MessagePassingRulesBase.rule_coverage
+MessagePassingRulesBase.visualize_spec
 ```

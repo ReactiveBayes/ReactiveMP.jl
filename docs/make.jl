@@ -14,8 +14,8 @@ makedocs(
     modules = MODULES,
     clean = true,
     sitename = "ReactiveMP.jl",
-    # Every exported, documented name appears on a page.
-    checkdocs = :exports,
+    # Every docstring appears on a page, exported or not; an internal helper has a comment.
+    checkdocs = :all,
     pages = [
         "Introduction" => "index.md",
         "Concepts" => [

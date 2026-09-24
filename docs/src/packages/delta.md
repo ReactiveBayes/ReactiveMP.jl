@@ -21,4 +21,7 @@ activate!(node, FactorNodeActivationOptions(; algorithm = DeltaApproximation(; m
 DeltaFn
 DeltaApproximation
 is_delta_node_compatible
+DeltaMessagePassingRules.UnknownInverse
+DeltaMessagePassingRules.KnownInverse
+DeltaMessagePassingRules.approximate_normal
 ```

@@ -106,7 +106,7 @@ function run_case(table::TableContext, args, ctx, output = nothing)
     spec = resolve(table, args)
     spec isa MessagePassingRulesBase.RuleSpec || return spec, nothing, nothing
     annotations = MessagePassingRulesBase.RuleAnnotations(out = MessagePassingRulesBase.AnnotationStore())
-    result = MessagePassingRulesBase.execute_rule(spec, output, table.algorithm, ctx, args, annotations, table.target)
+    result = MessagePassingRulesBase.execute_rule(spec, output, MessagePassingRulesBase.rule_algorithm(spec, table.algorithm), ctx, args, annotations, table.target)
     return spec, result, annotations
 end
 
@@ -133,7 +133,7 @@ function check_case(table::TableContext, index, inputs::CaseInputs, expected; at
     end
 
     if spec.inplace
-        buffer = spec.prealloc(table.algorithm, inputs.ctx, args, table.target)
+        buffer = spec.prealloc(MessagePassingRulesBase.rule_algorithm(spec, table.algorithm), inputs.ctx, args, table.target)
         _, inplace_result, _ = run_case(table, args, inputs.ctx, buffer)
         T = output_float_type(result)
         record_check(inplace_result === buffer, :(rule!(buffer) === buffer), "$label: `rule!` returned a new object instead of writing into its buffer", table.source)
@@ -173,7 +173,7 @@ end
 # specialisation on a node that is a type; without it Julia passes a `DataType` through and
 # resolution turns dynamic.
 function measure_allocations(spec, table, args, ctx)
-    output = spec.inplace ? spec.prealloc(table.algorithm, ctx, args, table.target) : nothing
+    output = spec.inplace ? spec.prealloc(MessagePassingRulesBase.rule_algorithm(spec, table.algorithm), ctx, args, table.target) : nothing
     kind = Val(table.kind)
     run_measured(kind, output, table.node, table.target, table.algorithm, args, ctx)
     return run_measured(kind, output, table.node, table.target, table.algorithm, args, ctx)

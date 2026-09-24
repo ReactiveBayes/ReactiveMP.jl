@@ -59,6 +59,23 @@
         body = (output::AbstractVector, args) -> (output .= 2 .* args.m[:x]; output),
     )
 
+    # Default rules an extension inherits. Reached under `Extended`, they run with
+    # `DefaultAlgorithm()` in their `algo` slot, so a helper typed `::DefaultAlgorithm` is
+    # reachable from the body and from `preallocate`.
+    struct Extended <: DefaultAlgorithmExtension end
+    only_default(::DefaultAlgorithm, x) = x
+    struct Inherited end
+    @define_factor_node(node = Inherited, type = Deterministic, interfaces = [:out, :x])
+    @define_message_update_rule(
+        node = Inherited, target = :out, args = (m[:x]::PointMass,),
+        body = (algo, args) -> PointMass(2 * only_default(algo, mean(args.m[:x]))),
+    )
+    @define_message_update_rule(
+        node = Inherited, target = :x, inplace = true, args = (m[:out]::AbstractVector,),
+        preallocate = (algo, args) -> similar(only_default(algo, args.m[:out])),
+        body = (output::AbstractVector, algo, args) -> (output .= only_default(algo, args.m[:out]) ./ 2; output),
+    )
+
     # `rule!` ignores its buffer and allocates: disagrees on identity and allocates.
     @define_message_update_rule(
         node = Buffered, target = :x, inplace = true, args = (m[:out]::Vector{Float64},),

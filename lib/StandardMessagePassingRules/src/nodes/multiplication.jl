@@ -69,13 +69,9 @@ function sampled_product_logpdf(rng, m_A, m_in)
     return ContinuousUnivariateLogPdf(z -> log(sum(a -> pdf(m_in, z / a) / abs(a), as)))
 end
 
-"""
-    besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
-
-The log-density of the product of two Gaussians with means `mx`, `my`, variances `vx`, `vy`
-and correlation `rho`, as a series of modified Bessel functions of the second kind truncated
-at `truncation`, evaluated at `x + jitter`.
-"""
+# The log-density of the product of two Gaussians with means `mx`, `my`, variances `vx`, `vy`
+# and correlation `rho`, as a series of modified Bessel functions of the second kind truncated
+# at `truncation`, evaluated at `x + jitter`.
 function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1.0e-8)
     T = float(promote_type(typeof(mx), typeof(vx), typeof(my), typeof(vy), typeof(rho)))
     return function (x)

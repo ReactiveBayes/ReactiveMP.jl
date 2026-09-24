@@ -101,7 +101,7 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `@average_energy` | `macro` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `@average_energy` | `macro` | `src/score/score.jl` | `base` | became `@define_average_energy`; `score(AverageEnergy(), …)` became `message_passing_average_energy` |
 | `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
 | `@call_rule` | `macro` | `src/rule.jl` | `base` | renamed `@call_message_update_rule`, with `@call_marginal_update_rule` and `@call_average_energy`; see PLAN.md § Naming |
 | `@logscale` | `macro` | `src/rule.jl` | `base` | deleted as a macro; becomes `annotate!(ann, :logscale, v)` on the annotations body slot |
@@ -118,10 +118,10 @@ replacement".
 | `AbstractMessage` | `type` | `src/message.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Adam` | `type` | `src/approximations/optimizers/adam.jl` | `delete` | optimiser for the old `ProdCVI` path; use Optimisers.jl directly |
 | `AdditiveCouplingLayer` | `type` | `src/nodes/predefined/flow/layers/additive_coupling_layer.jl` | `node:Flow` |  |
-| `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `base` |  |
-| `AddonMemory` | `function` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `engine` | the v5 name; its error points to `LogScaleAnnotations`. stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
+| `AddonMemory` | `function` | `src/annotations/input_arguments.jl` | `engine` | the v5 name; its error points to `InputArgumentsAnnotations`. stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
 | `Autoregressive` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` | alias |
-| `AverageEnergy` | `type` | `src/score/score.jl` | `base` | `score` becomes `message_passing_average_energy` |
+| `AverageEnergy` | `type` | `src/score/score.jl` | `delete` | replaced by `message_passing_average_energy` / `call_average_energy` in the base package; the v6 → v7 guide maps `score(AverageEnergy(), …)` to `call_average_energy` |
 | `BIFM` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
 | `BIFMHelper` | `type` | `src/nodes/predefined/bifm_helper.jl` | `node:BIFM` |  |
 | `BIFMMeta` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
@@ -148,7 +148,7 @@ replacement".
 | `DeltaFnNode` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | replaced: the engine's `FactorNode` is the node object, holding the function and its folded static inputs (`StaticFold`); `DeltaFn{F}` is the engine-independent node declaration (case (d)) |
 | `DeltaMeta` | `type` | `src/nodes/predefined/delta/delta.jl` | `node:Delta` | became Delta's own algorithm, `DeltaApproximation(; method, inverse)`: the approximation method and the optional inverse (case (d)) |
 | `Deterministic` | `type` | `src/nodes/nodes.jl` | `base` |  |
-| `DifferentialEntropy` | `type` | `src/score/score.jl` | `base` | entropy operation retained separately from average energy |
+| `DifferentialEntropy` | `type` | `src/score/score.jl` | `engine` | the entropy term of the engine's Bethe free energy (`src/score/score.jl`); average energies are `message_passing_average_energy` in the base package |
 | `DiscreteTransition` | `type` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` |  |
 | `FactorBoundFreeEnergy` | `type` | `src/score/node.jl` | `engine` | walks the graph |
 | `FactorNode` | `type` | `src/nodes/nodes.jl` | `engine` |  |
@@ -172,12 +172,12 @@ replacement".
 | `HalfNormal` | `type` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
 | `IMPLY` | `type` | `src/nodes/predefined/implication.jl` | `standard` |  |
 | `ImportanceSamplingApproximation` | `type` | `src/approximations/importance.jl` | `delete` | no in-tree consumer; no replacement |
-| `InputArgumentsAnnotations` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `InputArgumentsAnnotations` | `type` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
 | `InputLayer` | `type` | `src/nodes/predefined/flow/layers/input_layer.jl` | `node:Flow` |  |
 | `InverseWishart` | `type` | `src/nodes/predefined/wishart_inverse.jl` | `standard` |  |
 | `LaplaceApproximation` | `type` | `src/approximations/laplace.jl` | `delete` | no in-tree consumer; takes Optim with it; no replacement |
 | `Linearization` | `type` | `src/approximations/linearization.jl` | `approximations` |  |
-| `LogScaleAnnotations` | `type` | `src/annotations/logscale.jl` | `base` |  |
+| `LogScaleAnnotations` | `type` | `src/annotations/logscale.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`). Log scales are experimental; Phase 7 decides whether to fix or drop them |
 | `Marginal` | `type` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Marginalisation` | `type` | `src/nodes/nodes.jl` | `delete` | dead dispatch axis, hardcoded at all 5 construction sites; absorbed by the algorithm axis |
 | `MeanBased` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
@@ -202,14 +202,14 @@ replacement".
 | `Probit` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` |  |
 | `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` | becomes Probit's own algorithm (its moment matching), declaring its dependencies (DISCUSSION §3.21) |
 | `ProdCVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection` |
-| `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
 | `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
 | `RandomVariable` | `type` | `src/variables/random.jl` | `engine` |  |
 | `RandomVariableActivationOptions` | `type` | `src/variables/random.jl` | `engine` |  |
 | `RequireEverythingFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RequireMarginalFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
-| `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
+| `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
 | `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` |  |
 | `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; 85 Aqua ambiguities, narrow first |
 | `Stochastic` | `type` | `src/nodes/nodes.jl` | `base` |  |
@@ -236,20 +236,20 @@ replacement".
 | `factornode` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `functional_dependencies` | `function` | `src/nodes/predefined/bifm.jl` | `base` | the dependency protocol itself; becomes `dependencies_spec` |
 | `functionalform` | `function` | `src/nodes/nodes.jl` | `engine` |  |
-| `get_rule_input_arguments` | `function` | `src/annotations/input_arguments.jl` | `base` | retains references to rule inputs *and* results; see open item #10 on buffer ownership |
-| `getannotations` | `function` | `src/annotations.jl` | `base` |  |
+| `get_rule_input_arguments` | `function` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
+| `getannotations` | `function` | `src/annotations.jl` | `engine` | reads a `Message`'s or `Marginal`'s `AnnotationDict`, which are the engine's; a rule reads annotations through `ann.m`/`ann.q` instead |
 | `getapproximation` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
 | `getdata` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `getinterfaces` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `getlayers` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
-| `getlogscale` | `function` | `src/annotations/logscale.jl` | `base` |  |
+| `getlogscale` | `function` | `src/annotations/logscale.jl` | `engine` | reads the engine's `AnnotationDict`; stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
 | `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
 | `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `node:Polya` | `ghcubature` follows `multinomial_polya`, taking FastGaussQuadrature with it |
-| `huge` | `const` | `src/ReactiveMP.jl` | `base` | re-exported from TinyHugeNumbers |
+| `huge` | `const` | `src/ReactiveMP.jl` | `engine` | re-exported from TinyHugeNumbers by the engine; the rule packages take it from BayesBase |
 | `is_clamped` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `is_initial` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
-| `isdeterministic` | `function` | `src/nodes/nodes.jl` | `base` |  |
-| `isstochastic` | `function` | `src/nodes/nodes.jl` | `base` |  |
+| `isdeterministic` | `function` | `src/nodes/nodes.jl` | `engine` | an engine predicate on `Stochastic`/`Deterministic`, which the base package defines; the base package has `sdtype` |
+| `isstochastic` | `function` | `src/nodes/nodes.jl` | `engine` | an engine predicate on `Stochastic`/`Deterministic`, which the base package defines; the base package has `sdtype` |
 | `laplace` | `function` | `src/approximations/laplace.jl` | `delete` | no in-tree consumer; no replacement |
 | `localmarginalnames` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `localmarginals` | `function` | `src/nodes/nodes.jl` | `engine` |  |
@@ -259,12 +259,12 @@ replacement".
 | `nr_params` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `randomvar` | `function` | `src/variables/random.jl` | `engine` |  |
 | `rule` | `function` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
-| `score` | `function` | `src/score/score.jl` | `base` | average-energy methods become `message_passing_average_energy`; entropy/KL helpers remain separate, graph score assembly stays in the engine |
+| `score` | `function` | `src/score/score.jl` | `engine` | the engine's free-energy terms (`DifferentialEntropy`, `FactorBoundFreeEnergy`, `VariableBoundEntropy`); average-energy methods became `message_passing_average_energy` in the base package |
 | `sdtype` | `function` | `src/nodes/nodes.jl` | `base` |  |
-| `skipindex` | `function` | `src/helpers/helpers.jl` | `base` |  |
+| `skipindex` | `function` | `src/helpers/helpers.jl` | `engine` | an engine helper (`src/helpers/helpers.jl`); no rule uses it |
 | `softdot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` |  |
 | `srcubature` | `function` | `src/approximations/sphericalradial.jl` | `delete` | no in-tree consumer; no replacement |
-| `tiny` | `const` | `src/ReactiveMP.jl` | `base` | re-exported from TinyHugeNumbers |
+| `tiny` | `const` | `src/ReactiveMP.jl` | `engine` | re-exported from TinyHugeNumbers by the engine; the rule packages take it from BayesBase |
 | `update!` | `function` | `src/approximations/optimizers/adam.jl` | `delete` | `Adam`'s step function; no replacement |
 
 ## Engine hooks
@@ -277,7 +277,7 @@ replacement".
 | `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `delete` | not carried over (Phase 5 step 9, DISCUSSION §3.36): the fallback protocol is resolution-based, `find_*` returning `RuleNotFound` and never throwing, so an exception inside a selected rule never reaches a fallback (specified in Phase 0); a migration-guide entry |
 | `callbacks` | `hook` | `src/callbacks.jl` | `engine` | 10 event types, all message-passing lifecycle. Exports nothing but is documented public API (`lib/callbacks.md`) |
 | `stream postprocessors` | `hook` | `src/postprocessors.jl` | `engine` | Rocket streams. Exports nothing but is documented public API (`lib/stream-postprocessors.md`) |
-| `scoring` | `hook` | `src/score/` | `base` | `@average_energy`, `AverageEnergy` and `DifferentialEntropy` move to base; `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, since they walk the graph |
+| `scoring` | `hook` | `src/score/` | `engine` | `@average_energy` became the base package's `@define_average_energy` and `AverageEnergy` its `message_passing_average_energy`; `DifferentialEntropy`, `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, which assembles the free energy |
 | `node traits (@node-generated)` | `hook` | `src/nodes/nodes.jl` | `base` | `@define_factor_node` emits a `NodeSpec` alongside the 8 method kinds generated today |
 | `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec. Done in case (d): the unknown- and known-inverse layouts are two dependency declarations of `DeltaApproximation`; the old CVI layout is deleted, and CVI projection's is Phase 6 |
 | `CVI optimiser hooks` | `hook` | `src/approximations/cvi.jl` | `delete` | `cvi_setup!`/`cvi_update!` belong to the superseded `ProdCVI`, not to `CVIProjection` |

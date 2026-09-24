@@ -36,6 +36,9 @@ test_marginal_update_rule
 test_average_energy
 ExpectedWithAnnotations
 check_rule_coverage
+MessagePassingRulesTestUtils.RuleCoverageGap
+MessagePassingRulesTestUtils.rule_test_locations
+MessagePassingRulesTestUtils.approximately_equal
 ```
 
 ## [Verification](@id rules-testing-verification)

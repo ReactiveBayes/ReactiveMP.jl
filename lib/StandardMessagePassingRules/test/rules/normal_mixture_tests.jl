@@ -14,13 +14,14 @@
 end
 
 @testitem "rules:NormalMixture:p" tags = [:rules] begin
-    using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
 
     # z = 0.3: shape 1 + z/2, rate z (var_out + var_m + (out - m)²) / 2 = 0.3 (0 + 1 + 1.5²) / 2
     @test_message_update_rule(
         node = NormalMixture, target = (:p, 1), float_types = (Float32, Float64),
         cases = [(q = (out = PointMass(1.5), switch = Categorical([0.3, 0.7]), m = (NormalMeanVariance(0.0, 1.0), nothing)),) => GammaShapeRate(1.15, 0.4875)],
     )
+    @test_throws ErrorException call_message_update_rule(NormalMixture, (:p, 1); q = (out = PointMass(1.5), switch = PointMass(1), m = (NormalMeanVariance(0.0, 1.0), nothing)))
 end
 
 @testitem "rules:NormalMixture:switch-out-energy" tags = [:rules] begin

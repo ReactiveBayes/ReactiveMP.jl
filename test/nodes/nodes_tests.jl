@@ -10,6 +10,13 @@
     struct Mixture end
     @define_factor_node(node = Mixture, type = Stochastic, interfaces = [:out, :switch, :m...])
 
+    # Pairs of components, at least two, under mean-field only.
+    struct Paired end
+    @define_factor_node(
+        node = Paired, type = Stochastic, interfaces = [:out, :switch, :m..., :p...],
+        matched_groups = [(:m, :p)], min_group_length = 2, factorisation = :meanfield,
+    )
+
     struct NotANode end
 end
 
@@ -66,6 +73,35 @@ end
 
     @test_throws "must be `1:n`" factornode(N.Mixture, [(:out, out), (:switch, switch), ((:m, 2), m2)])
     @test_throws "needs at least one member" factornode(N.Mixture, [(:out, out), (:switch, switch)])
+end
+
+@testitem "factornode checks what a node declares of its groups and factorisation" tags = [:nodes] setup = [EngineNodes] begin
+    N = EngineNodes
+    paired(n_m, n_p) = [(:out, randomvar()), (:switch, randomvar()), [((:m, k), randomvar()) for k in 1:n_m]..., [((:p, k), randomvar()) for k in 1:n_p]...]
+    meanfield(interfaces) = Tuple((first(i),) for i in interfaces)
+
+    two = paired(2, 2)
+    @test length(ReactiveMP.getinterfaces(factornode(N.Paired, two, meanfield(two)))) == 6
+
+    three_two = paired(3, 2)
+    @test_throws "the groups `m` and `p` must have as many members as each other, got 3 and 2" factornode(N.Paired, three_two, meanfield(three_two))
+    one = paired(1, 1)
+    @test_throws "the group `m` needs at least 2 members, got 1" factornode(N.Paired, one, meanfield(one))
+    @test_throws "accepts only a mean-field factorisation" factornode(N.Paired, two)
+    @test_throws "accepts only a mean-field factorisation" factornode(N.Paired, two, ((:out, :switch), ((:m, 1),), ((:m, 2),), ((:p, 1),), ((:p, 2),)))
+
+    # A node that declares nothing takes any lengths and any factorisation.
+    @test length(ReactiveMP.getinterfaces(factornode(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar())]))) == 3
+end
+
+@testitem "the mixtures refuse components that do not come in pairs" tags = [:nodes] begin
+    using StandardMessagePassingRules
+    # Three means and two precisions: the switch rule would read two components and drop the
+    # third without a word.
+    for (node, a, b) in ((NormalMixture, :m, :p), (GammaMixture, :a, :b))
+        interfaces = [(:out, constvar(0.0)), (:switch, randomvar()), [((a, k), constvar(Float64(k))) for k in 1:3]..., [((b, k), constvar(1.0)) for k in 1:2]...]
+        @test_throws "must have as many members as each other, got 3 and 2" factornode(node, interfaces, Tuple((first(i),) for i in interfaces))
+    end
 end
 
 @testitem "factornode checks the interfaces it is given" tags = [:nodes] setup = [EngineNodes] begin

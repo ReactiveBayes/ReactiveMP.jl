@@ -28,13 +28,17 @@ function test_rule_derivatives(node, target; inputs::Function, at, summary = mea
         spec isa MessagePassingRulesBase.RuleSpec || throw(MessagePassingRulesBase.RuleNotFoundError(spec))
         return spec
     end
-    run(args, output) = MessagePassingRulesBase.execute_rule(resolved(args), output, algorithm, ctx, args, MessagePassingRulesBase.NoAnnotations(), resolved_target)
+    # The algorithm the resolved rule runs with, as the engine passes it: an inherited default
+    # rule gets `DefaultAlgorithm()`, not the extension it was reached through.
+    run(spec, args, output) = MessagePassingRulesBase.execute_rule(spec, output, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, MessagePassingRulesBase.NoAnnotations(), resolved_target)
+    run(args, output) = run(resolved(args), args, output)
+    prealloc(spec, args) = spec.prealloc(MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, resolved_target)
 
     spec = resolved(args_at(at))
     record_selected_rule!(spec, source)
     paths = Tuple{String, Function}[("rule", θ -> summary(run(args_at(θ), nothing)))]
     if spec.inplace
-        push!(paths, ("rule!", θ -> (args = args_at(θ); summary(run(args, resolved(args).prealloc(algorithm, ctx, args, resolved_target))))))
+        push!(paths, ("rule!", θ -> (args = args_at(θ); found = resolved(args); summary(run(found, args, prealloc(found, args))))))
     end
     for (path, f) in paths
         automatic = automatic_derivative(f, at)

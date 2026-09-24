@@ -32,7 +32,7 @@ The ReactiveMP.jl package is intended for advanced users with a deep understandi
 
 # Ecosystem
 
-The `RxInfer` framework consists of four *core* packages developed by [ReactiveBayes](https://github.com/reactivebayes/):
+The `RxInfer` framework consists of five *core* packages developed by [ReactiveBayes](https://github.com/reactivebayes/):
 
 - [`ReactiveMP.jl`](https://github.com/reactivebayes/ReactiveMP.jl) - the underlying message passing-based inference engine (this package)
 - [`RxInfer.jl`](https://github.com/reactivebayes/RxInfer.jl) - user-friendly modeling and inference layer

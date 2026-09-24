@@ -34,6 +34,9 @@ struct NodeSpec
     interfaces::Tuple{Vararg{InterfaceSpec}}
     algorithm::AbstractAlgorithm
     static_inputs::Symbol
+    matched_groups::Tuple{Vararg{Tuple{Vararg{Symbol}}}}
+    min_group_length::Int
+    factorisation::Symbol
     file::Symbol
     line::Int
 end
@@ -82,6 +85,31 @@ other input. `:fold` folds them into the node function, reached as
 from the graph, so the engine does the folding and the waiting.
 """
 static_inputs(node) = nodespec(node).static_inputs
+
+"""
+    matched_groups(node)
+
+The sets of groups that must have as many members as each other, as tuples of group names:
+`((:m, :p),)` for a mixture whose means and precisions come in pairs. Empty when the node
+declares none.
+"""
+matched_groups(node) = nodespec(node).matched_groups
+
+"""
+    min_group_length(node)
+
+The fewest members any group of `node` may have: 1 unless declared, 2 for a mixture.
+"""
+min_group_length(node) = nodespec(node).min_group_length
+
+"""
+    required_factorisation(node)
+
+The factorisations `node` accepts. `:any` accepts every one; `:meanfield` only clusters of one
+interface each, for a node whose rules are variational whatever the factorisation, such as
+a mixture. The engine checks it when it creates the node.
+"""
+required_factorisation(node) = nodespec(node).factorisation
 
 """
     alias_interface(node, name)

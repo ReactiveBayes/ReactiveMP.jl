@@ -1,4 +1,4 @@
-using TestItemRunner
+using TestItemRunner, Test, MessagePassingRulesTestUtils, StandardMessagePassingRules
 
 # Same selection syntax as the root test/runtests.jl.
 
@@ -18,7 +18,7 @@ for arg in ARGS
     end
 end
 
-function test_item_filter(ti)
+function is_selected(ti)
     isempty(SELECTED_PATHS) ||
         any(p -> occursin(p, ti.filename), SELECTED_PATHS) ||
         return false
@@ -34,4 +34,18 @@ function test_item_filter(ti)
     return true
 end
 
+# Whether any item was left out, by a selection or as `:slow`: the coverage gate below means
+# something only after the whole suite.
+const FILTERED_OUT = Ref(false)
+test_item_filter(ti) = is_selected(ti) || (FILTERED_OUT[] = true; false)
+
 @run_package_tests(filter = test_item_filter, verbose = true)
+
+# Every rule the package defines was selected by some test case, and every node has one.
+if !FILTERED_OUT[]
+    @testset "rule coverage" begin
+        gaps = check_rule_coverage(StandardMessagePassingRules)
+        foreach(println, gaps)
+        @test isempty(gaps)
+    end
+end

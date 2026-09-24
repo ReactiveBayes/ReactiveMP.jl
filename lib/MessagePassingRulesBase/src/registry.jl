@@ -18,23 +18,15 @@ end
 
 Registry() = Registry(RuleSpec[], NodeSpec[], DependenciesSpec[])
 
-"""
-    @define_registry
-
-Create the calling module's registry unless it exists. Emitted by the definition macros.
-"""
+# Create the calling module's registry unless it exists. Emitted by the definition macros.
 macro define_registry()
     return esc(:(isdefined(@__MODULE__, $(QuoteNode(REGISTRY_NAME))) || (const $REGISTRY_NAME = $Registry())))
 end
 
 rulekey(spec::RuleSpec) = (spec.kind, spec.node, spec.target, spec.algorithm, spec.signature)
 
-"""
-    register!(registry, spec::RuleSpec)
-
-Add a rule, replacing one with the same signature, so redefining a rule at the REPL
-updates it rather than duplicating it.
-"""
+# Add a rule, replacing one with the same signature, so redefining a rule at the REPL
+# updates it rather than duplicating it.
 function register!(registry::Registry, spec::RuleSpec)
     key = rulekey(spec)
     position = findfirst(existing -> rulekey(existing) == key, registry.rules)
@@ -46,11 +38,7 @@ function register!(registry::Registry, spec::RuleSpec)
     return spec
 end
 
-"""
-    register!(registry, spec::NodeSpec)
-
-Add a node, replacing an earlier declaration of the same node.
-"""
+# Add a node, replacing an earlier declaration of the same node.
 function register!(registry::Registry, spec::NodeSpec)
     position = findfirst(existing -> existing.node === spec.node, registry.nodes)
     if position === nothing
@@ -61,9 +49,7 @@ function register!(registry::Registry, spec::NodeSpec)
     return spec
 end
 
-"""
-    register!(registry, declaration::DependenciesSpec)
-"""
+# Add a dependency declaration, replacing an earlier one for the same node and algorithm.
 function register!(registry::Registry, declaration::DependenciesSpec)
     position = findfirst(
         existing -> existing.node === declaration.node && existing.algorithm === declaration.algorithm,

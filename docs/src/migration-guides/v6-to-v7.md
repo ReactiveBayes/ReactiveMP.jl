@@ -161,6 +161,10 @@ call_average_energy(MyGaussian; q = (out = PointMass(1.0), μ = PointMass(0.0), 
 log scales its inputs arrived with from `ann.m[:x]` (and `ann.q[:x]`), where v6 read them from
 the raw `messages` tuple.
 
+Log scales are experimental in v7, as they were in effect in v6: their gaps are kept, not
+fixed, and a later release may change how they are carried or remove them. Port a rule's log
+scale when it has one, but do not build new functionality on them.
+
 ```julia
 # v6
 @rule MyBernoulli(:p, Marginalisation) (m_out::PointMass,) = begin
@@ -304,7 +308,9 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   correctly.
 - **Arithmetic:** `+` and `-` fix sign errors for weighted-mean normals and for `-`'s marginal;
   `*`'s sampled messages towards a factor drop a spurious weight, its log scale towards `in` is
-  `-d·log|a|`, and a product that would need `in * A` for a matrix operand has no rule.
+  `-d·log|a|`, and a product that would need `in * A` for a matrix operand has no rule. v6's
+  `*` rules towards `in` with their arguments reversed, reachable only through `@call_rule`, are
+  gone.
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
 - **The Delta node** supports the `Unscented` method; v6's other methods are not available.
 
@@ -312,6 +318,8 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
 
 These v6 names have no counterpart: `Marginalisation`, `MomentMatching`, the functional
 dependency types, the per-node node types (`NormalMixtureNode`, `GammaMixtureNode`,
-`MixtureNode`), `NodeFunctionRuleFallback`, `CompanionMatrix`, and the approximation methods
+`MixtureNode`; the checks their constructors made, at least two components, as many of each
+kind, a mean-field factorisation, are the `matched_groups`, `min_group_length` and
+`factorisation` of [`@define_factor_node`](@ref)), `NodeFunctionRuleFallback`, `CompanionMatrix`, and the approximation methods
 with no remaining consumer (`CVI`, `ProdCVI`, `Adam`, `ForwardDiffGrad`, `LaplaceApproximation`,
 `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature`, `srcubature`).

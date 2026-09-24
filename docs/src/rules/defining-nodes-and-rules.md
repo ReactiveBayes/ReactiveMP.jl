@@ -68,6 +68,13 @@ dependencies and how it treats known inputs. An interface may have aliases,
 component, as `interfaces = [:out, :switch, :m..., :p...]`. The node itself is a type or a
 function: `node = +` declares the function `+` as a node.
 
+A node may also say what it requires of the graph, which the engine checks when it creates the
+node: `matched_groups = [(:m, :p)]` for groups with as many members as each other,
+`min_group_length = 2` for at least two members per group, and `factorisation = :meanfield` for
+a node whose rules are variational whatever the factorisation. `NormalMixture` declares all
+three, so a mixture with three means and two precisions is an error, not a switch that reads
+two components.
+
 ```@docs
 @define_factor_node
 Stochastic
@@ -77,8 +84,14 @@ MessagePassingRulesBase.NodeSpec
 MessagePassingRulesBase.InterfaceSpec
 MessagePassingRulesBase.nodespec
 MessagePassingRulesBase.static_inputs
+MessagePassingRulesBase.matched_groups
+MessagePassingRulesBase.min_group_length
+MessagePassingRulesBase.required_factorisation
 MessagePassingRulesBase.interfaces
+MessagePassingRulesBase.interface_groups
+MessagePassingRulesBase.alias_interface
 MessagePassingRulesBase.sdtype
+MessagePassingRulesBase.nodefunction
 ```
 
 ## [Rules](@id rules-defining-rules)
@@ -108,11 +121,15 @@ the other rule.
 MessagePassingRulesBase.Target
 MessagePassingRulesBase.IndexedTarget
 MessagePassingRulesBase.ClusterTarget
+MessagePassingRulesBase.target_edge
+MessagePassingRulesBase.target_index
+MessagePassingRulesBase.cluster_members
 MessagePassingRulesBase.RuleArgs
 MessagePassingRulesBase.Messages
 MessagePassingRulesBase.Marginals
 MessagePassingRulesBase.RuleContext
 matrix_correction
+MessagePassingRulesBase.buffer_like
 ```
 
 ## [Results](@id rules-defining-results)

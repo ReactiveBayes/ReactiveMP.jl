@@ -38,11 +38,22 @@
 
     plus(a, b) = a + b
     @define_factor_node(node = plus, type = Deterministic, interfaces = [:out, :in1, :in2])
+
+    # Groups that come in pairs, at least two members each, under mean-field only.
+    struct Paired end
+    @define_factor_node(
+        node = Paired,
+        type = Stochastic,
+        interfaces = [:out, :switch, :m..., :p...],
+        matched_groups = [(:m, :p)],
+        min_group_length = 2,
+        factorisation = :meanfield,
+    )
 end
 
 @testitem "nodes:traits" tags = [:base] setup = [ToyNodes] begin
     using MessagePassingRulesBase: nodespec, interfaces, interface_groups, sdtype, default_algorithm, alias_interface,
-        nodefunction, Stochastic, Deterministic, DefaultAlgorithm, NodeSpec
+        nodefunction, Stochastic, Deterministic, DefaultAlgorithm, NodeSpec, matched_groups, min_group_length, required_factorisation
     T = ToyNodes
 
     @test interfaces(T.Toy) === (:out, :μ, :τ)
@@ -67,6 +78,16 @@ end
     @test alias_interface(T.Toy, :μ) === :μ
     @test_throws ArgumentError alias_interface(T.Toy, :nope)
 
+    # What a node requires of the graph: nothing, unless declared.
+    @test matched_groups(T.Mixture) === ()
+    @test min_group_length(T.Mixture) == 1
+    @test required_factorisation(T.Mixture) === :any
+    @test matched_groups(T.Paired) === ((:m, :p),)
+    @test min_group_length(T.Paired) == 2
+    @test required_factorisation(T.Paired) === :meanfield
+    @test contains(sprint(show, MIME("text/plain"), nodespec(T.Paired)), "matched groups:    m = p")
+    @test !contains(sprint(show, MIME("text/plain"), nodespec(T.Mixture)), "matched groups")
+
     spec = nodespec(T.Toy)
     @test spec isa NodeSpec
     @test spec.node === T.Toy
@@ -87,7 +108,7 @@ end
     using MessagePassingRulesBase: registered_nodes
     T = ToyNodes
     ours = filter(spec -> parentmodule(spec.node isa Type ? spec.node : typeof(spec.node)) === T, registered_nodes())
-    @test length(ours) == 4
+    @test length(ours) == 5
 end
 
 @testitem "nodes:malformed" tags = [:base] begin
@@ -112,6 +133,17 @@ end
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, :μ, :μ]))), "duplicate interface `μ`")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, μ]))), "must be a symbol")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, (:μ, aliases = [:out])]))), "alias `out`")
+
+    grouped(keyword) = expansion_error(Expr(:macrocall, Symbol("@define_factor_node"), nothing, :(node = X), :(type = Stochastic), :(interfaces = [:out, :m..., :p...]), keyword))
+    @test contains(grouped(:(matched_groups = [(:m, :q)])), "names `q`, which is not a group")
+    @test contains(grouped(:(matched_groups = [(:m,)])), "two or more distinct groups")
+    @test contains(grouped(:(matched_groups = [(:m, :m)])), "two or more distinct groups")
+    @test contains(grouped(:(matched_groups = (:m, :p))), "must be a vector of tuples")
+    @test contains(grouped(:(min_group_length = 0)), "positive integer")
+    @test contains(grouped(:(factorisation = :structured)), ":any or :meanfield")
+    @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, :x], min_group_length = 2))), "needs a group")
+    @test grouped(:(matched_groups = [(:m, :p)])) == ""
+    @test contains(expansion_error(:(@define_factor_node(node = X, type = Deterministic, interfaces = [:out, :x], factorisation = :meanfield))), "cannot require")
 end
 
 @testitem "nodes:getnodefn" tags = [:base] begin

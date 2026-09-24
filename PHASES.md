@@ -8,12 +8,14 @@ without a diff alongside it is how a tracking file starts lying.
 
 Branch: `refactor/rule-node-system-rewrite`
 
-`file:line` citations in the three documents were last re-verified against the code after
-Phase 4.5 closed (`0b8f1caa`). Citations into v6 code name ReactiveMP 6.5.0's layout; the unported nodes and rules,
-`clusters.jl`, `dependencies.jl`, `score/` and the fallbacks are in `legacy/v6/` under the
-same paths. A ported node's files, and v6's `message.jl` and `marginal.jl`, which were
-rewritten in place, are only in the 6.5.0 release. A later reformat or edit moves them again, so
-re-check before relying on one.
+`file:line` citations in the three documents were re-verified against the code after Phase 4.5
+closed (`0b8f1caa`) and not since; the Phase 5 briefs cite the code as it was when each was
+written. Citations into v6 code name ReactiveMP 6.5.0's layout. Only the unported nodes, their
+rules and the helpers and approximations they use are still in `legacy/v6/`, under the same
+paths; everything else of v6 (its engine and rule-system files, `clusters.jl`,
+`dependencies.jl`, `score/`, the fallbacks, and every ported node's files) is only in the 6.5.0
+release and in git. A later reformat or edit moves them again, so re-check before relying on
+one.
 
 ---
 
@@ -34,7 +36,6 @@ and the deletions it lists.
 | Delta's `Linearization` rules and `CVIProjection` | Phase 6 | § Phase 6 |
 | a v6 rule-by-rule comparison for the Delta rules (they are checked by v6's own tables and the two engine fixtures) | Phase 6, with `Linearization` | § *Cases (b)–(d)*, case (d) |
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
-| `docs/` rewritten for the new engine (`make docs` refuses until then) | Phase 5 | § Phase 5 |
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
@@ -45,9 +46,9 @@ and the deletions it lists.
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | the RNG as an activation option (the engine passes `Random.default_rng()` until then), and `*`'s number of samples (3000, v6's) configurable | Phase 7 | `DISCUSSION.md` §3.32 |
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
-| MIGRATION.md: `*` refuses the non-commuting products v6 computed as in·A (a matrix operand with a Gaussian `A`, a matrix `in` towards `A`); v6's argument-reversed `*` `:in` rules, reachable only through `@call_rule`, are gone | step 9, with MIGRATION.md | § Phase 5, *Step 7 brief* |
-| MIGRATION.md: `Mixture` has no average energy, so a free energy of a model with one raises `RuleNotFound`, where v6 warned and returned 0.0 | step 9, with MIGRATION.md | `DISCUSSION.md` §3.35 |
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
+| the Delta package's missing `LibTests` job | Phase 7, with the workflows | § Phase 7 |
+| log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | the log-scale milestone, Phase 7 | `DISCUSSION.md` §3.37 |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
@@ -55,40 +56,17 @@ The rule registry was clarified with the user after step 4 and **stays as it is*
 the base package's method table, global already, and the per-module registries are
 introspection only (`DISCUSSION.md` §3.23, Correction 25).
 
-Step 4, the engine core on case (a), is done (§ Phase 4.5, *Step 4*): the v6 rule system is in
-`legacy/v6/`, the engine finds and runs rules through `MessagePassingRulesBase`, and
-`bp_iid`, `bp_iid_missing` and `bp_chain` agree with v6 call by call. Case (b) is done too:
-`vmp_meanfield` and `vmp_structured` agree the same way, with no engine change. Case (c) is
-done: the engine wires declared dependencies and interface groups, and `normal_mixture` agrees
-with v6 in its free energy and posteriors and in every rule call, whose order within an
-iteration differs by decision (`DISCUSSION.md` §3.24). Case (d) is done: the Delta node, with
-its function and its static inputs folded, agrees with v6 on `delta_unscented` and on a new
-`delta_unscented_static` fixture (§3.25). **Phase 4.5 is closed.**
+Phase 4.5's four slice cases and its ground rules are in § Phase 4.5: the step-4 clean cut,
+work on **Julia 1.13 only** wired with `[sources]`, and **no CI runs yet**, everything verified
+locally (`DISCUSSION.md` §3.22).
 
-Where Phase 4.5 stands. The design brief was signed off on 2026-09-23 (`DISCUSSION.md`
-§3.18–3.19); the design session itself was step 1. Since then:
-- **step 0** recorded the v6 engine fixtures;
-- **step 2** made the base-package additions;
-- **step 3** ported the slice's rules and numerics, in agreement with v6;
-- the **algorithm reconciliation** replaced `BP`/`VMP` with one `DefaultAlgorithm` (§3.20);
-- `Require*FunctionalDependencies` were dropped (§3.21);
-- **step 4** made the clean cut and ran case (a) through the new engine;
-- **case (b)** ran mean-field and structured VMP through it, changing only the test harness;
-- **case (c)** wired declared dependencies and groups and ran the mixture (§3.24);
-- **case (d)** ran the Delta node, in its own package, with static inputs folded (§3.25).
-
-Three ground rules were set on the same day (§3.22):
-- step 4 is a **clean cut**: the engine keeps only the new rule path, and every unported node
-  moves to `legacy/v6/` until Phase 5 ports it;
-- work targets **Julia 1.13 only**, wired with `[sources]`;
-- **no CI runs yet**; everything is verified locally.
-
-Phases 0–4.5 are closed. `lib/MessagePassingRulesBase` is the rule system;
-`lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules`,
-`lib/MessagePassingRulesApproximations` and `lib/DeltaMessagePassingRules` hold the slice's
-rules and numerics, and since Phase 5 the univariate and logic nodes; and
-`compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures. ReactiveMP
-itself is the engine on the new rule system; what it cannot run yet is in `legacy/v6/`. The
+Phases 0–5 are closed. `lib/MessagePassingRulesBase` is the rule system;
+`lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules` holds
+every standard node (the distributions, arithmetic, logic and the mixtures);
+`lib/MessagePassingRulesApproximations` holds `Unscented` and `smoothRTS`;
+`lib/DeltaMessagePassingRules` holds the Delta node; and `compat/v6-comparison` holds the v6
+oracle, the comparisons and the engine fixtures. ReactiveMP itself is the engine on the new rule
+system; the nodes Phase 6 ports are in `legacy/v6/`. The
 tooling's first finding was a real v6 bug: the variational `NormalMeanVariance` rules use
 `E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v` (ReactiveMP.jl#669). It was **corrected
 when NMV was ported in step 3**, and the comparison declares it.
@@ -105,8 +83,8 @@ done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.27,
-and this file's § Phase 4.5. Working conventions: one commit per step, failing test first,
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.37,
+and this file's § Phase 5 (its step briefs are the pattern Phase 6 follows) and § Phase 6. Working conventions: one commit per step, failing test first,
 `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive names rather than
 generic ones, and no comments that only narrate.
 
@@ -125,8 +103,8 @@ generic ones, and no comments that only narrate.
 | 3 | `MessagePassingRulesBase` | **done** |
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
-| 5 | `StandardMessagePassingRules` | entry brief signed off; steps 1–4 done; step 5, the multivariate normals, next |
-| 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started |
+| 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
+| 6 | `MessagePassingRulesApproximations` + node packages | `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; the rest not started, and its brief not yet written |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -776,8 +754,8 @@ re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
 ### What v6 does, and where — to replace, and to record fixtures from
 
 All re-verified in the post-Phase-4 audit, **against v6**. Step 4 has since replaced these in
-`src/`: the line numbers are ReactiveMP 6.5.0's, and the files other than `message.jl` and
-`marginal.jl` are kept under the same paths in `legacy/v6/`.
+`src/`: the line numbers are ReactiveMP 6.5.0's. The files were kept under the same paths in
+`legacy/v6/` until Phase 5 step 9 deleted them; they are in the 6.5.0 release and in git.
 
 - rule call: `MessageMapping`, `src/message.jl:570-738`. The callable is at `:657`; it builds
   `ruleargs` at `:692-703` and calls `rule(ruleargs...)` at `:704`; the fallback runs on a
@@ -1085,7 +1063,8 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    missing-input pin, the retained-value test and the `Message` benchmark are added here.
 
    *Done.* `nodes_tests` tests `factornode` itself now; `@node`'s own tests went to
-   `legacy/v6/test/nodes/`, as the base package tests `@define_factor_node`. The v6 tests of
+   `legacy/v6/test/nodes/` (deleted in Phase 5 step 9), as the base package tests
+   `@define_factor_node`. The v6 tests of
    `Require*` and meta-driven dependencies went with them. New: `MessageMapping` resolving and
    running a rule, with the algorithm and node it receives; `RuleNotFoundError`; the
    **missing-input pin** (no rule call, the pre-rule processors run, the post-rule ones do
@@ -1461,7 +1440,21 @@ methods; line-start `@rule`/`@marginalrule` gives 380 + 105 in all.
 5. **Multivariate normals**: MvNormalMeanCovariance, MvNormalMeanPrecision (whose `precision.jl`
    uses the correction strategy), MvNormalMeanScalePrecision and its matrix form,
    MvNormalWeightedMeanPrecision; then NormalMixture's multivariate branches. **Done** (the
-   step 5 brief below, `DISCUSSION.md` §3.28).
+   step 5 brief, `DISCUSSION.md` §3.28).
+6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
+   MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief,
+   `DISCUSSION.md` §3.29).
+7. **Arithmetic**: `+`, `-`, `*`, `dot`. **Done** (the step 7 brief, `DISCUSSION.md`
+   §3.31–3.33). The two questions recorded here are settled there: v6's
+   `default_meta = ReplaceZeroDiagonalEntries(tiny)` is the rules' default for an unset
+   `ctx.matrix_correction`, not an algorithm, and the sampling rules draw from `ctx.rng`.
+8. **Mixtures**: GammaMixture, a clone of NormalMixture; then `Mixture`, hand-written: its
+   switch rule builds a `randomvar` for a product with log scale (the `product` context
+   service instead), and its rules read incoming log scales (`ann.m`). **Done** (the step 8
+   brief, `DISCUSSION.md` §3.34–3.35).
+9. **Close**: the migration guide complete, `docs/` rewritten and back in the build, `legacy/v6/`
+   holding only Phase 6's nodes. **Done** (the step 9 brief, `DISCUSSION.md` §3.36):
+   the guide is the docs page `migration-guides/v6-to-v7.md`, not a `MIGRATION.md`.
 
 ### Step 5 brief — the multivariate normals
 
@@ -1928,7 +1921,8 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
     the guide. legacy/README lists what stays and whose it is: the unported nodes, the
     approximations Phase 6 ports or deletes, their helpers, `fixes.jl` and the CVI extensions.
   - *The docs — done.* `docs/Project.toml` takes the engine and the lib packages through
-    `[sources]`; `docs/make.jl` documents all six modules with `checkdocs = :exports` and runs
+    `[sources]`; `docs/make.jl` documents all six modules with `checkdocs = :exports` *(`:all` since the
+    post-close review, as the brief said)* and runs
     every doctest and `@example`; `make docs` builds again. The engine's undocumented exports got
     docstrings, and `Message`'s and `Marginal`'s, which a comment had detached, attach again, so
     their doctests run for the first time; a root `quality:doctests` item runs the engine's
@@ -1942,22 +1936,6 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
     mechanically; how to verify a port; the behaviour that changed and what was removed.
   - *The close — done, which closes Phase 5.* The exit criteria are ticked, and the next action
     is Phase 6.
-
-6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
-   MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,
-   `DISCUSSION.md` §3.29).
-7. **Arithmetic**: `+`, `-`, `*`, `dot`. *Briefed* (the step 7 brief below, `DISCUSSION.md`
-   §3.31–3.33). The two questions recorded here are settled there: v6's
-   `default_meta = ReplaceZeroDiagonalEntries(tiny)` is the rules' default for an unset
-   `ctx.matrix_correction`, not an algorithm, and the sampling rules draw from `ctx.rng`.
-   **Done.**
-8. **Mixtures**: GammaMixture, a clone of NormalMixture; then `Mixture`, hand-written: its
-   switch rule builds a `randomvar` for a product with log scale (the `product` context
-   service instead), and its rules read incoming log scales (`ann.m`). **Done** (the step 8
-   brief below, `DISCUSSION.md` §3.34–3.35).
-9. **Close**: the migration guide complete, `docs/` rewritten and back in the build, `legacy/v6/`
-   holding only Phase 6's nodes. **Done** (the step 9 brief below, `DISCUSSION.md` §3.36):
-   the guide is the docs page `migration-guides/v6-to-v7.md`, not a `MIGRATION.md`.
 
 **Found while counting, to settle in the step that meets them:**
 - `nodes/predefined/distribution/distribution.jl` (`StandaloneDistributionNode`) has no
@@ -1990,8 +1968,8 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
       work was fiddly. *(Its derivation from the transform tool went with the tool. Done in
       step 9 as the docs page `migration-guides/v6-to-v7.md`, from what steps 1–8 recorded;
       `DISCUSSION.md` §3.36.)*
-- [x] every before/after pair in the guide is an executable doctest run by CI *(its v7 side,
-      run by the docs build; the v6 side is shown, never run, §3.36)*
+- [x] every before/after pair in the guide is an executable doctest *(its v7 side, run by the
+      docs build, locally until CI runs again; the v6 side is shown, never run, §3.36)*
 - [x] guide covers the untranslatable cases explicitly (raw `messages[i]` indexing, rules
       constructing graph objects, `meta`-as-mutable-workspace) and tells the reader — human
       or agent — to stop and ask rather than guess
@@ -2016,8 +1994,40 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
       `dependencies`. Two pages are written with the port:
       - a documentation page on declaring dependencies, in the new terms only (the default
         scheme, a node's own algorithm, an extension for one model, initial messages);
-      - a `MIGRATION.md` section mapping the old types to those pieces, including RxInfer's
+      - a section of the v6 → v7 guide (`docs/src/migration-guides/v6-to-v7.md`, which is what
+        `MIGRATION.md` became, §3.36) mapping the old types to those pieces, including RxInfer's
         `where { dependencies = … }`, which becomes choosing an algorithm for the node
+
+### Post-close review — 2026-09-24
+
+A review of the closed work at `cdd9f88e` found three defects and two gates `PLAN.md` promised
+that nothing enforced; the consistency pass that followed resolved each:
+1. **TestUtils ran a resolved rule under the requested algorithm**, not `rule_algorithm(spec,
+   algorithm)`, so an inherited default rule saw the extension in its `algo` slot and its
+   preallocation did too. Tables, verification and derivatives now pass the effective
+   algorithm, as the engine does; `tables:algorithm-extension` and the extension cases in
+   `derivatives:propagate` and `verification:correct-rules` pin it.
+2. **The engine and `check_factorized_cluster` disagreed on a valid partition**: the engine
+   required the blocks, concatenated, to reproduce the cluster's order. It now asks what the
+   public check asks, so blocks may come in any order and need not be contiguous
+   (`engine:factorized-cluster:arguments`).
+3. **NormalMixture and GammaMixture lost v6's constructor checks**, so unequal groups were
+   accepted and the switch rule's `zip` dropped a component. `@define_factor_node` now declares
+   `matched_groups`, `min_group_length` and `factorisation` (user: a declaration, not a check
+   inferred from the dependencies), the engine's `factornode` enforces them, and both
+   mixtures declare all three, restoring v6's checks.
+4. **The docs build checked exported docstrings only** (`checkdocs = :exports`, where the step 9
+   brief and `PLAN.md` § Documentation say every docstring). It is `:all` now: the 65 missing
+   docstrings are on their pages, or were genuinely internal and are comments.
+5. **The registry-backed coverage gate was never run.** Standard and Delta now run
+   `check_rule_coverage` after an unfiltered suite; a direct `call_*` counts as a table case
+   does (§3.39). It found 50 of Standard's rules unselected: 39 tested by direct calls, and 11
+   without a test, which have one now. Delta had none.
+
+Beyond the findings, the pass reconciled the documents with the state of the repository: the
+status table, the not-done table, what `legacy/v6/` holds, `MIGRATION.md` as the guide's docs
+page, Phase 6's node list, and `INVENTORY.md`'s annotation, scoring and trait rows, which are
+the engine's (§3.37, where log scales are also marked experimental until Phase 7 decides).
 
 ---
 
@@ -2054,9 +2064,18 @@ algorithm and its Unscented rules; the items below that concern Delta add to it.
       until the numerical protocol (open item #13, parked) is settled
 - [ ] `ghcubature` moves to the Pólya node package along with `FastGaussQuadrature`
 - [ ] confirm `Optim` no longer appears anywhere
-- [ ] non-standard nodes spun out: Flow, Autoregressive, GP, BIFM, Pólya, GCV, Probit, SoftDot,
-      GaussianCoupling, … (Delta already, in Phase 4.5 case (d); the last four each get their
-      own package rather than a shared `models` one, `DISCUSSION.md` §3.30)
+- [ ] non-standard nodes spun out, each into its node package (`INVENTORY.md`'s `node:X`): Flow,
+      Autoregressive (with ConjugateAR), BIFM (with its `TerminalProdArgument` rules in
+      `legacy/v6/src/rules/mv_normal_mean_precision/marginals.jl`), Pólya, ContinuousTransition,
+      DiscreteTransition, GCV, Probit, SoftDot and GaussianCoupling (Delta already, in Phase 4.5
+      case (d); the last four each get their own package rather than a shared `models` one,
+      `DISCUSSION.md` §3.30). GP is not among them: it has no node in v6, and RxGP is its own
+      package
+- [ ] the helpers in `legacy/v6/src/helpers/algebra/` go with their users, as `INVENTORY.md`
+      says: the permutation matrix to Flow, the standard basis vector to Autoregressive,
+      `common.jl`'s helpers to the nodes that call them, and the companion matrix is deleted;
+      `legacy/v6/src/fixes.jl`, the `ForwardDiff` hot-fix, goes with `Linearization` if it still
+      needs it and is dropped otherwise, so `legacy/` can go
 - [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
       becomes honest again (see `PLAN.md` § Licensing)
 - [ ] Probit and ContinuousTransition get their own algorithms from `ProbitMeta` and `CTMeta`,
@@ -2105,10 +2124,14 @@ Known scope:
 - [ ] Aqua's `ambiguities` check re-measured on the new code and re-enabled, or its remaining
       pairs budgeted; it was 322 pairs on `main`, most in code now in `legacy/`
 - [ ] the log-scale milestone, after the migration (user): v6's gaps were preserved
-      deliberately, and this is where they are fixed. Typed annotations (`Message{D, A}`, brief
-      item 3) land with it, replacing the mutable `AnnotationDict`
+      deliberately, and this is where they are fixed, **or the feature is dropped**, decided
+      then (`DISCUSSION.md` §3.37). Dropping it takes Mixture's rules with it, since its switch
+      is a softmax over incoming log scales. Typed annotations (`Message{D, A}`, brief item 3)
+      land with it, replacing the mutable `AnnotationDict`; kept, the log-scale key would get
+      an owner there, in the base package
 - [ ] the `.github/` workflows brought up to date before the first PR: they still describe
-      the 1.10 matrix and the pre-step-4 layout (§3.22 left them alone)
+      the 1.10 matrix and the pre-step-4 layout (§3.22 left them alone), and `LibTests` has no
+      job for `DeltaMessagePassingRules`
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality — for every ported node, against recorded v6 fixtures
 
@@ -2131,11 +2154,12 @@ that nothing written in between escapes it.
       precisions come first because that is the update schedule", never "v6 did it this
       way" or "decided in step 3". A remark that is only history is deleted
 - [ ] a comparison with v6 that still matters for users is kept where users read it, the
-      release notes and `MIGRATION.md`, not in code (ReactiveMP.jl#669 is such a case)
+      release notes and the v6 → v7 guide (`docs/src/migration-guides/v6-to-v7.md`), not in
+      code (ReactiveMP.jl#669 is such a case)
 - [ ] the working documents go: `PLAN.md`, `PHASES.md`, `DISCUSSION.md` and `INVENTORY.md`
       (with `scripts/inventory.jl` and its `:quality` test item), and `CLAUDE.md` loses its
       § Ongoing work. What they decided that users need is already in the docs and
-      `MIGRATION.md`; the rest is in git
+      v6 → v7 guide; the rest is in git
 - [ ] `compat/v6-comparison` and its fixtures are removed, or kept as a named, documented
       migration aid, decided then; `legacy/` is already empty and deleted by Phases 5–6
 - [ ] `CHANGELOG.md`'s `[Unreleased]` entries, which record the rewrite step by step, are
@@ -2159,7 +2183,7 @@ this phase requires it to pass for release, rather than being its first executio
       come back is decided here
 - [ ] RxInfer's default package set updated
 - [ ] documentation links across the three levels updated
-- [ ] downstream migration readiness confirmed — `MIGRATION.md` exercised against a real
+- [ ] downstream migration readiness confirmed — the v6 → v7 guide exercised against a real
       external package (RxGP is the natural candidate)
 
 ---

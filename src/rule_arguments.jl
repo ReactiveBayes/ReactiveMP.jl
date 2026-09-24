@@ -134,8 +134,15 @@ factorized_blocks(::Type{<:Marginal{<:MessagePassingRulesBase.FactorizedCluster{
 block_value(::typeof(getdata), marginal, block) = getdata(marginal)[block]
 block_value(f::F, marginal, block) where {F} = f(marginal)
 
-# A factorised cluster's blocks must cover the cluster's members, each once and in its order.
-partitions(blocks, members) = Tuple(Iterators.flatten(blocks)) == members
+# A factorised cluster's blocks must partition the cluster's members, as
+# `check_factorized_cluster` requires: every member in exactly one block, each block listing
+# its members in the cluster's order. The blocks may come in any order, and a block need not be
+# contiguous, since each reaches the rule under its own labels.
+function partitions(blocks, members)
+    flat = Tuple(Iterators.flatten(blocks))
+    length(flat) == length(members) && allunique(flat) && all(in(members), flat) || return false
+    return all(block -> issorted(map(member -> findfirst(==(member), members), block)), blocks)
+end
 
 @generated function rule_marginals(f::F, ::Val{N}, inputs::Tuple) where {F, N}
     singlekeys, singlevalues, jointkeys, jointvalues, i = Symbol[], Any[], Any[], Any[], 1
@@ -145,7 +152,7 @@ partitions(blocks, members) = Tuple(Iterators.flatten(blocks)) == members
             partitions(blocks, name) || return :(
                 throw(
                     ArgumentError(
-                        $("the marginal of the cluster $(name) is a FactorizedCluster with the blocks $(blocks), which do not cover the cluster's members once each, in its order"),
+                        $("the marginal of the cluster $(name) is a FactorizedCluster with the blocks $(blocks), which are not a partition of the cluster's members, each block in the cluster's order"),
                     ),
                 )
             )
@@ -194,12 +201,8 @@ rule_annotations(messages_names, messages, marginals_names, marginals, out) = Ru
 has_missing_inputs(::Nothing) = false
 has_missing_inputs(inputs::Tuple) = any(ismissing, TupleTools.flatten(getdata.(inputs)))
 
-"""
-    ReactiveMP.RuleNotFoundError
-
-Re-exported from `MessagePassingRulesBase`: raised when no rule matches a call. Its message
-lists the near misses.
-"""
+# Re-exported from `MessagePassingRulesBase`: raised when no rule matches a call. Its message
+# lists the near misses.
 const RuleNotFoundError = MessagePassingRulesBase.RuleNotFoundError
 
 function resolve_rule(spec)

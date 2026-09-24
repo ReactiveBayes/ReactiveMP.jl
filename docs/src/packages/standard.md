@@ -54,3 +54,9 @@ OR
 NOT
 IMPLY
 ```
+
+## Helpers
+
+```@docs
+StandardMessagePassingRules.diageye
+```

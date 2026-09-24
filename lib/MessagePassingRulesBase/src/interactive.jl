@@ -13,6 +13,21 @@ function interactive_args(m, q, clusters)
     return RuleArgs(as_messages(m), Marginals(q, Val(keys), values))
 end
 
+# Called with every rule an interactive call below selects, before it runs. Test tooling
+# registers one to count a rule a test calls by hand as tested; an engine resolves rules
+# itself and never reaches these.
+const INTERACTIVE_SELECTION_OBSERVERS = Function[]
+
+function selected_interactively(spec)
+    foreach(observer -> observer(spec), INTERACTIVE_SELECTION_OBSERVERS)
+    return spec
+end
+
+function call_resolved(spec, output, algorithm, ctx, args, ann, target)
+    spec = selected_interactively(throw_if_not_found(spec))
+    return execute_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, target)
+end
+
 as_annotations(::Nothing) = NoAnnotations()
 as_annotations(ann::RuleAnnotations) = ann
 as_annotations(store) = RuleAnnotations(out = store)
@@ -25,24 +40,30 @@ on the given inputs. `clusters` gives structural clusters as `(:y, :x) => value`
 `algorithm` defaults to the node's; pass an `AnnotationStore` as `ann` to collect what the
 rule annotates.
 """
-call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
-    message_passing_rule(node, as_target(target), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
+function call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
+    resolved_target, args = as_target(target), interactive_args(m, q, clusters)
+    return call_resolved(find_message_rule(node, resolved_target, algorithm, args), nothing, algorithm, ctx, args, as_annotations(ann), resolved_target)
+end
 
 """
     call_marginal_update_rule(node, target; m, q, clusters, algorithm, ctx, ann)
 
 As [`call_message_update_rule`](@ref), for the marginal of the cluster `target`, e.g. `(:out, :μ)`.
 """
-call_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
-    message_passing_marginalrule(node, as_cluster(target), algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
+function call_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
+    cluster, args = as_cluster(target), interactive_args(m, q, clusters)
+    return call_resolved(find_marginal_rule(node, cluster, algorithm, args), nothing, algorithm, ctx, args, as_annotations(ann), cluster)
+end
 
 """
     call_average_energy(node; q, clusters, algorithm, ctx)
 
 As [`call_message_update_rule`](@ref), for a node's average energy.
 """
-call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing) =
-    message_passing_average_energy(node, algorithm, interactive_args(m, q, clusters), ctx, as_annotations(ann))
+function call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
+    args = interactive_args(m, q, clusters)
+    return call_resolved(find_average_energy(node, algorithm, args), nothing, algorithm, ctx, args, as_annotations(ann), nothing)
+end
 
 """
     which_message_update_rule(node, target; m, q, clusters, algorithm)

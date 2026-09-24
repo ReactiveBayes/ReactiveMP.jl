@@ -1,5 +1,11 @@
 # [Log-scale annotations](@id lib-annotations-logscale)
 
+!!! warning "Experimental"
+    Log scales are experimental. Rules write them by convention, under the `:logscale` key, and
+    the engine combines them; they have known gaps (some rules do not annotate one, and sampled
+    messages carry an unnormalised constant). How they are represented may change, and the
+    feature may be removed, in a later release.
+
 ## Background: scale factors in message passing
 
 In sum-product message passing on a Forney-style factor graph, a message ``\vec{\mu}_{s_j}(s_j)`` flowing along an edge is in general *unnormalised*. It can be decomposed as

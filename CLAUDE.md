@@ -47,7 +47,7 @@ src/
   fixes.jl             upstream hot-fixes; empty now
 lib/                   the new packages: the rule system, its test tooling, rules, numerics
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
-legacy/v6/             the v6 rule system and unported nodes, for reference; never loaded
+legacy/v6/             the nodes Phase 6 ports, with their helpers and approximations; never loaded
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against the v6 fixtures
 ```
 
@@ -93,12 +93,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (131 of them across 22 files), each self-contained and
+Tests are `@testitem` blocks (133 of them across 22 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (21) and `:engine` (108 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (23) and `:engine` (108 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate and the engine's doctests. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
@@ -125,7 +125,7 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   byte-identical output on Julia 1.10 and 1.13, which is what JuliaFormatter could not do. The
   version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
   between releases; use `make scripts_update` to bump it deliberately, and run `make format`
-  over the repo in the same commit. `docs/` is excluded, as it was before.
+  over the repo in the same commit. `docs/` and `legacy/` are excluded.
 - Julia: work targets **1.13 only**, and siblings are wired with `[sources]`, test-only ones via
   `[extras]` too; the comparison environment is resolved on 1.13 as well. The 1.10 floor and
   its old workarounds are reconsidered when the packages are registered (`DISCUSSION.md` §3.22).
@@ -150,12 +150,27 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
-  six nodes, the univariate distributions, the logic nodes, the multivariate normals, the matrix and Wishart nodes, the arithmetic nodes and the mixtures so far), `MessagePassingRulesApproximations` (`make test-approximations`;
+  every standard node: the distributions, arithmetic, logic and the mixtures), `MessagePassingRulesApproximations` (`make test-approximations`;
   `Unscented` and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation` and its Unscented
   rules). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
-- `legacy/v6/` holds the v6 rule system and every node not yet ported: never loaded, never
-  tested, kept as the reference Phase 5 ports from. The inventory gate runs in
+- The Standard and Delta suites end with a **rule-coverage gate**: after an unfiltered run
+  (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
+  find every rule selected by some test. A table case, a verification, a derivative check or
+  a direct `call_*` counts; a rule reached only through a graph does not. A new rule needs a test
+  in its package, or `make test-standard` fails.
+- `@define_factor_node` can declare what a node requires of the graph: `matched_groups =
+  [(:m, :p)]`, `min_group_length = 2`, `factorisation = :meanfield`. `factornode` checks them;
+  the two mixtures declare all three (`DISCUSSION.md` §3.38).
+- The v6 → v7 migration guide is the docs page `docs/src/migration-guides/v6-to-v7.md`; there is
+  no `MIGRATION.md`, though older text in the design documents still says so (§3.36).
+- Log scales (`:logscale` annotations, `LogScaleAnnotations`) are **experimental**: the engine
+  owns the policy, the base package only carries annotations, and Phase 7 decides whether to fix
+  or drop the feature (§3.37).
+- `legacy/v6/` holds the nodes not yet ported, their rules, and the helpers and approximations
+  they use: never loaded, never tested, kept as the reference Phase 6 ports from
+  (`legacy/README.md` says whose each file is). The v6 engine and rule system are only in the
+  6.5.0 release and in git. The inventory gate runs in
   `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
@@ -178,13 +193,13 @@ and read whichever exist before proposing changes:
 **If none of these files exist, the repository has no unfinished business** and you can
 treat `main` as the whole story.
 
-The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, and Phase 6 (the node
-packages) is next. From
-Phase 4.5 on, the engine in `src/` is
-**refactored in place**, not bridged. Its reactive machinery is kept, and rule lookup and
-invocation plus node and rule definition and creation are replaced. Step 4 is a **clean
-cut**: the v6 rule system and every unported node move to `legacy/v6/` (moved, not deleted),
-after their behaviour was recorded as fixtures in `compat/v6-comparison`. Breaking downstream
+The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
+review's findings resolved, and Phase 6 (the node packages) is next, starting with its brief.
+From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
+machinery is kept, and rule lookup and invocation plus node and rule definition and creation
+are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to
+`legacy/v6/`, after their behaviour was recorded as fixtures in `compat/v6-comparison`; Phase 5
+step 9 then deleted the v6 engine files from there, leaving only what Phase 6 ports. Breaking downstream
 packages before the release is accepted.
 
 Remarks in code and tests that only record the rewrite's history (phases, steps, cases, what

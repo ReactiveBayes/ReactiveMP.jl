@@ -20,6 +20,10 @@
             (m = (A = PointMass([2.0, 1.0]), in = NormalMeanVariance(1.0, 2.0)),) => MvNormalMeanCovariance([2.0, 1.0], [8.0 4.0; 4.0 2.0]),
             (m = (A = PointMass(2.0), in = GammaShapeRate(3.0, 4.0)),) => GammaShapeRate(3.0, 2.0),
             (m = (A = PointMass(2.0), in = PointMass(3.0)),) => PointMass(6.0),
+            # A scalar commutes, so each case above holds with the factors swapped.
+            (m = (A = GammaShapeRate(3.0, 4.0), in = PointMass(2.0)),) => GammaShapeRate(3.0, 2.0),
+            (m = (A = NormalMeanVariance(1.0, 2.0), in = PointMass([2.0, 1.0])),) => MvNormalMeanCovariance([2.0, 1.0], [8.0 4.0; 4.0 2.0]),
+            (m = (A = MvNormalMeanCovariance([1, 2], [3 2; 2 6]), in = PointMass(2)),) => MvNormalMeanCovariance([2, 4], [12 8; 8 24]),
         ],
     )
     # v6's tables for `:in` ran its reversed-order rules, which returned moment forms; the rule
@@ -42,6 +46,7 @@
             (m = (in = PointMass(2.0), out = NormalMeanVariance(4.0, 8.0)),) => NormalWeightedMeanPrecision(1.0, 0.5),
             (m = (in = PointMass([2.0, 1.0]), out = MvNormalMeanPrecision([2.0, 1.0], I2)),) => NormalWeightedMeanPrecision(5.0, 5.0),
             (m = (in = PointMass(2.0), out = PointMass(6.0)),) => PointMass(3.0),
+            (m = (in = PointMass(2.0), out = GammaShapeRate(3.0, 2.0)),) => GammaShapeRate(3.0, 4.0),
         ],
     )
     @test_marginal_update_rule(
@@ -97,6 +102,11 @@ end
     sampled_out = call_message_update_rule(*, :out; m = (A = b, in = g), ctx)
     for z in (0.3, 1.0, 2.0)
         @test logpdf(sampled_out, z) - log(3000) ≈ log(integral(a -> pdf(b, a) * pdf(g, z / a) / a, 0.0, 1.0)) atol = 0.05
+    end
+    # Towards `A`, the same ratio with the roles of `A` and `in` exchanged.
+    sampled_A = call_message_update_rule(*, :A; m = (out = g, in = b), ctx)
+    for a in (0.5, 2.0, 4.0)
+        @test logpdf(sampled_A, a) - log(3000) ≈ log(integral(y -> pdf(g, a * y) * pdf(b, y), 0.0, 1.0)) atol = 0.05
     end
 end
 

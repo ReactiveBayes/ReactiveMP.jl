@@ -151,6 +151,16 @@ end
     )
 end
 
+@testitem "rules:-:in1-convolution" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
+
+    # in1 = out + in2, so two Gammas of one scale convolve into their shapes' sum.
+    @test_message_update_rule(
+        node = -, target = :in1,
+        cases = [(m = (out = Gamma(3.5, 2.0), in2 = Gamma(1.0, 2.0)),) => Gamma(4.5, 2.0)],
+    )
+end
+
 @testitem "rules:-:marginals" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
 

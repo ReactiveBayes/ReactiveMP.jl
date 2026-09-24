@@ -32,7 +32,7 @@ changes to ReactiveMP code will be reflected in imported code.
 
 ### Committing code
 
-We use the standard [GitHub Flow](https://guides.github.com/introduction/flow/) workflow where all contributions are added through pull requests. In order to contribute, first [fork](https://guides.github.com/activities/forking/) the repository, then commit your contributions to your fork, and then create a pull request on the `master` branch of the ReactiveMP.jl repository.
+We use the standard [GitHub Flow](https://guides.github.com/introduction/flow/) workflow where all contributions are added through pull requests. In order to contribute, first [fork](https://guides.github.com/activities/forking/) the repository, then commit your contributions to your fork, and then create a pull request on the `main` branch of the ReactiveMP.jl repository.
 
 Before opening a pull request, please make sure that all tests pass without
 failing, that `make check-format` reports no changes, and that `CHANGELOG.md` has an entry
@@ -55,7 +55,7 @@ We use default [Julia style guide](https://docs.julialang.org/en/v1/manual/style
 
 We use the test-driven development (TDD) methodology for ReactiveMP.jl development. The test coverage should be as complete as possible. Please make sure that you write tests for each piece of code that you want to add.
 
-All unit tests are located in the `/test/` directory. The `/test/` directory follows the structure of the `/src/` directory. Each test file should have following filename format: `test_*.jl`. Some tests are also present in `jldoctest` docs annotations directly in the source code.
+The engine's tests are in the `/test/` directory, which follows the structure of the `/src/` directory; each rule package under `/lib/` has its own `test/` directory. Test files are named `*_tests.jl` and hold `@testitem` blocks, each carrying a tag. A rule package's suite ends with a coverage check: every rule it defines must be selected by some test, a table case or a direct `call_*`. Some tests are also present in `jldoctest` docs annotations directly in the source code.
 See [Julia's documentation](https://docs.julialang.org/en/v1/manual/documentation/index.html) about doctests.
 
 The tests can be evaluated by running following command in the Julia REPL:
@@ -82,8 +82,9 @@ a new release of the broken dependecy is available.
 
 - `make help`: Shows help snippet
 - `make test`: Run tests, supports extra arguments
-  - `make test test_args="rules:normal_mean_variance"` would run tests only from `test/rules/normal_mean_variance/`
-  - `make test test_args="rules:beta:out"` would run tests only from `test/rules/beta/out_tests.jl`
+  - `make test test_args="nodes"` runs only the tests under `test/nodes/`, and `make test test_args="engine:fixtures"` only `test/engine/fixtures_tests.jl`
+  - `make test test_args="tag:engine"` and `make test test_args="name:MessageMapping"` select test items by tag and by name
+  - `make test-standard test_args="name:rules:Beta"` runs a rule package's tests the same way; `make test-base`, `make test-testutils`, `make test-approximations` and `make test-delta` are the others
   - `RUN_AQUA=false make test` skips the slow Aqua checks, which are enabled by default
 - `make docs`: Compile documentation
 - `make check-format`: Check codestyle, without modifying files

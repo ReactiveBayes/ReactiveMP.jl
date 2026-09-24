@@ -2,10 +2,15 @@ const SELECTED_RULES = IdDict{Any, Vector{LineNumberNode}}()
 
 record_selected_rule!(spec, source::LineNumberNode) = (push!(get!(SELECTED_RULES, spec, LineNumberNode[]), source); nothing)
 
+# A rule a test calls by hand, with `call_message_update_rule` and its siblings, is recorded as
+# selected too; it has no source line to report.
+const DIRECT_CALL = LineNumberNode(0, Symbol("a direct call"))
+record_direct_call!(spec) = record_selected_rule!(spec, DIRECT_CALL)
+
 """
     RuleCoverageGap
 
-Something [`check_rule_coverage`](@ref) found untested: a rule no table case selected, or
+Something [`check_rule_coverage`](@ref) found untested: a rule no test case or direct call selected, or
 a node none of whose rules was selected.
 """
 struct RuleCoverageGap
@@ -18,8 +23,10 @@ Base.show(io::IO, gap::RuleCoverageGap) = print(io, "RuleCoverageGap(", gap.mess
 """
     check_rule_coverage(modules...)
 
-The rules and nodes defined in `modules` that no table case exercised. A rule counts as
-tested only when a case actually *selected* it, so a broader rule answering in its place
+The rules and nodes defined in `modules` that no test exercised: no table case,
+verification or derivative check, and no direct call such as
+[`call_message_update_rule`](@ref), selected them. A rule counts as tested only when a test
+actually *selected* it, so a broader rule answering in its place
 leaves it reported.
 
 Call it after the whole suite has run, and only when nothing was filtered out:

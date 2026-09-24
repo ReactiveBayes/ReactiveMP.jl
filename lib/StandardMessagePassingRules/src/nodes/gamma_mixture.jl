@@ -3,7 +3,8 @@
 
 A mixture of Gamma distributions: `out` is drawn from the component `switch` selects, a
 `GammaShapeRate` with shape `a` and rate `b`, both groups with one member per component. v6
-called it `GammaMixture{N}`; the number of components is now the groups' length.
+called it `GammaMixture{N}`; the number of components is now the groups' length. A node needs
+at least two components, as many shapes as rates, and a mean-field factorisation.
 
 Its rules run under its own algorithm, [`GammaMixtureVMP`](@ref), and are always variational.
 The `:out` and `:switch` dependencies list the rates before the shapes, which is the update
@@ -24,6 +25,9 @@ struct GammaMixtureVMP <: AbstractAlgorithm end
     type = Stochastic,
     interfaces = [:out, :switch, :a..., :b...],
     algorithm = GammaMixtureVMP,
+    matched_groups = [(:a, :b)],
+    min_group_length = 2,
+    factorisation = :meanfield,
     dependencies = [
         :out => (q[:switch], q[:b...], q[:a...]),
         :switch => (q[:out], q[:b...], q[:a...]),

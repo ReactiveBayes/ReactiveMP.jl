@@ -48,6 +48,7 @@ Within the reactive message passing framework, marginals are not computed once a
 
 ```@docs
 ReactiveMP.MarginalObservable
+ReactiveMP.MarginalMapping
 ```
 
 Every [`ReactiveMP.AbstractVariable`](@ref) holds one `MarginalObservable`, accessed via [`ReactiveMP.get_stream_of_marginals`](@ref). The observable starts *unconnected*: its internal `LazyObservable` has no upstream source until the factor graph is activated. During activation, `ReactiveMP.connect!` wires the lazy stream to a computed source (e.g. `collectLatest` over inbound messages for a [`ReactiveMP.RandomVariable`](@ref), or the observation channel for a [`ReactiveMP.DataVariable`](@ref)). After that point, every message update propagates through the graph and the `MarginalObservable` emits a fresh `Marginal`.

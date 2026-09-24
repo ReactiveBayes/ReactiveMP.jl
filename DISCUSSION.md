@@ -1244,7 +1244,8 @@ multinomial regression tests use it. So they are used, and they bundle three thi
 So the types are deleted. Documentation (user): one page explaining how to declare
 dependencies, written only in the new terms, and a `MIGRATION.md` section that maps the old
 types onto these three pieces. Both are written in Phase 5, with Probit and ContinuousTransition
-ported.
+ported. *(Both were written in Phase 5 step 9, the section in the guide `docs/src/migration-guides/v6-to-v7.md`
+(§3.36); Probit and ContinuousTransition are ported in Phase 6.)*
 
 ### 3.22 Clean cut, Julia 1.13 only
 
@@ -1445,7 +1446,7 @@ remains is dominated by work a tool would only flag: `FactorizedCluster` returns
 questions such as the correction strategy, helper extraction, and tests that do not exist in
 v6. The gates stay strict, per directory: v6's tables, a `compare_standard.jl` case per rule,
 verification against the node definition where it applies, and `check_rules`. `MIGRATION.md`
-is written from what the ports find, with its pairs as doctests; the requirement that the tool
+(the docs page since §3.36) is written from what the ports find, with its pairs as doctests; the requirement that the tool
 and the guide derive from one source goes with the tool.
 
 **Rule-to-rule calls become helper functions (user).** About twenty v6 bodies call another
@@ -1572,7 +1573,7 @@ than distributions. The engine supplies it from `rule_context`, with v6's `Gener
 v6's `Mixture` energy logs a warning and returns 0.0 on every call, so a free energy of a model
 with a Mixture was silently wrong. The user decided the port defines **no** average energy: a
 free energy then raises the base package's `RuleNotFound`, naming the node, instead of a wrong
-number. It is a gap, recorded for MIGRATION.md. Keeping v6's placeholder was rejected.
+number. It is a gap, recorded in the v6 → v7 guide. Keeping v6's placeholder was rejected.
 
 The node's rules are sum-product over the incoming messages whatever the factorisation, so it
 runs under an algorithm of its own, as NormalMixture does. The sketches called it
@@ -1595,6 +1596,54 @@ Four questions shaped step 9, and the user decided each:
   deleted, being replaced and kept by git and by the 6.5.0 release. v6's rule fallbacks and
   `StandaloneDistributionNode` are not carried over, and the guide says so. The helpers the
   unported nodes still use stay, as those nodes' material.
+
+### 3.37 Log scales stay where they are, experimental, until Phase 7 decides (user, 2026-09-24)
+
+The post-close review found `INVENTORY.md` sending the log-scale and input-argument annotation
+processors to the base package, where they are not and cannot go. What each layer holds:
+- the **base package** carries annotations generically: a keyed store, `annotate!`, and
+  `ann.m`/`ann.q` for those that arrived with the inputs. It gives `:logscale` no meaning;
+- **Standard's rules** write `:logscale` by convention, and Mixture's read the incoming ones: its
+  switch is a softmax over them, so without log scales Mixture has no rules;
+- the **engine** owns the policy: `LogScaleAnnotations` sums them across products and fills in
+  zero for point-mass inputs, and `InputArgumentsAnnotations` records the inputs.
+
+The processors hook the engine's `AnnotationDict`, `MessageMapping` and messages, which the
+package split keeps out of the base package, so they stay in the engine and the inventory says
+so. The key itself is a contract between Standard and the engine that neither owns.
+
+The user weighed four paths: leave the layering and decide later; give the key an owner in the
+base package now; move the processors into the base package; or drop log scales in this
+refactor. Dropping is tempting, since the feature is niche and underdeveloped, but it breaks
+Mixture and contradicts §3.19's "preserve, do not fix". Giving the key an owner now would be
+churn, since typed annotations replace it in Phase 7. **Decided:** the layering stays; the
+docs mark log scales experimental; and Phase 7's log-scale milestone decides whether to fix
+v6's gaps, with typed annotations and the key owned by the base package, or to drop the feature
+and Mixture's rules with it.
+
+### 3.38 A node declares what it requires of the graph (user, 2026-09-24)
+
+v6's NormalMixture and GammaMixture constructors checked for at least two components, as many
+of each kind, and a mean-field factorisation. The generic `factornode` lost all three, so a
+mixture with three means and two precisions was accepted and its switch rule, zipping the
+groups, silently dropped a component. Inferring the relation from the dependencies (an indexed
+target `(:m, k)` reading `q[:p][k]` implies `length(m) ≤ length(p)`) was considered and not
+chosen: the user wanted it **declared**. `@define_factor_node` takes `matched_groups`,
+`min_group_length` and `factorisation = :meanfield`, the `NodeSpec` keeps them, and the engine
+checks them when it creates a node.
+
+### 3.39 Rule coverage counts a rule a test calls by hand (2026-09-24)
+
+`check_rule_coverage` existed but no suite ran it, so `PLAN.md`'s mechanically enforced
+coverage was not. Wired into Standard and Delta after an unfiltered run, it reported 50 of
+Standard's rules unselected (Delta had none), and Uninformative and Mixture with no rule
+selected at all. 39 of the rules were tested, by `@test call_average_energy(…) ≈ …` rather
+than a table, and a direct call recorded nothing; the other 11 had no test, most of them
+shadowed by a broader rule their tests reached instead, and got one. Rewriting those tests as tables would add the tables' type
+promotion checks to rules written as direct calls precisely because they do not support them.
+Instead the base package's interactive calls report the rule they select to observers, and the
+test tooling registers one; an engine resolves rules itself and never reaches them. The gate is
+then zero gaps, which is also `PLAN.md`'s "fail on decrease".
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -1807,7 +1856,7 @@ The original discussion left these questions:
    assistant, never requested. Its piracy argument is now dead for rules (see §5); `algorithm` may
    already cover the "controllable dispatch" goal. **DEFERRED in Phase 0**, and the
    rule-fallback contract it was holding up was specified independently there (§3.15).
-- **The engine step is under-planned.** The rule layer is designed in detail;
+- ~~**The engine step is under-planned.**~~ The rule layer is designed in detail;
    "rewrite ReactiveMP against the new base" hides the mixture `activate!` work, the
    dependency-to-stream wiring for variadic groups, and the `Message`/`DeferredMessage`
    envelope changes. Wants its own session. *(Resolved: the Phase 4.5 design brief was
@@ -1845,7 +1894,7 @@ Open as of the Phase 4.5 reconciliation:
   edge (Probit), separately from `dependencies` (§3.21). Needed when Probit is ported.
 - **Log scales** — preserved as v6 has them, gaps included; fixing them is a milestone of its
   own after the migration.
-- **The models package's name** — *settled by §3.30: no such package; each node gets its own.*
+- ~~**The models package's name**~~ — *settled by §3.30: no such package; each node gets its own.*
 - **The Julia floor** — 1.13 only until registration, when 1.10 support is reconsidered
   (§3.22).
 

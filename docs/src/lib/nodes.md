@@ -15,7 +15,9 @@ FactorNode
 factornode
 functionalform
 getinterfaces
+ReactiveMP.FactorNodeLocalClusters
 ReactiveMP.FactorNodeLocalMarginal
+ReactiveMP.clusterkey
 ```
 
 A node is created from its functional form, the variables it connects, and a factorisation.
@@ -62,6 +64,7 @@ declaration order, which is the update schedule. See
 
 ```@docs
 ReactiveMP.FactorNodeActivationOptions
+ReactiveMP.getalgorithm
 ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)
 ReactiveMP.default_dependencies
 ReactiveMP.declared_dependencies

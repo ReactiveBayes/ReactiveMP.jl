@@ -131,3 +131,19 @@ end
     @test approximately_equal(box, box; atol = 1.0e-10, rtol = 0.0)
     @test !approximately_equal(Box(1.0), Box(1.0); atol = 1.0e-10, rtol = 0.0)
 end
+
+@testitem "tables:algorithm-extension" tags = [:testutils] setup = [ToyRules, Recording] begin
+    using MessagePassingRulesTestUtils, Distributions, BayesBase
+    T = ToyRules
+    # A table run under an extension executes an inherited default rule as the engine does,
+    # with `DefaultAlgorithm()`, through the rule, its preallocation and `rule!`.
+    set = Recording.recorded() do
+        @test_message_update_rule(node = T.Inherited, target = :out, algorithm = T.Extended(), cases = [(m = (x = PointMass(1.5),),) => PointMass(3.0)])
+        @test_message_update_rule(
+            node = T.Inherited, target = :x, algorithm = T.Extended(), check_nonallocating = true, check_type_promotion = false,
+            cases = [(m = (out = [2.0, 4.0],),) => [1.0, 2.0]],
+        )
+    end
+    @test isempty(Recording.failures(set))
+    @test Recording.passes(set) > 5
+end
