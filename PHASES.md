@@ -25,7 +25,7 @@ one.
 one package, with the companion matrix and the standard basis vector, and SoftDot on its own.
 Steps 1–3 are done: the numerics, Delta (Unscented, Linearization, `CVIProjection`), and
 GaussianCoupling, Probit and GCV, each in its package, compared with v6 and in a fixture, with a
-node's default initial message for Probit. Step 4 needs its brief.
+node's default initial message for Probit. Step 4 is briefed (§ Phase 6, *Step 4 brief*).
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -2439,6 +2439,56 @@ GCV; the guide's entries for the three, which close the step. A commit each.
 - *The guide — done, which closes step 3.* The v6 → v7 guide's *Node packages* section maps each
   node to its package and its `meta` to the node's algorithm, with Probit's initial message and
   GCV's distribution; its behaviour changes include Probit's finite energy.
+
+### Step 4 brief — the autoregressive family
+
+**Scope, surveyed** (`legacy/v6/src/nodes/predefined/{autoregressive,conjugate_autoregressive,softdot}.jl`,
+their rule directories, `helpers/algebra/{companion_matrix,standard_basis_vector}.jl`, the tests):
+- **AR** (`y` alias `out`, `x`, `θ`, `γ`): 8 message rules, 1 marginal rule `(:y, :x)`, 2 energies,
+  in mean-field and structured `q(y, x)` pairs. `ARMeta{F}(order, ARsafe | ARunsafe)` is required,
+  with no default: the variate form (Univariate forces order 1), the order, and whether the
+  covariance is regularised. Its own matrix types, `ARPrecisionMatrix` and `ARTransitionMatrix`,
+  broadcast into dense ones; the companion matrix of `θ` (`as_companion_matrix`, seven sites) and
+  a `StandardBasisVector` (`ar_unit`) are v6's algebra types, whose `*` methods v6 counted at 75 and
+  85 Aqua ambiguities. `LazyArrays` served one index vector in the energy. About 41 table cases,
+  30 node tests.
+- **ConjugateAR** (`y`, `x`, `w`): 5 message rules, 2 marginal rules, 1 energy; `w` is the joint
+  `(θ, γ)` as an `MvNormalGamma`. Its `x` and `y` rules and its energy map `q(w)` to effective
+  `(q_θ, q_γ)` and call AR's (`@call_rule`, `score`); its `w` message can be improper for order ≥ 3,
+  as v6 documents; one marginal rule is over the single interface `w`. Its tests compare with AR
+  and with a Bayesian linear regression.
+- **SoftDot** (`y`, `θ` alias `theta`, `x`, `γ` alias `gamma`), declared as `softdot`: 8 message rules,
+  1 marginal rule, 2 energies. Its `y` rule called AR's with an `ARMeta` it built, and it used AR's
+  `ar_slice` and `add_transition`. About 63 cases, and tests pinning ReactiveMP.jl#615.
+
+**Decided (user, entry brief):** AR and ConjugateAR share a package, with the companion matrix and
+the standard basis vector; SoftDot has its own, independent of AR's, reimplementing what it needs
+and tested on its own; the algebra helpers (`mul_trace`, `rank1update`, …) are Standard's.
+
+**Defaults for the step**, open to the user's correction:
+- **Packages** `AutoregressiveMessagePassingRules` (AR, ConjugateAR) and `SoftDotMessagePassingRules`,
+  on the Phase 6 template, depending on Standard for its helpers and MvNormalGamma's algebra.
+- **The algorithm**: `ARMeta` becomes `ARVMP(form, order, stype)`, v6's constructor and its order
+  check kept, with `ARsafe()` and `ARunsafe()`. Like Delta, the nodes declare no algorithm of their
+  own: v6 had no default meta, so under `DefaultAlgorithm` no rule is found, and the error says so.
+  ConjugateAR takes the same algorithm. SoftDot has none, as in v6.
+- **Rules that called rules** share helpers: ConjugateAR's `x` and `y` rules and its energy call the
+  AR helpers with the effective marginals; SoftDot's `y` rule writes out AR's `y` formula.
+- **ConjugateAR's `w` marginal** is not ported: a one-member cluster of a single interface is its
+  marginal, which the engine forms from the messages, and only v6's tests reached it; its algebra
+  is tested through the `w` message's product with a prior.
+- **The algebra types** move to the AR package unexported, their `*` methods narrowed until Aqua
+  finds no ambiguity, which every lib package checks; `LazyArrays` goes, the index vector built.
+- **Tests**: v6's tables and node tests, ported by a subagent against the port's API and reviewed,
+  as GCV's were; type-promotion checks where v6 asked for them.
+- **v6 comparisons** `compare_autoregressive.jl` and `compare_softdot.jl`, and **engine fixtures**
+  with free energy: an AR(2) process under `q(y, x) q(θ) q(γ)`, and a SoftDot regression.
+
+**Order:** the AR package (algebra types first, then AR, then ConjugateAR); SoftDot; the guide's
+entries, which close the step. A commit each.
+
+**Progress:** not started.
+
 
 
 
