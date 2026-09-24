@@ -131,6 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `compat/v6-comparison/`, a pinned environment holding `ReactiveMP@6.5.0` from the registry, in which the Phase 4 migration checker will run a v6 rule and a v7 rule on identical inputs in one process. Its `Manifest.toml` is tracked so the pin is reproducible.
 
 ### Removed
+- From `legacy/v6/` (Phase 6, step 1): the approximation methods nothing needs, CVI, Laplace, importance sampling, Gauss–Laguerre and spherical-radial cubature, with the optimisers and `ReactiveMPOptimisersExt`; the Delta node's CVI rules and layout; `fixes.jl`, the `ForwardDiff` hot-fix whose only users were Laplace and CVI; the approximation files step 1 ported; and their tests. `Optim` appears nowhere but in prose and the pinned 6.5.0 environment.
 - From `legacy/v6/` (Phase 5, step 9): the v6 engine and rule-system files (`rule.jl`, `nodes/{nodes,dependencies,clusters}.jl`, `score/`) and their tests, which the new packages replace; v6's rule fallbacks and `StandaloneDistributionNode`, which are not carried over (`INVENTORY.md` marks the fallbacks `delete`); and the stale include lists. `legacy/v6/` now holds only what Phase 6 ports from.
 - `Coverage`, `Dates` and `Distributed` from the test target — nothing referenced any of them.
 - `PkgBenchmark` from the test target; it was only there for the deleted benchmark suite and no test referenced it.

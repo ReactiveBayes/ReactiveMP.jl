@@ -21,12 +21,13 @@ one.
 
 ## Next action
 
-**Phase 6, step 1: numerics and deletions** (§ Phase 6, *Step 1 brief*). The entry brief counts
-Phase 6 at 123 message rules, 22 marginal rules and 19 average energies in 13 nodes and 10
-packages, with Delta's Linearization and `CVIProjection`, and orders it in ten steps, each
-briefed before it starts. Step 1 is briefed: `Linearization`, Gauss–Hermite cubature and
-`approximate_meancov` into `MessagePassingRulesApproximations`, the algebra helpers into
-Standard, and the deletions.
+**Phase 6, step 2: Delta** (§ Phase 6, *Entry brief*). The entry brief counts Phase 6 at 123
+message rules, 22 marginal rules and 19 average energies in 13 nodes and 10 packages, with
+Delta's Linearization and `CVIProjection`, and orders it in ten steps, each briefed before it
+starts. Step 1 is done: `Linearization`, Gauss–Hermite cubature and `approximate_meancov` are in
+`MessagePassingRulesApproximations`, the algebra helpers in Standard, and the deleted methods
+have left `legacy/v6/`. Step 2 needs its brief: Delta's Linearization rules, the `CVIProjection`
+extension, #11's follow-ups and the Delta v6 comparison.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -104,7 +105,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; `Unscented` and `smoothRTS` ported in 4.5, and `DeltaMessagePassingRules` created with Delta's Unscented rules; step 1, numerics and deletions, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; step 1, numerics and deletions, done; step 2, Delta, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -2230,13 +2231,22 @@ theirs; the algebra helpers in Standard; the deletions. A commit each.
   `mul_trace` in Standard, unexported and documented, with v6's tests (`helpers:algebra`);
   `rank1update!` is folded into `rank1update`'s generic path. `common.jl` and its tests have left
   `legacy/v6/`.
+- *The deletions — done, which closes step 1.* Out of `legacy/v6/`: the ported
+  `approximations.jl`, `shared.jl`, `linearization.jl` and `gausshermite.jl`; CVI, Laplace,
+  importance sampling, Gauss–Laguerre, spherical-radial cubature and the optimisers; the Delta
+  CVI rules and layout; `ext/ReactiveMPOptimisersExt`; `fixes.jl`; and their tests. What stays for
+  step 2 is `cvi_projection.jl`, `ext/ReactiveMPProjectionExt`, Delta's Linearization rules and its
+  default layout. `CVIProjection` needs `cvilinearize` from the deleted `cvi.jl`, two methods,
+  `cvilinearize(v::AbstractVector) = v` and `cvilinearize(m::AbstractMatrix) = eachcol(m)`,
+  which step 2 writes into the extension. `Optim` appears only in prose and in the pinned 6.5.0
+  environment's manifest.
 
 **Exit criteria**
-- [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
+- [x] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
       `laplace.jl` had no consumer; step 4 moved them and their tests to `legacy/v6/`, and
       they are not ported from there (skim the tests first, they may be the only record of
       intended behaviour)
-- [ ] the superseded `cvi.jl` (`ProdCVI`/`CVI`), `delta/layouts/cvi.jl` and
+- [x] the superseded `cvi.jl` (`ProdCVI`/`CVI`), `delta/layouts/cvi.jl` and
       `rules/delta/cvi/*` are not ported from `legacy/v6/` either. *Their dependencies are
       already gone:* step 4 moved `ReactiveMPOptimisersExt` to `legacy/v6/ext/` and dropped
       the `Optimisers` weakdep and `DiffResults` from `Project.toml`
@@ -2249,7 +2259,7 @@ theirs; the algebra helpers in Standard; the deletions. A commit each.
 - [ ] `CVIProjection` ships as a weakdep extension of the Delta node package. Phase 0 found
       the layout collapse real but partial: dependencies absorb input selection, while
       static gating, the empty group and `q_out` aliasing are engine features
-- [ ] `MessagePassingRulesApproximations`: `Linearization`, the remaining piece. `Unscented`,
+- [x] `MessagePassingRulesApproximations`: `Linearization`, the remaining piece. `Unscented`,
       `smoothRTS`, `approximations.jl` and `shared.jl` were ported in Phase 4.5 step 3, as pure
       numerics. **Standalone — must not depend on `MessagePassingRulesBase`**, nor on any
       distribution package. Utilities that algorithms use, not algorithms. The deps today are
@@ -2258,10 +2268,11 @@ theirs; the algebra helpers in Standard; the deletions. A commit each.
       with `cvi.jl`), no `Optim`
 - [ ] numerical API carried over without broader redesign. FastCholesky is called directly
       until the numerical protocol (open item #13, parked) is settled
-- [ ] `ghcubature` and `approximate_meancov` move to `MessagePassingRulesApproximations` with
+- [x] `ghcubature` and `approximate_meancov` move to `MessagePassingRulesApproximations` with
       `FastGaussQuadrature`, since Pólya, Probit and GCV all use them *(the Pólya package, until
       the entry brief counted their users)*
-- [ ] confirm `Optim` no longer appears anywhere
+- [x] confirm `Optim` no longer appears anywhere *(step 1: only in prose and the pinned 6.5.0
+      manifest)*
 - [ ] non-standard nodes spun out, each into its node package (`INVENTORY.md`'s `node:X`): Flow,
       Autoregressive (with ConjugateAR), BIFM (with its `TerminalProdArgument` rules in
       `legacy/v6/src/rules/mv_normal_mean_precision/marginals.jl`), Pólya, ContinuousTransition,

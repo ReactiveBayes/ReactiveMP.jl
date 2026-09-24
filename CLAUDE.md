@@ -151,7 +151,7 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
   every standard node: the distributions, arithmetic, logic and the mixtures), `MessagePassingRulesApproximations` (`make test-approximations`;
-  `Unscented` and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
+  `Unscented`, `Linearization`, Gauss–Hermite cubature and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation` and its Unscented
   rules). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
 - The Standard and Delta suites end with a **rule-coverage gate**: after an unfiltered run
@@ -194,7 +194,7 @@ and read whichever exist before proposing changes:
 treat `main` as the whole story.
 
 The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
-review's findings resolved; Phase 6 (the node packages) is briefed, and its step 1 is next.
+review's findings resolved; Phase 6 (the node packages) is under way: step 1 is done, and step 2, Delta, is next.
 From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
 machinery is kept, and rule lookup and invocation plus node and rule definition and creation
 are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to
