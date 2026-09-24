@@ -297,6 +297,25 @@ A ported rule is checked three ways:
 3. While the old implementation is at hand, [`compare_with_reference`](@ref) on the same inputs:
    every difference is either a bug in the port or a declared correction with its reason.
 
+## [Node packages](@id migration-v6-to-v7-node-packages)
+
+The nodes that are not standard have a package each, loaded next to the engine: loading it is
+enough for the engine to find its rules. Their v6 `meta` is the node's own algorithm:
+
+| v6 | v7 |
+|---|---|
+| `GaussianCoupling` | `GaussianCouplingMessagePassingRules`, no algorithm of its own |
+| `Probit`, `ProbitMeta(p)` | `ProbitMessagePassingRules`, `ProbitEP(; p = 32)` |
+| `GCV`, `GCVMetadata(GaussHermiteCubature(n))` | `GCVMessagePassingRules`, `GCVApproximation(; method = GaussHermiteCubature(n))` |
+
+- **Probit** declared `RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`. Its
+  algorithm now declares that the rule towards `in` reads the message on its own edge, and the
+  node declares that message's start, set only where the model sets none. A model that chose
+  another initial message keeps it. v6's rules without expectation propagation run under
+  `DefaultAlgorithm()`.
+- **GCV**'s `ExponentialLinearQuadratic` is exported by its package, which also holds the rules
+  that let `NormalMeanVariance` and `NormalMeanPrecision` take one on `out`.
+
 ## Behaviour that changed
 
 The rules of the standard nodes follow naive variational message passing where v6 did not, and
@@ -315,6 +334,8 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   `*` rules towards `in` with their arguments reversed, reachable only through `@call_rule`, are
   gone.
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
+- **Probit's average energy** is finite for a wide `q(in)`, where v6's underflowed at far cubature
+  points and returned Inf or NaN.
 - **The Delta node takes three methods**: `Unscented()`, `Linearization()` and, once
   `using ExponentialFamilyProjection` loads its rules, `CVIProjection()`. v6's other methods are
   gone, with no replacement: `CVI` and `ProdCVI`, `LaplaceApproximation`,
