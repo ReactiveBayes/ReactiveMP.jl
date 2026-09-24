@@ -10,10 +10,16 @@ loopy models, these variables can require additional initial messages and affect
 the message update schedule. `ManyPlus` avoids those intermediate variables, so
 initialization can refer directly to the summands.
 
+!!! note "Supported inputs"
+    `ManyPlus` currently supports only the summation of **univariate** Gaussian
+    variables, optionally mixed with scalar constants. Multivariate Gaussian inputs
+    are not supported; use a chain of binary `+` nodes for those instead.
+
 For example, in an RxInfer model:
 
 ```julia
 @model function sum_model(y, n)
+    local x
     for i in 1:n
         x[i] ~ Normal(mean = 0.0, variance = 1.0)
     end
@@ -21,6 +27,9 @@ For example, in an RxInfer model:
     y ~ Normal(mean = total, variance = 0.5)
 end
 ```
+
+The `local x` declaration is required. Without it, `x` exists only inside the
+`for` loop and cannot be passed as a whole to `ManyPlus` afterwards.
 
 At least two inputs are required. The current rules support scalar Gaussian
 messages from `UnivariateNormalDistributionsFamily` and scalar constants, represented
@@ -48,14 +57,28 @@ result = infer(
 
 This example supplies the fixed summands through `data`. The `sum_three` submodel
 assembles their interfaces into one `ManyPlus` factor without intermediate sum
-variables. In RxInfer 5.5.2, directly mixing variable references and numeric
-literals in a vector such as `[x1, 2.0, x3]` fails during GraphPPL graph construction;
-the submodel above avoids that frontend limitation.
+variables. Directly mixing variable references and numeric literals in a vector,
+such as `[x1, 2.0, x3]`, is currently not supported by the
+[GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl) model frontend; the
+submodel above avoids that limitation.
 
 Constants contribute their value to the sum and zero variance. When every input
 message is a point mass, the forward message is also a point mass. The incoming
 message on the output interface must still be Gaussian; directly observed or fixed
 outputs and multivariate messages are not supported.
+
+!!! warning "Scaling with the number of inputs"
+    Internally, the inputs are stored as a `Tuple`, and the backward message
+    to every input depends on a `Tuple` of all the other inputs. Julia compiles
+    specialised code for each tuple length, so both compilation and run time grow
+    quickly with the number of inputs. In a simple tree model, the first `infer`
+    call took about 7 seconds with 50 inputs and about 3 minutes with 200 inputs,
+    while later calls took about 0.01 and 0.7 seconds respectively. Every
+    iteration also costs ``O(N^2)`` for ``N`` inputs, because each of the ``N``
+    backward messages sums over the other ``N - 1`` inputs. `ManyPlus` is
+    therefore intended for a moderate number of summands (tens rather than
+    hundreds). For very long sums, consider a chain or tree of binary `+` nodes,
+    or several `ManyPlus` nodes over blocks of summands.
 
 The node always uses sum-product messages on its edges, independently of the
 surrounding factorisation. The forward message sums the incoming means and

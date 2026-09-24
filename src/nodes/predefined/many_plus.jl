@@ -3,9 +3,9 @@ export ManyPlus
 """
     ManyPlus
 
-A deterministic factor that adds a collection of two or more scalar Gaussian
+A deterministic factor that adds a collection of two or more univariate Gaussian
 or constant inputs with a single factor node, without introducing intermediate
-sum variables.
+sum variables. Multivariate inputs are currently not supported.
 
 The node uses sum-product messages on all edges, independently of the surrounding
 factorisation. It assumes a joint local belief `q(inputs, output)` with
@@ -22,6 +22,11 @@ total := ManyPlus(inputs = [x1, x2, x3])
 
 The inputs may include fixed input variables. See the ManyPlus node documentation
 for an RxInfer example with fixed inputs and graph-construction considerations.
+
+!!! warning
+    The inputs are stored in a `Tuple`, so compilation and run time grow quickly with
+    the number of inputs. `ManyPlus` is intended for tens rather than hundreds of
+    summands; see the ManyPlus node documentation for details.
 """
 struct ManyPlus end
 

@@ -31,7 +31,6 @@ makedocs(
             "Helper utils"         => "lib/helpers.md",
             "Algebra utils"        => "lib/algebra.md",
             "Specific factor nodes" => [
-                "ManyPlus" => "lib/nodes/many_plus.md",
                 "Delta" => "lib/nodes/delta.md",
                 "Flow" => "lib/nodes/flow.md",
                 "BIFM" => "lib/nodes/bifm.md",
@@ -43,6 +42,7 @@ makedocs(
                 "GaussianCoupling" => "lib/nodes/gaussian_coupling.md",
                 "BinomialPolya" => "lib/nodes/binomial_polya.md",
                 "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
+                "ManyPlus" => "lib/nodes/many_plus.md",
             ]
         ],
         "Annotations" => [
