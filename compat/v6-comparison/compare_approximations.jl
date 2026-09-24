@@ -1,5 +1,5 @@
 # MessagePassingRulesApproximations against v6's `src/approximations/`, on identical inputs:
-# the unscented transform, local linearization and the RTS smoother.
+# the unscented transform, local linearization, Gauss–Hermite cubature and the RTS smoother.
 # The multi-input unscented path matters most: it builds its joint from concatenated means
 # and a block-diagonal covariance, where v6 went through ExponentialFamily's JointNormal.
 #
@@ -46,6 +46,18 @@ const LINEARIZATION_CASES = [
     for (label, g, x̂) in LINEARIZATION_CASES
         @testset "Linearization: $label" begin
             @test agree(Approximations.approximate(Approximations.Linearization(), g, x̂), ReactiveMP.approximate(ReactiveMP.Linearization(), g, x̂))
+        end
+    end
+    for p in (3, 7)
+        new, old = Approximations.GaussHermiteCubature(p), ReactiveMP.GaussHermiteCubature(p)
+        @testset "Gauss–Hermite, $p points" begin
+            for (label, m, v) in (("univariate", 0.5, 2.0), ("multivariate", [1.0, -2.0], [2.0 0.5; 0.5 1.0]))
+                @test agree(collect(Approximations.getweights(new, m, v)), collect(ReactiveMP.getweights(old, m, v)))
+                @test agree(map(copy, Approximations.getpoints(new, m, v)), map(copy, ReactiveMP.getpoints(old, m, v)))
+            end
+            for (g, m, v) in ((x -> exp(-x^2), 0.5, 2.0), (x -> x^2 + 1.0, -1.0, 0.5), (x -> exp(-sum(abs2, x)), [1.0, -2.0], [2.0 0.5; 0.5 1.0]))
+                @test agree(Approximations.approximate_meancov(new, g, m, v), ReactiveMP.approximate_meancov(old, g, m, v))
+            end
         end
     end
     @testset "smoothRTS" begin

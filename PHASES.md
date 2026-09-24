@@ -2220,6 +2220,12 @@ theirs; the algebra helpers in Standard; the deletions. A commit each.
   checks and cases for a scalar and a vector function of a vector, a Jacobian and three mixed
   inputs; `compare_approximations.jl` agrees with 6.5.0 on six cases (28 checks in all). The
   distribution-level `approximate` over normals is step 2's, in the Delta package.
+- *Gauss–Hermite cubature and `approximate_meancov` — done.* `GaussHermiteCubature`,
+  `ghcubature`, `getweights`, `getpoints` and `approximate_meancov` over moments, with
+  FastGaussQuadrature; exactness on polynomials of degree `2p - 1`, `approximate_meancov`
+  against closed forms, v6's buffer tests, and 14 more checks against 6.5.0 (42 in all). v6's
+  display names, which threw, report the number of points. The distribution package stays out
+  of the closure.
 
 **Exit criteria**
 - [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,

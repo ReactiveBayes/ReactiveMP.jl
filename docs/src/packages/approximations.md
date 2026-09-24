@@ -38,6 +38,20 @@ Linearization
 local_linearization
 ```
 
+## Gauss–Hermite cubature
+
+Expectations under a normal, by a tensor-product Gauss–Hermite rule: the Probit, GCV and Pólya
+nodes use it. `approximate_meancov` gives the moments of a normal reweighted by a function, the
+building block of a projection onto a normal.
+
+```@docs
+GaussHermiteCubature
+ghcubature
+getweights
+getpoints
+approximate_meancov
+```
+
 ## Smoothing
 
 ```@docs

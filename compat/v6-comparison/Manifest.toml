@@ -821,7 +821,7 @@ uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 version = "2.28.1010+0"
 
 [[deps.MessagePassingRulesApproximations]]
-deps = ["FastCholesky", "ForwardDiff", "LinearAlgebra"]
+deps = ["FastCholesky", "FastGaussQuadrature", "ForwardDiff", "LinearAlgebra"]
 path = "../../lib/MessagePassingRulesApproximations"
 uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 version = "0.1.0-DEV"
