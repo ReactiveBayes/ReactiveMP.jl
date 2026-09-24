@@ -11,6 +11,10 @@ names the approximation method and, optionally, a known inverse of `f`. An input
 constant or to data is folded into the node function, so the rules see only the random inputs
 and reach the function as `getnodefn(ctx.node, Target(:out))`.
 
+The node takes two Gaussian methods from `MessagePassingRulesApproximations`: `Unscented()`, the
+unscented transform, and `Linearization()`, the first-order expansion at the inputs' means. Both
+run the same rules, which differ only in how the method pushes the inputs' moments through `f`.
+
 ```julia
 f(x, y) = x^2 + y
 node = factornode(DeltaFn{typeof(f)}, [(:out, z), ((:in, 1), x), ((:in, 2), y)]; nodefn = f)
@@ -24,4 +28,5 @@ is_delta_node_compatible
 DeltaMessagePassingRules.UnknownInverse
 DeltaMessagePassingRules.KnownInverse
 DeltaMessagePassingRules.approximate_normal
+DeltaMessagePassingRules.forward_statistics
 ```

@@ -2297,7 +2297,13 @@ extension; `cvilinearize` moves into the extension.
 **Order:** Linearization's rules and tables; #11; the comparison; the fixture; `CVIProjection`;
 the guide, which closes the step. A commit each.
 
-**Progress:** not started.
+**Progress:**
+- *Linearization — done.* The four rules are typed on both Gaussian methods (`rules/gaussian.jl`,
+  renamed from `unscented.jl`); `approximate_normal` gains Linearization's method and
+  `forward_statistics` takes the method's forward moments. Both go through the inputs'
+  `JointNormal`, not `joint_mean_cov`: for one scalar input it keeps the mean a scalar, which the
+  output type follows. v6's tables (7 cases towards `out`, 8 towards an input, 4 joints) pass with
+  their promotion checks, the test functions keeping v6's integer constants.
 
 
 **Exit criteria**

@@ -22,6 +22,7 @@ otherwise. A package providing a method opts it in by adding a method.
 """
 is_delta_node_compatible(method) = Val(false)
 is_delta_node_compatible(::Unscented) = Val(true)
+is_delta_node_compatible(::Linearization) = Val(true)
 
 """
     DeltaApproximation(; method, inverse = nothing)

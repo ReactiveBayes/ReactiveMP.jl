@@ -10,8 +10,8 @@ deletes after skimming:
 
 - `src/rules/`, `src/nodes/predefined/` — the unported nodes' rules and definitions:
   Autoregressive, ConjugateAR, BIFM and its helper, the Pólya nodes, the transitions, Flow,
-  GaussianCoupling, GCV, Probit, SoftDot, and Delta's `Linearization` rules and its default
-  layout;
+  GaussianCoupling, GCV, Probit and SoftDot, and Delta's v6 node file with its default layout,
+  the reference for `CVIProjection`'s;
   `rules/mv_normal_mean_precision/marginals.jl` holds MvNormalMeanPrecision's two marginal
   rules for BIFM's `TerminalProdArgument`;
 - `src/approximations/` — `cvi_projection.jl`, for the Delta package's extension in Phase 6
