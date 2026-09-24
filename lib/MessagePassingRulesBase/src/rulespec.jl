@@ -6,7 +6,7 @@ the `selection` — `:single`, `:cluster`, or for a group `:all`, `:aligned` or 
 """
 struct InputSpec
     container::Symbol
-    key::Union{Symbol, Tuple{Vararg{Symbol}}}
+    key::Union{Symbol, Tuple{Vararg{ClusterMember}}}
     selection::Symbol
     type::Any
 end

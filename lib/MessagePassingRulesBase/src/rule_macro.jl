@@ -15,7 +15,8 @@ Define the rule for the message a node sends towards one of its interfaces.
 - `args`: the inputs the rule consumes, in the spelling of its dependencies: `m[:μ]::T` for
   a message, `q[:μ]::T` for a marginal, `q[(:y, :x)]::T` or `q[:y, :x]::T` for a structural
   cluster (members in interface order; a group in a cluster means all its members jointly,
-  so `q[(:in,)]` is the joint over the group `in`), and for a group `m[:in...]::T` (all members), `m[:in][k]::T` (the
+  so `q[(:in,)]` is the joint over the group `in`, and `(:in, 1)` is one member, so
+  `q[:out, (:in, 1)]` is the joint of `out` and `in`'s first member), and for a group `m[:in...]::T` (all members), `m[:in][k]::T` (the
   target's own member) or `m[:in][!k]::T` (all but it). A group arrives as a tuple in member
   order with `nothing` where the selection leaves a member out, so `args.m[:in][k]` means
   member `k` whatever was selected. An omitted type is `Any`.
@@ -195,10 +196,13 @@ function parse_target(name, kind, ex)
             error("@$name: `target` of a marginal rule is a cluster like `(:y, :x)`, got `$ex`")
         return (:($Target{$(QuoteNode(symbol))}), nothing)
     end
-    if ex isa Expr && ex.head === :tuple && length(ex.args) >= 1 && all(a -> quoted_symbol(a) !== nothing, ex.args)
+    # A cluster: interfaces, and members of a group written `(:T, 1)`.
+    is_member(a) = a isa Expr && a.head === :tuple && length(a.args) == 2 && quoted_symbol(a.args[1]) !== nothing && a.args[2] isa Integer
+    if ex isa Expr && ex.head === :tuple && length(ex.args) >= 1 && all(a -> quoted_symbol(a) !== nothing || is_member(a), ex.args) &&
+            (kind === :marginal || !(length(ex.args) == 2 && ex.args[2] isa Symbol))
         kind === :marginal ||
             error("@$name: `target` of a message rule is `:out` or `(:m, k)`, got `$ex`")
-        members = Tuple(quoted_symbol.(ex.args))
+        members = Tuple(map(a -> quoted_symbol(a) !== nothing ? quoted_symbol(a) : (quoted_symbol(a.args[1]), Int(a.args[2])), ex.args))
         return (:($ClusterTarget{$members}), nothing)
     end
     if kind === :message && ex isa Expr && ex.head === :tuple && length(ex.args) == 2 &&
@@ -270,8 +274,13 @@ function cluster_members(name, ref, container, keys)
     container === :q || error("@$name: `$ref`: only marginals have structural clusters; use `q[...]`")
     members = map(keys) do key
         symbol = quoted_symbol(key)
-        symbol === nothing && error("@$name: a cluster member is a symbol like `:y`, got `$key`")
-        symbol
+        symbol === nothing || return symbol
+        # One member of a group, by a literal index: `(:T, 1)`.
+        if key isa Expr && key.head === :tuple && length(key.args) == 2 && quoted_symbol(key.args[1]) !== nothing
+            key.args[2] isa Integer && return (quoted_symbol(key.args[1]), Int(key.args[2]))
+            error("@$name: a group member in a cluster is `(:T, 1)`, with a literal index; got `$key`")
+        end
+        error("@$name: a cluster member is a symbol like `:y`, or a group member like `(:T, 1)`; got `$key`")
     end
     return Tuple(members)
 end
@@ -307,7 +316,9 @@ function rule_signature(inputs)
     end
     mkeys, mtypes = named([i for i in inputs if i.container === :m])
     qkeys, qtypes = named([i for i in inputs if i.container === :q && i.selection !== :cluster])
-    jkeys, jtypes = named([i for i in inputs if i.selection === :cluster])
+    joints = [i for i in inputs if i.selection === :cluster]
+    sorted = sort(joints; by = input -> cluster_sort_key(input.key))
+    jkeys, jtypes = Tuple(input.key for input in sorted), [element(input) for input in sorted]
     return :(
         $RuleArgs{
             <:$Messages{$mkeys, <:Tuple{$(mtypes...)}},

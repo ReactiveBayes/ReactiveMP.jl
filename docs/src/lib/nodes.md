@@ -30,8 +30,9 @@ node = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, v)], ((:out, :�
 ```
 
 The engine puts interfaces and clusters in declaration order, whatever order they are given in.
-A joint cluster's local marginal is keyed by its member tuple, `(:out, :μ)`, and a cluster may
-hold a whole group, `(:in,)`, but not only some of its members.
+A joint cluster's local marginal is keyed by its member tuple, `(:out, :μ)`. A cluster may hold
+a whole group, keyed by its name, `(:in,)`, or some of its members, each keyed with its index,
+`(:out, (:in, 1))`.
 
 ## [Interfaces](@id lib-node-interfaces)
 

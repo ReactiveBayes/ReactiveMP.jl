@@ -322,7 +322,8 @@ clusters. A group reaches a rule as one tuple in member order, with `nothing` fo
 it does not depend on. Interfaces connected to constants are skipped: their message is fixed.
 
 An algorithm that declares a free-energy partition requires the factorisation to be that
-partition. A joint cluster may hold a whole group, `(:in,)`, but not only some of its members.
+partition. A joint cluster may hold a whole group, `(:in,)`, or some of its members, keyed with
+them, `(:out, (:in, 1))`.
 
 A node that declares `initial_messages` has them set on its inbound messages here, on each
 interface where nothing was set before.
@@ -332,15 +333,6 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     algorithm = getalgorithm(fform, options)
     spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
-    interfaces = getinterfaces(factornode)
-    for cluster in getfactorization(getlocalclusters(factornode))
-        members = map(i -> interfaces[i], cluster)
-        length(cluster) > 1 && any(m -> m isa IndexedNodeInterface && !whole_group(m, members, interfaces), members) && throw(
-            ArgumentError(
-                "`$(fform)`: the cluster $(map(interface_key, members)) joins some members of a group with other interfaces, which the engine does not wire yet; a cluster may hold a whole group",
-            ),
-        )
-    end
     initialize_clusters!(getlocalclusters(factornode), factornode, options)
     seed_initial_messages!(factornode)
     return activate_messages!(factornode, options)

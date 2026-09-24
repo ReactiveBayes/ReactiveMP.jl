@@ -13,6 +13,19 @@
     struct WithGroup end
     @define_factor_node(node = WithGroup, type = Stochastic, interfaces = [:out, :m...])
 
+    # A joint of `out` with the first member of `m`, computed by its own marginal rule.
+    struct PartialJoint end
+    @define_factor_node(node = PartialJoint, type = Stochastic, interfaces = [:out, :m...])
+    @define_marginal_update_rule(
+        node = PartialJoint, target = (:out, (:m, 1)), args = (m[:out]::Real, m[:m...]::Any, q[:m...]::Any),
+        body = (args) -> args.m[:out] * args.m[:m][1],
+    )
+    # Its messages: towards `m[2]` from the joint's marginal, and inside the joint from the other
+    # member's message and `m[2]`'s marginal.
+    @define_message_update_rule(node = PartialJoint, target = (:m, k), args = (q[:out, (:m, 1)]::Real,), body = (args) -> args.q[:out, (:m, 1)])
+    @define_message_update_rule(node = PartialJoint, target = (:m, k), args = (m[:out]::Real, q[:m...]::Any), body = (args) -> args.m[:out])
+    @define_message_update_rule(node = PartialJoint, target = :out, args = (m[:m...]::Any, q[:m...]::Any), body = (args) -> args.m[:m][1])
+
     # Every selector, under the node's own algorithm.
     struct Selectors end
     struct SelectorsAlgorithm <: AbstractAlgorithm end
@@ -386,6 +399,47 @@ end
     @test length(get_node_local_marginals(getlocalclusters(transition))) == 4
 end
 
+@testitem "a joint of some members of a group is read by its key" tags = [:nodes] setup = [DependencySchemeNodes] begin
+    import ReactiveMP: default_dependencies, GroupMember, getlocalclusters, get_node_local_marginals, input_names, rule_marginals
+    using .DependencySchemeNodes: WithGroup
+
+    variables() = [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())]
+    node = factornode(WithGroup, variables(), ((:out, (:m, 1)), ((:m, 2),)))
+    dependencies(i) = map(first, default_dependencies(node, i))
+
+    # Inside the joint, the other member's message and the other cluster's marginal; outside it,
+    # the joint's marginal, by its key.
+    @test dependencies(1) == ((GroupMember(:m, 1, 2),), (GroupMember(:m, 2, 2),))
+    @test dependencies(2) == ((:out,), (GroupMember(:m, 2, 2),))
+    @test dependencies(3) == ((), ((:out, (:m, 1)),))
+
+    # A rule reads it as `q[:out, (:m, 1)]`.
+    q = rule_marginals(identity, input_names(((:out, (:m, 1)), GroupMember(:m, 2, 2))), (0.5, 2.0))
+    @test q[:out, (:m, 1)] == 0.5 && q[:m] == (nothing, 2.0)
+end
+
+@testitem "a joint of some members of a group is computed by its marginal rule" tags = [:nodes] setup = [DependencySchemeNodes] begin
+    import ReactiveMP: activate!, FactorNodeActivationOptions, RandomVariableActivationOptions, MessageProductContext, getlocalclusters, get_node_local_marginals, get_stream_of_marginals, getdata
+    using Rocket
+    using .DependencySchemeNodes: PartialJoint
+
+    # Messages on `out` and `m[1]` into their joint's marginal rule, the product of the two.
+    interfaces = [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())]
+    node = factornode(PartialJoint, interfaces, ((:out, (:m, 1)), ((:m, 2),)))
+    product = MessageProductContext()
+    foreach(((_, v),) -> activate!(v, RandomVariableActivationOptions(nothing, product, product)), interfaces)
+    activate!(node, FactorNodeActivationOptions())
+    joint = first(get_node_local_marginals(getlocalclusters(node)))
+    values = []
+    subscription = subscribe!(get_stream_of_marginals(joint), (q) -> push!(values, getdata(q)))
+    for (interface, value) in zip(ReactiveMP.getinterfaces(node), (2.0, 3.0, 5.0))
+        ReactiveMP.set_initial_message!(ReactiveMP.get_stream_of_inbound_messages(interface), value)
+    end
+    ReactiveMP.set_initial_marginal!(last(interfaces[3]), 5.0)
+    @test !isempty(values) && last(values) == 2.0 * 3.0
+    unsubscribe!(subscription)
+end
+
 @testitem "activate! wires declared dependencies, groups and a declared partition" tags = [:nodes] setup = [DependencySchemeNodes] begin
     import ReactiveMP: activate!, FactorNodeActivationOptions, RandomVariableActivationOptions, MessageProductContext
     using .DependencySchemeNodes: Selectors, SelectorsAlgorithm, FixedPartition, FixedPartitionAlgorithm, WithGroup
@@ -408,9 +462,15 @@ end
     @test activate!(factornode(FixedPartition, partitioned(), ((:out,), (:μ,), (:τ,))), FactorNodeActivationOptions()) === nothing
     @test_throws "declares the free-energy partition" activate!(factornode(FixedPartition, partitioned(), ((:out, :μ), (:τ,))), FactorNodeActivationOptions())
 
-    # A joint may hold a whole group, keyed by its name, but not only some of its members.
+    # A joint may hold a whole group, keyed by its name, or some of its members, keyed with them.
     whole = factornode(WithGroup, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out,), ((:m, 1), (:m, 2))))
     @test map(ReactiveMP.name, ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(whole))) == (:out, (:m,))
-    joint = factornode(WithGroup, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out, (:m, 1)), ((:m, 2),)))
-    @test_throws "joins some members of a group" activate!(joint, FactorNodeActivationOptions())
+    partial = [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())]
+    joint = activated(factornode(WithGroup, partial, ((:out, (:m, 1)), ((:m, 2),))), partial)
+    @test map(ReactiveMP.name, ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(joint))) == ((:out, (:m, 1)), :m)
+    @test activate!(joint, FactorNodeActivationOptions()) === nothing
+    three = [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar()), ((:m, 3), randomvar())]
+    members = activated(factornode(WithGroup, three, ((:out,), ((:m, 1), (:m, 3)), ((:m, 2),))), three)
+    @test map(ReactiveMP.name, ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(members))) == (:out, ((:m, 1), (:m, 3)), :m)
+    @test activate!(members, FactorNodeActivationOptions()) === nothing
 end

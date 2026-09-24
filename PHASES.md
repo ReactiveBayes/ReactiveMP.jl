@@ -3233,7 +3233,26 @@ for any factorisation and any number of `T`s.
 A commit for each of the first two, one for the package with its comparison and fixtures, and one
 for the guide.
 
-**Progress:** not started.
+**Progress:**
+- *Joints of part of a group — done.*
+  - **Keys:** a member in a joint is `(group, index)`, `(:out, (:T, 1))`. `clusterkey` keeps a
+    member's index in a joint of several interfaces; a lone member keeps its key.
+  - **The engine:** `activate!` no longer refuses such a joint. The default scheme gives a target
+    outside it the joint's marginal by its key, and one inside it the other members' messages. A
+    joint's marginal rule runs on `ClusterTarget((:out, (:T, 1)))`.
+  - **The base:**
+    - `ClusterTarget`, `InputSpec`, `Marginals`' lookup (`q[:out, (:T, 1)]`), the rule vocabulary
+      in `args` and marginal targets, and `check_rules`, which refuses a member of what is not a
+      group and members out of interface-then-index order;
+    - one canonical order for joint keys, `canonical_cluster_keys`, shared by the signatures a
+      macro generates and the marginals an engine builds. For keys of names it is the order they
+      had.
+  - A member is selected in `args` by a literal index inside a cluster only. Outside one, the group
+    arrives whole with `nothing` for the members left out, as before.
+  - Tests, failing first: keys, order and lookups; rules, an energy and a marginal rule over partial
+    joints called by hand; `check_rules`' refusals; in the engine, the keys, the default
+    dependencies, and a joint computed by its rule while the messages it feeds are computed from
+    it. The test that pinned the refusal now pins acceptance.
 
 
 

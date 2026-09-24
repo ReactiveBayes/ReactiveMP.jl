@@ -4,6 +4,14 @@
 
 canonical_order(keys) = Tuple(sort!(collect(keys)))
 
+"""
+    canonical_cluster_keys(keys)
+
+The joint-cluster keys in the order a [`RuleArgs`](@ref)'s marginals hold them: by the names of
+their elements, a group member's index after its group's name.
+"""
+canonical_cluster_keys(keys) = Tuple(sort(collect(keys); by = cluster_sort_key))
+
 @generated function canonical_keys(nt::NamedTuple{N}) where {N}
     sorted = canonical_order(N)
     return :(NamedTuple{$sorted}(($((:(getfield(nt, $(QuoteNode(k)))) for k in sorted)...),)))
@@ -39,7 +47,8 @@ The marginals a rule receives. Single interfaces and groups are reached like mes
 `args.q[:name]` and `args.q[:p][k]`. A structural cluster is reached by the tuple of its
 members, in interface-declaration order: `args.q[(:y, :x)]`, or `args.q[:y, :x]` for short.
 Inside a cluster a group's name stands for all its members jointly, so `args.q[(:in,)]` is
-the joint over the group `in`, and `args.q[:in]` is the tuple of its members' marginals.
+the joint over the group `in`, and `args.q[:in]` is the tuple of its members' marginals. One
+member of a group is `(:in, 1)`: `args.q[:out, (:in, 1)]` is the joint of `out` and that member.
 
 A cluster's key is the tuple of its member names, carried in the type (`J`). It is never
 turned into a symbol, so no name is ever derived and none can collide.
@@ -65,7 +74,7 @@ Marginals(singles::NamedTuple = NamedTuple()) = Marginals(singles, Val(()), ())
 @generated function Marginals(singles::NamedTuple, ::Val{J}, joints::Tuple) where {J}
     length(J) == length(joints.parameters) ||
         return :(throw(ArgumentError("got $(length(J)) cluster keys but $(length(joints)) clusters")))
-    order = sortperm(collect(J))
+    order = sortperm(collect(J); by = cluster_sort_key)
     sortedkeys = Tuple(J[order])
     sortedvalues = Expr(:tuple, (:(joints[$i]) for i in order)...)
     return quote
@@ -82,11 +91,13 @@ Base.keys(::Marginals{N}) where {N} = N
     return getfield(q.singles, key)
 end
 
-@inline Base.getindex(q::Marginals, members::Tuple{Vararg{Symbol}}) = q[Val(members)]
+@inline Base.getindex(q::Marginals, members::Tuple{Vararg{ClusterMember}}) = q[Val(members)]
 @inline Base.getindex(q::Marginals, a::Symbol, b::Symbol) = q[Val((a, b))]
 @inline Base.getindex(q::Marginals, a::Symbol, b::Symbol, c::Symbol) = q[Val((a, b, c))]
 @inline Base.getindex(q::Marginals, a::Symbol, b::Symbol, c::Symbol, rest::Symbol...) =
     q[Val((a, b, c, rest...))]
+# A joint holding members of a group, `q[:out, (:T, 1)]`.
+@inline Base.getindex(q::Marginals, a::ClusterMember, b::ClusterMember, rest::ClusterMember...) = q[Val((a, b, rest...))]
 
 @generated function Base.getindex(q::Marginals{N, T, J}, ::Val{K}) where {N, T, J, K}
     position = findfirst(==(K), J)

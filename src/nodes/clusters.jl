@@ -11,7 +11,7 @@ mutable struct FactorNodeLocalMarginal{K}
     const key::K
     marginal::MarginalObservable
 
-    FactorNodeLocalMarginal(key::K) where {K <: Union{Symbol, Tuple{Vararg{Symbol}}}} = new{K}(key)
+    FactorNodeLocalMarginal(key::K) where {K <: Union{Symbol, Tuple{Vararg{Union{Symbol, Tuple{Symbol, Int}}}}}} = new{K}(key)
 end
 
 name(localmarginal::FactorNodeLocalMarginal) = localmarginal.key
@@ -75,15 +75,21 @@ other_clusters(marginals::Tuple, index::Int) = Tuple(marginals[i] for i in eachi
 
 The key a cluster of interface positions is read by: the name of its only interface, or the
 tuple of its members' names, in which a group whose members are all in the cluster appears
-once, by its name: `(:in,)` is the joint over the group `in`, even of one member. A cluster
+once, by its name: `(:in,)` is the joint over the group `in`, even of one member. A joint that
+holds only some of a group's members names each, `(group, index)`: `(:out, (:T, 1))`. A cluster
 with a key that is a name shares its variable's marginal; one with a tuple is a joint.
 """
 function clusterkey(cluster::Tuple{Vararg{Int}}, interfaces)
     members = map(i -> interfaces[i], cluster)
-    names = Symbol[]
+    names = Union{Symbol, Tuple{Symbol, Int}}[]
     for member in members
-        member isa IndexedNodeInterface && whole_group(member, members, interfaces) || (push!(names, name(member)); continue)
-        name(member) in names || push!(names, name(member))
+        if member isa IndexedNodeInterface && whole_group(member, members, interfaces)
+            name(member) in names || push!(names, name(member))
+        elseif member isa IndexedNodeInterface && length(cluster) > 1
+            push!(names, interface_key(member))
+        else
+            push!(names, name(member))
+        end
     end
     return isone(length(cluster)) && isone(length(names)) && !(first(members) isa IndexedNodeInterface && whole_group(first(members), members, interfaces)) ?
         only(names) : Tuple(names)

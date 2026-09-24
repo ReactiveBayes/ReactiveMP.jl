@@ -3,7 +3,7 @@
 as_target(edge::Symbol) = Target(edge)
 as_target((edge, k)::Tuple{Symbol, Integer}) = IndexedTarget(edge, k)
 as_target(target::Union{Target, IndexedTarget}) = target
-as_cluster(members::Tuple{Vararg{Symbol}}) = ClusterTarget(members)
+as_cluster(members::Tuple{Vararg{ClusterMember}}) = ClusterTarget(members)
 as_cluster(target::ClusterTarget) = target
 
 function interactive_args(m, q, clusters)

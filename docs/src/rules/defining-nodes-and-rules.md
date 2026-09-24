@@ -102,7 +102,8 @@ A rule names its node, its target and its inputs, and gives its body as a lambda
 - `target` is an interface (`:out`), a member of a group (`(:m, k)`, with `k` in scope in the
   arguments and the body), or, for a marginal rule, a cluster (`(:out, :μ)`).
 - `args` lists the inputs with their types: messages `m[:x]`, marginals `q[:x]`, joint
-  marginals `q[:y, :x]`, whole groups `q[:m...]`, and a group's member `q[:p][k]`. A group arrives
+  marginals `q[:y, :x]` (with a group's member written `(:p, 1)`, `q[:y, (:p, 1)]`), whole
+  groups `q[:m...]`, and a group's member `q[:p][k]`. A group arrives
   as a tuple in member order, with `nothing` where the rule does not take a member.
 - `body` takes, by name, any of `output` (a buffer, for an in-place rule), `scratch` (its
   working memory), `algo` (the algorithm it runs under), `ctx` (the context services), `args`
@@ -151,6 +152,7 @@ MessagePassingRulesBase.cluster_members
 MessagePassingRulesBase.RuleArgs
 MessagePassingRulesBase.Messages
 MessagePassingRulesBase.Marginals
+MessagePassingRulesBase.canonical_cluster_keys
 MessagePassingRulesBase.RuleContext
 matrix_correction
 MessagePassingRulesBase.buffer_like

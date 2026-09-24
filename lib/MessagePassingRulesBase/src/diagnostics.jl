@@ -127,7 +127,18 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
     problems = String[]
     names = map(i -> i.name, node.interfaces)
     isgroup(name) = any(i -> i.name === name && i.group, node.interfaces)
-    order_ok(members) = all(in(names), members) && issorted(map(m -> findfirst(==(m), names), members))
+    # A cluster's members are interfaces, or members of a group, `(:T, 1)`, listed in interface
+    # order and a group's members by index.
+    member_name(m) = m isa Symbol ? m : first(m)
+    function cluster_problem(members)
+        for m in members
+            member_name(m) in names || return "a cluster lists existing interfaces in interface order, $(Tuple(names))"
+            m isa Tuple && !isgroup(member_name(m)) && return "`$(member_name(m))` is not a group, so it has no member $(last(m))"
+        end
+        positions = map(m -> (findfirst(==(member_name(m)), names), m isa Tuple ? last(m) : 0), members)
+        (issorted(positions) && allunique(positions)) || return "a cluster lists existing interfaces in interface order, $(Tuple(names)), and a group's members by index"
+        return nothing
+    end
     lone_single(members) = length(members) == 1 && only(members) in names && !isgroup(only(members))
     lone_message(members) = "a one-member cluster of a single interface is its marginal; write `q[$(repr(only(members)))]`"
 
@@ -147,8 +158,9 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
         members = target.parameters[1]
         if lone_single(members)
             push!(problems, "`target = $members`: $(lone_message(members))")
-        elseif !order_ok(members)
-            push!(problems, "`target = $members`: a cluster lists existing interfaces in interface order, $(Tuple(names))")
+        else
+            problem = cluster_problem(members)
+            problem === nothing || push!(problems, "`target = $members`: $problem")
         end
     end
 
@@ -157,8 +169,8 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
         if input.selection === :cluster && lone_single(input.key)
             push!(problems, "`$label`: $(lone_message(input.key))")
         elseif input.selection === :cluster
-            order_ok(input.key) ||
-                push!(problems, "`$label`: a cluster lists existing interfaces in interface order, $(Tuple(names))")
+            problem = cluster_problem(input.key)
+            problem === nothing || push!(problems, "`$label`: $problem")
         elseif !(input.key in names)
             push!(problems, "`$label`: $(spec.node) has no interface `$(input.key)`")
         elseif input.selection === :single && isgroup(input.key)
