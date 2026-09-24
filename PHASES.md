@@ -21,10 +21,10 @@ one.
 
 ## Next action
 
-**Phase 6, step 9: DiscreteTransition** (§ Phase 6, *Entry brief*), the last node and the largest,
-closes with the guide's entries. It is a tensor node (§3.45) in its own package, with every v6 test
-ported and every v6 rule compared (§ Phase 6, *Step 9 brief*, *Progress*); `legacy/v6/` is empty.
-Then step 10, the close: `legacy/` deleted, the guide completed, and the exit criteria.
+**Phase 6, step 10: the close** (§ Phase 6, *Entry brief*): `legacy/` deleted, the guide
+completed, and the exit criteria. Step 9, DiscreteTransition, the last node, is done: a tensor
+node (§3.45) in its own package, with every v6 test ported and every v6 rule compared (§ Phase 6,
+*Step 9 brief*, *Progress*), and its guide entries written; `legacy/v6/` is empty.
 
 Steps 1–8 are done, each node in its own package,
 compared with v6 and covered by an engine fixture: the numerics, Delta, GaussianCoupling, Probit
@@ -104,7 +104,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM) and 8 (Flow) done; step 9 (DiscreteTransition) done but for the guide's entries; step 10, the close, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; step 10, the close, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -3325,6 +3325,11 @@ for the guide.
     energy. The latter subscribes to the posteriors in the order RxInfer's `KeepEach` did, its
     `Dict`'s, since under VMP that order is the schedule; v6's `T2` is `(:T, 2)`.
   - The legacy files are deleted: `legacy/v6/` is empty, and step 10 deletes `legacy/`.
+- *The guide's entries — done, closing step 9.* *Node packages* gains DiscreteTransition: the
+  group `T` for v6's positional `T1`, `T2`, partial joints by their members, observed members as
+  blocks, no algorithm. *Groups* gains empty groups, partial joints and `default` rule arguments,
+  with a run example, as the counterpart of v6's hand-written `rule` over mangled names. *Behaviour
+  that changed* gains the `T3` correction and what v6 failed on.
 
 
 

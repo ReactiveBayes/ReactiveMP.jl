@@ -229,6 +229,35 @@ struct MySum end
 call_message_update_rule(MySum, (:in, 1); m = (out = NormalMeanVariance(3.0, 1.0), in = (nothing, NormalMeanVariance(2.0, 1.0))))
 ```
 
+A group may be empty where the node declares `min_group_length = 0`. A joint may hold some of a
+group's members with other interfaces, keyed with the members, `(:out, (:T, 1))`, and read as
+`q[:out, (:T, 1)]`. v6 handed such joints to hand-written `rule` methods under mangled names,
+`q_out_T1`, which the rule parsed. A rule that takes whatever inputs the factorisation delivers,
+as those did, is written with `default` in its arguments, and walks its inputs by key with
+[`MessagePassingRulesBase.rule_inputs`](@ref): an interface by its name, a member as `(:T, k)`,
+a joint by its key.
+
+```julia
+# v6
+function ReactiveMP.rule(::Type{<:MyTensor}, ::Val{:out}, ::Marginalisation, mnames, messages, qnames, marginals, meta, annotations, node)
+    # split names such as `:in_T1` on `_` to find which edges each input covers
+end
+```
+
+```@example v7
+struct MyTensor end
+
+@define_factor_node(node = MyTensor, type = Stochastic, interfaces = [:out, :in, :T...], min_group_length = 0)
+
+@define_message_update_rule(
+    node = MyTensor, target = :out, args = (default,),
+    body = (args) -> sum(last, MessagePassingRulesBase.rule_inputs(MyTensor, args.q)),
+)
+
+# Under q(out) q(in, T1) q(T2): the joint by its key, and the second member of `T`.
+call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) => 0.5,), q = (T = (nothing, 1.0),))
+```
+
 ## `meta`
 
 `meta` served two purposes, and each has its own place now.
@@ -315,6 +344,7 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 | `MultinomialPolya`, `MultinomialPolyaMeta(points)` | `PolyaMessagePassingRules`, `MultinomialPolyaApproximation(; points)` |
 | `BIFM`, `BIFMHelper`, `BIFMMeta(A, B, C)` | `BIFMMessagePassingRules`, `BIFMSmoother(A, B, C)` |
 | `Flow`, `FlowMeta(model, approximation)` | `FlowMessagePassingRules`, `FlowApproximation(model; method = approximation)` |
+| `DiscreteTransition` | `DiscreteTransitionMessagePassingRules`, no algorithm of its own |
 
 - **Probit** declared `RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`. Its
   algorithm now declares that the rule towards `in` reads the message on its own edge, and the
@@ -345,6 +375,14 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
   and its siblings are `FlowMessagePassingRules.forward`, public and unexported. Building a
   model that draws takes a generator first, `compile(rng, model)`, `PermutationMatrix(rng, dim)`,
   and without one draws from the task's as v6 did. `Unscented()` needs no dimension.
+- **DiscreteTransition**'s interfaces are `out`, `in`, `a` and the group `T`, which may be empty.
+  v6 took `DiscreteTransition(out, in, a, t1, t2)` positionally and aliased the extra arguments
+  `T1`, `T2`; they are the members `(:T, 1)`, `(:T, 2)`, and a joint over `out` and `t1` alone is
+  keyed `(:out, (:T, 1))`. Every factorisation v6 handled is handled, with one rule per target,
+  none per factorisation. A marginal rule's observed members come as [`FactorizedCluster`](@ref)
+  blocks, `(:out,) => …, (:in, (:T, 2)) => …`, where v6 returned `(out = …, in_T2 = …)`; one inside
+  a joint over the whole group `T` stays in the joint as a one-hot axis. v6 ignored the node's
+  `meta`, and it has no algorithm.
 
 ## Behaviour that changed
 
@@ -373,6 +411,13 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
 - **The Pólya nodes' average energies** are corrected: BinomialPolya's is the expectation of
   `softplus(xᵀβ)`, where v6 took it at the mean, and MultinomialPolya's is right for a Multinomial
   `q(x)` with more than one trial. A binomial regression's free energy is higher than v6's.
+- **DiscreteTransition** normalises its five-interface belief-propagation message towards `T3`
+  with a DirichletCollection `q(a)` over the whole tensor, as every other rule of the node, where
+  v6 normalised over `out` only. It also takes what v6 failed on: a Bernoulli `in` or `out`, the
+  energy of a joint over three or more axes with a DirichletCollection `q(a)`, and that of a
+  non-square `q(out, in)` with a point-mass `q(a)`. A point-mass `A` is used as given; v6's
+  belief-propagation rules clamped it to at most one, which changed nothing for a probability
+  tensor.
 - **The free energy of a model with BIFM** raises an error naming the node, where v6's failed with
   an infinite node bound.
 - **`ARunsafe`'s joint `q(y, x)`** is correct: v6's disagreed with `ARsafe` even for an AR(1), and
