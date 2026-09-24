@@ -25,8 +25,8 @@ one.
 its default initial message, and GCV. Steps 1 and 2 are done: the numerics are in
 `MessagePassingRulesApproximations`, the algebra helpers in Standard, and the Delta node takes
 `Unscented`, `Linearization` and, with ExponentialFamilyProjection, `CVIProjection`, compared with
-v6 rule by rule and in a fixture. Step 3 needs its brief, the design of a node's default initial
-message first.
+v6 rule by rule and in a fixture. Step 3 is briefed (§ Phase 6, *Step 3 brief*): a node's
+default initial message, then the three packages.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -2339,6 +2339,59 @@ the guide, which closes the step. A commit each.
   methods, the ones gone with no replacement, the error that refuses them, and `CVIProjection`'s
   generator and state, the breaking entry the exit criterion asks for; its `meta` section maps
   `DeltaMeta` with Linearization and an inverse.
+
+### Step 3 brief — the small nodes
+
+**Scope, surveyed** (`legacy/v6/src/nodes/predefined/{gaussian_coupling,probit,gcv}.jl`, their
+rule directories and tests):
+- **GaussianCoupling** (`out`, `in`, `a`): 2 message rules and 1 marginal rule, all with a
+  point-mass `q_a` and messages on `out` and `in`, and its energy; improper messages by design.
+  About 17 table cases and 15 node tests, one of which solves a linear system by belief
+  propagation.
+- **Probit** (`out`, `in`): 7 message rules, 1 marginal rule and its energy. `ProbitMeta(p = 32)`
+  sets only the energy's Gauss–Hermite points. The rules towards `in` are expectation propagation:
+  they read the message on their own edge, which v6 seeded with `NormalMeanPrecision(0, 100)` at
+  activation (`RequireMessageFunctionalDependencies(in = …)`). Two rules forwarded a point-mass
+  `q_out` to the `m_out` rules with `@call_rule`. The marginal rule has no v6 test. About 37 cases.
+- **GCV** (`y`, `x`, `z`, `κ`, `ω`): 10 message rules, 1 marginal rule and 2 energies, variational
+  under any factorisation of `(y, x)`; `GCVMetadata(GaussHermiteCubature(20))` names the
+  cubature of `ExponentialLinearQuadratic`, a distribution GCV owns, with its product against
+  normals. `gaussian_extension.jl` adds 4 message rules and 4 marginal rules to NormalMeanVariance
+  and NormalMeanPrecision for an `ExponentialLinearQuadratic` message, each an `@call_rule` into the
+  normal's own rule, and v6 never tested them. About 110 tests, with a test module of its own.
+
+**Decided (user):**
+- **A node may declare a default initial message** (§3.21, confirmed): `@define_factor_node(…,
+  initial_messages = [:in => NormalMeanPrecision(0.0, 100.0)])`, kept on the `NodeSpec`. At
+  activation the engine seeds the node's inbound message on that interface only when nothing was
+  set there, so a user's initialisation wins. Probit declares v6's.
+- **Probit's algorithm reads messages only**, expectation propagation: `:out => (m[:in],)`,
+  `:in => (m[:out], m[:in])`. It is v6's behaviour for an observed `out`, the usual `y ~ Probit(x)`.
+  v6's rules taking `q_out` are ported and tested by direct calls; the engine does not select them
+  under this algorithm.
+
+**Defaults for the step**, open to the user's correction:
+- **Packages** `GaussianCouplingMessagePassingRules`, `ProbitMessagePassingRules` and
+  `GCVMessagePassingRules`, on Delta's template (the entry brief), each with a Makefile target, a
+  docs page, a `compare_<node>.jl` against 6.5.0 and a place in CLAUDE.md. GCV depends on Standard,
+  whose normals its extension rules serve; Probit and GCV on Approximations, for the cubature.
+- **Algorithms**: `ProbitEP(; p = 32)` succeeds `ProbitMeta`, and `GCVApproximation(; method =
+  GaussHermiteCubature(20))` succeeds `GCVMetadata`, the node's own. GCV declares no dependencies:
+  the default scheme follows its factorisation, as v6's did.
+- **Rules that called rules** call helpers: Probit's forwarding pair calls the `m_out` rules'
+  helper; GCV's normal extensions reduce the `ExponentialLinearQuadratic` to its moments and call
+  the helpers of Standard's normal rules, taken qualified, or their formulas where Standard has
+  none.
+- **Tests**: v6's tables and node tests, with type-promotion checks where the rules allow them;
+  hand-derived cases for Probit's marginal and GCV's normal extensions, which v6 did not test.
+- **Engine fixtures**: a Probit model whose loop needs the default initial message, and a
+  GaussianCoupling chain; GCV if a small model runs in 6.5.0.
+
+**Order:** the `initial_messages` declaration and the engine seeding it; GaussianCoupling; Probit;
+GCV; the guide's entries for the three, which close the step. A commit each.
+
+**Progress:** not started.
+
 
 
 **Exit criteria**
