@@ -2304,6 +2304,9 @@ the guide, which closes the step. A commit each.
   `JointNormal`, not `joint_mean_cov`: for one scalar input it keeps the mean a scalar, which the
   output type follows. v6's tables (7 cases towards `out`, 8 towards an input, 4 joints) pass with
   their promotion checks, the test functions keeping v6's integer constants.
+- *#11 — done.* The guard is `DeltaApproximation`'s inner constructor, so the positional one no
+  longer skips it; the error names the node's methods, the package for `CVIProjection`, and the
+  method's `delta_method_hint`, which an extension's method can add (`delta:algorithm`).
 
 
 **Exit criteria**

@@ -117,8 +117,19 @@ end
     using DeltaMessagePassingRules, MessagePassingRulesApproximations
     using MessagePassingRulesBase: dependencies_spec, free_energy_partition, target_dependencies, IndexedTarget
 
-    @test_throws "not compatible" DeltaApproximation(method = :nonsense)
+    # No constructor skips the guard, and its error names the methods the node takes.
+    @test_throws ArgumentError DeltaApproximation(method = :nonsense)
+    @test_throws ArgumentError DeltaApproximation(:nonsense, nothing)
+    message = try
+        DeltaApproximation(:nonsense, nothing)
+    catch error
+        sprint(showerror, error)
+    end
+    @test contains(message, "`nonsense` is not an approximation method of the Delta node")
+    @test contains(message, "Unscented()") && contains(message, "Linearization()")
+    @test contains(message, "ExponentialFamilyProjection")
     @test DeltaApproximation(method = Unscented()).inverse === nothing
+    @test DeltaApproximation(Linearization(), identity).inverse === identity
 
     # The inverse decides what a message towards an input consumes; free energy counts the
     # joint over the inputs either way.

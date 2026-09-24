@@ -18,7 +18,8 @@ struct DeltaFn{F} end
     is_delta_node_compatible(method)
 
 `Val(true)` for an approximation method a [`DeltaApproximation`](@ref) accepts, `Val(false)`
-otherwise. A package providing a method opts it in by adding a method.
+otherwise. A package providing a method opts it in by adding a method; every constructor of
+`DeltaApproximation` checks it, and its error adds the method's [`delta_method_hint`](@ref).
 """
 is_delta_node_compatible(method) = Val(false)
 is_delta_node_compatible(::Unscented) = Val(true)
@@ -36,11 +37,29 @@ through the inverse.
 struct DeltaApproximation{M, I} <: AbstractAlgorithm
     method::M
     inverse::I
+
+    function DeltaApproximation(method::M, inverse::I) where {M, I}
+        is_delta_node_compatible(method) === Val(true) || throw(ArgumentError(incompatible_method_message(method)))
+        return new{M, I}(method, inverse)
+    end
 end
 
-function DeltaApproximation(; method, inverse = nothing)
-    is_delta_node_compatible(method) === Val(true) || throw(ArgumentError("the method `$method` is not compatible with the Delta node"))
-    return DeltaApproximation(method, inverse)
+DeltaApproximation(; method, inverse = nothing) = DeltaApproximation(method, inverse)
+
+"""
+    delta_method_hint(method)
+
+What to do about a `method` the Delta node does not take, appended to the error: `nothing`, or
+a sentence. A method whose rules live in a package extension says which package to load.
+"""
+delta_method_hint(method) = nothing
+
+function incompatible_method_message(method)
+    message = "`$method` is not an approximation method of the Delta node. It takes `Unscented()` and " *
+        "`Linearization()` from MessagePassingRulesApproximations, and `CVIProjection()` once " *
+        "ExponentialFamilyProjection is loaded; v6's other methods are gone."
+    hint = delta_method_hint(method)
+    return hint === nothing ? message : string(message, " ", hint)
 end
 
 """The form of [`DeltaApproximation`](@ref) without a known inverse."""
