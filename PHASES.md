@@ -22,8 +22,13 @@ one.
 ## Next action
 
 **Phase 6, step 6: the Pólya nodes** (§ Phase 6, *Entry brief*): BinomialPolya and MultinomialPolya
-in one package, which carries the GPL-3 dependency, with BinomialPolya's RNG taken from `ctx.rng` and
-its energy's overwritten Monte Carlo term corrected. It needs a brief first, as each step has had.
+in one package, which carries the GPL-3 dependency. Step 6 is briefed (§ Phase 6, *Step 6
+brief*):
+- their rules towards `β` and `ψ` read their own edge's message, through `default` plus `m[...]`
+  (§3.41);
+- BinomialPolya's energy becomes Gauss–Hermite (user);
+- MultinomialPolya's energy for a Multinomial `q(x)` is corrected.
+
 Steps 1–5 are done:
 - the numerics;
 - Delta;
@@ -2105,7 +2110,8 @@ Standard normals.
   NormalMeanPrecision take GCV's own `ExponentialLinearQuadratic`, so they stay in its package;
   v6 never tested them, and they get tests. BIFM's two MvNormalMeanPrecision marginals over a
   `TerminalProdArgument` move to Standard, whose types they are.
-- **v6 errors found while counting**, corrected, declared in the comparisons, each with an issue:
+- **v6 errors found while counting**, corrected, declared in the comparisons *(with no issue, by the
+  user's decision in the step 6 brief)*:
   BinomialPolya's energy computes its Monte Carlo term and overwrites it on the next line;
   ContinuousTransition's `default_meta` is defined on `CTMeta` instead of the node, and its
   energy takes the output dimension as half the joint's, which holds only when both are equal
@@ -2690,6 +2696,104 @@ A commit each.
   reads `q(a)`, which the model initialises. Its behaviour changes gain the corrected energies and
   the corrected rules for a nonlinear `f`. The two commits for the package, its comparison and its
   fixtures became one, as in steps 3 and 4.
+
+### Step 6 brief — the Pólya nodes
+
+**Scope, surveyed** (`legacy/v6/src/nodes/predefined/{binomial,multinomial}_polya.jl`, their rule
+directories, the tests):
+- **BinomialPolya** (`y`, `x`, `n`, `β`) is a binomial regression through the logistic,
+  `y ~ Binomial(n, σ(xᵀβ))`, with Pólya-Gamma augmentation. It has 2 message rules and 1 energy.
+  - The rule towards `β` reads `q(y)`, `q(x)`, `q(n)` and `m(β)`, its own edge's message: `ω` is the
+    Pólya-Gamma mean at `xᵀ mean(m_β)`.
+  - The rule towards `y` reads `q(x)`, `q(n)` and `q(β)`.
+  - `BinomialPolyaMeta(n_samples, rng)` is optional, and its default is `nothing`: the rules use
+    the means, or with a meta average over samples of `β` drawn from its `rng`.
+- **MultinomialPolya** (`x`, `N`, `ψ`) is a multinomial through logistic stick-breaking. It has
+  2 message rules and 1 energy.
+  - The rule towards `ψ` reads `q(x)`, `q(N)` and `m(ψ)`, its own edge.
+  - The rule towards `x` reads `q(N)` and `q(ψ)`.
+  - `MultinomialPolyaMeta(ncubaturepoints)` defaults to 21 points, for the energy's Gauss–Hermite
+    cubature.
+  - v6 exported `logistic_stick_breaking` and `compose_Nks`.
+- **Dependencies:** v6 declared none, so its default scheme never gave `m(β)` or `m(ψ)`. Each model
+  passed `where { dependencies = RequireMessageFunctionalDependencies(β = …) }` with an initial
+  message, as RxInfer's binomial and multinomial regression tests do (§3.21).
+- **Libraries:** PolyaGammaHybridSamplers (GPL-3), SpecialFunctions, LogExpFunctions, and the
+  cubature now in Approximations.
+- **Tests:** about 7 cases, and node tests of both energies. The Monte Carlo paths are tested
+  against the mean paths with tolerances.
+
+**Found while surveying, checked in 6.5.0** against exact expectations: a one-dimensional
+quadrature of `E[softplus(ψ)]`, and exact enumeration over `q(x)`.
+- **BinomialPolya's energy is always the plug-in `softplus(E[ψ])`.** Its Monte Carlo term is
+  computed and then overwritten, so asking for 1 000 samples returns the plug-in too. For one
+  normal `q(β)` the plug-in is 1.069 against the exact 1.534: softplus is convex, so the plug-in is
+  biased low.
+- **MultinomialPolya's energy is wrong for a Multinomial `q(x)` with N > 1:** 4.559 against 3.157 at
+  N = 3, and 3.950 against 2.742 at N = 5. For N = 1, and for a point-mass `q(x)`, it matches.
+  - `E[log C]`, the expected log multinomial coefficient, is `log N! - Σ_k E[log x_k!]`. v6
+    computes `Σ_k E[log x_k!] - log N` instead, the sign flipped and `log N` for `log N!`.
+  - v6's node test asserts −101.72 for `q(x) = Multinomial(100, …)`. That is impossible: the
+    average energy of a discrete `x` is at least zero.
+
+**Decided (user):**
+- **BinomialPolya's energy by Gauss–Hermite, 2026-09-24.** `ψ = xᵀβ` is normal under a normal `q(β)`,
+  so `E[softplus(ψ)]` is a one-dimensional integral over `N(xᵀm, xᵀVx)`: deterministic, and as
+  MultinomialPolya's energy already computes it. The energy then takes neither samples nor a
+  generator. Fixing only the overwrite was the alternative.
+- **No issues for the v6 errors that the ports correct, 2026-09-24,** this step's or earlier ones'.
+  The entry brief's "each with an issue" is dropped: each correction is declared in its comparison
+  and recorded here and in the changelog.
+- **From the entry brief:** one package for both nodes, carrying the GPL-3 dependency, with
+  BinomialPolya's generator taken from `ctx.rng`.
+
+**Defaults for the step**, open to the user's correction:
+- **The package:** `PolyaMessagePassingRules`, on the Phase 6 template. It depends on
+  PolyaGammaHybridSamplers, SpecialFunctions, LogExpFunctions and Approximations, and the README
+  and the docs page say it is GPL-3 through the first.
+- **The algorithms:**
+  - `BinomialPolyaMeta` becomes the node's own algorithm, `BinomialPolyaApproximation(; samples =
+    nothing)`. `nothing` is v6's mean path and the node's default; a number of samples draws `β`
+    from `ctx.rng`, so the rules stay pure (the generator is the caller's).
+  - `MultinomialPolyaMeta(points)` becomes `MultinomialPolyaApproximation(; points = 21)`, also the
+    node's default.
+  - The approximation names follow `GCVApproximation`, since they choose how, not what.
+- **Dependencies, by §3.41's extension:**
+  - BinomialPolya: `:β => (default, m[:β])`, and `default` for `y`, `x` and `n`;
+  - MultinomialPolya: `:ψ => (default, m[:ψ])`, and `default` for `x` and `N`.
+
+  The model no longer passes dependencies. No initial message is declared, since the dimension of
+  `β` or `ψ` is the model's: a model initialises `m(β)` as it did, and the guide says so.
+- **The energies are corrected and declared:**
+  - BinomialPolya's by Gauss–Hermite over `ψ`, 32 points like Probit's.
+  - MultinomialPolya's Multinomial branch as `log N!`-based, `-log N! + Σ_k E[log x_k!]`, with the
+    marginals `Binomial(N, π_k)`.
+  - v6's node-test values are replaced by the closed form and by enumeration, the −101.72 case
+    included.
+- **The helpers** `logistic_stick_breaking` and `compose_Nks` stay exported, as in v6, since
+  models use the first to read a posterior; `INVENTORY.md` has them in the package already.
+- **Tests:** v6's cases, ported by a subagent and reviewed. The Monte Carlo rule paths draw from a
+  `StableRNG` passed as `ctx.rng`, and their tolerances stay v6's.
+- **v6 comparison, `compare_polya.jl`:**
+  - both nodes' rules on the mean paths, which are deterministic;
+  - the Monte Carlo paths are compared as distributions, not draws, since the port's generator is
+    the caller's;
+  - both energies, with the corrections declared.
+- **Engine fixtures:** a binomial regression and a multinomial one, small, on the default algorithms
+  and with observed counts. The multinomial energy for observed counts is right in v6, so its
+  free energy must agree; the binomial's is a declared correction. Both models initialise `m(β)` or
+  `m(ψ)`. The harness can only set initial marginals today, so it gains initial messages, set as
+  RxInfer 5.5.2 sets `μ(β)`; how that is done is read in 5.5.2 before writing it.
+
+**Order:**
+1. the harness's initial messages, if the fixtures need them;
+2. the package, BinomialPolya then MultinomialPolya;
+3. the comparison and the fixtures;
+4. the guide's entries, which close the step.
+
+A commit for the package with its comparison and fixtures, as in steps 3–5, and one for the guide.
+
+**Progress:** not started.
 
 
 
