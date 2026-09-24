@@ -1727,6 +1727,36 @@ only the overwrite, and keeping the plug-in as the default, was the alternative.
 The user also decided that the v6 errors the ports correct get **no issues**. Each is declared in
 its comparison and recorded in `PHASES.md` and the changelog, so an issue would only restate a fix
 already made. The Phase 6 entry brief's "each with an issue" is superseded.
+
+### 3.44 Stateless BIFM, and scratch space for rules (user, 2026-09-24)
+
+v6's `BIFMMeta` was a mutable cache. The rule towards `zprev` wrote intermediate quantities into
+it, and the other rules read them back. So a node's results depended on the update order, and
+one meta shared across nodes corrupted them. Two things were fused there:
+- **state shared between a node's rules;**
+- **working memory.**
+
+The shared state is removed. Each rule recomputes what it needs, reading its own edge's message
+where it read the cache (§3.41), at the cost of a small Cholesky inverse per rule. The algorithm
+is immutable and the rules are pure.
+
+The user proposed working memory as a feature of its own, and named it **`scratch`**. A rule
+declares how to build it from its inputs and takes it as a body slot. The engine keeps one per
+outbound stream and reuses it. Three points shape the design:
+- **Write-before-read.** It carries nothing between calls, and the engine may drop or rebuild it,
+  so a rule stays pure and its result depends only on its inputs.
+- **Per rule, never shared across a node's rules.** Sharing would bring back v6's cache and its
+  ordering hazard.
+- **Separate from `inplace`.** A rule that returns a fresh distribution may still want scratch,
+  and the two combine.
+
+Scratch never leaves the rule, so reusing it cannot meet the retention problem that §3.16's
+**#10** left the engine free to avoid for output buffers. That makes it the safe half of buffer
+reuse to build first. TestUtils enforces the contract by running a rule again on a reused scratch
+poisoned with NaN.
+
+BIFM's free energy failed in 6.5.0 (an `Inf` node bound). It is **out of scope**: the port raises
+an error naming the node, and a correct Bethe free energy is a follow-up.
 ---
 
 ## 4. Corrections — read this before re-proposing anything

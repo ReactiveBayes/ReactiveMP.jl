@@ -21,10 +21,14 @@ one.
 
 ## Next action
 
-**Phase 6, step 7: BIFM** (§ Phase 6, *Entry brief*): BIFM and BIFMHelper in one package, with
-`pure = false` for BIFM's order-dependent rules, BIFMHelper's overridden dependencies declared,
-and MvNormalMeanPrecision's two `TerminalProdArgument` marginals moved to Standard with v6's
-`getdist` fixed. It needs a brief first, as each step has had. Steps 1–6 are done:
+**Phase 6, step 7: BIFM** (§ Phase 6, *Entry brief*). Step 7 is briefed (§ Phase 6, *Step 7
+brief*):
+- scratch space for rules first, per rule and write-before-read (§3.44);
+- then BIFM and BIFMHelper, BIFM stateless, its rules reading their own edge's message;
+- MvNormalMeanPrecision's `TerminalProdArgument` marginals move to Standard;
+- the free energy of a BIFM model is an explicit error.
+
+Steps 1–6 are done:
 - the numerics;
 - Delta;
 - GaussianCoupling, Probit and GCV;
@@ -2838,6 +2842,106 @@ A commit for the package with its comparison and fixtures, as in steps 3–5, an
   Pólya nodes, with their metas as algorithms. A note says to drop the per-model
   `RequireMessageFunctionalDependencies` and initialise the message instead, and that the package
   is GPL-3. Its behaviour changes gain the corrected energies.
+
+### Step 7 brief — BIFM, and scratch space for rules
+
+**Scope, surveyed** (`legacy/v6/src/nodes/predefined/bifm{,_helper}.jl`, `rules/bifm{,_helper}/`,
+`rules/mv_normal_mean_precision/marginals.jl`, the tests; the RxInferExamples notebook
+*RTS vs BIFM Smoothing*):
+- **BIFM** (`out`, `in`, `zprev`, `znext`) is a whole time slice of a linear state-space model,
+  `znext = A zprev + B in`, `out = C znext`, for backward-information-filter forward-marginal
+  smoothing. It is deterministic. It has 4 message rules and the marginal `(:in, :zprev, :znext)`,
+  and its messages towards `in`, `out` and `znext` are `TerminalProdArgument`s: marginals, not
+  messages.
+- **`BIFMMeta(A, B, C)` is mutable and required.**
+  - The rule towards `zprev` writes `H`, `BHBt`, `ξz`, `Λz`, `ξ̃z` and `Λ̃z` into it; the rules
+    towards `out` and `znext` write `μu` and `Σu`.
+  - The rules towards `in`, `out` and `znext` read them back, so results depend on the update
+    order, and v6's docstring asks for a subscription order.
+  - A second constructor, `BIFMMeta(A, B, C, μu, Σu)`, fixes the input's statistics, which the
+    `znext` rule then overwrites.
+- **BIFMHelper** (`out`, `in`) switches from the backward pass to the forward one. It has 2
+  message rules: towards `in` its `m_out`, and towards `out` `TerminalProdArgument(q_in)`. Its
+  energy is `entropy(q_in)`. v6 overrode its functional dependencies: `in` reads `m(out)`, `out`
+  the other clusters' marginals.
+- **MvNormalMeanPrecision** has two marginal rules for a `TerminalProdArgument` on `out` or `μ`.
+  They call an undefined `getdist` (its field is `.argument`).
+- **Tests:** v6's rule tests (about 21 cases) and node tests of the meta's getters and setters.
+  Neither RxInfer nor RxInferExamples tests BIFM beyond the example.
+
+**Found while surveying, checked in 6.5.0:**
+- The example's model runs, and its posteriors of `z[2:end]` and `u` equal the equivalent RTS
+  smoother's exactly, on a 2-dimensional state with 4 observations.
+- Its free energy fails: "Failed to compute node bound free energy component. The result is `Inf`".
+
+**Decided (user, 2026-09-24, `DISCUSSION.md` §3.44):**
+- **BIFM is stateless.** Where v6 read the meta's cache, each rule recomputes from its inputs,
+  reading its own edge's message through `default` plus `m[...]` (§3.41):
+  - the rule towards `in` reads `m(in)`, for `μu` and `Σu`;
+  - the rules towards `out` and `znext` read `m(out)` and `m(znext)`, for `Λz`, `BHBt` and `ξ̃z`;
+  - the marginal already reads all four messages.
+
+  The algorithm is immutable, and the rules are pure, independent of order, and safe to share
+  across nodes.
+- **Rules get scratch space.** A rule may declare `scratch = (args) -> …`, working memory, and take a
+  `scratch` slot in its body. The engine owns it, one per outbound stream, built from the first
+  call's inputs and reused. It is **write-before-read**: it carries nothing between calls, and the
+  engine may keep it, drop it or rebuild it, so the rule stays pure. It is separate from
+  `inplace`, and the two combine. Nothing is shared across a node's rules: that would be v6's
+  cache again, with its ordering hazard.
+- **BIFM's free energy is out of scope,** as in v6, where it failed: computing the free energy of
+  a BIFM model raises an error naming the node instead of an `Inf`, and a correct Bethe free
+  energy for BIFM is left as a follow-up.
+
+**Defaults for the step**, open to the user's correction:
+- **Scratch in the base:**
+  - `BODY_SLOTS` becomes `(output, scratch, algo, ctx, args, ann)`;
+  - `scratch` is a keyword on the message and marginal rule macros, taking the slots
+    `(algo, ctx, args)` as `preallocate` does;
+  - `RuleSpec` gains the function;
+  - `execute_rule` takes the store the engine keeps, with `nothing` asking for a fresh one, as
+    `output` does now.
+- **The engine:** each `MessageMapping` and `MarginalMapping` keeps a scratch slot, built at the
+  first call and reused while the same rule runs on that stream. An edge keeps its dimensions
+  within a graph; a rule whose shapes can vary checks them itself.
+- **TestUtils checks the contract.** A table case of a rule with scratch runs twice: once with a
+  fresh scratch, once with a reused one poisoned with NaN (`poison!` dispatching on arrays, tuples
+  and named tuples). The two results must agree, so a rule that reads before writing fails its own
+  tables.
+- **An allocation test** (`:alloc`) shows the reuse, and the documentation gets a section in
+  *Defining nodes and rules*.
+- **BIFM:** the package `BIFMMessagePassingRules` holds BIFM and BIFMHelper.
+  - `BIFMMeta(A, B, C)` becomes the immutable algorithm `BIFMSmoother(A, B, C)`, required, which
+    the node declares no default for.
+  - The five-argument constructor goes, since `m(in)` gives the input's statistics.
+  - Its rules are the first to use scratch, for their intermediates.
+  - BIFMHelper's dependencies are declared: `:in => (m[:out],)` and `:out => (default,)`.
+- **MvNormalMeanPrecision's two `TerminalProdArgument` marginals** move to Standard, with `.argument`
+  for `getdist`, returning a `FactorizedCluster`.
+- **Tests:** v6's rule tables, ported by a subagent and reviewed. The meta's getter and setter
+  tests go with the meta.
+- **v6 comparison, `compare_bifm.jl`:** v6's rules need the cache in a state the `zprev` rule
+  leaves, so the comparison calls v6's `zprev` rule first on the same inputs, then each forward
+  rule. The port must agree call by call.
+- **Engine fixture, `bifm_smoother`:** the example's model, small, without free energy. Posteriors
+  and rule calls are compared with v6; the trace order may differ, since the forward rules also
+  wait for their own edge's message, and `:within_iteration` is declared if it does.
+  - An engine test checks the posteriors against the equivalent RTS model built from Standard's
+    nodes, independently of v6.
+  - A test checks the free-energy error.
+- **The fixture encoder** may need `TerminalProdArgument`, the form of BIFM's posteriors.
+
+**Order:**
+1. scratch, in the base, the engine and TestUtils, failing tests first;
+2. the MvNormalMeanPrecision marginals in Standard;
+3. the BIFM package;
+4. the comparison and the fixture;
+5. the guide's entries, which close the step.
+
+Scratch is its own commit, the BIFM package with its comparison and fixture another, and the
+guide a third.
+
+**Progress:** not started.
 
 
 
