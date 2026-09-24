@@ -21,23 +21,19 @@ one.
 
 ## Next action
 
-**Phase 6, step 7: BIFM** (§ Phase 6, *Entry brief*). Step 7 is briefed (§ Phase 6, *Step 7
-brief*):
-- scratch space for rules first, per rule and write-before-read (§3.44);
-- then BIFM and BIFMHelper, BIFM stateless, its rules reading their own edge's message;
-- MvNormalMeanPrecision's `TerminalProdArgument` marginals move to Standard;
-- the free energy of a BIFM model is an explicit error.
-
-Steps 1–6 are done:
+**Phase 6, step 8: Flow** (§ Phase 6, *Entry brief*): `PermutationMatrix`'s `*` methods narrowed
+first, for their Aqua ambiguities; `FlowMeta` becomes an algorithm over Linearization or
+Unscented; Flow's global `rand` becomes `ctx.rng`. It needs a brief first, as each step has had.
+Steps 1–7 are done:
 - the numerics;
 - Delta;
 - GaussianCoupling, Probit and GCV;
 - the autoregressive family;
 - ContinuousTransition;
-- the Pólya nodes, whose rules towards the weights read their own edge's message (§3.41), with
-  both energies corrected and BinomialPolya's by Gauss–Hermite (§3.43).
+- the Pólya nodes;
+- scratch space for rules and BIFM, stateless, whose free energy is an explicit error (§3.44).
 
-Each is in its own package, compared with v6 and covered by an engine fixture.
+Each node is in its own package, compared with v6 and covered by an engine fixture.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -113,7 +109,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition) and 6 (the Pólya nodes) done; step 7, BIFM, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes) and 7 (scratch space, BIFM) done; step 8, Flow, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -3001,6 +2997,13 @@ guide a third.
   free-energy error. `encode_fixture_value` learns `TerminalProdArgument`.
 
   The ported files have left `legacy/v6/`, with `rules/mv_normal_mean_precision/`.
+- *The guide — done, which closes step 7.* The v6 → v7 guide's *Node packages* table gains BIFM
+  and BIFMHelper (`BIFMMeta` → `BIFMSmoother`), with a note that nothing is kept between calls:
+  nodes may share the algorithm, and subscription order no longer matters. Its behaviour changes
+  gain the free-energy error.
+
+  *Follow-up, recorded:* a correct Bethe free energy for BIFM, with MvNormalMeanPrecision's
+  `TerminalProdArgument` marginals, when a model needs it.
 
 
 
