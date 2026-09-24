@@ -79,6 +79,7 @@ Random variables represent latent (unobserved) quantities in the model. During i
 
 ```@docs
 ReactiveMP.RandomVariable
+ReactiveMP.EqualityChain
 ReactiveMP.randomvar
 ```
 
@@ -127,14 +128,17 @@ new_observation!(y, PointMass("some observed text"))
 The rules of the node consuming `y` then dispatch on the concrete `PointMass` type and read the payload back with `BayesBase.getpointmass`, which is defined for every payload:
 
 ```julia
+using MessagePassingRulesBase
+
 struct TextLikelihood end
 
-@node TextLikelihood Stochastic [out, θ]
+@define_factor_node(node = TextLikelihood, type = Stochastic, interfaces = [:out, :θ])
 
-@rule TextLikelihood(:θ, Marginalisation) (m_out::PointMass{<:String},) = begin
-    text = BayesBase.getpointmass(m_out) # never `mean(m_out)` — see below
-    return score_text(text)
-end
+@define_message_update_rule(
+    node = TextLikelihood, target = :θ,
+    args = (m[:out]::PointMass{<:String},),
+    body = (args) -> score_text(BayesBase.getpointmass(args.m[:out])), # never `mean` — see below
+)
 ```
 
 !!! note
@@ -146,7 +150,7 @@ A data variable holding a non-numeric `PointMass` comes with real constraints:
 - It cannot feed the built-in numeric nodes, whose rules compute with the moments of their inbound messages. Only nodes written for the payload can be connected to it.
 - Bethe free energy is not meaningful for such an edge, since it is defined through log-densities the payload does not have.
 
-See [Adding a custom node](@ref lib-custom-node) for defining the node and its rules.
+See [Defining nodes and rules](@ref rules-defining) for defining the node and its rules.
 
 ### Stream creation
 

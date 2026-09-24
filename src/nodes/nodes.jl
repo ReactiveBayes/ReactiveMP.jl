@@ -108,7 +108,19 @@ function node_specification(fform)
     return nodespec(fform)
 end
 
+"""
+    functionalform(factornode::FactorNode)
+
+The functional form a factor node was created with: the node type or function its
+`@define_factor_node` declaration names, such as `NormalMeanVariance` or `+`.
+"""
 functionalform(factornode::FactorNode) = factornode.fform
+
+"""
+    getinterfaces(factornode::FactorNode)
+
+A factor node's interfaces, in declaration order, a group's members in member order.
+"""
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
 # `getinboundinterfaces` skips the first interface, which is the output by convention

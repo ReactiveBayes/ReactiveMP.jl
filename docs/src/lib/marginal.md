@@ -16,8 +16,12 @@ ReactiveMP.is_clamped(marginal::Marginal)
 ReactiveMP.is_initial(marginal::Marginal)
 ReactiveMP.getannotations(marginal::Marginal)
 ReactiveMP.as_marginal
-ReactiveMP.to_marginal
 ```
+
+A marginal is formed from the product of a variable's messages in its public type: a rule may
+compute in an efficient working type, such as `WishartFast`, which
+`MessagePassingRulesBase.public_equivalent` turns into the type users expect, `Wishart`, before the
+marginal leaves the product.
 
 ```@example marginal
 using ReactiveMP, BayesBase, ExponentialFamily

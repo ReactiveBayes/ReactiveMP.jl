@@ -1,9 +1,22 @@
 export score, DifferentialEntropy
 
+"""
+    score(::Type{T}, kind, args...)
+
+A stream of the quantity `kind` selects, of float type `T`: a factor node's contribution to the
+free energy ([`FactorBoundFreeEnergy`](@ref)), a variable's ([`VariableBoundEntropy`](@ref)), or
+a marginal's differential entropy ([`DifferentialEntropy`](@ref)). [`bethe_free_energy`](@ref)
+combines them.
+"""
 function score end
 
 ##
 
+"""
+    DifferentialEntropy()
+
+Selects the differential entropy of a marginal in [`score`](@ref).
+"""
 struct DifferentialEntropy end
 
 struct KLDivergence end

@@ -2,6 +2,12 @@ export FactorBoundFreeEnergy
 
 import Base: tail
 
+"""
+    FactorBoundFreeEnergy()
+
+Selects a factor node's contribution to the Bethe free energy in [`score`](@ref): its average
+energy over each of its clusters, less the entropies of the clusters it scores.
+"""
 struct FactorBoundFreeEnergy end
 
 """

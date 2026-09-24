@@ -6,6 +6,9 @@ using Rocket
 import Rocket: getrecent
 import Base: ==, ndims, precision, length, size, iterate
 
+# The representation is a mutable struct with `const` fields: measured faster than an
+# immutable one through the equality chain, and lighter everywhere
+# (`scripts/benchmark_message_representation.jl`).
 """
     Marginal(data, is_clamped, is_initial[, annotations])
 
@@ -66,8 +69,6 @@ This is intentional: annotations are out-of-band metadata about *how* a marginal
 not part of the belief it represents. Compare `getannotations` explicitly when you need
 annotation-sensitive equality.
 """
-# Measured against an immutable struct: faster through the equality chain and lighter
-# everywhere (`scripts/benchmark_message_representation.jl`, PHASES.md § Phase 4.5).
 mutable struct Marginal{D}
     const data::D
     const is_clamped::Bool

@@ -28,7 +28,7 @@ Under a mean-field factorization assumption `q(x, y) = q(x) q(y)`, the VMP messa
 \mu_{f \to x}(x) = \exp \int q(y) \, q(z) \log f(x, y, z) \; \mathrm{d}y \; \mathrm{d}z
 ```
 
-Notice that this uses *marginals* `q(y)` and `q(z)` rather than messages `μ(y)` and `μ(z)`. ReactiveMP.jl tracks this distinction through its [functional dependencies](@ref lib-node-functional-dependencies) policy.
+Notice that this uses *marginals* `q(y)` and `q(z)` rather than messages `μ(y)` and `μ(z)`. Which of the two a rule receives is decided by the node's algorithm and factorisation; see [Algorithms and dependencies](@ref rules-algorithms).
 
 For a deeper treatment of the theory, see the [PhD dissertation](https://pure.tue.nl/ws/portalfiles/portal/313860204/20231219_Bagaev_hf.pdf) that ReactiveMP.jl is based on.
 
@@ -38,7 +38,7 @@ ReactiveMP.jl does not ask you to pick an algorithm up front. Instead, the corre
 
 1. **The node type** ([`Stochastic`](@ref) or [`Deterministic`](@ref)) — deterministic nodes always use BP-style messages.
 2. **The factorization assumption** attached to the model — mean-field or structured factorization triggers the appropriate VMP rule.
-3. **Julia's multiple dispatch** — `@rule` definitions are dispatched on the node type, the outgoing edge, and the types of incoming messages/marginals.
+3. **Julia's multiple dispatch** — rules are dispatched on the node, the outgoing edge, the algorithm, and the types of the incoming messages and marginals.
 
 This means adding a new factorization assumption automatically routes computation to the right rules without changing any node code.
 
@@ -73,5 +73,6 @@ Both are thin wrappers around a probability distribution object. The separation 
 
 - [Messages](@ref lib-message) — detailed description of the `Message` type and message observables.
 - [Marginals](@ref lib-marginal) — the `Marginal` type and marginal observables.
-- [Message update rules](@ref lib-rules) — how to define and query rules with `@rule` and `@marginalrule`.
+- [Defining nodes and rules](@ref rules-defining) — how to define and call rules.
+- [Algorithms and dependencies](@ref rules-algorithms) — what each rule consumes, and why.
 - [Inference lifecycle](@ref concepts-inference-lifecycle) — the three phases of construction, activation, and observation.

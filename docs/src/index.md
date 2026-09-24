@@ -5,6 +5,17 @@ ReactiveMP.jl
 
 `ReactiveMP.jl` is a low-level inference engine that implements variational message passing on factor graphs. It is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. For most use cases, the [RxInfer.jl](https://github.com/reactivebayes/RxInfer.jl) package provides a convenient model specification layer on top of ReactiveMP.jl.
 
+The engine is one of a family of packages:
+
+| Package | Contents |
+|---|---|
+| `ReactiveMP` | the engine: variables, factor nodes, messages, marginals, the free energy |
+| `MessagePassingRulesBase` | the macros that define nodes, rules and average energies, the algorithms, and rule lookup |
+| `StandardMessagePassingRules` | the rules of the standard nodes: distributions, arithmetic, logic and mixtures |
+| `MessagePassingRulesApproximations` | numerics for propagating moments through functions: the unscented transform, smoothing |
+| `DeltaMessagePassingRules` | the Delta node, for deterministic functions |
+| `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
+
 !!! note
     This package exports only an inference engine. For the full ecosystem with convenient model and constraints specification, see [`RxInfer.jl`](https://github.com/reactivebayes/RxInfer.jl) and its [documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
 
@@ -16,7 +27,7 @@ If you are new to ReactiveMP.jl, read the Concepts section first. It explains th
 2. **[Message passing](@ref concepts-message-passing)** — how belief propagation and variational message passing work, and the reactive computation model.
 3. **[Inference lifecycle](@ref concepts-inference-lifecycle)** — the three phases every inference run goes through: construction, activation, and observation.
 
-After reading the Concepts section, the Library section provides the full API reference for each component.
+After reading the Concepts section, *Nodes and rules* explains how nodes and their rules are defined and tested, and *The engine* and *Rule packages* are the API reference.
 
 ## [Ideas and principles behind `ReactiveMP.jl`](@id index-ideas)
 
@@ -34,15 +45,19 @@ Pages = [
   "concepts/factor-graphs.md",
   "concepts/message-passing.md",
   "concepts/inference-lifecycle.md",
+  "rules/defining-nodes-and-rules.md",
+  "rules/algorithms-and-dependencies.md",
+  "rules/testing-rules.md",
   "lib/nodes.md",
   "lib/variables.md",
   "lib/message.md",
   "lib/marginal.md",
-  "lib/rules.md",
-  "lib/helpers.md",
-  "lib/algebra.md",
+  "lib/score.md",
+  "packages/standard.md",
+  "packages/approximations.md",
+  "packages/delta.md",
+  "migration-guides/v6-to-v7.md",
   "extra/contributing.md",
-  "extra/extensions.md",
   "extra/methods.md",
 ]
 Depth = 2

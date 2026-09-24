@@ -1,5 +1,12 @@
 export VariableBoundEntropy
 
+"""
+    VariableBoundEntropy()
+
+Selects a variable's contribution to the Bethe free energy in [`score`](@ref): its marginal's
+entropy weighted by `d - 1`, `d` being the number of factor nodes it connects, or by `d` for a
+point-mass marginal, whose entropy is not finite.
+"""
 struct VariableBoundEntropy end
 
 function score(

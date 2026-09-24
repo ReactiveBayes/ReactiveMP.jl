@@ -4,7 +4,7 @@ A **stream postprocessor** is a composable transformation applied to one of the 
 
 The same postprocessor can be applied to three different kinds of streams produced by the inference engine:
 
-- streams of **outbound messages** leaving a factor node interface or a leg of an [`ReactiveMP.EqualityChain`](@ref);
+- streams of **outbound messages** leaving a factor node interface or a leg of a variable's equality chain;
 - streams of **marginals** emitted by a [`RandomVariable`](@ref) or by the local cluster of a factor node;
 - streams of **scores** (free-energy contributions) used to assemble Bethe Free Energy.
 
@@ -14,7 +14,7 @@ Stream postprocessors are useful for:
 - **Custom instrumentation** — applying any Rocket.jl operator (filtering, sampling, side-effects) on top of every stream produced by activation.
 
 !!! note
-    The previous `AbstractPipelineStage` API and the per-node `scheduler` argument have been unified into [`ReactiveMP.AbstractStreamPostprocessor`](@ref). The old `LoggerPipelineStage` is gone — equivalent behaviour can now be achieved through [callbacks](@ref lib-callbacks) without subscribing to the streams themselves. The migration guide also covers this change.
+    To observe what the engine computes without changing the streams, use [callbacks](@ref lib-callbacks) instead.
 
 ## [Available stream postprocessors](@id lib-stream-postprocessors-available)
 

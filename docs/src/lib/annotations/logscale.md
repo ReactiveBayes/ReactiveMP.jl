@@ -44,36 +44,35 @@ The log-scale is **non-zero** whenever the rule involves a factor that does not 
 
 - **Mixture and categorical nodes** — the backward message toward the model selection variable ``m`` contains the model evidence of each component as its scale factor (see equation 42 in van Erp et al. (2023)). This is the mechanism that makes automated Bayesian model comparison possible.
 
-Critically, **the normalised output distribution alone does not reveal the log-scale**. Both a zero-logscale rule and a non-zero-logscale rule return a properly normalised distribution object — looking at `Beta(2,1)` does not tell you that `log β = -log 2` was lost. This is why `@logscale` must be set explicitly by the rule author.
+Critically, **the normalised output distribution alone does not reveal the log-scale**. Both a zero-logscale rule and a non-zero-logscale rule return a properly normalised distribution object — looking at `Beta(2,1)` does not tell you that `log β = -log 2` was lost. This is why a rule must record its log-scale explicitly.
 
-## Inside rule bodies: `@logscale`
+## Inside rule bodies
 
-When a message update rule computes a message whose normalisation constant is known analytically, it records the log-scale factor using the `@logscale` macro:
-
-```julia
-@rule NormalMeanVariance(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, m_σ²::PointMass) = begin
-    @logscale 0   # conjugate reparameterisation — no normalisation constant is lost
-    return NormalMeanVariance(mean(m_μ), var(m_μ) + mean(m_σ²))
-end
-```
-
-For rules where a non-trivial normalisation constant is divided out, the exact value must be provided:
+A rule records the log-scale factor of the message it computes by annotating its output, through
+its `ann` body slot:
 
 ```julia
-@rule Bernoulli(:p, Marginalisation) (m_out::PointMass,) = begin
-    @logscale log(mean(m_out))   # log-likelihood of the observed value
-    return Beta(...)
-end
+@define_message_update_rule(
+    node = NormalMeanVariance, target = :out,
+    args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
+    body = (args, ann) -> begin
+        annotate!(ann, :logscale, 0) # conjugate: no normalisation constant is lost
+        NormalMeanVariance(mean(args.m[:μ]), var(args.m[:μ]) + mean(args.m[:v]))
+    end,
+)
 ```
 
-If a rule does not call `@logscale` and `LogScaleAnnotations` is active, ReactiveMP applies a fallback: if all incoming messages and marginals are `PointMass` distributions (i.e. the node is deterministic given its inputs) the log-scale is set to zero. In all other cases an error is raised to prevent silently wrong model evidence computations.
+A rule that needs the log-scales its inputs arrived with, such as a mixture's rules, reads them
+from the same slot: `getannotation(ann.m[:out], :logscale)`. `ann.m` and `ann.q` carry each
+input's annotations, keyed like the arguments.
+
+If a rule sets no log-scale and `LogScaleAnnotations` is active, the engine applies a fallback: if all incoming messages and marginals are `PointMass` distributions the log-scale is set to zero. In all other cases an error is raised to prevent silently wrong model evidence computations.
 
 ## API
 
 ```@docs
 ReactiveMP.LogScaleAnnotations
 ReactiveMP.getlogscale
-ReactiveMP.@logscale
 ReactiveMP.AddonLogScale
 ```
 

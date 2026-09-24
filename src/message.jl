@@ -13,6 +13,9 @@ An abstract supertype for all concrete message types.
 """
 abstract type AbstractMessage end
 
+# The representation is a mutable struct with `const` fields: measured faster than an
+# immutable one through the equality chain, and lighter everywhere
+# (`scripts/benchmark_message_representation.jl`).
 """
     Message(data, is_clamped, is_initial[, annotations])
 
@@ -74,8 +77,6 @@ This is intentional: annotations are out-of-band metadata about *how* a message 
 not part of the belief the message represents. Compare `getannotations` explicitly when you
 need annotation-sensitive equality.
 """
-# Measured against an immutable struct: faster through the equality chain and lighter
-# everywhere (`scripts/benchmark_message_representation.jl`, PHASES.md § Phase 4.5).
 mutable struct Message{D} <: AbstractMessage
     const data::D
     const is_clamped::Bool

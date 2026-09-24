@@ -16,42 +16,43 @@ where:
 
 ReactiveMP.jl computes each term reactively: whenever a marginal changes, the local contribution is recomputed and can be accumulated by subscribing to the score streams.
 
+## [Computing the free energy](@id lib-score-bethe-stream)
+
+[`bethe_free_energy`](@ref) returns the free energy of an activated graph as a stream, which
+emits once every component has a value and again whenever one of them updates:
+
+```julia
+energies = Float64[]
+subscribe!(bethe_free_energy(Float64, nodes, variables; algorithm = (node) -> nothing), (f) -> push!(energies, f))
+```
+
+`algorithm(node)` is the algorithm each node runs under, as given at activation, so the
+energy each node contributes is the one its rules are consistent with; `nothing` is the node's
+default.
+
+```@docs
+bethe_free_energy
+```
+
 ## [Score types](@id lib-score-types)
 
-Three tag types are used to dispatch the `score` function:
+A factor node's average energy, the `⟨-log f⟩_q` term, is its rule package's: it is declared
+with `@define_average_energy` next to the node's rules (see
+[Defining nodes and rules](@ref rules-defining)) and found by the engine through the base
+package. The engine combines it with the entropies into these contributions:
 
 | Type | Represents | Where used |
 |------|-----------|-----------|
-| `AverageEnergy` | `⟨-log f⟩_q` — the expected log-factor under the local marginal | Factor nodes |
-| `DifferentialEntropy` | `-∫ q log q` — the Shannon entropy of a marginal | Factor and variable nodes |
-| `FactorBoundFreeEnergy` | Local free energy contribution of one factor node | Factor nodes |
-| `VariableBoundEntropy` | Scaled entropy contribution of one variable node | Variable nodes |
+| [`DifferentialEntropy`](@ref) | `-∫ q log q`, the entropy of a marginal | factor and variable nodes |
+| [`FactorBoundFreeEnergy`](@ref) | a factor node's local contribution: its average energy less its clusters' entropies | factor nodes |
+| [`VariableBoundEntropy`](@ref) | a variable's contribution, its entropy weighted by its degree less one | variable nodes |
 
-The full Bethe free energy is the sum of all `FactorBoundFreeEnergy` and `VariableBoundEntropy` scores across the graph.
+A node without an average energy for its clusters' marginals makes the free energy an error
+that names the node, rather than a wrong number.
 
-## [The `score` function](@id lib-score-function)
-
-`score` is the central dispatch point. It is called internally by the engine, but can also be called manually for inspection:
-
-```julia
-# Entropy of a marginal
-score(DifferentialEntropy(), marginal)
-
-# Average energy for a factor node
-score(AverageEnergy(), MyNode, Val{(:x, :y)}(), (q_x, q_y), meta)
+```@docs
+score
+FactorBoundFreeEnergy
+VariableBoundEntropy
+DifferentialEntropy
 ```
-
-## [Defining average energy for custom nodes](@id lib-score-average-energy)
-
-When adding a new factor node, the engine needs to know how to compute `⟨-log f⟩_q`. The `@average_energy` macro generates the required `score(::AverageEnergy, ...)` method:
-
-```julia
-@average_energy MyNode (q_x::NormalMeanVariance, q_y::Gamma) begin
-    # return the average energy -⟨log f(x, y)⟩_{q(x)q(y)}
-    mx, vx = mean_var(q_x)
-    my     = mean(q_y)
-    return 0.5 * log(2π) + 0.5 * (vx + mx^2) * my - ...
-end
-```
-
-The macro handles argument naming, dispatch, and interface checking automatically. Marginals are named with a `q_` prefix matching the node interface names declared in the corresponding `@node` definition.

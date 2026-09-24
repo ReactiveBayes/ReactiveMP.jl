@@ -90,7 +90,7 @@ Multiple calls to [`new_observation!`](@ref) are possible after activation — e
 
 | Phase | What happens | Key functions |
 |-------|-------------|---------------|
-| **Construction** | Variables and nodes created, edges connected, streams allocated (lazy) | [`randomvar`](@ref), [`datavar`](@ref), [`constvar`](@ref), [`@node`](@ref) |
+| **Construction** | Variables and nodes created, edges connected, streams allocated (lazy) | [`randomvar`](@ref), [`datavar`](@ref), [`constvar`](@ref), [`factornode`](@ref) |
 | **Activation** | Lazy streams wired into a live reactive network | [`ReactiveMP.activate!`](@ref), [`ReactiveMP.FactorNodeActivationOptions`](@ref) |
 | **Observation** | Data fed in, messages propagate, marginals update | [`new_observation!`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref) |
 

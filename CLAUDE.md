@@ -71,7 +71,7 @@ make test test_args="tag:nodes name:factornode"    # combined
 RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
-make docs                                  # refuses: docs/ describes v6 and is being rewritten
+make docs                                  # build the documentation, running its doctests
 make test-base                             # lib/MessagePassingRulesBase's own suite
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
 make test-standard                         # lib/StandardMessagePassingRules
@@ -93,14 +93,14 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (130 of them across 21 files), each self-contained and
+Tests are `@testitem` blocks (131 of them across 22 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
 **Every test item carries a tag.** The taxonomy is `:nodes` (21) and `:engine` (108 —
-everything except the node tests and the inventory gate), plus `:alloc` on the two items that
-assert allocation counts and `:quality` on the inventory gate. `:rules` went with the v6 rule
+everything except the node tests and the quality items), plus `:alloc` on the two items that
+assert allocation counts and `:quality` on the inventory gate and the engine's doctests. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
 The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
 `:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`

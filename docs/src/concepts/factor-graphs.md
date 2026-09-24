@@ -36,22 +36,21 @@ This distinction matters for how messages are computed and how the variational f
 
 ## [How ReactiveMP.jl represents factor nodes](@id concepts-factor-graphs-node-registration)
 
-Every factor in ReactiveMP.jl is a Julia type registered with the [`@node`](@ref) macro. The macro declares the node's name, its type (`Stochastic` or `Deterministic`), and the fixed set of edges (interfaces) it connects to:
+Every factor is a node declared with `@define_factor_node` from `MessagePassingRulesBase`. The
+declaration names the node, a type or a function, its type (`Stochastic` or `Deterministic`)
+and its interfaces, the first being the output:
 
 ```julia
 struct MyFactor end
 
-@node MyFactor Stochastic [ out, x, y ]
-#     ^^^^^^^^ ^^^^^^^^^^   ^^^^^^^^^^
-#     tag      type          edges (first = output by convention)
+@define_factor_node(node = MyFactor, type = Stochastic, interfaces = [:out, :x, :y])
 ```
 
-After registration, `MyFactor` can be used as a factor node in a model. The inference engine then dispatches message update rules defined with [`@rule`](@ref) for that node type.
-
-!!! note
-    The `@node` macro only registers the factor's structure. Message update rules must be added separately using [`@rule`](@ref) and [`@marginalrule`](@ref). See [Message update rules](@ref lib-rules) for details.
-
-ReactiveMP.jl ships with [many predefined nodes](@ref lib-predefined-nodes) for common distributions and operations — Gaussian, Gamma, Beta, Bernoulli, arithmetic operations, and more. Custom nodes can be registered using the same `@node` macro.
+The declaration gives the node its structure only. Its message update rules, marginal rules and
+average energy are defined next to it with the same package's macros; see
+[Defining nodes and rules](@ref rules-defining). The standard nodes, for common distributions,
+arithmetic, logic and mixtures, come with `StandardMessagePassingRules`
+([Standard rules](@ref packages-standard)).
 
 ## [Next steps](@id concepts-factor-graphs-next)
 

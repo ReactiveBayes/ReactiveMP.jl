@@ -1,0 +1,317 @@
+# [Migrating from v6 to v7](@id migration-v6-to-v7)
+
+ReactiveMP v7 moves nodes and rules out of the engine into packages of their own. The engine
+keeps variables, factor nodes, messages, marginals and the free energy; `MessagePassingRulesBase`
+defines how nodes and rules are declared and found; `StandardMessagePassingRules` holds the
+standard nodes' rules; `MessagePassingRulesApproximations` and `DeltaMessagePassingRules` hold the
+approximation methods and the Delta node. Most of a port is mechanical, and this guide lists the
+mechanical translations as before/after pairs. The v7 side of each pair runs when these docs are
+built.
+
+## For an agent porting code
+
+Read this section before changing anything.
+
+- **Read first:** [Defining nodes and rules](@ref rules-defining) and
+  [Algorithms and dependencies](@ref rules-algorithms), then the pairs below.
+- **Translate only what a pair covers.** Each construct in the code you port must match a pair
+  in this guide. Anything else, and everything in [What cannot be translated
+  mechanically](@ref migration-v6-to-v7-manual), is a question for the person who owns the code.
+  Stop and ask; do not guess. A rule that compiles and returns a plausible distribution can
+  still be wrong, and nothing downstream will catch it.
+- **Never guess** which inputs a rule consumes, whether an input is a message or a marginal, the
+  order of interfaces, or what `meta` held: all of these change the result.
+- **Verify every rule you port** as [Verifying a port](@ref migration-v6-to-v7-verify) describes:
+  a table of cases, and a comparison with the old rule while it is available.
+- **Stop** when a rule reads raw message tuples, builds graph objects, keeps state in `meta`, or
+  when a verification fails and you cannot explain the difference.
+
+## Nodes
+
+A node is declared with `@define_factor_node`, keyword by keyword. Aliases are written on the
+interface, and the first interface is the output, as before.
+
+```julia
+# v6
+@node MyGaussian Stochastic [out, (μ, aliases = [mean]), (τ, aliases = [precision])]
+```
+
+```@example v7
+using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
+import MessagePassingRulesBase: annotate!, getannotation
+
+struct MyGaussian end
+
+@define_factor_node(
+    node = MyGaussian,
+    type = Stochastic,
+    interfaces = [:out, (:μ, aliases = [:mean]), (:τ, aliases = [:precision])],
+)
+```
+
+A node with a variable number of edges of one kind, which v6 wrote by hand with `ManyOf` and a
+node type of its own, declares an interface group, `:in...`; see [Groups](@ref migration-v6-to-v7-groups).
+
+## Message update rules
+
+`@rule` becomes `@define_message_update_rule`. The node, the target and the inputs are keywords;
+the inputs are typed like the old arguments, with `m_x` becoming `m[:x]` and `q_x` becoming
+`q[:x]`; the body is a lambda over the slots it needs. `Marginalisation` is gone: a rule belongs
+to an algorithm, the node's default unless it says otherwise.
+
+```julia
+# v6
+@rule MyGaussian(:out, Marginalisation) (m_μ::PointMass, m_τ::PointMass) = begin
+    return NormalMeanPrecision(mean(m_μ), mean(m_τ))
+end
+
+@rule MyGaussian(:out, Marginalisation) (q_μ::Any, q_τ::Any) = NormalMeanPrecision(mean(q_μ), mean(q_τ))
+```
+
+```@example v7
+@define_message_update_rule(
+    node = MyGaussian, target = :out,
+    args = (m[:μ]::PointMass, m[:τ]::PointMass),
+    body = (args) -> NormalMeanPrecision(mean(args.m[:μ]), mean(args.m[:τ])),
+)
+
+@define_message_update_rule(
+    node = MyGaussian, target = :out,
+    args = (q[:μ]::Any, q[:τ]::Any),
+    body = (args) -> NormalMeanPrecision(mean(args.q[:μ]), mean(args.q[:τ])),
+)
+
+call_message_update_rule(MyGaussian, :out; q = (μ = NormalMeanVariance(1.0, 1.0), τ = GammaShapeRate(2.0, 1.0)))
+```
+
+A joint marginal, `q_out_μ` in v6, is `q[:out, :μ]`, its members in interface order:
+
+```julia
+# v6
+@rule MyGaussian(:τ, Marginalisation) (q_out_μ::Any,) = begin
+    m, V = mean_cov(q_out_μ)
+    return GammaShapeRate(3 / 2, (V[1, 1] - V[1, 2] - V[2, 1] + V[2, 2] + abs2(m[1] - m[2])) / 2)
+end
+```
+
+```@example v7
+@define_message_update_rule(
+    node = MyGaussian, target = :τ,
+    args = (q[:out, :μ]::Any,),
+    body = (args) -> begin
+        m, V = mean_cov(args.q[:out, :μ])
+        GammaShapeRate(3 / 2, (V[1, 1] - V[1, 2] - V[2, 1] + V[2, 2] + abs2(m[1] - m[2])) / 2)
+    end,
+)
+
+call_message_update_rule(MyGaussian, :τ; clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.0], [1.0 0.0; 0.0 1.0]),))
+```
+
+## Marginal rules
+
+`@marginalrule` becomes `@define_marginal_update_rule`, its target the cluster's members as a
+tuple rather than a joined name (`:out_μ` becomes `(:out, :μ)`). A result that factorises into
+independent blocks, which v6 returned as a NamedTuple, is a [`FactorizedCluster`](@ref), each
+block labelled with the members it covers.
+
+```julia
+# v6
+@marginalrule MyGaussian(:out_μ) (m_out::PointMass, m_μ::NormalMeanPrecision, q_τ::Any) = begin
+    return (out = m_out, μ = prod(ClosedProd(), NormalMeanPrecision(mean(m_out), mean(q_τ)), m_μ))
+end
+```
+
+```@example v7
+@define_marginal_update_rule(
+    node = MyGaussian, target = (:out, :μ),
+    args = (m[:out]::PointMass, m[:μ]::NormalMeanPrecision, q[:τ]::Any),
+    body = (args) -> FactorizedCluster(
+        (:out,) => args.m[:out],
+        (:μ,) => prod(ClosedProd(), NormalMeanPrecision(mean(args.m[:out]), mean(args.q[:τ])), args.m[:μ]),
+    ),
+)
+
+call_marginal_update_rule(MyGaussian, (:out, :μ); m = (out = PointMass(1.0), μ = NormalMeanPrecision(0.0, 1.0)), q = (τ = PointMass(1.0),))
+```
+
+## Average energies
+
+`@average_energy` becomes `@define_average_energy`, with the same argument syntax as the rules.
+
+```julia
+# v6
+@average_energy MyGaussian (q_out::Any, q_μ::Any, q_τ::Any) = begin
+    return (log(2π) - mean(log, q_τ) + mean(q_τ) * (var(q_out) + var(q_μ) + abs2(mean(q_out) - mean(q_μ)))) / 2
+end
+```
+
+```@example v7
+@define_average_energy(
+    node = MyGaussian,
+    args = (q[:out]::Any, q[:μ]::Any, q[:τ]::Any),
+    body = (args) -> (log(2π) - mean(log, args.q[:τ]) + mean(args.q[:τ]) * (var(args.q[:out]) + var(args.q[:μ]) + abs2(mean(args.q[:out]) - mean(args.q[:μ])))) / 2,
+)
+
+call_average_energy(MyGaussian; q = (out = PointMass(1.0), μ = PointMass(0.0), τ = PointMass(1.0)))
+```
+
+## Log scales and annotations
+
+`@logscale v` becomes `annotate!(ann, :logscale, v)` on the rule's `ann` slot. A rule reads the
+log scales its inputs arrived with from `ann.m[:x]` (and `ann.q[:x]`), where v6 read them from
+the raw `messages` tuple.
+
+```julia
+# v6
+@rule MyBernoulli(:p, Marginalisation) (m_out::PointMass,) = begin
+    @logscale -log(2)
+    return Beta(1 + mean(m_out), 2 - mean(m_out))
+end
+```
+
+```@example v7
+struct MyBernoulli end
+
+@define_factor_node(node = MyBernoulli, type = Stochastic, interfaces = [:out, :p])
+
+@define_message_update_rule(
+    node = MyBernoulli, target = :p,
+    args = (m[:out]::PointMass,),
+    body = (args, ann) -> begin
+        annotate!(ann, :logscale, -log(2))
+        Beta(1 + mean(args.m[:out]), 2 - mean(args.m[:out]))
+    end,
+)
+
+store = MessagePassingRulesBase.AnnotationStore()
+call_message_update_rule(MyBernoulli, :p; m = (out = PointMass(1.0),), ann = store), getannotation(store, :logscale)
+```
+
+## [Groups](@id migration-v6-to-v7-groups)
+
+A variable number of edges of one kind, `ManyOf` in v6, is an interface group. A rule towards a
+member names it `(:in, k)`, and its inputs select members: `m[:in...]` all of them, `m[:in][k]`
+the target's own, and `m[:in][!k]` all but it. A group arrives as a tuple in member order, with
+`nothing` for a member the rule does not take. The node needs no node type, `factornode` or
+`activate!` of its own, and no `{N}` parameter: the number of members is the group's length.
+
+```julia
+# v6
+@rule MySum{N}(:out, Marginalisation) (m_in::ManyOf{N, NormalMeanVariance},) where {N} = begin
+    return NormalMeanVariance(sum(mean, m_in), sum(var, m_in))
+end
+```
+
+```@example v7
+struct MySum end
+
+@define_factor_node(node = MySum, type = Deterministic, interfaces = [:out, :in...])
+
+@define_message_update_rule(
+    node = MySum, target = :out,
+    args = (m[:in...]::NormalMeanVariance,),
+    body = (args) -> NormalMeanVariance(sum(mean, args.m[:in]), sum(var, args.m[:in])),
+)
+
+@define_message_update_rule(
+    node = MySum, target = (:in, k),
+    args = (m[:out]::NormalMeanVariance, m[:in][!k]::NormalMeanVariance),
+    body = (args) -> begin
+        others = [m for m in args.m[:in] if m !== nothing]
+        NormalMeanVariance(mean(args.m[:out]) - sum(mean, others), var(args.m[:out]) + sum(var, others))
+    end,
+)
+
+call_message_update_rule(MySum, (:in, 1); m = (out = NormalMeanVariance(3.0, 1.0), in = (nothing, NormalMeanVariance(2.0, 1.0))))
+```
+
+## `meta`
+
+`meta` served two purposes, and each has its own place now.
+
+- **What a rule computes**, such as an approximation method, is an **algorithm**: a type
+  `struct MyMethod <: AbstractAlgorithm end`, possibly with fields, that the rule names with
+  `algorithm = MyMethod` and receives in its `algo` slot. The node's user chooses it per node, as
+  they chose the meta. `DeltaMeta(method = Unscented())` is `DeltaApproximation(method = Unscented())`.
+- **How a rule computes it numerically**, such as a matrix correction or a random number
+  generator, is a **context service**, declared with `ctx = (:matrix_correction,)` and read as
+  `matrix_correction(ctx, default)` or `ctx.rng`. `default_meta` becomes the rule's `default`.
+
+## Functional dependencies
+
+v6's functional dependencies become declared dependencies. The default scheme, which gives a
+rule the messages in its own cluster and the marginals of the others, needs no declaration.
+
+| v6 | v7 |
+|---|---|
+| `DefaultFunctionalDependencies` | nothing: the default |
+| a node with its own `functional_dependencies` | an algorithm of the node's own, with `dependencies = [...]` on `@define_factor_node` |
+| `RequireMessageFunctionalDependencies`, `RequireMarginalFunctionalDependencies`, `RequireEverythingFunctionalDependencies` | for one model, a [`DefaultAlgorithmExtension`](@ref) with its own dependencies (`@define_dependencies`); for a node, its own algorithm |
+| RxInfer's `where { dependencies = … }` | choosing the node's algorithm |
+
+A target's inputs are subscribed to in the order they are declared, which is the update
+schedule in variational message passing.
+
+## Calling rules, and other renames
+
+| v6 | v7 |
+|---|---|
+| `@call_rule Node(:out, Marginalisation) (m_x = …,)` | `call_message_update_rule(Node, :out; m = (x = …,))`, or `@call_message_update_rule` |
+| `@call_marginalrule` | `call_marginal_update_rule`, `@call_marginal_update_rule` |
+| `score(AverageEnergy(), Node, Val{…}(), marginals, meta)` | `call_average_energy(Node; q = …)` |
+| a rule calling another rule | both calling a plain helper function |
+| `to_marginal(d)` | `public_equivalent(d)`, a method a package adds for its working types |
+| `getnodefn(node)`, `getnode()` in a rule | `getnodefn(ctx.node, target)`, `ctx.node` |
+| `@test_rules` | `@test_message_update_rule` ([Testing rules](@ref rules-testing)) |
+
+## [What cannot be translated mechanically](@id migration-v6-to-v7-manual)
+
+These need a person who knows what the rule means. Stop and ask.
+
+- **Rules reading the raw `messages` or `marginals` tuple**, often for their annotations. Each
+  use has to be matched to a named input or to `ann.m`/`ann.q`, which depends on what the rule
+  meant by the index.
+- **Rules building graph objects**, such as a `randomvar` for a product with a log scale. A
+  product is the `ctx.product` service; anything else has no counterpart.
+- **`meta` used as mutable workspace**, such as a cache filled across calls. A rule is pure unless
+  it says `pure = false`; state belongs to an algorithm that declares itself impure, and whether
+  that is right depends on the model.
+- **Rule fallbacks** are not carried over: when no rule fits, the base package reports the closest
+  candidates.
+
+## [Verifying a port](@id migration-v6-to-v7-verify)
+
+A ported rule is checked three ways:
+
+1. A table of cases, [`@test_message_update_rule`](@ref), with values derived by hand or taken
+   from the old tests.
+2. Where the inputs allow, [`@verify_message_update_rule`](@ref), which checks a message against
+   the node's definition.
+3. While the old implementation is at hand, [`compare_with_reference`](@ref) on the same inputs:
+   every difference is either a bug in the port or a declared correction with its reason.
+
+## Behaviour that changed
+
+The rules of the standard nodes follow naive variational message passing where v6 did not, and
+fix errors v6 had. A result that differs from v6's for these nodes is expected:
+
+- **Variational rules** take a variance's contribution as `1/E[1/v]` and a covariance's as
+  `E[Σ⁻¹]⁻¹` (NormalMeanVariance, MvNormalMeanCovariance), where v6 took `E[v]` and `E[Σ]`.
+- **Average energies** of Gamma and GammaInverse compute `E[x]·E[1/θ]` and `θ·E[1/x]`, where v6
+  divided expectations.
+- **Wishart**'s variational rule towards `out` uses `E[S⁻¹]`; **MvNormalGamma**'s includes the
+  covariance of `μ` in the rate; **MvNormalWeightedMeanPrecision**'s marginal labels its blocks
+  correctly.
+- **Arithmetic:** `+` and `-` fix sign errors for weighted-mean normals and for `-`'s marginal;
+  `*`'s sampled messages towards a factor drop a spurious weight, its log scale towards `in` is
+  `-d·log|a|`, and a product that would need `in * A` for a matrix operand has no rule.
+- **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
+- **The Delta node** supports the `Unscented` method; v6's other methods are not available.
+
+## Removed
+
+These v6 names have no counterpart: `Marginalisation`, `MomentMatching`, the functional
+dependency types, the per-node node types (`NormalMixtureNode`, `GammaMixtureNode`,
+`MixtureNode`), `NodeFunctionRuleFallback`, `CompanionMatrix`, and the approximation methods
+with no remaining consumer (`CVI`, `ProdCVI`, `Adam`, `ForwardDiffGrad`, `LaplaceApproximation`,
+`ImportanceSamplingApproximation`, `GaussLaguerreQuadrature`, `srcubature`).

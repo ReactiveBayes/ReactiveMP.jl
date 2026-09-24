@@ -1925,6 +1925,19 @@ helpers the unported nodes use (`helpers/algebra/common.jl`, `approximations/sha
     INVENTORY marks `NodeFunctionRuleFallback` and the fallback hook `delete`, with notes for
     the guide. legacy/README lists what stays and whose it is: the unported nodes, the
     approximations Phase 6 ports or deletes, their helpers, `fixes.jl` and the CVI extensions.
+  - *The docs — done.* `docs/Project.toml` takes the engine and the lib packages through
+    `[sources]`; `docs/make.jl` documents all six modules with `checkdocs = :exports` and runs
+    every doctest and `@example`; `make docs` builds again. The engine's undocumented exports got
+    docstrings, and `Message`'s and `Marginal`'s, which a comment had detached, attach again, so
+    their doctests run for the first time; a root `quality:doctests` item runs the engine's
+    doctests with the tests. New pages: *Defining nodes and rules*, *Algorithms and
+    dependencies*, *Testing rules*, and a page per rule package; the engine pages are rewritten
+    for the current API; removed: the unported nodes' pages, `rules.md`, `algebra.md`,
+    `approximations.md`, `extensions.md`. No page carries historical remarks.
+  - *The migration guide — done.* `migration-guides/v6-to-v7.md`: the agent preamble; pairs for
+    nodes, message and marginal rules, energies, log scales, groups, `meta`, functional
+    dependencies and the renames, their v7 side run by the build; what cannot be translated
+    mechanically; how to verify a port; the behaviour that changed and what was removed.
 
 6. **Matrix and Wishart**: Wishart, InverseWishart, MatrixNormal, MatrixNormalWishart,
    MvNormalGamma, MvNormalWishart, DirichletCollection. **Done** (the step 6 brief below,

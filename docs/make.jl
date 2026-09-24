@@ -1,73 +1,70 @@
-using Documenter, ReactiveMP
+using Documenter
+using ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils
+using StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules
 
-## https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
-## https://gr-framework.org/workstations.html#no-output
-ENV["GKSwstype"] = "100"
+const MODULES = [
+    ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils,
+    StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules,
+]
 
-DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive = true)
+const SETUP = :(using ReactiveMP, MessagePassingRulesBase, StandardMessagePassingRules, BayesBase, Distributions, ExponentialFamily)
+foreach(m -> DocMeta.setdocmeta!(m, :DocTestSetup, SETUP; recursive = true), MODULES)
 
 makedocs(
-    modules  = [ReactiveMP],
-    clean    = true,
+    modules = MODULES,
+    clean = true,
     sitename = "ReactiveMP.jl",
-    pages    = [
-        "Introduction"    => "index.md",
+    # Every exported, documented name appears on a page.
+    checkdocs = :exports,
+    pages = [
+        "Introduction" => "index.md",
         "Concepts" => [
-            "Factor graphs"           => "concepts/factor-graphs.md",
-            "Message passing"         => "concepts/message-passing.md",
-            "Reactive programming"   => "concepts/reactive-programming.md",
-            "Inference lifecycle"    => "concepts/inference-lifecycle.md",
+            "Factor graphs" => "concepts/factor-graphs.md",
+            "Message passing" => "concepts/message-passing.md",
+            "Reactive programming" => "concepts/reactive-programming.md",
+            "Inference lifecycle" => "concepts/inference-lifecycle.md",
         ],
-        "Library" => [
-            "Factor nodes"         => "lib/nodes.md",
-            "Variables"             => "lib/variables.md",
-            "Messages"             => "lib/message.md",
-            "Marginals"            => "lib/marginal.md",
-            "Message update rules" => "lib/rules.md",
-            "Callbacks"            => "lib/callbacks.md",
+        "Nodes and rules" => [
+            "Defining nodes and rules" => "rules/defining-nodes-and-rules.md",
+            "Algorithms and dependencies" => "rules/algorithms-and-dependencies.md",
+            "Testing rules" => "rules/testing-rules.md",
+        ],
+        "The engine" => [
+            "Factor nodes" => "lib/nodes.md",
+            "Variables" => "lib/variables.md",
+            "Messages" => "lib/message.md",
+            "Marginals" => "lib/marginal.md",
+            "Callbacks" => "lib/callbacks.md",
             "Stream postprocessors" => "lib/stream-postprocessors.md",
-            "Approximations"       => "lib/approximations.md",
-            "Score functions"      => "lib/score.md",
-            "Helper utils"         => "lib/helpers.md",
-            "Algebra utils"        => "lib/algebra.md",
-            "Specific factor nodes" => [
-                "Delta" => "lib/nodes/delta.md",
-                "Flow" => "lib/nodes/flow.md",
-                "BIFM" => "lib/nodes/bifm.md",
-                "Logical" => "lib/nodes/logical.md",
-                "Discrete Transition" => "lib/nodes/discrete_transition.md",
-                "Continuous transition" => "lib/nodes/ctransition.md",
-                "Autoregressive" => "lib/nodes/ar.md",
-                "Conjugate Autoregressive" => "lib/nodes/conjugate_ar.md",
-                "GaussianCoupling" => "lib/nodes/gaussian_coupling.md",
-                "BinomialPolya" => "lib/nodes/binomial_polya.md",
-                "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
-            ]
+            "Free energy" => "lib/score.md",
+            "Form constraints" => "custom/custom-functional-form.md",
+            "Helpers" => "lib/helpers.md",
+            "Annotations" => [
+                "Overview" => "lib/annotations.md",
+                "Log scale" => "lib/annotations/logscale.md",
+                "Input arguments" => "lib/annotations/input_arguments.md",
+            ],
         ],
-        "Annotations" => [
-            "Overview"         => "lib/annotations.md",
-            "Log-scale"        => "lib/annotations/logscale.md",
-            "Input arguments"  => "lib/annotations/input_arguments.md",
-        ],
-        "Custom functionality" => [
-            "Custom functional form" => "custom/custom-functional-form.md",
+        "Rule packages" => [
+            "Standard rules" => "packages/standard.md",
+            "Approximations" => "packages/approximations.md",
+            "The Delta node" => "packages/delta.md",
         ],
         "Migration guides" => [
+            "v6 to v7" => "migration-guides/v6-to-v7.md",
             "v5 to v6" => "migration-guides/v5-to-v6.md",
         ],
         "Extra" => [
-            "Contributing"     => "extra/contributing.md",
-            "Extensions"       => "extra/extensions.md",
-            "Exported methods" => "extra/methods.md"
-        ]
-        
+            "Contributing" => "extra/contributing.md",
+            "Exported methods" => "extra/methods.md",
+        ],
     ],
-    format   = Documenter.HTML(
+    format = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true",
         example_size_threshold = 400 * 1024,
         size_threshold_warn = 400 * 1024,
         size_threshold = 400 * 1024,
-    )
+    ),
 )
 
 if get(ENV, "CI", nothing) == "true"

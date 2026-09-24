@@ -10,9 +10,10 @@ Often, a message can be represented in the form of a probability distribution, a
 The representation of messages as probability distributions is not only for convenience but also for performance reasons. For example, a univariate _Gaussian_ distribution can be parameterized with two numbers, which significantly reduce the amount of information needed to pass along the edges of the graph.
 
 ```@example
-using StatsPlots, Distributions
+using ReactiveMP, BayesBase, ExponentialFamily
 
-plot(Normal(0.0, 1.0), label = "Univariate Gaussian distribution", fillalpha = 0.4, fill = 0)
+message = Message(NormalMeanVariance(0.0, 1.0), false, false)
+mean(message), var(message)
 ```
 
 ## [Variational Message Passing](@id lib-message-vmp)

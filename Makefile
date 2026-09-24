@@ -23,10 +23,10 @@ check-format: scripts_init ## Check Julia code formatting (does not modify files
 .PHONY: docs
 
 doc_init:
-	julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate();'
+	julia --project=docs -e 'using Pkg; Pkg.instantiate();'
 
-docs: ## Generate documentation (out of the build until Phase 5 rewrites it for the new engine)
-	@echo "docs/ describes the v6 engine and is out of the build until it is rewritten (PHASES.md § Phase 5)"; exit 1
+docs: doc_init ## Generate the documentation, running its doctests
+	julia --startup-file=no --project=docs docs/make.jl
 
 .PHONY: test test-all test-base test-testutils test-standard test-approximations test-delta
 
