@@ -356,3 +356,161 @@ end
     foreach(unsubscribe!, subscriptions)
     unsubscribe!(score_subscription)
 end
+
+@testitem "nodes:ManyPlus:observed output free energy" begin
+    using ReactiveMP, BayesBase, ExponentialFamily, LinearAlgebra
+
+    for dimension in (2, 3, 8)
+        variances = [0.25 + i / 5 for i in 1:dimension]
+        gaussians = Tuple(
+            NormalMeanVariance(i / 3, variances[i]) for i in 1:dimension
+        )
+        precision =
+            Diagonal(inv.(variances[1:(end - 1)])) +
+            fill(inv(last(variances)), dimension - 1, dimension - 1)
+        joint = MvNormalWeightedMeanPrecision(
+            zeros(dimension - 1), Matrix(precision)
+        )
+        for constants in ((), (PointMass(2), PointMass(-3.0f0)))
+            inputs = (gaussians..., constants...)
+            for shift in eachindex(inputs), y in (-2.0, 5.0)
+                ordered = Tuple(circshift(collect(inputs), shift))
+                actual = ReactiveMP._manyplus_negative_entropy(
+                    PointMass(y), ordered
+                )
+                @test BayesBase.value(actual) ≈ -entropy(joint) rtol = 1e-12 atol =
+                    1e-12
+                @test BayesBase.infinities(actual) == length(constants) + 1
+            end
+        end
+        if dimension == 2
+            conditional_variance = prod(variances) / sum(variances)
+            actual = ReactiveMP._manyplus_negative_entropy(
+                PointMass(5.0), gaussians
+            )
+            @test BayesBase.value(actual) ≈
+                -entropy(NormalMeanVariance(0.0, conditional_variance))
+        end
+    end
+
+    for T in (Float32, Float64, BigFloat)
+        for inputs in (
+            (PointMass(T(2)), PointMass(T(3))),
+            (NormalMeanVariance(T(1), T(2)), PointMass(T(3))),
+            (NormalMeanVariance(T(1), T(2)), NormalMeanVariance(T(2), T(3))),
+        )
+            actual = ReactiveMP._manyplus_negative_entropy(
+                PointMass(T(5)), inputs
+            )
+            @test actual isa ReactiveMP.CountingReal{T}
+            @test BayesBase.infinities(actual) ==
+                count(input -> input isa PointMass, inputs) + 1
+            if count(input -> !(input isa PointMass), inputs) <= 1
+                @test iszero(BayesBase.value(actual))
+            else
+                # Compute scalar Gaussian entropy with a type-preserving π;
+                # the distribution helper uses a Float64 constant internally.
+                expected = -(one(T) + log(T(2) * T(pi) * T(6) / T(5))) / T(2)
+                @test BayesBase.value(actual) ≈ expected
+            end
+        end
+    end
+end
+
+@testitem "nodes:ManyPlus:observed and fixed output streams" begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Rocket
+
+    for observed in (true, false), nrandom in (1, 2)
+        output = observed ? datavar() : constvar(5.0)
+        inputs = (ntuple(_ -> randomvar(), nrandom)..., constvar(2.0))
+        node = ReactiveMP.factornode(
+            ManyPlus,
+            [(:out, output); [(:inputs, input) for input in inputs]],
+            nothing,
+        )
+        sources = ntuple(_ -> Subject(Message), nrandom)
+        for (variable, source) in zip(inputs, sources)
+            incoming, _ = ReactiveMP.create_new_stream_of_inbound_messages!(
+                variable
+            )
+            ReactiveMP.connect!(incoming, source)
+            ReactiveMP.activate!(
+                variable, ReactiveMP.RandomVariableActivationOptions()
+            )
+        end
+        if observed
+            ReactiveMP.activate!(
+                output, ReactiveMP.DataVariableActivationOptions()
+            )
+        end
+        ReactiveMP.activate!(
+            node,
+            ReactiveMP.FactorNodeActivationOptions(
+                nothing, nothing, nothing, nothing, nothing, nothing
+            ),
+        )
+        received = []
+        message_subscription = subscribe!(
+            ReactiveMP.get_stream_of_outbound_messages(node.inputs[1]),
+            message -> push!(received, getdata(ReactiveMP.as_message(message))),
+        )
+        scores = []
+        score_subscription = subscribe!(
+            score(
+                ReactiveMP.CountingReal{Float64},
+                FactorBoundFreeEnergy(),
+                node,
+                nothing,
+                nothing,
+            ),
+            value -> push!(scores, value),
+        )
+        if observed
+            ReactiveMP.new_observation!(output, 5.0)
+        end
+        # No incoming message from the target is needed for its backward message.
+        if nrandom == 2
+            next!(
+                sources[2], Message(NormalMeanVariance(0.5, 0.25), false, false)
+            )
+        end
+        @test length(received) == 1
+        if nrandom == 1
+            @test only(received) isa PointMass
+            @test mean(only(received)) == 3.0
+        else
+            @test only(received) isa NormalMeanVariance
+            @test mean_var(only(received)) == (2.5, 0.25)
+        end
+        @test isempty(scores)
+        next!(sources[1], Message(NormalMeanVariance(1.0, 0.5), false, false))
+        @test length(received) == 1
+        @test length(scores) == 1
+        expected_entropy =
+            nrandom == 1 ? 0.0 : -entropy(NormalMeanVariance(0.0, 1 / 6))
+        @test BayesBase.value(last(scores)) ≈ expected_entropy
+        @test BayesBase.infinities(last(scores)) == 2
+
+        if observed
+            ReactiveMP.new_observation!(output, 7.0)
+            # PushNew waits for fresh messages from every non-constant source.
+            next!(
+                sources[1], Message(NormalMeanVariance(1.0, 0.5), false, false)
+            )
+            if nrandom == 2
+                next!(
+                    sources[2],
+                    Message(NormalMeanVariance(0.5, 0.25), false, false),
+                )
+            end
+            @test length(received) == 2
+            @test mean(last(received)) == mean(first(received)) + 2
+            @test var(last(received)) == var(first(received))
+            @test length(scores) == 2
+            @test BayesBase.value(last(scores)) ≈ expected_entropy
+            @test BayesBase.infinities(last(scores)) == 2
+        end
+        unsubscribe!(message_subscription)
+        unsubscribe!(score_subscription)
+    end
+end

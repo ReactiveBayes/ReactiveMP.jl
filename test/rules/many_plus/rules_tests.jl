@@ -132,6 +132,72 @@
             collect(mean_var(binary_backward2))
     end
 
+    @testset "Observed output" begin
+        output = PointMass(5.0)
+        for arity in (2, 3, 7)
+            inputs = [
+                manyplus_test_normal(
+                    (
+                        :mean_variance,
+                        :mean_precision,
+                        :weighted_mean_precision,
+                        :normal,
+                    )[mod1(i, 4)],
+                    i / 2,
+                    i / 4,
+                    Float64,
+                ) for i in 1:arity
+            ]
+            for k in eachindex(inputs)
+                others = inputs[filter(!=(k), eachindex(inputs))]
+                result = manyplus_rule_input(output, others, k)
+                @test result isa NormalMeanVariance
+                @test mean(result) ≈ 5 - sum(mean, others)
+                @test var(result) ≈ sum(var, others)
+            end
+        end
+
+        for parameterisation in
+            (:mean_variance, :mean_precision, :weighted_mean_precision, :normal)
+            gaussian = manyplus_test_normal(
+                parameterisation, 0.5, 0.25, Float64
+            )
+            binary = @call_rule typeof(+)(:in1, Marginalisation) (
+                m_out = output, m_in2 = gaussian
+            )
+            @test collect(
+                mean_var(manyplus_rule_input(output, (gaussian,), 1))
+            ) ≈ collect(mean_var(binary))
+        end
+
+        for (constant, T) in (
+                (PointMass(2), Float32),
+                (PointMass(2.0f0), Float32),
+                (PointMass(2.0), Float64),
+                (PointMass(big"2"), BigFloat),
+            ),
+            others in (
+                (constant, NormalMeanVariance(0.5f0, 0.25f0)),
+                (NormalMeanVariance(0.5f0, 0.25f0), constant),
+            )
+
+            result = manyplus_rule_input(PointMass(5.0f0), others, 2)
+            @test result isa NormalMeanVariance{T}
+            @test mean_var(result) == (T(2.5), T(0.25))
+        end
+
+        for (output, others, expected) in (
+            (PointMass(5), (PointMass(2), PointMass(-1)), PointMass(4)),
+            (PointMass(5.0f0), (PointMass(2.0f0),), PointMass(3.0f0)),
+            (PointMass(5.0f0), (PointMass(2.0),), PointMass(3.0)),
+            (PointMass(5), (PointMass(big"2"),), PointMass(big"3")),
+        )
+            result = manyplus_rule_input(output, others, 1)
+            @test result isa typeof(expected)
+            @test mean_var(result) == mean_var(expected)
+        end
+    end
+
     @testset "Constant inputs" begin
         inputs = [
             NormalMeanVariance(0.5, 0.25),

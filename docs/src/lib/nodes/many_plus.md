@@ -63,9 +63,30 @@ such as `[x1, 2.0, x3]`, is currently not supported by the
 submodel above avoids that limitation.
 
 Constants contribute their value to the sum and zero variance. When every input
-message is a point mass, the forward message is also a point mass. The incoming
-message on the output interface must still be Gaussian; directly observed or fixed
-outputs and multivariate messages are not supported.
+message is a point mass, the forward message is also a point mass. The output can
+also be observed or fixed, represented by a scalar `PointMass` message. For example:
+
+```julia
+@model function observed_sum_model(y, n)
+    local x
+    for i in 1:n
+        x[i] ~ Normal(mean = 0.0, variance = 1.0)
+    end
+    y ~ ManyPlus(inputs = x)
+end
+
+result = infer(
+    model = observed_sum_model(n = 3),
+    data = (y = 2.0,),
+    returnvars = (x = KeepLast(),),
+    free_energy = true,
+)
+```
+
+For a fixed output `y`, the backward message to input `k` has mean
+`y - sum(other input means)` and variance `sum(other input variances)`. If all
+other inputs are point masses, that backward message is a point mass as well.
+Multivariate messages are not supported.
 
 !!! warning "Scaling with the number of inputs"
     Internally, the inputs are stored as a `Tuple`, and the backward message
@@ -100,6 +121,17 @@ inputs, so deterministic-node Bethe free-energy scoring uses the joint input
 entropy after eliminating the output. Gaussian input dimensions contribute their
 joint Gaussian entropy, while constant inputs retain the point-mass entropy counts
 needed for cancellation with the clamped-variable terms.
+
+With a fixed output and ``d`` Gaussian inputs, eliminate one Gaussian input using
+the sum constraint. The remaining ``d - 1`` dimensions contribute
+
+```math
+-H = \frac{\log(\sum_i v_i) - \sum_i \log v_i - (d - 1)(1 + \log 2\pi)}{2},
+```
+
+where ``v_i`` are the incoming Gaussian variances. With at most one Gaussian input,
+the finite entropy contribution is zero. Scoring retains the constant-input
+point-mass counts and adds one for the fixed output.
 
 On Gaussian trees its results agree with a chain of binary additions. In loopy
 graphs, changing the graph structure and message schedule can change the inference

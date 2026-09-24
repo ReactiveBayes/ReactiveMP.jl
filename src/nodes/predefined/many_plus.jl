@@ -11,8 +11,8 @@ The node uses sum-product messages on all edges, independently of the surroundin
 factorisation. It assumes a joint local belief `q(inputs, output)` with
 `output = sum(inputs)` enforced exactly; the input belief can contain correlations.
 It supports univariate Gaussian messages in all parameterisations and scalar
-`PointMass` input messages, and computes its contribution to the Bethe free energy.
-The incoming message on the output interface must be Gaussian.
+`PointMass` messages on the inputs and output, and computes its contribution to
+the Bethe free energy, including when the output is observed or fixed.
 
 Use it in an RxInfer model as
 
@@ -199,6 +199,32 @@ function _manyplus_negative_entropy(
         log1p(sum(input_variances) / output_variance)
 
     dimension = length(input_variances)
+    one_value = one(logdet_precision)
+    two_value = one_value + one_value
+    log_two_pi = log(two_value * oftype(logdet_precision, pi))
+
+    return (logdet_precision - dimension * (one_value + log_two_pi)) /
+           two_value - pointmass_entropy
+end
+
+function _manyplus_negative_entropy(output::PointMass{<:Real}, inputs)
+    gaussian_inputs = filter(input -> !(input isa PointMass), inputs)
+    input_variances = map(input -> last(mean_var(input)), gaussian_inputs)
+    pointmass_entropy =
+        mapreduce(
+            input -> input isa PointMass ? entropy(input) : zero(var(input)),
+            +,
+            inputs;
+            init = zero(float(mean(output))),
+        ) + entropy(output)
+
+    # With at most one Gaussian input, the constraint leaves no free dimensions.
+    length(input_variances) <= 1 && return -pointmass_entropy
+
+    # Eliminate one Gaussian input using the fixed sum. The remaining precision
+    # is diag(1 ./ variances[1:end-1]) + 11ᵀ / variances[end].
+    logdet_precision = log(sum(input_variances)) - sum(log, input_variances)
+    dimension = length(input_variances) - 1
     one_value = one(logdet_precision)
     two_value = one_value + one_value
     log_two_pi = log(two_value * oftype(logdet_precision, pi))

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- A new `ManyPlus` node represents a sum with one factor and no intermediate sum variables, simplifying message initialization in RxInfer. Supports scalar Gaussian and fixed `PointMass` inputs, sum-product message rules, and deterministic joint-belief free-energy scoring. See the node documentation for constructing models with mixed random and fixed inputs.
+- A new `ManyPlus` node represents a sum with one factor and no intermediate sum variables, simplifying message initialization in RxInfer. Supports scalar Gaussian and fixed `PointMass` inputs, observed or fixed outputs, sum-product message rules, and deterministic joint-belief free-energy scoring. See the node documentation for constructing models with mixed random and fixed inputs or an observed sum.
 
 ## [6.5.0] - 2026-09-03
 
