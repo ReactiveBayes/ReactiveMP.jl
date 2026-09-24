@@ -21,25 +21,17 @@ one.
 
 ## Next action
 
-**Phase 6, step 8: Flow** (§ Phase 6, *Entry brief*). Step 8 is briefed (§ Phase 6, *Step 8
-brief*):
-- `PermutationMatrix` narrowed first, for its 119 ambiguities in 6.5.0;
-- `FlowMeta` becomes `FlowApproximation(model; method)`, the Unscented rules keeping v6's sigma
-  points;
-- the model builders take an explicit generator, since the global one was used there and not in
-  the rules;
-- the four marginal rules are not ported, being redundant for a single-input deterministic node.
+**Phase 6, step 9: DiscreteTransition** (§ Phase 6, *Entry brief*): the last node, and the largest:
+- Tullio;
+- the variadic `T...` group;
+- its hand-written `rule`, `marginalrule` and `score` methods, ported with a stop-and-ask;
+- the v6 errors the entry brief lists: the dead `:T2` rules, the `softmax!` over `dims = 1`, and
+  the unreachable `Val{:a}` marginal.
 
-Steps 1–7 are done:
-- the numerics;
-- Delta;
-- GaussianCoupling, Probit and GCV;
-- the autoregressive family;
-- ContinuousTransition;
-- the Pólya nodes;
-- scratch space for rules and BIFM, stateless, whose free energy is an explicit error (§3.44).
-
-Each node is in its own package, compared with v6 and covered by an engine fixture.
+It needs a brief first, as each step has had. Steps 1–8 are done, each node in its own package,
+compared with v6 and covered by an engine fixture: the numerics, Delta, GaussianCoupling, Probit
+and GCV, the autoregressive family, ContinuousTransition, the Pólya nodes, scratch space and BIFM,
+and Flow.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -115,7 +107,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes) and 7 (scratch space, BIFM) done; step 8, Flow, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM) and 8 (Flow) done; step 9, DiscreteTransition, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -3135,6 +3127,9 @@ guide.
   anything was committed, and nothing had been.
 
   The ported files have left `legacy/v6/`, and `helpers/algebra/` with them.
+- *The guide — done, which closes step 8.* The v6 → v7 guide's *Node packages* table gains Flow
+  (`FlowMeta` → `FlowApproximation`). A note says where the models and `ReactiveMP.forward` went,
+  that a model builder takes a generator, and that `Unscented()` needs no dimension.
 
 
 

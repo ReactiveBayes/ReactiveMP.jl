@@ -314,6 +314,7 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 | `BinomialPolya`, `BinomialPolyaMeta(n, rng)` | `PolyaMessagePassingRules`, `BinomialPolyaApproximation(; samples = n)`, drawing from the engine's generator |
 | `MultinomialPolya`, `MultinomialPolyaMeta(points)` | `PolyaMessagePassingRules`, `MultinomialPolyaApproximation(; points)` |
 | `BIFM`, `BIFMHelper`, `BIFMMeta(A, B, C)` | `BIFMMessagePassingRules`, `BIFMSmoother(A, B, C)` |
+| `Flow`, `FlowMeta(model, approximation)` | `FlowMessagePassingRules`, `FlowApproximation(model; method = approximation)` |
 
 - **Probit** declared `RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`. Its
   algorithm now declares that the rule towards `in` reads the message on its own edge, and the
@@ -340,6 +341,10 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
   to run in a set order and each node needed a meta of its own. `BIFMSmoother` is an ordinary
   value that nodes may share, and the order the posteriors are subscribed in no longer matters.
   `BIFMMeta(A, B, C, μu, Σu)` has no counterpart: the input's statistics come from its message.
+- **Flow**'s models, layers and `PermutationMatrix` live in its package. `ReactiveMP.forward(model, x)`
+  and its siblings are `FlowMessagePassingRules.forward`, public and unexported. Building a
+  model that draws takes a generator first, `compile(rng, model)`, `PermutationMatrix(rng, dim)`,
+  and without one draws from the task's as v6 did. `Unscented()` needs no dimension.
 
 ## Behaviour that changed
 
