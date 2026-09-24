@@ -21,16 +21,16 @@ one.
 
 ## Next action
 
-**Phase 6, step 5: ContinuousTransition** (§ Phase 6, *Entry brief*): `CTMeta` becomes the node's
-algorithm and `RequireMarginal` becomes declared dependencies, with the v6 errors its brief lists
-(`default_meta` on the wrong type, and both energies wrong in three terms). Step 5 is briefed
-(§ Phase 6, *Step 5 brief*): its rule towards `a` reads `q(a)`, which a declaration will add to
-the default scheme's inputs (§3.41). Steps 1–4 are done:
+**Phase 6, step 6: the Pólya nodes** (§ Phase 6, *Entry brief*): BinomialPolya and MultinomialPolya
+in one package, which carries the GPL-3 dependency, with BinomialPolya's RNG taken from `ctx.rng` and
+its energy's overwritten Monte Carlo term corrected. It needs a brief first, as each step has had.
+Steps 1–5 are done:
 - the numerics;
 - Delta;
 - GaussianCoupling, Probit and GCV;
-- the autoregressive family: AR and ConjugateAR in one package under `ARVMP`, with `ARunsafe`'s
-  joint corrected, and SoftDot on its own.
+- the autoregressive family;
+- ContinuousTransition, whose rule towards `a` extends the default scheme with `q(a)` (§3.41), with
+  its energies and its nonlinear `a` and `W` rules corrected (§3.42).
 
 Each is in its own package, compared with v6 and covered by an engine fixture.
 
@@ -108,7 +108,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV) and 4 (AR, ConjugateAR, SoftDot) done; step 5, ContinuousTransition, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot) and 5 (ContinuousTransition) done; step 6, the Pólya nodes, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -2685,6 +2685,11 @@ A commit each.
   monotonicity.
 
   The ported files have left `legacy/v6/`.
+- *The guide — done, which closes step 5.* The v6 → v7 guide's *Node packages* table gains
+  ContinuousTransition (`CTMeta` → `CTVMP`), with a note that it declares no algorithm and still
+  reads `q(a)`, which the model initialises. Its behaviour changes gain the corrected energies and
+  the corrected rules for a nonlinear `f`. The two commits for the package, its comparison and its
+  fixtures became one, as in steps 3 and 4.
 
 
 
