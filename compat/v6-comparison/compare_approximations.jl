@@ -1,4 +1,5 @@
-# MessagePassingRulesApproximations against v6's `src/approximations/`, on identical inputs.
+# MessagePassingRulesApproximations against v6's `src/approximations/`, on identical inputs:
+# the unscented transform, local linearization and the RTS smoother.
 # The multi-input unscented path matters most: it builds its joint from concatenated means
 # and a block-diagonal covariance, where v6 went through ExponentialFamily's JointNormal.
 #
@@ -23,6 +24,15 @@ const UNSCENTED_CASES = [
     ("scalar, vector and scalar", mixed, (0.5, [1.0, -2.0], 3.0), (2.0, [1.0 0.2; 0.2 0.5], 0.25)),
 ]
 
+const LINEARIZATION_CASES = [
+    ("scalar", square, (0.5,)),
+    ("scalar, vector output", x -> [x^2, x], (1.0,)),
+    ("vector, scalar output", x -> x[1]^2 * x[2], ([0.5, -1.0],)),
+    ("vector", stack3, ([0.5, -1.0],)),
+    ("two scalars", (a, b) -> a * b + b, (0.5, -1.0)),
+    ("scalar, vector and scalar", mixed, (0.5, [1.0, -2.0], 3.0)),
+]
+
 @testset "MessagePassingRulesApproximations against v6" begin
     for method in (Approximations.Unscented(), Approximations.Unscented(; alpha = 0.5, beta = 1.5, kappa = 1.0))
         v6_method = ReactiveMP.Unscented(; alpha = method.α, beta = method.β, kappa = method.κ)
@@ -31,6 +41,11 @@ const UNSCENTED_CASES = [
                 @test agree(Approximations.unscented_statistics(method, f, means, covs), ReactiveMP.unscented_statistics(v6_method, f, means, covs))
                 @test agree(Approximations.approximate(method, f, means, covs), ReactiveMP.approximate(v6_method, f, means, covs))
             end
+        end
+    end
+    for (label, g, x̂) in LINEARIZATION_CASES
+        @testset "Linearization: $label" begin
+            @test agree(Approximations.approximate(Approximations.Linearization(), g, x̂), ReactiveMP.approximate(ReactiveMP.Linearization(), g, x̂))
         end
     end
     @testset "smoothRTS" begin

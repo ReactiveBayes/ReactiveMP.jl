@@ -2214,7 +2214,12 @@ Standard.
 **Order:** Linearization, with its comparison; the cubature and `approximate_meancov`, with
 theirs; the algebra helpers in Standard; the deletions. A commit each.
 
-**Progress:** not started.
+**Progress:**
+- *Linearization — done.* `Linearization`, `approximate(::Linearization, g, x̂)` and
+  `local_linearization` in `MessagePassingRulesApproximations`, with ForwardDiff; v6's five
+  checks and cases for a scalar and a vector function of a vector, a Jacobian and three mixed
+  inputs; `compare_approximations.jl` agrees with 6.5.0 on six cases (28 checks in all). The
+  distribution-level `approximate` over normals is step 2's, in the Delta package.
 
 **Exit criteria**
 - [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
