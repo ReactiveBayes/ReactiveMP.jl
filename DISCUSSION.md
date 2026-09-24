@@ -1757,6 +1757,33 @@ poisoned with NaN.
 
 BIFM's free energy failed in 6.5.0 (an `Inf` node bound). It is **out of scope**: the port raises
 an error naming the node, and a correct Bethe free energy is a follow-up.
+### 3.45 DiscreteTransition is a tensor node (user, 2026-09-24)
+
+DiscreteTransition was bolted onto v6's engine:
+- its extra arguments were aliased by position into `T1`, `T2`, …;
+- its `rule`, `marginalrule` and `score` were written by hand for any target and any
+  factorisation;
+- a joint's tensor axes were found by parsing its name as a string, `"in_t1_t5"`;
+- about 50 explicit Tullio rules sat beside them.
+
+Enumerating the factorisations as typed rules was considered first. It was rejected because it
+cannot cover joints of arbitrary members of the `T` group: dispatch cannot match "`out` with any
+`T` member". An untyped escape hatch, v6's hand-written `rule` in the base, was the other
+alternative, and it steps outside what `check_rules`, coverage and the table tests rely on.
+
+The user asked for something better, since the node is important, and agreed to this. Every
+DiscreteTransition rule is one computation, the tensor `E[log A]` weighted by each input along its
+axes, and the engine knows each input's axes statically: they are its cluster key. So:
+- **joints of part of a group** are allowed, keyed with the members, `(:out, (:T, 1))`;
+- **`default` in a rule's arguments**, the counterpart of `default` in a declaration (§3.41), lets
+  one typed rule take whatever inputs the factorisation delivers, with the typed inputs named
+  beside it.
+
+The node's rules are then written once, for any factorisation and any number of `T`s. Rules with
+explicit inputs remain more specific, so a fast path can be added where a measurement asks for it.
+`default` arguments are a general feature of the base, with DiscreteTransition as their first
+user.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

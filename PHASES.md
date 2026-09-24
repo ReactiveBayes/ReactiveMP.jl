@@ -21,14 +21,12 @@ one.
 
 ## Next action
 
-**Phase 6, step 9: DiscreteTransition** (§ Phase 6, *Entry brief*): the last node, and the largest:
-- Tullio;
-- the variadic `T...` group;
-- its hand-written `rule`, `marginalrule` and `score` methods, ported with a stop-and-ask;
-- the v6 errors the entry brief lists: the dead `:T2` rules, the `softmax!` over `dims = 1`, and
-  the unreachable `Val{:a}` marginal.
+**Phase 6, step 9: DiscreteTransition** (§ Phase 6, *Entry brief*), the last node and the largest.
+Step 9 is briefed (§ Phase 6, *Step 9 brief*): DiscreteTransition becomes a tensor node (§3.45).
+Its rules are written once for any factorisation and any number of `T`s, on two additions to the
+engine and the base: joints of part of a group, and `default` in a rule's arguments.
 
-It needs a brief first, as each step has had. Steps 1–8 are done, each node in its own package,
+Steps 1–8 are done, each node in its own package,
 compared with v6 and covered by an engine fixture: the numerics, Delta, GaussianCoupling, Probit
 and GCV, the autoregressive family, ContinuousTransition, the Pólya nodes, scratch space and BIFM,
 and Flow.
@@ -3130,6 +3128,112 @@ guide.
 - *The guide — done, which closes step 8.* The v6 → v7 guide's *Node packages* table gains Flow
   (`FlowMeta` → `FlowApproximation`). A note says where the models and `ReactiveMP.forward` went,
   that a model builder takes a generator, and that `Unscented()` needs no dimension.
+
+### Step 9 brief — DiscreteTransition, a tensor node
+
+**Scope, surveyed** (`legacy/v6/src/nodes/predefined/discrete_transition.jl`,
+`rules/discrete_transition/` and `predefined/`, the tests, about 4 300 lines of them):
+- **DiscreteTransition** is `out ~ Categorical(A[:, in, T1, …, Tn])`, a factor over the tensor `A`
+  with axes `(out, in, T1, …, Tn)` and prior `q(a)`, a `DirichletCollection` or a point mass. Its
+  interfaces are `out`, `in`, `a`, and any number of `T`s.
+- **v6 bolted it onto its engine:**
+  - it aliased extra `in` arguments by position into `T1`, `T2`, …;
+  - it overrode `sdtype` and `prepare_interfaces_generic`;
+  - it wrote `ReactiveMP.rule`, `marginalrule` and `score` by hand for any target and any
+    factorisation, finding a joint's tensor axes by **parsing its name** (`"in_t1_t5"`) and
+    contracting;
+  - beside them, about 50 explicit Tullio rules: belief propagation with a point-mass or
+    Dirichlet `q(a)`, and an observed `out`, up to three `T`s.
+- **Every one of those rules is one computation:** `E[log A]`, or `A`, weighted by each input along
+  the axes it covers, then summed out, exponentiated or normalised. The factorisations differ
+  only in which inputs arrive and which axes each covers.
+- **Tests:** belief propagation (`m_in`, `m_out`, `m_T1` … `m_T6`), mean-field, and joints:
+  `q_out_in`, and joints of part of the `T` group, `q_out_T1`, `q_t1_t2`, `q_out_in_T1` and
+  `q_out_in_T1_t2`. The engine refuses the latter now.
+- **The entry brief's v6 errors:**
+  - four five-interface `:T2` rules read `m_T2`, their own edge, and never match;
+  - a belief-propagation `:T3` rule with a Dirichlet `q(a)` normalises over `dims = 1`, unlike its
+    siblings;
+  - a `Val{:a}` marginal is unreachable.
+
+**Decided (user, 2026-09-24, `DISCUSSION.md` §3.45):** DiscreteTransition becomes a **tensor node**,
+with typed rules generic over the factorisation. Two things the engine and the base lack come
+first:
+1. **Joints of part of a group.** A cluster key may name single members, `(:out, (:T, 1))`.
+   `factornode` and `activate!` accept such a joint, where they now refuse it; `clusterkey`,
+   the labels, `Marginals`' lookup, the free-energy clusters and the interactive calls learn the
+   keys. A key stays a static type parameter.
+2. **`default` in a rule's arguments,** the counterpart of `default` in declarations (§3.41).
+   `args = (default, q[:a]::DirichletCollection)` takes whatever inputs the factorisation delivers,
+   and the typed ones named beside `default`.
+   - The body reads `args.m` and `args.q` as pairs of cluster key and value; a node maps a key to
+     tensor axes with a function of its own. Nothing is parsed.
+   - A rule with explicit inputs stays more specific, so fast paths can sit on top.
+   - `check_rules` checks the typed inputs only, as it does for `default` declarations.
+
+The node then has a message rule towards any categorical axis, `out`, `in` or `(:T, k)`, the
+message towards `a`, the marginal of any cluster, and the average energy. Each is written once,
+for any factorisation and any number of `T`s.
+
+**Defaults for the step**, open to the user's correction:
+- **`default` rule arguments are a general feature of the base,** documented in *Defining nodes and
+  rules*, with DiscreteTransition as the first user.
+  - Their method is the catch-all for the node, target and algorithm.
+  - The typed inputs are checked by a generated guard, so a mismatch is a `RuleNotFound`, never a
+    `MethodError`.
+  - `check_rule_ambiguities` treats a specific rule over the same inputs as nested.
+  - TestUtils' tables take clusters keyed with members, `clusters = ((:out, (:T, 1)) => q, …)`,
+    as does `call_message_update_rule`.
+- **The rule-input vocabulary** names a member in a cluster as `q[:out, (:T, 1)]`, for a rule that
+  wants that joint by name. DiscreteTransition's own rules use `default` and need none.
+- **The package, `DiscreteTransitionMessagePassingRules`:**
+  - interfaces `[:out, :in, :a, :T...]` under `DefaultAlgorithm`, no algorithm of its own, since
+    v6's meta was ignored;
+  - `discrete_transition_axes(key)`, which maps a cluster key to tensor axes (`out` is 1, `in` 2,
+    `(:T, k)` 2 + k, a joint the concatenation);
+  - the contraction helpers, `sum_out_dimensions` and `multiply_dimensions!`, kept from v6 and
+    tested on their own;
+  - no Tullio. v6's explicit rules are not ported, since the generic ones cover them. Their tables
+    become cases of the generic rules.
+  - A benchmark of two-interface belief propagation against 6.5.0 decides whether any fast path
+    is added, and is recorded.
+- **The v6 errors:**
+  - the dead `:T2` rules have no counterpart;
+  - the `dims = 1` case gets its siblings' normalisation, declared as a correction;
+  - the unreachable marginal goes.
+- **The model layer** is RxInfer's port, not this step: turning `DiscreteTransition(x, A, t1, t2)`
+  into `T1`, `T2`. The guide says how the interfaces are named.
+- **Every v6 test and every v6 rule (user, 2026-09-24).** The step closes only when both hold:
+  - **every case** of v6's DiscreteTransition tests (`test/rules/discrete_transition/*`,
+    `test/nodes/predefined/discrete_transition_tests.jl`) is ported with v6's values and
+    tolerances and passes, the explicit rules' tables and the partial joints included. A case is
+    left out only if the review shows v6's expectation was wrong, and then it is a declared
+    correction with its reason, not an omission. A subagent ports them, and the review checks
+    their count against v6's;
+  - **every v6 rule is supported:** each of v6's rule, marginal and energy methods, explicit or
+    generic, has its input shape reached by the port. The comparison lists them and calls 6.5.0's
+    method on the same inputs. The dead `:T2` rules never matched in v6; their intended
+    computation, the message towards `T2`, is covered and compared.
+- **v6 comparison, `compare_discrete_transition.jl`:** belief propagation, mean-field, structured
+  and partial joints, with one to six `T`s. Every v6 method is called on inputs that select it, and
+  the port agrees; the only disagreement expected is the `dims = 1` correction.
+- **Engine fixtures:**
+  - `dt_hmm`, the RxInferExamples *Hidden Markov Model*, small, with learned `A` and `B`, the
+    structured `q(s)` chain and the free energy;
+  - `dt_partial_joint`, a node with two `T`s under `q(out, T1) q(in) q(T2) q(a)`, which the engine
+    only now accepts.
+
+**Order:**
+1. joints of part of a group, in the engine and the base, failing tests first;
+2. `default` rule arguments, in the base, TestUtils and the docs;
+3. the package;
+4. the comparison and the fixtures;
+5. the guide's entries, which close the step.
+
+A commit for each of the first two, one for the package with its comparison and fixtures, and one
+for the guide.
+
+**Progress:** not started.
 
 
 
