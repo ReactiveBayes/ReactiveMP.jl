@@ -21,9 +21,15 @@ one.
 
 ## Next action
 
-**Phase 6, step 8: Flow** (§ Phase 6, *Entry brief*): `PermutationMatrix`'s `*` methods narrowed
-first, for their Aqua ambiguities; `FlowMeta` becomes an algorithm over Linearization or
-Unscented; Flow's global `rand` becomes `ctx.rng`. It needs a brief first, as each step has had.
+**Phase 6, step 8: Flow** (§ Phase 6, *Entry brief*). Step 8 is briefed (§ Phase 6, *Step 8
+brief*):
+- `PermutationMatrix` narrowed first, for its 119 ambiguities in 6.5.0;
+- `FlowMeta` becomes `FlowApproximation(model; method)`, the Unscented rules keeping v6's sigma
+  points;
+- the model builders take an explicit generator, since the global one was used there and not in
+  the rules;
+- the four marginal rules are not ported, being redundant for a single-input deterministic node.
+
 Steps 1–7 are done:
 - the numerics;
 - Delta;
@@ -3004,6 +3010,88 @@ guide a third.
 
   *Follow-up, recorded:* a correct Bethe free energy for BIFM, with MvNormalMeanPrecision's
   `TerminalProdArgument` marginals, when a model needs it.
+
+### Step 8 brief — Flow
+
+**Scope, surveyed** (`legacy/v6/src/nodes/predefined/flow/`, `rules/flow/`,
+`helpers/algebra/permutation_matrix.jl`, the tests; the RxInferExamples *Invertible Neural Network
+Tutorial*):
+- **Flow** (`out`, `in`) is a deterministic node, `out = f(in)` for an invertible flow model `f`.
+  - It has 8 message rules: towards `out` and towards `in`, for Linearization with an
+    `MvNormalMeanCovariance`, an `MvNormalMeanPrecision` or an `MvNormalWeightedMeanPrecision`,
+    and one for Unscented.
+  - It has 4 marginal rules over `(in,)`.
+  - Its linearised rules use the model's own analytical Jacobians (`jacobian`, `inv_jacobian`,
+    `backward_inv_jacobian`), so `Linearization()` there is only a tag.
+- **`FlowMeta(model, approximation = Linearization())`** is required. Its Unscented rules need
+  `Unscented(dim)` and read its `λ`, `L`, `Wm` and `Wc`. They build their own sigma points from
+  the symmetric square root `sqrt((L + λ) Σ)`, where the numerics package uses a Cholesky factor.
+- **The flow models,** about 1 800 lines:
+  - `FlowModel`, `CompiledFlowModel` and `compile`;
+  - the layers `InputLayer`, `AdditiveCouplingLayer` and `PermutationLayer`;
+  - the coupling flows `PlanarFlow` and `RadialFlow`;
+  - `nr_params`, `getlayers`, and `forward`, `backward` and their Jacobians;
+  - TupleTools.
+
+  The tutorial calls the unexported `ReactiveMP.forward`.
+- **`PermutationMatrix`** has about 30 `*` and `mul!` methods on `Adjoint`, `Transpose` and plain
+  vectors and matrices. Measured in 6.5.0, they give **119** method ambiguities, many of them with
+  ArrayLayouts, which LazyArrays loaded, and several among its own `mul!`s.
+- **Tests:** the rule tests (about 54 cases) compile models with fixed parameters, so they are
+  deterministic. The model and layer tests are about 466 checks.
+
+**Found while surveying:**
+- **The global generator is in model building, not in the rules.** `compile(model)` draws the
+  flows' initial parameters with `randn`, and `PermutationMatrix(dim)` and `PermutationLayer()`
+  shuffle with the global generator. So the entry brief's "Flow's global `rand` → `ctx.rng`"
+  does not apply: the rules draw nothing.
+- **The marginal rules are redundant in v7.** A deterministic node with one input has singleton
+  clusters, `(out,)` and `(in,)`, which the engine reads as the variables' own marginals, as for
+  `NOT`. v6's rule computed `m_in` times the rule's own message towards `in`, which is that
+  marginal.
+
+**Decided:** from the entry brief, a package of its own, with `FlowMeta` becoming an algorithm over
+Linearization or Unscented, and `PermutationMatrix`'s methods narrowed.
+
+**Defaults for the step**, open to the user's correction:
+- **The package, `FlowMessagePassingRules`:** the node, the models, the layers, the coupling flows
+  and `PermutationMatrix`, on the Phase 6 template. It depends on TupleTools and on
+  Approximations for `Linearization` and `Unscented`.
+- **The algorithm:** `FlowMeta(model, approximation)` becomes `FlowApproximation(model; method =
+  Linearization())`, required, with the node declaring none. The rules dispatch on the method, as
+  Delta's do. `Unscented()` without a dimension is also accepted, its weights taken from the
+  input's dimension.
+- **The Unscented rules keep v6's sigma points, from the symmetric square root.** Changing to the
+  numerics package's Cholesky factor would change a nonlinear flow's results; the unscented
+  transform is not invariant to the square root. `Unscented`'s getters are read qualified.
+- **Generators:** `compile`, `PermutationMatrix` and `PermutationLayer` take an optional first
+  argument `rng`, defaulting to `Random.default_rng()`, so v6's calls keep working and a model can
+  be built reproducibly.
+- **`PermutationMatrix`'s methods** are narrowed until Aqua finds no ambiguity, as every lib package
+  checks: concrete `Vector` and `Matrix` operands, and the methods between two of its own types
+  written out. A test pins the products against the dense matrix.
+- **The marginal rules are not ported;** their tables become checks that `in`'s marginal, the
+  product of `m_in` and the rule's message, has v6's values.
+- **`forward`, `backward`, `jacobian` and `inv_jacobian`** stay unexported but documented as public,
+  qualified: the guide maps `ReactiveMP.forward` to `FlowMessagePassingRules.forward`.
+- **Tests:** the rule tables and the model and layer tests, ported by a subagent and reviewed.
+- **v6 comparison, `compare_flow.jl`:** every message rule, under both methods, on models with
+  planar and radial flows and a fixed permutation layer.
+- **Engine fixtures, `flow_meanfield` and `flow_meanfield_unscented`:** the tutorial's first model,
+  `x ~ N(z_μ, z_Λ)`, `y_lat ~ Flow(x)`, `y ~ N(y_lat, tiny)`, under `q(z_μ) q(z_Λ) q(x)`, small,
+  with fixed parameters and the free energy. The free energy should agree with v6, the marginals
+  being the same.
+
+**Order:**
+1. `PermutationMatrix` narrowed, failing ambiguity test first;
+2. the package: models and layers, then the node and its rules;
+3. the comparison and the fixtures;
+4. the guide's entries, which close the step.
+
+A commit for the package with its comparison and fixtures, as in the earlier steps, and one for the
+guide.
+
+**Progress:** not started.
 
 
 
