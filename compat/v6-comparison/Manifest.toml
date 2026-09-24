@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "7a389840c111cb21ea6051200d994a16e661f65c"
+project_hash = "2bc9d31d3c0ecd9665979b0de74e930bccaa0288"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -285,6 +285,12 @@ version = "0.19.6"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 version = "1.11.0"
+
+[[deps.DeltaMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesApproximations", "MessagePassingRulesBase"]
+path = "../../lib/DeltaMessagePassingRules"
+uuid = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
+version = "0.1.0-DEV"
 
 [[deps.Dictionaries]]
 deps = ["Indexing", "Random", "Serialization"]

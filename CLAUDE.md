@@ -78,7 +78,7 @@ make test-standard                         # lib/StandardMessagePassingRules
 make test-approximations                   # lib/MessagePassingRulesApproximations, which depends on no sibling
 make test-delta                            # lib/DeltaMessagePassingRules
 # the v6 oracle environment: comparisons and engine fixtures
-for s in check compare_standard compare_approximations; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
+for s in check compare_standard compare_approximations compare_delta; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 

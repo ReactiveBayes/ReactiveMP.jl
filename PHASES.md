@@ -35,7 +35,6 @@ rules, #11's follow-ups, the Delta v6 comparison, a fixture, and the `CVIProject
 |---|---|---|
 | a joint cluster holding some members of a group with other interfaces (`activate!` refuses it) | when a node needs one | § *Cases (b)–(d)*, case (d) |
 | Delta's `Linearization` rules and `CVIProjection` | Phase 6 | § Phase 6 |
-| a v6 rule-by-rule comparison for the Delta rules (they are checked by v6's own tables and the two engine fixtures) | Phase 6, with `Linearization` | § *Cases (b)–(d)*, case (d) |
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
@@ -78,7 +77,7 @@ when NMV was ported in step 3**, and the comparison declares it.
 git switch refactor/rule-node-system-rewrite && git pull
 make test test-base test-testutils test-standard test-approximations test-delta
 julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-for s in check compare_standard compare_approximations; do
+for s in check compare_standard compare_approximations compare_delta; do
     julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
 done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
@@ -2307,6 +2306,11 @@ the guide, which closes the step. A commit each.
 - *#11 — done.* The guard is `DeltaApproximation`'s inner constructor, so the positional one no
   longer skips it; the error names the node's methods, the package for `CVIProjection`, and the
   method's `delta_method_hint`, which an extension's method can add (`delta:algorithm`).
+- *The Delta v6 comparison — done.* `compat/v6-comparison/compare_delta.jl` runs every Delta
+  rule against 6.5.0's for Linearization and two Unscented parameter sets: towards `out`,
+  towards an input with and without an inverse, and the joint, 102 checks, all agreeing.
+  `V6Oracle` takes the v6 node a rule reads, and builds a `DeltaFnNode` as v6's `@call_rule`
+  did (`v6_delta_node`); Delta joins the comparison environment.
 
 
 **Exit criteria**

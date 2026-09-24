@@ -4,7 +4,7 @@ module V6Oracle
 
 using ReactiveMP
 
-export v6_message_update, v6_marginal_update, v6_average_energy, v6_logdensity, v6_interfaces, v6_cluster_blocks
+export v6_message_update, v6_marginal_update, v6_average_energy, v6_logdensity, v6_interfaces, v6_cluster_blocks, v6_delta_node
 
 v6_target(target::Symbol) = Val(target)
 v6_target((edge, k)::Tuple{Symbol, Integer}) = (Val(edge), k)
@@ -22,19 +22,20 @@ function v6_inputs(wrap, inputs::NamedTuple)
 end
 
 """
-    v6_message_update(fform, target, m, q; meta = nothing)
+    v6_message_update(fform, target, m, q; meta = nothing, node = nothing)
 
 Run v6's `rule` for `fform` target `target` on messages `m` and marginals `q`, given as
 the named tuples a v7 rule takes. Returns `(result, logscale)`, `logscale` being `nothing`
-when the rule annotates none.
+when the rule annotates none. `node` is the v6 node a rule reads, such as a `DeltaFnNode`
+holding the function ([`v6_delta_node`](@ref)).
 """
-function v6_message_update(fform, target, m::NamedTuple, q::NamedTuple; meta = nothing)
+function v6_message_update(fform, target, m::NamedTuple, q::NamedTuple; meta = nothing, node = nothing)
     mnames, messages = v6_inputs(ReactiveMP.Message, m)
     qnames, marginals = v6_inputs(ReactiveMP.Marginal, q)
     annotations = ReactiveMP.AnnotationDict()
     result = ReactiveMP.rule(
         fform, v6_target(target), ReactiveMP.Marginalisation(), mnames, messages, qnames, marginals,
-        meta, annotations, nothing,
+        meta, annotations, node,
     )
     result isa ReactiveMP.RuleMethodError && throw(result)
     logscale = ReactiveMP.has_annotation(annotations, :logscale) ? ReactiveMP.getlogscale(annotations) : nothing
@@ -42,16 +43,24 @@ function v6_message_update(fform, target, m::NamedTuple, q::NamedTuple; meta = n
 end
 
 """
-    v6_marginal_update(fform, members, m, q; meta = nothing)
+    v6_marginal_update(fform, members, m, q; meta = nothing, node = nothing)
 
 Run v6's `marginalrule` for the cluster `members`, a tuple like `(:out, :μ)`, on messages `m`
 and marginals `q`. v6 names the cluster by joining its members with `_`.
 """
-function v6_marginal_update(fform, members::Tuple{Vararg{Symbol}}, m::NamedTuple, q::NamedTuple; meta = nothing)
+function v6_marginal_update(fform, members::Tuple{Vararg{Symbol}}, m::NamedTuple, q::NamedTuple; meta = nothing, node = nothing)
     mnames, messages = v6_inputs(ReactiveMP.Message, m)
     qnames, marginals = v6_inputs(ReactiveMP.Marginal, q)
-    return ReactiveMP.marginalrule(fform, Val(v6_name(members)), mnames, messages, qnames, marginals, meta, nothing)
+    return ReactiveMP.marginalrule(fform, Val(v6_name(members)), mnames, messages, qnames, marginals, meta, node)
 end
+
+"""
+    v6_delta_node(f, meta)
+
+The v6 `DeltaFnNode` for the function `f` that a Delta rule reads its function from, as v6's
+`@call_rule` builds it, with the node type and meta the rule dispatches on.
+"""
+v6_delta_node(f, meta) = ReactiveMP.call_rule_make_node(ReactiveMP.DeltaFn{typeof(f)}, f, meta)
 
 """
     v6_average_energy(fform, q, clusters = (); meta = nothing)

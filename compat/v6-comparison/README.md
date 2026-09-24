@@ -24,14 +24,14 @@ floor, because a manifest resolved on a newer Julia can select versions an older
 load. ReactiveMP 6.5.0 and RxInfer 5.5.2 run on 1.13, and the engine fixtures recorded on
 1.10.12 reproduce there exactly (`record_engine_fixtures.jl --check`).
 
-Regenerate it, developing the four lib packages the comparisons load in one call so Pkg never
-resolves with only some of them (`DeltaMessagePassingRules` is not among them; it joins when
-Phase 6 writes its v6 comparison):
+Regenerate it, developing the five lib packages the comparisons load in one call so Pkg never
+resolves with only some of them (`DeltaMessagePassingRules` joined in Phase 6 step 2, with
+`compare_delta.jl`):
 
 ```bash
 julia --startup-file=no --project=compat/v6-comparison -e '
 using Pkg
-Pkg.develop([PackageSpec(path = joinpath("lib", p)) for p in ("MessagePassingRulesBase", "MessagePassingRulesTestUtils", "StandardMessagePassingRules", "MessagePassingRulesApproximations")])
+Pkg.develop([PackageSpec(path = joinpath("lib", p)) for p in ("MessagePassingRulesBase", "MessagePassingRulesTestUtils", "StandardMessagePassingRules", "MessagePassingRulesApproximations", "DeltaMessagePassingRules")])
 Pkg.instantiate()'
 ```
 
