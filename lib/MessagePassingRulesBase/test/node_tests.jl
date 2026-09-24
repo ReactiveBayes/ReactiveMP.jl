@@ -146,7 +146,9 @@ end
     @test contains(grouped(:(matched_groups = [(:m,)])), "two or more distinct groups")
     @test contains(grouped(:(matched_groups = [(:m, :m)])), "two or more distinct groups")
     @test contains(grouped(:(matched_groups = (:m, :p))), "must be a vector of tuples")
-    @test contains(grouped(:(min_group_length = 0)), "positive integer")
+    @test contains(grouped(:(min_group_length = -1)), "non-negative integer")
+    # A group that may be empty, as DiscreteTransition's `T`.
+    @test grouped(:(min_group_length = 0)) == ""
     @test contains(grouped(:(factorisation = :structured)), ":any or :meanfield")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, :x], min_group_length = 2))), "needs a group")
     @test grouped(:(matched_groups = [(:m, :p)])) == ""

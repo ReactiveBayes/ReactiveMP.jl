@@ -23,6 +23,7 @@ The engine is one of a family of packages:
 | `PolyaMessagePassingRules` | the Pólya-Gamma augmented nodes, BinomialPolya and MultinomialPolya; GPL-3 |
 | `BIFMMessagePassingRules` | BIFM, a linear state-space time slice for backward-information-filter forward-marginal smoothing, and BIFMHelper |
 | `FlowMessagePassingRules` | Flow, an invertible transformation, with its flow models, layers and PermutationMatrix |
+| `DiscreteTransitionMessagePassingRules` | DiscreteTransition, a categorical transition through a tensor with any number of conditioning categoricals |
 | `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
 
 !!! note

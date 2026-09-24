@@ -1,0 +1,334 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "A ~ DirichletCollection(ones(2, 2, 3, 2)), x ~ Categorical([0.4, 0.6]), t1 ~ Categorical([0.2, 0.3, 0.5]), t2 ~ Categorical([0.5, 0.5]), z ~ DiscreteTransition(x, A, t1, t2), y ~ DiscreteTransition(z, [0.9 0.2; 0.1 0.8]) observed at [0, 1]; q(z, t1) q(x) q(t2) q(A), a joint of out and T1 only."
+free_energy = [1.044485975513389, 1.0717286144795013, 1.0731242505152316, 1.0732170442587288, 1.0732240464412512]
+id = "dt_partial_joint"
+
+    [trajectory.posteriors.A]
+    type = "DirichletCollection"
+
+        [[trajectory.posteriors.A.params]]
+        size = [2, 2, 3, 2]
+        type = "Array"
+        values = [1.0040180277793014, 1.034249712904736, 1.006171630740916, 1.0526070481939707, 1.0059533357250774, 1.0524074442100773, 1.009144234880892, 1.0804970526599975, 1.0096700225158095, 1.0908634997013293, 1.0148530103578066, 1.139564980330087, 1.0040180277793014, 1.034249712904736, 1.006171630740916, 1.0526070481939707, 1.0059533357250774, 1.0524074442100773, 1.009144234880892, 1.0804970526599975, 1.0096700225158095, 1.0908634997013293, 1.0148530103578066, 1.139564980330087]
+
+    [trajectory.posteriors.t1]
+    params = [[0.19409264778854493, 0.2960037668941129, 0.5099035853173423]]
+    type = "DiscreteNonParametric"
+
+    [trajectory.posteriors.t2]
+    params = [[0.5, 0.5]]
+    type = "DiscreteNonParametric"
+
+    [trajectory.posteriors.x]
+    params = [[0.39432408567266125, 0.6056759143273388]]
+    type = "DiscreteNonParametric"
+
+    [trajectory.posteriors.z]
+    params = [[0.09962040772162492, 0.900379592278375]]
+    type = "DiscreteNonParametric"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.2, 0.3, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.11111111111111113, 0.8888888888888888]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":T2"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.4, 0.6]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DirichletCollection"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "DirichletCollection"
+
+            [[trajectory.trace.result.params]]
+            size = [2, 2, 3, 2]
+            type = "Array"
+            values = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        type = "DirichletCollection"
+
+            [[trajectory.trace.result.params]]
+            size = [2, 2, 3, 2]
+            type = "Array"
+            values = [1.0044444444444445, 1.0355555555555556, 1.0066666666666666, 1.0533333333333332, 1.0066666666666666, 1.0533333333333332, 1.01, 1.08, 1.011111111111111, 1.0888888888888888, 1.0166666666666666, 1.1333333333333333, 1.0044444444444445, 1.0355555555555556, 1.0066666666666666, 1.0533333333333332, 1.0066666666666666, 1.0533333333333332, 1.01, 1.08, 1.011111111111111, 1.0888888888888888, 1.0166666666666666, 1.1333333333333333]
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":T1"
+
+        [trajectory.trace.result]
+        params = [[0.32656634081792085, 0.33174342870083234, 0.34169023048124675]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.47077318990763833, 0.5292268100923617]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.11111111111111113, 0.8888888888888888]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":T2"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.4945423262080216, 0.5054576737919785]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        type = "DirichletCollection"
+
+            [[trajectory.trace.result.params]]
+            size = [2, 2, 3, 2]
+            type = "Array"
+            values = [1.0040303814997624, 1.0343748616722004, 1.0061790077898427, 1.0527003555519017, 1.005977106636855, 1.0525440211899402, 1.0091635465456616, 1.0805556288558367, 1.0097443061184106, 1.0907153459560281, 1.0149390680301151, 1.1390763701534454, 1.0040303814997624, 1.0343748616722004, 1.0061790077898427, 1.0527003555519017, 1.005977106636855, 1.0525440211899402, 1.0091635465456616, 1.0805556288558367, 1.0097443061184106, 1.0907153459560281, 1.0149390680301151, 1.1390763701534454]
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":T1"
+
+        [trajectory.trace.result]
+        params = [[0.3260341646523682, 0.331474555747794, 0.34249127959983794]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.4696037938533564, 0.5303962061466436]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.11111111111111113, 0.8888888888888888]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":T2"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.4941069386314184, 0.5058930613685816]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        type = "DirichletCollection"
+
+            [[trajectory.trace.result.params]]
+            size = [2, 2, 3, 2]
+            type = "Array"
+            values = [1.0040186049042854, 1.0342593031293916, 1.0061716933476708, 1.052614755183829, 1.0059543415189078, 1.0524206108757896, 1.0091445590739256, 1.0805065297854881, 1.009674832076312, 1.0908502901669141, 1.014858414347112, 1.1395260655903738, 1.0040186049042854, 1.0342593031293916, 1.0061716933476708, 1.052614755183829, 1.0059543415189078, 1.0524206108757896, 1.0091445590739256, 1.0805065297854881, 1.009674832076312, 1.0908502901669141, 1.014858414347112, 1.1395260655903738]
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":T1"
+
+        [trajectory.trace.result]
+        params = [[0.3259954841470207, 0.3314431225642495, 0.34256139328872975]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.4695404315996643, 0.5304595684003356]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.11111111111111113, 0.8888888888888888]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":T2"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.4940757765383172, 0.5059242234616829]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        type = "DirichletCollection"
+
+            [[trajectory.trace.result.params]]
+            size = [2, 2, 3, 2]
+            type = "Array"
+            values = [1.0040180616232874, 1.0342503771278644, 1.0061716283304527, 1.0526076047679118, 1.0059533814752724, 1.052408519772508, 1.0091442245588862, 1.0804979952299667, 1.0096703525771, 1.0908624027452625, 1.0148533864150815, 1.1395620653764063, 1.0040180616232874, 1.0342503771278644, 1.0061716283304527, 1.0526076047679118, 1.0059533814752724, 1.052408519772508, 1.0091442245588862, 1.0804979952299667, 1.0096703525771, 1.0908624027452625, 1.0148533864150815, 1.1395620653764063]
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":T1"
+
+        [trajectory.trace.result]
+        params = [[0.32599270016646037, 0.3314399699730629, 0.3425673298604767]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.46953613874626315, 0.5304638612537368]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.11111111111111113, 0.8888888888888888]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":T2"
+
+        [trajectory.trace.result]
+        params = [[0.5, 0.5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.49407357345513214, 0.5059264265448679]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        type = "DirichletCollection"
+
+            [[trajectory.trace.result.params]]
+            size = [2, 2, 3, 2]
+            type = "Array"
+            values = [1.0040180277793014, 1.0342497129047363, 1.006171630740916, 1.0526070481939704, 1.0059533357250774, 1.0524074442100773, 1.009144234880892, 1.0804970526599973, 1.0096700225158093, 1.0908634997013293, 1.0148530103578066, 1.139564980330087, 1.0040180277793014, 1.0342497129047363, 1.006171630740916, 1.0526070481939704, 1.0059533357250774, 1.0524074442100773, 1.009144234880892, 1.0804970526599973, 1.0096700225158093, 1.0908634997013293, 1.0148530103578066, 1.139564980330087]
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":T1"
+
+        [trajectory.trace.result]
+        params = [[0.32599249524719226, 0.3314396764357161, 0.34256782831709165]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.46953581586108784, 0.5304641841389123]]
+        type = "DiscreteNonParametric"

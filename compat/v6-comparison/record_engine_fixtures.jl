@@ -300,6 +300,32 @@ end
     i ~ Bernoulli(0.9)
 end
 
+# RxInferExamples' Hidden Markov Model, small: three states, six observations, the transition
+# and emission tensors learned.
+const DT_OBSERVED = [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0]]
+@model function dt_hmm(x)
+    A ~ DirichletCollection(ones(3, 3))
+    B ~ DirichletCollection([10.0 1.0 1.0; 1.0 10.0 1.0; 1.0 1.0 10.0])
+    s0 ~ Categorical(fill(1.0 / 3.0, 3))
+    sprev = s0
+    for t in eachindex(x)
+        s[t] ~ DiscreteTransition(sprev, A)
+        x[t] ~ DiscreteTransition(s[t], B)
+        sprev = s[t]
+    end
+end
+
+# A node with two `T`s whose joint holds `out` and only the first of them.
+const DT_EMISSION = [0.9 0.2; 0.1 0.8]
+@model function dt_partial_joint(y)
+    A ~ DirichletCollection(ones(2, 2, 3, 2))
+    x ~ Categorical([0.4, 0.6])
+    t1 ~ Categorical([0.2, 0.3, 0.5])
+    t2 ~ Categorical([0.5, 0.5])
+    z ~ DiscreteTransition(x, A, t1, t2)
+    y ~ DiscreteTransition(z, DT_EMISSION)
+end
+
 const Y = [1.2, 0.7, 2.1, 1.6, 0.9, 1.4]
 const Y_MIXTURE = [-2.1, -1.8, 2.2, 1.9, -2.3, 2.0, 1.7, -1.9]
 
@@ -546,6 +572,43 @@ const MODELS = [
         "mixture_bp",
         "s ~ Categorical([0.3, 0.7]), x[1] ~ NMV(-2, 1), x[2] ~ NMV(2, 1), z ~ Mixture(switch = s, inputs = x), y ~ NMV(z, 0.5) observed at 1.5; BP with v6's LogScaleAnnotations, which the Mixture rules need (a data variable's message carries no log scale in v6, hence y through NMV). No free energy: v6's Mixture energy is a placeholder returning 0.0, and the port defines none.",
         () -> record("mixture_bp"; description = "", model = mixture_bp(), data = (y = 1.5,), iterations = 2, returnvars = (:s, :x), annotations = (LogScaleAnnotations(),), free_energy = false),
+    ),
+    (
+        "dt_hmm",
+        "RxInferExamples' Hidden Markov Model: A ~ DirichletCollection(ones(3, 3)), B ~ DirichletCollection(10 on the diagonal, 1 off it), s0 ~ Categorical(1/3), s[t] ~ DiscreteTransition(s[t-1], A), x[t] ~ DiscreteTransition(s[t], B) with six one-hot x observed; q(s0, s) q(A) q(B), q(A) and q(B) initialised at DirichletCollection(I + 0.1).",
+        () -> record(
+            "dt_hmm"; description = "", model = dt_hmm(), data = (x = DT_OBSERVED,), iterations = 5, returnvars = (:A, :B, :s),
+            constraints = @constraints(
+                begin
+                    q(s0, s, A, B) = q(s0, s)q(A)q(B)
+                end
+            ),
+            initialization = @initialization(
+                begin
+                    q(A) = DirichletCollection([1.1 0.1 0.1; 0.1 1.1 0.1; 0.1 0.1 1.1])
+                    q(B) = DirichletCollection([1.1 0.1 0.1; 0.1 1.1 0.1; 0.1 0.1 1.1])
+                end
+            ),
+        ),
+    ),
+    (
+        "dt_partial_joint",
+        "A ~ DirichletCollection(ones(2, 2, 3, 2)), x ~ Categorical([0.4, 0.6]), t1 ~ Categorical([0.2, 0.3, 0.5]), t2 ~ Categorical([0.5, 0.5]), z ~ DiscreteTransition(x, A, t1, t2), y ~ DiscreteTransition(z, [0.9 0.2; 0.1 0.8]) observed at [0, 1]; q(z, t1) q(x) q(t2) q(A), a joint of out and T1 only.",
+        () -> record(
+            "dt_partial_joint"; description = "", model = dt_partial_joint(), data = (y = [0.0, 1.0],), iterations = 5, returnvars = (:A, :x, :t1, :t2, :z),
+            constraints = @constraints(
+                begin
+                    q(z, x, t1, t2, A) = q(z, t1)q(x)q(t2)q(A)
+                end
+            ),
+            initialization = @initialization(
+                begin
+                    q(A) = DirichletCollection(ones(2, 2, 3, 2))
+                    q(x) = Categorical([0.5, 0.5])
+                    q(t2) = Categorical([0.5, 0.5])
+                end
+            ),
+        ),
     ),
 ]
 

@@ -7,8 +7,9 @@ with the members each block covers. The joint is the distribution, and BayesBase
 its entropy and float-type conversion. The labels are what the engine needs to hand each
 block on and to score it. Each label is the tuple of the block's members, in the cluster's
 order, and the labels are carried in the type, so a block is read as `fc[(:out, :μ)]` with no
-lookup at run time. It replaces v6's NamedTuple results keyed by mangled names such as
-`out_μ`, which cannot be split back safely once interface names may contain underscores.
+lookup at run time. A member of a group is written as in a cluster's key, `(:T, 1)`. It
+replaces v6's NamedTuple results keyed by mangled names such as `out_μ`, which cannot be split
+back safely once interface names may contain underscores.
 
 [`check_factorized_cluster`](@ref) confirms the blocks partition the cluster.
 """
@@ -19,7 +20,7 @@ end
 
 # The labels reach the type through `Val`, which constant propagation resolves when a rule
 # body writes them literally; `gate:factorized-cluster` measures it.
-@inline FactorizedCluster(blocks::Pair{<:Tuple{Vararg{Symbol}}}...) = FactorizedCluster(Val(map(first, blocks)), map(last, blocks))
+@inline FactorizedCluster(blocks::Pair{<:Tuple{Vararg{ClusterMember}}}...) = FactorizedCluster(Val(map(first, blocks)), map(last, blocks))
 @inline FactorizedCluster(::Val{K}, components::Tuple) where {K} = FactorizedCluster(Val(K), FactorizedJoint(components))
 @inline FactorizedCluster(::Val{K}, joint::FactorizedJoint) where {K} = FactorizedCluster{K, typeof(joint)}(joint)
 
@@ -34,7 +35,7 @@ cluster_blocks(::FactorizedCluster{K}) where {K} = K
 
 BayesBase.components(fc::FactorizedCluster) = BayesBase.components(fc.joint)
 
-@inline Base.getindex(fc::FactorizedCluster, block::Tuple{Vararg{Symbol}}) = fc[Val(block)]
+@inline Base.getindex(fc::FactorizedCluster, block::Tuple{Vararg{ClusterMember}}) = fc[Val(block)]
 
 @generated function Base.getindex(fc::FactorizedCluster{K}, ::Val{B}) where {K, B}
     position = findfirst(==(B), K)

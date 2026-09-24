@@ -3,13 +3,14 @@ using ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils
 using StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules
 using GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules, SoftDotMessagePassingRules
 using AutoregressiveMessagePassingRules, ContinuousTransitionMessagePassingRules, PolyaMessagePassingRules, BIFMMessagePassingRules, FlowMessagePassingRules
+using DiscreteTransitionMessagePassingRules
 
 const MODULES = [
     ReactiveMP, MessagePassingRulesBase, MessagePassingRulesTestUtils,
     StandardMessagePassingRules, MessagePassingRulesApproximations, DeltaMessagePassingRules,
     GaussianCouplingMessagePassingRules, ProbitMessagePassingRules, GCVMessagePassingRules, SoftDotMessagePassingRules,
     AutoregressiveMessagePassingRules, ContinuousTransitionMessagePassingRules, PolyaMessagePassingRules,
-    BIFMMessagePassingRules, FlowMessagePassingRules,
+    BIFMMessagePassingRules, FlowMessagePassingRules, DiscreteTransitionMessagePassingRules,
 ]
 
 const SETUP = :(using ReactiveMP, MessagePassingRulesBase, StandardMessagePassingRules, BayesBase, Distributions, ExponentialFamily)
@@ -63,6 +64,7 @@ makedocs(
             "Pólya" => "packages/polya.md",
             "BIFM" => "packages/bifm.md",
             "Flow" => "packages/flow.md",
+            "DiscreteTransition" => "packages/discrete-transition.md",
         ],
         "Migration guides" => [
             "v6 to v7" => "migration-guides/v6-to-v7.md",

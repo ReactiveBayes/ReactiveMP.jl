@@ -48,7 +48,7 @@ src/
   fixes.jl             upstream hot-fixes; empty now
 lib/                   the new packages: the rule system, its test tooling, rules, numerics
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
-legacy/v6/             the nodes Phase 6 ports, with their helpers and approximations; never loaded
+legacy/                empty but for its README since DiscreteTransition, the last node, was ported; Phase 6 step 10 deletes it
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against the v6 fixtures
 ```
 
@@ -87,8 +87,9 @@ make test-continuous-transition            # lib/ContinuousTransitionMessagePass
 make test-polya                            # lib/PolyaMessagePassingRules (GPL-3)
 make test-bifm                             # lib/BIFMMessagePassingRules
 make test-flow                             # lib/FlowMessagePassingRules
+make test-discrete-transition              # lib/DiscreteTransitionMessagePassingRules
 # the v6 oracle environment: comparisons and engine fixtures
-for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
+for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow compare_discrete_transition; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
@@ -103,12 +104,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (156 of them across 22 files), each self-contained and
+Tests are `@testitem` blocks (158 of them across 22 files), each self-contained and
 independently runnable. The root suite skips `legacy/`, `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (28) and `:engine` (126 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (28) and `:engine` (128 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate and the engine's doctests. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
@@ -176,7 +177,9 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   default scheme's inputs), `PolyaMessagePassingRules` (`make test-polya`; BinomialPolya and
   MultinomialPolya, GPL-3 through PolyaGammaHybridSamplers, the only package that is),
   `BIFMMessagePassingRules` (`make test-bifm`; BIFM, stateless, and BIFMHelper; no free energy)
-  and `FlowMessagePassingRules` (`make test-flow`; Flow, its flow models and `PermutationMatrix`). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
+  `FlowMessagePassingRules` (`make test-flow`; Flow, its flow models and `PermutationMatrix`) and
+  `DiscreteTransitionMessagePassingRules` (`make test-discrete-transition`; a tensor node, its rules
+  `default` ones walking `rule_inputs`, its `T` group possibly empty). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
 - The Standard and Delta suites end with a **rule-coverage gate**: after an unfiltered run
   (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
   find every rule selected by some test. A table case, a verification, a derivative check or
@@ -194,10 +197,8 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - Log scales (`:logscale` annotations, `LogScaleAnnotations`) are **experimental**: the engine
   owns the policy, the base package only carries annotations, and Phase 7 decides whether to fix
   or drop the feature (§3.37).
-- `legacy/v6/` holds the nodes not yet ported, their rules, and the helpers and approximations
-  they use: never loaded, never tested, kept as the reference Phase 6 ports from
-  (`legacy/README.md` says whose each file is). The v6 engine and rule system are only in the
-  6.5.0 release and in git. The inventory gate runs in
+- `legacy/v6/` is empty: every node is ported, DiscreteTransition last, and Phase 6 step 10
+  deletes `legacy/`. The v6 code is only in the 6.5.0 release and in git. The inventory gate runs in
   `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
@@ -221,7 +222,7 @@ and read whichever exist before proposing changes:
 treat `main` as the whole story.
 
 The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
-review's findings resolved; Phase 6 (the node packages) is under way: steps 1–8 are done, and step 9, DiscreteTransition as a tensor node, is briefed and next.
+review's findings resolved; Phase 6 (the node packages) is under way: steps 1–8 are done, step 9, DiscreteTransition as a tensor node, is done but for the guide's entries, and step 10, the close, is next.
 From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
 machinery is kept, and rule lookup and invocation plus node and rule definition and creation
 are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to

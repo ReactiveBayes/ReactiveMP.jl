@@ -44,6 +44,12 @@
     unordered = Marginal(FactorizedCluster((:c, :a) => joint, (:b,) => PointMass(2.0)), false, false)
     @test_throws "are not a partition of the cluster's members" rule_marginals(getdata, Val(((:a, :b, :c),)), (unordered,))
 
+    # In a cluster with members of a group, a block of one group member stays a joint of that
+    # one member: its group's length, which `q[:T]` would need, is not known here.
+    grouped = FactorizedCluster((:out,) => PointMass(1.0), (:in, (:T, 2)) => joint, ((:T, 1),) => PointMass(2.0))
+    q = rule_marginals(getdata, Val(((:out, :in, (:T, 1), (:T, 2)),)), (Marginal(grouped, false, false),))
+    @test q[:out] === PointMass(1.0) && q[:in, (:T, 2)] === joint && q[((:T, 1),)] === PointMass(2.0)
+
     # A joint that does not split is passed as it is.
     whole = Marginal(joint, false, false)
     @test rule_marginals(getdata, Val(((:out, :μ),)), (whole,))[:out, :μ] === joint

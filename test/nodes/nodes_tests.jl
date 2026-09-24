@@ -10,6 +10,9 @@
     struct Mixture end
     @define_factor_node(node = Mixture, type = Stochastic, interfaces = [:out, :switch, :m...])
 
+    struct MaybeEmpty end
+    @define_factor_node(node = MaybeEmpty, type = Stochastic, interfaces = [:out, :in, :T...], min_group_length = 0)
+
     # Pairs of components, at least two, under mean-field only.
     struct Paired end
     @define_factor_node(
@@ -77,6 +80,9 @@ end
 
     @test_throws "must be `1:n`" factornode(N.Mixture, [(:out, out), (:switch, switch), ((:m, 2), m2)])
     @test_throws "needs at least one member" factornode(N.Mixture, [(:out, out), (:switch, switch)])
+    # A node whose group may be empty builds without members.
+    empty = factornode(N.MaybeEmpty, [(:out, randomvar()), (:in, randomvar())])
+    @test name.(getinterfaces(empty)) == [:out, :in]
 end
 
 @testitem "factornode checks what a node declares of its groups and factorisation" tags = [:nodes] setup = [EngineNodes] begin

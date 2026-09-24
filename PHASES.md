@@ -21,10 +21,10 @@ one.
 
 ## Next action
 
-**Phase 6, step 9: DiscreteTransition** (§ Phase 6, *Entry brief*), the last node and the largest.
-Step 9 is briefed (§ Phase 6, *Step 9 brief*): DiscreteTransition becomes a tensor node (§3.45).
-Its rules are written once for any factorisation and any number of `T`s, on two additions to the
-engine and the base: joints of part of a group, and `default` in a rule's arguments.
+**Phase 6, step 9: DiscreteTransition** (§ Phase 6, *Entry brief*), the last node and the largest,
+closes with the guide's entries. It is a tensor node (§3.45) in its own package, with every v6 test
+ported and every v6 rule compared (§ Phase 6, *Step 9 brief*, *Progress*); `legacy/v6/` is empty.
+Then step 10, the close: `legacy/` deleted, the guide completed, and the exit criteria.
 
 Steps 1–8 are done, each node in its own package,
 compared with v6 and covered by an engine fixture: the numerics, Delta, GaussianCoupling, Probit
@@ -35,7 +35,6 @@ and Flow.
 
 | What | Where it lands | Recorded in |
 |---|---|---|
-| a joint cluster holding some members of a group with other interfaces (`activate!` refuses it) | when a node needs one | § *Cases (b)–(d)*, case (d) |
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
 | Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
@@ -105,7 +104,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM) and 8 (Flow) done; step 9, DiscreteTransition, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM) and 8 (Flow) done; step 9 (DiscreteTransition) done but for the guide's entries; step 10, the close, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -3271,6 +3270,61 @@ for the guide.
     mean-field and partial-joint inputs; the guard's refusals; an explicit rule winning; a group
     target; a marginal rule over any cluster; an energy; `check_rules` and ambiguities clean; the
     macro's refusals; a TestUtils table with a partial joint.
+- *The package, its comparison and fixtures — done.*
+  - **`DiscreteTransitionMessagePassingRules`**: `[:out, :in, :a, :T...]` with
+    `min_group_length = 0`, under `DefaultAlgorithm`; `discrete_transition_axes(key, n)` maps a
+    key to tensor axes, a whole group `T` in a joint spanning the axes left; one `default` rule
+    towards `out`, `in` and `(:T, k)` with a typed `q(a)`, one towards `a`, a marginal rule over
+    any cluster, and the energy. `sum_out_dimensions` and `multiply_dimensions!` are v6's, and
+    are tested on their own with the axes of each key; their `dims` are increasing, as every
+    key's axes are, since the values are reshaped, not permuted.
+  - **Found while building, in the base and the engine:**
+    - a group may be empty, `min_group_length = 0`, which `factornode` accepts;
+    - `FactorizedCluster` labels may hold group members, and the engine hands a block of one
+      member of a group to a rule as a joint of that member, `q[((:T, 1),)]`, the group's length
+      not being known from the cluster. The marginal rule splits off an observed member only
+      where it is a member of the key in its own right, as v6 did; inside a whole group `T` it
+      stays in the joint as a one-hot axis, the same distribution;
+    - `rule_inputs` built a `Vector{Any}` per call; it is generated from the container's type
+      now, and `@define_factor_node` emits `interface_groups` as a literal so it folds;
+    - fixtures encode arrays of more than two axes and blocks with group members.
+  - **The v6 tests:** a subagent ported every case of `test/rules/discrete_transition/*` and
+    `test/nodes/predefined/discrete_transition_tests.jl` with v6's values, and the counts were
+    reviewed against v6's: a 7/7 items (11 cases), in 10/10 (27 cases and a loop), out 10/10 (33),
+    marginals 11/11 (19), T 7/7 (69), the energies' 8 values. v6's node-property checks of
+    `sdtype`, `alias_interface` and `collect_factorisation` became `nodespec` checks. Two values
+    differ from v6's, each computed independently in the test: the `dims = 1` rule, and a point-mass
+    tensor with entries above one, which v6's belief-propagation rules clamped to one. An integer
+    tensor takes the messages' float type, as in v6. 2095 checks pass, and the coverage gate.
+  - **The comparison, `compare_discrete_transition.jl`:** 444 comparisons, every v6 method on
+    inputs that select it, belief propagation with zero to four `T`s, mean-field observed or not,
+    messages beside marginals, structured and partial joints, the rule towards `a`, the marginals
+    with observed members split off, and the energies. The only disagreement is the declared
+    `dims = 1` correction. Where v6 failed, on a Bernoulli marginal, the ambiguous energy of a
+    joint over three or more axes and the square-only point-mass energy, the port is compared with
+    v6 on the equivalent Categorical or with v6's generic method, reached by `invoke`.
+  - **The benchmark, 2-interface belief propagation against 6.5.0's explicit rules** (the
+    rule's body through `execute_rule`, v6's `rule` called directly, Julia 1.13):
+
+    | states | `q(a)` | v7 | v6 | ratio |
+    |---|---|---|---|---|
+    | 2 | point mass | 141 ns | 55 ns | 2.6 |
+    | 2 | Dirichlet | 330 ns | 241 ns | 1.4 |
+    | 10 | point mass | 226 ns | 146 ns | 1.6 |
+    | 10 | Dirichlet | 3.9 µs | 3.9 µs | 1.0 |
+    | 50 | point mass | 1.6 µs | 1.2 µs | 1.3 |
+    | 50 | Dirichlet | 95 µs | 94 µs | 1.0 |
+
+    Before the `rule_inputs` fix and a point-mass shortcut (with nothing to sum out,
+    `exp(E[log A])` is `A`, clamped, without a logarithm and an exponential, as v6's explicit
+    rules computed it), the point-mass rows were 14–22 times v6's. **No fast path is kept:** the
+    gap left is below 100 ns at two states.
+  - **Engine fixtures:** `dt_hmm` (RxInferExamples' Hidden Markov Model, three states, six
+    observations, `q(s0, s) q(A) q(B)`, five iterations) and `dt_partial_joint`
+    (`q(out, T1) q(in) q(T2) q(a)`) agree with v6's to 1e-9, every rule call, posterior and free
+    energy. The latter subscribes to the posteriors in the order RxInfer's `KeepEach` did, its
+    `Dict`'s, since under VMP that order is the schedule; v6's `T2` is `(:T, 2)`.
+  - The legacy files are deleted: `legacy/v6/` is empty, and step 10 deletes `legacy/`.
 
 
 

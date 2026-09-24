@@ -201,7 +201,9 @@ function prepare_interfaces(fform, spec::NodeSpec, given::AbstractDict)
     for declared in spec.interfaces
         if declared.group
             members = sort!([k for (key, k) in (key for key in keys(given) if key isa Tuple) if key === declared.name])
-            isempty(members) && throw(ArgumentError("`$(fform)`: the group `$(declared.name)` needs at least one member, as `(:$(declared.name), 1)`"))
+            # A group may be empty only where the node allows it, `min_group_length = 0`.
+            isempty(members) && spec.min_group_length > 0 &&
+                throw(ArgumentError("`$(fform)`: the group `$(declared.name)` needs at least one member, as `(:$(declared.name), 1)`"))
             members == 1:length(members) || throw(ArgumentError("`$(fform)`: the members of the group `$(declared.name)` must be `1:n`, got $(members)"))
             for k in members
                 push!(processed, IndexedNodeInterface(k, NodeInterface(declared.name, pop!(given, (declared.name, k)))))

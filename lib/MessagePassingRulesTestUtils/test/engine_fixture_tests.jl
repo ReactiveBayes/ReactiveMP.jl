@@ -14,6 +14,9 @@
     @test encode_fixture_value(nothing) == Dict("type" => "nothing")
     @test encode_fixture_value(MessagePassingRulesBase.FactorizedCluster((:out, :μ) => PointMass([1.0, 2.0]), (:v,) => PointMass(3.0))) ==
         Dict("type" => "FactorizedCluster", "blocks" => [["out", "μ"], ["v"]], "components" => [encode_fixture_value(PointMass([1.0, 2.0])), encode_fixture_value(PointMass(3.0))])
+    # A block may hold a member of a group, and an array of more axes is stored with its size.
+    @test encode_fixture_value(MessagePassingRulesBase.FactorizedCluster((:out,) => PointMass(1.0), (:in, (:T, 1)) => PointMass(2.0)))["blocks"] == [["out"], ["in", "(:T, 1)"]]
+    @test encode_fixture_value(reshape(collect(1.0:8.0), 2, 2, 2)) == Dict("type" => "Array", "size" => [2, 2, 2], "values" => collect(1.0:8.0))
     # A rule call skipped for a missing input records `missing`, which is not `nothing`.
     @test encode_fixture_value(missing) == Dict("type" => "missing")
 end

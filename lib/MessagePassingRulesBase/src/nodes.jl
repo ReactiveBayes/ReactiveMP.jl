@@ -99,7 +99,8 @@ matched_groups(node) = nodespec(node).matched_groups
 """
     min_group_length(node)
 
-The fewest members any group of `node` may have: 1 unless declared, 2 for a mixture.
+The fewest members any group of `node` may have: 1 unless declared, 2 for a mixture, 0 for
+a node whose group may be empty, as `DiscreteTransition`'s `T`.
 """
 min_group_length(node) = nodespec(node).min_group_length
 

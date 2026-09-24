@@ -5,7 +5,8 @@ The portable form of a value recorded in an engine fixture. Numbers become `Floa
 distribution becomes its family name and parameters (`Dict("type" => "Normal", "params" =>
 [0.5, 2.0])`), a matrix becomes its rows, a tuple or vector is encoded element by element,
 and `nothing` and `missing` are `Dict("type" => "nothing")` and
-`Dict("type" => "missing")`. Encoded values encode to themselves, so both
+`Dict("type" => "missing")`; an array of more axes is its size and its values in column-major
+order. Encoded values encode to themselves, so both
 sides of a comparison can be given either way. It holds no Julia types, which is what lets a
 fixture recorded on one Julia version be read by another.
 """
@@ -17,10 +18,11 @@ encode_fixture_value(x::AbstractDict) = Dict{String, Any}(x)
 encode_fixture_value(x::AbstractVector{<:Real}) = Float64.(x)
 encode_fixture_value(x::AbstractVector) = Any[encode_fixture_value(v) for v in x]
 encode_fixture_value(x::AbstractMatrix) = Any[encode_fixture_value(collect(row)) for row in eachrow(x)]
+encode_fixture_value(x::AbstractArray) = Dict{String, Any}("type" => "Array", "size" => collect(size(x)), "values" => encode_fixture_value(vec(collect(x))))
 encode_fixture_value(x::Tuple) = Any[encode_fixture_value(v) for v in x]
 encode_fixture_value(x::FactorizedCluster) = Dict{String, Any}(
     "type" => "FactorizedCluster",
-    "blocks" => Any[String.(collect(block)) for block in cluster_blocks(x)],
+    "blocks" => Any[map(member -> member isa Symbol ? String(member) : string(member), collect(block)) for block in cluster_blocks(x)],
     "components" => encode_fixture_value(BayesBase.components(x)),
 )
 encode_fixture_value(x::PointMass) = Dict{String, Any}("type" => "PointMass", "params" => Any[encode_fixture_value(mean(x))])

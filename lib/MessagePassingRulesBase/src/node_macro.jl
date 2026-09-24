@@ -82,6 +82,8 @@ function define_factor_node_expr(mod, source, args)
             $(QuoteNode(Symbol(something(source.file, :none)))), $(source.line),
         )
         $base.nodespec(::$dispatch) = $spec
+        # A literal, so a rule body's `rule_inputs` folds to a constant.
+        $base.interface_groups(::$dispatch) = $(Tuple(groups))
         $register!($REGISTRY_NAME, $spec)
     end
 
@@ -136,7 +138,7 @@ function parse_initial_messages(ex, parsed)
 end
 
 function parse_min_group_length(ex, groups)
-    (ex isa Integer && ex >= 1) || error("@define_factor_node: `min_group_length` must be a positive integer, got `$ex`")
+    (ex isa Integer && ex >= 0) || error("@define_factor_node: `min_group_length` must be a non-negative integer, got `$ex`")
     (ex == 1 || !isempty(groups)) || error("@define_factor_node: `min_group_length` needs a group, and the node declares none")
     return Int(ex)
 end

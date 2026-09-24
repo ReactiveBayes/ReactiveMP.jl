@@ -1,0 +1,1273 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "RxInferExamples' Hidden Markov Model: A ~ DirichletCollection(ones(3, 3)), B ~ DirichletCollection(10 on the diagonal, 1 off it), s0 ~ Categorical(1/3), s[t] ~ DiscreteTransition(s[t-1], A), x[t] ~ DiscreteTransition(s[t], B) with six one-hot x observed; q(s0, s) q(A) q(B), q(A) and q(B) initialised at DirichletCollection(I + 0.1)."
+free_energy = [9.699237739889725, 8.375830230920172, 8.270422509765439, 8.27045863687998, 8.27192829954788]
+id = "dt_hmm"
+
+    [trajectory.posteriors.A]
+    params = [[[2.401508046735807, 1.3086569556704797, 1.2853823674915095], [1.9743870110399797, 1.0777363860437306, 1.9286566538378551], [1.072762233297453, 1.9629286140259614, 1.9879817318572224]]]
+    type = "DirichletCollection"
+
+    [trajectory.posteriors.B]
+    params = [[[11.897148894279312, 1.0548280178294167, 1.0480230878912722], [1.0560750216990415, 11.86780637745267, 1.0761186008482873], [1.0425030030147293, 1.0581950214865206, 11.89930197549875]]]
+    type = "DirichletCollection"
+
+    [[trajectory.posteriors.s]]
+    params = [[0.9428921968734166, 0.030496470574204102, 0.02661133255237922]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.s]]
+    params = [[0.9542566974058947, 0.024331547255212478, 0.021411755338892835]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.s]]
+    params = [[0.025792207727434305, 0.952077395534485, 0.022130396738080677]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.s]]
+    params = [[0.01459632003224061, 0.029329028366146263, 0.9560746516016131]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.s]]
+    params = [[0.027906682982488534, 0.02886599312037422, 0.9432273238971373]]
+    type = "DiscreteNonParametric"
+    [[trajectory.posteriors.s]]
+    params = [[0.030282813971607016, 0.9157289819181861, 0.05398820411020688]]
+    type = "DiscreteNonParametric"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.3333333333333333, 0.3333333333333333, 0.3333333333333333]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "DiscreteNonParametric"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.3333333333333333, 0.3333333333333333, 0.3333333333333333]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.33333333333333326, 0.3333333333333332, 0.33333333333333337]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9999092083843409, 4.539580782951091e-5, 4.539580782951091e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.999818429133358, 9.078543332091635e-5, 9.07854333209164e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9999092083843409, 4.539580782951091e-5, 4.539580782951091e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9999092001406624, 4.539992966886192e-5, 4.539992966886192e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[4.539580782951091e-5, 0.9999092083843409, 4.539580782951091e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.4999432565286153, 0.4999886502749172, 6.809319646754482e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[4.539580782951091e-5, 4.539580782951091e-5, 0.9999092083843409]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.20001271163419992, 0.2000308682259426, 0.5999564201398575]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[4.539580782951091e-5, 4.539580782951091e-5, 0.9999092083843409]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[4.539580782951091e-5, 0.9999092083843409, 4.539580782951091e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[9.078543332091635e-5, 0.999818429133358, 9.078543332091636e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[7.56576187493688e-5, 0.3333182034582629, 0.6666061389229877]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[4.54009597544834e-5, 6.809319646754475e-5, 0.9998865058437779]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[6.355528480912588e-5, 0.5999564201398571, 0.3999800245753338]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.5832970790438498, 0.25001040411108877, 0.1666925168450616]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9998767804944877, 6.485165860223586e-5, 5.8367846910038185e-5]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DirichletCollection"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.999876779022197, 1.0000453943355387, 1.0000453943355387], [1.0000000008833343, 1.0000194567341072, 1.0000000008833343], [1.0000000005889564, 1.0000000005889564, 1.000012972628037]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9999351409807593, 1.00000000206102, 1.00000000206102], [1.0000194558508797, 1.0000194558508797, 1.0000000008832943], [1.0000129708616354, 1.0000000005888763, 1.0000129708616354]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.2857216945227816, 1.0000000000000535, 1.0000000000000535], [1.4285306651090854, 1.0000389114073012, 1.000000001766575], [1.285682785470932, 1.000000001177699, 1.0000259405455187]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0000324240626992, 1.000000001472184, 1.0000000000000668], [1.0000064852836488, 1.1428608499111532, 1.0000000002944582], [1.2856827851765407, 1.2857087268996246, 1.2857087268996246]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0000129702728529, 1.000000000588903, 1.000000001766575], [1.000006484989244, 1.1428543634498323, 1.0000194552620971], [1.0000129702728529, 1.000012971450525, 1.8570807819471176]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0000064861669298, 1.0000000002944982, 1.0000194558508797], [1.0000064861669298, 1.1428803031121768, 1.428543633909808], [1.0000000002944716, 1.0000000002944982, 1.428543633909808]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.15510645591181813, 0.2673824348816343, 0.5775111092065476]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DirichletCollection"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[[10.0, 1.0, 1.0], [1.0, 10.0, 1.0], [1.0, 1.0, 10.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9999675676932744, 1.0000194585007758, 1.0000129738059498], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9999351451027991, 1.0000389125850535, 1.0000259423121474], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.2857216945228886, 1.4285695782829617, 1.2857087271941496], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.00003242553495, 1.1428673354892602, 1.8571002389757898]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0000129726283309, 1.1428803037011734, 1.8571067236704957]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0000263328679586, 1.999875621414382, 1.0000980457176591], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.32912086393484813, 0.28696815036101747, 0.3839109857041343]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9084589242086293, 0.04626071530577726, 0.04528036048559351]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5413062831842247, 0.20953096780159414, 0.24916274901418126]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9084589242086293, 0.04626071530577726, 0.04528036048559351]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5600545604536151, 0.20351771348710268, 0.2364277260592824]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.06349104701468572, 0.8716707390344982, 0.064838213950816]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.2905250166331927, 0.36313608073642256, 0.34633890263038475]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.043583726946186264, 0.06726644936630595, 0.8891498236875077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.17666554834927173, 0.27397348644091946, 0.5493609652098088]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.043583726946186264, 0.06726644936630595, 0.8891498236875077]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.06349104701468572, 0.8716707390344982, 0.064838213950816]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.2684562367289082, 0.4113782133461759, 0.3201655499249158]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.22476534196078954, 0.2906555430940229, 0.4845791149451876]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.2181365700356565, 0.286181215993804, 0.49568221397053946]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.25935629497641594, 0.4068000535147276, 0.3338436515088564]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.5687934716838382, 0.2396510986960843, 0.19155542962007735]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.6037980081378084, 0.22755753310151924, 0.1686444587606724]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.5954323709647609, 1.2143078028521164, 1.153384137638657], [1.0044162753500545, 1.0079278408112067, 1.0056732995562851], [1.0039493618229929, 1.0053218894381961, 1.00958702156573]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9146806281821716, 1.0146170709815596, 1.0136992627123014], [1.0252553022155213, 1.0020129671141587, 1.0018863047022277], [1.0231883810578417, 1.0013873776218283, 1.0032727054123898]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.1157981853564813, 1.0008215225614372, 1.0006843753945562], [1.721018169864081, 1.0255127448589139, 1.0212505613617053], [1.1061806066554705, 1.0028203066115566, 1.0059135273357982]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0061514322235587, 1.0110457100998802, 1.0006831418195696], [1.004244157374549, 1.0380103713200777, 1.0023504860214778], [1.1069084937143672, 1.718725394664742, 1.1118808127617776]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0015641194640745, 1.0010860141132711, 1.0097991013920615], [1.0012788031040898, 1.004428559315573, 1.0399532007370036], [1.015037361574844, 1.0390904412872604, 1.887762399011822]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0020244081065373, 1.0017439515678415, 1.033082825064901], [1.0096079310679138, 1.0412818799023984, 1.7830075757056765], [1.0008168957949561, 1.0026347316864266, 1.1257998011033488]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.20697682573633688, 0.3579478585823496, 0.4350753156813136]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9631243114555346, 1.0180174157175466, 1.018858272826919], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9429969618760325, 1.0291545740319077, 1.0278484640920598], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.1173040833124748, 1.7677814760847, 1.1149144406028253], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0178802841430084, 1.0446050147161046, 1.9375147011408869]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0124492349694072, 1.0456605631566664, 1.9418902018739264]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0371888458242664, 1.8829797118156961, 1.0798314423600375], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.3327406408331466, 0.30492823435484323, 0.3623311248120103]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.903228867706441, 0.0490007678900908, 0.04777036440346823]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.48167028222709596, 0.30520252126310965, 0.21312719650979423]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.903228867706441, 0.0490007678900908, 0.04777036440346823]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.49326868779876065, 0.3041970457503919, 0.2025342664508474]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.05490408652327423, 0.8873548458046373, 0.05774106767208856]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.30338591047326113, 0.2539545661849996, 0.44265952334173936]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.04676053003117629, 0.052361012064531386, 0.9008784579042922]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.21233985918334075, 0.35738361921577066, 0.43027652160088864]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.04676053003117629, 0.052361012064531386, 0.9008784579042922]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.05490408652327423, 0.8873548458046373, 0.05774106767208856]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.3439106651073737, 0.2652075861527024, 0.3908817487399237]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.19797694319097742, 0.40183470260534676, 0.40018835420367593]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.19456132697153225, 0.401837132328041, 0.4036015407004268]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.3381919525275225, 0.2650130632937807, 0.3967949841786968]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.4972058885745211, 0.28066341977379583, 0.2221306916516831]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.5114034878087336, 0.27572430201982007, 0.2128722101714462]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.4978502834297633, 1.258914169807834, 1.1921881730140436], [1.0091725253512527, 1.006746449654238, 1.0107122379845856], [1.0043806790277174, 1.010063682557748, 1.0099717991728172]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9048974343703216, 1.0233966287597864, 1.0201181385500415], [1.0231442964171122, 1.0008463055962313, 1.0015566673368852], [1.0209108954642074, 1.0023882786340588, 1.002741354871356]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.043316158435278, 1.000774373237095, 1.0003913159930073], [1.869904687865196, 1.0219938559036434, 1.0237745731112042], [1.0351913553796757, 1.00277904020949, 1.0018746398654104]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0026367400114973, 1.0136674806953894, 1.0004395318109105], [1.0036054898596758, 1.0264310697496164, 1.0018182377635112], [1.0382396177942073, 1.8755745664350378, 1.0375872658801546]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0017307992538658, 1.0008437095885667, 1.0187817380813078], [1.000899189322996, 1.0006199072699629, 1.0295191341101961], [1.0141137639409352, 1.0303911805142738, 1.9031005779178956]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0019213435433467, 1.0018831885729407, 1.0289558171660476], [1.018682423677817, 1.0258971101710437, 1.851779942747163], [1.0007524797025764, 1.0032579319591708, 1.066869762459894]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.22203151151582493, 0.37293251341536154, 0.4050359750688135]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.948952626251641, 1.0266312129900763, 1.0244161607582827], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9484122016801493, 1.0255472693502286, 1.0260405289696222], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0444818476653803, 1.9156731168800436, 1.039845035454576], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.016743752517797, 1.0318547973728034, 1.9514014501093997]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0213562469237403, 1.0310382307031551, 1.9476055223731046]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.033261664582096, 1.902926225778777, 1.063812109639127], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.3286878964120947, 0.31946060935829423, 0.3518514942296109]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9033392788192659, 0.0486078249739949, 0.048052896206739304]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.4596768651794373, 0.35014199336019275, 0.19018114146037007]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9033392788192659, 0.0486078249739949, 0.048052896206739304]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.4694367952035677, 0.35048280776215696, 0.18008039703427545]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.04998265190069232, 0.8982723819141749, 0.05174496618513279]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.2994022791937832, 0.2319131049301251, 0.4686846158760917]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.0474022754344599, 0.049528095038461895, 0.9030696295270781]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.22275574844540566, 0.37574822401931535, 0.4014960275352789]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.0474022754344599, 0.049528095038461895, 0.9030696295270781]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.04998265190069232, 0.8982723819141749, 0.05174496618513279]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.3735882923419591, 0.23495615882507986, 0.39145554883296096]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.17950181556497788, 0.4376131074605686, 0.38288507697445373]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.1774196370061873, 0.435586850960668, 0.38699351203314464]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.3709806267028228, 0.23209269898048582, 0.3969266743166915]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.47869662536758256, 0.2885412128177029, 0.2327621618147145]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.4888574688405769, 0.28350677439419664, 0.22763575676522627]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.4734086958120616, 1.2651990668111428, 1.2054903496842932], [1.0113069127350256, 1.006505470214553, 1.0119490278114351], [1.0041418602934897, 1.0118022373685007, 1.010196379269498]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9042728209587294, 1.026492572769557, 1.0223511070931124], [1.02241661579975, 1.0006745180852505, 1.0013489720193407], [1.0174086755490186, 1.002594319906206, 1.0024403978190355]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.027824076128759, 1.0006388565623008, 1.0002658027253422], [1.904039921574386, 1.0213191118505403, 1.0210261431568821], [1.0212525031182533, 1.0024821374915003, 1.0011514473920358]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0017284335534382, 1.0129917242409983, 1.000297951800296], [1.003242138981358, 1.025029064935489, 1.0013606871538392], [1.0237581628816057, 1.9083643874053213, 1.0232274490476545]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0018234348974, 1.000826701348338, 1.023604407652264], [1.0008823508358184, 1.0004108644608531, 1.0278084944616153], [1.0123123238615142, 1.0283943252614949, 1.9039370972207021]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.001800197494134, 1.0017773639391572, 1.0268317953604977], [1.0238239590521852, 1.0241584483839064, 1.8645235846573212], [1.0006303873516826, 1.0031658974352233, 1.0532883663258925]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.22713686867032065, 0.37487174210518337, 0.39799138922449584]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9440981123074978, 1.0297614107610138, 1.0261404769314886], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9531165008213986, 1.0244401059043415, 1.02244339327426], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.028728735416402, 1.9463851765818085, 1.0248860880017896], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0150181095947324, 1.029631891070686, 1.9553499993345815]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0262545438980017, 1.0291017097582869, 1.9446437463437114]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0307930545645412, 1.913348656750515, 1.0558582886849437], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.327815660519066, 0.32321948585242044, 0.3489648536285135]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9034763481317244, 0.04857036249814025, 0.0479532893701353]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.45426569694171565, 0.36144182628164395, 0.18429247677664046]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.9034763481317244, 0.04857036249814025, 0.0479532893701353]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.4635014535633087, 0.3620849357165821, 0.17441361072010927]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.04880404933390601, 0.9009393622301188, 0.050256588435975004]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.29771117533667496, 0.22813210611118775, 0.47415671855213737]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.047618732545351386, 0.04900204061219322, 0.9033792268424553]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.22672331799422646, 0.3785177920786883, 0.39475888992708535]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.047618732545351386, 0.04900204061219322, 0.9033792268424553]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.04880404933390601, 0.9009393622301188, 0.050256588435975004]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.3809055165475606, 0.2293343473116788, 0.38976013614076055]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.17494718581585486, 0.44579341876130035, 0.3792593954228448]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.17319127542375426, 0.44331322374576093, 0.38349550083048467]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.3790533060820011, 0.22595490692932824, 0.3949917869886706]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.47399927088377947, 0.2892296534625645, 0.23677107565365604]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[0.4832131860517657, 0.28422152088975, 0.23256529305848442]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.4672959259634621, 1.2654818118327833, 1.2101144590771713], [1.0118424693873818, 1.0064815567993635, 1.012172444387459], [1.0040747907009215, 1.0122581522576033, 1.0102783895938543]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9040642467735749, 1.027224785565856, 1.0229676650664636], [1.0223823619782355, 1.0006493298538772, 1.0012998554230998], [1.0164455881216061, 1.0026223551544708, 1.0023438120628156]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0249445169303772, 1.0006061790154563, 1.0002415117816008], [1.9106050476424725, 1.021318180532462, 1.0201541673595504], [1.0187071328330448, 1.0024071877072942, 1.0010160761977416]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0015582352733727, 1.0127665887841029, 1.000271495974765], [1.0031566514632637, 1.0249151068243014, 1.001257270078581], [1.0210773209907977, 1.9143956999260807, 1.0206016306847348]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.001856272349162, 1.0008315954041038, 1.0252188152292228], [1.0008885061666328, 1.000383464455088, 1.0275940224986535], [1.011851541516446, 1.0281139685069545, 1.9032618138737367]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.001788849445858, 1.0017459950681769, 1.0265684203622867], [1.0255119744019936, 1.0239887475786387, 1.8661788940905115], [1.000605859134637, 1.0031312504735588, 1.050480009444339]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.2288676536527435, 0.37490000282345526, 0.39623234352380127]]
+        type = "DiscreteNonParametric"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9428921968734167, 1.0304964705742041, 1.0266113325523791], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.9542566974058948, 1.0243315472552126, 1.0214117553388928], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0257922077274344, 1.952077395534485, 1.0221303967380806], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0145963200322405, 1.0293290283661463, 1.9560746516016132]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0279066829824886, 1.0288659931203743, 1.9432273238971374]]]
+        type = "DirichletCollection"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "DiscreteTransition"
+    target = ":a"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 1.0, 1.0], [1.030282813971607, 1.915728981918186, 1.0539882041102069], [1.0, 1.0, 1.0]]]
+        type = "DirichletCollection"

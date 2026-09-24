@@ -706,3 +706,61 @@ end
     @test compare_engine_trajectory(strip(FlowFixture.run("flow_meanfield_unscented", A.Unscented(2))), strip(EngineHarness.fixture("flow_meanfield_unscented")); atol = 1.0e-9) === :agree
     @test last(FlowFixture.run("flow_meanfield_unscented", A.Unscented(2); iterations = 40).free_energy) ≈ 14.977626369022019 atol = 1.0e-8
 end
+
+@testitem "engine:fixture:dt_hmm" tags = [:engine] setup = [EngineHarness] begin
+    # RxInferExamples' Hidden Markov Model under q(s0, s) q(A) q(B): each transition's joint
+    # q(out, in), the emissions' messages from an observed `out`, the learned tensors and the energy.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, DiscreteTransitionMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    I3 = [1.1 0.1 0.1; 0.1 1.1 0.1; 0.1 0.1 1.1]
+    observed = [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0]]
+
+    graph = H.Graph()
+    A, B, s0 = H.random!(graph), H.random!(graph), H.random!(graph)
+    H.node!(graph, DirichletCollection, [(:out, A), (:a, H.constant!(graph, ones(3, 3)))])
+    H.node!(graph, DirichletCollection, [(:out, B), (:a, H.constant!(graph, [10.0 1.0 1.0; 1.0 10.0 1.0; 1.0 1.0 10.0]))])
+    H.node!(graph, Categorical, [(:out, s0), (:p, H.constant!(graph, fill(1.0 / 3.0, 3)))])
+    s, x = [H.random!(graph) for _ in observed], [H.data!(graph) for _ in observed]
+    for t in eachindex(observed)
+        H.node!(graph, DiscreteTransition, [(:out, s[t]), (:in, t == 1 ? s0 : s[t - 1]), (:a, A)]; factorisation = ((:out, :in), (:a,)))
+        H.node!(graph, DiscreteTransition, [(:out, x[t]), (:in, s[t]), (:a, B)]; factorisation = ((:out,), (:in,), (:a,)))
+    end
+
+    trajectory = H.run(
+        graph; id = "dt_hmm", data = x .=> observed, iterations = 5, posteriors = [:A => A, :B => B, :s => s],
+        initial_marginals = [A => DirichletCollection(I3), B => DirichletCollection(I3)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("dt_hmm"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:dt_partial_joint" tags = [:engine] setup = [EngineHarness] begin
+    # A node with two `T`s under q(out, T1) q(in) q(T2) q(a): a joint of `out` and only the first
+    # member of the group, its marginal, the messages in and out of it, and the energy.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, DiscreteTransitionMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    A = H.random!(graph)
+    H.node!(graph, DirichletCollection, [(:out, A), (:a, H.constant!(graph, ones(2, 2, 3, 2)))])
+    x, t1, t2 = H.random!(graph), H.random!(graph), H.random!(graph)
+    H.node!(graph, Categorical, [(:out, x), (:p, H.constant!(graph, [0.4, 0.6]))])
+    H.node!(graph, Categorical, [(:out, t1), (:p, H.constant!(graph, [0.2, 0.3, 0.5]))])
+    H.node!(graph, Categorical, [(:out, t2), (:p, H.constant!(graph, [0.5, 0.5]))])
+    z, y = H.random!(graph), H.data!(graph)
+    H.node!(
+        graph, DiscreteTransition, [(:out, z), (:in, x), (:a, A), ((:T, 1), t1), ((:T, 2), t2)];
+        factorisation = ((:out, (:T, 1)), (:in,), (:a,), ((:T, 2),)),
+    )
+    H.node!(graph, DiscreteTransition, [(:out, y), (:in, z), (:a, H.constant!(graph, [0.9 0.2; 0.1 0.8]))])
+
+    # The posteriors in the order RxInfer subscribed to them, its `Dict`'s: under VMP the order
+    # marginals are first asked for is the schedule, and it moves the result by 1e-8.
+    trajectory = H.run(
+        graph; id = "dt_partial_joint", data = [y => [0.0, 1.0]], iterations = 5, posteriors = [:t2 => t2, :A => A, :z => z, :t1 => t1, :x => x],
+        initial_marginals = [A => DirichletCollection(ones(2, 2, 3, 2)), x => Categorical([0.5, 0.5]), t2 => Categorical([0.5, 0.5])],
+    )
+    # v6 named the members of the group as interfaces of their own, `T2` for `(:T, 2)`.
+    v6_named(r) = RuleCallRecord(r.iteration, r.node, replace(r.target, r"^\(:T, (\d+)\)$" => s":T\1"), r.result, r.logscale)
+    trajectory = EngineTrajectory(trajectory.id; free_energy = trajectory.free_energy, posteriors = trajectory.posteriors, trace = map(v6_named, trajectory.trace))
+    @test compare_engine_trajectory(trajectory, H.fixture("dt_partial_joint"); atol = 1.0e-9) === :agree
+end

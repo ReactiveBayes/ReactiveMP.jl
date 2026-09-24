@@ -27,6 +27,7 @@ each of the 231 entities in ReactiveMP is destined to land.
 | `PolyaMessagePassingRules` | 6 (step 6) | BinomialPolya and MultinomialPolya, Pólya-Gamma augmented; **GPL-3** through PolyaGammaHybridSamplers, the only package that carries it |
 | `BIFMMessagePassingRules` | 6 (step 7) | BIFM and BIFMHelper under `BIFMSmoother(A, B, C)`: stateless, its rules the first to use scratch; no free energy |
 | `FlowMessagePassingRules` | 6 (step 8) | Flow under `FlowApproximation(model; method)`, the flow models, layers and coupling flows, and `PermutationMatrix` |
+| `DiscreteTransitionMessagePassingRules` | 6 (step 9) | DiscreteTransition as a tensor node: one rule per target, over whatever inputs the factorisation delivers, joints of some of the `T`s included; no Tullio |
 
 There is no shared domain-models package: `GCV`, `Probit`, `SoftDot` and `GaussianCoupling`
 each get their own node package in Phase 6, like the other non-standard nodes

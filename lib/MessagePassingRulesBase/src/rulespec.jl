@@ -269,23 +269,27 @@ member of a group as `(group, k)`, and a joint by its key, as `(:out, (:T, 1))`.
 does not deliver are left out. `node` tells which names are groups. It is for a rule declared with
 `default`, whose body walks the inputs the factorisation delivered.
 """
-function rule_inputs(node, container::Union{Messages, Marginals})
-    groups = Tuple(i.name for i in nodespec(node).interfaces if i.group)
-    singles = container isa Messages ? container.values : container.singles
+rule_inputs(node, container::Union{Messages, Marginals}) = rule_inputs(Val(interface_groups(node)), container)
+
+# Generated from the container's type, so the pairs are a tuple of known types, with the keys
+# as constants: a rule body walking them is type-stable.
+@generated function rule_inputs(::Val{groups}, container::Union{Messages, Marginals}) where {groups}
+    singles = container <: Messages ? :(container.values) : :(container.singles)
+    names, types = container.parameters[1], container.parameters[2].parameters
     pairs = Any[]
-    for (key, value) in zip(keys(singles), values(singles))
-        if key in groups && value isa Tuple
-            for (k, member) in enumerate(value)
-                member === nothing || push!(pairs, (key, k) => member)
+    for (i, (key, type)) in enumerate(zip(names, types))
+        if key in groups && type <: Tuple
+            for (k, member) in enumerate(type.parameters)
+                member === Nothing || push!(pairs, :($(QuoteNode((key, k))) => getfield(getfield($singles, $i), $k)))
             end
         else
-            push!(pairs, key => value)
+            push!(pairs, :($(QuoteNode(key)) => getfield($singles, $i)))
         end
     end
-    if container isa Marginals
-        for (key, value) in zip(typeof(container).parameters[3], container.joints)
-            push!(pairs, key => value)
+    if container <: Marginals
+        for (j, key) in enumerate(container.parameters[3])
+            push!(pairs, :($(QuoteNode(key)) => getfield(container.joints, $j)))
         end
     end
-    return Tuple(pairs)
+    return Expr(:tuple, pairs...)
 end

@@ -28,7 +28,7 @@ doc_init:
 docs: doc_init ## Generate the documentation, running its doctests
 	julia --startup-file=no --project=docs docs/make.jl
 
-.PHONY: test test-all test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv test-softdot test-autoregressive test-continuous-transition test-polya test-bifm test-flow
+.PHONY: test test-all test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv test-softdot test-autoregressive test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
 
 test: ## Run the fast subset (skips `:slow`). test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
@@ -77,6 +77,9 @@ test-bifm: ## Test lib/BIFMMessagePassingRules against the local lib packages ([
 
 test-flow: ## Test lib/FlowMessagePassingRules against the local lib packages ([sources]). Takes test_args like `test`
 	julia --startup-file=no --project=lib/FlowMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
+
+test-discrete-transition: ## Test lib/DiscreteTransitionMessagePassingRules against the local lib packages ([sources]). Takes test_args like `test`
+	julia --startup-file=no --project=lib/DiscreteTransitionMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

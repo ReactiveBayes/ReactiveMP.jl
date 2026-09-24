@@ -15,6 +15,9 @@
     # The blocks are a BayesBase `FactorizedJoint`: the labels are all that is added.
     @test fc.joint isa BayesBase.FactorizedJoint
     @test BayesBase.components(fc) === ("joint", "v")
+    # A block may hold members of a group, as a joint over some of them is keyed.
+    fc = FactorizedCluster((:out,) => "out", (:in, (:T, 2)) => "joint", ((:T, 1),) => "T1")
+    @test fc[(:in, (:T, 2))] === "joint" && fc[((:T, 1),)] === "T1"
 end
 
 @testmodule FactorizedBodies begin

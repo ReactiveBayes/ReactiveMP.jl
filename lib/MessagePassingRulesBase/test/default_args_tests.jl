@@ -36,6 +36,9 @@ end
     q = Marginals((in = 1.0, a = 2.0, T = (nothing, 3.0)), Val(((:out, (:T, 1)),)), (4.0,))
     @test Set(rule_inputs(N.Tensor, q)) == Set([:in => 1.0, :a => 2.0, (:T, 2) => 3.0, (:out, (:T, 1)) => 4.0])
     @test Set(rule_inputs(N.Tensor, Messages((out = 5.0, T = (6.0, nothing, 7.0))))) == Set([:out => 5.0, (:T, 1) => 6.0, (:T, 3) => 7.0])
+    # Generated from the container's type, so a rule body walking the pairs is type-stable.
+    @test @inferred(rule_inputs(N.Tensor, q)) isa Tuple{Vararg{Pair}}
+    @test @inferred(rule_inputs(N.Tensor, Messages((out = 5.0, T = (6.0, nothing, 7.0))))) isa NTuple{3, Pair}
 end
 
 @testitem "default arguments:rules" tags = [:base] setup = [DefaultArgsNodes] begin

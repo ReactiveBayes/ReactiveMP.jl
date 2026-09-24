@@ -55,7 +55,7 @@ replacement".
 | `BinomialPolya` | `node` | `src/nodes/predefined/binomial_polya.jl` | `node:Polya` | GPL-3 via PolyaGammaHybridSamplers |
 | `ConjugateAR` | `node` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` |  |
 | `ContinuousTransition` | `node` | `src/nodes/predefined/continuous_transition.jl` | `node:ContinuousTransition` | uses ForwardDiff; own package by decision |
-| `DiscreteTransition` | `node` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` | sole consumer of Tullio; declares its traits by hand |
+| `DiscreteTransition` | `node` | `src/nodes/predefined/discrete_transition.jl` | `node:DiscreteTransition` | a tensor node, `[:out, :in, :a, :T...]`: one rule per target over whatever inputs arrive; its explicit Tullio rules are cases of those, and Tullio goes |
 | `Distributions.Bernoulli` | `node` | `src/nodes/predefined/bernoulli.jl` | `standard` |  |
 | `Distributions.Beta` | `node` | `src/nodes/predefined/beta.jl` | `standard` |  |
 | `Distributions.Categorical{P} where P<:Real` | `node` | `src/nodes/predefined/categorical.jl` | `standard` |  |
@@ -302,5 +302,5 @@ replacement".
 | `delta layout: cvi` | `rule` | `src/nodes/predefined/delta/layouts/cvi.jl` | `delete` | old `ProdCVI` |
 | `delta layout: cvi-projection` | `rule` | `ext/ReactiveMPProjectionExt/layout/cvi_projection.jl` | `node:Delta` | moves into the Delta package's extension once its engine half is gone |
 | `mixture rules indexing raw inputs` | `rule` | `src/rules/mixture/` | `standard` | raw message access in switch/out/inputs; hand-migrated in Phase 5 step 8, reading incoming log scales from `ann.m` |
-| `discrete_transition rules indexing raw inputs` | `rule` | `src/rules/discrete_transition/` | `node:DiscreteTransition` | raw message/marginal access in categoricals and marginals; hand-migrate with the node, not standard rules |
+| `discrete_transition rules indexing raw inputs` | `rule` | `src/rules/discrete_transition/` | `node:DiscreteTransition` | raw message/marginal access in categoricals and marginals; replaced by `default` rule arguments, the inputs walked by key with `rule_inputs`, nothing parsed |
 | `MessageMapping construction sites` | `rule` | `src/message.jl` | `engine` | 5 sites; engine wiring |

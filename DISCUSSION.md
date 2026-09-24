@@ -1784,6 +1784,19 @@ explicit inputs remain more specific, so a fast path can be added where a measur
 `default` arguments are a general feature of the base, with DiscreteTransition as their first
 user.
 
+*Decided while building:*
+- **A block of one member of a group, in a `FactorizedCluster`, is a joint of that member**,
+  `q[((:T, 1),)]`, not an entry of `q[:T]`. Building the group's tuple needs its length, and the
+  cluster's key does not carry it: `(:out, (:T, 1))` says nothing of how many `T`s there are.
+  Only a `default` rule reads such a block, walking `rule_inputs`, so nothing is lost.
+- **An observed member inside a whole group stays in the joint.** A cluster over every member is
+  keyed `(:out, :in, :T)`, and blocks splitting `T` would not partition that key. The joint keeps
+  the member as a one-hot axis, which is the same distribution as v6's blocks, and whose entropy
+  is the same.
+- **No fast path** (the measurement is in `PHASES.md`, step 9's *Progress*): once `rule_inputs`
+  folds and a point mass with nothing to sum out skips the logarithm and the exponential, the
+  generic rule is within 1.0–1.6 times v6's explicit ones from ten states on.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
