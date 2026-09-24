@@ -22,6 +22,7 @@ The engine is one of a family of packages:
 | `ContinuousTransitionMessagePassingRules` | the ContinuousTransition node, a transition through a matrix built from a vector |
 | `PolyaMessagePassingRules` | the Pólya-Gamma augmented nodes, BinomialPolya and MultinomialPolya; GPL-3 |
 | `BIFMMessagePassingRules` | BIFM, a linear state-space time slice for backward-information-filter forward-marginal smoothing, and BIFMHelper |
+| `FlowMessagePassingRules` | Flow, an invertible transformation, with its flow models, layers and PermutationMatrix |
 | `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
 
 !!! note
@@ -72,6 +73,7 @@ Pages = [
   "packages/continuous-transition.md",
   "packages/polya.md",
   "packages/bifm.md",
+  "packages/flow.md",
   "migration-guides/v6-to-v7.md",
   "extra/contributing.md",
   "extra/methods.md",

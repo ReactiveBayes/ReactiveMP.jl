@@ -3091,7 +3091,50 @@ Linearization or Unscented, and `PermutationMatrix`'s methods narrowed.
 A commit for the package with its comparison and fixtures, as in the earlier steps, and one for the
 guide.
 
-**Progress:** not started.
+**Progress:**
+- *`PermutationMatrix` — done.*
+  - v6's file alone, with no ArrayLayouts loaded, gave 18 ambiguities, all among its own
+    methods: a product of two permutations matched both `P * X` and `X * P`.
+  - Its matrix operand is now dense matrices and their adjoints and transposes, and its vector
+    operand dense vectors. FillArrays' zeros, which BayesBase loads, had 7 more.
+  - A product of two permutations has its own method: a permutation, with the indices composed.
+  - `PermutationMatrix([rng,] dim)` takes a generator, and `getind` covers the transpose.
+  - *Found while narrowing:* methods written with type variables, `PermutationMatrix{T} where T`,
+    rank below the unparameterised ones they refine, so the aliases are typevar-free.
+  - v6's tests, and new ones against the dense matrix, 200 checks; zero ambiguities, a quality item
+    pins it.
+- *The package, its comparison and its fixtures — done.* `lib/FlowMessagePassingRules`
+  (`make test-flow`).
+  - A subagent ported the models, layers and coupling flows faithfully, 537 of v6's checks. It
+    added a generator to every builder that draws: `compile`, `FlowModel`, `PlanarFlow`,
+    `RadialFlow` and `PermutationLayer`, drawing in v6's order, with 59 checks of reproducibility.
+    It also fixed:
+    - `FlowModel(dim, ())`, which v6 made ambiguous;
+    - `prepare(dim, layers)`, which v6 never made work.
+  - The node, `FlowApproximation(model; method)` and the 8 message rules are mine. They are v6's,
+    Unscented keeping its symmetric-square-root sigma points; `Unscented()` takes the dimension
+    from the input, and `Unscented(dim)` of another dimension throws.
+  - A second subagent ported the rule tables: 196 checks, the marginal cases rewritten as the
+    marginal of `in`. The suite totals 1 004, with the coverage gate.
+
+  `compare_flow.jl`: 78 checks, all agreeing, over planar, radial and stacked models with a
+  permutation, both methods, the three input forms, and the marginal of `in` against v6's marginal
+  rule.
+
+  The fixtures `flow_meanfield` and `flow_meanfield_unscented` agree with v6 in every posterior and
+  rule call.
+  *Found:* their free energy agrees only once the posteriors settle, by 0.38 apart at the first
+  iteration. A single-input deterministic node's entropy term is `in`'s own marginal, as current
+  as its messages; v6 recomputed it from its marginal rule once both of the node's messages had
+  refreshed, and lagged. Run for 40 iterations, both reach 14.971494010931867, and the Unscented
+  variant 14.977626369022019. The tests compare posteriors and calls exactly, and the converged
+  free energy against v6's.
+
+  *Found while testing:* my first command of the step ran from the repository's root and emptied
+  `test/runtests.jl`, so the root suite silently ran nothing. It was restored from git before
+  anything was committed, and nothing had been.
+
+  The ported files have left `legacy/v6/`, and `helpers/algebra/` with them.
 
 
 

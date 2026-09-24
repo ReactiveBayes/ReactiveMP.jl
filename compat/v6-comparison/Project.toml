@@ -7,6 +7,7 @@ DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 GCVMessagePassingRules = "2bb838d1-ae36-49a2-8c64-82a0acccfa93"
+FlowMessagePassingRules = "adabaeda-8474-4dd2-bb94-9124d4d2b701"
 GaussianCouplingMessagePassingRules = "a57ce80c-d854-4eb3-973d-f0d0550df039"
 MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
@@ -25,6 +26,7 @@ ContinuousTransitionMessagePassingRules = {path = "../../lib/ContinuousTransitio
 AutoregressiveMessagePassingRules = {path = "../../lib/AutoregressiveMessagePassingRules"}
 DeltaMessagePassingRules = {path = "../../lib/DeltaMessagePassingRules"}
 GCVMessagePassingRules = {path = "../../lib/GCVMessagePassingRules"}
+FlowMessagePassingRules = {path = "../../lib/FlowMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "../../lib/GaussianCouplingMessagePassingRules"}
 MessagePassingRulesApproximations = {path = "../../lib/MessagePassingRulesApproximations"}
 MessagePassingRulesBase = {path = "../../lib/MessagePassingRulesBase"}

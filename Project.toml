@@ -21,6 +21,7 @@ BIFMMessagePassingRules = {path = "lib/BIFMMessagePassingRules"}
 ContinuousTransitionMessagePassingRules = {path = "lib/ContinuousTransitionMessagePassingRules"}
 AutoregressiveMessagePassingRules = {path = "lib/AutoregressiveMessagePassingRules"}
 DeltaMessagePassingRules = {path = "lib/DeltaMessagePassingRules"}
+FlowMessagePassingRules = {path = "lib/FlowMessagePassingRules"}
 GCVMessagePassingRules = {path = "lib/GCVMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassingRules"}
 MessagePassingRulesApproximations = {path = "lib/MessagePassingRulesApproximations"}
@@ -54,6 +55,7 @@ DeltaMessagePassingRules = "0.1"
 Documenter = "1"
 ExponentialFamily = "2.5.0"
 ExponentialFamilyProjection = "3"
+FlowMessagePassingRules = "0.1"
 GCVMessagePassingRules = "0.1"
 GaussianCouplingMessagePassingRules = "0.1"
 PolyaMessagePassingRules = "0.1"
@@ -83,6 +85,7 @@ DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b"
+FlowMessagePassingRules = "adabaeda-8474-4dd2-bb94-9124d4d2b701"
 GCVMessagePassingRules = "2bb838d1-ae36-49a2-8c64-82a0acccfa93"
 GaussianCouplingMessagePassingRules = "a57ce80c-d854-4eb3-973d-f0d0550df039"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -102,4 +105,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "BIFMMessagePassingRules", "AutoregressiveMessagePassingRules", "BenchmarkTools", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "PolyaMessagePassingRules", "ProbitMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BIFMMessagePassingRules", "AutoregressiveMessagePassingRules", "BenchmarkTools", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "FlowMessagePassingRules", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "PolyaMessagePassingRules", "ProbitMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]

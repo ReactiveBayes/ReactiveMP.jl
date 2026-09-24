@@ -218,6 +218,37 @@ const BIFM_A, BIFM_B, BIFM_C = [0.9 0.1; 0.0 0.8], reshape([1.0, 0.5], 2, 1), [1
     z[end] ~ MvNormalMeanPrecision([0.0, 0.0], [0.0 0.0; 0.0 0.0])
 end
 
+# The RxInferExamples *Invertible Neural Network Tutorial*'s first model, small: latent points
+# through a fixed flow, a coupling layer, a fixed permutation and another, under mean-field.
+const FLOW_MODEL = compile(
+    FlowModel((InputLayer(2), AdditiveCouplingLayer(PlanarFlow(); permute = false), PermutationLayer(PermutationMatrix([2, 1])), AdditiveCouplingLayer(PlanarFlow(); permute = false))),
+    [0.3, -0.2, 0.5, 0.1, 0.4, -0.3],
+)
+const FLOW_Y = [[1.2, 0.3], [0.8, -0.4], [1.5, 0.9], [0.2, 0.1]]
+@model function flow_meanfield(y, method)
+    z_μ ~ MvNormalMeanCovariance([0.0, 0.0], [100.0 0.0; 0.0 100.0])
+    z_Λ ~ Wishart(3.0, [1.0 0.0; 0.0 1.0])
+    for k in eachindex(y)
+        x[k] ~ MvNormalMeanPrecision(z_μ, z_Λ)
+        y_lat[k] ~ Flow(x[k]) where {meta = FlowMeta(FLOW_MODEL, method)}
+        y[k] ~ MvNormalMeanCovariance(y_lat[k], [0.01 0.0; 0.0 0.01])
+    end
+end
+flow_fixture(id, method) = record(
+    id; description = "", model = flow_meanfield(method = method), data = (y = FLOW_Y,), iterations = 5, returnvars = (:z_μ, :z_Λ, :x),
+    constraints = @constraints(
+        begin
+            q(z_μ, x, z_Λ) = q(z_μ)q(z_Λ)q(x)
+        end
+    ),
+    initialization = @initialization(
+        begin
+            q(z_μ) = MvNormalMeanCovariance([0.0, 0.0], [100.0 0.0; 0.0 100.0])
+            q(z_Λ) = Wishart(3.0, [1.0 0.0; 0.0 1.0])
+        end
+    ),
+)
+
 # A Bayesian linear regression through SoftDot: y[i] ~ N(θ ⋅ X[i], 1/γ), with X[i] known.
 @model function softdot_regression(y, X)
     θ ~ MvNormalMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
@@ -445,6 +476,16 @@ const MODELS = [
                 end
             ),
         ),
+    ),
+    (
+        "flow_meanfield",
+        "z_μ ~ MvNMC(0, 100 I), z_Λ ~ Wishart(3, I), x[k] ~ MvNMP(z_μ, z_Λ), y_lat[k] ~ Flow(x[k]) with FlowMeta(model), y[k] ~ MvNMC(y_lat[k], 0.01 I) observed; the model a planar coupling layer, the permutation [2, 1] and another, with fixed parameters; q(z_μ) q(z_Λ) q(x), Linearization.",
+        () -> flow_fixture("flow_meanfield", Linearization()),
+    ),
+    (
+        "flow_meanfield_unscented",
+        "As flow_meanfield, with FlowMeta(model, Unscented(2)).",
+        () -> flow_fixture("flow_meanfield_unscented", Unscented(2)),
     ),
     (
         "softdot_regression",

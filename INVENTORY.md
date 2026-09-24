@@ -153,7 +153,7 @@ replacement".
 | `FactorBoundFreeEnergy` | `type` | `src/score/node.jl` | `engine` | walks the graph |
 | `FactorNode` | `type` | `src/nodes/nodes.jl` | `engine` |  |
 | `Flow` | `type` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
-| `FlowMeta` | `type` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `FlowMeta` | `type` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` | becomes the algorithm `FlowApproximation(model; method)` |
 | `FlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `FormConstraintCheckEach` | `type` | `src/constraints/form.jl` | `engine` |  |
 | `FormConstraintCheckLast` | `type` | `src/constraints/form.jl` | `engine` |  |
@@ -196,7 +196,7 @@ replacement".
 | `NormalMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `OR` | `type` | `src/nodes/predefined/or.jl` | `standard` |  |
 | `PermutationLayer` | `type` | `src/nodes/predefined/flow/layers/permutation_layer.jl` | `node:Flow` |  |
-| `PermutationMatrix` | `type` | `src/helpers/algebra/permutation_matrix.jl` | `node:Flow` | only consumer is Flow's `permutation_layer.jl`; its over-broad `*` methods cause 137 Aqua ambiguities and should be narrowed first |
+| `PermutationMatrix` | `type` | `src/helpers/algebra/permutation_matrix.jl` | `node:Flow` | only consumer is Flow's `permutation_layer.jl`; its `*` methods, 119 ambiguities in 6.5.0, are narrowed to dense operands, with products of two permutations written out: none |
 | `PlanarFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/planar_flow.jl` | `node:Flow` |  |
 | `Poisson` | `type` | `src/nodes/predefined/poisson.jl` | `standard` |  |
 | `Probit` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` |  |
@@ -223,7 +223,7 @@ replacement".
 | `approximation_short_name` | `function` | `src/approximations/approximations.jl` | `approximations` |  |
 | `as_marginal` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `as_message` | `function` | `src/message.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
-| `compile` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
+| `compile` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` | takes an optional generator first, which v6 left global |
 | `compose_Nks` | `function` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 |
 | `constrain_form` | `function` | `src/constraints/form.jl` | `engine` |  |
 | `constvar` | `function` | `src/variables/constant.jl` | `engine` |  |
@@ -238,12 +238,12 @@ replacement".
 | `functionalform` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `get_rule_input_arguments` | `function` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
 | `getannotations` | `function` | `src/annotations.jl` | `engine` | reads a `Message`'s or `Marginal`'s `AnnotationDict`, which are the engine's; a rule reads annotations through `ann.m`/`ann.q` instead |
-| `getapproximation` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `getapproximation` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` | unexported, as `getmethod(algorithm)`; the field `method` holds it |
 | `getdata` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `getinterfaces` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `getlayers` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `getlogscale` | `function` | `src/annotations/logscale.jl` | `engine` | reads the engine's `AnnotationDict`; stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
-| `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
+| `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` | unexported, `getmodel(algorithm)`; the field `model` holds it |
 | `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `approximations` | Pólya, Probit and GCV use it, so it goes to the numerics package with FastGaussQuadrature, over means and covariances only (Phase 6 entry brief, `DISCUSSION.md` §3.40) |
 | `huge` | `const` | `src/ReactiveMP.jl` | `engine` | re-exported from TinyHugeNumbers by the engine; the rule packages take it from BayesBase |
 | `is_clamped` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |

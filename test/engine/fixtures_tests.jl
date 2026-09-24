@@ -651,3 +651,58 @@ end
     using BIFMMessagePassingRules
     @test_throws BIFMMessagePassingRules.BIFMFreeEnergyError BIFMFixture.bifm(free_energy = true)
 end
+
+@testmodule FlowFixture begin
+    # The RxInferExamples *Invertible Neural Network Tutorial*'s first model, as `flow_meanfield` in
+    # the recorder: x[k] ~ N(z_μ, z_Λ⁻¹), y_lat[k] = f(x[k]), y[k] ~ N(y_lat[k], 0.01 I).
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, FlowMessagePassingRules
+    import MessagePassingRulesApproximations as A
+    import ..EngineHarness as H
+
+    const MODEL = compile(
+        FlowModel((InputLayer(2), AdditiveCouplingLayer(PlanarFlow(); permute = false), PermutationLayer(PermutationMatrix([2, 1])), AdditiveCouplingLayer(PlanarFlow(); permute = false))),
+        [0.3, -0.2, 0.5, 0.1, 0.4, -0.3],
+    )
+    const Y = [[1.2, 0.3], [0.8, -0.4], [1.5, 0.9], [0.2, 0.1]]
+    const I2 = [1.0 0.0; 0.0 1.0]
+
+    function run(id, method; posteriors = [:z_μ, :z_Λ, :x], iterations = 5)
+        graph = H.Graph()
+        z_μ, z_Λ = H.random!(graph), H.random!(graph)
+        H.node!(graph, MvNormalMeanCovariance, [(:out, z_μ), (:μ, H.constant!(graph, [0.0, 0.0])), (:Σ, H.constant!(graph, 100 * I2))])
+        H.node!(graph, Wishart, [(:out, z_Λ), (:ν, H.constant!(graph, 3.0)), (:S, H.constant!(graph, I2))])
+        x, y_lat, y = [H.random!(graph) for _ in 1:4], [H.random!(graph) for _ in 1:4], [H.data!(graph) for _ in 1:4]
+        for k in 1:4
+            H.node!(graph, MvNormalMeanPrecision, [(:out, x[k]), (:μ, z_μ), (:Λ, z_Λ)]; factorisation = ((:out,), (:μ,), (:Λ,)))
+            H.node!(graph, Flow, [(:out, y_lat[k]), (:in, x[k])]; algorithm = FlowApproximation(MODEL; method))
+            H.node!(graph, MvNormalMeanCovariance, [(:out, y[k]), (:μ, y_lat[k]), (:Σ, H.constant!(graph, 0.01 * I2))])
+        end
+        variables = (; z_μ, z_Λ, x)
+        return H.run(
+            graph; id, data = y .=> Y, iterations, posteriors = map(name -> name => variables[name], posteriors),
+            initial_marginals = [z_μ => MvNormalMeanCovariance([0.0, 0.0], 100 * I2), z_Λ => Wishart(3.0, I2)],
+        )
+    end
+end
+
+# Every posterior and rule call agrees with v6. The free energy agrees once the posteriors settle,
+# not along the way: a single-input deterministic node's entropy term is `in`'s own marginal, as
+# current as its messages, where v6 recomputed it from its marginal rule only once both of the
+# node's messages had refreshed. Run for 40 iterations, both engines reach the same value, v6's
+# given here as recorded in 6.5.0.
+@testitem "engine:fixture:flow_meanfield" tags = [:engine] setup = [EngineHarness, FlowFixture] begin
+    using MessagePassingRulesTestUtils
+    import MessagePassingRulesApproximations as A
+    strip(t) = EngineTrajectory(t.id; description = t.description, free_energy = Float64[], posteriors = t.posteriors, trace = t.trace)
+    # Posteriors and rule calls exactly; the free energy along the way differs (see above).
+    @test compare_engine_trajectory(strip(FlowFixture.run("flow_meanfield", A.Linearization())), strip(EngineHarness.fixture("flow_meanfield")); atol = 1.0e-9) === :agree
+    @test last(FlowFixture.run("flow_meanfield", A.Linearization(); iterations = 40).free_energy) ≈ 14.971494010931867 atol = 1.0e-9
+end
+
+@testitem "engine:fixture:flow_meanfield_unscented" tags = [:engine] setup = [EngineHarness, FlowFixture] begin
+    using MessagePassingRulesTestUtils
+    import MessagePassingRulesApproximations as A
+    strip(t) = EngineTrajectory(t.id; description = t.description, free_energy = Float64[], posteriors = t.posteriors, trace = t.trace)
+    @test compare_engine_trajectory(strip(FlowFixture.run("flow_meanfield_unscented", A.Unscented(2))), strip(EngineHarness.fixture("flow_meanfield_unscented")); atol = 1.0e-9) === :agree
+    @test last(FlowFixture.run("flow_meanfield_unscented", A.Unscented(2); iterations = 40).free_energy) ≈ 14.977626369022019 atol = 1.0e-8
+end

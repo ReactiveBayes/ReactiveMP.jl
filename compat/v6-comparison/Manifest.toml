@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "5b891eecfd602b4d3415b806181e59e7d7d7637a"
+project_hash = "72022031383144420158e0477335ed5cd7cd5ea4"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -540,6 +540,12 @@ git-tree-sha1 = "befa1ad59c77643dec6fc20d71fd6f5c3afcdadd"
 registries = "General"
 uuid = "4130a065-6d82-41fe-881e-7a5c65156f7d"
 version = "0.1.1"
+
+[[deps.FlowMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "Random", "TupleTools"]
+path = "../../lib/FlowMessagePassingRules"
+uuid = "adabaeda-8474-4dd2-bb94-9124d4d2b701"
+version = "0.1.0-DEV"
 
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]

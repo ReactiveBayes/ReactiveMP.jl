@@ -1,0 +1,1043 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "As flow_meanfield, with FlowMeta(model, Unscented(2))."
+free_energy = [42.24878474300528, 27.778472252672863, 19.103158899054993, 15.644759735795226, 15.09060811003631]
+id = "flow_meanfield_unscented"
+
+    [[trajectory.posteriors.x]]
+    params = [[136.9307418910163, 126.35757674411515], [[494.34990325809815, 304.3731097197425], [304.3731097197425, 209.47618772577033]]]
+    type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.posteriors.x]]
+    params = [[-42.05290763087202, 13.122025346046051], [[496.4202891117311, 305.29221249292544], [305.29221249292544, 209.73678267165852]]]
+    type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.posteriors.x]]
+    params = [[285.0407618994, 218.67554923121187], [[491.91931513686575, 303.1833011442273], [303.1833011442273, 209.0348323871855]]]
+    type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.posteriors.x]]
+    params = [[2.1036111662063988, 6.446777188560842], [[489.4822647716, 302.6012507981559], [302.6012507981559, 209.35073906741374]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [trajectory.posteriors."z_Λ"]
+    params = [7.0, [[0.5755042777106857, 0.17315917222200589], [0.17315917222200589, 0.30669752386685534]]]
+    type = "Wishart"
+
+    [trajectory.posteriors."z_μ"]
+    params = [[-4.29288143524839, 9.130817933089093], [[16.124119775899196, 4.848456822216165], [4.848456822216165, 8.597530668271949]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[3.0, 0.0], [0.0, 3.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[3.0, 0.0], [0.0, 3.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[3.0, 0.0], [0.0, 3.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[3.0, 0.0], [0.0, 3.0]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.2, 0.3], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.9177804974315222, 1.9397284910664894], [[0.02078963256687831, -0.030369432080437374], [-0.030369432080437374, 0.049173688336953736]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.13718142326251836, 0.11544770075852284], [[0.6359551841162907, 0.9775284674170601], [0.9775284674170601, 1.6772964889680488]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, -0.4], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-1.2019965351792052, 1.8132755658589303], [[0.020815667310841005, -0.030461306411055544], [-0.030461306411055544, 0.04938066894392922]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.13718142326251836, 0.11544770075852284], [[0.6359551841162907, 0.9775284674170601], [0.9775284674170601, 1.6772964889680488]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.5, 0.9], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.6290886067145038, 1.962634515017271], [[0.020745512818218518, -0.030250473963113464], [-0.030250473963113464, 0.048930666050673276]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.13718142326251836, 0.11544770075852284], [[0.6359551841162907, 0.9775284674170601], [0.9775284674170601, 1.6772964889680488]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.2, 0.1], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.07838121266104281, 0.13616605722927488], [[0.020777033124584884, -0.030192166073591032], [-0.030192166073591032, 0.04868679427778735]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Wishart"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [3.0, [[1.0, -0.0], [-0.0, 1.0]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.00994755542037209, 0.00011690940145224749], [0.00011690940145224749, 0.009737789887432341]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.009901054777889036, 0.00014792372557457666], [0.00014792372557457666, 0.009778374660060556]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.009978728940189857, 7.544102691367524e-5], [7.544102691367524e-5, 0.009723538426787645]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.009997847903880955, 3.2232044316234167e-6], [3.2232044316234167e-6, 0.00999465917628803]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanCovariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[100.0, 0.0], [0.0, 100.0]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.723863857111433, 1.6328924544114296], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-1.0023685513956309, 1.499531581347817], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.4490528891750497, 1.675876994187355], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.0640839358812202, 0.11374754827722225], [[0.01737949872855517, 0.00015067846726545952], [0.00015067846726545952, 0.017120427277240443]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.11232120441854931, 0.2508711593764019], [[109.81606624589585, 168.07876200697865], [168.07876200697865, 288.4364626650913]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.2, 0.3], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.9177804974315222, 1.9397284910664894], [[0.02078963256687831, -0.030369432080437374], [-0.030369432080437374, 0.049173688336953736]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.11232120441854931, 0.2508711593764019], [[109.81606624589585, 168.07876200697865], [168.07876200697865, 288.4364626650913]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, -0.4], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-1.2019965351792052, 1.8132755658589303], [[0.020815667310841005, -0.030461306411055544], [-0.030461306411055544, 0.04938066894392922]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.11232120441854931, 0.2508711593764019], [[109.81606624589585, 168.07876200697865], [168.07876200697865, 288.4364626650913]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.5, 0.9], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.6290886067145038, 1.962634515017271], [[0.020745512818218518, -0.030250473963113464], [-0.030250473963113464, 0.048930666050673276]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.11232120441854931, 0.2508711593764019], [[109.81606624589585, 168.07876200697865], [168.07876200697865, 288.4364626650913]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.2, 0.1], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.07838121266104281, 0.13616605722927488], [[0.020777033124584884, -0.030192166073591032], [-0.030192166073591032, 0.04868679427778735]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.07835529598303637, 0.0028768135517280883], [0.0028768135517280883, 0.07396650595550798]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.07649447515466141, 0.0037437985790896395], [0.0037437985790896395, 0.07516563079555276]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.07928901863902968, 0.0014638653315558487], [0.0014638653315558487, 0.07366961073006723]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.07845459060013343, 0.002932489510835092], [0.002932489510835092, 0.07326537141955668]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.4882452592276416, 1.0731726304160418], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.4882452592276416, 1.0731726304160418], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.4882452592276416, 1.0731726304160418], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.4882452592276416, 1.0731726304160418], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.9164521880267388, 1.937629198840128], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-1.20062885852046, 1.8111260376532001], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.6278557902574967, 1.960675508176884], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.0782834215029818, 0.1360128011027549], [[0.1340965985813928, 0.004649836196305938], [0.004649836196305938, 0.12714768310943333]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.7113189935334958, 0.22193165808130288], [[14.195714031945073, 21.637632679849105], [21.637632679849105, 37.11896910083507]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.2, 0.3], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.9177804974315222, 1.9397284910664894], [[0.02078963256687831, -0.030369432080437374], [-0.030369432080437374, 0.049173688336953736]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.7113189935334958, 0.22193165808130288], [[14.195714031945073, 21.637632679849105], [21.637632679849105, 37.11896910083507]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, -0.4], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-1.2019965351792052, 1.8132755658589303], [[0.020815667310841005, -0.030461306411055544], [-0.030461306411055544, 0.04938066894392922]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.7113189935334958, 0.22193165808130288], [[14.195714031945073, 21.637632679849105], [21.637632679849105, 37.11896910083507]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.5, 0.9], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.6290886067145038, 1.962634515017271], [[0.020745512818218518, -0.030250473963113464], [-0.030250473963113464, 0.048930666050673276]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.7113189935334958, 0.22193165808130288], [[14.195714031945073, 21.637632679849105], [21.637632679849105, 37.11896910083507]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.2, 0.1], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.07838121266104281, 0.13616605722927488], [[0.020777033124584884, -0.030192166073591032], [-0.030192166073591032, 0.04868679427778735]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.5310719606809331, 0.049214645258270164], [0.049214645258270164, 0.45307619922309095]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.48301530924180897, 0.06487895369874065], [0.06487895369874065, 0.48063034701792845]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.5388508780139452, 0.014551066078082832], [0.014551066078082832, 0.44408551281183956]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[0.497305529372651, 0.12029727110882579], [0.12029727110882579, 0.3037235650251186]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.6919111637095381, 1.4326831153477813], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.6919111637095381, 1.4326831153477813], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.6919111637095381, 1.4326831153477813], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.6919111637095381, 1.4326831153477813], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.9134188084731274, 1.9328406900405237], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-1.1973501018484842, 1.8060442322427195], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.6254131122956554, 1.9567365627952293], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.08293323036702195, 0.14334077920650307], [[0.7856848358838636, 0.10013018919249171], [0.10013018919249171, 0.6353286451003078]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9039167873852421, 0.21570322035404388], [[2.4083870292081873, 3.5453565389869164], [3.5453565389869164, 6.067965781870374]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.2, 0.3], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.9177804974315222, 1.9397284910664894], [[0.02078963256687831, -0.030369432080437374], [-0.030369432080437374, 0.049173688336953736]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9039167873852421, 0.21570322035404388], [[2.4083870292081873, 3.5453565389869164], [3.5453565389869164, 6.067965781870374]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, -0.4], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-1.2019965351792052, 1.8132755658589303], [[0.020815667310841005, -0.030461306411055544], [-0.030461306411055544, 0.04938066894392922]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9039167873852421, 0.21570322035404388], [[2.4083870292081873, 3.5453565389869164], [3.5453565389869164, 6.067965781870374]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.5, 0.9], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.6290886067145038, 1.962634515017271], [[0.020745512818218518, -0.030250473963113464], [-0.030250473963113464, 0.048930666050673276]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9039167873852421, 0.21570322035404388], [[2.4083870292081873, 3.5453565389869164], [3.5453565389869164, 6.067965781870374]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.2, 0.1], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.07838121266104281, 0.13616605722927488], [[0.020777033124584884, -0.030192166073591032], [-0.030192166073591032, 0.04868679427778735]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[2.9482650575129683, 0.7778833459913489], [0.7778833459913489, 1.7055102103546553]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[2.1100311744170117, 0.9211433918792132], [0.9211433918792132, 2.178149682197653]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[2.8750664472757856, 0.16554830888330704], [0.16554830888330704, 1.4526712395696395]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[2.788852863067958, 1.1290331345318143], [1.1290331345318143, 0.9417170515347225]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7017562273222586, 1.4535445390568746], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7017562273222586, 1.4535445390568746], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7017562273222586, 1.4535445390568746], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7017562273222586, 1.4535445390568746], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.9065075109489745, 1.9218693495720054], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-1.1891483175555384, 1.793611266285725], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.6211687760700252, 1.949469254757117], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.1075411473014849, 0.18208236799120106], [[2.615515908505342, 0.6803304452141752], [0.6803304452141752, 1.5809173233152953]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9193427241698373, 0.22352940863493131], [[0.7529504952021313, 1.0106028841376589], [1.0106028841376589, 1.7181042699642912]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.2, 0.3], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.9177804974315222, 1.9397284910664894], [[0.02078963256687831, -0.030369432080437374], [-0.030369432080437374, 0.049173688336953736]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9193427241698373, 0.22352940863493131], [[0.7529504952021313, 1.0106028841376589], [1.0106028841376589, 1.7181042699642912]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, -0.4], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-1.2019965351792052, 1.8132755658589303], [[0.020815667310841005, -0.030461306411055544], [-0.030461306411055544, 0.04938066894392922]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9193427241698373, 0.22352940863493131], [[0.7529504952021313, 1.0106028841376589], [1.0106028841376589, 1.7181042699642912]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.5, 0.9], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.6290886067145038, 1.962634515017271], [[0.020745512818218518, -0.030250473963113464], [-0.030250473963113464, 0.048930666050673276]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9193427241698373, 0.22352940863493131], [[0.7529504952021313, 1.0106028841376589], [1.0106028841376589, 1.7181042699642912]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanCovariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.2, 0.1], [[0.01, 0.0], [0.0, 0.01]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[-0.07838121266104281, 0.13616605722927488], [[0.020777033124584884, -0.030192166073591032], [-0.030192166073591032, 0.04868679427778735]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[9.702420053755556, 3.6644678990749417], [3.6644678990749417, 3.7529735773684982]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[5.128725992996317, 3.5365978591316143], [3.5365978591316143, 5.544310145053537]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[7.550958123762453, 0.5200643647334261], [0.5200643647334261, 2.2413527309887007]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":Λ"
+
+        [trajectory.trace.result]
+        params = [4.0, [[9.490939138391614, 4.218754683838314], [4.218754683838314, 2.4532036773249533]]]
+        type = "WishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7046573033938758, 1.4588339533562558], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7046573033938758, 1.4588339533562558], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7046573033938758, 1.4588339533562558], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[-0.7046573033938758, 1.4588339533562558], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.8959428178366464, 1.9050302694191654], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-1.175168499015694, 1.7731358883516948], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.6156243170675278, 1.9390192405524322], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanPrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[-0.1384940635266875, 0.2309772311063335], [[4.0285299439747995, 1.2121142055540413], [1.2121142055540413, 2.1468826670679872]]]
+        type = "MvNormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "Flow"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.9224563972093165, 0.22412007056118455], [[0.5123559973109332, 0.6507482069770013], [0.6507482069770013, 1.098374231140589]]]
+        type = "MvNormalMeanCovariance"
