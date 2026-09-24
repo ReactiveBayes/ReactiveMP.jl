@@ -26,8 +26,8 @@ message rules, 22 marginal rules and 19 average energies in 13 nodes and 10 pack
 Delta's Linearization and `CVIProjection`, and orders it in ten steps, each briefed before it
 starts. Step 1 is done: `Linearization`, Gauss–Hermite cubature and `approximate_meancov` are in
 `MessagePassingRulesApproximations`, the algebra helpers in Standard, and the deleted methods
-have left `legacy/v6/`. Step 2 needs its brief: Delta's Linearization rules, the `CVIProjection`
-extension, #11's follow-ups and the Delta v6 comparison.
+have left `legacy/v6/`. Step 2 is briefed (§ Phase 6, *Step 2 brief*): Delta's Linearization
+rules, #11's follow-ups, the Delta v6 comparison, a fixture, and the `CVIProjection` extension.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -2240,6 +2240,65 @@ theirs; the algebra helpers in Standard; the deletions. A commit each.
   `cvilinearize(v::AbstractVector) = v` and `cvilinearize(m::AbstractMatrix) = eachcol(m)`,
   which step 2 writes into the extension. `Optim` appears only in prose and in the pinned 6.5.0
   environment's manifest.
+
+### Step 2 brief — Delta
+
+**Scope, surveyed** (`legacy/v6/src/rules/delta/linearization/`, `nodes/predefined/delta/`,
+`src/approximations/cvi_projection.jl`, `ext/ReactiveMPProjectionExt/`, their tests):
+- **Linearization**: 4 message rules and 1 marginal rule, the same four targets and the same
+  shapes as the Unscented rules the package has since Phase 4.5 case (d). Only the forward
+  statistics differ: the unscented transform's `(μ, Σ, C)` there, the linear map's
+  `(Aμ + b, AΣAᵀ, ΣAᵀ)` here; the division towards an input without an inverse is the same code.
+  v6's tables: 7 cases towards `out`, 8 towards `in`, 4 for the joint, all with promotion checks.
+- **`CVIProjection`**: the method type (an RNG, sample counts, projection parameters, a mutable
+  proposal and a sampling strategy, `FullSampling` or `MeanBased`), and in the extension on
+  ExponentialFamilyProjection 3: `DivisionOf`, a lazy quotient with its products, and 2 message
+  rules and 2 marginal rules. Its layout is `:out` from `m[:out]`, `q[:out]` and `q[(:in,)]`, the
+  one Delta layout reading its own edge; towards an input and the joint as the default one.
+  It ignores a given inverse, with a warning. v6's tests: about 13 rule cases, JET checks.
+- **#11's two follow-ups**: the positional `DeltaApproximation(method, inverse)` skips the
+  compatibility guard, and the guard's error names neither the method to use nor the package.
+- **No Delta rule-by-rule comparison exists**; `V6Oracle` calls rules with `node = nothing`, and
+  v6's Delta rules read the function from a real `DeltaFnNode`.
+
+**Decided (user, entry brief):** `CVIProjection` is a weakdep extension of the Delta package on
+ExponentialFamilyProjection; its generator is `ctx.rng`, and its mutable proposal makes it
+`pure = false`; the method set is `{Unscented, Linearization}` and `CVIProjection` with the
+extension; `cvilinearize` moves into the extension.
+
+**Defaults for the step**, open to the user's correction:
+- **One set of rules for both Gaussian methods.** The four rules are typed on
+  `DeltaApproximation{<:Union{Unscented, Linearization}}`, and the method enters through two
+  helpers: `approximate_normal`, gaining a Linearization method (v6's `approximate` over normals,
+  through `joint_mean_cov` instead of a `JointNormal`), and a new `forward_statistics(method, f,
+  μs, Σs)`. The Unscented tables stay, and v6's Linearization tables are added with their
+  promotion checks.
+- **#11:** the guard moves into an inner constructor, so no constructor skips it, and its error
+  names the methods the node takes and, for `CVIProjection` without the extension, the package
+  to load: `is_delta_node_compatible` stays the opt-in, and a method may add a hint.
+- **`CVIProjection`** is defined in the Delta package (INVENTORY: `node:Delta`) without its rules;
+  `ext/DeltaMessagePassingRulesProjectionExt` holds `DivisionOf`, the rules, the compatibility
+  opt-in and `cvilinearize`. Its algorithm declares the layout above as dependencies, with no
+  engine change: a target may read its own edge, and a deterministic node's `q[:out]` is the
+  variable's marginal. The `RNG` field goes, the rules declaring `ctx = (:rng,)`; the proposal
+  stays, as the algorithm's state. v6's rule tests are ported with a `StableRNG`, the JET checks
+  dropped. An engine test checks that a `DivisionOf` message forms the right marginal, since the
+  engine's product, not the rule, divides it out.
+- **The Delta v6 comparison**, `compare_delta.jl`: `V6Oracle` builds a v6 `DeltaFnNode` with a
+  `DeltaMeta` for each case, and the new side passes the function through `RuleContext(node =
+  …)`; Delta joins the comparison environment. Cases per rule, for both Gaussian methods;
+  `CVIProjection` is sampled, and is checked by its tests instead.
+- **A `delta_linearization` engine fixture**, recorded from RxInfer 5.5.2 as `delta_unscented`
+  was, and its `@testitem`.
+- **The guide**: the Delta section says the node takes `Unscented`, `Linearization` and, with
+  ExponentialFamilyProjection, `CVIProjection`, and that the other v6 methods are gone, as the
+  breaking entry the exit criterion asks for.
+
+**Order:** Linearization's rules and tables; #11; the comparison; the fixture; `CVIProjection`;
+the guide, which closes the step. A commit each.
+
+**Progress:** not started.
+
 
 **Exit criteria**
 - [x] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
