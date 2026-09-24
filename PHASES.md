@@ -2311,6 +2311,12 @@ the guide, which closes the step. A commit each.
   towards an input with and without an inverse, and the joint, 102 checks, all agreeing.
   `V6Oracle` takes the v6 node a rule reads, and builds a `DeltaFnNode` as v6's `@call_rule`
   did (`v6_delta_node`); Delta joins the comparison environment.
+- *The fixture — done.* `delta_linearization`, `x ~ NMV(0.5, 1)`, `z := x³ - x` by Linearization,
+  `y ~ NMV(z, 0.1)` observed, recorded from RxInfer 5.5.2, agrees call by call, posteriors and
+  free energy included (`engine:fixture:delta_linearization`). *Found:* with two random inputs,
+  v6 computes the first input's prior message once per subscriber, the same value three times
+  where the engine computes it once, so a call-by-call comparison cannot match it; the values
+  agree. Recorded for Phase 7's checks on scheduling, and the fixture has one input.
 
 
 **Exit criteria**

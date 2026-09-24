@@ -129,6 +129,17 @@ scaled_square_plus(c, x, s) = c * x^2 + s
     y ~ NormalMeanVariance(z, 0.1)
 end
 
+# Linearization of a cubic. One random input: with two, v6 computes the first input's prior
+# message once for each of its subscribers, the same value three times, which a call-by-call
+# comparison cannot match.
+cube_minus(x) = x^3 - x
+
+@model function delta_linearization(y)
+    x ~ NormalMeanVariance(0.5, 1.0)
+    z := cube_minus(x)
+    y ~ NormalMeanVariance(z, 0.1)
+end
+
 # Belief propagation through deterministic nodes under the default scheme (Phase 5, step 4): a
 # tree of the four logic nodes, closed by a Bernoulli factor on its last output.
 @model function logic_bp(p)
@@ -208,6 +219,19 @@ const MODELS = [
             meta = @meta(
                 begin
                     square_plus_one() -> DeltaMeta(method = Unscented())
+                end
+            ),
+            initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
+        ),
+    ),
+    (
+        "delta_linearization",
+        "x ~ NMV(0.5, 1), z := x^3 - x (Linearization), y ~ NMV(z, 0.1) observed at 2.0.",
+        () -> record(
+            "delta_linearization"; description = "", model = delta_linearization(), data = (y = 2.0,), iterations = 3, returnvars = (:x, :z),
+            meta = @meta(
+                begin
+                    cube_minus() -> DeltaMeta(method = Linearization())
                 end
             ),
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),

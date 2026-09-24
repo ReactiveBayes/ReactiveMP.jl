@@ -185,6 +185,7 @@ end
 @testmodule DeltaFunctions begin
     square_plus_one(x) = x^2 + 1.0
     scaled_square_plus(c, x, s) = c * x^2 + s
+    cube_minus(x) = x^3 - x
 end
 
 @testitem "engine:fixture:delta_unscented" tags = [:engine] setup = [EngineHarness, DeltaFunctions] begin
@@ -206,6 +207,25 @@ end
         posteriors = [:z => z, :x => x], initial_marginals = [z => NormalMeanVariance(1.0, 1.0)],
     )
     @test compare_engine_trajectory(trajectory, H.fixture("delta_unscented"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:delta_linearization" tags = [:engine] setup = [EngineHarness, DeltaFunctions] begin
+    using ExponentialFamily, StandardMessagePassingRules, DeltaMessagePassingRules, MessagePassingRulesApproximations, MessagePassingRulesTestUtils
+    H = EngineHarness
+    f = DeltaFunctions.cube_minus
+
+    graph = H.Graph()
+    x, z = H.random!(graph), H.random!(graph)
+    y = H.data!(graph)
+    H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, DeltaFn{typeof(f)}, [(:out, z), ((:in, 1), x)]; algorithm = DeltaApproximation(method = Linearization()), nodefn = f)
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, z), (:v, H.constant!(graph, 0.1))])
+
+    trajectory = H.run(
+        graph; id = "delta_linearization", data = [y => 2.0], iterations = 3,
+        posteriors = [:z => z, :x => x], initial_marginals = [z => NormalMeanVariance(1.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("delta_linearization"); atol = 1.0e-9) === :agree
 end
 
 @testitem "engine:fixture:delta_unscented_static" tags = [:engine] setup = [EngineHarness, DeltaFunctions] begin
