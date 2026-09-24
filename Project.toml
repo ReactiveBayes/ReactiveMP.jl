@@ -18,6 +18,7 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 # The lib packages are unregistered; `[sources]` (Julia 1.11+) resolves them by path.
 [sources]
 DeltaMessagePassingRules = {path = "lib/DeltaMessagePassingRules"}
+GCVMessagePassingRules = {path = "lib/GCVMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassingRules"}
 MessagePassingRulesApproximations = {path = "lib/MessagePassingRulesApproximations"}
 MessagePassingRulesBase = {path = "lib/MessagePassingRulesBase"}
@@ -45,6 +46,7 @@ DeltaMessagePassingRules = "0.1"
 Documenter = "1"
 ExponentialFamily = "2.5.0"
 ExponentialFamilyProjection = "3"
+GCVMessagePassingRules = "0.1"
 GaussianCouplingMessagePassingRules = "0.1"
 ProbitMessagePassingRules = "0.1"
 InteractiveUtils = "1.11"
@@ -68,6 +70,7 @@ DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b"
+GCVMessagePassingRules = "2bb838d1-ae36-49a2-8c64-82a0acccfa93"
 GaussianCouplingMessagePassingRules = "a57ce80c-d854-4eb3-973d-f0d0550df039"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -84,4 +87,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "BenchmarkTools", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "ProbitMessagePassingRules", "REPL", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BenchmarkTools", "DeltaMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "ProbitMessagePassingRules", "REPL", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]

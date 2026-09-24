@@ -361,3 +361,27 @@ end
     trajectory = H.run(graph; id = "probit_ep", data = [y1 => 1.0, y2 => 0.0], iterations = 5, posteriors = [:w => w])
     @test compare_engine_trajectory(trajectory, H.fixture("probit_ep"); atol = 1.0e-9) === :agree
 end
+
+@testitem "engine:fixture:gcv_meanfield" tags = [:engine] setup = [EngineHarness] begin
+    # Mean-field through GCV, y's variance about x being exp(z - 0.5), and y observed through a
+    # narrow normal, so q(y) is a normal and the node's energy applies. The message towards z is an
+    # ExponentialLinearQuadratic, which the product at z turns into a normal by cubature.
+    using ExponentialFamily, StandardMessagePassingRules, GCVMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    meanfield(interfaces) = Tuple((first(i),) for i in interfaces)
+    node!(graph, fform, interfaces) = H.node!(graph, fform, interfaces; factorisation = meanfield(interfaces))
+
+    graph = H.Graph()
+    x, y, z = H.random!(graph), H.random!(graph), H.random!(graph)
+    o = H.data!(graph)
+    node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))])
+    node!(graph, NormalMeanVariance, [(:out, z), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+    node!(graph, GCV, [(:y, y), (:x, x), (:z, z), (:κ, H.constant!(graph, 1.0)), (:ω, H.constant!(graph, -0.5))])
+    node!(graph, NormalMeanVariance, [(:out, o), (:μ, y), (:v, H.constant!(graph, 0.1))])
+
+    trajectory = H.run(
+        graph; id = "gcv_meanfield", data = [o => 2.0], iterations = 5, posteriors = [:x => x, :y => y, :z => z],
+        initial_marginals = [x => NormalMeanVariance(0.5, 1.0), y => NormalMeanVariance(2.0, 1.0), z => NormalMeanVariance(0.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("gcv_meanfield"); atol = 1.0e-9) === :agree
+end

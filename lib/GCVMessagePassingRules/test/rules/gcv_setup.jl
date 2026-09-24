@@ -1,13 +1,11 @@
 @testmodule GCVRulesTestUtils begin
-    using ReactiveMP, BayesBase, ExponentialFamily, Distributions
-
-    import ReactiveMP:
-        ExponentialLinearQuadratic, GCVMetadata, GaussHermiteCubature
+    using GCVMessagePassingRules, BayesBase, ExponentialFamily, Distributions
+    using MessagePassingRulesApproximations: GaussHermiteCubature
 
     # The `GCV` node is `p(y | x, z, κ, ω) = N(y | x, exp(κz + ω))` -- the *variance* is
     # `exp(κz + ω)`, so the precision is `exp(-(κz + ω))`. Everything in these test files is
     # derived from that single statement, which is pinned independently by the node's own
-    # `@average_energy`:
+    # average energy:
     #
     #     -log p = ½[log2π + (κz + ω) + (y - x)²·e^{-(κz + ω)}]
     #
@@ -37,8 +35,7 @@
     end
 
     # ⟨(y - x)²⟩ under a factorized q(y)q(x)
-    expected_psi(q_y, q_x) =
-    let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
+    expected_psi(q_y, q_x) = let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
         (m_y - m_x)^2 + v_y + v_x
     end
 
@@ -53,12 +50,17 @@
     # A joint q(y, x) with zero cross-covariance, i.e. the factorized case embedded in the
     # structured parameterisation. Every structured rule must then agree exactly with its
     # mean-field sibling.
-    block_diagonal_joint(q_y, q_x) =
-    let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
+    block_diagonal_joint(q_y, q_x) = let (m_y, v_y) = mean_var(q_y), (m_x, v_x) = mean_var(q_x)
         MvNormalMeanCovariance([m_y, m_x], [v_y 0.0; 0.0 v_x])
     end
 
-    default_meta() = GCVMetadata(GaussHermiteCubature(20))
+    default_algorithm() = GCVApproximation(method = GaussHermiteCubature(20))
+
+    # The ExponentialLinearQuadratic the `:y`, `:x` and marginal tests take as an incoming message.
+    test_elq() = ExponentialLinearQuadratic(GaussHermiteCubature(20), 1.0, 1.0, -1.0, 0.0)
+
+    # A 2×2 matrix is positive definite iff its leading minors are positive.
+    isposdef2(W) = W[1, 1] > 0 && W[1, 1] * W[2, 2] - W[1, 2] * W[2, 1] > 0
 
     # A spread of parameter sets used across the rule test files. `z` and `κ` deliberately
     # get means away from 0 and 1 and non-zero variances -- degenerate choices such as

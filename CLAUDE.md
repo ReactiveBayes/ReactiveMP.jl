@@ -79,8 +79,9 @@ make test-approximations                   # lib/MessagePassingRulesApproximatio
 make test-delta                            # lib/DeltaMessagePassingRules
 make test-gaussian-coupling                # lib/GaussianCouplingMessagePassingRules
 make test-probit                           # lib/ProbitMessagePassingRules
+make test-gcv                              # lib/GCVMessagePassingRules
 # the v6 oracle environment: comparisons and engine fixtures
-for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
+for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
@@ -157,8 +158,8 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation`, its Unscented and
   Linearization rules, and `CVIProjection`, whose rules are an extension on
   ExponentialFamilyProjection) and the Phase 6 node packages, one per node, on Delta's template:
-  `GaussianCouplingMessagePassingRules` (`make test-gaussian-coupling`) and
-  `ProbitMessagePassingRules` (`make test-probit`). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
+  `GaussianCouplingMessagePassingRules` (`make test-gaussian-coupling`),
+  `ProbitMessagePassingRules` (`make test-probit`) and `GCVMessagePassingRules` (`make test-gcv`). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
 - The Standard and Delta suites end with a **rule-coverage gate**: after an unfiltered run
   (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
   find every rule selected by some test. A table case, a verification, a derivative check or

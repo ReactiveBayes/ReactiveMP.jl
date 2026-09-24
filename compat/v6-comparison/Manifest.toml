@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "b5c2ff00581bc0daa5d767c2b8d8aea18aa67b8f"
+project_hash = "ce742e3e108c42b24cc4493d5b93cb4069344758"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -545,6 +545,12 @@ version = "0.1.2"
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 version = "1.11.0"
+
+[[deps.GCVMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
+path = "../../lib/GCVMessagePassingRules"
+uuid = "2bb838d1-ae36-49a2-8c64-82a0acccfa93"
+version = "0.1.0-DEV"
 
 [[deps.Gamma]]
 git-tree-sha1 = "86f86b6168a016ed88e4ae4e64577b98c3b59e8e"

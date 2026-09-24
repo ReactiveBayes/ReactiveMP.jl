@@ -1,0 +1,218 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "x ~ NMV(0.5, 1), z ~ NMV(0, 1), y ~ GCV(x, z, κ = 1, ω = -0.5), o ~ NMV(y, 0.1) observed at 2; mean-field, the message towards z an ExponentialLinearQuadratic."
+free_energy = [2.1808468345061707, 2.1317744224277115, 2.1271254175856353, 2.1269903331355433, 2.127109448744706]
+id = "gcv_meanfield"
+
+    [trajectory.posteriors.x]
+    params = [4.310726595052282, 2.9986470532183755]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.y]
+    params = [22.84373718576798, 11.981066306386069]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.z]
+    params = [0.12702750845210367, 0.6389959734197437]
+    type = "NormalMeanVariance"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "GCV"
+    target = ":z"
+
+        [trajectory.trace.result]
+        params = [1.0, 7.007065400475545, -1.0, 0.0]
+        type = "ExponentialLinearQuadratic"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "GCV"
+    target = ":x"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.3717347889791618]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GCV"
+    target = ":y"
+
+        [trajectory.trace.result]
+        params = [1.1324484537521278, 1.3717347889791618]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GCV"
+    target = ":z"
+
+        [trajectory.trace.result]
+        params = [1.0, 2.185237304213293, -1.0, 0.0]
+        type = "ExponentialLinearQuadratic"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GCV"
+    target = ":x"
+
+        [trajectory.trace.result]
+        params = [1.9410524536931255, 0.7042683044683462]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "GCV"
+    target = ":y"
+
+        [trajectory.trace.result]
+        params = [1.3455549222589502, 0.7042683044683462]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "GCV"
+    target = ":z"
+
+        [trajectory.trace.result]
+        params = [1.0, 1.3671487080165436, -1.0, 0.0]
+        type = "ExponentialLinearQuadratic"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "GCV"
+    target = ":x"
+
+        [trajectory.trace.result]
+        params = [1.9186285131336034, 0.5606984460066102]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "GCV"
+    target = ":y"
+
+        [trajectory.trace.result]
+        params = [1.4089702861968474, 0.5606984460066102]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "GCV"
+    target = ":z"
+
+        [trajectory.trace.result]
+        params = [1.0, 1.147019733846889, -1.0, 0.0]
+        type = "ExponentialLinearQuadratic"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "GCV"
+    target = ":x"
+
+        [trajectory.trace.result]
+        params = [1.9105447095607007, 0.5183460356954968]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "GCV"
+    target = ":y"
+
+        [trajectory.trace.result]
+        params = [1.4290008182585232, 0.5183460356954968]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "GCV"
+    target = ":z"
+
+        [trajectory.trace.result]
+        params = [1.0, 1.0788047989571081, -1.0, 0.0]
+        type = "ExponentialLinearQuadratic"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "GCV"
+    target = ":x"
+
+        [trajectory.trace.result]
+        params = [1.9076570158488628, 0.504778662267108]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "GCV"
+    target = ":y"
+
+        [trajectory.trace.result]
+        params = [1.4354578524711925, 0.504778662267108]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.1]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "GCV"
+    target = ":z"
+
+        [trajectory.trace.result]
+        params = [1.0, 1.056732108245453, -1.0, 0.0]
+        type = "ExponentialLinearQuadratic"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "GCV"
+    target = ":x"
+
+        [trajectory.trace.result]
+        params = [1.9066530976121852, 0.5003384656584177]
+        type = "NormalMeanVariance"

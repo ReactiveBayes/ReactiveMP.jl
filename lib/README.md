@@ -20,6 +20,7 @@ each of the 231 entities in ReactiveMP is destined to land.
 | `DeltaMessagePassingRules` | 4.5 (`Unscented`), then 6 (`Linearization`, `CVIProjection`) | the Delta node (`INVENTORY.md`'s `node:Delta`, created early in case (d)): `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules. The engine owns the node's function and static inputs |
 | `GaussianCouplingMessagePassingRules` | 6 (step 3) | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
 | `ProbitMessagePassingRules` | 6 (step 3) | the Probit node and its algorithm `ProbitEP`, expectation propagation |
+| `GCVMessagePassingRules` | 6 (step 3) | the GCV node, its `ExponentialLinearQuadratic`, and the normal nodes' rules for it |
 
 There is no shared domain-models package: `GCV`, `Probit`, `SoftDot` and `GaussianCoupling`
 each get their own node package in Phase 6, like the other non-standard nodes
@@ -43,7 +44,7 @@ such as `MessagePassingRulesTestUtils` for a rule package, goes in `[extras]` an
 the same way. Plain `Pkg.test()` then works, and so does every `make test-*` target:
 
 ```bash
-make test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit
+make test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv
 ```
 
 Work targets **Julia 1.13**, where `[sources]` is honoured (1.11+). On the old 1.10 floor it was

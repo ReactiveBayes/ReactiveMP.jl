@@ -140,6 +140,19 @@ cube_minus(x) = x^3 - x
     y ~ NormalMeanVariance(z, 0.1)
 end
 
+# GCV under mean-field: the variance of y about x is exp(z - 0.5), with z unknown, and y itself
+# observed through a narrow normal, so that q(y) is a normal and v6's energy applies.
+@model function gcv_meanfield(o)
+    x ~ NormalMeanVariance(0.5, 1.0)
+    z ~ NormalMeanVariance(0.0, 1.0)
+    y ~ GCV(x, z, 1.0, -0.5)
+    o ~ NormalMeanVariance(y, 0.1)
+end
+
+# v6's ExponentialLinearQuadratic has no `params`, which the fixture encoder reads; the port's
+# defines them as its four coefficients, and so does this, for v6's type only.
+Distributions.params(d::ReactiveMP.ExponentialLinearQuadratic) = (d.a, d.b, d.c, d.d)
+
 # Two Probit outputs of one weight: each rule towards `w` reads the message on its own edge,
 # which the other's message feeds, so they start from Probit's default initial message.
 @model function probit_ep(y)
@@ -250,6 +263,20 @@ const MODELS = [
                 end
             ),
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
+        ),
+    ),
+    (
+        "gcv_meanfield",
+        "x ~ NMV(0.5, 1), z ~ NMV(0, 1), y ~ GCV(x, z, κ = 1, ω = -0.5), o ~ NMV(y, 0.1) observed at 2; mean-field, the message towards z an ExponentialLinearQuadratic.",
+        () -> record(
+            "gcv_meanfield"; description = "", model = gcv_meanfield(), data = (o = 2.0,), iterations = 5, returnvars = (:x, :y, :z), constraints = MeanField(),
+            initialization = @initialization(
+                begin
+                    q(x) = NormalMeanVariance(0.5, 1.0)
+                    q(y) = NormalMeanVariance(2.0, 1.0)
+                    q(z) = NormalMeanVariance(0.0, 1.0)
+                end
+            ),
         ),
     ),
     (

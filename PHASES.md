@@ -73,9 +73,9 @@ when NMV was ported in step 3**, and the comparison declares it.
 
 ```bash
 git switch refactor/rule-node-system-rewrite && git pull
-make test test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit
+make test test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv
 julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit; do
+for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv; do
     julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
 done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
@@ -2421,6 +2421,22 @@ GCV; the guide's entries for the three, which close the step. A commit each.
   the cavity times the EP message and against the closed form. `compare_probit.jl`: 205 checks,
   the underflow cases declared. `probit_ep`, two Probit outputs of one weight, agrees with v6
   call by call, which only the declared initial message makes possible.
+- *GCV — done.* `lib/GCVMessagePassingRules` (`make test-gcv`): the node, `GCVApproximation(;
+  method = GaussHermiteCubature(20))` for `GCVMetadata`, no declared dependencies (the default
+  scheme follows the factorisation), `ExponentialLinearQuadratic` with its moments by cubature and
+  its product with a normal, the 10 message rules, the joint and the two energies; and the 8 rules
+  that let NormalMeanVariance and NormalMeanPrecision take an `ExponentialLinearQuadratic` on
+  `out`, their `@call_rule`s written out with Standard's helpers (`variational_variance`,
+  `coupled_precision`, `promoted_cluster`), and tested for the first time. The v6 tests were
+  ported by a subagent and reviewed: 461 checks. Aqua found an ambiguity v6 also had, between the
+  default constructor and the all-`Integer` one, which is narrowed. *Found:* the product with a
+  normal centres its cubature on the normal, where the doubly exponential factor is poorly
+  resolved, so its variance can be 3.5e-2 off; v6's test asserted 1e-2 for its generator's draws
+  only, and the port's is 5e-2 with that reason, the rule kept as v6's. `compare_gcv.jl`: 85
+  checks, the #669 cases of the normal extension declared, as in Standard. A `gcv_meanfield`
+  fixture, with `y` observed through a narrow normal so that v6's energy applies, agrees with v6
+  call by call, free energy included; `ExponentialLinearQuadratic` gains `params` for the fixture
+  encoder, and the recorder gives v6's the same.
 
 
 
