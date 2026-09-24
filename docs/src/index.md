@@ -14,6 +14,7 @@ The engine is one of a family of packages:
 | `StandardMessagePassingRules` | the rules of the standard nodes: distributions, arithmetic, logic and mixtures |
 | `MessagePassingRulesApproximations` | numerics for propagating moments through functions: the unscented transform, smoothing |
 | `DeltaMessagePassingRules` | the Delta node, for deterministic functions |
+| `GaussianCouplingMessagePassingRules` | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
 | `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
 
 !!! note
@@ -56,6 +57,7 @@ Pages = [
   "packages/standard.md",
   "packages/approximations.md",
   "packages/delta.md",
+  "packages/gaussian-coupling.md",
   "migration-guides/v6-to-v7.md",
   "extra/contributing.md",
   "extra/methods.md",

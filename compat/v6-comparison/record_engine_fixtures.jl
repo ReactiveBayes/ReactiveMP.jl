@@ -140,6 +140,13 @@ cube_minus(x) = x^3 - x
     y ~ NormalMeanVariance(z, 0.1)
 end
 
+# GaussianCoupling's improper message towards `c`, made proper by the observation's likelihood.
+@model function gaussian_coupling(y)
+    x ~ NormalMeanPrecision(0.5, 2.0)
+    c ~ GaussianCoupling(x, 0.5)
+    y ~ NormalMeanVariance(c, 1.0)
+end
+
 # Belief propagation through deterministic nodes under the default scheme (Phase 5, step 4): a
 # tree of the four logic nodes, closed by a Bernoulli factor on its last output.
 @model function logic_bp(p)
@@ -236,6 +243,11 @@ const MODELS = [
             ),
             initialization = @initialization(q(z) = NormalMeanVariance(1.0, 1.0)),
         ),
+    ),
+    (
+        "gaussian_coupling",
+        "x ~ NMP(0.5, 2), c ~ GaussianCoupling(x, 0.5), y ~ NMV(c, 1) observed at 1.5; the message towards c is improper, the likelihood's precision makes c's marginal proper.",
+        () -> record("gaussian_coupling"; description = "", model = gaussian_coupling(), data = (y = 1.5,), iterations = 3, returnvars = (:x, :c)),
     ),
     (
         "logic_bp",

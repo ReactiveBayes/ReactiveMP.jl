@@ -1,9 +1,19 @@
+"""
+    GaussianCouplingMessagePassingRules
+
+The GaussianCoupling node, `φ(out, in, a) = exp(out ⋅ a ⋅ in)`, the pairwise potential of Gaussian
+belief propagation, and its rules under the structured factorisation `q(out, in) q(a)`.
+"""
+module GaussianCouplingMessagePassingRules
+
+using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
+
 export GaussianCoupling
 
 @doc raw"""
     GaussianCoupling
 
-Stochastic factor node representing the pairwise Gaussian coupling (a bilinear interaction)
+A stochastic factor node representing the pairwise Gaussian coupling (a bilinear interaction)
 
 ```math
 \phi(\mathrm{out}, \mathrm{in}, a) = \exp(\mathrm{out} \cdot a \cdot \mathrm{in})
@@ -25,11 +35,8 @@ Shental et al., *Gaussian Belief Propagation for Solving Systems of Linear Equat
 
 Only the structured factorization `q(out, in) q(a)` is supported:
 
-```julia
-@constraints begin
-    q(out, in, a) = q(out, in)q(a)
-end
-```
+`((:out, :in), (:a,))` in `factornode`, as RxInfer's
+`@constraints begin q(out, in, a) = q(out, in)q(a) end`.
 
 When `a` is supplied as a constant — the intended usage, as in
 `x[j] ~ GaussianCoupling(x[i], -A[i, j])` — this factorization is applied automatically, because
@@ -65,10 +72,42 @@ Per Shental et al.:
 """
 struct GaussianCoupling end
 
-@node GaussianCoupling Stochastic [out, in, a]
+@define_factor_node(node = GaussianCoupling, type = Stochastic, interfaces = [:out, :in, :a])
 
-@average_energy GaussianCoupling (q_out_in::Any, q_a::PointMass) = begin
-    # ⟨-log φ⟩ = -E[a] ⋅ E_{q(out, in)}[out ⋅ in] = -E[a] ⋅ (V[1, 2] + m[1] ⋅ m[2])
-    m, V = mean_cov(q_out_in)
-    return -mean(q_a) * (V[1, 2] + m[1] * m[2])
+# ⟨-log φ⟩ = -E[a] E[out ⋅ in] = -E[a] (V[1, 2] + m[1] m[2]), with no normaliser.
+@define_average_energy(
+    node = GaussianCoupling, args = (q[:out, :in]::Any, q[:a]::PointMass),
+    body = (args) -> begin
+        m, V = mean_cov(args.q[:out, :in])
+        -mean(args.q[:a]) * (V[1, 2] + m[1] * m[2])
+    end,
+)
+
+# m(in) ∝ ∫ exp(a ⋅ out ⋅ in) m_out(out) d(out) = exp(a μ_out in + a² v_out in² / 2): improper,
+# with a negative precision, as the factor is; and symmetrically towards `out`.
+coupled_message(a, m) = NormalWeightedMeanPrecision(a * mean(m), -abs2(a) * var(m))
+
+@define_message_update_rule(
+    node = GaussianCoupling, target = :in, args = (m[:out]::UnivariateNormalDistributionsFamily, q[:a]::PointMass),
+    body = (args) -> coupled_message(mean(args.q[:a]), args.m[:out]),
+)
+
+@define_message_update_rule(
+    node = GaussianCoupling, target = :out, args = (m[:in]::UnivariateNormalDistributionsFamily, q[:a]::PointMass),
+    body = (args) -> coupled_message(mean(args.q[:a]), args.m[:in]),
+)
+
+# q(out, in) ∝ m_out(out) m_in(in) exp(a ⋅ out ⋅ in): the factor adds the cross term only; proper
+# when precision(m_out) ⋅ precision(m_in) > a².
+@define_marginal_update_rule(
+    node = GaussianCoupling, target = (:out, :in),
+    args = (m[:out]::UnivariateNormalDistributionsFamily, m[:in]::UnivariateNormalDistributionsFamily, q[:a]::PointMass),
+    body = (args) -> begin
+        a = mean(args.q[:a])
+        ξ = [weightedmean(args.m[:out]), weightedmean(args.m[:in])]
+        W = [precision(args.m[:out]) -a; -a precision(args.m[:in])]
+        MvNormalWeightedMeanPrecision(ξ, W)
+    end,
+)
+
 end

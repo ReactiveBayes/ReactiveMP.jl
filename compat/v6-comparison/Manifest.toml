@@ -2,7 +2,7 @@
 
 julia_version = "1.13.0"
 manifest_format = "2.1"
-project_hash = "2bc9d31d3c0ecd9665979b0de74e930bccaa0288"
+project_hash = "86459a80958b17b4effef0500896b682fd86b812"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -292,6 +292,12 @@ path = "../../lib/DeltaMessagePassingRules"
 uuid = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 version = "0.1.0-DEV"
 
+    [deps.DeltaMessagePassingRules.extensions]
+    DeltaMessagePassingRulesProjectionExt = "ExponentialFamilyProjection"
+
+    [deps.DeltaMessagePassingRules.weakdeps]
+    ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b"
+
 [[deps.Dictionaries]]
 deps = ["Indexing", "Random", "Serialization"]
 git-tree-sha1 = "a55766a9c8f66cf19ffcdbdb1444e249bb4ace33"
@@ -552,6 +558,12 @@ git-tree-sha1 = "eb6f1f48aa994f3018cbd029a17863c6535a266d"
 registries = "General"
 uuid = "d54b0c1a-921d-58e0-8e36-89d8069c0969"
 version = "0.5.8"
+
+[[deps.GaussianCouplingMessagePassingRules]]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesBase"]
+path = "../../lib/GaussianCouplingMessagePassingRules"
+uuid = "a57ce80c-d854-4eb3-973d-f0d0550df039"
+version = "0.1.0-DEV"
 
 [[deps.GraphPPL]]
 deps = ["BitSetTuples", "DataStructures", "Dictionaries", "MacroTools", "MetaGraphsNext", "NamedTupleTools", "Static", "StaticArrays", "TupleTools", "Unrolled"]

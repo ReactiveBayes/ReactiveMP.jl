@@ -4,6 +4,7 @@ DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
+GaussianCouplingMessagePassingRules = "a57ce80c-d854-4eb3-973d-f0d0550df039"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
@@ -17,6 +18,7 @@ StandardMessagePassingRules = "d166223a-7879-43b1-add3-64af0a178e9e"
 # The engine and the lib packages are unregistered; `[sources]` resolves them by path.
 [sources]
 DeltaMessagePassingRules = {path = "../lib/DeltaMessagePassingRules"}
+GaussianCouplingMessagePassingRules = {path = "../lib/GaussianCouplingMessagePassingRules"}
 MessagePassingRulesApproximations = {path = "../lib/MessagePassingRulesApproximations"}
 MessagePassingRulesBase = {path = "../lib/MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "../lib/MessagePassingRulesTestUtils"}

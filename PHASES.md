@@ -73,9 +73,9 @@ when NMV was ported in step 3**, and the comparison declares it.
 
 ```bash
 git switch refactor/rule-node-system-rewrite && git pull
-make test test-base test-testutils test-standard test-approximations test-delta
+make test test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling
 julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-for s in check compare_standard compare_approximations compare_delta; do
+for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling; do
     julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
 done
 julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
@@ -2397,6 +2397,16 @@ GCV; the guide's entries for the three, which close the step. A commit each.
   `getrecent` finds none. Tests: the declaration in the base package, and the seeding, a user's
   value winning and a node without any, in the engine (`nodes_tests.jl`). The dependencies page
   has a section on it.
+- *GaussianCoupling — done.* `lib/GaussianCouplingMessagePassingRules` (`make
+  test-gaussian-coupling`): the node, its two improper messages, its joint and its energy, with
+  v6's tables and node tests, type promotion included, and v6's GaBP solver of `A x = b` by direct
+  calls; the cross-checks against NormalMeanPrecision are written as their closed forms, since the
+  package does not depend on Standard. `compare_gaussian_coupling.jl`: 136 checks, all agreeing.
+  A `gaussian_coupling` fixture, `x ~ NMP(0.5, 2)`, `c ~ GaussianCoupling(x, 0.5)`, `y ~ NMV(c, 1)`
+  observed, agrees in values; v6 computes `x`'s prior message once per subscriber, and orders
+  the node's two messages otherwise within an iteration, so `compare_engine_trajectory` gains
+  `collapse_repeats`, declaring the repeats, and the test declares both. The docs page is
+  *Rule packages › GaussianCoupling*.
 
 
 

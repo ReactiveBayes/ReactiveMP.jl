@@ -100,6 +100,29 @@ end
     @test contains(Recording.failure_text(set), "Normal(:μ)")
     @test_throws ArgumentError compare_engine_trajectory(reference, reference; trace_order = :none)
 
+    # v6 computes a message once per subscriber; declared, a v6 call repeating an earlier one of
+    # its iteration, with the same result, is dropped. A repeat with another result is not.
+    repeated = [two[1], two[1], two[2]]
+    set = Recording.recorded() do
+        compare_engine_trajectory(make(trace = two), make(trace = repeated))
+    end
+    @test !isempty(Recording.failures(set))
+    set = Recording.recorded() do
+        @test compare_engine_trajectory(make(trace = two), make(trace = repeated); collapse_repeats = true) === :agree
+    end
+    @test isempty(Recording.failures(set))
+    differing = [two[1], RuleCallRecord(1, "Normal", ":out", Normal(0.0, 2.0), 0.0), two[2]]
+    set = Recording.recorded() do
+        compare_engine_trajectory(make(trace = two), make(trace = differing); collapse_repeats = true)
+    end
+    @test !isempty(Recording.failures(set))
+    # A repeat in another iteration is a call of its own.
+    later = [two[1], two[2], RuleCallRecord(2, "Normal", ":out", Normal(0.0, 1.0), 0.0)]
+    set = Recording.recorded() do
+        compare_engine_trajectory(make(trace = two), make(trace = later); collapse_repeats = true)
+    end
+    @test !isempty(Recording.failures(set))
+
     set = Recording.recorded() do
         compare_engine_trajectory(make(trace = [RuleCallRecord(1, "Normal", ":out", Normal(0.0, 1.0), -1.0)]), reference)
     end

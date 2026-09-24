@@ -129,7 +129,7 @@ values_agree(a, b; atol, rtol) = encoded_close(encode_fixture_value(a), encode_f
 describe_call(r::RuleCallRecord) = "$(r.node)($(r.target)) in iteration $(r.iteration) → $(repr(encode_fixture_value(r.result)))"
 
 """
-    compare_engine_trajectory(v7, v6; atol = 1e-6, rtol = 0, declared = [], trace_order = :exact)
+    compare_engine_trajectory(v7, v6; atol = 1e-6, rtol = 0, declared = [], trace_order = :exact, collapse_repeats = false)
 
 Compare a v7 run with its recorded v6 [`EngineTrajectory`](@ref) and return the outcome:
 `:agree`, the kind of a matching [`DeclaredDisagreement`](@ref) (looked up by the v6 id), or
@@ -141,8 +141,13 @@ order is part of what an engine must reproduce. `trace_order = :within_iteration
 the order of the calls inside an iteration free: each iteration must make the same calls with
 the same results, in any order. It is for a schedule that is changed deliberately where the
 calls it reorders do not depend on each other; say why where it is used.
+
+`collapse_repeats = true` declares that v6 computed a message once per subscriber where an engine
+shares it: a v6 call that repeats an earlier call of its own iteration, with an agreeing result,
+is dropped before the traces are compared. A repeat with another result stays, and so does one in
+a later iteration.
 """
-function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], trace_order = :exact, source = LineNumberNode(0, :unknown))
+function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], trace_order = :exact, collapse_repeats = false, source = LineNumberNode(0, :unknown))
     trace_order in (:exact, :within_iteration) || throw(ArgumentError("`trace_order` is `:exact` or `:within_iteration`, got $(repr(trace_order))"))
     checks = Tuple{Bool, Any, Function}[]
 
@@ -156,7 +161,8 @@ function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; a
         push!(checks, (ok, :(v7.posteriors[$name] ≈ v6.posteriors[$name]), () -> "`$(v6.id)`: posterior `$name` differs: v7 $(repr(present ? encode_fixture_value(v7.posteriors[name]) : get(v7.posteriors, name, missing))), v6 $(repr(get(v6.posteriors, name, missing)))"))
     end
 
-    mismatch = trace_order === :exact ? first_trace_mismatch(v7.trace, v6.trace; atol, rtol) : first_unmatched_call(v7.trace, v6.trace; atol, rtol)
+    v6_trace = collapse_repeats ? without_repeats(v6.trace; atol, rtol) : v6.trace
+    mismatch = trace_order === :exact ? first_trace_mismatch(v7.trace, v6_trace; atol, rtol) : first_unmatched_call(v7.trace, v6_trace; atol, rtol)
     push!(checks, (mismatch === nothing, :(v7.trace ≈ v6.trace), () -> "`$(v6.id)`: $mismatch"))
 
     agree = all(first, checks)
@@ -173,6 +179,15 @@ function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; a
         record_check(ok || outcome !== :disagree, expression, describe, source)
     end
     return outcome
+end
+
+# The calls of `trace` that repeat no earlier call of their iteration.
+function without_repeats(trace; atol, rtol)
+    kept = eltype(trace)[]
+    for call in trace
+        any(earlier -> calls_agree(earlier, call; atol, rtol), kept) || push!(kept, call)
+    end
+    return kept
 end
 
 calls_agree(a, b; atol, rtol) =

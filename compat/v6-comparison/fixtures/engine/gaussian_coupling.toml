@@ -1,0 +1,94 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "x ~ NMP(0.5, 2), c ~ GaussianCoupling(x, 0.5), y ~ NMV(c, 1) observed at 1.5; the message towards c is improper, the likelihood's precision makes c's marginal proper."
+free_energy = [-0.6917656963122605, -0.6917656963122605, -0.6917656963122605]
+id = "gaussian_coupling"
+
+    [trajectory.posteriors.c]
+    params = [1.75, 0.875]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.x]
+    params = [1.75, 1.75]
+    type = "NormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 2.0]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanPrecision"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 2.0]
+        type = "NormalMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GaussianCoupling"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.25, -0.125]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GaussianCoupling"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.75, -0.25]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "GaussianCoupling"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.75, -0.25]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "GaussianCoupling"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [0.75, -0.25]
+        type = "NormalWeightedMeanPrecision"

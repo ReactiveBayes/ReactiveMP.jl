@@ -324,3 +324,23 @@ end
     expected = EngineTrajectory("mixture_bp"; free_energy = v6.free_energy, posteriors = v6.posteriors, trace = v6.trace[setdiff(eachindex(v6.trace), extra)])
     @test compare_engine_trajectory(trajectory, expected; atol = 1.0e-9) === :agree
 end
+
+@testitem "engine:fixture:gaussian_coupling" tags = [:engine] setup = [EngineHarness] begin
+    # The message towards `c` is improper, with negative precision; the likelihood's precision
+    # makes `c`'s marginal proper. The constant coefficient gives the structured factorisation.
+    using ExponentialFamily, StandardMessagePassingRules, GaussianCouplingMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    x, c = H.random!(graph), H.random!(graph)
+    y = H.data!(graph)
+    H.node!(graph, NormalMeanPrecision, [(:out, x), (:μ, H.constant!(graph, 0.5)), (:τ, H.constant!(graph, 2.0))])
+    H.node!(graph, GaussianCoupling, [(:out, c), (:in, x), (:a, H.constant!(graph, 0.5))])
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, c), (:v, H.constant!(graph, 1.0))])
+
+    trajectory = H.run(graph; id = "gaussian_coupling", data = [y => 1.5], iterations = 3, posteriors = [:x => x, :c => c])
+    # v6 computes `x`'s prior message twice, once for each of its subscribers, where the engine
+    # shares one; and it computes GaussianCoupling's two messages, which do not depend on each
+    # other, in another order within an iteration. The values agree.
+    @test compare_engine_trajectory(trajectory, H.fixture("gaussian_coupling"); atol = 1.0e-9, trace_order = :within_iteration, collapse_repeats = true) === :agree
+end

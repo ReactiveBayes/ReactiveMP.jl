@@ -10,7 +10,7 @@ deletes after skimming:
 
 - `src/rules/`, `src/nodes/predefined/` — the unported nodes' rules and definitions:
   Autoregressive, ConjugateAR, BIFM and its helper, the Pólya nodes, the transitions, Flow,
-  GaussianCoupling, GCV, Probit and SoftDot (Delta left in Phase 6 step 2, its last rules
+  GCV, Probit and SoftDot (Delta left in Phase 6 step 2, and GaussianCoupling in step 3, both
   ported);
   `rules/mv_normal_mean_precision/marginals.jl` holds MvNormalMeanPrecision's two marginal
   rules for BIFM's `TerminalProdArgument`;
