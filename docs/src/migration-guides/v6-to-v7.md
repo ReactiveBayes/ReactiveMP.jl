@@ -311,6 +311,8 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 | `AR`, `ConjugateAR`, `ARMeta(form, order, stype)` | `AutoregressiveMessagePassingRules`, `ARVMP(form, order, stype)` with `ARsafe()` or `ARunsafe()` |
 | `SoftDot` (`softdot`) | `SoftDotMessagePassingRules`, no algorithm of its own |
 | `ContinuousTransition` (`CTransition`), `CTMeta(f)` | `ContinuousTransitionMessagePassingRules`, `CTVMP(f)` |
+| `BinomialPolya`, `BinomialPolyaMeta(n, rng)` | `PolyaMessagePassingRules`, `BinomialPolyaApproximation(; samples = n)`, drawing from the engine's generator |
+| `MultinomialPolya`, `MultinomialPolyaMeta(points)` | `PolyaMessagePassingRules`, `MultinomialPolyaApproximation(; points)` |
 
 - **Probit** declared `RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`. Its
   algorithm now declares that the rule towards `in` reads the message on its own edge, and the
@@ -328,6 +330,11 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
   `RequireMarginalFunctionalDependencies(a = nothing)` made it, now through its declaration
   ([Extending the default scheme](@ref rules-algorithms-extending)). As in v6, the node sets no
   initial `q(a)`; a model initialises it.
+- **BinomialPolya** and **MultinomialPolya** read the message on their weights' own edge, which v6
+  required each model to ask for with `where { dependencies = RequireMessageFunctionalDependencies(β
+  = …) }`. The nodes now declare it; drop the `dependencies` and initialise the message instead,
+  `μ(β) = …` in RxInfer's `@initialization`. Their package is GPL-3 licensed, through
+  PolyaGammaHybridSamplers.
 
 ## Behaviour that changed
 
@@ -353,6 +360,9 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   terms, so a model's free energy changes with them. Its rules towards `a` and `W` keep the offset
   of an affine or nonlinear `f`, such as a rotation, which v6 dropped; for `reshape` nothing
   changes.
+- **The Pólya nodes' average energies** are corrected: BinomialPolya's is the expectation of
+  `softplus(xᵀβ)`, where v6 took it at the mean, and MultinomialPolya's is right for a Multinomial
+  `q(x)` with more than one trial. A binomial regression's free energy is higher than v6's.
 - **`ARunsafe`'s joint `q(y, x)`** is correct: v6's disagreed with `ARsafe` even for an AR(1), and
   threw for a multivariate AR. `ARsafe` is unchanged.
 - **The Delta node takes three methods**: `Unscented()`, `Linearization()` and, once

@@ -21,21 +21,17 @@ one.
 
 ## Next action
 
-**Phase 6, step 6: the Pólya nodes** (§ Phase 6, *Entry brief*): BinomialPolya and MultinomialPolya
-in one package, which carries the GPL-3 dependency. Step 6 is briefed (§ Phase 6, *Step 6
-brief*):
-- their rules towards `β` and `ψ` read their own edge's message, through `default` plus `m[...]`
-  (§3.41);
-- BinomialPolya's energy becomes Gauss–Hermite (user);
-- MultinomialPolya's energy for a Multinomial `q(x)` is corrected.
-
-Steps 1–5 are done:
+**Phase 6, step 7: BIFM** (§ Phase 6, *Entry brief*): BIFM and BIFMHelper in one package, with
+`pure = false` for BIFM's order-dependent rules, BIFMHelper's overridden dependencies declared,
+and MvNormalMeanPrecision's two `TerminalProdArgument` marginals moved to Standard with v6's
+`getdist` fixed. It needs a brief first, as each step has had. Steps 1–6 are done:
 - the numerics;
 - Delta;
 - GaussianCoupling, Probit and GCV;
 - the autoregressive family;
-- ContinuousTransition, whose rule towards `a` extends the default scheme with `q(a)` (§3.41), with
-  its energies and its nonlinear `a` and `W` rules corrected (§3.42).
+- ContinuousTransition;
+- the Pólya nodes, whose rules towards the weights read their own edge's message (§3.41), with
+  both energies corrected and BinomialPolya's by Gauss–Hermite (§3.43).
 
 Each is in its own package, compared with v6 and covered by an engine fixture.
 
@@ -113,7 +109,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot) and 5 (ContinuousTransition) done; step 6, the Pólya nodes, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition) and 6 (the Pólya nodes) done; step 7, BIFM, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -2838,6 +2834,10 @@ A commit for the package with its comparison and fixtures, as in steps 3–5, an
   above v6's at every iteration, as Jensen's inequality requires of the plug-in.
 
   The ported files have left `legacy/v6/`.
+- *The guide — done, which closes step 6.* The v6 → v7 guide's *Node packages* table gains both
+  Pólya nodes, with their metas as algorithms. A note says to drop the per-model
+  `RequireMessageFunctionalDependencies` and initialise the message instead, and that the package
+  is GPL-3. Its behaviour changes gain the corrected energies.
 
 
 
