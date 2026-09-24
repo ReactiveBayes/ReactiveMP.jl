@@ -307,6 +307,8 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 | `GaussianCoupling` | `GaussianCouplingMessagePassingRules`, no algorithm of its own |
 | `Probit`, `ProbitMeta(p)` | `ProbitMessagePassingRules`, `ProbitEP(; p = 32)` |
 | `GCV`, `GCVMetadata(GaussHermiteCubature(n))` | `GCVMessagePassingRules`, `GCVApproximation(; method = GaussHermiteCubature(n))` |
+| `AR`, `ConjugateAR`, `ARMeta(form, order, stype)` | `AutoregressiveMessagePassingRules`, `ARVMP(form, order, stype)` with `ARsafe()` or `ARunsafe()` |
+| `SoftDot` (`softdot`) | `SoftDotMessagePassingRules`, no algorithm of its own |
 
 - **Probit** declared `RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`. Its
   algorithm now declares that the rule towards `in` reads the message on its own edge, and the
@@ -315,6 +317,10 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
   `DefaultAlgorithm()`.
 - **GCV**'s `ExponentialLinearQuadratic` is exported by its package, which also holds the rules
   that let `NormalMeanVariance` and `NormalMeanPrecision` take one on `out`.
+- **AR** and **ConjugateAR** declare no algorithm, as v6 had no default `ARMeta`. A model gives
+  each node `ARVMP(...)`, and without one no rule is found. ConjugateAR's marginal over `w` alone
+  is the engine's product of its messages, as for any single interface.
+- **SoftDot** does not need the AR package; loading its own package is enough.
 
 ## Behaviour that changed
 
@@ -336,6 +342,8 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
 - **Probit's average energy** is finite for a wide `q(in)`, where v6's underflowed at far cubature
   points and returned Inf or NaN.
+- **`ARunsafe`'s joint `q(y, x)`** is correct: v6's disagreed with `ARsafe` even for an AR(1), and
+  threw for a multivariate AR. `ARsafe` is unchanged.
 - **The Delta node takes three methods**: `Unscented()`, `Linearization()` and, once
   `using ExponentialFamilyProjection` loads its rules, `CVIProjection()`. v6's other methods are
   gone, with no replacement: `CVI` and `ProdCVI`, `LaplaceApproximation`,

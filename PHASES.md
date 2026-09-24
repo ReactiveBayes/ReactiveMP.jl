@@ -21,11 +21,17 @@ one.
 
 ## Next action
 
-**Phase 6, step 4: the autoregressive family** (§ Phase 6, *Entry brief*): AR and ConjugateAR in
-one package, with the companion matrix and the standard basis vector, and SoftDot on its own.
-Steps 1–3 are done: the numerics, Delta (Unscented, Linearization, `CVIProjection`), and
-GaussianCoupling, Probit and GCV, each in its package, compared with v6 and in a fixture, with a
-node's default initial message for Probit. Step 4 is briefed (§ Phase 6, *Step 4 brief*).
+**Phase 6, step 5: ContinuousTransition** (§ Phase 6, *Entry brief*): `CTMeta` becomes the node's
+algorithm and `RequireMarginal` becomes declared dependencies, with the v6 errors the entry brief lists
+(`default_meta` on the wrong type, the energy's dimension when dx ≠ dy). It needs a brief first,
+as each step has had. Steps 1–4 are done:
+- the numerics;
+- Delta;
+- GaussianCoupling, Probit and GCV;
+- the autoregressive family: AR and ConjugateAR in one package under `ARVMP`, with `ARunsafe`'s
+  joint corrected, and SoftDot on its own.
+
+Each is in its own package, compared with v6 and covered by an engine fixture.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -101,7 +107,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta) and 3 (GaussianCoupling, Probit, GCV) done; step 4, the autoregressive family, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV) and 4 (AR, ConjugateAR, SoftDot) done; step 5, ContinuousTransition, next |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -2516,6 +2522,9 @@ entries, which close the step. A commit each.
   the same.
 - The ported files and their tests have left `legacy/v6/`, with `helpers/algebra/{companion_matrix,
   standard_basis_vector}.jl`.
+- *The guide — done, which closes step 4.* The v6 → v7 guide's *Node packages* table gains AR and
+  ConjugateAR (`ARMeta` → `ARVMP`) and SoftDot, with a note that no rule runs without `ARVMP`.
+  Its behaviour changes gain `ARunsafe`'s corrected joint.
 
 
 
