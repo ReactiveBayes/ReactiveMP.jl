@@ -59,6 +59,21 @@
         body = (output::AbstractVector, args) -> (output .= 2 .* args.m[:x]; output),
     )
 
+    # Scratch: one that writes before reading, one that accumulates into its scratch and so
+    # depends on what an earlier call left there.
+    struct Scratched end
+    @define_factor_node(node = Scratched, type = Deterministic, interfaces = [:out, :x])
+    @define_message_update_rule(
+        node = Scratched, target = :out, args = (m[:x]::Vector{Float64},),
+        scratch = (args) -> (work = similar(args.m[:x]),),
+        body = (scratch, args) -> (scratch.work .= 2 .* args.m[:x]; PointMass(sum(scratch.work))),
+    )
+    @define_message_update_rule(
+        node = Scratched, target = :x, args = (m[:out]::PointMass,),
+        scratch = (args) -> (total = zeros(1),),
+        body = (scratch, args) -> (scratch.total[1] += mean(args.m[:out]); PointMass(scratch.total[1])),
+    )
+
     # Default rules an extension inherits. Reached under `Extended`, they run with
     # `DefaultAlgorithm()` in their `algo` slot, so a helper typed `::DefaultAlgorithm` is
     # reachable from the body and from `preallocate`.

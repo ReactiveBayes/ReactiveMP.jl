@@ -114,9 +114,13 @@ ReactiveMP.DeferredMessage
 ### [Message mappings](@id lib-messages-mapping)
 
 A *message mapping* defines how messages are transformed or mapped during the propagation process — for example, when combining multiple incoming messages or applying specific transformation rules. This structure helps organize and reuse mapping logic across different inference algorithms.
+A mapping also keeps the [scratch](@ref rules-defining-scratch) of the rule it runs, built at its first call and reused on
+every later one.
 
 ```@docs
 ReactiveMP.MessageMapping
+ReactiveMP.ScratchSlot
+ReactiveMP.scratch_for!
 ```
 
 ### [Rule arguments](@id lib-messages-rule-arguments)

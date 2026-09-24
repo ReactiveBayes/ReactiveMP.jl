@@ -19,8 +19,8 @@ holds the body and the preallocation function and knows whether it is in-place. 
 type parameters, so resolution returns one concrete type wherever it can be inferred.
 
 `kind` is `:message`, `:marginal` or `:average_energy`. The body takes the full slot list
-`(output, algo, ctx, args, ann, target)`; `prealloc`, when present, takes
-`(algo, ctx, args, target)`.
+`(output, scratch, algo, ctx, args, ann, target)`; `prealloc` and `scratch`, when present,
+take `(algo, ctx, args, target)`.
 """
 struct RuleSpec
     kind::Symbol
@@ -31,6 +31,7 @@ struct RuleSpec
     inputs::Tuple{Vararg{InputSpec}}
     body::Function
     prealloc::Union{Nothing, Function}
+    scratch::Union{Nothing, Function}
     inplace::Bool
     pure::Bool
     services::Tuple{Vararg{Symbol}}
@@ -42,7 +43,7 @@ end
 function RuleSpec(;
         kind::Symbol, node, target, algorithm::Type, signature::Type, body::Function,
         inputs::Tuple{Vararg{InputSpec}} = (),
-        prealloc = nothing, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
+        prealloc = nothing, scratch = nothing, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
         services::Tuple{Vararg{Symbol}} = (), source::AbstractString = "",
         file::Symbol = :none, line::Integer = 0,
     )
@@ -56,7 +57,7 @@ function RuleSpec(;
     end
     effective = something(pure, algorithm <: AbstractAlgorithm ? ispure(algorithm) : true)
     return RuleSpec(
-        kind, node, target, algorithm, signature, inputs, body, prealloc, inplace, effective,
+        kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, inplace, effective,
         services, String(source), file, Int(line),
     )
 end
@@ -128,22 +129,42 @@ end
 
 """
     execute_rule(spec, output, algorithm, ctx, args, ann, target)
+    execute_rule(spec, output, scratch, algorithm, ctx, args, ann, target)
 
 Run a resolved rule. For an in-place rule, `output` is the buffer to write into; `nothing`
-asks the rule to preallocate one. Nothing here catches exceptions: whatever a rule throws
-propagates to the caller.
+asks the rule to preallocate one. `scratch` is the rule's working memory, which an engine
+builds once with [`rule_scratch`](@ref) and passes on every call; without it, or with
+`nothing`, a rule that declares scratch gets a fresh one. Nothing here catches exceptions:
+whatever a rule throws propagates to the caller.
 
 A rule never sees a missing input. When any input is `missing`, an engine does not call the
 rule at all, and does not run the annotation processors that follow a rule either; the
 result is `missing`, carrying only the annotations written before the call. This is v6's
 behaviour, kept unchanged.
 """
-@inline function execute_rule(spec::RuleSpec, output, algorithm, ctx, args, ann, target)
+@inline execute_rule(spec::RuleSpec, output, algorithm, ctx, args, ann, target) =
+    execute_rule(spec, output, nothing, algorithm, ctx, args, ann, target)
+
+@inline function execute_rule(spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target)
     if spec.inplace && output === nothing
         output = spec.prealloc(algorithm, ctx, args, target)
     end
-    return spec.body(output, algorithm, ctx, args, ann, target)
+    if scratch === nothing
+        scratch = rule_scratch(spec, algorithm, ctx, args, target)
+    end
+    return spec.body(output, scratch, algorithm, ctx, args, ann, target)
 end
+
+"""
+    rule_scratch(spec, algorithm, ctx, args, target)
+
+The working memory a rule declares with `scratch`, built from these inputs, or `nothing` for a
+rule that declares none. An engine builds it once per outbound stream and passes it to every
+[`execute_rule`](@ref) of that rule. The rule writes it before reading it, so the engine may
+rebuild it whenever it likes.
+"""
+@inline rule_scratch(spec::RuleSpec, algorithm, ctx, args, target) =
+    spec.scratch === nothing ? nothing : spec.scratch(algorithm, ctx, args, target)
 
 @inline function throw_if_not_found(spec)
     spec isa RuleNotFound && throw(RuleNotFoundError(spec))

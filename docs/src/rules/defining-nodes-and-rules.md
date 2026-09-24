@@ -104,8 +104,9 @@ A rule names its node, its target and its inputs, and gives its body as a lambda
 - `args` lists the inputs with their types: messages `m[:x]`, marginals `q[:x]`, joint
   marginals `q[:y, :x]`, whole groups `q[:m...]`, and a group's member `q[:p][k]`. A group arrives
   as a tuple in member order, with `nothing` where the rule does not take a member.
-- `body` takes, by name, any of `output` (a buffer, for an in-place rule), `algo` (the
-  algorithm it runs under), `ctx` (the context services), `args` and `ann` (the annotations).
+- `body` takes, by name, any of `output` (a buffer, for an in-place rule), `scratch` (its
+  working memory), `algo` (the algorithm it runs under), `ctx` (the context services), `args`
+  and `ann` (the annotations).
 - `ctx = (:rng,)` declares the context services the body uses. `ctx.rng` is the random number
   generator the caller owns; `ctx.product(left, right)` multiplies two distributions and returns
   the product with its own log scale; `matrix_correction(ctx, default)` is the correction a rule
@@ -114,6 +115,28 @@ A rule names its node, its target and its inputs, and gives its body as a lambda
 
 A rule that reuses another's computation calls a plain helper function both share, rather than
 the other rule.
+
+### [Scratch](@id rules-defining-scratch)
+
+A rule that needs working memory declares how to build it from its inputs, and takes it as its
+`scratch`:
+
+```julia
+@define_message_update_rule(
+    node = Summing, target = :out, args = (m[:in]::Vector{Float64},),
+    scratch = (args) -> (work = similar(args.m[:in]),),
+    body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
+)
+```
+
+The engine keeps one scratch per outbound stream, builds it at the first call and passes the
+same one to every later call, so the memory is allocated once. It is **write-before-read**: a
+rule never relies on what an earlier call left in it, and the engine may drop or rebuild it at
+any time, so the rule's result depends on its inputs alone and the rule stays pure. It never
+leaves the rule, so a rule must not return it or a view into it, and it is never shared with
+another rule, not even one of the same node. It is independent of `inplace`, and a rule may
+declare both, taking `output` and then `scratch`. The table tests check the contract: a rule with
+scratch is run again on a reused scratch filled with NaN, and must agree.
 
 ```@docs
 @define_message_update_rule
@@ -189,4 +212,5 @@ message_passing_marginalrule
 message_passing_marginalrule!
 message_passing_average_energy
 MessagePassingRulesBase.execute_rule
+MessagePassingRulesBase.rule_scratch
 ```

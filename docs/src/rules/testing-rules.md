@@ -25,7 +25,9 @@ that the result's type follows, unless `check_type_promotion = false`. Tolerance
 and `rtol`. A case that expects annotations as well as a value gives an
 [`ExpectedWithAnnotations`](@ref). A rule that reads its inputs' annotations, such as a mixture's
 log scales, is called directly with them: `call_message_update_rule(node, target; m, ann =
-RuleAnnotations(m = …))`.
+RuleAnnotations(m = …))`. A rule with [scratch](@ref rules-defining-scratch) is also run on a
+reused scratch that [`MessagePassingRulesTestUtils.poison!`](@ref) filled with NaN, and must give
+the same result.
 
 ```@docs
 @test_message_update_rule
@@ -39,6 +41,7 @@ check_rule_coverage
 MessagePassingRulesTestUtils.RuleCoverageGap
 MessagePassingRulesTestUtils.rule_test_locations
 MessagePassingRulesTestUtils.approximately_equal
+MessagePassingRulesTestUtils.poison!
 ```
 
 ## [Verification](@id rules-testing-verification)

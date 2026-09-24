@@ -1,7 +1,8 @@
-const BODY_SLOTS = (:output, :algo, :ctx, :args, :ann)
+const BODY_SLOTS = (:output, :scratch, :algo, :ctx, :args, :ann)
 const PREALLOCATE_SLOTS = (:algo, :ctx, :args)
+const SCRATCH_SLOTS = PREALLOCATE_SLOTS
 
-const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :pure, :ctx)
+const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx)
 const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
 
 """
@@ -18,15 +19,20 @@ Define the rule for the message a node sends towards one of its interfaces.
   target's own member) or `m[:in][!k]::T` (all but it). A group arrives as a tuple in member
   order with `nothing` where the selection leaves a member out, so `args.m[:in][k]` means
   member `k` whatever was selected. An omitted type is `Any`.
-- `body`: an ordinary lambda over some of the slots `(output, algo, ctx, args, ann)`,
+- `body`: an ordinary lambda over some of the slots `(output, scratch, algo, ctx, args, ann)`,
   named in that order: `args` holds the inputs, `algo` the algorithm value, `ctx` the
   [`RuleContext`](@ref), `ann` the annotations (read `ann.m[:out]`, write with
-  [`annotate!`](@ref)) and `output` the buffer of an in-place rule.
+  [`annotate!`](@ref)), `output` the buffer of an in-place rule and `scratch` its working memory.
 - `algorithm`: the algorithm type the rule runs under. Almost every rule omits it and
   belongs to its node's default, usually [`DefaultAlgorithm`](@ref), which requires the node
   to be declared before the rule is loaded. Naming one is for a rule switcher's or a node's
   own algorithm.
 - `inplace = true` with `preallocate = (args) -> buffer` and a body taking `output` first.
+- `scratch = (args) -> memory`: working memory, built from the inputs (and optionally `algo`
+  and `ctx`, as `preallocate`) and given to the body as `scratch`. An engine keeps one per
+  outbound stream and reuses it, so it is **write-before-read**: it carries nothing between
+  calls, and the engine may keep, drop or rebuild it whenever it likes. It never leaves the
+  rule, is never shared with another rule, and combines with `inplace`.
 - `pure = false` marks a rule that has side effects, whatever its algorithm declares.
 - `ctx = (:product, ...)`: the context services the rule needs.
 
@@ -58,7 +64,7 @@ end
     @define_average_energy(node = ..., args = (...), body = ...)
 
 Define a node's average energy. Takes the keywords of
-[`@define_message_update_rule`](@ref) except `target`, `inplace` and `preallocate`.
+[`@define_message_update_rule`](@ref) except `target`, `inplace`, `preallocate` and `scratch`.
 """
 macro define_average_energy(args...)
     return esc(define_rule_expr(:average_energy, __source__, args))
@@ -95,6 +101,9 @@ function define_rule_expr(kind, source, macroargs)
         :output in slots && error("@$name: the `output` slot requires `inplace = true`")
         haskey(keywords, :preallocate) && error("@$name: `preallocate` requires `inplace = true`")
     end
+    has_scratch = haskey(keywords, :scratch)
+    :scratch in slots && !has_scratch && error("@$name: the `scratch` slot requires a `scratch` keyword, `scratch = (args) -> memory`")
+    has_scratch && !(:scratch in slots) && error("@$name: the rule declares `scratch` but its body does not take it; name `scratch` among its slots")
 
     base = MessagePassingRulesBase
     user_body = gensym(:body)
@@ -115,6 +124,20 @@ function define_rule_expr(kind, source, macroargs)
         pre_index = index_name === nothing ? () : (:($target_index($pre_target)),)
         push!(prealloc_defs, :(const $user_pre = $(append_parameter(pre, index_name))))
         prealloc = :(($(pre_args...), $pre_target) -> $user_pre($(pre_passed...), $(pre_index...)))
+    end
+
+    scratch_defs = []
+    scratch_fn = nothing
+    if has_scratch
+        sc = keywords[:scratch]
+        sc_slots = parse_slots(name, sc, SCRATCH_SLOTS; what = "scratch")
+        user_sc = gensym(:scratch)
+        sc_args = [gensym(slot) for slot in SCRATCH_SLOTS]
+        sc_passed = [sc_args[findfirst(==(slot), SCRATCH_SLOTS)] for slot in sc_slots]
+        sc_target = gensym(:target)
+        sc_index = index_name === nothing ? () : (:($target_index($sc_target)),)
+        push!(scratch_defs, :(const $user_sc = $(append_parameter(sc, index_name))))
+        scratch_fn = :(($(sc_args...), $sc_target) -> $user_sc($(sc_passed...), $(sc_index...)))
     end
 
     algorithm_type = haskey(keywords, :algorithm) ? :($algorithm_dispatch_type($(keywords[:algorithm]))) :
@@ -138,6 +161,7 @@ function define_rule_expr(kind, source, macroargs)
         const $signature_sym = $signature
         const $user_body = $(append_parameter(body, index_name))
         $(prealloc_defs...)
+        $(scratch_defs...)
         const $spec_sym = $RuleSpec(
             kind = $(QuoteNode(kind)),
             node = $node,
@@ -147,6 +171,7 @@ function define_rule_expr(kind, source, macroargs)
             inputs = $(input_specs(inputs)),
             body = ($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...)),
             prealloc = $prealloc,
+            scratch = $scratch_fn,
             inplace = $inplace,
             pure = $pure,
             services = $services,

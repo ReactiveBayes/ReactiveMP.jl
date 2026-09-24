@@ -143,6 +143,8 @@ function check_case(table::TableContext, index, inputs::CaseInputs, expected; at
         )
     end
 
+    spec.scratch === nothing || check_scratch(table, label, spec, args, inputs.ctx, result, atol, rtol)
+
     if check_nonallocating
         bytes = measure_allocations(spec, table, args, inputs.ctx)
         record_check(bytes == 0, :(allocated_bytes == 0), "$label: allocated $bytes bytes", table.source)
@@ -167,6 +169,39 @@ function check_case(table::TableContext, index, inputs::CaseInputs, expected; at
     end
     return nothing
 end
+
+# A rule with scratch runs again on a scratch an engine would reuse: one call on it, then one
+# after `poison!`, each into a fresh output. Both must agree with the fresh run, or the rule
+# reads its scratch before writing it.
+function check_scratch(table::TableContext, label, spec, args, ctx, result, atol, rtol)
+    algorithm = MessagePassingRulesBase.rule_algorithm(spec, table.algorithm)
+    scratch = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, table.target)
+    fresh_output() = spec.inplace ? spec.prealloc(algorithm, ctx, args, table.target) : nothing
+    run() = MessagePassingRulesBase.execute_rule(spec, fresh_output(), scratch, algorithm, ctx, args, MessagePassingRulesBase.NoAnnotations(), table.target)
+    reused = run()
+    poison!(scratch)
+    poisoned = run()
+    T = output_float_type(result)
+    agree(value) = approximately_equal(value, result; atol = tolerance_for(atol, T), rtol = tolerance_for(something(rtol, 0.0), T))
+    return record_check(
+        agree(reused) && agree(poisoned), :(rule_with_reused_scratch == rule),
+        () -> "$label: the rule reads its scratch before writing it: fresh $(repr(result)), on a reused scratch $(repr(reused)), after poisoning it $(repr(poisoned))",
+        table.source,
+    )
+end
+
+"""
+    poison!(scratch)
+
+Overwrite a rule's scratch with values no correct computation reads: NaN in every
+floating-point array, through tuples and named tuples; other storage is left as it is. Table
+tests run a rule with scratch again after poisoning it, and it must give the same result. A
+scratch of another kind extends this function. Returns `scratch`.
+"""
+poison!(x::AbstractArray{<:AbstractFloat}) = fill!(x, NaN)
+poison!(x::AbstractArray) = (foreach(poison!, x); x)
+poison!(x::Union{Tuple, NamedTuple}) = (foreach(poison!, x); x)
+poison!(x) = x
 
 # Measured through the public entry points with concrete arguments, so resolution is static
 # and the figure is the rule's own, as an engine calling it would see it. `node::N` forces

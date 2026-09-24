@@ -261,16 +261,17 @@ struct MarginalMapping{F, T, N, M, A, R}
     marginals_names::M
     algorithm::A
     factornode::R
+    scratch::ScratchSlot
 end
 
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
 marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
 MarginalMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R) where {F, T, N, M, A, R} =
-    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode)
+    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode, ScratchSlot())
 
 MarginalMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R) where {F <: Function, T, N, M, A, R} =
-    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode)
+    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode, ScratchSlot())
 
 function (mapping::MarginalMapping)(dependencies)
     messages = getrecent(dependencies[1])
@@ -303,7 +304,8 @@ function compute_marginal(mapping::MarginalMapping, messages, marginals)
     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
     ctx = rule_context(mapping.factornode)
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
-    return MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, ctx, args, ann, mapping.target)
+    scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target)
+    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =

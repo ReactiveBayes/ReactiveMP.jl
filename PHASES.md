@@ -2941,7 +2941,27 @@ A commit for the package with its comparison and fixtures, as in steps 3–5, an
 Scratch is its own commit, the BIFM package with its comparison and fixture another, and the
 guide a third.
 
-**Progress:** not started.
+**Progress:**
+- *Scratch — done.*
+  - In the base, `scratch` is a keyword of the message and marginal macros, not of energies, and
+    its slots are `preallocate`'s. The macro requires the keyword and the body slot together.
+    `RuleSpec` carries the builder, `rule_scratch` builds a scratch, and `execute_rule` gains an
+    eight-argument form taking one; the seven-argument form builds a fresh one, as interactive
+    calls do.
+  - In the engine, `src/scratch.jl` defines `ScratchSlot` and `scratch_for!`, and each
+    `MessageMapping` and `MarginalMapping` keeps a slot, rebuilt only when another rule runs on
+    the stream.
+  - In TestUtils, a table case of a rule with scratch runs again on a reused scratch, before and
+    after `poison!`, into fresh outputs, and must agree.
+
+  Tests, failing first:
+  - base: declaration and calls, in-place with scratch, a group index, a marginal rule, the
+    display, the macro errors, and the reuse saving the scratch's allocation;
+  - TestUtils: a rule that accumulates into its scratch fails its table, and one that writes first
+    passes;
+  - engine: three calls on one stream build one scratch, and another stream its own.
+
+  Docs: *Defining nodes and rules › Scratch*, the testing page and the mappings' API.
 
 
 

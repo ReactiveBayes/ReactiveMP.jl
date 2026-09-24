@@ -367,6 +367,21 @@ end
     @define_message_update_rule(node = Square, target = :out, args = (m[:in]::Any,), ctx = (:product,), body = (ctx, args) -> ctx.product(args.m[:in], args.m[:in]))
 
     struct Stranger end
+
+    # Working memory: the rule counts how often its scratch is built, and uses it.
+    const SCRATCH_BUILT = Ref(0)
+    struct Scratched end
+    @define_factor_node(node = Scratched, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(
+        node = Scratched, target = :out, args = (m[:in]::Vector{Float64},),
+        scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
+        body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
+    )
+    @define_marginal_update_rule(
+        node = Scratched, target = (:out, :in), args = (m[:out]::Vector{Float64}, m[:in]::Vector{Float64}),
+        scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
+        body = (scratch, args) -> (scratch.work .= args.m[:out] .- args.m[:in]; sum(scratch.work)),
+    )
 end
 
 @testitem "MessageMapping resolves and runs the rule" tags = [:engine] setup = [MessageMappingNodes] begin
@@ -383,6 +398,32 @@ end
 
     towards_in = MessageMapping(N.Increment, Target{:in}(), nothing, Val((:out,)), DefaultAlgorithm(), nothing, node, nothing)
     @test getdata(towards_in(nothing, (Marginal(3, false, false),))) === (DefaultAlgorithm(), node, 2)
+end
+
+@testitem "a mapping keeps its rule's scratch and reuses it" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, MarginalMapping, getdata
+    import MessagePassingRulesBase: Target, ClusterTarget, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    # One scratch per outbound stream, built at its first call and reused on every later one.
+    N.SCRATCH_BUILT[] = 0
+    towards_out = MessageMapping(N.Scratched, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scratched(), nothing)
+    for x in ([1.0, 2.0], [3.0, 4.0], [0.5, 0.5])
+        @test getdata(towards_out((Message(x, false, false),), nothing)) == 2 * sum(x)
+    end
+    @test N.SCRATCH_BUILT[] == 1
+    # Another stream has its own.
+    other = MessageMapping(N.Scratched, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scratched(), nothing)
+    other((Message([1.0], false, false),), nothing)
+    @test N.SCRATCH_BUILT[] == 2
+
+    # A marginal mapping keeps one too.
+    N.SCRATCH_BUILT[] = 0
+    joint = MarginalMapping(N.Scratched, ClusterTarget((:out, :in)), Val((:out, :in)), nothing, DefaultAlgorithm(), N.Scratched())
+    for _ in 1:3
+        @test ReactiveMP.compute_marginal(joint, (Message([3.0, 1.0], false, false), Message([1.0, 1.0], false, false)), nothing) == 2.0
+    end
+    @test N.SCRATCH_BUILT[] == 1
 end
 
 @testitem "MessageMapping gives a rule the default random number generator" tags = [:engine] setup = [MessageMappingNodes] begin

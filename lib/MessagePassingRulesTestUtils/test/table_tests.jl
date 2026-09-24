@@ -147,3 +147,26 @@ end
     @test isempty(Recording.failures(set))
     @test Recording.passes(set) > 5
 end
+
+@testitem "tables:scratch" tags = [:testutils] setup = [ToyRules, Recording] begin
+    using MessagePassingRulesTestUtils, BayesBase
+    using MessagePassingRulesTestUtils: poison!
+
+    # A rule with scratch runs again on a reused scratch poisoned with NaN, and must agree.
+    good = Recording.recorded() do
+        @test_message_update_rule(node = ToyRules.Scratched, target = :out, check_type_promotion = false, cases = [(m = (x = [1.0, 2.0],),) => PointMass(6.0)])
+    end
+    @test isempty(Recording.failures(good))
+
+    # One that reads what an earlier call left fails its own table.
+    bad = Recording.recorded() do
+        @test_message_update_rule(node = ToyRules.Scratched, target = :x, check_type_promotion = false, cases = [(m = (out = PointMass(2.0),),) => PointMass(2.0)])
+    end
+    @test !isempty(Recording.failures(bad))
+    @test contains(Recording.failure_text(bad), "reads its scratch before writing it")
+
+    # `poison!` fills floating-point storage with NaN, through tuples and named tuples.
+    scratch = (a = [1.0, 2.0], b = ([3.0f0],), c = [1, 2])
+    @test poison!(scratch) === scratch
+    @test all(isnan, scratch.a) && all(isnan, scratch.b[1]) && scratch.c == [1, 2]
+end

@@ -575,6 +575,7 @@ struct MessageMapping{F, T, N, M, A, X, R, E}
     annotations::X
     factornode::R
     callbacks::E
+    scratch::ScratchSlot
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -598,10 +599,10 @@ function Base.show(io::IO, mapping::MessageMapping)
 end
 
 MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E) where {F, T, N, M, A, X, R, E} =
-    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks)
+    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, ScratchSlot())
 
 MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E) where {F <: Function, T, N, M, A, X, R, E} =
-    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks)
+    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, ScratchSlot())
 
 function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
@@ -639,7 +640,8 @@ function (mapping::MessageMapping)(messages, marginals)
         ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
         ctx = rule_context(mapping.factornode)
         algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
-        MessagePassingRulesBase.execute_rule(spec, nothing, algorithm, ctx, args, ann, mapping.target)
+        scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target)
+        MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
     end
 
     # Run annotation processors after the rule has been executed

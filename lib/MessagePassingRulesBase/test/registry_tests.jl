@@ -9,8 +9,8 @@
     @define_registry          # idempotent
     end
 
-    body1 = (o, a, c, r, n, t) -> 1
-    body2 = (o, a, c, r, n, t) -> 2
+    body1 = (o, s, a, c, r, n, t) -> 1
+    body2 = (o, s, a, c, r, n, t) -> 2
     spec(body) = RuleSpec(kind = :message, node = First.Node, target = Target{:out}, algorithm = DefaultAlgorithm, signature = RuleArgs, body = body)
 
     register!(First.__message_passing_registry__, spec(body1))

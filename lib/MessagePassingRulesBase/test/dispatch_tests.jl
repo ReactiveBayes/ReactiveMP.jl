@@ -23,37 +23,37 @@
 
     const GAUSS_OUT = RuleSpec(
         kind = :message, node = Gauss, target = Target{:out}, algorithm = DefaultAlgorithm, signature = PointArgs,
-        body = (output, algo, ctx, args, ann, target) -> args.m[:μ] + args.m[:v],
+        body = (output, scratch, algo, ctx, args, ann, target) -> args.m[:μ] + args.m[:v],
     )
     find_message_rule(::Type{Gauss}, ::Target{:out}, ::DefaultAlgorithm, ::PointArgs) = GAUSS_OUT
 
     const GAUSS_OUT_STATEFUL = RuleSpec(
         kind = :message, node = Gauss, target = Target{:out}, algorithm = Stateful, signature = PointArgs,
-        body = (output, algo, ctx, args, ann, target) -> -1.0,
+        body = (output, scratch, algo, ctx, args, ann, target) -> -1.0,
     )
     find_message_rule(::Type{Gauss}, ::Target{:out}, ::Stateful, ::PointArgs) = GAUSS_OUT_STATEFUL
 
     const EXPLODES = RuleSpec(
         kind = :message, node = Exploding, target = Target{:out}, algorithm = DefaultAlgorithm, signature = RuleArgs,
-        body = (output, algo, ctx, args, ann, target) -> error("broken, but found"),
+        body = (output, scratch, algo, ctx, args, ann, target) -> error("broken, but found"),
     )
     find_message_rule(::Type{Exploding}, ::Target{:out}, ::DefaultAlgorithm, ::RuleArgs) = EXPLODES
 
     const MIX_M = RuleSpec(
         kind = :message, node = Mix, target = IndexedTarget{:m}, algorithm = MixtureVMP, signature = RuleArgs,
-        body = (output, algo, ctx, args, ann, target) -> args.q[:p][target_index(target)],
+        body = (output, scratch, algo, ctx, args, ann, target) -> args.q[:p][target_index(target)],
     )
     find_message_rule(::Type{Mix}, ::IndexedTarget{:m}, ::MixtureVMP, ::RuleArgs) = MIX_M
 
     const GAUSS_JOINT = RuleSpec(
         kind = :marginal, node = Gauss, target = ClusterTarget{(:out, :μ)}, algorithm = DefaultAlgorithm, signature = RuleArgs,
-        body = (output, algo, ctx, args, ann, target) -> (args.m[:out], args.m[:μ]),
+        body = (output, scratch, algo, ctx, args, ann, target) -> (args.m[:out], args.m[:μ]),
     )
     find_marginal_rule(::Type{Gauss}, ::ClusterTarget{(:out, :μ)}, ::DefaultAlgorithm, ::RuleArgs) = GAUSS_JOINT
 
     const GAUSS_ENERGY = RuleSpec(
         kind = :average_energy, node = Gauss, target = Nothing, algorithm = DefaultAlgorithm, signature = RuleArgs,
-        body = (output, algo, ctx, args, ann, target) -> 42.0,
+        body = (output, scratch, algo, ctx, args, ann, target) -> 42.0,
     )
     find_average_energy(::Type{Gauss}, ::DefaultAlgorithm, ::RuleArgs) = GAUSS_ENERGY
 
@@ -61,13 +61,13 @@
         kind = :message, node = Gauss, target = Target{:v}, algorithm = DefaultAlgorithm, signature = RuleArgs,
         inplace = true,
         prealloc = (algo, ctx, args, target) -> similar(args.m[:x]),
-        body = (output, algo, ctx, args, ann, target) -> (output .= 2 .* args.m[:x]; output),
+        body = (output, scratch, algo, ctx, args, ann, target) -> (output .= 2 .* args.m[:x]; output),
     )
     find_message_rule(::Type{Gauss}, ::Target{:v}, ::DefaultAlgorithm, ::RuleArgs) = INPLACE
 
     const ANNOTATES = RuleSpec(
         kind = :message, node = Gauss, target = Target{:μ}, algorithm = DefaultAlgorithm, signature = RuleArgs,
-        body = (output, algo, ctx, args, ann, target) -> begin
+        body = (output, scratch, algo, ctx, args, ann, target) -> begin
             MessagePassingRulesBase.annotate!(ann, :logscale, 1.5)
             ctx.node
         end,
@@ -174,7 +174,7 @@ end
     # A rule inherits its algorithm's purity unless it overrides it.
     @test H.GAUSS_OUT.pure
     @test !H.GAUSS_OUT_STATEFUL.pure
-    body = (o, a, c, r, n, t) -> nothing
+    body = (o, s, a, c, r, n, t) -> nothing
     @test !RuleSpec(kind = :message, node = H.Gauss, target = Target{:out}, algorithm = DefaultAlgorithm, signature = RuleArgs, body = body, pure = false).pure
 end
 
