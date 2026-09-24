@@ -21,10 +21,10 @@ one.
 
 ## Next action
 
-**Phase 6, step 1: numerics and deletions** (§ Phase 6, *Entry brief*). The entry brief counts
+**Phase 6, step 1: numerics and deletions** (§ Phase 6, *Step 1 brief*). The entry brief counts
 Phase 6 at 123 message rules, 22 marginal rules and 19 average energies in 13 nodes and 10
 packages, with Delta's Linearization and `CVIProjection`, and orders it in ten steps, each
-briefed before it starts. Step 1 needs its brief: `Linearization`, Gauss–Hermite cubature and
+briefed before it starts. Step 1 is briefed: `Linearization`, Gauss–Hermite cubature and
 `approximate_meancov` into `MessagePassingRulesApproximations`, the algebra helpers into
 Standard, and the deletions.
 
@@ -2161,6 +2161,60 @@ Standard normals.
 - ConjugateAR's single-interface `w` marginal is reached only by its tests;
 - the `w` message of ConjugateAR can be improper for order ≥ 3, as v6 documents;
 - DiscreteTransition declares its traits by hand, with no `@node`.
+
+### Step 1 brief — numerics and deletions
+
+**Scope, surveyed** (`legacy/v6/src/approximations/`, `helpers/algebra/common.jl`, their tests):
+- **`Linearization`** (`linearization.jl`, 142 lines): the method type, `approximate(::Linearization,
+  g, x̂)` returning the local linear map `(A, b)`, and `local_linearization` with its methods for
+  scalar or vector inputs and outputs, one input or several (through `shared.jl`'s
+  `__splitjoin`/`__as_vec`, already ported). Its distribution-level `approximate` over normals
+  and its `is_delta_node_compatible` belong to the Delta package (step 2). 5 v6 checks.
+- **Gauss–Hermite cubature** (`gausshermite.jl`, 90 lines): `GaussHermiteCubature(p)`,
+  `ghcubature`, `getweights`, `getpoints`, univariate and multivariate; the multivariate points
+  are one reused buffer, by design (#633), with a test that pins it.
+- **`approximate_meancov`** (`approximations.jl`): the mean and variance of `g(x)` for a normal
+  `x` given by its moments, by any method with `getweights`/`getpoints`; GCV calls it.
+- **The algebra helpers** (`common.jl`): `negate_inplace!`, `mul_inplace!`, `rank1update` and
+  `mul_trace`, used by AR, SoftDot, ContinuousTransition and DiscreteTransition, with their v6
+  tests (`common_tests.jl`).
+- **Deleted, not ported:** `cvi.jl` (all but `cvilinearize`, which step 2 moves into the
+  `CVIProjection` extension), `laplace.jl`, `importance.jl`, `gausslaguerre.jl`,
+  `sphericalradial.jl`, `optimizers.jl`/`optimizers/adam.jl`, `ext/ReactiveMPOptimisersExt`,
+  `fixes.jl`, and their tests; from `approximations.jl`, `approximate_kernel_expectation`, whose
+  only user was Laplace; from `common.jl`, `powerset`, `v_a_vT` and `rank1update!`, which nothing
+  uses, and `isonehot` and `diageye`, which Standard already has.
+
+**Decided (user, the entry brief):** Linearization, the cubature and `approximate_meancov` go to
+`MessagePassingRulesApproximations`, which takes ForwardDiff and FastGaussQuadrature and still
+depends on no distribution package and not on the base package; the algebra helpers go to
+Standard.
+
+**Defaults for the step**, open to the user's correction:
+- **The numerical API is carried over**, as the exit criterion says: `approximate(::Linearization,
+  g, x̂)` keeps returning `(A, b)` and `approximate(::Unscented, f, means, covs)` `(m, V)`; the
+  Delta package wraps each in step 2. Exported: `Linearization`, `local_linearization`,
+  `GaussHermiteCubature`, `ghcubature`, `getweights`, `getpoints`, `approximate_meancov`.
+- **`approximate_meancov` takes moments only**, `(method, g, m, v)` and `(method, g, m, P)`;
+  v6's `(method, g, distribution)` forwarding method stays with GCV, its caller.
+- **v6's errors, corrected:** `approximation_name` and `approximation_short_name` of a
+  `GaussHermiteCubature` read a field `p` it does not have, so both threw; they report the
+  number of points. `gausshermite.jl` loaded Distributions for nothing.
+- **The algebra helpers** are Standard's, unexported, beside `diageye`, and documented on its
+  page under *Helpers*: node packages take them qualified.
+- **Tests:** v6's Linearization checks with `@inferred`, and new ones for its other shapes (a
+  vector output from a vector input, three inputs); the cubature's exactness on polynomials of
+  degree `2p - 1`, univariate and multivariate, `approximate_meancov` against closed forms, and
+  v6's buffer test without its spherical-radial half; v6's algebra tests. Each suite's quality
+  items keep checking the dependency closure.
+- **v6 comparison:** `compare_approximations.jl` gains Linearization and Gauss–Hermite cases
+  against 6.5.0, exact up to `1e-12`.
+- **`Optim`** is confirmed gone: nothing outside the pinned 6.5.0 environment's manifest names it.
+
+**Order:** Linearization, with its comparison; the cubature and `approximate_meancov`, with
+theirs; the algebra helpers in Standard; the deletions. A commit each.
+
+**Progress:** not started.
 
 **Exit criteria**
 - [ ] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
