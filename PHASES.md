@@ -21,13 +21,13 @@ one.
 
 ## Next action
 
-**Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
-brief*), its questions answered (§3.46); items 1 (the small engine fixes), 2 (the diagnostics) and 3
-(the generator as an activation option, `*`'s samples) are done, and item 4, the missing engine
-fixtures, is done, item 5 (the workflows) too, and item 6, RxInfer, is under way. **Phase 6 is
-closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
-with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
-deleted.
+**Phase C: cleanup** (§ Phase C), starting with its entry brief; and, before the release, the
+performance pass recorded in the not-done table below (user). **Phase 7 is closed** (§ Phase 7,
+*The close*): the engine is complete for the release, with the diagnostics, the generator as an
+activation option, Aqua's ambiguity check on, an engine fixture reaching every ported node, the
+workflows on 1.13, and RxInfer adapted on its branch `refactor/reactivemp-v7` (pushed, no PR),
+its whole suite and five RxInferExamples models agreeing with v6; log scales stay as v6 has them
+until after the release (§3.48). Phases 5 and 6 are closed too.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -101,7 +101,7 @@ generic ones, and no comments that only narrate.
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
 | 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
-| 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | entry brief written |
+| 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | **closed**: items 1–7; RxInfer's branch pushed, no PR |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
 
@@ -3415,7 +3415,9 @@ Known scope:
       average energies of `bethe_free_energy`, which takes no activation options, wait for
       RxInfer's adaptation, item 6, to pass them; running the suite checked is a workflow job,
       item 5)*
-- [ ] RxInfer adapted to the new engine, as its own major release: node and rule creation,
+- [x] RxInfer adapted to the new engine, as its own major release *(item 6: the branch
+      `refactor/reactivemp-v7` of RxInfer, 6.0.0-DEV, pushed without a PR; its suite, Aqua and
+      five RxInferExamples models pass; `IntegrationTest.yml` runs it)*: node and rule creation,
       a per-node `algorithm` option (replacing `meta` and v6's `where { dependencies = … }`),
       and default initial messages. What step 4 changed under it, all found by reading RxInfer
       5.5.2 (`src/model/plugins/`):
@@ -3605,8 +3607,20 @@ Known scope:
   ARMA models) run on v6 and on RxInfer's branch, and agree: four bit-identical or within 1e-12,
   and the AR ones bit-identical once `dot` and `+` round as v6 did (`v_a_vT`, `mean_cov`), which
   the comparison found. No declared correction is involved in these models.
-- *Remaining:* RxInfer's branch is local; pushing it, and pointing `IntegrationTest.yml` at it, wait
-  for the user.
+- *Closed (user, 2026-09-25):* the branch is pushed to `ReactiveBayes/RxInfer.jl` with no PR, and
+  `IntegrationTest.yml` runs it on 1.13, its `[sources]` rewritten from the sibling path to the
+  checkout (the rewrite simulated locally). The two Probit cases with a per-edge initial message
+  need no v7 counterpart; their removal stands.
+
+### The close
+
+*Done (user, 2026-09-25).* Every item of the known scope is ticked: the diagnostics (item 2), the
+generator as an activation option and `*`'s samples (3), the engine fixtures for every ported node
+(4), the workflows (5), RxInfer on its branch (6), and the log-scale milestone, closed with no
+change past the release (7, §3.48); the small engine fixes (1) switched Aqua's ambiguity check on
+and removed the `EqualityChain` race. Left for later, each recorded: RxInfer's documentation (with
+the release work), the performance pass before the release (`investigations/message-type-parameter/`),
+log scales after it, and each package's `LICENSE` with registration (Phase 8).
 
 ### Item 7 brief — log scales fixed
 

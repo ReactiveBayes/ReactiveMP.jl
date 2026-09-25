@@ -225,7 +225,7 @@ and read whichever exist before proposing changes:
 treat `main` as the whole story.
 
 The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
-review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7, completing the engine, is under way: RxInfer is adapted on a local branch, the diagnostics are activation options (`DISCUSSION.md` §3.46), and log scales stay exactly as v6 has them until after the release (§3.48).
+review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7 is closed: RxInfer is adapted on its branch `refactor/reactivemp-v7` (pushed, no PR, run by `IntegrationTest.yml`), the diagnostics are activation options (`DISCUSSION.md` §3.46), and log scales stay exactly as v6 has them until after the release (§3.48). Phase C, the cleanup, is next, with the performance pass before the release.
 From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
 machinery is kept, and rule lookup and invocation plus node and rule definition and creation
 are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to
