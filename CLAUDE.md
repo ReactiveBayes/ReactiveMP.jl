@@ -28,6 +28,7 @@ src/
   message.jl           Message, DeferredMessage, MessageObservable, MessageMapping
   marginal.jl          Marginal, MarginalObservable, MarginalMapping
   scratch.jl           ScratchSlot: the rule scratch each message and marginal mapping keeps
+  diagnostics.jl       EngineDiagnostics: the opt-in purity, in-place and checked-buffer audits
   rule_arguments.jl    RuleArgs/RuleAnnotations built from the latest messages and marginals
   variable.jl          AbstractVariable API
   variables/           randomvar, constvar, datavar
@@ -103,12 +104,12 @@ is run locally. The workflow files under `.github/` are left as they are until r
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (159 of them across 23 files), each self-contained and
+Tests are `@testitem` blocks (164 of them across 24 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (29) and `:engine` (128 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (29) and `:engine` (133 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate and the engine's doctests. `:rules` went with the v6 rule
 tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.

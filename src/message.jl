@@ -577,6 +577,7 @@ struct MessageMapping{F, T, N, M, A, X, R, E}
     annotations::X
     factornode::R
     callbacks::E
+    diagnostics::EngineDiagnostics
     scratch::ScratchSlot
 end
 
@@ -600,11 +601,11 @@ function Base.show(io::IO, mapping::MessageMapping)
     return nothing
 end
 
-MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E) where {F, T, N, M, A, X, R, E} =
-    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, ScratchSlot())
+MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics()) where {F, T, N, M, A, X, R, E} =
+    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ScratchSlot())
 
-MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E) where {F <: Function, T, N, M, A, X, R, E} =
-    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, ScratchSlot())
+MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics()) where {F <: Function, T, N, M, A, X, R, E} =
+    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ScratchSlot())
 
 function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
@@ -638,11 +639,11 @@ function (mapping::MessageMapping)(messages, marginals)
     else
         fform = message_mapping_fform(mapping)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
-        spec = resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args))
+        spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)))
         ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
         ctx = rule_context(mapping.factornode)
         algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
-        scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target)
+        scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
         MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
     end
 

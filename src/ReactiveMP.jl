@@ -25,6 +25,7 @@ include("annotations.jl")
 include("annotations/logscale.jl")
 include("annotations/input_arguments.jl")
 include("scratch.jl")
+include("diagnostics.jl")
 include("message.jl")
 include("marginal.jl")
 

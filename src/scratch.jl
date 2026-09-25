@@ -16,14 +16,15 @@ mutable struct ScratchSlot
 end
 
 """
-    ReactiveMP.scratch_for!(slot, spec, algorithm, ctx, args, target)
+    ReactiveMP.scratch_for!(slot, spec, algorithm, ctx, args, target, checked = false)
 
 The scratch to run `spec` with: the slot's, if it was built for this rule, or a new one, which
-the slot keeps. `nothing` for a rule that declares none.
+the slot keeps. `nothing` for a rule that declares none. `checked`, the `checked_buffers`
+diagnostic, poisons a reused scratch first (see [`ReactiveMP.poison!`](@ref)).
 """
-function scratch_for!(slot::ScratchSlot, spec, algorithm, ctx, args, target)
+function scratch_for!(slot::ScratchSlot, spec, algorithm, ctx, args, target, checked::Bool = false)
     spec.scratch === nothing && return nothing
-    slot.spec === spec && return slot.scratch
+    slot.spec === spec && return checked ? poison!(slot.scratch) : slot.scratch
     slot.scratch = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, target)
     slot.spec = spec
     return slot.scratch

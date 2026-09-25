@@ -77,6 +77,26 @@ ReactiveMP.GroupInputs
 ReactiveMP.input_names
 ```
 
+## [Diagnostics](@id lib-node-diagnostics)
+
+Three audits of the rules a node runs, all off by default, set with the activation option
+`diagnostics`: `check_everything_pure` stops at an impure rule, `check_everything_inplace` reports
+each rule with no in-place form once, and `checked_buffers` poisons the memory the engine recycles
+before each reuse, so a rule reading its scratch before writing it shows `NaN`. Each names the
+rule it objects to, by node, target, algorithm and the place it is defined. Purity is declared,
+not proved: the audit reads what the rule and its algorithm declare (see
+[`MessagePassingRulesBase.ispure`](@ref)).
+
+```julia
+activate!(node, FactorNodeActivationOptions(; diagnostics = EngineDiagnostics(check_everything_pure = true)))
+```
+
+```@docs
+ReactiveMP.EngineDiagnostics
+ReactiveMP.ImpureRuleError
+ReactiveMP.poison!
+```
+
 ## [Static inputs](@id lib-node-static-inputs)
 
 A deterministic node declared with `static_inputs = :fold`, such as the Delta node, folds the

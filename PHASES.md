@@ -22,8 +22,8 @@ one.
 ## Next action
 
 **Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
-brief*), its questions answered (§3.46); item 1, the small engine fixes, is done, and item 2, the
-diagnostics, is next. **Phase 6 is
+brief*), its questions answered (§3.46); items 1 (the small engine fixes) and 2 (the diagnostics) are
+done, and item 3, the generator as an activation option, is next. **Phase 6 is
 closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
 with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
 deleted.
@@ -3410,7 +3410,12 @@ Known scope:
 - [x] every node supported, as Phases 5–6 port their rules out of `legacy/v6/`. The mixtures'
       per-node `activate!` is already gone: step 4's generic activation replaces it *(Phase 6)*
 - [x] `EqualityChain` `BitVector` → `Vector{Bool}` *(item 1, with a test of the caches)*
-- [ ] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
+- [x] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
+      *(item 2: `EngineDiagnostics`, an activation option, audited as message and marginal
+      rules are resolved; checked buffers poison the scratch, the only memory recycled; the
+      average energies of `bethe_free_energy`, which takes no activation options, wait for
+      RxInfer's adaptation, item 6, to pass them; running the suite checked is a workflow job,
+      item 5)*
 - [ ] RxInfer adapted to the new engine, as its own major release: node and rule creation,
       a per-node `algorithm` option (replacing `meta` and v6's `where { dependencies = … }`),
       and default initial messages. What step 4 changed under it, all found by reading RxInfer
