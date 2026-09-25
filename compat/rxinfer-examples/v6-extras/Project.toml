@@ -1,0 +1,4 @@
+# Stacked after compat/v6-comparison on JULIA_LOAD_PATH, for the one registry package the
+# examples need that the pinned v6 environment lacks. StableRNGs depends only on Random.
+[deps]
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"

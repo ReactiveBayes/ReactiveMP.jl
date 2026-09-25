@@ -1826,6 +1826,17 @@ method: the entropy of a point mass whose point is a distribution is `−∞` in
 distribution's float type. RxInfer builds the node for a distribution value, and counts its
 hidden constant in the free energy's point entropies.
 
+### 3.48 Log scales stay as v6 has them, past the release (user, 2026-09-25)
+
+§3.46 had log scales fixed in Phase 7, with typed annotations and the key owned by the base
+package, and item 7's brief proposed a contract (exact belief-propagation rules must annotate
+one, verified; the rest record `missing`). **The user set that aside:** this is a transition
+release. Log scales reproduce what v6 does, with no new rules annotating them, none removed, and
+no new requirement or error; typed annotations are not done, and may not be needed; the mutable
+`AnnotationDict` stays. Every earlier decision about fixing them is void, and what log scales
+should be is decided after the refactor is released. The brief's survey stands as the record:
+22 of Standard's 83 belief-propagation rules annotate a log scale, none elsewhere.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

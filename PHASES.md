@@ -33,17 +33,17 @@ deleted.
 
 | What | Where it lands | Recorded in |
 |---|---|---|
-| typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
+| typed annotations (`Message{D, A}`), if at all | after the release | `DISCUSSION.md` §3.48 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
-| `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | the log-scale milestone, Phase 7 | Phase 5 review |
+| `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | after the release, with log scales | Phase 5 review; §3.48 |
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only), and its `mean(loggamma, ::GammaShapeRate)` is a Float64 (GammaMixture's switch and energy tables run in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
-| `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
+| `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | after the release, with log scales | § Phase 5, *Step 7 brief*; §3.48 |
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
-| log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | the log-scale milestone, Phase 7 | `DISCUSSION.md` §3.37 |
+| log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | after the release | `DISCUSSION.md` §3.37, §3.48 |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
@@ -3441,7 +3441,8 @@ Known scope:
 - [x] Aqua's `ambiguities` check re-measured on the new code and re-enabled, or its remaining
       pairs budgeted; it was 322 pairs on `main`, most in code now in `legacy/` *(item 1: one
       pair left, `getdata(())`, fixed; the check is on)*
-- [ ] the log-scale milestone, after the migration (user): v6's gaps were preserved
+- [x] the log-scale milestone, after the migration (user): v6's gaps were preserved *(item 7:
+      deferred past the release, v6's behaviour kept as it is, §3.48)*; originally: v6's gaps were preserved
       deliberately, and this is where they are fixed, **or the feature is dropped**, decided
       then (`DISCUSSION.md` §3.37). Dropping it takes Mixture's rules with it, since its switch
       is a softmax over incoming log scales. Typed annotations (`Message{D, A}`, brief item 3)
@@ -3645,10 +3646,11 @@ them, and the key gets an owner in the base package.
    recorded for every exact BP fixture, against v6 where v6 has them, and against the evidence
    (minus the free energy) where the model is exact.
 
-**Open, for the user:** whether (2)'s rule — exact BP messages only, `missing` otherwise — is the
-contract; whether typed annotations (6) belong in this milestone or after it; and whether the
-node packages' exact BP rules (GaussianCoupling's, DiscreteTransition's belief propagation,
-Delta's never) are in scope now.
+**Decided (user, 2026-09-25, `DISCUSSION.md` §3.48), superseding the proposals above and
+§3.46's "fixed":** this is a transition release. Log scales keep exactly what v6 does: no new
+rules annotating them, none removed, no new requirement or error, and no typed annotations; the
+mutable `AnnotationDict` stays. What log scales should be is decided after the refactor is
+released. **Item 7 is closed with no change.**
 
 ---
 
