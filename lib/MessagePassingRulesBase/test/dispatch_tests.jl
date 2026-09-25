@@ -189,7 +189,7 @@ end
 
 @testitem "context:matrix-correction" tags = [:base] begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: RuleContext, RuleArgs, Target, find_message_rule, missing_services, CONTEXT_SERVICES
+    using MessagePassingRulesBase: RuleContext, RuleArgs, Target, find_message_rule, missing_services, DEFAULT_CONTEXT_SERVICES
 
     # A strategy for correcting a matrix, such as MatrixCorrectionTools' ones, reached as
     # `ctx.matrix_correction`. `nothing` means not set, and the rule applies its own default
@@ -202,7 +202,7 @@ end
         body = (ctx, args) -> matrix_correction(ctx, x -> 2x)(args.m[:in]),
     )
 
-    @test :matrix_correction in CONTEXT_SERVICES
+    @test :matrix_correction in DEFAULT_CONTEXT_SERVICES
     @test RuleContext().matrix_correction === nothing
     args = RuleArgs(m = (in = 2.0,))
     @test message_passing_rule(Corrected, Target(:out), DefaultAlgorithm(), args) == 4.0
@@ -212,5 +212,31 @@ end
 
     spec = find_message_rule(Corrected, Target(:out), DefaultAlgorithm(), args)
     @test spec.services === (:matrix_correction,)
-    @test isempty(missing_services(spec, RuleContext()))
+    # Supplied as `nothing`, it is set to "the rule's own default"; left out, it is missing.
+    @test isempty(missing_services(spec, RuleContext(matrix_correction = nothing)))
+    @test missing_services(spec, RuleContext()) == (:matrix_correction,)
+end
+
+@testitem "context:any service" tags = [:base] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: RuleContext, RuleArgs, Target, find_message_rule, missing_services
+
+    # The context holds whatever the caller supplies, read as `ctx.name`, and a rule may declare
+    # a service of its own; one not supplied reads as `nothing`.
+    struct Scaled end
+    @define_factor_node(node = Scaled, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Scaled, target = :out, ctx = (:scale,), args = (m[:in]::Float64,), body = (ctx, args) -> ctx.scale * args.m[:in])
+
+    ctx = RuleContext(scale = 3.0)
+    @test ctx.scale === 3.0 && ctx.rng === nothing
+    @test ctx isa RuleContext{@NamedTuple{scale::Float64}} && ismutable(ctx)
+    args = RuleArgs(m = (in = 2.0,))
+    @test message_passing_rule(Scaled, Target(:out), DefaultAlgorithm(), args, ctx) == 6.0
+    spec = find_message_rule(Scaled, Target(:out), DefaultAlgorithm(), args)
+    @test missing_services(spec, ctx) == () && missing_services(spec, RuleContext()) == (:scale,)
+    # Merging overrides and adds, as an engine layers a model's services over its defaults.
+    merged = merge(RuleContext(rng = :default, scale = 1.0), (scale = 2.0, extra = 1))
+    @test merged.rng === :default && merged.scale === 2.0 && merged.extra === 1
+    @test propertynames(merged) == (:rng, :scale, :extra)
+    @test (@inferred (c -> c.scale)(ctx)) === 3.0
 end

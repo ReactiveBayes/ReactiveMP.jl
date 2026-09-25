@@ -55,10 +55,6 @@ function RuleSpec(;
         throw(ArgumentError("rule kind must be :message, :marginal or :average_energy, got :$kind"))
     inplace && prealloc === nothing &&
         throw(ArgumentError("an in-place rule needs a `preallocate` function"))
-    for service in services
-        service in CONTEXT_SERVICES ||
-            throw(ArgumentError("unknown context service :$service; valid services are $CONTEXT_SERVICES"))
-    end
     effective = something(pure, algorithm <: AbstractAlgorithm ? ispure(algorithm) : true)
     return RuleSpec(
         kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, default, inplace, effective,
@@ -228,12 +224,12 @@ end
 """
     missing_services(spec::RuleSpec, ctx::RuleContext)
 
-The context services a rule declares and `ctx` does not provide. Meant to be checked once,
-when a node is set up, rather than on every call. An optional service, whose `nothing` is a
-setting (`matrix_correction`), is never missing.
+The context services a rule declares that `ctx` does not supply: names it has no entry for.
+An entry whose value is `nothing`, such as an unset `matrix_correction`, is supplied. Meant to be
+checked once, when a node is set up, rather than on every call.
 """
 missing_services(spec::RuleSpec, ctx::RuleContext) =
-    filter(service -> !(service in OPTIONAL_CONTEXT_SERVICES) && getfield(ctx, service) === nothing, spec.services)
+    filter(service -> !haskey(getfield(ctx, :services), service), spec.services)
 
 
 """

@@ -149,6 +149,21 @@ MessagePassingRulesBase.RuleIssue
 MessagePassingRulesBase.check_rule_ambiguities
 ```
 
+### [Rule fallbacks](@id rules-algorithms-fallbacks)
+
+Where no rule fits, an engine may consult a rule fallback instead of reporting the error: a
+callable taking the node, the target and the rule's arguments, and returning a message or
+`nothing`. It is consulted only when the lookup returns `RuleNotFound`, so it never replaces a
+rule that exists, and an error inside a rule is never turned into a fallback. The engine takes it
+as the activation option `rulefallback`. [`NodeFunctionRuleFallback`](@ref) is the one the base
+package provides: for a stochastic node without groups, the node's log-density in the target, the
+other inputs collapsed to points.
+
+```@docs
+MessagePassingRulesBase.NodeFunctionRuleFallback
+MessagePassingRulesBase.NodeFunctionLogPdf
+```
+
 The registries list what each package defined, for listings, coverage and display.
 
 ```@docs

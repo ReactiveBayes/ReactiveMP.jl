@@ -65,6 +65,7 @@ declaration order, which is the update schedule. See
 
 ```@docs
 ReactiveMP.FactorNodeActivationOptions
+ReactiveMP.node_context
 ReactiveMP.getalgorithm
 ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)
 ReactiveMP.default_dependencies

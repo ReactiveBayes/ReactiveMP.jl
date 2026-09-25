@@ -43,6 +43,7 @@ is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
 is_initial(tuple::Tuple) = TupleTools.prod(map(is_initial, tuple))
 
 include("rule_arguments.jl")
+include("context.jl")
 
 # Predefined postprocessors
 include("postprocessors/scheduled.jl")

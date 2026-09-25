@@ -1,0 +1,44 @@
+"""
+    NodeFunctionRuleFallback(extract = mean)
+
+A rule fallback: the message a stochastic node sends when no rule matches, computed from its
+[`nodefunction`](@ref), the log-density its declaration defines. The message towards `out` or
+another interface is the node's log-density in that interface, every other input, a message or
+a marginal, collapsed to a point by `extract`. It is a [`NodeFunctionLogPdf`](@ref), unnormalised,
+which a form constraint or a product with a proper distribution turns into one.
+
+Called as `fallback(node, target, args)`, it returns `nothing` where the node function does not
+apply: a deterministic node, a node with groups, a member of a group, or an input that is a
+joint. An engine consults a fallback only when resolution finds no rule, so an error inside a
+rule is never turned into a fallback.
+"""
+struct NodeFunctionRuleFallback{E}
+    extract::E
+end
+
+NodeFunctionRuleFallback() = NodeFunctionRuleFallback(mean)
+
+"""
+    NodeFunctionLogPdf(logpdf)
+
+An unnormalised log-density, `logpdf(d, x)` being `logpdf(x)`, supported everywhere: the message
+of a [`NodeFunctionRuleFallback`](@ref).
+"""
+struct NodeFunctionLogPdf{F}
+    logpdf::F
+end
+
+BayesBase.logpdf(d::NodeFunctionLogPdf, x) = d.logpdf(x)
+BayesBase.insupport(::NodeFunctionLogPdf, x) = true
+(d::NodeFunctionLogPdf)(x) = logpdf(d, x)
+
+(fallback::NodeFunctionRuleFallback)(node, target, args) = nothing
+
+function (fallback::NodeFunctionRuleFallback)(node, ::Target{E}, args::RuleArgs) where {E}
+    applicable(nodefunction, node) || return nothing
+    inputs = (rule_inputs(node, args.m)..., rule_inputs(node, args.q)...)
+    all(((key, _),) -> key isa Symbol, inputs) || return nothing
+    points = NamedTuple{map(first, inputs)}(map(((_, value),) -> fallback.extract(value), inputs))
+    f = nodefunction(node)
+    return NodeFunctionLogPdf(x -> f(; points..., (E => x,)...))
+end

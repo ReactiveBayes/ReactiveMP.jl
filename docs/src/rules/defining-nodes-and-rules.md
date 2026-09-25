@@ -180,6 +180,7 @@ MessagePassingRulesBase.Messages
 MessagePassingRulesBase.Marginals
 MessagePassingRulesBase.canonical_cluster_keys
 MessagePassingRulesBase.RuleContext
+MessagePassingRulesBase.DEFAULT_CONTEXT_SERVICES
 matrix_correction
 MessagePassingRulesBase.buffer_like
 ```

@@ -72,7 +72,7 @@ function score(
 
     mapping = let fform = functionalform(node),
             marginals_names = input_names(map(i -> cluster_label(node, clusters, i), Tuple(eachindex(localmarginals)))),
-            ctx = rule_context(node),
+            ctx = node_context(node),
             algorithm = algorithm
 
         (marginals) -> begin

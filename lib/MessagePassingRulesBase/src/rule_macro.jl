@@ -247,8 +247,6 @@ function parse_services(name, ex)
     for entry in entries
         symbol = quoted_symbol(entry)
         symbol === nothing && error("@$name: `ctx` lists services as symbols, like `ctx = (:product,)`; got `$entry`")
-        symbol in CONTEXT_SERVICES ||
-            error("@$name: unknown context service `$symbol`; valid services are $(join(("`$s`" for s in CONTEXT_SERVICES), ", "))")
         push!(services, symbol)
     end
     return Tuple(services)

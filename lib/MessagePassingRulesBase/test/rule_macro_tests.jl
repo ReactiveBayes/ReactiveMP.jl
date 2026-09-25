@@ -261,6 +261,7 @@ end
     @test contains(rule(base..., kw(:args, :((m[:a, :b],))), kw(:body, :((args) -> 1))), "only marginals")
     @test contains(rule(base..., kw(:args, :((m[:a], m[:a]))), kw(:body, :((args) -> 1))), "given twice")
     @test contains(rule(base..., kw(:args, :(())), kw(:body, :(1))), "must be a lambda")
-    @test contains(rule(base..., kw(:args, :(())), kw(:body, :(() -> 1)), kw(:ctx, :((:gpu,)))), "unknown context service `gpu`")
+    # Any service name is allowed: the context is whatever the caller supplies.
+    @test rule(base..., kw(:args, :(())), kw(:body, :(() -> 1)), kw(:ctx, :((:gpu,)))) == ""
     @test contains(rule(kw(:node, :X), kw(:target, :out), kw(:args, :(())), kw(:body, :(() -> 1))), "`target` must be")
 end

@@ -1837,6 +1837,23 @@ no new requirement or error; typed annotations are not done, and may not be need
 should be is decided after the refactor is released. The brief's survey stands as the record:
 22 of Standard's 83 belief-propagation rules annotate a log scale, none elsewhere.
 
+### 3.49 Rule fallbacks back; the context services one option (user, 2026-09-25)
+
+§3.36 had not carried v6's rule fallbacks over, for nothing in the tree needed them; RxInfer's
+documentation does. The design had kept their place: resolution is total, so a fallback sits on
+the `RuleNotFound` branch only and can never swallow an error from a rule. So they come back as
+the activation option `rulefallback`, and the base package provides `NodeFunctionRuleFallback`,
+v6's computation from the node function.
+
+The generator was a flat activation option of its own, `rng`, and `matrix_correction` had none.
+The user asked for the context to be one option instead, and open: a store of anything a rule may
+need, so a rule may declare services of its own and the base does not restrict their names; the
+base documents only those an engine supplies by default. `RuleContext` is a mutable object
+holding a typed `NamedTuple`, so it is passed by reference and every read of a service is
+inferred. The engine builds one per node at activation, its defaults (`node`, `product`, the
+task's `rng`) merged with the node's `context` option, which adds or overrides services; RxInfer
+forwards the option.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

@@ -1,36 +1,44 @@
 """
-    RuleContext(; node = nothing, product = nothing, linalg = nothing, rng = nothing, matrix_correction = nothing)
+    RuleContext(; services...)
+    RuleContext(services::NamedTuple)
 
-The read-only infrastructure a rule receives as `ctx`. It never takes part in dispatch.
+The context a rule receives as `ctx`: the services its caller supplies, read as `ctx.name`. It
+never takes part in dispatch. A rule declares the services it reads, `ctx = (:rng,)`; any name
+is allowed, so a rule may need a service of its own. A service the caller does not supply reads
+as `nothing`, and [`missing_services`](@ref) lists them.
 
-- `node`: the factor node the rule belongs to, e.g. for [`getnodefn`](@ref)`(ctx.node, target)`.
-- `product`: `(left, right) -> (distribution, logscale)`.
-- `linalg`: the linear-algebra strategy. **Unstable**: its protocol is not settled yet.
-- `rng`: the random number generator, owned by the caller.
+The services an engine supplies by default, [`DEFAULT_CONTEXT_SERVICES`](@ref):
+- `node`: the factor node the rule belongs to, e.g. for [`getnodefn`](@ref)`(ctx.node, target)`;
+- `product`: `(left, right) -> (distribution, logscale)`;
+- `rng`: the random number generator, owned by the caller;
 - `matrix_correction`: how a rule corrects a matrix it builds before using it, such as a
-  precision that must stay positive definite: a strategy from MatrixCorrectionTools. `nothing`
-  means not set, and each rule then applies its own default; a rule reads it through
+  precision that must stay positive definite: a strategy from MatrixCorrectionTools, or
+  `nothing`, and each rule then applies its own default; a rule reads it through
   [`matrix_correction`](@ref)`(ctx, default)`. MatrixCorrectionTools' `NoCorrection()` is an
   explicit identity.
 
-A service a rule needs and does not get is `nothing`; see [`missing_services`](@ref). For an
-optional service, `matrix_correction`, `nothing` is a setting rather than an absence.
+A mutable object holding the services as a typed `NamedTuple`: a caller builds one and passes
+it to every call by reference, and reading a service is inferred. `merge(ctx, services)` adds
+or overrides services, as a caller layers its own over the defaults.
 """
-struct RuleContext{N, P, L, R, M}
-    node::N
-    product::P
-    linalg::L
-    rng::R
-    matrix_correction::M
+mutable struct RuleContext{S <: NamedTuple}
+    const services::S
 end
 
-RuleContext(; node = nothing, product = nothing, linalg = nothing, rng = nothing, matrix_correction = nothing) =
-    RuleContext(node, product, linalg, rng, matrix_correction)
+RuleContext(; services...) = RuleContext(NamedTuple(services))
 
-const CONTEXT_SERVICES = (:node, :product, :linalg, :rng, :matrix_correction)
+Base.getproperty(ctx::RuleContext, name::Symbol) = get(getfield(ctx, :services), name, nothing)
+Base.propertynames(ctx::RuleContext) = keys(getfield(ctx, :services))
+Base.merge(ctx::RuleContext, services::NamedTuple) = RuleContext(merge(getfield(ctx, :services), services))
+Base.show(io::IO, ctx::RuleContext) = print(io, "RuleContext", getfield(ctx, :services))
 
-# The services for which `nothing` is a setting, so that a rule declaring one is never short of it.
-const OPTIONAL_CONTEXT_SERVICES = (:matrix_correction,)
+"""
+    DEFAULT_CONTEXT_SERVICES
+
+The context services an engine supplies by default: `node`, `product`, `rng` and
+`matrix_correction` (see [`RuleContext`](@ref)). A rule may declare others.
+"""
+const DEFAULT_CONTEXT_SERVICES = (:node, :product, :rng, :matrix_correction)
 
 """
     matrix_correction(ctx::RuleContext, default)

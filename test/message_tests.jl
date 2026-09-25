@@ -439,27 +439,38 @@ end
     @test getdata(draw((Message(1, false, false),), nothing)) === Random.default_rng()
 end
 
-@testitem "the generator is an activation option" tags = [:engine] setup = [MessageMappingNodes] begin
-    import ReactiveMP: MessageMapping, EngineDiagnostics, FactorNodeActivationOptions, activate!, factornode, getinterfaces,
-        get_stream_of_inbound_messages, get_stream_of_marginals, set_initial_message!, RandomVariableActivationOptions, MessageProductContext, getdata
-    import MessagePassingRulesBase: Target, DefaultAlgorithm
+@testitem "the context services are an activation option" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, EngineDiagnostics, FactorNodeActivationOptions, node_context, activate!, factornode,
+        get_stream_of_marginals, set_initial_message!, RandomVariableActivationOptions, MessageProductContext, getdata, getinterfaces,
+        get_stream_of_inbound_messages
+    import MessagePassingRulesBase: Target, DefaultAlgorithm, RuleContext
     import Random
     using Rocket
     N = MessageMappingNodes
 
     rng = Random.Xoshiro(7)
-    @test FactorNodeActivationOptions().rng === nothing
-    @test FactorNodeActivationOptions(; rng).rng === rng
-    # A mapping given one hands it to its rule.
-    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing, EngineDiagnostics(), rng)
-    @test getdata(draw((Message(1, false, false),), nothing)) === rng
+    @test FactorNodeActivationOptions().context === NamedTuple()
+    @test FactorNodeActivationOptions(; context = (rng = rng,)).context === (rng = rng,)
 
-    # Through activation: the node's rules draw from it.
+    # One context per node, the engine's services merged with the node's: any name is allowed, and
+    # a name the engine supplies is overridden.
+    node = N.Draw()
+    ctx = node_context(node, (rng = rng, matrix_correction = :identity, gpu = :device))
+    @test ctx isa RuleContext && ctx.node === node && ctx.rng === rng && ctx.matrix_correction === :identity && ctx.gpu === :device
+    @test ctx.product !== nothing
+    @test node_context(node).rng === Random.default_rng() && node_context(node).matrix_correction === nothing
+
+    # A mapping hands its node's context to the rule.
+    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, node, nothing, EngineDiagnostics(), (rng = rng,))
+    @test getdata(draw((Message(1, false, false),), nothing)) === rng
+    @test draw.context.node === node
+
+    # Through activation: the node's rules draw from its generator.
     out, in = randomvar(), randomvar()
     node = factornode(N.Draw, [(:out, out), (:in, in)], ((:out, :in),))
     product = MessageProductContext()
     foreach(v -> activate!(v, RandomVariableActivationOptions(nothing, product, product)), (out, in))
-    activate!(node, FactorNodeActivationOptions(; rng))
+    activate!(node, FactorNodeActivationOptions(; context = (rng = rng,)))
     received = []
     subscription = subscribe!(get_stream_of_marginals(out), (q) -> push!(received, getdata(q)))
     set_initial_message!(get_stream_of_inbound_messages(last(getinterfaces(node))), 1)

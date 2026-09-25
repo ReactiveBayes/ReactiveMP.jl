@@ -43,6 +43,7 @@ until after the release (§3.48). Phases 5 and 6 are closed too.
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | after the release, with log scales | § Phase 5, *Step 7 brief*; §3.48 |
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
+| **inconsistent, to settle** (user, 2026-09-25): the context service `product` is a fixed engine function, `(left, right) -> (distribution, logscale)` with `GenericProd`, not the product context the variables use (`MessageProductContext`), and it returns a log scale although a rule has nothing to do with log scales; only Mixture's switch rule uses it (§3.34) | **before the release** (user), after this cleanup | `DISCUSSION.md` §3.34 |
 | the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
 | log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | after the release | `DISCUSSION.md` §3.37, §3.48 |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
@@ -3683,6 +3684,13 @@ history: phases and steps ("Phase 5, step 3", "case (d)"), the slice, what v6 di
 into `DISCUSSION.md` or `PHASES.md`, `legacy/` paths. They are irrelevant once the rewrite is
 done, and git keeps the history. Done last, after Phases 5–7 and before the release, so
 that nothing written in between escapes it.
+
+**Progress** (plan of 2026-09-25: rule fallbacks; dead code and wrong docs; the engine tests
+without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
+`compat/`, `investigations/`, the CHANGELOG's release notes and TestUtils' comparison machinery
+wait for the release):
+- *Rule fallbacks and the open rule context — done* (§3.49), with RxInfer's options forwarding
+  `context` and `rulefallback`.
 
 **Exit criteria**
 - [ ] no mention of phases, steps, cases (a)–(d), the slice, `PLAN.md`, `PHASES.md`,

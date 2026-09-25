@@ -569,7 +569,7 @@ unless an input is `missing`, in which case the message is `missing` and no rule
 
 See also: [`Message`](@ref), [`DeferredMessage`](@ref)
 """
-struct MessageMapping{F, T, N, M, A, X, R, E, G}
+struct MessageMapping{F, T, N, M, A, X, R, E, G, B}
     target::T
     msgs_names::N
     marginals_names::M
@@ -578,7 +578,8 @@ struct MessageMapping{F, T, N, M, A, X, R, E, G}
     factornode::R
     callbacks::E
     diagnostics::EngineDiagnostics
-    rng::G
+    context::G
+    rulefallback::B
     scratch::ScratchSlot
 end
 
@@ -602,12 +603,20 @@ function Base.show(io::IO, mapping::MessageMapping)
     return nothing
 end
 
-# `rng` is the generator the rules draw from, `nothing` for the task's default one.
-MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), rng::G = nothing) where {F, T, N, M, A, X, R, E, G} =
-    MessageMapping{F, T, N, M, A, X, R, E, G}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, rng, ScratchSlot())
+# `context` holds the services the rules run with, merged over the engine's (`node_context`);
+# `rulefallback` gives the message where no rule matches, `nothing` for none.
+MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing) where {F, T, N, M, A, X, R, E, B} =
+    (c = node_context(factornode, context); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot()))
 
-MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), rng::G = nothing) where {F <: Function, T, N, M, A, X, R, E, G} =
-    MessageMapping{F, T, N, M, A, X, R, E, G}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, rng, ScratchSlot())
+MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing) where {F <: Function, T, N, M, A, X, R, E, B} =
+    (c = node_context(factornode, context); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot()))
+
+# The fallback's message where no rule matched; the not-found error where it has none either.
+function fallback_message(fallback, notfound, fform, target, args)
+    message = fallback(fform, target, args)
+    isnothing(message) && throw(RuleNotFoundError(notfound))
+    return message
+end
 
 function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
@@ -641,12 +650,17 @@ function (mapping::MessageMapping)(messages, marginals)
     else
         fform = message_mapping_fform(mapping)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
-        spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)))
-        ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
-        ctx = rule_context(mapping.factornode, mapping.rng)
-        algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
-        scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
-        MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+        found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
+        if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
+            fallback_message(mapping.rulefallback, found, fform, mapping.target, args)
+        else
+            spec = audit_rule(mapping.diagnostics, resolve_rule(found))
+            ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
+            ctx = mapping.context
+            algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+            scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+            MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+        end
     end
 
     # Run annotation processors after the rule has been executed

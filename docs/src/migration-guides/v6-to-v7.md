@@ -301,6 +301,7 @@ schedule in variational message passing.
 | `to_marginal(d)` | `public_equivalent(d)`, a method a package adds for its working types |
 | `getnodefn(node)`, `getnode()` in a rule | `getnodefn(ctx.node, target)`, `ctx.node` |
 | `@test_rules` | `@test_message_update_rule` ([Testing rules](@ref rules-testing)) |
+| `NodeFunctionRuleFallback()` as the engine's `rulefallback` | the same, from `MessagePassingRulesBase`, as the activation option `rulefallback` ([Rule fallbacks](@ref rules-algorithms-fallbacks)); its message is a `NodeFunctionLogPdf` |
 
 ## [What cannot be translated mechanically](@id migration-v6-to-v7-manual)
 
@@ -314,8 +315,6 @@ These need a person who knows what the rule means. Stop and ask.
 - **`meta` used as mutable workspace**, such as a cache filled across calls. A rule is pure unless
   it says `pure = false`; state belongs to an algorithm that declares itself impure, and whether
   that is right depends on the model.
-- **Rule fallbacks** are not carried over: when no rule fits, the base package reports the closest
-  candidates.
 
 ## [Verifying a port](@id migration-v6-to-v7-verify)
 
@@ -445,7 +444,7 @@ These v6 names have no counterpart: `Marginalisation`, `MomentMatching`, the fun
 dependency types, the per-node node types (`NormalMixtureNode` and its alias `GaussianMixtureNode`,
 `GammaMixtureNode`, `MixtureNode`; the checks their constructors made, at least two components, as many of each
 kind, a mean-field factorisation, are the `matched_groups`, `min_group_length` and
-`factorisation` of [`@define_factor_node`](@ref)), `NodeFunctionRuleFallback`, and the approximation methods
+`factorisation` of [`@define_factor_node`](@ref)), and the approximation methods
 with no remaining consumer (`CVI`, `ProdCVI`, `Adam` and its `update!`, `ForwardDiffGrad`,
 `LaplaceApproximation` and `laplace`, `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature`,
 `srcubature`), with the Optimisers extension that served `ProdCVI`.
