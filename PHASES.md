@@ -3576,6 +3576,30 @@ Known scope:
   and the tests;
 - **the five proposed RxInferExamples models are the check.**
 
+**Progress** (RxInfer's branch `refactor/reactivemp-v7`, local):
+- *Steps 1–5 — done in RxInfer, its whole suite passing (14 710 checks) and its Aqua checks.*
+  - RxInfer depends on the engine, the base, Standard, Delta and the approximations, and
+    re-exports them; every other node package is a test extra. The GraphPPL backend asks
+    `nodespec`: a declared node is atomic and names its interfaces, a trailing group may be
+    given none, and a function no package declares is a Delta node, `DeltaFn{typeof(f)}` with
+    `nodefn = f`, which may be given its method alone, `f() -> Linearization()`, as in v6.
+  - Node creation passes names, a group member as `(name, EdgeLabel.index)` only for the node's
+    own groups, since GraphPPL indexes an edge from a sliced array too; a distribution value is
+    a `StandaloneDistribution` (§3.47), its hidden constant counted in the free energy.
+  - `@algorithm`, `infer(; algorithm)` and `where { algorithm = … }`; `meta` a deprecated alias;
+    `where { dependencies = … }` and `rulefallback` errors saying where they went; the
+    `diagnostics` and `rng` options forwarded; the free energy and force-marginal plugins on
+    the node's algorithm and local marginals.
+  - The tests ported (a subagent): v6's macros to the base's, `@call_rule` to
+    `call_message_update_rule`, the dependencies to declarations and `@initialization`; no
+    expected value changed. `cvi_tests.jl` is deleted, CVI having no replacement. Two Probit
+    cases set a per-edge initial message with `RequireMessageFunctionalDependencies`, which v7
+    has no counterpart for; the nearest, `μ(x)`, sets every edge of `x` and gives v6's own
+    numbers for that translation, so they are removed and recorded here.
+  - Found for the engine packages: `diageye(n)`, `dot` and `diageye` exported from Standard,
+    and `StandaloneDistribution`.
+- *Step 6, RxInferExamples models against v6, is next; then a commit in RxInfer for review.*
+
 ---
 
 ## Phase C — Cleanup: historical remarks out of the repository

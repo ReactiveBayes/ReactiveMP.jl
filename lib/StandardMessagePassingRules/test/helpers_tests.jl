@@ -40,3 +40,11 @@
         @test mul_trace(a, b) ≈ a * b
     end
 end
+
+@testitem "helpers:diageye" tags = [:helpers] begin
+    using StandardMessagePassingRules
+
+    # Exported, as v6's was, with its element type or, as models write it, without one.
+    @test diageye(Float32, 2) == Float32[1 0; 0 1] && eltype(diageye(Float32, 2)) === Float32
+    @test diageye(3) == [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] && eltype(diageye(3)) === Float64
+end

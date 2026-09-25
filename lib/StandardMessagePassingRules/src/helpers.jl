@@ -20,11 +20,12 @@ promoted_cluster(cluster::FactorizedCluster, inputs...) =
     BayesBase.convert_paramfloattype(BayesBase.promote_paramfloattype(inputs...), cluster)
 
 """
-    diageye(::Type{T}, n)
+    diageye([T = Float64], n)
 
 The `n`×`n` identity matrix of element type `T`, dense.
 """
 diageye(::Type{T}, n::Integer) where {T} = Matrix{T}(I, n, n)
+diageye(n::Integer) = diageye(Float64, n)
 
 """
     negate_inplace!(A)
