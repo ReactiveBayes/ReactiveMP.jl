@@ -34,7 +34,6 @@ deleted.
 | What | Where it lands | Recorded in |
 |---|---|---|
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
-| the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
 | `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | the log-scale milestone, Phase 7 | Phase 5 review |
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
@@ -43,7 +42,6 @@ deleted.
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
-| the Delta package's missing `LibTests` job | Phase 7, with the workflows | § Phase 7 |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
 | log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | the log-scale milestone, Phase 7 | `DISCUSSION.md` §3.37 |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
@@ -3449,9 +3447,13 @@ Known scope:
       is a softmax over incoming log scales. Typed annotations (`Message{D, A}`, brief item 3)
       land with it, replacing the mutable `AnnotationDict`; kept, the log-scale key would get
       an owner there, in the base package
-- [ ] the `.github/` workflows brought up to date before the first PR: they still describe
+- [x] the `.github/` workflows brought up to date before the first PR: they still describe
       the 1.10 matrix and the pre-step-4 layout (§3.22 left them alone), and `LibTests` has no
-      job for `DeltaMessagePassingRules`
+      job for `DeltaMessagePassingRules` *(item 5: `ci.yml` on 1.13; `LibTests.yml` a job per
+      `make test-<package>` target, all fifteen, and the v6 job on 1.13 running every comparison,
+      the fixture check and the inventory gate. Checked by parsing and against the Makefile, since
+      no `act` is available; they first run on a PR. A job running the suite under
+      `EngineDiagnostics` is not added: the engine has no global switch for it)*
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality — for every ported node, against recorded v6 fixtures
 

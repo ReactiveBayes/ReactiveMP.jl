@@ -7,6 +7,8 @@ on:
     paths:
       - 'lib/**'
       - 'compat/**'
+      - 'src/**'
+      - 'Makefile'
       - '.github/workflows/LibTests.yml'
   push:
     branches:
@@ -15,91 +17,75 @@ on:
     paths:
       - 'lib/**'
       - 'compat/**'
+      - 'src/**'
+      - 'Makefile'
       - '.github/workflows/LibTests.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Julia 1.13 only while the rewrite targets it (DISCUSSION.md §3.22): its [sources] wire the
+# siblings, so each package is tested from its own project, as `make test-<package>` does.
 jobs:
   test:
-    name: ${{ matrix.package }} - Julia ${{ matrix.version }}
+    name: ${{ matrix.package }} - Julia 1.13
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - '1.10'
-          - '1.11'
-          - '1.12'
+        # The Makefile's targets, one per package under lib/.
         package:
-          - MessagePassingRulesBase
-          - MessagePassingRulesTestUtils
-          - MessagePassingRulesApproximations
+          - base
+          - testutils
+          - standard
+          - approximations
+          - delta
+          - gaussian-coupling
+          - probit
+          - gcv
+          - autoregressive
+          - softdot
+          - continuous-transition
+          - polya
+          - bifm
+          - flow
+          - discrete-transition
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3
         with:
-          version: ${{ matrix.version }}
+          version: '1.13'
       - uses: julia-actions/cache@v2
       - name: Test
         env:
+          # The fast local default skips `:slow` items; CI runs everything, and so the
+          # rule-coverage gates run too.
           TEST_ALL: true
-        run: |
-          julia --startup-file=no --project=lib/${{ matrix.package }} -e '
-            using Pkg
-            # Only the test tooling depends on a sibling; the approximations must not.
-            "${{ matrix.package }}" == "MessagePassingRulesTestUtils" && Pkg.develop(path = "lib/MessagePassingRulesBase")
-            Pkg.test()'
-
-  standard:
-    # Tested from its test/Project.toml: the test tooling is unregistered, and on 1.10, where
-    # [sources] is ignored, developing it into the package itself would make it a runtime
-    # dependency. So the siblings are developed into the test environment instead.
-    name: StandardMessagePassingRules - Julia ${{ matrix.version }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.10'
-          - '1.11'
-          - '1.12'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v2
-      - name: Test
-        env:
-          TEST_ALL: true
-        run: |
-          julia --startup-file=no --project=lib/StandardMessagePassingRules/test -e '
-            import Pkg
-            Pkg.develop([Pkg.PackageSpec(path = p) for p in ("lib/MessagePassingRulesBase", "lib/MessagePassingRulesTestUtils", "lib/StandardMessagePassingRules")])
-            Pkg.instantiate()'
-          julia --startup-file=no --project=lib/StandardMessagePassingRules/test lib/StandardMessagePassingRules/test/runtests.jl
+          JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC: 1
+        run: make test-${{ matrix.package }}
 
   v6-comparison:
-    name: v6 comparison - Julia 1.10
+    name: v6 comparison - Julia 1.13
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3
         with:
-          version: '1.10'
+          version: '1.13'
       - uses: julia-actions/cache@v2
-      - name: Compare ports with v6 and verify v6 rules
+      - name: Instantiate the pinned v6 environment
+        run: julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
+      - name: Verify the v6 rules and compare every port with v6
         run: |
-          julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-          julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
-      - name: Compare MessagePassingRulesApproximations with v6
-        run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_approximations.jl
-      - name: Compare the StandardMessagePassingRules ports with v6
-        run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_standard.jl
+          for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow compare_discrete_transition; do
+            echo "::group::$s"
+            julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
+            echo "::endgroup::"
+          done
       - name: Re-record the v6 engine fixtures and compare with the committed ones
         run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
+      - name: Every v6 entity has a destination
+        run: julia --startup-file=no --project=compat/v6-comparison scripts/inventory.jl --check

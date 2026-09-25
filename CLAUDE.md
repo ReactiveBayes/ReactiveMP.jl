@@ -94,7 +94,7 @@ julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures
 ```
 
 Work targets **Julia 1.13** for now, and **no CI runs** until a PR is opened: every check above
-is run locally. The workflow files under `.github/` are left as they are until registration.
+is run locally. The workflows under `.github/` describe these same checks, on 1.13 (Phase 7 item 5).
 
 `test_args` takes three kinds of entry, and they compose:
 
@@ -119,9 +119,10 @@ The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRu
 and stay in `make test-all`.
 
 The fast default must never become a coverage reduction — the CI workflows set `TEST_ALL=true`,
-so a `:slow` tag changes what *you* run locally, never what CI runs. The workflows under
-`.github/` still describe the 1.10 matrix and the pre-step-4 layout, and are brought up to date
-before the first PR (`PHASES.md` § Phase 7); until then, "CI" means these checks run locally.
+so a `:slow` tag changes what *you* run locally, never what CI runs. `ci.yml` runs the root
+suite and the docs, `LibTests.yml` a job per `make test-<package>` target and one for every v6
+comparison, the fixtures and the inventory; none has run yet, so until the first PR "CI" means
+these checks run locally.
 
 Rule tests live with the rules, in the lib packages, and are table-driven via
 `MessagePassingRulesTestUtils` (`@test_message_update_rule`). The engine's own tests declare
