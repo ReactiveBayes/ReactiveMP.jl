@@ -1906,6 +1906,17 @@ ownerless) and §3.48 (log scales as v6 has them past the release).
   where unsure): 28 more of Standard's rules, checked by enumeration or quadrature. The other 27
   stay undeclared, each with its reason in PHASES; whether a gate should list them is open.
 
+### 3.51 The rich display of `RuleResult` (user, 2026-09-25)
+
+Four decisions shaped it. **Dependency-free, in the base package**: a hand-written SVG of one node
+and a `text/plain` report, through `show(io, mime, x)`; `visualize_spec`'s extensions stay the
+place for graph-scale pictures. **A single rule call**: a trace of an inference run, recording
+rule calls through callbacks and drawing them on the graph, is a separate piece of work. **No
+maths**: showing a node's density or a rule's formula would need a declaration of it, and it is
+unclear how to generate one. **Tests of structure**, the elements and sections present and
+balanced, rather than byte-exact snapshots. The card lists the other rules for the same target
+with how each fits the call, the report the not-found error gives, now shared (`fit_report`).
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

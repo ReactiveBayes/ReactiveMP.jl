@@ -9,7 +9,7 @@ macros of `MessagePassingRulesBase`. The engine finds a node's rules through the
 so a rule defined in any loaded package is found, and none of the definitions depend on the
 engine: a rule is an ordinary function of its inputs, and can be called and tested on its own.
 
-## A worked example
+## [A worked example](@id rules-defining-worked-example)
 
 A deterministic node `out = in + c` for a known shift `c`, with a rule towards each of its
 unknowns:
@@ -235,6 +235,12 @@ Any rule can be called directly, without a graph, which is how rules are tested 
 Every call returns a [`RuleResult`](@ref): the result together with its log scale, the rule that
 ran, and what it ran with. A rule that reads its inputs' log scales is given them as
 `logscale = (out = …,)`, keyed like `m`. `which_*` returns the rule a call would run.
+
+A `RuleResult` shows itself: in the terminal as a report, one line per edge of the node with what
+it carried into the rule, and in a notebook or these pages as a card with the node drawn — the
+inputs as arrows in, messages solid and marginals dashed, the target as the arrow out — with the
+result, its log scale, the rule that ran and the other rules for the same target, as the
+[worked example](@ref rules-defining-worked-example) shows.
 
 ```@example defining
 which_message_update_rule(Shift, :in; m = (out = NormalMeanVariance(4.0, 2.0), c = PointMass(3.0)))

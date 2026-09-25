@@ -69,24 +69,32 @@ function Base.showerror(io::IO, err::RuleNotFoundError)
     print(io, "\n  near misses:")
     for spec in candidates
         print(io, "\n    rule at ", spec.file, ":", spec.line)
-        mark(ok) = ok ? "✓" : "✗"
-        print(io, "\n      ", mark(admits(nf.algorithm, spec.algorithm)), " algorithm ", spec.algorithm)
-        for input in spec.inputs
-            found = findfirst(((c, k, _),) -> c === input.container && k == input.key, provided)
-            label = input_label(input.container, input.key, input.selection) * "::" * string(input.type)
-            if found === nothing
-                print(io, "\n      ✗ ", label, "  not provided")
-            else
-                type = provided[found][3]
-                print(io, "\n      ", mark(input_accepts(input, type)), " ", label, "  got ", type)
-            end
-        end
-        for (c, k, t) in provided
-            any(i -> i.container === c && i.key == k, spec.inputs) && continue
-            print(io, "\n      ✗ ", input_label(c, k, k isa Tuple ? :cluster : :single), "::", t, "  provided but not consumed")
+        for (ok, text) in fit_report(spec, nf.algorithm, provided)
+            print(io, "\n      ", ok ? "✓" : "✗", " ", text)
         end
     end
     return nothing
+end
+
+# How a rule fits a call, slot by slot: its algorithm, each of its inputs against what was
+# provided, and each provided input it does not consume, as `(fits, description)` pairs.
+function fit_report(spec::RuleSpec, algorithm, provided)
+    lines = Tuple{Bool, String}[(admits(algorithm, spec.algorithm), "algorithm $(spec.algorithm)")]
+    for input in spec.inputs
+        found = findfirst(((c, k, _),) -> c === input.container && k == input.key, provided)
+        label = input_label(input.container, input.key, input.selection) * "::" * string(input.type)
+        if found === nothing
+            push!(lines, (false, "$label  not provided"))
+        else
+            type = provided[found][3]
+            push!(lines, (input_accepts(input, type), "$label  got $type"))
+        end
+    end
+    for (c, k, t) in provided
+        any(i -> i.container === c && i.key == k, spec.inputs) && continue
+        push!(lines, (false, "$(input_label(c, k, k isa Tuple ? :cluster : :single))::$t  provided but not consumed"))
+    end
+    return lines
 end
 
 """

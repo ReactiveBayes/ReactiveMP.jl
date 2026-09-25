@@ -50,6 +50,7 @@ include("diagnostics.jl")
 include("fallback.jl")
 include("interactive.jl")
 include("display.jl")
+include("result_show.jl")
 
 function __init__()
     Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs

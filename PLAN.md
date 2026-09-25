@@ -317,7 +317,7 @@ built on it.
   node's interfaces/groups, of what a rule receives under a given factorisation, and of the
   coverage matrix activate when a plotting package is loaded, and otherwise fail with a
   descriptive "load X to enable this" message rather than a `MethodError`.
-- **Rich display of `RuleResult`** (user, `DISCUSSION.md` §3.50; a requirement, not built yet).
+- **Rich display of `RuleResult`** (user, `DISCUSSION.md` §3.50, §3.51; built for a single rule call).
   What a call returns can show itself, through Julia's multimedia `show(io, mime, x)`: a
   `text/plain` report in the terminal (the node and the target with its direction, the inputs
   with their types and values, marked `m` or `q`, the incoming log scales, the algorithm and its
@@ -328,8 +328,8 @@ built on it.
   with an inline SVG of the node — its interfaces as edges, the inputs used as incoming arrows
   styled as messages or marginals, the unused interfaces greyed, the target the highlighted
   outgoing arrow — and the report's sections as tables. Dependency-free; `visualize_spec` stays
-  the extension point for richer backends. Built today: the one-line and plain `text/plain`
-  forms.
+  the extension point for richer backends. Not in it (user, §3.51): traces of an inference run,
+  and the maths of a node or a rule, which nothing declares.
 - **Error messages are pedagogy.** The "no rule found" output showing near-miss rules with
   per-slot ✓/✗ diffs is a teaching tool for students who get an input wrong, which is the
   common case in a classroom.
