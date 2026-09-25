@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [6.6.0] - 2026-09-25
+
 ### Added
 - A new `ManyPlus` node represents a sum with one factor and no intermediate sum variables, simplifying message initialization in RxInfer. Supports scalar Gaussian and fixed `PointMass` inputs, observed or fixed outputs, sum-product message rules, and deterministic joint-belief free-energy scoring. See the node documentation for constructing models with mixed random and fixed inputs or an observed sum.
 
@@ -307,7 +310,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.4.1...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.6.0...HEAD
+[6.6.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.5.0...v6.6.0
+[6.5.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.4.1...v6.5.0
 [6.4.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.4.0...v6.4.1
 [6.4.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.3...v6.4.0
 [6.3.3]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.3.2...v6.3.3
