@@ -3600,6 +3600,56 @@ Known scope:
     and `StandaloneDistribution`.
 - *Step 6, RxInferExamples models against v6, is next; then a commit in RxInfer for review.*
 
+### Item 7 brief — log scales fixed
+
+**Decided before (user, §3.46):** log scales are fixed, not dropped; typed annotations land with
+them, and the key gets an owner in the base package.
+
+**Scope, surveyed** (2026-09-25):
+- **What a log scale is.** For a belief-propagation message `m(x) = ∫ f(x, y…) Π m_i(y_i) dy`, the
+  log of its normalising constant, relative to the normalised distribution the rule returns;
+  summed over a variable's messages, with `compute_logscale` of each product, it is the log
+  evidence of an exact model (`bp_iid`'s posterior log scale is minus its free energy). A
+  variational message has none.
+- **Coverage.** Standard has 210 message rules: 83 read messages only, of which **22** annotate
+  `:logscale`; 77 read marginals only and 29 mix. No other package's rules annotate one. v6's
+  gaps are among the 61: NormalMeanVariance towards `μ` from `(m_out, q_v::PointMass)` (a
+  point-mass marginal of a constant, belief propagation in effect), and towards `out` from
+  `(q_μ, q_v::PointMass)`, which a prediction needs.
+- **The processor** (`src/annotations/logscale.jl`, 81 lines) errors when a rule sets none, but
+  for all-point-mass inputs, messages *or* marginals, never a mix, and never looking inside a
+  `FactorizedCluster`.
+- **`*`'s sampled messages** are unnormalised sums: their log scale lacks a constant.
+- **Annotations** are a mutable `AnnotationDict` per message; typed annotations,
+  `Message{D, A}`, were deferred to this milestone (§3.23).
+
+**Proposed, open to the user's correction:**
+1. **The key's owner:** the base package defines the log scale as a typed annotation and what a
+   rule's value means; `annotate!(ann, :logscale, v)` stays as its spelling in rule bodies.
+2. **Which rules must have one:** every rule whose result is an exact belief-propagation message:
+   inputs that are messages, or point-mass marginals of constants and data. A rule with any
+   other marginal has none, and the processor records its absence (`missing`) instead of
+   erroring, so a mixed model's evidence is `missing`, never wrong or an error.
+3. **Verified, not only tabulated:** TestUtils checks a rule's log scale against
+   `log ∫ f Π m_i` by quadrature or Monte Carlo, as `@verify_message_update_rule` checks a
+   message; every rule of (2) runs it, and a coverage gate, like the rule-coverage one, fails a
+   rule of (2) with no log scale.
+4. **The processor's fallbacks:** all point-mass inputs, messages and marginals mixed, and a
+   `FactorizedCluster`'s blocks.
+5. **`*`'s sampled messages** normalised, their log scale the Monte Carlo estimate of the constant.
+6. **Typed annotations:** `Message{D, A}` and `Marginal{D, A}` carry an immutable, typed
+   annotation set in place of the mutable dict, so an annotated message allocates nothing when
+   no processor runs; processors keep their hooks. Measured before and after, as §3.14 did for
+   the `Message` representation.
+7. **Checks:** the engine fixtures' log scales, recorded for `bp_iid` and `mixture_bp` only, are
+   recorded for every exact BP fixture, against v6 where v6 has them, and against the evidence
+   (minus the free energy) where the model is exact.
+
+**Open, for the user:** whether (2)'s rule — exact BP messages only, `missing` otherwise — is the
+contract; whether typed annotations (6) belong in this milestone or after it; and whether the
+node packages' exact BP rules (GaussianCoupling's, DiscreteTransition's belief propagation,
+Delta's never) are in scope now.
+
 ---
 
 ## Phase C — Cleanup: historical remarks out of the repository
