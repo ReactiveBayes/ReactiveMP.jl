@@ -12,7 +12,8 @@ using MessagePassingRulesTestUtils
 const FIXTURES = joinpath(@__DIR__, "fixtures", "engine")
 const PACKAGES = Dict("ReactiveMP" => pkgversion(ReactiveMP), "RxInfer" => pkgversion(RxInfer))
 
-node_text(mapping) = string(nameof(typeof(mapping).parameters[1]))
+# A function's node, `typeof(+)` say, by the function's name, `+` rather than `#+`.
+node_text(mapping) = replace(string(nameof(typeof(mapping).parameters[1])), r"^#" => "")
 
 target_text(::Val{S}) where {S} = ":$S"
 target_text((tag, index)::Tuple{Val{S}, Int}) where {S} = "(:$S, $index)"
@@ -271,6 +272,10 @@ end
 # defines them as its four coefficients, and so does this, for v6's type only.
 Distributions.params(d::ReactiveMP.ExponentialLinearQuadratic) = (d.a, d.b, d.c, d.d)
 
+# v6's Uninformative message is no distribution, which the fixture encoder cannot write; it is
+# recorded by name, for v6's type only.
+MessagePassingRulesTestUtils.encode_fixture_value(::ReactiveMP.Uninformative) = Dict{String, Any}("type" => "Uninformative")
+
 # Two Probit outputs of one weight: each rule towards `w` reads the message on its own edge,
 # which the other's message feeds, so they start from Probit's default initial message.
 @model function probit_ep(y)
@@ -324,6 +329,118 @@ const DT_EMISSION = [0.9 0.2; 0.1 0.8]
     t2 ~ Categorical([0.5, 0.5])
     z ~ DiscreteTransition(x, A, t1, t2)
     y ~ DiscreteTransition(z, DT_EMISSION)
+end
+
+# Belief propagation through the arithmetic nodes: a sum, a difference, a product by a constant
+# scalar and by a constant matrix, and a dot product with a constant vector.
+@model function arithmetic_bp(y1, y2)
+    x ~ NormalMeanVariance(0.0, 1.0)
+    z ~ NormalMeanVariance(1.0, 2.0)
+    s ~ x + z
+    w ~ NormalMeanVariance(0.5, 1.0)
+    d ~ s - w
+    m ~ 2.0 * d
+    y1 ~ NormalMeanVariance(m, 0.5)
+    v ~ MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 2.0])
+    Av ~ [1.0 0.5; 0.0 1.0] * v
+    q ~ dot([1.0, 2.0], Av)
+    y2 ~ NormalMeanVariance(q, 0.5)
+end
+
+# Conjugate priors of Bernoulli observations: a Beta, and a Uniform on [0, 1].
+@model function bernoulli_priors(y, u)
+    p ~ Beta(2.0, 3.0)
+    r ~ Uniform(0.0, 1.0)
+    for i in eachindex(y)
+        y[i] ~ Bernoulli(p)
+        u[i] ~ Bernoulli(r)
+    end
+end
+
+# Poisson counts with a Gamma (shape and scale) prior on the rate.
+@model function poisson_gamma(y)
+    l ~ Gamma(shape = 2.0, scale = 1.5)
+    for i in eachindex(y)
+        y[i] ~ Poisson(l)
+    end
+end
+
+# An inverse-gamma prior on a variance, the mean known: v is each likelihood's only random
+# interface, so its messages are the same under any factorisation.
+@model function gamma_inverse_variance(y)
+    v ~ GammaInverse(3.0, 2.0)
+    for i in eachindex(y)
+        y[i] ~ NormalMeanVariance(1.0, v)
+    end
+end
+
+# Observed matrices about a known mean, the row and column covariances learned under
+# inverse-Wishart priors.
+@model function matrix_normal_covariances(y)
+    U ~ InverseWishart(5.0, [1.0 0.0; 0.0 1.0])
+    V ~ InverseWishart(4.0, [2.0 0.0; 0.0 2.0])
+    for i in eachindex(y)
+        y[i] ~ MatrixNormal([0.5 0.0; 0.0 0.5], U, V)
+    end
+end
+
+@model function mv_scale_precision(y)
+    μ ~ MvNormalMeanCovariance([0.0, 0.0], [10.0 0.0; 0.0 10.0])
+    γ ~ GammaShapeRate(2.0, 1.0)
+    for i in eachindex(y)
+        y[i] ~ MvNormalMeanScalePrecision(μ, γ)
+    end
+end
+
+@model function mv_scale_matrix_precision(y)
+    μ ~ MvNormalMeanCovariance([0.0, 0.0], [10.0 0.0; 0.0 10.0])
+    γ ~ GammaShapeRate(2.0, 1.0)
+    G ~ Wishart(3.0, [1.0 0.0; 0.0 1.0])
+    for i in eachindex(y)
+        y[i] ~ MvNormalMeanScaleMatrixPrecision(μ, γ, G)
+    end
+end
+
+# ar2_structured with (θ, γ) joint on one edge, under a Normal-Gamma prior.
+@model function conjugate_ar2_structured(y)
+    w ~ MvNormalGamma([0.5, 0.0], [1.0 0.0; 0.0 1.0], 2.0, 1.0)
+    x0 ~ MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+    x_prev = x0
+    for i in eachindex(y)
+        x[i] ~ ConjugateAR(x_prev, w) where {meta = ARMeta(Multivariate, 2, ARsafe())}
+        y[i] ~ MvNormalMeanCovariance(x[i], [0.1 0.0; 0.0 0.1])
+        x_prev = x[i]
+    end
+end
+
+# Two Gamma components of known shapes, their rates learned. The shapes are data: GraphPPL
+# makes a group of `[a1, a2]`, where a vector given as one argument would be one interface.
+@model function gamma_mixture(y, a1, a2)
+    π ~ Dirichlet([1.0, 1.0])
+    b[1] ~ GammaShapeRate(2.0, 4.0)
+    b[2] ~ GammaShapeRate(2.0, 1.0)
+    for i in eachindex(y)
+        z[i] ~ Categorical(π)
+        y[i] ~ GammaMixture(switch = z[i], a = [a1, a2], b = b)
+    end
+end
+
+# The smallest models that reach these nodes in v6. No node takes a HalfNormal, MvNormalWishart
+# or MatrixNormalWishart message closed-form, so each prior's variable is closed by an
+# Uninformative factor, and a parameter of each prior is data, for its message to be computed on
+# every update rather than once; RxInfer rejects a variable no update reaches.
+@model function half_normal_uninformative(v0, y)
+    h ~ HalfNormal(v0)
+    h ~ Uninformative()
+    u ~ Uninformative()
+    y ~ NormalMeanVariance(u, 1.0)
+end
+
+@model function normal_wishart_priors(μ0, M0)
+    nw ~ MvNormalWishart(μ0, [1.0 0.0; 0.0 1.0], 2.0, 3.0)
+    nw ~ Uninformative()
+    mw ~ MatrixNormalWishart(M0, [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], 3.0)
+    mw ~ Uninformative()
 end
 
 const Y = [1.2, 0.7, 2.1, 1.6, 0.9, 1.4]
@@ -608,6 +725,101 @@ const MODELS = [
                     q(t2) = Categorical([0.5, 0.5])
                 end
             ),
+        ),
+    ),
+    (
+        "arithmetic_bp",
+        "x ~ NMV(0, 1), z ~ NMV(1, 2), s = x + z, w ~ NMV(0.5, 1), d = s - w, m = 2d, y1 ~ NMV(m, 0.5) observed at 1.5; v ~ MvNMC([0, 1], diag(1, 2)), Av = [1 0.5; 0 1] v, q = dot([1, 2], Av), y2 ~ NMV(q, 0.5) observed at 2; BP.",
+        () -> record("arithmetic_bp"; description = "", model = arithmetic_bp(), data = (y1 = 1.5, y2 = 2.0), iterations = 2, returnvars = (:x, :z, :s, :w, :d, :m, :v, :Av, :q)),
+    ),
+    (
+        "bernoulli_priors",
+        "p ~ Beta(2, 3), r ~ Uniform(0, 1), y[i] ~ Bernoulli(p) observed at [1, 0, 1], u[i] ~ Bernoulli(r) observed at [0, 0, 1]; BP.",
+        () -> record("bernoulli_priors"; description = "", model = bernoulli_priors(), data = (y = [1.0, 0.0, 1.0], u = [0.0, 0.0, 1.0]), iterations = 2, returnvars = (:p, :r)),
+    ),
+    (
+        "poisson_gamma",
+        "l ~ Gamma(shape = 2, scale = 1.5), y[i] ~ Poisson(l) observed at [3, 1, 4]; BP.",
+        () -> record("poisson_gamma"; description = "", model = poisson_gamma(), data = (y = [3, 1, 4],), iterations = 2, returnvars = (:l,)),
+    ),
+    (
+        "gamma_inverse_variance",
+        "v ~ GammaInverse(3, 2), y[i] ~ NMV(1, v) observed at [1.2, 0.3, 2.1]; v the only random interface of each likelihood. v6's GammaInverse energy is ReactiveMP.jl#672's.",
+        () -> record("gamma_inverse_variance"; description = "", model = gamma_inverse_variance(), data = (y = [1.2, 0.3, 2.1],), iterations = 2, returnvars = (:v,)),
+    ),
+    (
+        "matrix_normal_covariances",
+        "U ~ InverseWishart(5, I), V ~ InverseWishart(4, 2I), y[i] ~ MatrixNormal(0.5 I, U, V) observed, three 2×2 matrices; mean-field.",
+        () -> record(
+            "matrix_normal_covariances"; description = "", model = matrix_normal_covariances(), data = (y = [[1.0 0.5; 0.2 1.1], [0.8 0.3; -0.1 0.9], [0.2 -0.4; 0.6 0.3]],),
+            iterations = 5, returnvars = (:U, :V), constraints = MeanField(),
+            initialization = @initialization(
+                begin
+                    q(U) = InverseWishart(5.0, [1.0 0.0; 0.0 1.0])
+                    q(V) = InverseWishart(4.0, [2.0 0.0; 0.0 2.0])
+                end
+            ),
+        ),
+    ),
+    (
+        "mv_scale_precision",
+        "μ ~ MvNMC(0, 10 I), γ ~ GammaShapeRate(2, 1), y[i] ~ MvNormalMeanScalePrecision(μ, γ) observed at [1, 0.5], [0.3, 1.2], [0.8, 0.9]; mean-field.",
+        () -> record(
+            "mv_scale_precision"; description = "", model = mv_scale_precision(), data = (y = [[1.0, 0.5], [0.3, 1.2], [0.8, 0.9]],), iterations = 5, returnvars = (:μ, :γ),
+            constraints = MeanField(), initialization = @initialization(q(γ) = GammaShapeRate(2.0, 1.0)),
+        ),
+    ),
+    (
+        "mv_scale_matrix_precision",
+        "μ ~ MvNMC(0, 10 I), γ ~ GammaShapeRate(2, 1), G ~ Wishart(3, I), y[i] ~ MvNormalMeanScaleMatrixPrecision(μ, γ, G) observed at [1, 0.5], [0.3, 1.2], [0.8, 0.9]; mean-field.",
+        () -> record(
+            "mv_scale_matrix_precision"; description = "", model = mv_scale_matrix_precision(), data = (y = [[1.0, 0.5], [0.3, 1.2], [0.8, 0.9]],), iterations = 5, returnvars = (:μ, :γ, :G),
+            constraints = MeanField(),
+            initialization = @initialization(
+                begin
+                    q(γ) = GammaShapeRate(2.0, 1.0)
+                    q(G) = Wishart(3.0, [1.0 0.0; 0.0 1.0])
+                end
+            ),
+        ),
+    ),
+    (
+        "conjugate_ar2_structured",
+        "w ~ MvNormalGamma([0.5, 0], I, 2, 1), x0 ~ MvNMC(0, I), x[i] ~ ConjugateAR(x[i-1], w) with ARMeta(Multivariate, 2, ARsafe()), y[i] ~ MvNMC(x[i], 0.1 I) observed at [0.8, 0.1], [0.5, 0.8], [0.3, 0.5]; q(x0, x) q(w).",
+        () -> record(
+            "conjugate_ar2_structured"; description = "", model = conjugate_ar2_structured(), data = (y = [[0.8, 0.1], [0.5, 0.8], [0.3, 0.5]],), iterations = 5, returnvars = (:w, :x),
+            constraints = @constraints(
+                begin
+                    q(x0, x, w) = q(x0, x)q(w)
+                end
+            ),
+            initialization = @initialization(q(w) = MvNormalGamma([0.5, 0.0], [1.0 0.0; 0.0 1.0], 2.0, 1.0)),
+        ),
+    ),
+    (
+        "gamma_mixture",
+        "π ~ Dirichlet([1, 1]), b[1] ~ GammaShapeRate(2, 4), b[2] ~ GammaShapeRate(2, 1), z[i] ~ Categorical(π), y[i] ~ GammaMixture(z[i], a = [2, 5] as data, b) observed at [0.3, 0.5, 2.1, 1.8, 0.4, 2.5]; mean-field.",
+        () -> record(
+            "gamma_mixture"; description = "", model = gamma_mixture(), data = (y = [0.3, 0.5, 2.1, 1.8, 0.4, 2.5], a1 = 2.0, a2 = 5.0), iterations = 5, returnvars = (:π, :b, :z),
+            constraints = MeanField(),
+            initialization = @initialization(
+                begin
+                    q(π) = Dirichlet([1.0, 1.0])
+                    q(b) = GammaShapeRate(1.0, 1.0)
+                end
+            ),
+        ),
+    ),
+    (
+        "half_normal_uninformative",
+        "h ~ HalfNormal(v0) with v0 = 2 data, closed by h ~ Uninformative(); u ~ Uninformative(), y ~ NMV(u, 1) observed at 1.5; BP.",
+        () -> record("half_normal_uninformative"; description = "", model = half_normal_uninformative(), data = (v0 = 2.0, y = 1.5), iterations = 2, returnvars = (:h, :u)),
+    ),
+    (
+        "normal_wishart_priors",
+        "nw ~ MvNormalWishart(μ0, I, 2, 3) with μ0 = [0.5, 1] data, mw ~ MatrixNormalWishart(M0, I, I, 3) with M0 = [1 0.5; 0 1] data, each closed by an Uninformative factor. No free energy: v6 defines no MvNormalWishart energy, and its MatrixNormalWishart energy throws (no `iterate` for the distribution).",
+        () -> record(
+            "normal_wishart_priors"; description = "", model = normal_wishart_priors(), data = (μ0 = [0.5, 1.0], M0 = [1.0 0.5; 0.0 1.0]), iterations = 2, returnvars = (:nw, :mw), free_energy = false,
         ),
     ),
 ]

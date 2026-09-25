@@ -24,7 +24,7 @@ one.
 **Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
 brief*), its questions answered (§3.46); items 1 (the small engine fixes), 2 (the diagnostics) and 3
 (the generator as an activation option, `*`'s samples) are done, and item 4, the missing engine
-fixtures, is next. **Phase 6 is
+fixtures, is done; items 5 (the workflows) is done, and item 6, RxInfer, is under way. **Phase 6 is
 closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
 with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
 deleted.
@@ -3454,8 +3454,12 @@ Known scope:
       the fixture check and the inventory gate. Checked by parsing and against the Makefile, since
       no `act` is available; they first run on a PR. A job running the suite under
       `EngineDiagnostics` is not added: the engine has no global switch for it)*
-- [ ] explicit checks on scheduling order, annotations, retained values and free energy —
+- [x] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality — for every ported node, against recorded v6 fixtures
+      *(item 4: eleven fixtures, 37 in all, reach every ported node; MatrixNormal's rules towards
+      `M` and `out` are reached by no RxInfer 5.5.2 model. GammaInverse's free energy is a declared
+      correction, pinned against the closed form; GammaMixture compares within each iteration,
+      v6 updating a group's members last first)*
 
 ### Entry brief
 

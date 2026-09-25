@@ -1,0 +1,68 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "h ~ HalfNormal(v0) with v0 = 2 data, closed by h ~ Uninformative(); u ~ Uninformative(), y ~ NMV(u, 1) observed at 1.5; BP."
+free_energy = [0.0, 0.0]
+id = "half_normal_uninformative"
+
+    [trajectory.posteriors.h]
+    params = [0.0, 1.4142135623730951, 0.0, +inf]
+    type = "Truncated"
+
+    [trajectory.posteriors.u]
+    params = [1.5, 1.0]
+    type = "NormalMeanVariance"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "HalfNormal"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.0, 1.4142135623730951, 0.0, +inf]
+        type = "Truncated"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Uninformative"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "Uninformative"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Uninformative"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "Uninformative"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "HalfNormal"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.0, 1.4142135623730951, 0.0, +inf]
+        type = "Truncated"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 1.0]
+        type = "NormalMeanVariance"

@@ -1,0 +1,68 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "nw ~ MvNormalWishart(μ0, I, 2, 3) with μ0 = [0.5, 1] data, mw ~ MatrixNormalWishart(M0, I, I, 3) with M0 = [1 0.5; 0 1] data, each closed by an Uninformative factor. No free energy: v6 defines no MvNormalWishart energy, and its MatrixNormalWishart energy throws (no `iterate` for the distribution)."
+free_energy = []
+id = "normal_wishart_priors"
+
+    [trajectory.posteriors.mw]
+    params = [[[1.0, 0.5], [0.0, 1.0]], [[1.0, 0.0], [0.0, 1.0]], [[1.0, 0.0], [0.0, 1.0]], 3.0]
+    type = "MatrixNormalWishart"
+
+    [trajectory.posteriors.nw]
+    params = [[0.5, 1.0], [[1.0, 0.0], [0.0, 1.0]], 2.0, 3.0]
+    type = "MvNormalWishart"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalWishart"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 1.0], [[1.0, 0.0], [0.0, 1.0]], 2.0, 3.0]
+        type = "MvNormalWishart"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Uninformative"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "Uninformative"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MatrixNormalWishart"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 0.5], [0.0, 1.0]], [[1.0, 0.0], [0.0, 1.0]], [[1.0, 0.0], [0.0, 1.0]], 3.0]
+        type = "MatrixNormalWishart"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Uninformative"
+    target = ":out"
+
+        [trajectory.trace.result]
+        type = "Uninformative"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalWishart"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 1.0], [[1.0, 0.0], [0.0, 1.0]], 2.0, 3.0]
+        type = "MvNormalWishart"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MatrixNormalWishart"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[[1.0, 0.5], [0.0, 1.0]], [[1.0, 0.0], [0.0, 1.0]], [[1.0, 0.0], [0.0, 1.0]], 3.0]
+        type = "MatrixNormalWishart"

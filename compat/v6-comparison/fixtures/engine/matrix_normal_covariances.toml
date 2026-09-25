@@ -1,0 +1,278 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "U ~ InverseWishart(5, I), V ~ InverseWishart(4, 2I), y[i] ~ MatrixNormal(0.5 I, U, V) observed, three 2×2 matrices; mean-field."
+free_energy = [6.204879878684187, 6.129899374971403, 6.122756663281077, 6.121717043952721, 6.121550101567198]
+id = "matrix_normal_covariances"
+
+    [trajectory.posteriors.U]
+    params = [11.0, [[2.166258545556306, 0.5608020477728087], [0.5608020477728087, 2.8463861326998927]]]
+    type = "InverseWishart"
+
+    [trajectory.posteriors.V]
+    params = [10.0, [[6.211161395312319, 1.9787802543489357], [1.9787802543489357, 5.916665011447649]]]
+    type = "InverseWishart"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "InverseWishart"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [4.0, [[2.0, 0.0], [0.0, 2.0]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[1.45, 1.85], [1.85, 3.0500000000000007]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.5000000000000001, 0.25000000000000006], [0.25000000000000006, 1.25]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[2.25, 0.0], [0.0, 1.0]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "InverseWishart"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [5.0, [[1.0, 0.0], [0.0, 1.0]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.5691554467564259, 0.4283965728274174], [0.4283965728274174, 0.49449204406364755]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.20489596083231337, 0.0822521419828641], [0.08225214198286407, 0.3018359853121175]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.28029375764993875, -0.10771113831089349], [-0.10771113831089343, 0.8274173806609547]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[1.3835379614457954, 1.5597832606990636], [1.5597832606990638, 2.4276584647142805]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.5909698148038189, 0.2476582297199304], [0.24765822971993048, 0.9850183708265863]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[2.35826471116214, 0.29638632566732115], [0.29638632566732104, 0.9205798422534515]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.592638782607793, 0.47409745610152043], [0.47409745610152043, 0.5684287717568222]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.21334996173880555, 0.10666480338086715], [0.1066648033808671, 0.34889241117019226]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.3022108579121297, -0.07137566867862187], [-0.07137566867862188, 0.851490568646297]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[1.3305028159455214, 1.4621988172610316], [1.4621988172610316, 2.2591169097916213]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.5932913354647125, 0.23472314874097838], [0.2347231487409783, 0.9155644795408049]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[2.349837226435741, 0.337160893419732], [0.33716089341973215, 0.8792453833277663]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.6101326089035708, 0.4945980389248439], [0.49459803892484383, 0.5946599180161701]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.21964773920528546, 0.11469283345413309], [0.11469283345413311, 0.3625745321445386]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.3133489068331142, -0.06550363043306384], [-0.06550363043306384, 0.8623857962802124]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[1.3051091317470407, 1.4251037522137229], [1.4251037522137229, 2.20141260117693]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.5891778920411236, 0.22795782529977404], [0.2279578252997739, 0.8922287405842448]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[2.337109007549643, 0.3427232458651839], [0.34272324586518405, 0.8610321258777406]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.6184944275515143, 0.5031499927929156], [0.5031499927929156, 0.6045693214942354]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.22265799391854516, 0.11759483502305065], [0.11759483502305063, 0.3671893469473822]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.3181966876794971, -0.06463477040793889], [-0.06463477040793886, 0.8670550538396731]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[1.294237543122145, 1.410509027444511], [1.410509027444511, 2.1796974932577173]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.5866937227721899, 0.22501691123901169], [0.2250169112390117, 0.8835228832852715]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MatrixNormal"
+    target = ":V"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[2.3302301294179832, 0.3432543156654132], [0.3432543156654132, 0.8534446349046598]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.6220928116128953, 0.5066435575470603], [0.5066435575470603, 0.6084516715644694]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.22395341218064235, 0.11870368728287907], [0.11870368728287906, 0.36890498880244665]]]
+        type = "InverseWishartFast"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MatrixNormal"
+    target = ":U"
+
+        [trajectory.trace.result]
+        params = [-1.0, [[0.3202123217627682, -0.0645451970571306], [-0.06454519705713052, 0.8690294723329768]]]
+        type = "InverseWishartFast"

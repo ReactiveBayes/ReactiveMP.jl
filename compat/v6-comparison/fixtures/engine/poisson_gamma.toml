@@ -1,0 +1,74 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "l ~ Gamma(shape = 2, scale = 1.5), y[i] ~ Poisson(l) observed at [3, 1, 4]; BP."
+free_energy = [5.9717458770134675, 5.9717458770134675]
+id = "poisson_gamma"
+
+    [trajectory.posteriors.l]
+    params = [10.0, 0.2727272727272727]
+    type = "Gamma"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Gamma"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.5]
+        type = "Gamma"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Poisson"
+    target = ":l"
+
+        [trajectory.trace.result]
+        params = [4.0, 1.0]
+        type = "Gamma"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Poisson"
+    target = ":l"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.0]
+        type = "Gamma"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "Poisson"
+    target = ":l"
+
+        [trajectory.trace.result]
+        params = [5.0, 1.0]
+        type = "Gamma"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Poisson"
+    target = ":l"
+
+        [trajectory.trace.result]
+        params = [4.0, 1.0]
+        type = "Gamma"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Poisson"
+    target = ":l"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.0]
+        type = "Gamma"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "Poisson"
+    target = ":l"
+
+        [trajectory.trace.result]
+        params = [5.0, 1.0]
+        type = "Gamma"

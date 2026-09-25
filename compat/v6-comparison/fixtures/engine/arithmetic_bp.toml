@@ -1,0 +1,310 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "x ~ NMV(0, 1), z ~ NMV(1, 2), s = x + z, w ~ NMV(0.5, 1), d = s - w, m = 2d, y1 ~ NMV(m, 0.5) observed at 1.5; v ~ MvNMC([0, 1], diag(1, 2)), Av = [1 0.5; 0 1] v, q = dot([1, 2], Av), y2 ~ NMV(q, 0.5) observed at 2; BP."
+free_energy = [4.575590250674573, 4.575590250674573]
+id = "arithmetic_bp"
+
+    [trajectory.posteriors.Av]
+    params = [[4.0, 8.5], [[3.0000000000000004, 3.5], [3.5, 8.75]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.d]
+    params = [6.125, 8.25]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.m]
+    params = [3.0625, 2.0625]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.q]
+    params = [4.185185185185185, 2.074074074074074]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.s]
+    params = [1.4444444444444444, 1.222222222222222]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.v]
+    params = [[4.0, 10.5], [[3.0, 5.0], [5.0, 13.0]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.w]
+    params = [0.58, 1.32]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.x]
+    params = [0.08, 1.32]
+    type = "NormalWeightedMeanPrecision"
+
+    [trajectory.posteriors.z]
+    params = [1.0882352941176472, 0.9705882352941176]
+    type = "NormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 2.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "+"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 3.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "-"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 4.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 2.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "MvNormalMeanCovariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 1.0], [[1.0, 0.0], [0.0, 2.0]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.0, 1.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    logscale = 0.0
+    node = "*"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.5, 1.0], [[1.5, 1.0], [1.0, 2.0]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "NormalMeanVariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 2.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 0
+    node = "-"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [0.5, 4.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = -0.6931471805599453
+    node = "*"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [6.0, 8.0]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "-"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.25, 3.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "-"
+    target = ":in1"
+
+        [trajectory.trace.result]
+        params = [1.25, 1.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "+"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [1.25, 2.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "+"
+    target = ":in1"
+
+        [trajectory.trace.result]
+        params = [0.25, 3.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    logscale = 0.0
+    node = "*"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [1.0, 16.0]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "dot"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [[4.0, 8.0], [[2.0, 4.0], [4.0, 8.0]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "*"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[4.0, 10.0], [[2.0, 5.0], [5.0, 12.5]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "dot"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [2.5, 13.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [1.5, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    logscale = -0.6931471805599453
+    node = "*"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [6.0, 8.0]
+        type = "NormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "-"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [0.25, 3.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "-"
+    target = ":in1"
+
+        [trajectory.trace.result]
+        params = [1.25, 1.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "+"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [1.25, 2.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "+"
+    target = ":in1"
+
+        [trajectory.trace.result]
+        params = [0.25, 3.125]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "NormalMeanVariance"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.5]
+        type = "NormalMeanVariance"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "dot"
+    target = ":in2"
+
+        [trajectory.trace.result]
+        params = [[4.0, 8.0], [[2.0, 4.0], [4.0, 8.0]]]
+        type = "MvNormalWeightedMeanPrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "*"
+    target = ":in"
+
+        [trajectory.trace.result]
+        params = [[4.0, 10.0], [[2.0, 5.0], [5.0, 12.5]]]
+        type = "MvNormalWeightedMeanPrecision"

@@ -1,0 +1,278 @@
+[header]
+format = 1
+julia = "1.13.0"
+notes = """Recorded from ReactiveMP 6.5.0 through RxInfer 5.5.2, unmodified.\nLog scales are recorded only for bp_iid and mixture_bp. v6 cannot annotate the others: NormalMeanVariance(:μ)\nwith (m_out::Normal, q_v::PointMass) sets no @logscale (mean.jl:30) while its mirror out.jl:40\ndoes. Found by reading, and not triggered by these models: LogScaleAnnotations' all-point-mass\nfallback (logscale.jl:45-49) covers all-messages or all-marginals, never a mix of the two."""
+
+    [header.packages]
+    ReactiveMP = "6.5.0"
+    RxInfer = "5.5.2"
+
+[trajectory]
+description = "μ ~ MvNMC(0, 10 I), γ ~ GammaShapeRate(2, 1), y[i] ~ MvNormalMeanScalePrecision(μ, γ) observed at [1, 0.5], [0.3, 1.2], [0.8, 0.9]; mean-field."
+free_energy = [8.30847974685863, 8.218728589251139, 8.214009341304129, 8.21381414040399, 8.213806518585487]
+id = "mv_scale_precision"
+
+    [trajectory.posteriors."γ"]
+    params = [5.0, 1.563155210639237]
+    type = "GammaShapeRate"
+
+    [trajectory.posteriors."μ"]
+    params = [[6.712429274137482, 8.310626720360691], [[9.689184677339261, 0.0], [0.0, 9.689184677339261]]]
+    type = "MvNormalWeightedMeanPrecision"
+
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanCovariance"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [[0.0, 0.0], [[10.0, 0.0], [0.0, 10.0]]]
+        type = "MvNormalMeanCovariance"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.0, 0.5], 2.0]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.3, 1.2], 2.0]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, 0.9], 2.0]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "GammaShapeRate"
+    target = ":out"
+
+        [trajectory.trace.result]
+        params = [2.0, 1.0]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.27455657081429724]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.29980247245364156]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 1
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.17127788228970708]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.0, 0.5], 2.86428404830102]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.3, 1.2], 2.86428404830102]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, 0.9], 2.86428404830102]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.22610154220578688]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.2507769743660866]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 2
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.12181230774688931]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.0, 0.5], 3.127559077678831]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.3, 1.2], 3.127559077678831]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, 0.9], 3.127559077678831]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.21661010842282133]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.2411737553458678]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 3
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.11212285440078922]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.0, 0.5], 3.1849026073536604]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.3, 1.2], 3.1849026073536604]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, 0.9], 3.1849026073536604]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.21474888482535492]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.23929060963792154]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 4
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.11022279735047308]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[1.0, 0.5], 3.19639489244642]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.3, 1.2], 3.19639489244642]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanScalePrecision"
+    target = ":μ"
+
+        [trajectory.trace.result]
+        params = [[0.8, 0.9], 3.19639489244642]
+        type = "MvNormalMeanScalePrecision"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.21438382996164623]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.23892125497608385]
+        type = "GammaShapeRate"
+    [[trajectory.trace]]
+    iteration = 5
+    node = "MvNormalMeanScalePrecision"
+    target = ":γ"
+
+        [trajectory.trace.result]
+        params = [2.0, 0.10985012570150708]
+        type = "GammaShapeRate"

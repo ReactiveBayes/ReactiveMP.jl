@@ -764,3 +764,324 @@ end
     trajectory = EngineTrajectory(trajectory.id; free_energy = trajectory.free_energy, posteriors = trajectory.posteriors, trace = map(v6_named, trajectory.trace))
     @test compare_engine_trajectory(trajectory, H.fixture("dt_partial_joint"); atol = 1.0e-9) === :agree
 end
+
+@testitem "engine:fixture:arithmetic_bp" tags = [:engine] setup = [EngineHarness] begin
+    # Belief propagation through `+`, `-`, `*` by a constant scalar and by a constant matrix, and
+    # `dot` with a constant vector: each node's messages both ways, and its joint over its inputs
+    # in the free energy.
+    using ExponentialFamily, LinearAlgebra, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    x = H.random!(graph)
+    x_prior = [(:out, x), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))]
+    z = H.random!(graph)
+    z_prior = [(:out, z), (:μ, H.constant!(graph, 1.0)), (:v, H.constant!(graph, 2.0))]
+    s, w = H.random!(graph), H.random!(graph)
+    w_prior = [(:out, w), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))]
+    d, m = H.random!(graph), H.random!(graph)
+    two, y1 = H.constant!(graph, 2.0), H.data!(graph)
+    v = H.random!(graph)
+    v_prior = [(:out, v), (:μ, H.constant!(graph, [0.0, 1.0])), (:Σ, H.constant!(graph, [1.0 0.0; 0.0 2.0]))]
+    Av, A = H.random!(graph), H.constant!(graph, [1.0 0.5; 0.0 1.0])
+    q, c = H.random!(graph), H.constant!(graph, [1.0, 2.0])
+    y2 = H.data!(graph)
+
+    H.node!(graph, NormalMeanVariance, x_prior)
+    H.node!(graph, NormalMeanVariance, z_prior)
+    H.node!(graph, +, [(:out, s), (:in1, x), (:in2, z)])
+    H.node!(graph, NormalMeanVariance, w_prior)
+    H.node!(graph, -, [(:out, d), (:in1, s), (:in2, w)])
+    H.node!(graph, *, [(:out, m), (:A, two), (:in, d)])
+    H.node!(graph, NormalMeanVariance, [(:out, y1), (:μ, m), (:v, H.constant!(graph, 0.5))])
+    H.node!(graph, MvNormalMeanCovariance, v_prior)
+    H.node!(graph, *, [(:out, Av), (:A, A), (:in, v)])
+    H.node!(graph, dot, [(:out, q), (:in1, c), (:in2, Av)])
+    H.node!(graph, NormalMeanVariance, [(:out, y2), (:μ, q), (:v, H.constant!(graph, 0.5))])
+
+    # The posteriors in the order RxInfer subscribed to them, its `Dict`'s.
+    variables = (; x, z, s, w, d, m, v, Av, q)
+    trajectory = H.run(
+        graph; id = "arithmetic_bp", data = [y1 => 1.5, y2 => 2.0], iterations = 2,
+        posteriors = [name => variables[name] for name in (:w, :m, :d, :s, :v, :Av, :z, :q, :x)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("arithmetic_bp"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:bernoulli_priors" tags = [:engine] setup = [EngineHarness] begin
+    # Beta and Uniform priors of Bernoulli observations: each prior's message, its product with
+    # the likelihoods' Beta messages, and the energies.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    p = H.random!(graph)
+    p_prior = [(:out, p), (:a, H.constant!(graph, 2.0)), (:b, H.constant!(graph, 3.0))]
+    r = H.random!(graph)
+    r_prior = [(:out, r), (:a, H.constant!(graph, 0.0)), (:b, H.constant!(graph, 1.0))]
+    y, u = [H.data!(graph) for _ in 1:3], [H.data!(graph) for _ in 1:3]
+    H.node!(graph, Beta, p_prior)
+    H.node!(graph, Uniform, r_prior)
+    for i in 1:3
+        H.node!(graph, Bernoulli, [(:out, y[i]), (:p, p)])
+        H.node!(graph, Bernoulli, [(:out, u[i]), (:p, r)])
+    end
+
+    trajectory = H.run(
+        graph; id = "bernoulli_priors", data = [y => [1.0, 0.0, 1.0], u => [0.0, 0.0, 1.0]], iterations = 2,
+        posteriors = [:p => p, :r => r],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("bernoulli_priors"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:poisson_gamma" tags = [:engine] setup = [EngineHarness] begin
+    # Poisson counts under a Gamma (shape, scale) prior: the messages towards the rate, their
+    # product with the prior's, and both nodes' energies.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    l = H.random!(graph)
+    l_prior = [(:out, l), (:α, H.constant!(graph, 2.0)), (:θ, H.constant!(graph, 1.5))]
+    y = [H.data!(graph) for _ in 1:3]
+    H.node!(graph, Gamma, l_prior)
+    for i in 1:3
+        H.node!(graph, Poisson, [(:out, y[i]), (:l, l)])
+    end
+
+    trajectory = H.run(graph; id = "poisson_gamma", data = [y => [3, 1, 4]], iterations = 2, posteriors = [:l => l])
+    @test compare_engine_trajectory(trajectory, H.fixture("poisson_gamma"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:gamma_inverse_variance" tags = [:engine] setup = [EngineHarness] begin
+    # An inverse-gamma prior on a known-mean normal's variance: the prior's message and the
+    # likelihoods' messages towards `v` agree with v6, and so does q(v). v6's GammaInverse energy
+    # took θ/E[x] for E[θ/x] (ReactiveMP.jl#672), wrong for this q(v), so the free energy is
+    # compared apart: the port's is pinned here, against the closed form.
+    using ExponentialFamily, Distributions, SpecialFunctions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    v = H.random!(graph)
+    v_prior = [(:out, v), (:α, H.constant!(graph, 3.0)), (:θ, H.constant!(graph, 2.0))]
+    y = [H.data!(graph) for _ in 1:3]
+    H.node!(graph, GammaInverse, v_prior)
+    for i in 1:3
+        H.node!(graph, NormalMeanVariance, [(:out, y[i]), (:μ, H.constant!(graph, 1.0)), (:v, v)])
+    end
+
+    trajectory = H.run(graph; id = "gamma_inverse_variance", data = [y => [1.2, 0.3, 2.1]], iterations = 2, posteriors = [:v => v])
+    without_free_energy(t) = EngineTrajectory(t.id; description = t.description, free_energy = Float64[], posteriors = t.posteriors, trace = t.trace)
+    v6 = H.fixture("gamma_inverse_variance")
+    @test compare_engine_trajectory(without_free_energy(trajectory), without_free_energy(v6); atol = 1.0e-9) === :agree
+    # Exact: q(v) is the exact posterior, so the free energy is -log p(y), for S = Σ(y - 1)² = 1.74
+    # 3 log 2 - log Γ(3) + log Γ(4.5) - 4.5 log(2 + S/2) - 1.5 log 2π, and v6's was not.
+    S = sum(abs2, [1.2, 0.3, 2.1] .- 1.0)
+    evidence = 3 * log(2.0) - loggamma(3.0) + loggamma(4.5) - 4.5 * log(2.0 + S / 2) - 1.5 * log(2π)
+    @test trajectory.free_energy ≈ [-evidence, -evidence] atol = 1.0e-9
+    @test trajectory.free_energy ≈ [3.6611888016235694, 3.6611888016235694] atol = 1.0e-9
+    @test !(trajectory.free_energy ≈ v6.free_energy)
+end
+
+@testitem "engine:fixture:matrix_normal_covariances" tags = [:engine] setup = [EngineHarness] begin
+    # MatrixNormal's rules towards its row and column covariances under mean-field, each reading
+    # the other's inverse-Wishart marginal, and the InverseWishart priors.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    meanfield!(graph, fform, interfaces) = H.node!(graph, fform, interfaces; factorisation = H.meanfield_factorisation(interfaces))
+    I2 = [1.0 0.0; 0.0 1.0]
+
+    graph = H.Graph()
+    U = H.random!(graph)
+    U_prior = [(:out, U), (:ν, H.constant!(graph, 5.0)), (:S, H.constant!(graph, I2))]
+    V = H.random!(graph)
+    V_prior = [(:out, V), (:ν, H.constant!(graph, 4.0)), (:S, H.constant!(graph, 2 * I2))]
+    y = [H.data!(graph) for _ in 1:3]
+    meanfield!(graph, InverseWishart, U_prior)
+    meanfield!(graph, InverseWishart, V_prior)
+    for i in 1:3
+        meanfield!(graph, MatrixNormal, [(:out, y[i]), (:M, H.constant!(graph, [0.5 0.0; 0.0 0.5])), (:U, U), (:V, V)])
+    end
+
+    Y = [[1.0 0.5; 0.2 1.1], [0.8 0.3; -0.1 0.9], [0.2 -0.4; 0.6 0.3]]
+    trajectory = H.run(
+        graph; id = "matrix_normal_covariances", data = [y => Y], iterations = 5, posteriors = [:U => U, :V => V],
+        initial_marginals = [U => InverseWishart(5.0, I2), V => InverseWishart(4.0, 2 * I2)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("matrix_normal_covariances"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:mv_scale_precision" tags = [:engine] setup = [EngineHarness] begin
+    # MvNormalMeanScalePrecision under mean-field, its mean and scale learned.
+    using ExponentialFamily, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    meanfield!(graph, fform, interfaces) = H.node!(graph, fform, interfaces; factorisation = H.meanfield_factorisation(interfaces))
+
+    graph = H.Graph()
+    μ = H.random!(graph)
+    μ_prior = [(:out, μ), (:μ, H.constant!(graph, [0.0, 0.0])), (:Σ, H.constant!(graph, [10.0 0.0; 0.0 10.0]))]
+    γ = H.random!(graph)
+    γ_prior = [(:out, γ), (:α, H.constant!(graph, 2.0)), (:β, H.constant!(graph, 1.0))]
+    y = [H.data!(graph) for _ in 1:3]
+    meanfield!(graph, MvNormalMeanCovariance, μ_prior)
+    meanfield!(graph, GammaShapeRate, γ_prior)
+    for i in 1:3
+        meanfield!(graph, MvNormalMeanScalePrecision, [(:out, y[i]), (:μ, μ), (:γ, γ)])
+    end
+
+    trajectory = H.run(
+        graph; id = "mv_scale_precision", data = [y => [[1.0, 0.5], [0.3, 1.2], [0.8, 0.9]]], iterations = 5,
+        posteriors = [:γ => γ, :μ => μ], initial_marginals = [γ => GammaShapeRate(2.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("mv_scale_precision"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:mv_scale_matrix_precision" tags = [:engine] setup = [EngineHarness] begin
+    # MvNormalMeanScaleMatrixPrecision under mean-field, its mean, scale and matrix learned.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    meanfield!(graph, fform, interfaces) = H.node!(graph, fform, interfaces; factorisation = H.meanfield_factorisation(interfaces))
+    I2 = [1.0 0.0; 0.0 1.0]
+
+    graph = H.Graph()
+    μ = H.random!(graph)
+    μ_prior = [(:out, μ), (:μ, H.constant!(graph, [0.0, 0.0])), (:Σ, H.constant!(graph, 10 * I2))]
+    γ = H.random!(graph)
+    γ_prior = [(:out, γ), (:α, H.constant!(graph, 2.0)), (:β, H.constant!(graph, 1.0))]
+    G = H.random!(graph)
+    G_prior = [(:out, G), (:ν, H.constant!(graph, 3.0)), (:S, H.constant!(graph, I2))]
+    y = [H.data!(graph) for _ in 1:3]
+    meanfield!(graph, MvNormalMeanCovariance, μ_prior)
+    meanfield!(graph, GammaShapeRate, γ_prior)
+    meanfield!(graph, Wishart, G_prior)
+    for i in 1:3
+        meanfield!(graph, MvNormalMeanScaleMatrixPrecision, [(:out, y[i]), (:μ, μ), (:γ, γ), (:G, G)])
+    end
+
+    trajectory = H.run(
+        graph; id = "mv_scale_matrix_precision", data = [y => [[1.0, 0.5], [0.3, 1.2], [0.8, 0.9]]], iterations = 5,
+        posteriors = [:γ => γ, :μ => μ, :G => G], initial_marginals = [γ => GammaShapeRate(2.0, 1.0), G => Wishart(3.0, I2)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("mv_scale_matrix_precision"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:conjugate_ar2_structured" tags = [:engine] setup = [EngineHarness] begin
+    # ar2_structured with (θ, γ) joint on ConjugateAR's `w`, under q(x0, x) q(w): each node's
+    # joint q(y, x), the rules towards `y`, `x` and `w`, the MvNormalGamma prior and the energies.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    I2 = [1.0 0.0; 0.0 1.0]
+
+    graph = H.Graph()
+    w = H.random!(graph)
+    w_prior = [(:out, w), (:μ, H.constant!(graph, [0.5, 0.0])), (:Λ, H.constant!(graph, I2)), (:α, H.constant!(graph, 2.0)), (:β, H.constant!(graph, 1.0))]
+    x0 = H.random!(graph)
+    x0_prior = [(:out, x0), (:μ, H.constant!(graph, [0.0, 0.0])), (:Σ, H.constant!(graph, I2))]
+    H.node!(graph, MvNormalGamma, w_prior)
+    H.node!(graph, MvNormalMeanCovariance, x0_prior)
+    x, y = [H.random!(graph) for _ in 1:3], [H.data!(graph) for _ in 1:3]
+    for i in 1:3
+        H.node!(
+            graph, ConjugateAR, [(:y, x[i]), (:x, i == 1 ? x0 : x[i - 1]), (:w, w)];
+            factorisation = ((:y, :x), (:w,)), algorithm = ARVMP(Multivariate, 2, ARsafe()),
+        )
+        H.node!(graph, MvNormalMeanCovariance, [(:out, y[i]), (:μ, x[i]), (:Σ, H.constant!(graph, 0.1 * I2))])
+    end
+
+    trajectory = H.run(
+        graph; id = "conjugate_ar2_structured", data = y .=> [[0.8, 0.1], [0.5, 0.8], [0.3, 0.5]], iterations = 5, posteriors = [:w => w, :x => x],
+        initial_marginals = [w => MvNormalGamma([0.5, 0.0], I2, 2.0, 1.0)],
+    )
+    @test compare_engine_trajectory(trajectory, H.fixture("conjugate_ar2_structured"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:gamma_mixture" tags = [:engine] setup = [EngineHarness] begin
+    # A two-component GammaMixture under mean-field, the shapes known and the rates learned: the
+    # rules towards the switch and each rate, and the energy.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    meanfield!(graph, fform, interfaces; kwargs...) = H.node!(graph, fform, interfaces; factorisation = H.meanfield_factorisation(interfaces), kwargs...)
+    Y = [0.3, 0.5, 2.1, 1.8, 0.4, 2.5]
+
+    graph = H.Graph()
+    π = H.random!(graph)
+    π_prior = [(:out, π), (:a, H.constant!(graph, [1.0, 1.0]))]
+    b, b_priors = [], []
+    for (α, β) in ((2.0, 4.0), (2.0, 1.0))
+        push!(b, H.random!(graph))
+        push!(b_priors, [(:out, b[end]), (:α, H.constant!(graph, α)), (:β, H.constant!(graph, β))])
+    end
+    z, y = [], []
+    for _ in Y
+        push!(z, H.random!(graph))
+        push!(y, H.data!(graph))
+    end
+    a1, a2 = H.data!(graph), H.data!(graph)
+    meanfield!(graph, Dirichlet, π_prior)
+    foreach(prior -> meanfield!(graph, GammaShapeRate, prior), b_priors)
+    for i in eachindex(Y)
+        meanfield!(graph, Categorical, [(:out, z[i]), (:p, π)])
+        meanfield!(graph, GammaMixture, [(:out, y[i]), (:switch, z[i]), ((:a, 1), a1), ((:a, 2), a2), ((:b, 1), b[1]), ((:b, 2), b[2])])
+    end
+
+    trajectory = H.run(
+        graph; id = "gamma_mixture", data = [y => Y, a1 => 2.0, a2 => 5.0], iterations = 5,
+        posteriors = [:b => b, :π => π, :z => z],
+        initial_marginals = [π => Dirichlet([1.0, 1.0]), b[1] => GammaShapeRate(1.0, 1.0), b[2] => GammaShapeRate(1.0, 1.0)],
+    )
+    # As in normal_mixture, v6 subscribed to a group's members last first, and the engine in
+    # declaration order: v6 updated π, b[2] and b[1] after z, the engine b[1], π and b[2]. Each
+    # reads q(z) and none reads another, so this reorders calls inside an iteration and changes no
+    # value (`DISCUSSION.md` §3.24).
+    @test compare_engine_trajectory(trajectory, H.fixture("gamma_mixture"); atol = 1.0e-9, trace_order = :within_iteration) === :agree
+end
+
+@testmodule UninformativeRecords begin
+    # v6 recorded its Uninformative message by name, not being a distribution; so is the port's.
+    using MessagePassingRulesTestUtils: EngineTrajectory, RuleCallRecord
+    using StandardMessagePassingRules: Uninformative
+    named(r) = r.result isa Uninformative ? RuleCallRecord(r.iteration, r.node, r.target, Dict{String, Any}("type" => "Uninformative"), r.logscale) : r
+    by_name(t) = EngineTrajectory(t.id; description = t.description, free_energy = t.free_energy, posteriors = t.posteriors, trace = map(named, t.trace))
+end
+
+@testitem "engine:fixture:half_normal_uninformative" tags = [:engine] setup = [EngineHarness, UninformativeRecords] begin
+    # HalfNormal's message, from a variance given as data, closed by an Uninformative factor; an
+    # Uninformative prior of an observed normal's mean; both nodes' energies.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+
+    graph = H.Graph()
+    v0, h = H.data!(graph), H.random!(graph)
+    u, y = H.random!(graph), H.data!(graph)
+    H.node!(graph, HalfNormal, [(:out, h), (:v, v0)])
+    H.node!(graph, Uninformative, [(:out, h)])
+    H.node!(graph, Uninformative, [(:out, u)])
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, u), (:v, H.constant!(graph, 1.0))])
+
+    trajectory = H.run(graph; id = "half_normal_uninformative", data = [v0 => 2.0, y => 1.5], iterations = 2, posteriors = [:h => h, :u => u])
+    @test compare_engine_trajectory(UninformativeRecords.by_name(trajectory), H.fixture("half_normal_uninformative"); atol = 1.0e-9) === :agree
+end
+
+@testitem "engine:fixture:normal_wishart_priors" tags = [:engine] setup = [EngineHarness, UninformativeRecords] begin
+    # MvNormalWishart's and MatrixNormalWishart's messages, from a parameter given as data, each
+    # closed by an Uninformative factor. No free energy: v6 could compute neither node's.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, MessagePassingRulesTestUtils
+    H = EngineHarness
+    I2 = [1.0 0.0; 0.0 1.0]
+
+    graph = H.Graph()
+    μ0, nw = H.data!(graph), H.random!(graph)
+    M0, mw = H.data!(graph), H.random!(graph)
+    nw_prior = [(:out, nw), (:μ, μ0), (:W, H.constant!(graph, I2)), (:λ, H.constant!(graph, 2.0)), (:ν, H.constant!(graph, 3.0))]
+    mw_prior = [(:out, mw), (:M, M0), (:U, H.constant!(graph, I2)), (:V, H.constant!(graph, I2)), (:ν, H.constant!(graph, 3.0))]
+    H.node!(graph, MvNormalWishart, nw_prior; factorisation = H.meanfield_factorisation(nw_prior))
+    H.node!(graph, Uninformative, [(:out, nw)])
+    H.node!(graph, MatrixNormalWishart, mw_prior; factorisation = H.meanfield_factorisation(mw_prior))
+    H.node!(graph, Uninformative, [(:out, mw)])
+
+    trajectory = H.run(
+        graph; id = "normal_wishart_priors", data = [μ0 => [0.5, 1.0], M0 => [1.0 0.5; 0.0 1.0]], iterations = 2,
+        posteriors = [:nw => nw, :mw => mw], free_energy = false,
+    )
+    @test compare_engine_trajectory(UninformativeRecords.by_name(trajectory), H.fixture("normal_wishart_priors"); atol = 1.0e-9) === :agree
+end
