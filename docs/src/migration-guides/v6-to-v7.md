@@ -384,6 +384,10 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
   blocks, `(:out,) => …, (:in, (:T, 2)) => …`, where v6 returned `(out = …, in_T2 = …)`; one inside
   a joint over the whole group `T` stays in the joint as a one-hot axis. v6 ignored the node's
   `meta`, and it has no algorithm.
+- **A distribution value as a prior**, `x ~ d` for `d = Beta(4.0, 8.0)` or `Truncated(…)`, was
+  v6's `StandaloneDistributionNode`, an engine node type. It is Standard's
+  `StandaloneDistribution`, an ordinary node `out ~ d` with `d` a constant: the message towards
+  `out` is `d`, and the free-energy term `KL(q ‖ d)`, as before.
 
 ## Behaviour that changed
 

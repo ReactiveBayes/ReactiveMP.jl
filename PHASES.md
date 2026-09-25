@@ -24,7 +24,7 @@ one.
 **Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
 brief*), its questions answered (§3.46); items 1 (the small engine fixes), 2 (the diagnostics) and 3
 (the generator as an activation option, `*`'s samples) are done, and item 4, the missing engine
-fixtures, is done; items 5 (the workflows) is done, and item 6, RxInfer, is under way. **Phase 6 is
+fixtures, is done, item 5 (the workflows) too, and item 6, RxInfer, is under way. **Phase 6 is
 closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
 with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
 deleted.

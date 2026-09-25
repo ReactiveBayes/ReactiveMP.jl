@@ -158,3 +158,15 @@ end
     # Any other type is left as it is.
     @test getdata(as_marginal(Message(Gamma(2.0, 1.0), false, false))) === Gamma(2.0, 1.0)
 end
+
+@testitem "the entropy of a point mass holding a distribution" tags = [:engine] begin
+    import ReactiveMP: score, DifferentialEntropy, Marginal
+    using BayesBase, Distributions
+
+    # A constant holding a distribution value, as a prior's `x ~ d`, is a point mass like any
+    # other: −∞, in the distribution's float type, which the free energy counts.
+    h = score(DifferentialEntropy(), Marginal(PointMass(Beta(4.0, 8.0)), true, false))
+    @test h === BayesBase.MinusInfinity(Float64)
+    @test score(DifferentialEntropy(), Marginal(PointMass(Beta(4.0f0, 8.0f0)), true, false)) === BayesBase.MinusInfinity(Float32)
+    @test score(DifferentialEntropy(), Marginal(PointMass(2.0), true, false)) === BayesBase.MinusInfinity(Float64)
+end

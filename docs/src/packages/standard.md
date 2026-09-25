@@ -51,6 +51,7 @@ MixtureBP
 GammaShapeLikelihood
 HalfNormal
 Uninformative
+StandaloneDistribution
 AND
 OR
 NOT

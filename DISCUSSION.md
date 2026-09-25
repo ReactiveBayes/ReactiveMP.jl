@@ -1812,6 +1812,20 @@ The entry brief asked three questions, and the user answered:
   separate pass over a built graph. The engine knows the resolved `RuleSpec` at that point, with
   its `pure` and `inplace`, and RxInfer forwards the options from `infer`.
 
+### 3.47 The standalone distribution node comes back (user, 2026-09-25)
+
+§3.36 did not carry over v6's `StandaloneDistributionNode`, the node of `x ~ d` for a distribution
+*value* `d`. Adapting RxInfer found that its tests and documentation use it: priors passed to a
+model as arguments, `θ ~ prior`, and values of families with no node of their own, such as
+`Truncated(Normal(0.5, 1.0), 0, 1)`. Rewriting `x ~ d` into the family's own node, the other
+option, would not cover those. So it is an ordinary node of Standard, `StandaloneDistribution`,
+`out ~ d` with `d` a constant: its message towards `out` is `d`, and its average energy the cross
+entropy `KL(q ‖ d) + H(q)`, so the node's free-energy term, the energy less `H(q)`, is v6's
+`KL(q ‖ d)`. v6 made it a special engine node type; here nothing in the engine is special but one
+method: the entropy of a point mass whose point is a distribution is `−∞` in that
+distribution's float type. RxInfer builds the node for a distribution value, and counts its
+hidden constant in the free energy's point entropies.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

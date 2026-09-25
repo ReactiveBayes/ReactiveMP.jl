@@ -26,8 +26,11 @@ using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
 import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily, covmats
 import DomainSets
 
-export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, Mixture, MixtureBP, GammaShapeLikelihood, HalfNormal, Uninformative
+export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, Mixture, MixtureBP, GammaShapeLikelihood, HalfNormal, Uninformative, StandaloneDistribution
 export AND, OR, NOT, IMPLY, MultiplicationSampling
+# v6 exported both from the engine: `dot`, LinearAlgebra's, is the node `out = dot(A, in)`, and
+# `diageye` builds the identity matrices models write.
+export dot, diageye
 
 include("helpers.jl")
 
@@ -97,6 +100,8 @@ include("rules/uniform/out.jl")
 
 include("nodes/uninformative.jl")
 include("rules/uninformative/out.jl")
+include("nodes/standalone_distribution.jl")
+include("rules/standalone_distribution/out.jl")
 
 include("nodes/mv_normal_mean_covariance.jl")
 include("rules/mv_normal_mean_covariance/out.jl")

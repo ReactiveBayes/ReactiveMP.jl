@@ -26,6 +26,10 @@ struct KLDivergence end
 # A `FactorizedCluster`'s entropy is the sum over its blocks, which BayesBase's
 # `FactorizedJoint` gives; v6 needed a method of its own for its NamedTuple joints.
 score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
+# A point mass whose point is a distribution, the constant of a prior `x ~ d`, is −∞ like any
+# other, in the distribution's float type; BayesBase would take the distribution's type for it.
+score(::DifferentialEntropy, marginal::Marginal{<:PointMass{<:Distribution}}) =
+    BayesBase.MinusInfinity(paramfloattype(BayesBase.getpointmass(getdata(marginal))))
 
 ## Kl KlDivergence
 
