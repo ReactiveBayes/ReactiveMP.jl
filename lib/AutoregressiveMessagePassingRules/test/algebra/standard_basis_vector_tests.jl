@@ -111,3 +111,12 @@
     @test eltype(rand(rng, 3) * e') === Float64
     @test eltype(rand(rng, BigFloat, 2, 3) * e) === BigFloat
 end
+
+@testitem "StandardBasisVector:v_a_vT" tags = [:rules] begin
+    using AutoregressiveMessagePassingRules, StandardMessagePassingRules, LinearAlgebra
+    using AutoregressiveMessagePassingRules: StandardBasisVector
+
+    # e a eᵀ as v6 built it for `dot`'s precision: a diagonal with one entry.
+    W = StandardMessagePassingRules.v_a_vT(StandardBasisVector(3, 2, 2.0), 0.5)
+    @test W isa Diagonal && W == Diagonal([0.0, 2.0, 0.0])
+end

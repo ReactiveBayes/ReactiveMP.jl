@@ -36,8 +36,11 @@ end
     q(θ) = MvNormalMeanPrecision(zeros(order), diageye(order))
 end
 
-function record_ar!(r, prefix, result)
-    record!(r, "$prefix:x", result.posteriors[:x])
+function record_ar!(r, prefix, result; full_x = true)
+    # For the AR(50) the states' 50×50 covariances would make the file 26 MB; their means and
+    # variances, what the notebook plots, are kept instead.
+    xs = result.posteriors[:x]
+    record!(r, "$prefix:x", full_x ? xs : [vcat(mean(d), var(d)) for d in xs])
     record!(r, "$prefix:τ", result.posteriors[:τ])
     record!(r, "$prefix:θ", result.posteriors[:θ])
     return r
@@ -110,7 +113,7 @@ stock_predictions_result = infer(
     free_energy = false,
     iterations = 20
 )
-record_ar!(r, "stock", stock_predictions_result)
+record_ar!(r, "stock", stock_predictions_result; full_x = false)
 record!(r, "stock:y_predictions", stock_predictions_result.predictions[:y][end])
 
 # --- ARMA(10, 4) -----------------------------------------------------------------------------

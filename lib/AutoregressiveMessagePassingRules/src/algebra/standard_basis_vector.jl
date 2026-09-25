@@ -3,7 +3,7 @@
 # against a scalar, a dense `Matrix` or `Vector` and each other, the combinations the rules
 # form; any other operand takes the generic `AbstractVector` fallback, which reads `getindex`.
 # v6 wrote them against `AbstractMatrix`, `Diagonal` and `Adjoint`, which Aqua counted at 85
-# ambiguities, and had a `v_a_vT` no rule used, which is not ported.
+# ambiguities.
 struct StandardBasisVector{T <: Real} <: AbstractVector{T}
     length::Int
     index::Int
@@ -57,6 +57,14 @@ end
 function Base.:*(A::Matrix{<:Real}, e::StandardBasisVector)
     size(A, 2) == length(e) || throw(DimensionMismatch("cannot multiply a matrix of size $(size(A)) by a vector of length $(length(e))"))
     return StandardMessagePassingRules.mul_inplace!(e.scale, A[:, e.index])
+end
+
+# e a eᵀ, the precision `dot`'s rules build from it: a diagonal with its one entry, as in v6.
+function StandardMessagePassingRules.v_a_vT(e::StandardBasisVector, a::Real)
+    T = promote_type(eltype(e), typeof(a))
+    diagonal = zeros(T, length(e))
+    diagonal[e.index] = e.scale * a * e.scale
+    return LinearAlgebra.Diagonal(diagonal)
 end
 
 # v eᵀ: v, scaled, in the column at the index.

@@ -160,3 +160,17 @@ end
         ],
     )
 end
+
+@testitem "rules:dot:precision as v6 built it" tags = [:rules] begin
+    using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions, LinearAlgebra
+    using MatrixCorrectionTools: NoCorrection
+    using MessagePassingRulesBase: RuleContext
+
+    # The precision towards `in2` is v6's `a aᵀ w`: exactly symmetric, where `(a w) aᵀ` is not
+    # always, which FastCholesky then warns about and symmetrises.
+    a = [0.1, 0.7, 1.0 / 3.0, 2.0 / 7.0]
+    m = call_message_update_rule(dot, :in2; m = (out = NormalMeanVariance(0.3, 0.9), in1 = PointMass(a)), ctx = RuleContext(matrix_correction = NoCorrection()))
+    W = precision(m)
+    @test W == a * a' * (1 / 0.9) && issymmetric(W)
+    @test StandardMessagePassingRules.v_a_vT(a, 2.0) == a * a' * 2.0
+end

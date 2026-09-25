@@ -44,7 +44,7 @@ summarise(d::Union{Wishart, ExponentialFamily.WishartFast}) = vcat(flat(mean(d))
 summarise(d::PointMass) = flat(mean(d))
 function summarise(d)
     # Anything else (a SampleList, a mixture, …): its first two moments.
-    vcat(flat(mean(d)), flat(d isa UnivariateDistribution ? var(d) : cov(d)))
+    return vcat(flat(mean(d)), flat(d isa UnivariateDistribution ? var(d) : cov(d)))
 end
 
 record!(r::Recorder, name::String, x::Real) = (r.values[name] = flat(x); r.types[name] = string(typeof(x)); r)

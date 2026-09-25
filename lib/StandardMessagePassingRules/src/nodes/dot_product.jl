@@ -15,6 +15,6 @@ dot_forward(a, m_x) = ((μ, Σ) = mean_cov(m_x); NormalMeanVariance(dot(a, μ), 
 function dot_backward(ctx, m_a::PointMass, m_out)
     a = mean(m_a)
     ξ, w = weightedmean_precision(m_out)
-    W = correction!(matrix_correction(ctx, dot_default_correction()), a * w * a')
+    W = correction!(matrix_correction(ctx, dot_default_correction()), v_a_vT(a, w))
     return promote_variate_type(variate_form(typeof(m_a)), NormalWeightedMeanPrecision)(a * ξ, W)
 end

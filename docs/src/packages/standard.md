@@ -66,6 +66,7 @@ leave any other argument untouched, so a rule may pass them a view or a number.
 
 ```@docs
 StandardMessagePassingRules.diageye
+StandardMessagePassingRules.v_a_vT
 StandardMessagePassingRules.negate_inplace!
 StandardMessagePassingRules.mul_inplace!
 StandardMessagePassingRules.rank1update

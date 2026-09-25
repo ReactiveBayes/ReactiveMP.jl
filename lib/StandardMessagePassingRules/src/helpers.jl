@@ -20,6 +20,16 @@ promoted_cluster(cluster::FactorizedCluster, inputs...) =
     BayesBase.convert_paramfloattype(BayesBase.promote_paramfloattype(inputs...), cluster)
 
 """
+    v_a_vT(v, a)
+
+`v a vᵀ`, as v6 computed it: for a vector `v` and a scalar `a`, `(v vᵀ) a`, which is exactly
+symmetric where `(v a) vᵀ` is not always. A package with a structured vector adds a method, as
+the AR package's standard basis vector does.
+"""
+v_a_vT(v, a) = v * a * v'
+v_a_vT(v::AbstractVector, a::Real) = v * v' * a
+
+"""
     diageye([T = Float64], n)
 
 The `n`×`n` identity matrix of element type `T`, dense.

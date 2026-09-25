@@ -3599,7 +3599,13 @@ Known scope:
     numbers for that translation, so they are removed and recorded here.
   - Found for the engine packages: `diageye(n)`, `dot` and `diageye` exported from Standard,
     and `StandaloneDistribution`.
-- *Step 6, RxInferExamples models against v6, is next; then a commit in RxInfer for review.*
+- *Step 6 — done.* Five RxInferExamples models (`compat/rxinfer-examples/`: the Kalman filter,
+  its nonlinear Delta part, the hidden Markov model, the Gaussian mixtures, and the AR, AR(50) and
+  ARMA models) run on v6 and on RxInfer's branch, and agree: four bit-identical or within 1e-12,
+  and the AR ones bit-identical once `dot` and `+` round as v6 did (`v_a_vT`, `mean_cov`), which
+  the comparison found. No declared correction is involved in these models.
+- *Remaining:* RxInfer's branch is local; pushing it, and pointing `IntegrationTest.yml` at it, wait
+  for the user.
 
 ### Item 7 brief — log scales fixed
 
