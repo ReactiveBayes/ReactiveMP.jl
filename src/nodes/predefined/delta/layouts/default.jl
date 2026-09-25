@@ -93,7 +93,7 @@ function deltafn_apply_layout(
         vtag  = Val{:ins}()
 
         mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
-        marginalout = combineLatestUpdates((with_statics(factornode, msgs_observable), with_statics(factornode, marginals_observable)), PushNew(), Marginal, mapping, reset_vstatus)
+        marginalout = runner_combine_latest_updates(stream_postprocessors, (with_statics(factornode, msgs_observable), with_statics(factornode, marginals_observable)), PushNew(), Marginal, mapping, reset_vstatus)
         marginalout = postprocess_stream_of_marginals(stream_postprocessors, marginalout)
 
         connect!(cmarginal, marginalout)

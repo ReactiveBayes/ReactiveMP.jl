@@ -138,13 +138,18 @@ function activate!(
         )
     end
 
-    stream_of_marginals = collectLatest(
+    stream_of_marginals = runner_collect_latest(
+        options.stream_postprocessor,
         AbstractMessage,
         Marginal,
         randomvar.input_messages,
         (messages) ->
             _compute_marginal_from_messages(randomvar, options, messages),
         reset_vstatus,
+        multicore_parallel_safe(
+            options.stream_postprocessor,
+            options.prod_context_for_marginal_computation,
+        ),
     )
     stream_of_marginals = postprocess_stream_of_marginals(
         options.stream_postprocessor, stream_of_marginals

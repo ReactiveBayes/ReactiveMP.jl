@@ -284,6 +284,12 @@ function (mapping::MarginalMapping)(dependencies)
     messages  = getrecent(dependencies[1])
     marginals = getrecent(dependencies[2])
 
+    return compute_marginal(mapping, messages, marginals)
+end
+
+# Numerical entry point shared by reactive streams and compiled execution.
+function compute_marginal(mapping::MarginalMapping, messages, marginals)
+
     # Marginal is clamped if all of the inputs are clamped
     is_marginal_clamped =
         __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)

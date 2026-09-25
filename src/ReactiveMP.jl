@@ -70,6 +70,7 @@ include("approximations/cvi_projection.jl")
 
 # Predefined postprocessors
 include("postprocessors/scheduled.jl")
+include("postprocessors/multicore.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
@@ -88,6 +89,9 @@ include("score/node.jl")
 include("nodes/predefined.jl")
 include("rules/predefined.jl")
 include("rules/fallbacks.jl")
+include("compiled/program.jl")
+include("compiled/storage.jl")
+include("compiled/delta.jl")
 
 function __init__()
     Base.Experimental.register_error_hint(

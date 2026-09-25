@@ -9,6 +9,11 @@ Concrete subtypes include:
 """
 abstract type AbstractVariable end
 
+"A variable label for a product inside a rule, with no graph or stream state."
+struct RuleProductVariable <: AbstractVariable
+    label::Symbol
+end
+
 Base.broadcastable(v::AbstractVariable) = Ref(v)
 
 # Helper functions
@@ -46,6 +51,11 @@ Returns `true` if `variable` is a [`ReactiveMP.ConstVariable`](@ref).
 For an array, returns `true` only if all elements are const variables.
 """
 function isconst end
+
+degree(::RuleProductVariable) = 0
+israndom(::RuleProductVariable) = true
+isdata(::RuleProductVariable) = false
+isconst(::RuleProductVariable) = false
 
 israndom(v::AbstractArray{<:AbstractVariable}) = all(israndom, v)
 isdata(v::AbstractArray{<:AbstractVariable}) = all(isdata, v)

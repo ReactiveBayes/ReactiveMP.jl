@@ -99,4 +99,5 @@ ReactiveMP.postprocess_stream_of_marginals
 ReactiveMP.postprocess_stream_of_scores
 ReactiveMP.CompositeStreamPostprocessor
 ReactiveMP.ScheduleOnStreamPostprocessor
+ReactiveMP.MulticoreRunner
 ```

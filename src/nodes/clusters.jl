@@ -160,7 +160,7 @@ function activate_cluster!(
         meta  = collect_meta(fform, getmetadata(options))
 
         mapping     = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
-        marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
+        marginalout = runner_combine_latest_updates(stream_postprocessors, (messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
         marginalout = postprocess_stream_of_marginals(stream_postprocessors, marginalout)
 
         set_stream_of_marginals!(marginal, marginalout)

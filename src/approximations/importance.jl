@@ -22,9 +22,9 @@ convenient functions to generate samples and weights to approximate expectations
     outer result is silently wrong. Construct a separate `ImportanceSamplingApproximation` per
     nesting level if you need that.
 
-    Note that this is a reentrancy constraint, not a thread-safety one: ReactiveMP's schedulers
-    (including Rocket's `AsyncScheduler`) are built on `@async` coroutines running on a single
-    thread, so two rule evaluations never execute concurrently.
+    This is also a thread-safety constraint. `MulticoreRunner` conservatively executes rules
+    with mutable approximation state on the calling task, after joining worker computations.
+    Custom threaded execution must likewise prevent overlapping calls sharing these buffers.
 
 !!! note "Degenerate estimates fall back to the proposal"
     When the weights all vanish, or the resulting moments are non-finite or have zero variance,
