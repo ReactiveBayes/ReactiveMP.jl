@@ -4,7 +4,7 @@ if get(ENV, "RUN_AQUA", "true") == "true"
     Aqua.test_all(
         ReactiveMP;
         # `ambiguities` stays off for now: it was 322 pairs on `main`, most of them in the
-        # algebra helpers that moved to `legacy/`. Re-measuring it is tracked in PHASES.md.
+        # algebra helpers that left with their nodes. Re-measuring it is tracked in PHASES.md.
         ambiguities = false,
         deps_compat = (; check_extras = true, check_weakdeps = true),
     )
@@ -47,10 +47,9 @@ for arg in ARGS
     end
 end
 
-# `legacy/` is the v6 code kept for reference, which nothing loads; `lib/` holds packages
-# with suites of their own; `compat/` runs against v6. TestItemRunner scans the whole
-# directory, so each is excluded here.
-const EXCLUDED_DIRS = ("legacy", "lib", "compat")
+# `lib/` holds packages with suites of their own; `compat/` runs against v6. TestItemRunner
+# scans the whole directory, so each is excluded here.
+const EXCLUDED_DIRS = ("lib", "compat")
 
 is_excluded(filename) = any(dir -> occursin(joinpath(pkgdir(ReactiveMP), dir) * "/", filename), EXCLUDED_DIRS)
 

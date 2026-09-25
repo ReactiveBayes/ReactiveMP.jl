@@ -685,7 +685,7 @@ ReactiveMP.jl/
     DeltaMessagePassingRules/
   compat/v6-comparison/     # ReactiveMP@6.5.0, RxInfer 5.5.2 and the new packages: the v6
                             # oracle, the comparisons and the recorded engine fixtures
-  legacy/v6/                # step 4 onwards: the unported v6 rules and nodes, never loaded
+  (legacy/v6/)              # Phase 4.5 step 4 to Phase 6 step 10: the unported v6 code; gone
 ```
 
 **Julia 1.13 only, for now** (Phase 4.5, user; `DISCUSSION.md` §3.22). Every inter-package
@@ -866,7 +866,8 @@ downstream to RxInfer.
 **Decision: live with it.** It has been the situation for over a year; this rewrite resolves
 it rather than a separate fix. The resolution is a side effect of the split — the Pólya
 nodes move to their own package, which may be GPL-3, and ReactiveMP goes back to being
-honestly MIT.
+honestly MIT. *(Done in Phase 6 step 6: only `PolyaMessagePassingRules` depends on the sampler;
+its `LICENSE` file comes with registration, Phase 8.)*
 
 **Hard constraint: `MessagePassingRulesBase` must not depend on `ExponentialFamily`.**
 BayesBase exists precisely to hold this machinery. Where a needed piece is missing from

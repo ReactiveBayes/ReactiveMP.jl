@@ -13,8 +13,8 @@
 # deletion has no migration note. Phase P is complete exactly when `--check` exits 0.
 #
 # Run from the repository root, in the v6 comparison environment: the inventory is the
-# record of where everything in ReactiveMP 6.5.0 goes, and since step 4 of Phase 4.5 moved
-# the v6 rule system to `legacy/v6/`, only v6.5.0 itself still has all of it.
+# record of where everything in ReactiveMP 6.5.0 went, and only v6.5.0 itself still has all
+# of it.
 
 using ReactiveMP
 

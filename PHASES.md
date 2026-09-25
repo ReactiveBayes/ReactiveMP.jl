@@ -21,15 +21,10 @@ one.
 
 ## Next action
 
-**Phase 6, step 10: the close** (§ Phase 6, *Entry brief*): `legacy/` deleted, the guide
-completed, and the exit criteria. Step 9, DiscreteTransition, the last node, is done: a tensor
-node (§3.45) in its own package, with every v6 test ported and every v6 rule compared (§ Phase 6,
-*Step 9 brief*, *Progress*), and its guide entries written; `legacy/v6/` is empty.
-
-Steps 1–8 are done, each node in its own package,
-compared with v6 and covered by an engine fixture: the numerics, Delta, GaussianCoupling, Probit
-and GCV, the autoregressive family, ContinuousTransition, the Pólya nodes, scratch space and BIFM,
-and Flow.
+**Phase 7: complete the engine** (§ Phase 7), starting with its entry brief. **Phase 6 is
+closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
+with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
+deleted.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
@@ -48,6 +43,7 @@ and Flow.
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
 | the Delta package's missing `LibTests` job | Phase 7, with the workflows | § Phase 7 |
+| a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
 | log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | the log-scale milestone, Phase 7 | `DISCUSSION.md` §3.37 |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
@@ -104,7 +100,7 @@ generic ones, and no comments that only narrate.
 | 4 | `MessagePassingRulesTestUtils` | **done** |
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
-| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; step 10, the close, next |
+| 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
@@ -3334,6 +3330,15 @@ for the guide.
 
 
 
+### Step 10 — the close
+
+*Done.* `legacy/` is deleted, its README with it: every file had left with its node, and the
+suite, the formatter and the inventory script no longer mention it. The guide's node sections are
+complete: every node has its row in *Node packages*, and every exported v6 name the inventory
+deletes is named in *Removed* or, for the internals (the CVI hooks and layout, the rule
+fallbacks), described where they went; the intro names the node packages. The exit criteria
+below are ticked, each with where it was done.
+
 **Exit criteria**
 - [x] **delete, don't port** — `sphericalradial.jl`, `gausslaguerre.jl`, `importance.jl`,
       `laplace.jl` had no consumer; step 4 moved them and their tests to `legacy/v6/`, and
@@ -3359,35 +3364,38 @@ for the guide.
       `LinearAlgebra` and `FastCholesky`; `Linearization` brings `ForwardDiff`, and the
       Gauss–Hermite cubature `FastGaussQuadrature` (entry brief). No `DiffResults` (it leaves
       with `cvi.jl`), no `Optim`
-- [ ] numerical API carried over without broader redesign. FastCholesky is called directly
+- [x] numerical API carried over without broader redesign *(step 1)*. FastCholesky is called directly
       until the numerical protocol (open item #13, parked) is settled
 - [x] `ghcubature` and `approximate_meancov` move to `MessagePassingRulesApproximations` with
       `FastGaussQuadrature`, since Pólya, Probit and GCV all use them *(the Pólya package, until
       the entry brief counted their users)*
 - [x] confirm `Optim` no longer appears anywhere *(step 1: only in prose and the pinned 6.5.0
       manifest)*
-- [ ] non-standard nodes spun out, each into its node package (`INVENTORY.md`'s `node:X`): Flow,
+- [x] non-standard nodes spun out, each into its node package *(steps 2–9: twelve packages under
+      `lib/`, each with its v6 comparison and an engine fixture)* (`INVENTORY.md`'s `node:X`): Flow,
       Autoregressive (with ConjugateAR), BIFM (with its `TerminalProdArgument` rules in
       `legacy/v6/src/rules/mv_normal_mean_precision/marginals.jl`), Pólya, ContinuousTransition,
       DiscreteTransition, GCV, Probit, SoftDot and GaussianCoupling (Delta already, in Phase 4.5
       case (d); the last four each get their own package rather than a shared `models` one,
       `DISCUSSION.md` §3.30). GP is not among them: it has no node in v6, and RxGP is its own
       package
-- [ ] the helpers in `legacy/v6/src/helpers/algebra/` go with their users, as `INVENTORY.md`
-      says: the permutation matrix to Flow, the standard basis vector and the companion matrix
+- [x] the helpers in `legacy/v6/src/helpers/algebra/` go with their users, as `INVENTORY.md`
+      says *(steps 1, 4 and 8; `legacy/` deleted in step 10)*: the permutation matrix to Flow, the standard basis vector and the companion matrix
       to Autoregressive, and `common.jl`'s helpers the Phase 6 nodes use to Standard;
       `legacy/v6/src/fixes.jl`, the `ForwardDiff` hot-fix, is dropped, since only the deleted
       `laplace.jl` and `cvi.jl` took a Hessian, so `legacy/` can go
-- [ ] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
-      becomes honest again (see `PLAN.md` § Licensing)
-- [ ] Probit and ContinuousTransition get their own algorithms from `ProbitMeta` and `CTMeta`
+- [x] Pólya package carries the GPL-3 `PolyaGammaHybridSamplers`; ReactiveMP's MIT licence
+      becomes honest again (see `PLAN.md` § Licensing) *(step 6: the sampler is a dependency of
+      that package only; its `LICENSE` file is Phase 8's)*
+- [x] Probit and ContinuousTransition get their own algorithms from `ProbitMeta` and `CTMeta`
       *(Probit's, with its initial message and the dependencies page's section, in step 3)*,
       declaring their dependencies, and Probit's self-dependency a default initial message
       declared on its node (moved from Phase 5's `Require*` criterion); the dependencies page
       gains a section on initial messages
-- [ ] surviving impure algorithms (BIFM and stateful projection algorithms) carry the
-      `pure = false` marker under the agreed purity/RNG contract
-- [ ] the packages stay in the monorepo under `lib/`; the split into repositories is Phase 8
+- [x] surviving impure algorithms (BIFM and stateful projection algorithms) carry the
+      `pure = false` marker under the agreed purity/RNG contract *(BIFM became stateless in
+      step 7, so it needs none; `CVIProjection`'s joint rule carries it, step 2)*
+- [x] the packages stay in the monorepo under `lib/`; the split into repositories is Phase 8
       (`DISCUSSION.md` §3.40)
 
 ## Phase 7 — Complete the engine
@@ -3488,6 +3496,8 @@ this phase requires it to pass for release, rather than being its first executio
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed.
       Work targets 1.13 only until then (§3.22); whether the 1.10 floor and its workarounds
       come back is decided here
+- [ ] each package's `LICENSE` file, which none under `lib/` has yet: MIT, but GPL-3 for
+      `PolyaMessagePassingRules`, which says so in its docstring and `Project.toml` (Phase 6)
 - [ ] RxInfer's default package set updated
 - [ ] documentation links across the three levels updated
 - [ ] downstream migration readiness confirmed — the v6 → v7 guide exercised against a real

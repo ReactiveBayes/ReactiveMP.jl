@@ -4,7 +4,8 @@ ReactiveMP v7 moves nodes and rules out of the engine into packages of their own
 keeps variables, factor nodes, messages, marginals and the free energy; `MessagePassingRulesBase`
 defines how nodes and rules are declared and found; `StandardMessagePassingRules` holds the
 standard nodes' rules; `MessagePassingRulesApproximations` and `DeltaMessagePassingRules` hold the
-approximation methods and the Delta node. Most of a port is mechanical, and this guide lists the
+approximation methods and the Delta node; and every other node has a package of its own
+([Node packages](@ref migration-v6-to-v7-node-packages)). Most of a port is mechanical, and this guide lists the
 mechanical translations as before/after pairs. The v7 side of each pair runs when these docs are
 built.
 
@@ -437,9 +438,10 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
 ## Removed
 
 These v6 names have no counterpart: `Marginalisation`, `MomentMatching`, the functional
-dependency types, the per-node node types (`NormalMixtureNode`, `GammaMixtureNode`,
-`MixtureNode`; the checks their constructors made, at least two components, as many of each
+dependency types, the per-node node types (`NormalMixtureNode` and its alias `GaussianMixtureNode`,
+`GammaMixtureNode`, `MixtureNode`; the checks their constructors made, at least two components, as many of each
 kind, a mean-field factorisation, are the `matched_groups`, `min_group_length` and
 `factorisation` of [`@define_factor_node`](@ref)), `NodeFunctionRuleFallback`, and the approximation methods
-with no remaining consumer (`CVI`, `ProdCVI`, `Adam`, `ForwardDiffGrad`, `LaplaceApproximation`,
-`ImportanceSamplingApproximation`, `GaussLaguerreQuadrature`, `srcubature`).
+with no remaining consumer (`CVI`, `ProdCVI`, `Adam` and its `update!`, `ForwardDiffGrad`,
+`LaplaceApproximation` and `laplace`, `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature`,
+`srcubature`), with the Optimisers extension that served `ProdCVI`.

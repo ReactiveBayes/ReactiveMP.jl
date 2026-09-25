@@ -13,10 +13,9 @@ using ArgParse
 
 const PROJECT_ROOT = normpath(joinpath(@__DIR__, ".."))
 
-# `docs/` is excluded, as it was under JuliaFormatter's `ignore = ["docs"]`, and so is `legacy/`, the v6
-# code kept for reference while porting, which nothing loads. Documenter's own
+# `docs/` is excluded, as it was under JuliaFormatter's `ignore = ["docs"]`. Documenter's own
 # `@example` blocks are formatted by nobody and reformatting `make.jl` buys nothing.
-const EXCLUDED_DIRS = ("docs", "legacy", ".git")
+const EXCLUDED_DIRS = ("docs", ".git")
 
 function julia_files(root)
     files = String[]
