@@ -268,7 +268,7 @@ function collect_factorisation(fform, spec::NodeSpec, interfaces, factorisation)
 end
 
 """
-    ReactiveMP.FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics)
+    ReactiveMP.FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics, rng)
 
 Everything needed to activate a [`FactorNode`](@ref):
 
@@ -280,26 +280,30 @@ Everything needed to activate a [`FactorNode`](@ref):
 - `callbacks` — optional callbacks invoked around every rule call (see
   [`ReactiveMP.invoke_callback`](@ref));
 - `diagnostics` — the audits the node's rules run under, all off by default (see
-  [`ReactiveMP.EngineDiagnostics`](@ref)).
+  [`ReactiveMP.EngineDiagnostics`](@ref));
+- `rng` — the random number generator the node's rules draw from, `ctx.rng`; `nothing`, the
+  default, is the task's own, `Random.default_rng()`, looked up at each call.
 """
-struct FactorNodeActivationOptions{A, P, N, E}
+struct FactorNodeActivationOptions{A, P, N, E, G}
     algorithm::A
     postprocessor::P
     annotations::N
     callbacks::E
     diagnostics::EngineDiagnostics
+    rng::G
 end
 
 FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks) =
-    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, EngineDiagnostics())
+    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, EngineDiagnostics(), nothing)
 
-FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics()) =
-    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics)
+FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), rng = nothing) =
+    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics, rng)
 
 getpostprocessor(options::FactorNodeActivationOptions) = options.postprocessor
 getannotations(options::FactorNodeActivationOptions) = options.annotations
 getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 getdiagnostics(options::FactorNodeActivationOptions) = options.diagnostics
+getrng(options::FactorNodeActivationOptions) = options.rng
 
 """
     ReactiveMP.getalgorithm(fform, options::FactorNodeActivationOptions)

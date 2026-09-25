@@ -31,7 +31,8 @@ find every rule.
   correction; `NoCorrection()` from MatrixCorrectionTools applies none. MvNormalMeanPrecision
   corrects nothing unless one is set.
 - **Sampling.** The `*` rules for two general univariate distributions approximate their
-  messages from draws of `ctx.rng`.
+  messages from draws of `ctx.rng`, as many as `*`'s algorithm says,
+  `MultiplicationSampling(; samples = 3000)`.
 - **Products that do not commute.** For a matrix operand, `*` computes `A * in` only.
 - **Mixtures.** `NormalMixture` and `GammaMixture` are always variational, under their own
   algorithms. `Mixture` is always belief propagation, under `MixtureBP`; its rules need their
@@ -39,6 +40,7 @@ find every rule.
   energy, so the free energy of a model with one is an error.
 
 ```@docs
+MultiplicationSampling
 NormalMixture
 GaussianMixture
 NormalMixtureVMP

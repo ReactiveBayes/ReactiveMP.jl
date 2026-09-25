@@ -150,6 +150,7 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
         getalgorithm(fform, options),
         factornode,
         getdiagnostics(options),
+        getrng(options),
     )
     marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
     marginalout = postprocess_stream_of_marginals(getpostprocessor(options), marginalout)

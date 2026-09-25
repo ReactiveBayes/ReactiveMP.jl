@@ -255,24 +255,25 @@ end
 A callable structure computing the joint marginal of a cluster of a factor node: it resolves
 the node's marginal rule for the cluster with `find_marginal_rule` and runs it.
 """
-struct MarginalMapping{F, T, N, M, A, R}
+struct MarginalMapping{F, T, N, M, A, R, G}
     target::T
     msgs_names::N
     marginals_names::M
     algorithm::A
     factornode::R
     diagnostics::EngineDiagnostics
+    rng::G
     scratch::ScratchSlot
 end
 
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
 marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
-MarginalMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics()) where {F, T, N, M, A, R} =
-    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ScratchSlot())
+MarginalMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics(), rng::G = nothing) where {F, T, N, M, A, R, G} =
+    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, rng, ScratchSlot())
 
-MarginalMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics()) where {F <: Function, T, N, M, A, R} =
-    MarginalMapping{F, T, N, M, A, R}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ScratchSlot())
+MarginalMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics(), rng::G = nothing) where {F <: Function, T, N, M, A, R, G} =
+    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, rng, ScratchSlot())
 
 function (mapping::MarginalMapping)(dependencies)
     messages = getrecent(dependencies[1])
@@ -303,7 +304,7 @@ function compute_marginal(mapping::MarginalMapping, messages, marginals)
     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
     spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)))
     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
-    ctx = rule_context(mapping.factornode)
+    ctx = rule_context(mapping.factornode, mapping.rng)
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
     scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
     return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)

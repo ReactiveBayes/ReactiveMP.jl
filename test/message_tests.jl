@@ -434,9 +434,37 @@ end
     import Random
     N = MessageMappingNodes
 
-    # Until the generator is an activation option, `ctx.rng` is the task's default one.
+    # Without a generator of its own, `ctx.rng` is the task's default one.
     draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing)
     @test getdata(draw((Message(1, false, false),), nothing)) === Random.default_rng()
+end
+
+@testitem "the generator is an activation option" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, EngineDiagnostics, FactorNodeActivationOptions, activate!, factornode, getinterfaces,
+        get_stream_of_inbound_messages, get_stream_of_marginals, set_initial_message!, RandomVariableActivationOptions, MessageProductContext, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    import Random
+    using Rocket
+    N = MessageMappingNodes
+
+    rng = Random.Xoshiro(7)
+    @test FactorNodeActivationOptions().rng === nothing
+    @test FactorNodeActivationOptions(; rng).rng === rng
+    # A mapping given one hands it to its rule.
+    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing, EngineDiagnostics(), rng)
+    @test getdata(draw((Message(1, false, false),), nothing)) === rng
+
+    # Through activation: the node's rules draw from it.
+    out, in = randomvar(), randomvar()
+    node = factornode(N.Draw, [(:out, out), (:in, in)], ((:out, :in),))
+    product = MessageProductContext()
+    foreach(v -> activate!(v, RandomVariableActivationOptions(nothing, product, product)), (out, in))
+    activate!(node, FactorNodeActivationOptions(; rng))
+    received = []
+    subscription = subscribe!(get_stream_of_marginals(out), (q) -> push!(received, getdata(q)))
+    set_initial_message!(get_stream_of_inbound_messages(last(getinterfaces(node))), 1)
+    unsubscribe!(subscription)
+    @test received == [rng]
 end
 
 @testitem "MessageMapping gives a rule the product service" tags = [:engine] setup = [MessageMappingNodes] begin

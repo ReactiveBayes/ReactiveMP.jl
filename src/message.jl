@@ -569,7 +569,7 @@ unless an input is `missing`, in which case the message is `missing` and no rule
 
 See also: [`Message`](@ref), [`DeferredMessage`](@ref)
 """
-struct MessageMapping{F, T, N, M, A, X, R, E}
+struct MessageMapping{F, T, N, M, A, X, R, E, G}
     target::T
     msgs_names::N
     marginals_names::M
@@ -578,6 +578,7 @@ struct MessageMapping{F, T, N, M, A, X, R, E}
     factornode::R
     callbacks::E
     diagnostics::EngineDiagnostics
+    rng::G
     scratch::ScratchSlot
 end
 
@@ -601,11 +602,12 @@ function Base.show(io::IO, mapping::MessageMapping)
     return nothing
 end
 
-MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics()) where {F, T, N, M, A, X, R, E} =
-    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ScratchSlot())
+# `rng` is the generator the rules draw from, `nothing` for the task's default one.
+MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), rng::G = nothing) where {F, T, N, M, A, X, R, E, G} =
+    MessageMapping{F, T, N, M, A, X, R, E, G}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, rng, ScratchSlot())
 
-MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics()) where {F <: Function, T, N, M, A, X, R, E} =
-    MessageMapping{F, T, N, M, A, X, R, E}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ScratchSlot())
+MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), rng::G = nothing) where {F <: Function, T, N, M, A, X, R, E, G} =
+    MessageMapping{F, T, N, M, A, X, R, E, G}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, rng, ScratchSlot())
 
 function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
@@ -641,7 +643,7 @@ function (mapping::MessageMapping)(messages, marginals)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
         spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)))
         ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
-        ctx = rule_context(mapping.factornode)
+        ctx = rule_context(mapping.factornode, mapping.rng)
         algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
         scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
         MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)

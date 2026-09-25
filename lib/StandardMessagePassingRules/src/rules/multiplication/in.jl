@@ -37,5 +37,5 @@
 @define_message_update_rule(
     node = *, target = :in, ctx = (:rng,),
     args = (m[:out]::UnivariateDistribution, m[:A]::UnivariateDistribution),
-    body = (ctx, args) -> sampled_ratio_logpdf(ctx.rng, args.m[:out], args.m[:A]),
+    body = (algo, ctx, args) -> sampled_ratio_logpdf(ctx.rng, args.m[:out], args.m[:A], algo.samples),
 )

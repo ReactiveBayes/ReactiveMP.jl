@@ -57,5 +57,5 @@
 @define_message_update_rule(
     node = *, target = :out, ctx = (:rng,),
     args = (m[:A]::UnivariateDistribution, m[:in]::UnivariateDistribution),
-    body = (ctx, args) -> sampled_product_logpdf(ctx.rng, args.m[:A], args.m[:in]),
+    body = (algo, ctx, args) -> sampled_product_logpdf(ctx.rng, args.m[:A], args.m[:in], algo.samples),
 )

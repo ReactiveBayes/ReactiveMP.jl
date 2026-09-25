@@ -22,8 +22,9 @@ one.
 ## Next action
 
 **Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
-brief*), its questions answered (§3.46); items 1 (the small engine fixes) and 2 (the diagnostics) are
-done, and item 3, the generator as an activation option, is next. **Phase 6 is
+brief*), its questions answered (§3.46); items 1 (the small engine fixes), 2 (the diagnostics) and 3
+(the generator as an activation option, `*`'s samples) are done, and item 4, the missing engine
+fixtures, is next. **Phase 6 is
 closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
 with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
 deleted.
@@ -40,7 +41,6 @@ deleted.
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only), and its `mean(loggamma, ::GammaShapeRate)` is a Float64 (GammaMixture's switch and energy tables run in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
-| the RNG as an activation option (the engine passes `Random.default_rng()` until then), and `*`'s number of samples (3000, v6's) configurable | Phase 7 | `DISCUSSION.md` §3.32 |
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | the log-scale milestone, Phase 7 | § Phase 5, *Step 7 brief* |
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
 | the Delta package's missing `LibTests` job | Phase 7, with the workflows | § Phase 7 |
@@ -3491,7 +3491,9 @@ Known scope:
    options, each erroring or reporting with the rule's node, target and inputs; checked buffers,
    poisoning a recycled in-place output.
 3. **The RNG as an activation option**, the engine's `Random.default_rng()` its default, and
-   `*`'s number of samples as a field of its algorithm.
+   `*`'s number of samples as a field of its algorithm. *Done:* `FactorNodeActivationOptions(;
+   rng)`, a type parameter of the mappings so the rule call stays type-stable, and
+   `MultiplicationSampling(; samples = 3000)`, a `DefaultAlgorithmExtension`, as `*`'s algorithm.
 4. **Engine fixtures** for the nodes listed above, recorded from v6 as before.
 5. **The workflows:** 1.13, the `lib/` layout, a `LibTests` job per package, the comparisons on
    1.13. They run only on a PR, so this is checked by reading and by `act` if available.

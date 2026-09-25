@@ -27,7 +27,7 @@ import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsF
 import DomainSets
 
 export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, Mixture, MixtureBP, GammaShapeLikelihood, HalfNormal, Uninformative
-export AND, OR, NOT, IMPLY
+export AND, OR, NOT, IMPLY, MultiplicationSampling
 
 include("helpers.jl")
 

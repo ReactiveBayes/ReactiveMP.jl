@@ -7,7 +7,7 @@ import Random
 # number generator is an activation option (`DISCUSSION.md` §3.32); and `ctx.product`, which
 # multiplies two distributions with v6's `GenericProd` and returns the product with its own log
 # scale, the incoming ones being the rule's to add (§3.34).
-rule_context(node) = RuleContext(node = node, rng = Random.default_rng(), product = rule_product)
+rule_context(node, rng = nothing) = RuleContext(node = node, rng = something(rng, Random.default_rng()), product = rule_product)
 
 function rule_product(left, right)
     result = prod(BayesBase.GenericProd(), left, right)

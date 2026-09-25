@@ -67,7 +67,7 @@ end
 
 @testitem "rules:*:closures" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
-    using MessagePassingRulesBase: RuleContext
+    using MessagePassingRulesBase: RuleContext, default_algorithm
     using HCubature: hquadrature
     using StableRNGs: StableRNG
 
@@ -108,6 +108,13 @@ end
     for a in (0.5, 2.0, 4.0)
         @test logpdf(sampled_A, a) - log(3000) ≈ log(integral(y -> pdf(g, a * y) * pdf(b, y), 0.0, 1.0)) atol = 0.05
     end
+
+    # The number of draws is the algorithm's, 3000 by default, as in v6.
+    @test default_algorithm(*) === MultiplicationSampling() && MultiplicationSampling().samples == 3000
+    algorithm = MultiplicationSampling(samples = 5)
+    few = call_message_update_rule(*, :in; m = (out = g, A = b), ctx = RuleContext(rng = StableRNG(1)), algorithm)
+    ys = rand(StableRNG(1), b, 5)
+    @test logpdf(few, 2.0) ≈ log(sum(y -> pdf(g, 2.0 * y), ys))
 end
 
 @testitem "rules:*:logscale-correction-refusals" tags = [:rules] begin
