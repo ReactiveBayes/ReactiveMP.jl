@@ -6,8 +6,6 @@ function record_check(passed::Bool, expression, description, source::LineNumberN
     return passed
 end
 
-caller_source(file, line) = LineNumberNode(line, Symbol(file))
-
 """
     approximately_equal(a, b; atol, rtol)
 

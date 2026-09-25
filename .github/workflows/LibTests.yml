@@ -25,8 +25,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Julia 1.13 only while the rewrite targets it (DISCUSSION.md §3.22): its [sources] wire the
-# siblings, so each package is tested from its own project, as `make test-<package>` does.
+# Julia 1.13, whose [sources] wire the siblings, so each package is tested from its own project, as `make test-<package>` does.
 jobs:
   test:
     name: ${{ matrix.package }} - Julia 1.13

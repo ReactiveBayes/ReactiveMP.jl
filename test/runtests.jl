@@ -3,8 +3,7 @@ using Aqua, TestItemRunner, ReactiveMP
 if get(ENV, "RUN_AQUA", "true") == "true"
     Aqua.test_all(
         ReactiveMP;
-        # `ambiguities` is on: 322 pairs on `main`, most in the v6 algebra helpers and nodes that
-        # left for their packages; each lib suite checks its own.
+        # `ambiguities` is on; each lib suite checks its own package.
         deps_compat = (; check_extras = true, check_weakdeps = true),
     )
 end
@@ -14,8 +13,8 @@ end
 # `make test test_args="..."` passes each entry through as an element of `ARGS`. Three
 # prefixes, and they compose:
 #
-#   engine:fixtures      path   -- maps to `test/engine/fixtures`, matched with `occursin`,
-#                                  so prefixes work. This is the original syntax
+#   engine:variational   path   -- maps to `test/engine/variational`, matched with `occursin`,
+#                                  so prefixes work
 #   tag:engine           tag    -- only items carrying that tag
 #   name:MessageMapping  name   -- only items whose name contains that text
 #

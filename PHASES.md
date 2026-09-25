@@ -44,6 +44,7 @@ until after the release (§3.48). Phases 5 and 6 are closed too.
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
 | **inconsistent, to settle** (user, 2026-09-25): the context service `product` is a fixed engine function, `(left, right) -> (distribution, logscale)` with `GenericProd`, not the product context the variables use (`MessageProductContext`), and it returns a log scale although a rule has nothing to do with log scales; only Mixture's switch rule uses it (§3.34) | **before the release** (user), after this cleanup | `DISCUSSION.md` §3.34 |
+| **inconsistent, to settle** (user, 2026-09-25): `visualize_spec` is a public, documented entry point with no backend anywhere, so every call is a `MethodError`; its backend was decided (§3.12, Phase P), an extension on GraphPPL's pattern, but is tracked nowhere. The intent (user): comprehensive visualisations of nodes, dependencies and rules, rendered in the documentation, for teaching as well. The Phase C audit took it for dead code and removed it; restored at the user's request | undecided (user) | `DISCUSSION.md` §3.12 |
 | the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
 | log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | after the release | `DISCUSSION.md` §3.37, §3.48 |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
@@ -3694,6 +3695,27 @@ wait for the release):
 - *History out of the twelve node packages — done* (three subagents, one per group; every diff
   reviewed: renames and comments only, no assertion touched). Their migration-guide candidates
   are merged with the docs step.
+- *Dead code and wrong docs — done*: the engine's unused helpers, the Addon stubs, Delta's and
+  TestUtils' unused names, unused dependencies and test extras; docstrings for `MessageMapping`,
+  `hasannotation` and the three modules; Flow's and DiscreteTransition's quality items; the
+  workflows and the Makefile. `visualize_spec` stays: it was taken for dead code, but is the
+  entry point of the planned visualisations (see the not-done table).
+- *The engine tests without v6 as reference — done*: `test/engine/{exact_inference,variational,
+  approximation}_tests.jl` (39 items) replace `fixtures_tests.jl`; `harness.jl` reads no
+  fixture. Two rule discrepancies found (AR towards `γ` under mean-field, CT towards `y` from
+  `m[:x]`) are `@test_broken`, for the user to decide.
+- *History out of the engine, base, TestUtils and Approximations — done* (one subagent for the
+  three lib packages, the engine by hand; every diff reviewed).
+- *Docs, READMEs and CLAUDE.md — done*: the package pages carry no v6 notes, their differences
+  are in the v6 → v7 guide; `lib/README.md` and `README.md` describe the current state.
+- *The recorded search* (2026-09-25), `grep -rniE 'v6|v5|phase [0-9]|step [0-9]|§|PLAN\.md|
+  PHASES\.md|DISCUSSION\.md|INVENTORY\.md|legacy|ported|the port\b|as in v6' src lib test
+  scripts docs/src .github Makefile README.md`, less the migration guides and manifests: no hit
+  in `src/` or `lib/*/{src,test}`. What remains waits for the release or is not history: the
+  inventory (`scripts/inventory.jl`, `test/inventory_tests.jl`), `compat/`'s CI job in
+  `LibTests.yml` and its mentions in `test/runtests.jl` and `lib/README.md`; the guides' file
+  names in `docs/src/index.md`; the inference lifecycle's "Phase 1–3"; two arithmetic "Step 1/2"
+  comments in `test/message_tests.jl`; `codecov-action@v5`.
 
 **Exit criteria**
 - [ ] no mention of phases, steps, cases (a)–(d), the slice, `PLAN.md`, `PHASES.md`,

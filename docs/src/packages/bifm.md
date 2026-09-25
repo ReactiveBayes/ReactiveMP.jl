@@ -18,13 +18,11 @@ BIFMHelper
 BIFMMessagePassingRules.BIFMFreeEnergyError
 ```
 
-!!! note
-    v6's `BIFMMeta` was a mutable cache: the rule towards `zprev` stored intermediate quantities
-    that the other rules read back, so results depended on the order the rules ran in, and one
-    meta shared by two nodes corrupted both. The port's forward rules read the message on their
-    own edge and recompute those quantities, keeping only working memory in their
-    [scratch](@ref rules-defining-scratch). They are pure and independent of order.
+The rules keep nothing between calls. The forward rules read the message on their own edge and
+recompute the quantities of the backward pass they need, keeping only working memory in their
+[scratch](@ref rules-defining-scratch). They are pure, so the order they run in does not matter,
+and one `BIFMSmoother` may be shared by several nodes.
 
 !!! warning
-    The free energy of a model with BIFM is not supported, as in v6, where it failed with an
-    infinite node bound; asking for it raises a `BIFMFreeEnergyError`.
+    The free energy of a model with BIFM is not supported; asking for it raises a
+    `BIFMFreeEnergyError`.

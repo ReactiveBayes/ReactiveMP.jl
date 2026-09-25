@@ -43,16 +43,10 @@ DiscreteTransitionMessagePassingRules.multiply_dimensions!
 DiscreteTransitionMessagePassingRules.sum_out_dimensions
 ```
 
-!!! note
-    v6 found a joint's axes by parsing its name, `"in_t1_t5"`, and added about fifty explicit
-    rules beside its generic ones. Its explicit rules computed the same contractions, and agree up
-    to the normalisation of the result, except one: the five-interface rule towards `T3` under
-    belief propagation with a DirichletCollection `q(a)` normalised over `out` only
-    (`softmax!(…; dims = 1)`), and the port normalises it as all the others. Four of v6's
-    five-interface rules towards `T2` read their own edge's message and never matched; the message
-    towards `T2` is the generic one's. Measured against 6.5.0, belief propagation over two
-    interfaces is within 1.0–1.6 times v6's explicit rules from ten states on, and 90 ns slower at
-    two, so no explicit rule is kept.
+A joint's axes are read from its key, never from a name, and every message is normalised over
+the whole tensor. There are no rules specialised to a number of interfaces: the generic
+contraction is within 1.0–1.6 times the cost of a specialised two-interface rule from ten states
+on, and 90 ns slower at two.
 
-The model layer names the interfaces: v6 took `DiscreteTransition(out, in, a, t1, t2)`
-positionally, and the conditioning variables are the members `(:T, 1)`, `(:T, 2)` here.
+The model layer names the interfaces, and the conditioning variables are the members
+`(:T, 1)`, `(:T, 2)`.

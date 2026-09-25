@@ -47,5 +47,4 @@ ReactiveMP.InputArgumentsAnnotations
 ReactiveMP.RuleInputArgumentsRecord
 ReactiveMP.ProductInputArgumentsRecord
 ReactiveMP.get_rule_input_arguments
-ReactiveMP.AddonMemory
 ```

@@ -1,5 +1,3 @@
-# Ported from v6's `test/approximations/`, keeping the numeric test items, with only the imports changed.
-
 @testitem "smoothRTS: a singular forward covariance yields the forward marginal unchanged" tags = [:approximations] begin
     using MessagePassingRulesApproximations, LinearAlgebra
 
@@ -9,9 +7,9 @@
     # uncertainty, so the backward message cannot revise the input: the smoothed inbound
     # marginal is exactly the forward one.
     #
-    # Previously `W_tilde = cholinv(V_tilde)` produced `Inf` rather than raising -- `cholinv` on
-    # a scalar is just `inv` -- so `D_tilde = C_tilde * W_tilde` became `0 * Inf = NaN` and a
-    # silently corrupted marginal propagated.
+    # `cholinv` on a scalar is just `inv`, so inverting a zero `V_tilde` gives `Inf` rather than
+    # raising, and `D_tilde = C_tilde * W_tilde` would be `0 * Inf = NaN`, a silently corrupted
+    # marginal.
 
     @testset "scalar, zero V_tilde" begin
         m_in, V_in = smoothRTS(4.0, 0.0, 0.0, 2.0, 3.0, 5.0, 1.0)
@@ -91,10 +89,8 @@ end
 
     import MessagePassingRulesApproximations: Unscented, unscented_statistics
 
-    # `__unscented_parameters_zero_covariance` returned `nothing` for the cross-covariance --
-    # "not computed" rather than a degenerate value of the same kind as the zeros beside it.
-    # Callers that legitimately requested it (`Val(true)`) then fed `nothing` into arithmetic
-    # (issue #630).
+    # `__unscented_parameters_zero_covariance` returns a genuine zero cross-covariance, not
+    # `nothing` ("not computed"): callers that request it (`Val(true)`) do arithmetic with it.
 
     @testset "univariate" begin
         (m, V, C) = with_logger(SimpleLogger(IOBuffer())) do

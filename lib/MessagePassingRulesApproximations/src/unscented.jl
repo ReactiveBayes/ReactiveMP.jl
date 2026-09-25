@@ -21,8 +21,7 @@ More specifically, it contains the hyperparameters used for sigma points computa
 
 The `Unscented` structure with default parameters can be constructed as `Unscented()`.
 
-A node package uses it through [`approximate`](@ref) and [`unscented_statistics`](@ref);
-in v6 it was given as `DeltaMeta(method = Unscented())`.
+A node package uses it through [`approximate`](@ref) and [`unscented_statistics`](@ref).
 """
 struct Unscented{A, B, K, E} <: AbstractApproximationMethod
     α::A
@@ -156,12 +155,10 @@ end
 # A zero-covariance input means the input is known exactly, so the transformed output is a
 # point too: zero output covariance *and* zero cross-covariance with the input.
 #
-# The cross-covariance used to be returned as `nothing`, which is not a degenerate value of the
-# same kind as the zeros beside it -- it is "not computed". Consumers that legitimately asked
-# for it (`Val(true)`, i.e. the `DeltaFn(:ins)` marginal rules) then fed `nothing` into
-# arithmetic and failed with `MethodError: no method matching *(::Nothing, ::Float64)`. Callers
-# that did not ask for it discard the third element anyway, so returning a genuine zero is
-# correct for both and keeps the return type stable.
+# The cross-covariance is a genuine zero, not `nothing` ("not computed"): consumers that ask
+# for it (`Val(true)`, i.e. the `DeltaFn(:ins)` marginal rules) do arithmetic with it, and
+# callers that do not ask discard the third element anyway, so a zero is correct for both and
+# keeps the return type stable.
 __unscented_parameters_zero_covariance(m::T) where {T <: Real} =
     (m, zero(T), zero(T))
 __unscented_parameters_zero_covariance(m::AbstractVector{T}) where {T <: Real} =

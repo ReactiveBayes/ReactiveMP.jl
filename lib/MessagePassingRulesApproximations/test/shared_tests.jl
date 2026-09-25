@@ -1,6 +1,3 @@
-# Ported from v6's `test/approximations/`, with only the imports changed.
-
-
 @testitem "Shared approximation methods" tags = [:approximations] begin
     using MessagePassingRulesApproximations
 

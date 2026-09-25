@@ -1,13 +1,10 @@
 SHELL = /bin/bash
 .DEFAULT_GOAL = help
 
-.PHONY: format check-format
+.PHONY: help scripts_init scripts_update format check-format
 
-# No `Pkg.update()` in `scripts_init` on purpose: it defeated `scripts/Manifest.toml` by
-# re-resolving the formatter to the newest allowed version on every `make format` /
-# `make check-format`, so which formatter you got depended only on when you last ran it --
-# and CI and contributors could therefore disagree with no code change involved.
-# Use `make scripts_update` to bump deliberately.
+# `scripts_init` only instantiates `scripts/Manifest.toml`, so every `make format` and
+# `make check-format` runs the same pinned Runic; `make scripts_update` bumps it deliberately.
 scripts_init:
 	julia --project=scripts/ -e 'using Pkg; Pkg.instantiate(); Pkg.precompile();'
 
@@ -20,7 +17,7 @@ format: scripts_init ## Format Julia code
 check-format: scripts_init ## Check Julia code formatting (does not modify files)
 	julia --project=scripts/ scripts/formatter.jl
 
-.PHONY: docs
+.PHONY: doc_init docs
 
 doc_init:
 	julia --project=docs -e 'using Pkg; Pkg.instantiate();'
@@ -30,12 +27,12 @@ docs: doc_init ## Generate the documentation, running its doctests
 
 .PHONY: test test-all test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv test-softdot test-autoregressive test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
 
-test: ## Run the fast subset (skips `:slow`). test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
+test: ## Run the root suite except items tagged `:slow`. test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
 
-test-all: ## Run everything, including `:slow`. This is what CI will run
+test-all: ## Run the root suite, `:slow` items included, as CI does
 	TEST_ALL=true julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
-	
+
 test-base: ## Test lib/MessagePassingRulesBase. Takes test_args like `test`, e.g. test_args="tag:quality"
 	julia --startup-file=no --project=lib/MessagePassingRulesBase -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
@@ -82,4 +79,4 @@ test-discrete-transition: ## Test lib/DiscreteTransitionMessagePassingRules agai
 	julia --startup-file=no --project=lib/DiscreteTransitionMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 help:  ## Display this help
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

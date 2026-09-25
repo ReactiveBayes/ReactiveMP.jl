@@ -17,7 +17,7 @@ We welcome new feature proposals. However, before submitting a feature request, 
 
 ### Installing ReactiveMP
 
-We suggest that you use the `dev` command from the new Julia package manager to
+We suggest that you use the `dev` command of the Julia package manager to
 install ReactiveMP.jl for development purposes. To work on your fork of ReactiveMP.jl, use your fork's URL address in the `dev` command, for example:
 
 ```
@@ -74,18 +74,20 @@ make test
 
 If a bug has been discovered in an external dependencies of the `ReactiveMP.jl` it is the best to open an issue 
 directly in the dependency's github repository. You use can use the `fixes.jl` file for hot-fixes before 
-a new release of the broken dependecy is available.
+a new release of the broken dependency is available.
 
 ### Makefile
 
-`ReactiveMP.jl` uses `Makefile` for most common operations:
+`ReactiveMP.jl` uses `Makefile` for most common operations. The repository is developed and
+tested on Julia 1.13.
 
 - `make help`: Shows help snippet
-- `make test`: Run tests, supports extra arguments
-  - `make test test_args="nodes"` runs only the tests under `test/nodes/`, and `make test test_args="engine:fixtures"` only `test/engine/fixtures_tests.jl`
-  - `make test test_args="tag:engine"` and `make test test_args="name:MessageMapping"` select test items by tag and by name
-  - `make test-standard test_args="name:rules:Beta"` runs a rule package's tests the same way; `make test-base`, `make test-testutils`, `make test-approximations` and `make test-delta` are the others
+- `make test`: Runs the engine's tests, except items tagged `:slow`; `make test-all` runs those too, as CI does. Both take `test_args`:
+  - `make test test_args="nodes"` runs only the tests under `test/nodes/`, and `make test test_args="engine:variational"` only `test/engine/variational_tests.jl`
+  - `make test test_args="tag:engine"` and `make test test_args="name:MessageMapping"` select test items by tag and by name; entries of the same kind are alternatives, entries of different kinds all apply
   - `RUN_AQUA=false make test` skips the slow Aqua checks, which are enabled by default
-- `make docs`: Compile documentation
-- `make check-format`: Check codestyle, without modifying files
-- `make format`: Fix codestyle; this overwrites files 
+- `make test-<package>` runs one package's suite under `lib/`, with the same `test_args`, for example `make test-standard test_args="name:rules:Beta"`. The targets are `test-base`, `test-testutils`, `test-standard`, `test-approximations`, `test-delta`, `test-gaussian-coupling`, `test-probit`, `test-gcv`, `test-autoregressive`, `test-softdot`, `test-continuous-transition`, `test-polya`, `test-bifm`, `test-flow` and `test-discrete-transition`. They skip items tagged `:slow` unless `TEST_ALL=true` is set, and the coverage check runs only on an unfiltered run
+- `make docs`: Builds the documentation, running its doctests
+- `make check-format`: Checks the formatting (Runic), without modifying files
+- `make format`: Formats the code; this overwrites files
+- `make scripts_update`: Bumps the pinned Runic version in `scripts/Manifest.toml`

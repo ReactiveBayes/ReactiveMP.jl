@@ -30,6 +30,7 @@ src/
   scratch.jl           ScratchSlot: the rule scratch each message and marginal mapping keeps
   diagnostics.jl       EngineDiagnostics: the opt-in purity, in-place and checked-buffer audits
   rule_arguments.jl    RuleArgs/RuleAnnotations built from the latest messages and marginals
+  context.jl           node_context: the RuleContext a node's rules read, the engine's services and the model's
   variable.jl          AbstractVariable API
   variables/           randomvar, constvar, datavar
   nodes/
@@ -51,7 +52,7 @@ lib/                   the new packages: the rule system, its test tooling, rule
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
 compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
 investigations/        performance investigations kept for the end-of-refactor pass; never loaded
-test/                  mostly mirrors src/; test/engine/ runs whole graphs against the v6 fixtures
+test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants
 ```
 
 Include order in `src/ReactiveMP.jl` is load-bearing: `nodes/equality.jl` must precede
@@ -64,10 +65,10 @@ must load after its node's declaration.
 All via `make` (run `make help` for the list).
 
 ```bash
-make test                                  # the fast subset: everything except `:slow`
-make test-all                              # everything, including `:slow`
+make test                                  # the root suite, except items tagged `:slow`
+make test-all                              # the root suite, `:slow` included (as CI runs it)
 make test test_args="nodes"                        # one directory
-make test test_args="engine:fixtures"              # one file
+make test test_args="engine:variational"           # one file
 make test test_args="tag:engine"                   # by tag
 make test test_args="name:MessageMapping"          # by test-item name
 make test test_args="tag:nodes name:factornode"    # combined
@@ -95,8 +96,8 @@ for s in check compare_standard compare_approximations compare_delta compare_gau
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
 ```
 
-Work targets **Julia 1.13** for now, and **no CI runs** until a PR is opened: every check above
-is run locally. The workflows under `.github/` describe these same checks, on 1.13 (Phase 7 item 5).
+Work targets **Julia 1.13**, and **no CI runs** until a PR is opened: every check above is run
+locally. The workflows under `.github/` run these same checks, on 1.13.
 
 `test_args` takes three kinds of entry, and they compose:
 
@@ -106,15 +107,16 @@ is run locally. The workflows under `.github/` describe these same checks, on 1.
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (177 of them across 24 files), each self-contained and
+Tests are `@testitem` blocks (177 of them across 27 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
 **Every test item carries a tag.** The taxonomy is `:nodes` (29) and `:engine` (146 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
-assert allocation counts and `:quality` on the inventory gate and the engine's doctests. `:rules` went with the v6 rule
-tests; rules are tested in the lib suites now. `:slow` exists and is **unused in `test/`**: nothing there has been measured as slow yet, so nothing claims to be.
+assert allocation counts and `:quality` on the inventory gate and the engine's doctests. Rules
+are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
+measured as slow, so nothing claims to be.
 The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
 `:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`
 (`TEST_ALL=true make test-base`). When items are tagged `:slow` they disappear from `make test`
@@ -122,27 +124,30 @@ and stay in `make test-all`.
 
 The fast default must never become a coverage reduction — the CI workflows set `TEST_ALL=true`,
 so a `:slow` tag changes what *you* run locally, never what CI runs. `ci.yml` runs the root
-suite and the docs, `LibTests.yml` a job per `make test-<package>` target and one for every v6
-comparison, the fixtures and the inventory; none has run yet, so until the first PR "CI" means
-these checks run locally.
+suite and the docs, `LibTests.yml` a job per `make test-<package>` target and one for the v6
+comparison, the fixtures and the inventory; until the first PR "CI" means these checks run
+locally.
 
 Rule tests live with the rules, in the lib packages, and are table-driven via
 `MessagePassingRulesTestUtils` (`@test_message_update_rule`). The engine's own tests declare
 toy nodes and rules with the base package's macros. `test/engine/harness.jl` builds a graph the
-way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtures.
+way RxInfer does and returns its posteriors and free energies; the engine tests check them
+against closed forms computed in the test (exact models), coordinate ascent or convergence
+(variational ones) and quadrature or Monte Carlo (approximations). Two known rule
+discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT's rule towards
+`y` from `m[:x]`.
 
 ## Conventions
 
 - **`CHANGELOG.md` must be updated** in every change (CI enforces it on a PR).
 - Formatting is **Runic** (`make check-format`; CI checks it on a PR). It is zero-config — there is
-  no style file, and `.JuliaFormatter.toml` is gone — and deterministic: measured, it produces
-  byte-identical output on Julia 1.10 and 1.13, which is what JuliaFormatter could not do. The
-  version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
+  no style file — and deterministic: measured, it produces byte-identical output on Julia 1.10
+  and 1.13. The version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
   between releases; use `make scripts_update` to bump it deliberately, and run `make format`
   over the repo in the same commit. `docs/` is excluded.
 - Julia: work targets **1.13 only**, and siblings are wired with `[sources]`, test-only ones via
-  `[extras]` too; the comparison environment is resolved on 1.13 as well. The 1.10 floor and
-  its old workarounds are reconsidered when the packages are registered (`DISCUSSION.md` §3.22).
+  `[extras]` too; the comparison environment is resolved on 1.13 as well. The lowest supported
+  version is decided when the packages are registered.
 
 ## Gotchas
 
@@ -152,24 +157,29 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   `(:out, :μ)`, so interface names may contain underscores.
 - Rule lookup is the base package's method table (`find_message_rule` and friends), global
   across every loaded package. The per-module `__message_passing_registry__` is introspection
-  only, per module because of precompilation; the engine never reads it (`DISCUSSION.md` §3.23).
+  only, per module because of precompilation; the engine never reads it.
 - `activate!` wires a node's declared dependencies (`dependencies_spec`) or the default scheme,
   groups included, and subscribes to a target's inputs **in declaration order**, which in VMP
-  is the update schedule (`DISCUSSION.md` §3.24). A joint may hold some members of a group,
-  keyed with them, `(:out, (:T, 1))` (§3.45). A declaration may write `default` among a target's inputs, `:a => (default, q[:a])`:
-  the default scheme's inputs plus the listed ones, placed in interface order (§3.41). A
+  is the update schedule. A joint may hold some members of a group,
+  keyed with them, `(:out, (:T, 1))`. A declaration may write `default` among a target's inputs, `:a => (default, q[:a])`:
+  the default scheme's inputs plus the listed ones, placed in interface order. A
   deterministic node's clusters are always `out` and the joint over its inputs,
-  and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)` (§3.25).
-- Aqua's checks run in full in `test/runtests.jl`, `ambiguities` included since Phase 7 (it was
-  322 pairs on `main`, most in v6 code since moved out); `deps_compat` checks `[extras]` too.
-- `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
+  and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)`.
+- Aqua's checks run in full in `test/runtests.jl`, `ambiguities` included; `deps_compat` checks
+  `[extras]` too.
+- A rule reads its services from `ctx`, a `RuleContext` wrapping a `NamedTuple`: the engine
+  supplies `node`, `product`, `rng` and `matrix_correction` (`node_context`), and the activation
+  option `context`, any `NamedTuple`, is merged over them. A name nobody supplies reads as
+  `nothing`.
+- The activation option `rulefallback` (e.g. `NodeFunctionRuleFallback()`) gives a message only
+  where no rule matches; an exception inside a rule always propagates.
+- `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
-  (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's
-  every standard node: the distributions, arithmetic, logic and the mixtures), `MessagePassingRulesApproximations` (`make test-approximations`;
+  (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; every standard node: the distributions, arithmetic, logic and the mixtures), `MessagePassingRulesApproximations` (`make test-approximations`;
   `Unscented`, `Linearization`, Gauss–Hermite cubature and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation`, its Unscented and
   Linearization rules, and `CVIProjection`, whose rules are an extension on
-  ExponentialFamilyProjection) and the Phase 6 node packages, one per node, on Delta's template:
+  ExponentialFamilyProjection) and the node packages, one per node, on Delta's template:
   `GaussianCouplingMessagePassingRules` (`make test-gaussian-coupling`),
   `ProbitMessagePassingRules` (`make test-probit`), `GCVMessagePassingRules` (`make test-gcv`),
   `AutoregressiveMessagePassingRules` (`make test-autoregressive`; AR and ConjugateAR under
@@ -193,16 +203,18 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   and `algorithm = T` on the rules, as `BinomialPolyaApproximation` does.
 - `@define_factor_node` can declare what a node requires of the graph: `matched_groups =
   [(:m, :p)]`, `min_group_length = 2`, `factorisation = :meanfield`. `factornode` checks them;
-  the two mixtures declare all three (`DISCUSSION.md` §3.38).
+  the two mixtures declare all three.
 - The v6 → v7 migration guide is the docs page `docs/src/migration-guides/v6-to-v7.md`; there is
-  no `MIGRATION.md`, though older text in the design documents still says so (§3.36).
+  no `MIGRATION.md`.
 - Log scales (`:logscale` annotations, `LogScaleAnnotations`) are **experimental**: the engine
   owns the policy, the base package only carries annotations, and they do exactly what v6 did:
   no rule gains or loses one, and nothing new is required of rules, until a decision after the
-  release (§3.48).
-- There is no `legacy/`: every node is ported, and Phase 6 step 10 deleted the directory. The v6
-  code is only in the 6.5.0 release and in git. The inventory gate runs in
+  release.
+- The v6 code is only in the 6.5.0 release and in git. The inventory gate runs in
   `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
+- `visualize_spec` is a deliberate entry point for visualisation backends (extensions), none
+  written yet: comprehensive visualisations of nodes, dependencies and rules, rendered in the
+  documentation. Not dead code.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 

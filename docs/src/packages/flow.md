@@ -7,7 +7,7 @@ FlowMessagePassingRules
 `Flow` is the deterministic node `out = f(in)` for an invertible flow model `f`, built from
 layers and compiled with its parameters. A normal is pushed through the model by linearisation,
 with the model's own Jacobians, or by the unscented transform, under `FlowApproximation`, which
-the model must give. v6 called it `FlowMeta`.
+the model must give.
 
 ```@docs
 Flow
@@ -45,7 +45,6 @@ FlowMessagePassingRules.backward_inv_jacobian
 Base.eltype(::CompiledFlowModel)
 ```
 
-!!! note
-    v6 drew the random parameters of `compile(model)` and the random permutations of
-    `PermutationMatrix(dim)` and `PermutationLayer()` from the global generator. Each takes a
-    generator as its first argument now, `compile(rng, model)`. The node's rules draw nothing.
+`compile(model)`, `PermutationMatrix(dim)` and `PermutationLayer()` draw random parameters and
+permutations. Each takes a generator as its first argument, `compile(rng, model)`, and without
+one draws from the task's. The node's rules draw nothing.

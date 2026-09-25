@@ -1,5 +1,9 @@
 # [Defining nodes and rules](@id rules-defining)
 
+```@docs
+MessagePassingRulesBase
+```
+
 Nodes, their message update rules, marginal rules and average energies are defined with the
 macros of `MessagePassingRulesBase`. The engine finds a node's rules through the base package,
 so a rule defined in any loaded package is found, and none of the definitions depend on the

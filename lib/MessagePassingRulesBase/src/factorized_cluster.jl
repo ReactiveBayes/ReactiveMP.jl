@@ -7,9 +7,8 @@ with the members each block covers. The joint is the distribution, and BayesBase
 its entropy and float-type conversion. The labels are what the engine needs to hand each
 block on and to score it. Each label is the tuple of the block's members, in the cluster's
 order, and the labels are carried in the type, so a block is read as `fc[(:out, :μ)]` with no
-lookup at run time. A member of a group is written as in a cluster's key, `(:T, 1)`. It
-replaces v6's NamedTuple results keyed by mangled names such as `out_μ`, which cannot be split
-back safely once interface names may contain underscores.
+lookup at run time. A member of a group is written as in a cluster's key, `(:T, 1)`. No
+names are mangled together, so interface names may contain underscores.
 
 [`check_factorized_cluster`](@ref) confirms the blocks partition the cluster.
 """

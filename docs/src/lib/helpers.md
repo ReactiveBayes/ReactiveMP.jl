@@ -23,20 +23,10 @@ ReactiveMP.skipindex
 
 ## [Macro utilities](@id lib-helpers-macro)
 
-The `ReactiveMP.MacroHelpers` submodule contains building blocks the engine's macros use to parse and transform Julia type expressions. They are implementation details, documented for completeness.
-
-| Function | Purpose |
-|----------|---------|
-| `ReactiveMP.MacroHelpers.ensure_symbol` | Assert that an expression is a `Symbol`; error otherwise |
-| `ReactiveMP.MacroHelpers.bottom_type` | Extract the base type `T` from expressions like `Type{<:T}`, `typeof(T)`, or `T` |
-| `ReactiveMP.MacroHelpers.upper_type` | Wrap a type expression into `Type{<:T}` form for dispatch |
-| `ReactiveMP.MacroHelpers.@proxy_methods` | Generate forwarding method definitions for a proxy wrapper type |
-
-`@proxy_methods` is the most user-facing of these. It generates a set of method forwarding stubs so that a thin wrapper type transparently delegates calls to its wrapped type, without hand-writing each delegation.
+`ReactiveMP.MacroHelpers.@proxy_methods` generates forwarding methods, so that a thin wrapper type
+delegates calls to what it wraps: `Message` and `Marginal` forward `mean`, `var` and the other
+statistics to their data.
 
 ```@docs
-ReactiveMP.MacroHelpers.ensure_symbol
 ReactiveMP.MacroHelpers.@proxy_methods
-ReactiveMP.MacroHelpers.upper_type
-ReactiveMP.MacroHelpers.bottom_type
 ```

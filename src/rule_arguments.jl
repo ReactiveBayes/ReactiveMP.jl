@@ -114,8 +114,7 @@ is one tuple under its name (see [`ReactiveMP.GroupInputs`](@ref)).
 A joint whose value is a `FactorizedCluster` reaches the rule as its blocks instead: a block
 of one member as that member's marginal, `q[:out]`, and a larger one as a joint,
 `q[:out, :μ]`. A block of one member of a group stays a joint of that member, `q[((:T, 1),)]`,
-since the group's length, which `q[:T]` would need, is not known from the cluster. The labels are in the cluster's type, so this is decided at compile time. v6
-decomposed its NamedTuple joints the same way, for the average energy only.
+since the group's length, which `q[:T]` would need, is not known from the cluster. The labels are in the cluster's type, so this is decided at compile time.
 """
 rule_marginals(f::F, ::Nothing, ::Nothing) where {F} = Marginals(NamedTuple())
 

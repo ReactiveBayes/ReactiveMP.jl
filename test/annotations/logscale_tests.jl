@@ -228,10 +228,3 @@ end
         @test ReactiveMP.getlogscale(getannotations(right_product)) == 4.0
     end
 end
-
-@testitem "AddonLogScale throws an error" tags = [:engine] begin
-    import ReactiveMP: AddonLogScale
-
-    @test_throws "AddonLogScale` has been removed" AddonLogScale()
-    @test_throws "LogScaleAnnotations" AddonLogScale()
-end

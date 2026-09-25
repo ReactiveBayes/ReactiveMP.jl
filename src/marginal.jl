@@ -189,11 +189,7 @@ function as_marginal end
 
 as_marginal(marginal::Marginal) = marginal
 
-dropproxytype(::Type{<:Marginal{T}}) where {T} = T
-
 skip_initial() = filter(v -> !is_initial(v))
-skip_clamped() = filter(v -> !is_clamped(v))
-skip_clamped_and_initial() = filter(v -> !is_initial(v) && !is_clamped(v))
 
 ## Marginal observable
 

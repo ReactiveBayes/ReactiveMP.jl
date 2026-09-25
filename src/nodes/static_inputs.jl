@@ -1,5 +1,5 @@
 # Static inputs: the members of a node's group connected to a constant or to data, folded into
-# its function under `static_inputs = :fold` (v6's `with_statics` and the Delta node's proxy).
+# its function under `static_inputs = :fold`.
 
 """
     ReactiveMP.StaticFold(f, statics)

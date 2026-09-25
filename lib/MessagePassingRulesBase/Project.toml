@@ -4,20 +4,17 @@ version = "0.1.0-DEV"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [compat]
 BayesBase = "1.5"
-LinearAlgebra = "1.11"
 MacroTools = "0.5"
-TupleTools = "1.2.0"
 julia = "1.11"
 
 Aqua = "0.8"
 Documenter = "1"
 JET = "0.9, 0.10, 0.11, 0.12"
+LinearAlgebra = "1.11"
 Pkg = "1.11"
 Test = "1.11"
 TestItemRunner = "1"
@@ -26,9 +23,10 @@ TestItemRunner = "1"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "Documenter", "JET", "Pkg", "Test", "TestItemRunner"]
+test = ["Aqua", "Documenter", "JET", "LinearAlgebra", "Pkg", "Test", "TestItemRunner"]

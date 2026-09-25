@@ -1,7 +1,7 @@
-@testitem "interactive:call_message_update_rule" tags = [:base] setup = [SpikeRules] begin
+@testitem "interactive:call_message_update_rule" tags = [:base] setup = [RepresentativeRules] begin
     using MessagePassingRulesBase
     using MessagePassingRulesBase: AnnotationStore, getannotation, RuleContext
-    S = SpikeRules
+    S = RepresentativeRules
     P, N = S.Point, S.Normal
 
     @test (@call_message_update_rule(node = S.NMV, target = :out, m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
@@ -20,10 +20,10 @@
     @test (@call_average_energy(node = S.NMV, q = (out = N(0.0, 1.0), μ = N(1.0, 2.0), v = P(2.0)))) == 2.0
 end
 
-@testitem "interactive:queries" tags = [:base] setup = [SpikeRules] begin
+@testitem "interactive:queries" tags = [:base] setup = [RepresentativeRules] begin
     using MessagePassingRulesBase
     using MessagePassingRulesBase: list_rules, rule_coverage, DefaultAlgorithm, RuleSpec
-    S = SpikeRules
+    S = RepresentativeRules
 
     @test length(list_rules(S.NMV)) == 5
     @test length(list_rules(S.NMV, :out)) == 1
@@ -49,9 +49,9 @@ end
     @test !haskey(coverage.counts, ("→ v", S.MixtureVMP))
 end
 
-@testitem "interactive:display" tags = [:base] setup = [SpikeRules, DependencyNodes] begin
+@testitem "interactive:display" tags = [:base] setup = [RepresentativeRules, DependencyNodes] begin
     using MessagePassingRulesBase: list_rules, nodespec, dependencies_spec, rule_coverage, Target, IndexedTarget, ClusterTarget
-    S = SpikeRules
+    S = RepresentativeRules
     plain(x) = sprint(show, MIME"text/plain"(), x)
     html(x) = sprint(show, MIME"text/html"(), x)
 
@@ -86,10 +86,10 @@ end
     @test contains(html(rule_coverage(S.NMV)), "<table")
 end
 
-@testitem "interactive:visualize" tags = [:base] setup = [SpikeRules] begin
+@testitem "interactive:visualize" tags = [:base] setup = [RepresentativeRules] begin
     using MessagePassingRulesBase: visualize_spec, nodespec
     err = try
-        visualize_spec(nodespec(SpikeRules.NMV))
+        visualize_spec(nodespec(RepresentativeRules.NMV))
         nothing
     catch e
         e

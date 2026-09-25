@@ -37,7 +37,26 @@ jobs:
       - name: "Run CompatHelper"
         run: |
           import CompatHelper
-          CompatHelper.main()
+          # The root package and every package under lib/.
+          subdirs = [
+              "",
+              "lib/AutoregressiveMessagePassingRules",
+              "lib/BIFMMessagePassingRules",
+              "lib/ContinuousTransitionMessagePassingRules",
+              "lib/DeltaMessagePassingRules",
+              "lib/DiscreteTransitionMessagePassingRules",
+              "lib/FlowMessagePassingRules",
+              "lib/GCVMessagePassingRules",
+              "lib/GaussianCouplingMessagePassingRules",
+              "lib/MessagePassingRulesApproximations",
+              "lib/MessagePassingRulesBase",
+              "lib/MessagePassingRulesTestUtils",
+              "lib/PolyaMessagePassingRules",
+              "lib/ProbitMessagePassingRules",
+              "lib/SoftDotMessagePassingRules",
+              "lib/StandardMessagePassingRules",
+          ]
+          CompatHelper.main(; subdirs)
         shell: julia --color=yes {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

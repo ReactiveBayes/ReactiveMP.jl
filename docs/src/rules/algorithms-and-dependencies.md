@@ -105,7 +105,7 @@ MessagePassingRulesBase.extends_default_scheme
 A rule that reads the message on its own edge, as an expectation-propagation rule does, has no
 message to start from in a graph with a loop through that edge. The node may declare one, and the
 engine sets it on the node's inbound message at activation, where nothing was set: a model's own
-initialisation wins. Probit declares its v6 default for `in`:
+initialisation wins. Probit declares one for `in`:
 
 ```julia
 @define_factor_node(

@@ -40,7 +40,7 @@ end
 ## Deterministic mapping
 
 # Minus the entropy of the joint over the inputs, the node's second cluster, each time it
-# updates (v6's Delta node score).
+# updates.
 function score(
         ::Type{T},
         ::FactorBoundFreeEnergy,

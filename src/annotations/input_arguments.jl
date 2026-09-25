@@ -1,8 +1,7 @@
 export InputArgumentsAnnotations,
     RuleInputArgumentsRecord,
     ProductInputArgumentsRecord,
-    get_rule_input_arguments,
-    AddonMemory
+    get_rule_input_arguments
 
 """
     RuleInputArgumentsRecord
@@ -180,22 +179,4 @@ function Base.show(io::IO, record::ProductInputArgumentsRecord)
         i < length(record.mappings) && println(io)
     end
     return
-end
-
-"""
-    AddonMemory(args...; kwargs...)
-
-Deprecated: `AddonMemory` has been removed in ReactiveMP v6.
-Use [`InputArgumentsAnnotations`](@ref) instead. See the migration guide in the documentation for details.
-"""
-function AddonMemory(args...; kwargs...)
-    error(
-        """`AddonMemory` has been removed in ReactiveMP v6 """ *
-            """and replaced by `InputArgumentsAnnotations`.\n""" *
-            """To migrate, replace:\n""" *
-            """  addons = (AddonMemory(),)\n""" *
-            """with:\n""" *
-            """  annotations = (InputArgumentsAnnotations(),)\n""" *
-            """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
-    )
 end

@@ -83,8 +83,6 @@ end
 
 # Towards `out`, the projection reads the message on its own edge, the marginal of `out` and the
 # joint over the inputs; towards an input, it divides the joint by the input's own message.
-const CVIApproximation = DeltaApproximation{<:CVIProjection}
-
 @define_dependencies(
     node = DeltaFn, algorithm = DeltaApproximation{<:CVIProjection, Nothing},
     dependencies = [:out => (m[:out], q[:out], q[(:in,)]), (:in, k) => (m[:in][k], q[(:in,)])],

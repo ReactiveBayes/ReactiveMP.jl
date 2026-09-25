@@ -1,6 +1,6 @@
-# The Phase 3 step 2 gate: container access inside a real lambda body resolves at compile
-# time. Each access is measured through a function barrier with `const` bodies, never at
-# global scope (see DISCUSSION.md §3.15 for how each of those mistakes skews the number).
+# Container access inside a real lambda body resolves at compile time. Each access is measured
+# through a function barrier with `const` bodies, never at global scope, where dynamic dispatch
+# would skew the number.
 
 @testmodule GateBodies begin
     using MessagePassingRulesBase: RuleArgs, Marginals

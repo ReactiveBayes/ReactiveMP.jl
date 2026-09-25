@@ -79,7 +79,6 @@ If a rule sets no log-scale and `LogScaleAnnotations` is active, the engine appl
 ```@docs
 ReactiveMP.LogScaleAnnotations
 ReactiveMP.getlogscale
-ReactiveMP.AddonLogScale
 ```
 
 ## References

@@ -1,5 +1,4 @@
-# Gauss–Hermite cubature and `approximate_meancov`. v6 tested the cubature only through the GCV
-# node and the buffer test below; the exactness cases are new.
+# Gauss–Hermite cubature and `approximate_meancov`.
 
 @testitem "Gauss–Hermite: exact on polynomials of degree 2p - 1" tags = [:approximations] begin
     using MessagePassingRulesApproximations
@@ -51,10 +50,9 @@ end
     @test mean ≈ P * (Σ \ μ + b) atol = 1.0e-6
 end
 
-# v6's `test/approximations/getpoints_tests.jl`, its Gauss–Hermite half: the spherical-radial
-# cubature it also covered is deleted. The multivariate points are one buffer, rewritten on every
-# iteration (ReactiveMP.jl#633): `approximate_meancov` mutates each point in place, which is
-# safe only because the next iteration rewrites it. These tests pin that contract.
+# The multivariate points are one buffer, rewritten on every iteration: `approximate_meancov`
+# mutates each point in place, which is safe only because the next iteration rewrites it. These
+# tests pin that contract.
 @testitem "Gauss–Hermite: the multivariate points reuse one buffer, by design" tags = [:approximations] begin
     using MessagePassingRulesApproximations
 

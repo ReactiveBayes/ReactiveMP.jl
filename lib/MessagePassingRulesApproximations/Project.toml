@@ -2,11 +2,8 @@ name = "MessagePassingRulesApproximations"
 uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 version = "0.1.0-DEV"
 
-# Numerical utilities (Unscented, Linearization, Gauss–Hermite cubature, smoothRTS), NOT algorithms.
-# HARD CONSTRAINT: this package must NOT depend on MessagePassingRulesBase. They are
-# siblings. "How do I approximate this integral" is numerics; "which update scheme am I
-# running" is an algorithm. It works on means and covariances, not on distributions, so it
-# depends on no distribution package either, and stays usable outside this ecosystem.
+# Numerics on means and covariances: Unscented, Linearization, Gauss–Hermite cubature and
+# smoothRTS. It depends on no MessagePassingRules package and on no distribution package.
 
 [deps]
 FastCholesky = "2d5283b6-8564-42b6-bb00-83ed8e915756"

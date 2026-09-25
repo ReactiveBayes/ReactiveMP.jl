@@ -31,6 +31,8 @@ annotate!(::NoAnnotations, ::Symbol, _) = nothing
 
 """
     hasannotation(annotations, key::Symbol)
+
+Whether `annotations` holds a value under `key`; always `false` for `NoAnnotations`.
 """
 hasannotation(store::AnnotationStore, key::Symbol) = store.entries !== nothing && haskey(store.entries, key)
 hasannotation(::NoAnnotations, ::Symbol) = false

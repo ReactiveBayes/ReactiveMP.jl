@@ -160,8 +160,8 @@ __apply_link_data(f::F, data::NTuple{N, PointMass}) where {F, N} =
 # A linked `DataVariable` must be a deterministic function of *point* values: the
 # transformation is applied to plain numbers, not to distributions. Linking to a
 # `RandomVariable` therefore delivers a full posterior here, which has no meaningful
-# point value to substitute. Previously this produced a bare `MethodError` mentioning
-# only `__apply_link`, which gives no indication of what the user did wrong.
+# point value to substitute; the error says so, where a bare `MethodError` in
+# `__apply_link` would not.
 function __apply_link_data(f::F, data::Tuple) where {F}
     offenders = join(
         (

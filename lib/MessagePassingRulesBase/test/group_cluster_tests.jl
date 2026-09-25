@@ -1,4 +1,4 @@
-# A cluster over a whole group: Delta's joint over its inputs, `q_ins` in v6. A cluster is
+# A cluster over a whole group: Delta's joint over its inputs. A cluster is
 # written as a tuple of members, `q[:y, :x]` being shorthand for `q[(:y, :x)]`, and inside a
 # cluster a group's name means all of its members jointly: `q[(:in,)]`, or `q[:out, :in]`.
 

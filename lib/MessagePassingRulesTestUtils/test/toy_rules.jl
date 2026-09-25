@@ -22,7 +22,7 @@
     )
     # A cluster that factorises: q(out, μ, σ) = q(out, μ) q(σ). Every block carries the
     # promoted float type of all the inputs, so the `(:σ,)` block cannot pass `m[:σ]` through
-    # unchanged the way v6's `v = m_v` does.
+    # unchanged.
     @define_marginal_update_rule(
         node = Gauss, target = (:out, :μ, :σ), args = (m[:out]::Normal, m[:μ]::Normal, m[:σ]::PointMass),
         body = (args) -> begin

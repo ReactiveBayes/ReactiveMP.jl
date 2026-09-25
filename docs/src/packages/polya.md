@@ -12,7 +12,7 @@ PolyaMessagePassingRules
 multinomial one through logistic stick-breaking. Pólya-Gamma augmentation makes the messages
 towards their weights normal. The rules towards the weights read the message on their own edge,
 through their declarations ([Extending the default scheme](@ref rules-algorithms-extending)), so
-a model initialises that message, as in v6. The node declares none, since the dimension of the
+a model initialises that message. The node declares none, since the dimension of the
 weights is the model's.
 
 ```@docs
@@ -24,8 +24,6 @@ logistic_stick_breaking
 compose_Nks
 ```
 
-!!! note
-    v6's average energies were wrong. BinomialPolya's took `softplus` at the mean of `xᵀβ`, even
-    when asked to sample, and is now its expectation under `q(β)`, by Gauss–Hermite cubature.
-    MultinomialPolya's, for a Multinomial `q(x)` with more than one trial, flipped the sign of
-    `Σ ⟨log x_k!⟩` and took `log N` for `log N!`; observed counts were right.
+BinomialPolya's average energy takes the expectation of `softplus(xᵀβ)` under `q(β)` by
+Gauss–Hermite cubature. MultinomialPolya's includes the multinomial coefficient's
+expectation, `log N! - Σ ⟨log x_k!⟩`, for a Multinomial `q(x)` of `N` trials.

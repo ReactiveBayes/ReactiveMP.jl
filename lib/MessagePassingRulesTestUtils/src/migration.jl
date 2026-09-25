@@ -1,10 +1,10 @@
 """
     DeclaredDisagreement(id; kind, reasoning)
 
-A known, investigated difference between the v7 and the v6 result of the comparison `id`:
-`kind = :migration_bug` when the port is wrong and awaits a fix, `:correction` when v6 was
-wrong and v7 deliberately differs. `reasoning` says why; it is printed whenever the
-disagreement is met.
+A known, investigated difference between the actual and the reference result of the
+comparison `id`: `kind = :migration_bug` when the implementation under test is wrong and awaits
+a fix, `:correction` when the reference is wrong and the implementation deliberately differs.
+`reasoning` says why; it is printed whenever the disagreement is met.
 """
 struct DeclaredDisagreement
     id::String
@@ -21,34 +21,34 @@ end
 """
     MigrationRecord
 
-One comparison of a v7 rule against its v6 original on the same inputs: both results and
-log scales, and the `outcome` — `:agree`, a declared `:migration_bug` or `:correction`, or
-`:disagree` when the difference was never declared.
+One comparison of a rule against a reference implementation on the same inputs: both
+results and log scales, and the `outcome` — `:agree`, a declared `:migration_bug` or
+`:correction`, or `:disagree` when the difference was never declared.
 """
 struct MigrationRecord
     id::String
     node::String
     target::String
     inputs::Any
-    v7::Any
-    v6::Any
-    v7_logscale::Any
-    v6_logscale::Any
+    actual::Any
+    reference::Any
+    actual_logscale::Any
+    reference_logscale::Any
     outcome::Symbol
 end
 
 """
-    compare_with_reference(id, v7, v6; inputs, node, target, v7_logscale, v6_logscale, atol, rtol, declared)
+    compare_with_reference(id, actual, reference; inputs, node, target, actual_logscale, reference_logscale, atol, rtol, declared)
 
-Compare a v7 result with its v6 reference and return a [`MigrationRecord`](@ref). The
-check passes when they agree — values, types and log scales — or when the difference is one
-of the `declared` disagreements; an undeclared difference fails. Neither side is ever
-silently preferred.
+Compare a result with the reference implementation's and return a
+[`MigrationRecord`](@ref). The check passes when they agree — values, types and log scales —
+or when the difference is one of the `declared` disagreements; an undeclared difference fails.
+Neither side is ever silently preferred.
 """
-function compare_with_reference(id::AbstractString, v7, v6; inputs = nothing, node = "", target = "", v7_logscale = nothing, v6_logscale = nothing, atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], source = LineNumberNode(0, :unknown))
-    values_agree = approximately_equal(v7, v6; atol, rtol)
-    logscales_agree = (v7_logscale === nothing && v6_logscale === nothing) ||
-        (v7_logscale !== nothing && v6_logscale !== nothing && isapprox(v7_logscale, v6_logscale; atol, rtol))
+function compare_with_reference(id::AbstractString, actual, reference; inputs = nothing, node = "", target = "", actual_logscale = nothing, reference_logscale = nothing, atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], source = LineNumberNode(0, :unknown))
+    values_agree = approximately_equal(actual, reference; atol, rtol)
+    logscales_agree = (actual_logscale === nothing && reference_logscale === nothing) ||
+        (actual_logscale !== nothing && reference_logscale !== nothing && isapprox(actual_logscale, reference_logscale; atol, rtol))
     agree = values_agree && logscales_agree
     declaration = findfirst(d -> d.id == id, declared)
     outcome = if agree
@@ -60,11 +60,11 @@ function compare_with_reference(id::AbstractString, v7, v6; inputs = nothing, no
         :disagree
     end
     record_check(
-        outcome !== :disagree, :(v7 ≈ v6),
-        () -> "`$id`: v7 gives $(repr(v7)) (log scale $(repr(v7_logscale))), v6 gives $(repr(v6)) (log scale $(repr(v6_logscale))); investigate, then declare it a :migration_bug or a :correction",
+        outcome !== :disagree, :(actual ≈ reference),
+        () -> "`$id`: the result is $(repr(actual)) (log scale $(repr(actual_logscale))), the reference is $(repr(reference)) (log scale $(repr(reference_logscale))); investigate, then declare it a :migration_bug or a :correction",
         source,
     )
-    return MigrationRecord(String(id), string(node), string(target), inputs, v7, v6, v7_logscale, v6_logscale, outcome)
+    return MigrationRecord(String(id), string(node), string(target), inputs, actual, reference, actual_logscale, reference_logscale, outcome)
 end
 
 const FIXTURE_FORMAT = 1
@@ -72,8 +72,8 @@ const FIXTURE_FORMAT = 1
 """
     save_migration_fixtures(path, records; packages = Dict{String, Any}())
 
-Write migration records for later phases to read back, stamped with the Julia version and
-the given package versions. Serialization is exact but tied to the Julia version, so
+Write comparison records to be read back later, stamped with the Julia version and the
+given package versions. Serialization is exact but tied to the Julia version, so
 [`load_migration_fixtures`](@ref) refuses a file written by another minor release.
 """
 function save_migration_fixtures(path::AbstractString, records::AbstractVector{MigrationRecord}; packages = Dict{String, Any}())

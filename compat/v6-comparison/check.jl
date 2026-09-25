@@ -61,7 +61,7 @@ records = MigrationRecord[]
         for (id, edge, m) in CASES
             v7, v7_logscale = v7_message_update(NormalMeanVariance, edge, m, NamedTuple())
             v6, v6_logscale = v6_message_update(NormalMeanVariance, edge, m, NamedTuple())
-            push!(records, compare_with_reference(id, v7, v6; inputs = (m = m,), node = "NormalMeanVariance", target = ":$edge", v7_logscale, v6_logscale))
+            push!(records, compare_with_reference(id, v7, v6; inputs = (m = m,), node = "NormalMeanVariance", target = ":$edge", actual_logscale = v7_logscale, reference_logscale = v6_logscale))
         end
         @test all(r -> r.outcome === :agree, records)
     end
@@ -70,7 +70,7 @@ records = MigrationRecord[]
         path = joinpath(mktempdir(), "normal_mean_variance.jls")
         save_migration_fixtures(path, records; packages = Dict("ReactiveMP" => pkgversion(ReactiveMP)))
         loaded = load_migration_fixtures(path)
-        @test map(r -> r.v6, loaded.records) == map(r -> r.v6, records)
+        @test map(r -> r.reference, loaded.records) == map(r -> r.reference, records)
         @test loaded.header.packages["ReactiveMP"] == v"6.5.0"
     end
 end

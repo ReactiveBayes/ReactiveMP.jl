@@ -11,9 +11,7 @@ single propagation step using a `PendingScheduler`, or to move work onto a
 worker thread using an `AsyncScheduler`.
 
 The same scheduler is applied to all three stream kinds (outbound messages,
-marginals, scores), which makes `ScheduleOnStreamPostprocessor` the direct
-successor of the v5/early-v6 `ScheduleOnPipelineStage` + node-level scheduler
-pair.
+marginals, scores).
 
 # Fields
 - `scheduler::S` — a Rocket.jl scheduler. Must be compatible with

@@ -472,7 +472,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
             store = AnnotationStore()
             v7 = call_message_update_rule(node, edge; m, q, ann = store)
             v6, v6_logscale = v6_message_update(v6_node(node), edge, m, q)
-            record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = ":$edge", v7_logscale = getannotation(store, :logscale, nothing), v6_logscale, declared = declare(id, flagged))
+            record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = ":$edge", actual_logscale = getannotation(store, :logscale, nothing), reference_logscale = v6_logscale, declared = declare(id, flagged))
             # A declared correction must actually differ, or the declaration is stale.
             @test (flagged !== false) == (record.outcome === :correction)
         end

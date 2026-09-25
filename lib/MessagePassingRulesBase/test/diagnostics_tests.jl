@@ -65,11 +65,11 @@ end
     @test length(messages) == 9
 end
 
-@testitem "diagnostics:clean" tags = [:base] setup = [SpikeRules, DependencyNodes, ToyNodes] begin
+@testitem "diagnostics:clean" tags = [:base] setup = [RepresentativeRules, DependencyNodes, ToyNodes] begin
     using MessagePassingRulesBase: check_rules, check_rule_ambiguities
-    @test isempty(check_rules(SpikeRules))
+    @test isempty(check_rules(RepresentativeRules))
     @test isempty(check_rules(DependencyNodes))
-    @test isempty(check_rule_ambiguities(SpikeRules))
+    @test isempty(check_rule_ambiguities(RepresentativeRules))
 end
 
 @testitem "diagnostics:ambiguities" tags = [:base] setup = [BrokenRules] begin

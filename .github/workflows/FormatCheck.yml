@@ -1,9 +1,5 @@
 name: Format Check
 on:
-  push:
-    branches:
-      - main
-    tags: ['*']
   pull_request:
   workflow_dispatch:
 concurrency:
@@ -26,10 +22,8 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
-      # The floor, matching `scripts/Manifest.toml`. Under JuliaFormatter this pin had to
-      # track ci.yml's newest Julia, because its output shifted with the Julia minor version
-      # through JuliaSyntax. Runic does not: measured, it produces byte-identical output on
-      # 1.10 and 1.13, so this only needs to be a version the manifest loads on.
+      # Any version `scripts/Manifest.toml` loads on: Runic's output does not depend on the
+      # Julia version (measured, byte-identical on 1.10 and 1.13).
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1.10'
@@ -121,7 +115,7 @@ jobs:
           body: |
             This PR was automatically created to fix Julia code formatting issues.
             
-            The formatting was applied using JuliaFormatter according to the project's style guidelines.
+            The formatting was applied with Runic (`make format`).
             
             Please review the changes and merge if appropriate.
           branch: auto-format-${{ github.event.pull_request.number }}

@@ -139,8 +139,7 @@ whatever a rule throws propagates to the caller.
 
 A rule never sees a missing input. When any input is `missing`, an engine does not call the
 rule at all, and does not run the annotation processors that follow a rule either; the
-result is `missing`, carrying only the annotations written before the call. This is v6's
-behaviour, kept unchanged.
+result is `missing`, carrying only the annotations written before the call.
 """
 @inline execute_rule(spec::RuleSpec, output, algorithm, ctx, args, ann, target) =
     execute_rule(spec, output, nothing, algorithm, ctx, args, ann, target)

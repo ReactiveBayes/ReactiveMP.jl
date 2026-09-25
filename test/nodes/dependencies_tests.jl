@@ -372,7 +372,7 @@ end
 @testitem "a rule that reads its own target's marginal runs once per iteration" tags = [:nodes] setup = [DependencySchemeNodes, EngineHarness] begin
     # y ~ N(a x, 1/W) observed, under mean-field: the message towards `a` updates q(a), which it
     # reads. `PushNew()` recomputes a message only once all its inputs have refreshed, so the
-    # cycle m(→a) → q(a) → m(→a) does not recurse, as in v6.
+    # cycle m(→a) → q(a) → m(→a) does not recurse.
     using ExponentialFamily, BayesBase, StandardMessagePassingRules
     import ReactiveMP: getlocalclusters, get_node_local_marginals
     using .DependencySchemeNodes: Transition

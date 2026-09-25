@@ -53,7 +53,7 @@ end
     @test mean(q_x) ≈ 10.5 / 11 atol = 0.1
     @test var(q_x) ≈ 1 / 11 atol = 0.05
     # The projection of `out` is only as close as sampling and ExponentialFamilyProjection make
-    # it, as v6's own rule tests allow: measured, a mean of 1.86 and a variance of 0.22.
+    # it: measured, a mean of 1.86 and a variance of 0.22.
     @test mean(q_z) ≈ 10.5 / 11 + 1 atol = 0.25
     @test 0.0 < var(q_z) < 0.5
 end

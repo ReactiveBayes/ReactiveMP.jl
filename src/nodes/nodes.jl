@@ -129,17 +129,10 @@ A factor node's interfaces, in declaration order, a group's members in member or
 """
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
-# `getinboundinterfaces` skips the first interface, which is the output by convention
-getinboundinterfaces(factornode::FactorNode) = view(
-    factornode.interfaces,
-    (firstindex(factornode.interfaces) + 1):lastindex(factornode.interfaces),
-)
 getlocalclusters(factornode::FactorNode) = factornode.localclusters
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
 interfaceindex(factornode::FactorNode, iname::Symbol) = findfirst(interface -> name(interface) === iname, getinterfaces(factornode))
-interfaceindices(factornode::FactorNode, iname::Symbol) = (interfaceindex(factornode, iname),)
-interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 # The key an interface is known by in a factorisation and in an error: `:out`, or `(:m, k)`.
 interface_key(interface::NodeInterface) = name(interface)

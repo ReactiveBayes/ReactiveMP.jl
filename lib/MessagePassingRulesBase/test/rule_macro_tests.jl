@@ -1,7 +1,7 @@
-# The ten representative rules from the Phase 0 spike (`git show 81822c57:spike/dispatch/02_rules.jl`),
-# written through the definition macros, with toy distributions in place of ExponentialFamily.
+# Representative rules, written through the definition macros, with toy distributions in place
+# of ExponentialFamily.
 
-@testmodule SpikeRules begin
+@testmodule RepresentativeRules begin
     using MessagePassingRulesBase
     using MessagePassingRulesBase: DefaultAlgorithm, AbstractAlgorithm, annotate!
     import BayesBase: mean, var
@@ -164,11 +164,11 @@
     )
 end
 
-@testitem "rules:spike" tags = [:base] setup = [SpikeRules] begin
+@testitem "rules:representative" tags = [:base] setup = [RepresentativeRules] begin
     using MessagePassingRulesBase
     using MessagePassingRulesBase: RuleArgs, Marginals, Target, IndexedTarget, ClusterTarget, DefaultAlgorithm,
         RuleContext, RuleAnnotations, AnnotationStore, getannotation
-    S = SpikeRules
+    S = RepresentativeRules
     P, N, C = S.Point, S.Normal, S.Categorical
 
     @test message_passing_rule(S.NMV, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
@@ -211,9 +211,9 @@ end
     @test message_passing_average_energy(S.NMV, DefaultAlgorithm(), energy) == (1.0 + 2.0 + 1.0) / 2.0
 end
 
-@testitem "rules:specs" tags = [:base] setup = [SpikeRules] begin
+@testitem "rules:specs" tags = [:base] setup = [RepresentativeRules] begin
     using MessagePassingRulesBase: find_message_rule, registered_rules, RuleArgs, Target, DefaultAlgorithm, RuleSpec
-    S = SpikeRules
+    S = RepresentativeRules
     ours = filter(spec -> parentmodule(spec.body) === S || spec.node in (S.NMV, S.NormalMixture, S.Mixture, S.DeltaFn, S.Vec, S.Counter, S.Stack, +), registered_rules())
     @test length(ours) == 14
 

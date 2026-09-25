@@ -1,24 +1,19 @@
-# Runs a graph through the engine the way RxInfer would, and records what happened as an
-# `EngineTrajectory`, to be compared with the trajectories v6 recorded through RxInfer.
+# Runs a graph through the engine the way RxInfer would, and records what happened: every rule
+# call, every posterior update and the free energy after each iteration.
 
 @testmodule EngineHarness begin
     using ReactiveMP, Rocket, BayesBase, MessagePassingRulesBase
-    using MessagePassingRulesTestUtils: EngineTrajectory, RuleCallRecord, load_engine_fixture
     import ReactiveMP:
         activate!, israndom, isdata, getdata, getannotations, has_annotation, get_annotation, message_mapping_fform,
         FactorNodeActivationOptions, RandomVariableActivationOptions, DataVariableActivationOptions,
         MessageProductContext, get_stream_of_marginals, get_stream_of_predictions, set_initial_marginal!, set_initial_message!
     import MessagePassingRulesBase: Target, IndexedTarget
 
-    const FIXTURES = joinpath(pkgdir(ReactiveMP), "compat", "v6-comparison", "fixtures", "engine")
-
     # `out := in`, for a graph that needs a variable to receive a point mass.
     struct Copy end
     MessagePassingRulesBase.@define_factor_node(node = Copy, type = Deterministic, interfaces = [:out, :in])
     MessagePassingRulesBase.@define_message_update_rule(node = Copy, target = :out, args = (m[:in]::Any,), body = (args) -> args.m[:in])
     MessagePassingRulesBase.@define_message_update_rule(node = Copy, target = :in, args = (m[:out]::Any,), body = (args) -> args.m[:out])
-
-    fixture(id) = last(load_engine_fixture(joinpath(FIXTURES, "$id.toml")))
 
     """
     A graph in the making: variables and factor nodes in the order they were created, which
@@ -54,17 +49,47 @@
         return node
     end
 
+    """
+    One rule call: the iteration it happened in (0 before the first data), the node's functional
+    form and the target, as `":out"` or `"(:in, 1)"`, the result and its log scale, if any.
+    """
+    struct RuleCall
+        iteration::Int
+        node::String
+        target::String
+        result::Any
+        logscale::Union{Nothing, Float64}
+    end
+
+    """
+    What a run produced: `posteriors[name]` is the last marginal of a watched variable (a vector
+    for a vector of variables), `history[name]` every marginal it was given, in order, and
+    `predictions` the last prediction of each predicted data variable (`nothing` if none came).
+    `free_energy` has one value per iteration, `trace` every rule call, and `logscales[name]` the
+    last marginal's log scale when a run is given annotations.
+    """
+    struct Run
+        id::String
+        posteriors::Dict{String, Any}
+        history::Dict{String, Any}
+        predictions::Vector{Any}
+        free_energy::Vector{Float64}
+        trace::Vector{RuleCall}
+        logscales::Dict{String, Any}
+    end
+
     target_text(target::Target{E}) where {E} = ":$E"
     target_text(target::IndexedTarget{E}) where {E} = "(:$E, $(target.index))"
 
     logscale_of(ann) = has_annotation(ann, :logscale) ? Float64(get_annotation(ann, :logscale)) : nothing
 
-    unwrap(q) = getdata(q)
-    final(history::Vector) = unwrap(last(history))
+    unwrapall(history::Vector) = map(getdata, history)
+    unwrapall(histories::Vector{<:Vector}) = map(unwrapall, histories)
+    final(history::Vector) = getdata(last(history))
     final(histories::Vector{<:Vector}) = map(final, histories)
 
     """
-        run(graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
+        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
 
     Activate `graph` as RxInfer does (variables, each followed by its entry in
     `initial_marginals` and then in `initial_messages` (variable => distribution), the latter set
@@ -73,13 +98,13 @@
     variables, then to the free energy, and feed `data` (variable => value, or vectors of
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
     """
-    function run(graph::Graph; id, data, iterations, posteriors, predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
-        trace = RuleCallRecord[]
+    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
+        trace = RuleCall[]
         iteration = Ref(0)
         callbacks = (
             after_message_rule_call = (event) -> begin
                 node = string(nameof(message_mapping_fform(event.mapping)))
-                push!(trace, RuleCallRecord(iteration[], node, target_text(event.mapping.target), event.result, logscale_of(event.annotations)))
+                push!(trace, RuleCall(iteration[], node, target_text(event.mapping.target), event.result, logscale_of(event.annotations)))
                 nothing
             end,
         )
@@ -112,8 +137,9 @@
             end
             histories[string(name)] = variables isa AbstractVector ? records : only(records)
         end
-        for variable in predictions
-            push!(subscriptions, subscribe!(get_stream_of_predictions(variable), (_) -> nothing))
+        predicted = Any[nothing for _ in predictions]
+        for (k, variable) in enumerate(predictions)
+            push!(subscriptions, subscribe!(get_stream_of_predictions(variable), (p) -> (predicted[k] = getdata(p))))
         end
         energies = Float64[]
         if free_energy
@@ -133,12 +159,14 @@
         foreach(unsubscribe!, subscriptions)
 
         results = Dict{String, Any}(name => final(history) for (name, history) in histories)
+        unwrapped = Dict{String, Any}(name => unwrapall(history) for (name, history) in histories)
+        logscales = Dict{String, Any}()
         if annotations !== nothing
             for (name, history) in histories
                 history isa Vector{<:Vector} && continue
-                results["logscale($name)"] = logscale_of(getannotations(last(history)))
+                logscales[name] = logscale_of(getannotations(last(history)))
             end
         end
-        return EngineTrajectory(id; free_energy = energies, posteriors = results, trace)
+        return Run(id, results, unwrapped, predicted, energies, trace, logscales)
     end
 end

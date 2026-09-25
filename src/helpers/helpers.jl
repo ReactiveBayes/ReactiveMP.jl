@@ -73,40 +73,10 @@ Rocket.similar_typeof(::SkipIndexIterator, ::Type{L}) where {L} = Vector{L}
 
 ##
 
-import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
-
 # Symbol helpers
 
 unval(::Type{Val{S}}) where {S} = S
 unval(::Val{S}) where {S} = S
-
-@generated function split_underscored_symbol(symbol_val)
-    S = unval(symbol_val)
-    R = tuple(map(Symbol, split(string(S), "_"))...)
-    return :(Val{$R}())
-end
-
-# NamedTuple helpers
-
-fields(::NamedTuple{F}) where {F} = F
-hasfield(field::Symbol, ntuple::NamedTuple) = field ∈ fields(ntuple)
-
-function swapped(tuple::Tuple, i, j)
-    @assert j > i
-    return (
-        tuple[1:(i - 1)]...,
-        tuple[j],
-        tuple[(i + 1):(j - 1)]...,
-        tuple[i],
-        tuple[(j + 1):end]...,
-    )
-end
-
-function swapped(array::AbstractArray, i, j)
-    array = copy(array)
-    array[i], array[j] = array[j], array[i]
-    return array
-end
 
 ##
 

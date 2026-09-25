@@ -498,7 +498,6 @@ function as_message(
     return computed
 end
 
-dropproxytype(::Type{<:Message{T}}) where {T} = T
 
 ## Message observable
 
@@ -553,19 +552,22 @@ function set_initial_message!(message::MessageObservable, value)
 end
 
 ## Message Mapping structure
-## https://github.com/JuliaLang/julia/issues/42559
-## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
-## We create a lambda-like callable structure to improve type inference and make it more stable
+## A callable structure rather than a closure, which `activate!` (src/nodes/nodes.jl) would
+## capture with types Julia cannot fully infer (https://github.com/JuliaLang/julia/issues/42559).
 """
     MessageMapping
 
 A callable structure representing a deferred computation of a message. It stores what is
 needed to compute the message later: the node type, the rule's target, the names of the
 messages and marginals it depends on, the algorithm, the annotation processors, the factor
-node and the callbacks.
+node, the callbacks, the [`ReactiveMP.EngineDiagnostics`](@ref), the node's rule context (see
+[`ReactiveMP.node_context`](@ref)), the rule fallback and the scratch the rule reuses across
+calls.
 
 When invoked, it resolves the rule with `find_message_rule` and runs it with `execute_rule`,
-unless an input is `missing`, in which case the message is `missing` and no rule runs.
+unless an input is `missing`, in which case the message is `missing` and no rule runs. When
+no rule matches, the rule fallback, if one is set, gives the message; otherwise that is a
+`RuleNotFoundError`.
 
 See also: [`Message`](@ref), [`DeferredMessage`](@ref)
 """

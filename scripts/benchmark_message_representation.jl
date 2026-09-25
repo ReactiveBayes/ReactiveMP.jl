@@ -1,5 +1,4 @@
-# Phase 4.5, step 4: `Message` and `Marginal` as `mutable struct`s with `const` fields, or as
-# immutable structs. Times the data-feeding loop of two NormalMeanVariance graphs: an iid model,
+# `Message` and `Marginal` as `mutable struct`s with `const` fields, or as immutable structs. Times the data-feeding loop of two NormalMeanVariance graphs: an iid model,
 # whose one variable of high degree exercises the equality chain, and a chain of BP updates.
 # Edit the two struct definitions in `src/message.jl` and `src/marginal.jl` to compare.
 #

@@ -1,13 +1,13 @@
 @testitem "migration:compare" tags = [:testutils] setup = [Recording] begin
     using MessagePassingRulesTestUtils, Distributions
 
-    declared = [DeclaredDisagreement("NMV:μ:vmp"; kind = :correction, reasoning = "v6 uses E[v] where naive VMP needs 1/E[1/v]")]
+    declared = [DeclaredDisagreement("NMV:μ:vmp"; kind = :correction, reasoning = "the reference uses E[v] where naive VMP needs 1/E[1/v]")]
     records = MigrationRecord[]
     set = Recording.recorded() do
-        push!(records, compare_with_reference("agree", Normal(0.0, 1.0), Normal(0.0, 1.0); v7_logscale = 0.0, v6_logscale = 0.0))
+        push!(records, compare_with_reference("agree", Normal(0.0, 1.0), Normal(0.0, 1.0); actual_logscale = 0.0, reference_logscale = 0.0))
         push!(records, compare_with_reference("NMV:μ:vmp", Normal(0.0, 1.0), Normal(0.0, 2.0); declared))
         push!(records, compare_with_reference("undeclared", Normal(0.0, 1.0), Normal(0.0, 2.0); declared))
-        push!(records, compare_with_reference("logscale", Normal(0.0, 1.0), Normal(0.0, 1.0); v7_logscale = 0.0, v6_logscale = -1.0))
+        push!(records, compare_with_reference("logscale", Normal(0.0, 1.0), Normal(0.0, 1.0); actual_logscale = 0.0, reference_logscale = -1.0))
     end
     @test map(r -> r.outcome, records) == [:agree, :correction, :disagree, :disagree]
     @test length(Recording.failures(set)) == 2
@@ -23,7 +23,7 @@ end
     path = joinpath(mktempdir(), "fixtures.jls")
     save_migration_fixtures(path, [record]; packages = Dict("ReactiveMP" => v"6.5.0"))
     loaded = load_migration_fixtures(path)
-    @test only(loaded.records).v7 == Normal(0.0, 1.0)
+    @test only(loaded.records).actual == Normal(0.0, 1.0)
     @test loaded.header.packages["ReactiveMP"] == v"6.5.0"
     @test loaded.header.julia == VERSION
 

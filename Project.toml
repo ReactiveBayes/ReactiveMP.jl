@@ -27,7 +27,6 @@ GCVMessagePassingRules = {path = "lib/GCVMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassingRules"}
 MessagePassingRulesApproximations = {path = "lib/MessagePassingRulesApproximations"}
 MessagePassingRulesBase = {path = "lib/MessagePassingRulesBase"}
-MessagePassingRulesTestUtils = {path = "lib/MessagePassingRulesTestUtils"}
 PolyaMessagePassingRules = {path = "lib/PolyaMessagePassingRules"}
 ProbitMessagePassingRules = {path = "lib/ProbitMessagePassingRules"}
 SoftDotMessagePassingRules = {path = "lib/SoftDotMessagePassingRules"}
@@ -50,7 +49,6 @@ julia = "1.11"
 Aqua = "0.8"
 BIFMMessagePassingRules = "0.1"
 AutoregressiveMessagePassingRules = "0.1"
-BenchmarkTools = "1"
 ContinuousTransitionMessagePassingRules = "0.1"
 DeltaMessagePassingRules = "0.1"
 Documenter = "1"
@@ -64,15 +62,10 @@ PolyaMessagePassingRules = "0.1"
 ProbitMessagePassingRules = "0.1"
 SoftDotMessagePassingRules = "0.1"
 InteractiveUtils = "1.11"
-JET = "0.9, 0.10, 0.11, 0.12"
-Logging = "1.11"
 MessagePassingRulesApproximations = "0.1"
-MessagePassingRulesTestUtils = "0.1"
-Pkg = "1.11"
 REPL = "1.11"
 Random = "1.11"
 SpecialFunctions = "2.3"
-StableRNGs = "1"
 StandardMessagePassingRules = "0.1"
 Test = "1.11"
 TestItemRunner = "1"
@@ -81,7 +74,6 @@ TestItemRunner = "1"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BIFMMessagePassingRules = "3092217e-9fde-41d8-8729-057ea730fd7c"
 AutoregressiveMessagePassingRules = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 ContinuousTransitionMessagePassingRules = "be169b08-8551-4d4c-a46b-881478acc6d9"
 DeltaMessagePassingRules = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -92,20 +84,15 @@ FlowMessagePassingRules = "adabaeda-8474-4dd2-bb94-9124d4d2b701"
 GCVMessagePassingRules = "2bb838d1-ae36-49a2-8c64-82a0acccfa93"
 GaussianCouplingMessagePassingRules = "a57ce80c-d854-4eb3-973d-f0d0550df039"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
-Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
-MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PolyaMessagePassingRules = "2d94fc58-1726-4ac3-9db6-3d18f146cabb"
 ProbitMessagePassingRules = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 SoftDotMessagePassingRules = "fdfab25d-afbd-4817-865a-cd280c067f5e"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
-StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 StandardMessagePassingRules = "d166223a-7879-43b1-add3-64af0a178e9e"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "BIFMMessagePassingRules", "AutoregressiveMessagePassingRules", "BenchmarkTools", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "DiscreteTransitionMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "FlowMessagePassingRules", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "JET", "Logging", "MessagePassingRulesApproximations", "MessagePassingRulesTestUtils", "Pkg", "PolyaMessagePassingRules", "ProbitMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StableRNGs", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BIFMMessagePassingRules", "AutoregressiveMessagePassingRules", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "DiscreteTransitionMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "FlowMessagePassingRules", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "MessagePassingRulesApproximations", "PolyaMessagePassingRules", "ProbitMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StandardMessagePassingRules", "Test", "TestItemRunner"]

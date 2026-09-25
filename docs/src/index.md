@@ -3,6 +3,10 @@ ReactiveMP.jl
 
 *Julia package for reactive message passing Bayesian inference engine on a factor graph.*
 
+```@docs
+ReactiveMP
+```
+
 `ReactiveMP.jl` is a low-level inference engine that implements variational message passing on factor graphs. It is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. For most use cases, the [RxInfer.jl](https://github.com/reactivebayes/RxInfer.jl) package provides a convenient model specification layer on top of ReactiveMP.jl.
 
 The engine is one of a family of packages:
@@ -35,7 +39,8 @@ If you are new to ReactiveMP.jl, read the Concepts section first. It explains th
 
 1. **[Factor graphs](@ref concepts-factor-graphs)** — what factor graphs are and how ReactiveMP.jl represents them.
 2. **[Message passing](@ref concepts-message-passing)** — how belief propagation and variational message passing work, and the reactive computation model.
-3. **[Inference lifecycle](@ref concepts-inference-lifecycle)** — the three phases every inference run goes through: construction, activation, and observation.
+3. **[Reactive programming](@ref concepts-reactive-programming)** — the streams messages and marginals are, built on Rocket.jl.
+4. **[Inference lifecycle](@ref concepts-inference-lifecycle)** — the three phases every inference run goes through: construction, activation, and observation.
 
 After reading the Concepts section, *Nodes and rules* explains how nodes and their rules are defined and tested, and *The engine* and *Rule packages* are the API reference.
 
@@ -54,6 +59,7 @@ Accessible tutorials and examples are available in the [RxInfer documentation](h
 Pages = [
   "concepts/factor-graphs.md",
   "concepts/message-passing.md",
+  "concepts/reactive-programming.md",
   "concepts/inference-lifecycle.md",
   "rules/defining-nodes-and-rules.md",
   "rules/algorithms-and-dependencies.md",
@@ -62,7 +68,14 @@ Pages = [
   "lib/variables.md",
   "lib/message.md",
   "lib/marginal.md",
+  "lib/callbacks.md",
+  "lib/stream-postprocessors.md",
   "lib/score.md",
+  "custom/custom-functional-form.md",
+  "lib/helpers.md",
+  "lib/annotations.md",
+  "lib/annotations/logscale.md",
+  "lib/annotations/input_arguments.md",
   "packages/standard.md",
   "packages/approximations.md",
   "packages/delta.md",
@@ -75,7 +88,9 @@ Pages = [
   "packages/polya.md",
   "packages/bifm.md",
   "packages/flow.md",
+  "packages/discrete-transition.md",
   "migration-guides/v6-to-v7.md",
+  "migration-guides/v5-to-v6.md",
   "extra/contributing.md",
   "extra/methods.md",
 ]

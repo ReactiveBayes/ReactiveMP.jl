@@ -1,5 +1,5 @@
 # A marginal rule whose cluster factorises returns a `FactorizedCluster`: its blocks are keyed
-# by tuples of members, carried in the type, never by a mangled name like v6's `out_μ`.
+# by tuples of members, carried in the type, never by a mangled name like `out_μ`.
 
 @testitem "factorized-cluster:access" tags = [:base] begin
     using MessagePassingRulesBase: FactorizedCluster, cluster_blocks
@@ -26,7 +26,7 @@ end
     # `const`, as a rule body is: a non-const binding measures dynamic dispatch instead.
     const build = (a, b) -> FactorizedCluster((:out, :μ) => a, (:v,) => b)
     const read = (fc) -> fc[(:out, :μ)] + fc[(:v,)]
-    # Fixed arity: a varargs helper that splats adds 48 bytes on 1.10 (DISCUSSION.md §3.15).
+    # Fixed arity: a varargs helper that splats adds 48 bytes on 1.10.
     measure_build(a, b) = (build(a, b); @allocated build(a, b))
     measure_read(fc) = (read(fc); @allocated read(fc))
 end
@@ -82,7 +82,7 @@ end
 
     struct Gauss end
     @define_factor_node(node = Gauss, type = Stochastic, interfaces = [:out, :μ, :v], algorithm = DefaultAlgorithm)
-    # v6's `(out_μ = …, v = m_v)`.
+    # q(out, μ, v) = q(out, μ) q(v).
     @define_marginal_update_rule(
         node = Gauss, target = (:out, :μ, :v),
         args = (m[:out]::Float64, m[:μ]::Float64, m[:v]::Float64),

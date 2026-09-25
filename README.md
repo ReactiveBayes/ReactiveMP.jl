@@ -12,15 +12,22 @@
 
 ReactiveMP.jl is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. It does not create a specific message passing schedule in advance, but rather _reacts_ on changes in the data source (hence _reactive_ in the name of the package).
 
+The engine holds no update rules of its own. Nodes and rules are declared with [`MessagePassingRulesBase`](lib/MessagePassingRulesBase), and the rules live in packages under [`lib/`](lib/README.md): `StandardMessagePassingRules` for the standard distributions, arithmetic, logic and mixtures, and a package for each other node (Delta, Probit, GCV, Autoregressive, ContinuousTransition, Flow, DiscreteTransition and more). Loading a rule package is enough for the engine to find its rules.
+
 # Installation
 
-Install ReactiveMP through the Julia package manager:
+The current version, 7, and its rule packages are not registered yet. Until they are, clone this repository and develop the engine together with the packages you need; each package's `[sources]` points at its siblings:
 
 ```julia
-] add ReactiveMP
+import Pkg
+Pkg.develop([
+    Pkg.PackageSpec(path = "path/to/ReactiveMP.jl"),
+    Pkg.PackageSpec(path = "path/to/ReactiveMP.jl/lib/MessagePassingRulesBase"),
+    Pkg.PackageSpec(path = "path/to/ReactiveMP.jl/lib/StandardMessagePassingRules"),
+])
 ```
 
-Optionally, use `] test ReactiveMP` to validate the installation by running the test suite.
+The registered version 6 installs with `] add ReactiveMP`.
 
 # Documentation
 

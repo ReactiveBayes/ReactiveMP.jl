@@ -1,6 +1,14 @@
+"""
+    MessagePassingRulesBase
+
+The rule system: the macros that declare factor nodes, their message update rules, marginal
+rules, average energies and dependencies, and the lookup an engine uses to find and run a rule
+for a node, a target and the types of its inputs. Rules are ordinary functions of their inputs,
+callable and testable without an engine.
+"""
 module MessagePassingRulesBase
 
-using BayesBase, LinearAlgebra, MacroTools, TupleTools
+using BayesBase, MacroTools
 
 export message_passing_rule, message_passing_rule!
 export message_passing_marginalrule, message_passing_marginalrule!

@@ -300,6 +300,7 @@ schedule in variational message passing.
 | a rule calling another rule | both calling a plain helper function |
 | `to_marginal(d)` | `public_equivalent(d)`, a method a package adds for its working types |
 | `getnodefn(node)`, `getnode()` in a rule | `getnodefn(ctx.node, target)`, `ctx.node` |
+| `nodefunction(node, meta, Val(:out))`; a known inverse as `nodefunction(node, meta, (Val(:in), k))` | `getnodefn(ctx.node, Target(:out))`; an inverse is the algorithm's, read from `algo` |
 | `@test_rules` | `@test_message_update_rule` ([Testing rules](@ref rules-testing)) |
 | `NodeFunctionRuleFallback()` as the engine's `rulefallback` | the same, from `MessagePassingRulesBase`, as the activation option `rulefallback` ([Rule fallbacks](@ref rules-algorithms-fallbacks)); its message is a `NodeFunctionLogPdf` |
 
@@ -339,7 +340,7 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 | `GCV`, `GCVMetadata(GaussHermiteCubature(n))` | `GCVMessagePassingRules`, `GCVApproximation(; method = GaussHermiteCubature(n))` |
 | `AR`, `ConjugateAR`, `ARMeta(form, order, stype)` | `AutoregressiveMessagePassingRules`, `ARVMP(form, order, stype)` with `ARsafe()` or `ARunsafe()` |
 | `SoftDot` (`softdot`) | `SoftDotMessagePassingRules`, no algorithm of its own |
-| `ContinuousTransition` (`CTransition`), `CTMeta(f)` | `ContinuousTransitionMessagePassingRules`, `CTVMP(f)` |
+| `ContinuousTransition` (`CTransition`), `CTMeta(f)` or `ContinuousTransitionMeta(f)` | `ContinuousTransitionMessagePassingRules`, `CTVMP(f)` |
 | `BinomialPolya`, `BinomialPolyaMeta(n, rng)` | `PolyaMessagePassingRules`, `BinomialPolyaApproximation(; samples = n)`, drawing from the engine's generator |
 | `MultinomialPolya`, `MultinomialPolyaMeta(points)` | `PolyaMessagePassingRules`, `MultinomialPolyaApproximation(; points)` |
 | `BIFM`, `BIFMHelper`, `BIFMMeta(A, B, C)` | `BIFMMessagePassingRules`, `BIFMSmoother(A, B, C)` |
@@ -406,6 +407,17 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   `*` rules towards `in` with their arguments reversed, reachable only through `@call_rule`, are
   gone.
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
+- **NormalMixture** and **GammaMixture** take no type parameter: v6's `NormalMixture{N}` and
+  `GammaMixture{N}` are `NormalMixture` and `GammaMixture`, and the number of components is the
+  length of their groups.
+- **`*`** runs under `MultiplicationSampling(; samples = 3000)`, its default algorithm: its three
+  rules that sample draw `samples` values from the engine's generator, where v6 always drew 3000.
+- **MatrixNormal's average energy** takes a point mass or a MatrixNormal for `q(out)` and `q(M)`,
+  whose second moments it uses; v6 took any type and dropped the second moments of anything but
+  a MatrixNormal. **MatrixNormalWishart's** is exact for known parameters, where v6 took
+  `f(E[x])` for `E[f(x)]`.
+- **MvNormalWeightedMeanPrecision's average energy** takes a Wishart `q(Λ)`, not only a point
+  mass.
 - **Probit's average energy** is finite for a wide `q(in)`, where v6's underflowed at far cubature
   points and returned Inf or NaN.
 - **ContinuousTransition's average energies** are the closed form; v6's were wrong in three
@@ -415,13 +427,17 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
 - **The Pólya nodes' average energies** are corrected: BinomialPolya's is the expectation of
   `softplus(xᵀβ)`, where v6 took it at the mean, and MultinomialPolya's is right for a Multinomial
   `q(x)` with more than one trial. A binomial regression's free energy is higher than v6's.
+  BinomialPolya's sampling takes a univariate `β` too, each draw one sample, where v6 took all the
+  draws as one.
 - **DiscreteTransition** normalises its five-interface belief-propagation message towards `T3`
   with a DirichletCollection `q(a)` over the whole tensor, as every other rule of the node, where
   v6 normalised over `out` only. It also takes what v6 failed on: a Bernoulli `in` or `out`, the
   energy of a joint over three or more axes with a DirichletCollection `q(a)`, and that of a
   non-square `q(out, in)` with a point-mass `q(a)`. A point-mass `A` is used as given; v6's
   belief-propagation rules clamped it to at most one, which changed nothing for a probability
-  tensor.
+  tensor. v6's fifty or so rules specialised to a number of interfaces are gone; they computed
+  the generic contraction, and four of its five-interface rules towards `T2`, which read their own
+  edge's message, never matched.
 - **The free energy of a model with BIFM** raises an error naming the node, where v6's failed with
   an infinite node bound.
 - **`ARunsafe`'s joint `q(y, x)`** is correct: v6's disagreed with `ARsafe` even for an AR(1), and
@@ -447,4 +463,15 @@ kind, a mean-field factorisation, are the `matched_groups`, `min_group_length` a
 `factorisation` of [`@define_factor_node`](@ref)), and the approximation methods
 with no remaining consumer (`CVI`, `ProdCVI`, `Adam` and its `update!`, `ForwardDiffGrad`,
 `LaplaceApproximation` and `laplace`, `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature`,
-`srcubature`), with the Optimisers extension that served `ProdCVI`.
+`srcubature`), with the Optimisers extension that served `ProdCVI`. MvNormalMeanPrecision's two
+marginal rules for BIFM's `TerminalProdArgument` messages are gone too: only the free energy of a
+BIFM model reached them, and it is not supported.
+
+The engine no longer defines these internal helpers, none of which it used: `skip_clamped` and
+`skip_clamped_and_initial` (`skip_initial` stays), `KLDivergence` and its `score` method
+(`BayesBase.kldivergence` computes the divergence directly), `dropproxytype`, `other_clusters`,
+`getinboundinterfaces`, `interfaceindices`, `ReactiveMP.hasfield` (which shadowed
+`Base.hasfield`), `split_underscored_symbol`, `fields`, `swapped`, and the macro helpers other than
+`@proxy_methods`. The v5 stubs `AddonLogScale` and `AddonMemory`, which only raised an error
+pointing to their replacements, are gone too: use `LogScaleAnnotations` and
+`InputArgumentsAnnotations`.

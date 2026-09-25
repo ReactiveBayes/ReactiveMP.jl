@@ -1,5 +1,9 @@
 # [Testing rules](@id rules-testing)
 
+```@docs
+MessagePassingRulesTestUtils
+```
+
 `MessagePassingRulesTestUtils` tests rules the way they are defined: on their own, without a
 graph. Its tools are tables of cases, verification against a node's definition, comparison with
 a reference implementation, and engine trajectories for whole graphs.

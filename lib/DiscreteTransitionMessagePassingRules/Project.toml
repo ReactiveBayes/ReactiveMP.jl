@@ -28,7 +28,6 @@ MessagePassingRulesBase = "0.1"
 MessagePassingRulesTestUtils = "0.1"
 Pkg = "1.11"
 Random = "1.11"
-StableRNGs = "1"
 Test = "1.11"
 TestItemRunner = "1"
 julia = "1.11"
@@ -39,9 +38,8 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "Documenter", "MessagePassingRulesTestUtils", "Pkg", "Random", "StableRNGs", "Test", "TestItemRunner"]
+test = ["Aqua", "Documenter", "MessagePassingRulesTestUtils", "Pkg", "Random", "Test", "TestItemRunner"]

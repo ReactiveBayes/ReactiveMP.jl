@@ -43,7 +43,7 @@ mean(Normal(0.0, 1.0)) # `Normal` is an object from `Distributions.jl`
 ```
 
 ```@example another_import
-mean(NormalMeanVariance(0.0, 1.0)) # `NormalMeanVariance` is an object from `ReactiveMP.jl`
+mean(NormalMeanVariance(0.0, 1.0)) # `NormalMeanVariance` is an object from `ExponentialFamily.jl`
 ```
 
 
@@ -53,7 +53,7 @@ mean(NormalMeanVariance(0.0, 1.0)) # `NormalMeanVariance` is an object from `Rea
 Below you can find a list of **exported** methods from ReactiveMP.jl. All methods (even private) can be always accessed with `ReactiveMP.` prefix, e.g `ReactiveMP.mean`.
 
 !!! note
-    Some exported names are (for legacy reasons) intended for private usage only. As a result some of these methods do not have a proper associated documentation with them. We constantly improve ReactiveMP.jl library and continue to add better documentation for many exported methods, but a small portion of these methods could be removed from this list in the future.
+    A few names are re-exported from other packages, such as `tiny` and `huge` from TinyHugeNumbers, and are documented there.
 
 ```@example list
 using ReactiveMP #hide

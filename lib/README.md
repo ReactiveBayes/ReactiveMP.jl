@@ -1,68 +1,51 @@
-# `lib/` — the new message-passing rule packages
+# `lib/` — the message passing rule packages
 
-The packages of the rule/node rewrite. The first four were created as stubs in Phase P:
-`MessagePassingRulesBase` (Phase 3) and `MessagePassingRulesTestUtils` (Phase 4) are
-implemented, each with its own test suite, and `StandardMessagePassingRules` and
-`MessagePassingRulesApproximations` were filled in Phase 4.5 with the rules and the numerics
-the engine slice needs. `DeltaMessagePassingRules` was created in Phase 4.5 case (d). Phase 5
-completed `StandardMessagePassingRules`; Phase 6 completes the others and adds a package per
-non-standard node.
+The rule system, its test tooling, the numerics the rules share, and the rules themselves,
+one package per group of nodes. Each package has its own test suite. The engine in `src/`
+depends on `MessagePassingRulesBase` only; it finds the rules of every loaded rule package
+through it.
 
-Read `PLAN.md` for the design, `PHASES.md` for what is next, and `INVENTORY.md` for where
-each of the 231 entities in ReactiveMP is destined to land.
+| package | role |
+|---|---|
+| `MessagePassingRulesBase` | the rule system: the macros that declare nodes, rules, marginal rules, average energies and dependencies; targets, algorithms, the argument and annotation containers, the rule context, the registry and rule lookup, rule fallbacks, and the interactive surface (`@call_*`, `@which_*`, `list_rules`, `rule_coverage`) |
+| `MessagePassingRulesTestUtils` | test tooling, used through `[extras]`: table tests (`@test_message_update_rule`), verification against a node's definition, derivative checks, the rule-coverage gate, comparison with a reference implementation, and engine trajectories |
+| `StandardMessagePassingRules` | the standard nodes: distributions, arithmetic, logic and the mixtures |
+| `MessagePassingRulesApproximations` | numerics over means and covariances: `Unscented`, `Linearization`, Gauss–Hermite cubature and `smoothRTS` |
+| `DeltaMessagePassingRules` | the Delta node, `DeltaFn{F}`, under `DeltaApproximation(; method, inverse)` with `Unscented()`, `Linearization()` or, through an extension on ExponentialFamilyProjection, `CVIProjection()` |
+| `GaussianCouplingMessagePassingRules` | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
+| `ProbitMessagePassingRules` | the Probit node and its algorithm `ProbitEP`, expectation propagation |
+| `GCVMessagePassingRules` | the GCV node, its `ExponentialLinearQuadratic`, and the normal nodes' rules for it |
+| `AutoregressiveMessagePassingRules` | the AR and ConjugateAR nodes under their algorithm `ARVMP` |
+| `SoftDotMessagePassingRules` | the SoftDot node, independent of the autoregressive package |
+| `ContinuousTransitionMessagePassingRules` | the ContinuousTransition node under `CTVMP(f)`; its rule towards `a` extends the default scheme with `q(a)` |
+| `PolyaMessagePassingRules` | BinomialPolya and MultinomialPolya, Pólya-Gamma augmented; **GPL-3** through PolyaGammaHybridSamplers, the only package that is |
+| `BIFMMessagePassingRules` | BIFM and BIFMHelper under `BIFMSmoother(A, B, C)`: stateless rules, no free energy |
+| `FlowMessagePassingRules` | Flow under `FlowApproximation(model; method)`, the flow models and layers, and `PermutationMatrix` |
+| `DiscreteTransitionMessagePassingRules` | DiscreteTransition as a tensor node: one rule per target, over whatever inputs the factorisation delivers |
 
-| package | phase | role |
-|---|---|---|
-| `MessagePassingRulesBase` | 3 | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like` (not `Message`/`Marginal` — those stay in the engine) |
-| `MessagePassingRulesTestUtils` | 4 | test tooling, consumed via `[extras]` and `[sources]`: table tests, coverage, verification against the node definition, derivative checks, the migration checker |
-| `StandardMessagePassingRules` | 4.5 (the slice's six nodes), then 5 (done) | distributions, arithmetic, logic, mixtures |
-| `MessagePassingRulesApproximations` | 4.5 (`Unscented`, `smoothRTS`), then 6 (`Linearization`, Gauss–Hermite cubature) | numerical utilities over means and covariances; **standalone, must not depend on the base**, nor on a distribution package: `LinearAlgebra`, `FastCholesky`, `ForwardDiff` and `FastGaussQuadrature` |
-| `DeltaMessagePassingRules` | 4.5 (`Unscented`), then 6 (`Linearization`, `CVIProjection`) | the Delta node (`INVENTORY.md`'s `node:Delta`, created early in case (d)): `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules. The engine owns the node's function and static inputs |
-| `GaussianCouplingMessagePassingRules` | 6 (step 3) | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
-| `ProbitMessagePassingRules` | 6 (step 3) | the Probit node and its algorithm `ProbitEP`, expectation propagation |
-| `GCVMessagePassingRules` | 6 (step 3) | the GCV node, its `ExponentialLinearQuadratic`, and the normal nodes' rules for it |
-| `AutoregressiveMessagePassingRules` | 6 (step 4) | the AR and ConjugateAR nodes, their algorithm `ARVMP`, and the companion matrix and standard basis vector their rules use |
-| `SoftDotMessagePassingRules` | 6 (step 4) | the SoftDot node, with its own copy of the little AR algebra it needs rather than a dependency on AR's package |
-| `ContinuousTransitionMessagePassingRules` | 6 (step 5) | the ContinuousTransition node and its algorithm `CTVMP(f)`; its rule towards `a` extends the default scheme with `q(a)` |
-| `PolyaMessagePassingRules` | 6 (step 6) | BinomialPolya and MultinomialPolya, Pólya-Gamma augmented; **GPL-3** through PolyaGammaHybridSamplers, the only package that carries it |
-| `BIFMMessagePassingRules` | 6 (step 7) | BIFM and BIFMHelper under `BIFMSmoother(A, B, C)`: stateless, its rules the first to use scratch; no free energy |
-| `FlowMessagePassingRules` | 6 (step 8) | Flow under `FlowApproximation(model; method)`, the flow models, layers and coupling flows, and `PermutationMatrix` |
-| `DiscreteTransitionMessagePassingRules` | 6 (step 9) | DiscreteTransition as a tensor node: one rule per target, over whatever inputs the factorisation delivers, joints of some of the `T`s included; no Tullio |
+## Dependency constraints
 
-There is no shared domain-models package: `GCV`, `Probit`, `SoftDot` and `GaussianCoupling`
-each get their own node package in Phase 6, like the other non-standard nodes
-(`DISCUSSION.md` §3.30), and `INVENTORY.md` records each as `node:<Name>`.
+- `MessagePassingRulesBase` never depends on `ExponentialFamily`: the distribution machinery
+  it needs is BayesBase's, and anything missing is added to BayesBase, in non-breaking
+  releases, since `compat/v6-comparison` resolves against them.
+- `MessagePassingRulesApproximations` depends on no sibling and on no distribution package:
+  approximating an integral is numerics, choosing which rules run is an algorithm.
+- No rule package depends on `ReactiveMP` or on `MessagePassingRulesTestUtils`; each
+  package's `quality:closure` test checks its dependency closure.
 
-## Two constraints that are easy to erode
+## Wiring
 
-- `MessagePassingRulesBase` must **never** depend on `ExponentialFamily`. BayesBase exists
-  to hold that machinery; if something is missing there, add it to BayesBase. Those
-  additions must ship as non-breaking **1.x** releases, or `compat/v6-comparison` stops
-  resolving and the Phase 4 migration checker goes with it.
-- `MessagePassingRulesApproximations` must **never** depend on `MessagePassingRulesBase`.
-  They are siblings: approximating an integral is numerics, choosing which rules run is an
-  algorithm.
-
-## Wiring the inter-package dependencies
-
-These packages are unregistered, so a package that depends on a sibling lists it in `[deps]`
-like any other dependency, and in `[sources]` with its relative path. A test-only sibling,
-such as `MessagePassingRulesTestUtils` for a rule package, goes in `[extras]` and `[sources]`
-the same way. Plain `Pkg.test()` then works, and so does every `make test-*` target:
+The packages are unregistered, so a package that depends on a sibling lists it in `[deps]`
+and in `[sources]`, with its relative path. A test-only sibling, such as
+`MessagePassingRulesTestUtils`, goes in `[extras]` and `[sources]`. `Pkg.test()` then works
+from each package's own project, and so does its `make` target:
 
 ```bash
-make test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv test-autoregressive test-softdot test-continuous-transition test-polya test-bifm test-flow
+make test-base test-testutils test-standard test-approximations test-delta \
+     test-gaussian-coupling test-probit test-gcv test-autoregressive test-softdot \
+     test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
 ```
 
-Work targets **Julia 1.13**, where `[sources]` is honoured (1.11+). On the old 1.10 floor it was
-ignored, which cost a develop-at-test-time step for every sibling and a separate
-`test/Project.toml` for a test-only one; both are gone since Phase 4.5 step 4, and 1.10 support
-is reconsidered at registration (`DISCUSSION.md` §3.22). No `Manifest.toml` under `lib/` is
-committed; the local ones are gitignored.
-
-## Promotion to separate repositories
-
-Planned for **Phase 8**, with registration (`DISCUSSION.md` §3.40); it was Phase 6 until the
-Phase 6 brief, since Phase 3 froze the base API and Phase 4.5 proved the engine interface, but
-the node packages are wired with `[sources]` and run no CI until they are registered. Until then a change spanning two packages is one commit; afterwards it is two
-pull requests and a version pin. That is the trade this layout is making deliberately.
+Each target takes `test_args` as the root's `make test` does. Items tagged `:slow` are skipped
+unless `TEST_ALL=true`, which CI sets. `[sources]` needs Julia 1.11 or later; the packages are
+developed and tested on Julia 1.13. No `Manifest.toml` under `lib/` is committed.

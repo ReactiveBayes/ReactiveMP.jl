@@ -1,6 +1,7 @@
-# The Phase 0 devirtualization gate, re-run through the definition macros. It reports the
-# figures rather than only asserting them; see DISCUSSION.md §3.15 for the spike's numbers
-# and for the mistakes that make this measurement lie.
+# Routing through the definition macros is devirtualized: a rule call resolves at compile time
+# and allocates nothing. The test reports the figures rather than only asserting them. Each
+# call is measured inside a function, never at global scope, where dynamic dispatch would
+# allocate and skew the number.
 
 @testmodule MacroGate begin
     using MessagePassingRulesBase

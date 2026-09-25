@@ -1,7 +1,7 @@
 @testitem "engine:retained-values" tags = [:engine] setup = [EngineHarness] begin
     # Once a message is materialised, its value and annotations never change underneath
-    # whoever holds it, however many updates follow. Deferred messages materialise as in v6,
-    # so the guarantee starts at materialisation.
+    # whoever holds it, however many updates follow. A deferred message is computed when first
+    # read, so the guarantee starts there.
     using ExponentialFamily, StandardMessagePassingRules
     import ReactiveMP:
         activate!, as_message, getdata, getannotations, get_annotation, getinterfaces,

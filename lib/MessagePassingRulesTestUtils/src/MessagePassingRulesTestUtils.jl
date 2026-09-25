@@ -1,3 +1,10 @@
+"""
+    MessagePassingRulesTestUtils
+
+Tools for testing rules without a graph: tables of cases (`@test_message_update_rule`),
+verification against a node's definition, comparison with a reference implementation, the
+rule-coverage gate, and engine trajectories for whole graphs.
+"""
 module MessagePassingRulesTestUtils
 
 using BayesBase, Distributions, ForwardDiff, HCubature, Serialization, Statistics, Test, TOML

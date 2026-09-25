@@ -29,7 +29,7 @@ jobs:
                 package:
                     # Add downstream packages that depend on ReactiveMP here
                     # Each entry runs as a separate parallel job
-                    # RxInfer's branch adapted to ReactiveMP v7 (Phase 7), until its release.
+                    # RxInfer's branch for ReactiveMP v7, until RxInfer releases it.
                     - { user: ReactiveBayes, repo: RxInfer.jl, ref: refactor/reactivemp-v7 }
 
 

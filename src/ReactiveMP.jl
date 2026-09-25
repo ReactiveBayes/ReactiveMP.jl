@@ -1,4 +1,12 @@
+"""
+    ReactiveMP
 
+A reactive message passing engine for Bayesian inference on factor graphs. Messages and
+marginals are streams: a factor node computes each outbound message with the update rule that
+`MessagePassingRulesBase` finds for it, from the latest messages and marginals it depends on,
+and a variable combines its inbound messages into its marginal. Rules come from the rule
+packages, which depend on the base package only, never on the engine.
+"""
 module ReactiveMP
 
 # List global dependencies here

@@ -8,7 +8,7 @@ each of its rules is one tensor contraction, written once for any factorisation.
 module DiscreteTransitionMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
-using MessagePassingRulesBase: rule_inputs, Target, IndexedTarget
+using MessagePassingRulesBase: rule_inputs, Target
 using BayesBase: clamplog, tiny, huge, convert_paramfloattype
 using ExponentialFamily: softmax!
 using LinearAlgebra: normalize!

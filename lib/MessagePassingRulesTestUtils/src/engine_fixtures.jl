@@ -134,12 +134,12 @@ values_agree(a, b; atol, rtol) = encoded_close(encode_fixture_value(a), encode_f
 describe_call(r::RuleCallRecord) = "$(r.node)($(r.target)) in iteration $(r.iteration) → $(repr(encode_fixture_value(r.result)))"
 
 """
-    compare_engine_trajectory(v7, v6; atol = 1e-6, rtol = 0, declared = [], trace_order = :exact, collapse_repeats = false)
+    compare_engine_trajectory(actual, reference; atol = 1e-6, rtol = 0, declared = [], trace_order = :exact, collapse_repeats = false)
 
-Compare a v7 run with its recorded v6 [`EngineTrajectory`](@ref) and return the outcome:
-`:agree`, the kind of a matching [`DeclaredDisagreement`](@ref) (looked up by the v6 id), or
-`:disagree`. The free energy, each posterior, and the trace — every rule call with its result
-and log scale — are checked and reported separately.
+Compare a run with a recorded reference [`EngineTrajectory`](@ref) and return the outcome:
+`:agree`, the kind of a matching [`DeclaredDisagreement`](@ref) (looked up by the reference's
+id), or `:disagree`. The free energy, each posterior, and the trace — every rule call with its
+result and log scale — are checked and reported separately.
 
 With `trace_order = :exact` the rule calls must come **in the same order**, because emission
 order is part of what an engine must reproduce. `trace_order = :within_iteration` declares
@@ -147,35 +147,35 @@ the order of the calls inside an iteration free: each iteration must make the sa
 the same results, in any order. It is for a schedule that is changed deliberately where the
 calls it reorders do not depend on each other; say why where it is used.
 
-`collapse_repeats = true` declares that v6 computed a message once per subscriber where an engine
-shares it: a v6 call that repeats an earlier call of its own iteration, with an agreeing result,
-is dropped before the traces are compared. A repeat with another result stays, and so does one in
-a later iteration.
+`collapse_repeats = true` drops from the reference trace every call that repeats an earlier
+call of its own iteration with an agreeing result, before the traces are compared: for a
+reference engine that computes a message once per subscriber where the engine under test
+shares it. A repeat with another result stays, and so does one in a later iteration.
 """
-function compare_engine_trajectory(v7::EngineTrajectory, v6::EngineTrajectory; atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], trace_order = :exact, collapse_repeats = false, source = LineNumberNode(0, :unknown))
+function compare_engine_trajectory(actual::EngineTrajectory, reference::EngineTrajectory; atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], trace_order = :exact, collapse_repeats = false, source = LineNumberNode(0, :unknown))
     trace_order in (:exact, :within_iteration) || throw(ArgumentError("`trace_order` is `:exact` or `:within_iteration`, got $(repr(trace_order))"))
     checks = Tuple{Bool, Any, Function}[]
 
-    fe_ok = length(v7.free_energy) == length(v6.free_energy) && all(((a, b),) -> isapprox(a, b; atol, rtol), zip(v7.free_energy, v6.free_energy))
-    push!(checks, (fe_ok, :(v7.free_energy ≈ v6.free_energy), () -> "`$(v6.id)`: free energy per iteration differs: v7 $(v7.free_energy), v6 $(v6.free_energy)"))
+    fe_ok = length(actual.free_energy) == length(reference.free_energy) && all(((a, b),) -> isapprox(a, b; atol, rtol), zip(actual.free_energy, reference.free_energy))
+    push!(checks, (fe_ok, :(actual.free_energy ≈ reference.free_energy), () -> "`$(reference.id)`: free energy per iteration differs: actual $(actual.free_energy), reference $(reference.free_energy)"))
 
-    names = sort!(collect(union(keys(v7.posteriors), keys(v6.posteriors))))
+    names = sort!(collect(union(keys(actual.posteriors), keys(reference.posteriors))))
     for name in names
-        present = haskey(v7.posteriors, name) && haskey(v6.posteriors, name)
-        ok = present && values_agree(v7.posteriors[name], v6.posteriors[name]; atol, rtol)
-        push!(checks, (ok, :(v7.posteriors[$name] ≈ v6.posteriors[$name]), () -> "`$(v6.id)`: posterior `$name` differs: v7 $(repr(present ? encode_fixture_value(v7.posteriors[name]) : get(v7.posteriors, name, missing))), v6 $(repr(get(v6.posteriors, name, missing)))"))
+        present = haskey(actual.posteriors, name) && haskey(reference.posteriors, name)
+        ok = present && values_agree(actual.posteriors[name], reference.posteriors[name]; atol, rtol)
+        push!(checks, (ok, :(actual.posteriors[$name] ≈ reference.posteriors[$name]), () -> "`$(reference.id)`: posterior `$name` differs: actual $(repr(present ? encode_fixture_value(actual.posteriors[name]) : get(actual.posteriors, name, missing))), reference $(repr(get(reference.posteriors, name, missing)))"))
     end
 
-    v6_trace = collapse_repeats ? without_repeats(v6.trace; atol, rtol) : v6.trace
-    mismatch = trace_order === :exact ? first_trace_mismatch(v7.trace, v6_trace; atol, rtol) : first_unmatched_call(v7.trace, v6_trace; atol, rtol)
-    push!(checks, (mismatch === nothing, :(v7.trace ≈ v6.trace), () -> "`$(v6.id)`: $mismatch"))
+    reference_trace = collapse_repeats ? without_repeats(reference.trace; atol, rtol) : reference.trace
+    mismatch = trace_order === :exact ? first_trace_mismatch(actual.trace, reference_trace; atol, rtol) : first_unmatched_call(actual.trace, reference_trace; atol, rtol)
+    push!(checks, (mismatch === nothing, :(actual.trace ≈ reference.trace), () -> "`$(reference.id)`: $mismatch"))
 
     agree = all(first, checks)
-    declaration = findfirst(d -> d.id == v6.id, declared)
+    declaration = findfirst(d -> d.id == reference.id, declared)
     outcome = if agree
         :agree
     elseif declaration !== nothing
-        @info "known disagreement `$(v6.id)` ($(declared[declaration].kind)): $(declared[declaration].reasoning)"
+        @info "known disagreement `$(reference.id)` ($(declared[declaration].kind)): $(declared[declaration].reasoning)"
         declared[declaration].kind
     else
         :disagree
@@ -199,28 +199,28 @@ calls_agree(a, b; atol, rtol) =
     (a.iteration, a.node, a.target) == (b.iteration, b.node, b.target) && values_agree(a.result, b.result; atol, rtol) &&
     ((a.logscale === nothing && b.logscale === nothing) || (a.logscale !== nothing && b.logscale !== nothing && isapprox(a.logscale, b.logscale; atol, rtol)))
 
-# Matches every v6 call with a v7 call of its iteration that agrees, each used once.
-function first_unmatched_call(v7, v6; atol, rtol)
-    unmatched = collect(eachindex(v7))
-    for b in v6
-        position = findfirst(i -> calls_agree(v7[i], b; atol, rtol), unmatched)
-        position === nothing && return "v6 made $(describe_call(b)), which no call of v7 in iteration $(b.iteration) matches"
+# Matches every reference call with an actual call of its iteration that agrees, each used once.
+function first_unmatched_call(actual, reference; atol, rtol)
+    unmatched = collect(eachindex(actual))
+    for b in reference
+        position = findfirst(i -> calls_agree(actual[i], b; atol, rtol), unmatched)
+        position === nothing && return "the reference made $(describe_call(b)), which no actual call in iteration $(b.iteration) matches"
         deleteat!(unmatched, position)
     end
     isempty(unmatched) && return nothing
-    return "v7 made $(describe_call(v7[first(unmatched)])), which v6 did not make"
+    return "the actual run made $(describe_call(actual[first(unmatched)])), which the reference did not make"
 end
 
-function first_trace_mismatch(v7, v6; atol, rtol)
-    for i in 1:min(length(v7), length(v6))
-        a, b = v7[i], v6[i]
+function first_trace_mismatch(actual, reference; atol, rtol)
+    for i in 1:min(length(actual), length(reference))
+        a, b = actual[i], reference[i]
         if (a.iteration, a.node, a.target) != (b.iteration, b.node, b.target) || !values_agree(a.result, b.result; atol, rtol)
-            return "rule call $i differs: v7 made $(describe_call(a)), v6 made $(describe_call(b))"
+            return "rule call $i differs: actual $(describe_call(a)), reference $(describe_call(b))"
         end
         logscales_agree = (a.logscale === nothing && b.logscale === nothing) ||
             (a.logscale !== nothing && b.logscale !== nothing && isapprox(a.logscale, b.logscale; atol, rtol))
-        logscales_agree || return "rule call $i, $(describe_call(b)): log scale v7 $(a.logscale), v6 $(b.logscale)"
+        logscales_agree || return "rule call $i, $(describe_call(b)): log scale actual $(a.logscale), reference $(b.logscale)"
     end
-    length(v7) == length(v6) && return nothing
-    return "the traces have $(length(v7)) (v7) and $(length(v6)) (v6) rule calls; the first $(min(length(v7), length(v6))) agree"
+    length(actual) == length(reference) && return nothing
+    return "the traces have $(length(actual)) (actual) and $(length(reference)) (reference) rule calls; the first $(min(length(actual), length(reference))) agree"
 end

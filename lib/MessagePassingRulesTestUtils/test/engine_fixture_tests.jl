@@ -103,8 +103,8 @@ end
     @test contains(Recording.failure_text(set), "Normal(:μ)")
     @test_throws ArgumentError compare_engine_trajectory(reference, reference; trace_order = :none)
 
-    # v6 computes a message once per subscriber; declared, a v6 call repeating an earlier one of
-    # its iteration, with the same result, is dropped. A repeat with another result is not.
+    # With `collapse_repeats`, a reference call repeating an earlier one of its iteration, with
+    # the same result, is dropped. A repeat with another result is not.
     repeated = [two[1], two[1], two[2]]
     set = Recording.recorded() do
         compare_engine_trajectory(make(trace = two), make(trace = repeated))
@@ -132,13 +132,13 @@ end
     @test contains(Recording.failure_text(set), "log scale")
 
     # A declared disagreement is reported with its kind and does not fail.
-    declared = [DeclaredDisagreement("toy"; kind = :correction, reasoning = "v6 is wrong here")]
+    declared = [DeclaredDisagreement("toy"; kind = :correction, reasoning = "the reference is wrong here")]
     set = Recording.recorded() do
         @test compare_engine_trajectory(make(fe = [2.0, 1.1]), reference; declared) === :correction
     end
     @test isempty(Recording.failures(set))
 
-    # A value that was recorded from v7 is encoded before comparison, so the two sides
+    # A value is encoded before comparison, so the two sides
     # may be given either as distributions or as their encodings.
     encoded = EngineTrajectory("toy"; free_energy = [2.0, 1.0], posteriors = Dict("x" => encode_fixture_value(Normal(0.5, 0.7))), trace = reference.trace)
     set = Recording.recorded() do

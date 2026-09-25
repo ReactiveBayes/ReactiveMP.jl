@@ -66,9 +66,6 @@ end
 clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) =
     findfirst(cluster -> vindex in cluster, clusters.factorization)
 
-# Every local marginal but the one at `index`. The marginals are of different types once a
-# joint is among them, so this cannot be `TupleTools.deleteat`, which wants an `NTuple`.
-other_clusters(marginals::Tuple, index::Int) = Tuple(marginals[i] for i in eachindex(marginals) if i != index)
 
 """
     ReactiveMP.clusterkey(cluster, interfaces)
@@ -126,7 +123,7 @@ end
 # A joint is computed by the node's marginal rule. In a stochastic node it reads the messages of
 # its members and the marginals of the other clusters. In a deterministic node, whose output is
 # a function of its inputs, the joint over the inputs reads the messages on every interface, the
-# output's included (v6's `q_ins`).
+# output's included.
 function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
     marginal = get_node_local_marginals(clusters)[index]
     isjoint(marginal) || return nothing

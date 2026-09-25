@@ -119,8 +119,7 @@ end
     ReactiveMP.extended_default_dependencies(factornode, interface, inputs)
 
 A target declared with `default`: the default scheme's inputs, and each of `inputs`, a single
-interface's message or marginal, placed in interface order, where v6's
-`RequireMarginalFunctionalDependencies` put it. A marginal is the variable's own and is never
+interface's message or marginal, placed in interface order. A marginal is the variable's own and is never
 scored; an input the default scheme has already is not added twice.
 """
 function extended_default_dependencies(factornode, interface, inputs)

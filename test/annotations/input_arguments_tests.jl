@@ -559,10 +559,3 @@ end
         @test map(r -> r.result, shared_record.mappings) == [:a, :b]
     end
 end
-
-@testitem "AddonMemory throws an error" tags = [:engine] begin
-    import ReactiveMP: AddonMemory
-
-    @test_throws "AddonMemory` has been removed" AddonMemory()
-    @test_throws "InputArgumentsAnnotations" AddonMemory()
-end

@@ -1,7 +1,4 @@
-# v6's `test/approximations/linearization_tests.jl`, with only the imports changed, and cases
-# for the shapes v6 did not test.
-
-@testitem "Linearization: v6's cases" tags = [:approximations] begin
+@testitem "Linearization: sums and differences" tags = [:approximations] begin
     using MessagePassingRulesApproximations
 
     @test @inferred(approximate(Linearization(), (x, y) -> x + y, (1, 2))) == ([1 1], 0)
