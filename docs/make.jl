@@ -42,6 +42,7 @@ makedocs(
                 "GaussianCoupling" => "lib/nodes/gaussian_coupling.md",
                 "BinomialPolya" => "lib/nodes/binomial_polya.md",
                 "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
+                "ManyPlus" => "lib/nodes/many_plus.md",
             ]
         ],
         "Annotations" => [
