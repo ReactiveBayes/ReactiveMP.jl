@@ -3564,9 +3564,13 @@ Known scope:
 - **In this repository:** whatever RxInfer needs of the engine, with its own tests, in its own
   commits here; `IntegrationTest.yml` points at the branch once it passes.
 
-**Open, for the user:** how a model names a node's algorithm (keep `@meta` and `where { meta = …
-}`, their values now algorithms, or rename them `algorithm`); whether RxInfer's own documentation
-is adapted here or later; and which RxInferExamples models are the check.
+**Decided (user, 2026-09-25):**
+- **a model names a node's algorithm `algorithm`**, `@algorithm` and `where { algorithm = … }`,
+  and **`meta` stays as a deprecated alias for one release**, its value taken as the algorithm,
+  with a deprecation warning pointing to the new spelling;
+- **RxInfer's documentation is adapted later**, with the release work; this item adapts `src/`
+  and the tests;
+- **the five proposed RxInferExamples models are the check.**
 
 ---
 
