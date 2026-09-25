@@ -49,6 +49,8 @@ src/
   fixes.jl             upstream hot-fixes; empty now
 lib/                   the new packages: the rule system, its test tooling, rules, numerics
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
+compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
+investigations/        performance investigations kept for the end-of-refactor pass; never loaded
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against the v6 fixtures
 ```
 

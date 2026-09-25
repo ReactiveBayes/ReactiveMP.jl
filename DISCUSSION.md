@@ -2030,6 +2030,27 @@ to the generic method, whose first statement is `getlocalclusters(factornode)` �
 `MixtureNode` has no such method, so the policy that `collect_functional_dependencies`
 explicitly accepts `MethodError`s at activation time.
 
+**`Message{D}`'s type parameter, and what actually costs time (2026-09-25, Phase 7; the user's
+question, nothing decided).** Full record, variants, scripts and raw results:
+`investigations/message-type-parameter/`. Measured at `851559a4`, through RxInfer's v7 branch; every
+variant bit-identical to HEAD.
+- **Dropping the parameter (`data::Any`) is slower everywhere:** per `infer` 1.13–1.65×, per VMP
+  iteration 1.9–3.2×. Rule resolution becomes a runtime dispatch over every rule package (27 ns →
+  0.7–1 µs), and every pairwise product a runtime `prod`; the streams, already abstract and
+  allocation-free, gain nothing.
+- **Function barriers recover most of it** (untyped + one-method kernels): per `infer` 0.96–1.12×
+  of HEAD, but the graph loops stay 1.3× slower, each barrier's dispatch and allocation falling on
+  every call and product.
+- **Two costs in HEAD are the real target.** Building `Message{D}`/`Marginal{D}` from an
+  `Any`-typed value costs 510 ns (`Core._compute_sparams`), on every rule output; building callback
+  events nobody listens to costs about 270 ns per rule call. Fixing both while keeping `Message{D}`
+  (a `@noinline` constructor at 4 sites, lazy `@invoke_callback` at 12) gives per `infer`
+  0.76–0.96×, per iteration 0.37–0.75×, rule calls 0.14–0.25×, compile time unchanged.
+- Typed streams are not needed for these gains. Next suspects (inferred): the abstract `RuleSpec`
+  behind `execute_rule`, and the `Any` tuple a product returns. Input to the end-of-refactor
+  performance pass.
+
+
 ---
 
 ## 6. Still open, and why

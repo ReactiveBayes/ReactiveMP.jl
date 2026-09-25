@@ -43,6 +43,7 @@ deleted.
 | `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | after the release, with log scales | § Phase 5, *Step 7 brief*; §3.48 |
 | `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
+| the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
 | log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | after the release | `DISCUSSION.md` §3.37, §3.48 |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |

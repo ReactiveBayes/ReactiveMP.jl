@@ -1,0 +1,1011 @@
+variant C; typeof(msg(NMV)) = Message
+
+== NMV->out BP   argument types (Tuple{Message, Message}, Nothing)
+return_types(mapping) = Any[Message]
+return_types(rule_arguments) = Any[MessagePassingRulesBase.RuleArgs{M, MessagePassingRulesBase.Marginals{(), Tuple{}, (), Tuple{}}} where M<:(MessagePassingRulesBase.Messages{(:v, :μ), T} where T<:Tuple{Any, Any})]
+typeof(args) = MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{(:v, :μ), Tuple{PointMass{Float64}, NormalMeanVariance{Float64}}}, MessagePassingRulesBase.Marginals{(), Tuple{}, (), Tuple{}}}
+return_types(find_message_rule) = Any[MessagePassingRulesBase.RuleSpec]
+-- @code_warntype mapping(ms, qs)
+MethodInstance for (::MessageMapping{NormalMeanVariance, Target{:out}, Val{(:μ, :v)}, Nothing, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing})(::Tuple{Message, Message}, ::Nothing)
+  from (mapping::MessageMapping)(messages, marginals) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:614
+Arguments
+  mapping::MessageMapping{NormalMeanVariance, Target{:out}, Val{(:μ, :v)}, Nothing, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}
+  messages::Tuple{Message, Message}
+  marginals::Core.Const(nothing)
+Locals
+  @_4::Union{}
+  @_5::Union{}
+  result::ANY
+  qdata::Nothing
+  mdata::TUPLE{ANY, ANY}
+  annotations::ReactiveMP.AnnotationDict
+  span_id::Nothing
+  is_message_initial::Bool
+  is_message_clamped::Bool
+  p@_13::Union{}
+  p@_14::Union{}
+  @_15::Bool
+  @_16::Bool
+  @_17::Bool
+  @_18::ANY
+Body::Message
+1 ──        Core.NewvarNode(:(@_4))
+│           Core.NewvarNode(:(@_5))
+│           Core.NewvarNode(:(result))
+│           Core.NewvarNode(:(qdata))
+│           Core.NewvarNode(:(mdata))
+│           Core.NewvarNode(:(annotations))
+│           Core.NewvarNode(:(span_id))
+│           Core.NewvarNode(:(is_message_initial))
+│           Core.NewvarNode(:(is_message_clamped))
+│    %10  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %11  = ReactiveMP.is_clamped::Core.Const(ReactiveMP.is_clamped)
+│    %12  = (%10)(%11, messages)::Bool
+└───        goto #3 if not %12
+2 ── %14  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %15  = ReactiveMP.is_clamped::Core.Const(ReactiveMP.is_clamped)
+│           (@_15 = (%14)(%15, marginals))
+└───        goto #4
+3 ──        (@_15 = false)
+4 ┄─ %19  = @_15::Bool
+│           (is_message_clamped = %19)
+│    %21  = ReactiveMP.:!::Core.Const(!)
+│    %22  = is_message_clamped::Bool
+│    %23  = (%21)(%22)::Bool
+└───        goto #9 if not %23
+5 ── %25  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %26  = ReactiveMP.is_clamped_or_initial::Core.Const(ReactiveMP.is_clamped_or_initial)
+│    %27  = (%25)(%26, messages)::Bool
+└───        goto #7 if not %27
+6 ── %29  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %30  = ReactiveMP.is_clamped_or_initial::Core.Const(ReactiveMP.is_clamped_or_initial)
+│           (@_17 = (%29)(%30, marginals))
+└───        goto #8
+7 ──        (@_17 = false)
+8 ┄─ %34  = @_17::Bool
+│           (@_16 = %34)
+└───        goto #10
+9 ──        (@_16 = false)
+10 ┄ %38  = @_16::Bool
+│           (is_message_initial = %38)
+│    %40  = ReactiveMP.generate_span_id::Core.Const(ReactiveMP.generate_span_id)
+│    %41  = Base.getproperty(mapping, :callbacks)::Core.Const(nothing)
+│           (span_id = (%40)(%41))
+│    %43  = ReactiveMP.invoke_callback::Core.Const(ReactiveMP.invoke_callback)
+│    %44  = Base.getproperty(mapping, :callbacks)::Core.Const(nothing)
+│    %45  = ReactiveMP.BeforeMessageRuleCallEvent::Core.Const(ReactiveMP.BeforeMessageRuleCallEvent)
+│    %46  = span_id::Core.Const(nothing)
+│    %47  = (%45)(mapping, messages, marginals, %46)::ReactiveMP.BeforeMessageRuleCallEvent{MessageMapping{NormalMeanVariance, Target{:out}, Val{(:μ, :v)}, Nothing, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}, Tuple{Message, Message}, Nothing, Nothing}
+│           (%43)(%44, %47)
+│    %49  = ReactiveMP.AnnotationDict::Core.Const(ReactiveMP.AnnotationDict)
+│           (annotations = (%49)())
+│    %51  = ReactiveMP.:!::Core.Const(!)
+│    %52  = ReactiveMP.isnothing::Core.Const(isnothing)
+│    %53  = Base.getproperty(mapping, :annotations)::Core.Const(nothing)
+│    %54  = (%52)(%53)::Core.Const(true)
+│    %55  = (%51)(%54)::Core.Const(false)
+└───        goto #12 if not %55
+11 ─        Core.Const(:(Base.getproperty(mapping, :annotations)))
+│           Core.Const(:(@_5 = Base.iterate(%57)))
+│           Core.Const(:(@_5))
+│           Core.Const(:(%59 === nothing))
+│           Core.Const(:(Base.not_int(%60)))
+│           Core.Const(:(goto %76 if not %61))
+│           Core.Const(:(@_5))
+│           Core.Const(:(p@_13 = Core.getfield(%63, 1)))
+│           Core.Const(:(Core.getfield(%63, 2)))
+│           Core.Const(:(ReactiveMP.pre_rule_annotations!))
+│           Core.Const(:(p@_13))
+│           Core.Const(:(annotations))
+│           Core.Const(:((%66)(%67, %68, mapping, messages, marginals)))
+│           Core.Const(:(@_5 = Base.iterate(%57, %65)))
+│           Core.Const(:(@_5))
+│           Core.Const(:(%71 === nothing))
+│           Core.Const(:(Base.not_int(%72)))
+│           Core.Const(:(goto %76 if not %73))
+└───        Core.Const(:(goto %63))
+12 ┄ %76  = ReactiveMP.data_of::Core.Const(ReactiveMP.data_of)
+│    %77  = (%76)(messages)::TUPLE{ANY, ANY}
+│    %78  = ReactiveMP.data_of::Core.Const(ReactiveMP.data_of)
+│    %79  = (%78)(marginals)::Core.Const(nothing)
+│           (mdata = %77)
+│           (qdata = %79)
+│    %82  = ReactiveMP.has_missing_data::Core.Const(ReactiveMP.has_missing_data)
+│    %83  = mdata::TUPLE{ANY, ANY}
+│    %84  = (%82)(%83)::UNION{MISSING, BOOL}
+└───        goto #14 if not %84
+13 ─        goto #15
+14 ─ %87  = ReactiveMP.has_missing_data::Core.Const(ReactiveMP.has_missing_data)
+│    %88  = qdata::Core.Const(nothing)
+│    %89  = (%87)(%88)::Core.Const(false)
+└───        goto #16 if not %89
+15 ┄        (@_18 = ReactiveMP.missing)
+└───        goto #17
+16 ─ %93  = ReactiveMP.run_message_rule::Core.Const(ReactiveMP.run_message_rule)
+│    %94  = mdata::TUPLE{ANY, ANY}
+│    %95  = qdata::Core.Const(nothing)
+│    %96  = ReactiveMP.annotations_of::Core.Const(ReactiveMP.annotations_of)
+│    %97  = (%96)(messages)::Tuple{ReactiveMP.AnnotationDict, ReactiveMP.AnnotationDict}
+│    %98  = ReactiveMP.annotations_of::Core.Const(ReactiveMP.annotations_of)
+│    %99  = (%98)(marginals)::Core.Const(nothing)
+│    %100 = annotations::ReactiveMP.AnnotationDict
+└───        (@_18 = (%93)(mapping, %94, %95, %97, %99, %100))
+17 ┄ %102 = @_18::ANY
+│           (result = %102)
+│    %104 = ReactiveMP.:!::Core.Const(!)
+│    %105 = ReactiveMP.isnothing::Core.Const(isnothing)
+│    %106 = Base.getproperty(mapping, :annotations)::Core.Const(nothing)
+│    %107 = (%105)(%106)::Core.Const(true)
+│    %108 = (%104)(%107)::Core.Const(false)
+└───        goto #19 if not %108
+18 ─        Core.Const(:(ReactiveMP.:!==))
+│           Core.Const(:(result))
+│           Core.Const(:(ReactiveMP.missing))
+│           Core.Const(:((%110)(%111, %112)))
+│           Core.Const(:(goto %135 if not %113))
+│           Core.Const(:(Base.getproperty(mapping, :annotations)))
+│           Core.Const(:(@_4 = Base.iterate(%115)))
+│           Core.Const(:(@_4))
+│           Core.Const(:(%117 === nothing))
+│           Core.Const(:(Base.not_int(%118)))
+│           Core.Const(:(goto %135 if not %119))
+│           Core.Const(:(@_4))
+│           Core.Const(:(p@_14 = Core.getfield(%121, 1)))
+│           Core.Const(:(Core.getfield(%121, 2)))
+│           Core.Const(:(ReactiveMP.post_rule_annotations!))
+│           Core.Const(:(p@_14))
+│           Core.Const(:(annotations))
+│           Core.Const(:(result))
+│           Core.Const(:((%124)(%125, %126, mapping, messages, marginals, %127)))
+│           Core.Const(:(@_4 = Base.iterate(%115, %123)))
+│           Core.Const(:(@_4))
+│           Core.Const(:(%130 === nothing))
+│           Core.Const(:(Base.not_int(%131)))
+│           Core.Const(:(goto %135 if not %132))
+└───        Core.Const(:(goto %121))
+19 ┄ %135 = ReactiveMP.invoke_callback::Core.Const(ReactiveMP.invoke_callback)
+│    %136 = Base.getproperty(mapping, :callbacks)::Core.Const(nothing)
+│    %137 = ReactiveMP.AfterMessageRuleCallEvent::Core.Const(ReactiveMP.AfterMessageRuleCallEvent)
+│    %138 = result::ANY
+│    %139 = annotations::ReactiveMP.AnnotationDict
+│    %140 = span_id::Core.Const(nothing)
+│    %141 = (%137)(mapping, messages, marginals, %138, %139, %140)::REACTIVEMP.AFTERMESSAGERULECALLEVENT{MESSAGEMAPPING{NORMALMEANVARIANCE, TARGET{:OUT}, VAL{(:Μ, :V)}, NOTHING, DEFAULTALGORITHM, NOTHING, NOTHING, NOTHING, NOTHING}, TUPLE{MESSAGE, MESSAGE}, NOTHING, _A, REACTIVEMP.ANNOTATIONDICT, NOTHING} WHERE _A
+│           (%135)(%136, %141)
+│    %143 = ReactiveMP.Message::Core.Const(Message)
+│    %144 = result::ANY
+│    %145 = is_message_clamped::Bool
+│    %146 = is_message_initial::Bool
+│    %147 = annotations::ReactiveMP.AnnotationDict
+│    %148 = (%143)(%144, %145, %146, %147)::Message
+└───        return %148
+
+
+   lines with ::Any = 0
+JET report_opt (runtime dispatch / captured vars): 37 reports
+═════ 37 possible errors found ═════
+┌ (::MessageMapping{…})(messages::Tuple{…}, marginals::Nothing) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:646
+│┌ run_message_rule(mapping::MessageMapping{…}, mdata::Tuple{…}, qdata::Nothing, mann::Tuple{…}, qann::Nothing, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:675
+││┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:63
+│││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:333
+││││┌ lock(rl::ReentrantLock) @ Base ./lock.jl:195
+│││││┌ (::Base.var"#slowlock#lock##0")(rl::ReentrantLock) @ Base ./lock.jl:218
+││││││┌ yield() @ Base ./task.jl:1099
+│││││││┌ wait() @ Base ./task.jl:1292
+││││││││┌ getindex(once::OncePerThread{Task, Base.var"#612#613"}, tid::Int64) @ Base ./lock.jl:858
+│││││││││ failed to optimize due to recursion: getindex(::OncePerThread{Task, Base.var"#612#613"}, ::Int64)
+││││││││└────────────────────
+││││││││┌ (::OncePerThread{Task, Base.var"#612#613"})() @ Base ./lock.jl:857
+│││││││││ failed to optimize due to recursion: (::OncePerThread{Task, Base.var"#612#613"})()
+││││││││└────────────────────
+│││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:335
+││││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+│││││┌ push!(s::Set{Tuple{Symbol, Int64, Any}}, x::Tuple{Symbol, Int64, Any}) @ Base ./set.jl:137
+││││││┌ setindex!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, v0::Nothing, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:358
+│││││││┌ ht_keyindex2_shorthash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:270
+││││││││┌ rehash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, newsz::Int64) @ Base ./dict.jl:169
+│││││││││ runtime dispatch detected: Base.hashindex(%109::Tuple{Symbol, Int64, Any}, %19::Int64)::Tuple{Int64, UInt8}
+││││││││└────────────────────
+││││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+│││││ runtime dispatch detected: ReactiveMP.in(%7::Tuple{Symbol, Int64, Any}, ReactiveMP.REPORTED_NOT_INPLACE)::Bool
+││││└────────────────────
+││││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+│││││ runtime dispatch detected: ReactiveMP.push!(ReactiveMP.REPORTED_NOT_INPLACE, %7::Tuple{Symbol, Int64, Any})::Any
+││││└────────────────────
+││┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:67
+│││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+││││┌ display_name(x::Type) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:43
+│││││┌ string(xs::Type) @ Base ./strings/io.jl:186
+││││││┌ print_to_string(xs::Type) @ Base ./strings/io.jl:145
+│││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+││││││││┌ show(io::IOBuffer, x::Type) @ Base ./show.jl:978
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:983
+││││││││││┌ show_typealias(io::IOBuffer, x::Type) @ Base ./show.jl:821
+│││││││││││┌ show_typealias(io::IOBuffer, name::GlobalRef, x::Type, env::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:768
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+│││││││││││││┌ show(io::IOContext{IOBuffer}, tv::TypeVar) @ Base ./show.jl:2724
+││││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOContext{IOBuffer}, b::Any) @ Base ./show.jl:2716
+│││││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, b::Any)::Any
+││││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+│││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %269::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+│││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %338::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+│││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %200::Any)::Any
+││││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:986
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType) @ Base ./show.jl:1139
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1142
+││││││││││││┌ maybe_kws_nt(x::DataType) @ Base ./show.jl:1130
+│││││││││││││ runtime dispatch detected: eltype(%60::DataType)::Any
+││││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1231
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+│││││││││││││┌ show(io::IOBuffer, tv::TypeVar) @ Base ./show.jl:2724
+││││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOBuffer, b::Any) @ Base ./show.jl:2716
+│││││││││││││││ runtime dispatch detected: show(io::IOBuffer, b::Any)::Any
+││││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+│││││││││││││ runtime dispatch detected: show(io::IOBuffer, %245::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+│││││││││││││ runtime dispatch detected: show(io::IOBuffer, %302::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+│││││││││││││ runtime dispatch detected: show(io::IOBuffer, %188::Any)::Any
+││││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %223::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %53::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+││││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOBuffer, %320::Tuple, %319::DataType)::Any
+│││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:989
+││││││││││┌ show_unionaliases(io::IOBuffer, x::Union) @ Base ./show.jl:922
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %66::Any)::Any
+││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:993
+││││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool) @ Base ./show.jl:1423
+│││││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool, i1::Int64, l::Int64) @ Base ./show.jl:1434
+││││││││││││ runtime dispatch detected: show(%3::IOContext{IOBuffer}, %50::Any)::Any
+│││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1020
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %260::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %65::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+│││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %431::Tuple, %430::DataType)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1225
+│││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %516::Tuple, %520::DataType)::Any
+││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1022
+││││││││││ runtime dispatch detected: show(%77::IOContext{IOBuffer}, %78::Any)::Any
+│││││││││└────────────────────
+│││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+││││││││ runtime dispatch detected: show(io::IOBuffer, x::Type)::Any
+│││││││└────────────────────
+││││┌ string(::String, ::Any) @ Base ./strings/io.jl:186
+│││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:140
+││││││ runtime dispatch detected: Base._str_sizehint(%9::Any)::Int64
+│││││└────────────────────
+│││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:145
+││││││ runtime dispatch detected: print(%38::IOBuffer, %46::Any)::Any
+│││││└────────────────────
+│││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+││││ runtime dispatch detected: ReactiveMP.display_name(%8::Any)::Any
+│││└────────────────────
+│││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+││││ runtime dispatch detected: ReactiveMP.target_text(%20::Any)::Any
+│││└────────────────────
+│┌ run_message_rule(mapping::MessageMapping{…}, mdata::Tuple{…}, qdata::Nothing, mann::Tuple{…}, qann::Nothing, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:679
+││┌ scratch_for!(slot::ReactiveMP.ScratchSlot, spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…} where M<:(MessagePassingRulesBase.Messages{…} where T<:Tuple{…}), target::Target{…}, checked::Bool) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/scratch.jl:28
+│││┌ rule_scratch(spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…} where M<:(MessagePassingRulesBase.Messages{…} where T<:Tuple{…}), target::Target{…}) @ MessagePassingRulesBase /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/lib/MessagePassingRulesBase/src/rulespec.jl:170
+││││ runtime dispatch detected: %5::Union{Nothing, Function}(algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{Nothing, typeof(ReactiveMP.rule_product), Nothing, Random.TaskLocalRNG, Nothing}, args::MessagePassingRulesBase.RuleArgs{…} where M<:(MessagePassingRulesBase.Messages{…} where T<:Tuple{…}), target::Target{:out})::Any
+│││└────────────────────
+┌ (::MessageMapping{…})(messages::Tuple{…}, marginals::Nothing) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:642
+│ runtime dispatch detected: ReactiveMP.has_missing_data(%47::Tuple{Any, Any})::Union{Missing, Bool}
+└────────────────────
+┌ (::MessageMapping{…})(messages::Tuple{…}, marginals::Nothing) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:646
+│ runtime dispatch detected: ReactiveMP.run_message_rule(mapping::MessageMapping{NormalMeanVariance, Target{…}, Val{…}, Nothing, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}, %47::Tuple{Any, Any}, nothing, %59::Tuple{ReactiveMP.AnnotationDict, ReactiveMP.AnnotationDict}, nothing, %40::ReactiveMP.AnnotationDict)::Any
+└────────────────────
+┌ (::MessageMapping{…})(messages::Tuple{…}, marginals::Nothing) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:661
+│ runtime dispatch detected: ReactiveMP.AfterMessageRuleCallEvent(mapping::MessageMapping{NormalMeanVariance, Target{…}, Val{…}, Nothing, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}, messages::Tuple{Message, Message}, marginals::Nothing, %63::Any, %40::ReactiveMP.AnnotationDict, nothing)::ReactiveMP.AfterMessageRuleCallEvent{…} where _A
+└────────────────────
+
+
+== NMP->μ VMP   argument types (Nothing, Tuple{Marginal, Marginal})
+return_types(mapping) = Any[Message]
+return_types(rule_arguments) = Any[MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{(), Tuple{}}, Q} where Q<:(MessagePassingRulesBase.Marginals{(:out, :τ), T, (), Tuple{}} where T<:Tuple{Any, Any})]
+typeof(args) = MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{(), Tuple{}}, MessagePassingRulesBase.Marginals{(:out, :τ), Tuple{PointMass{Float64}, GammaShapeRate{Float64}}, (), Tuple{}}}
+return_types(find_message_rule) = Any[MessagePassingRulesBase.RuleSpec]
+-- @code_warntype mapping(ms, qs)
+MethodInstance for (::MessageMapping{NormalMeanPrecision, Target{:μ}, Nothing, Val{(:out, :τ)}, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing})(::Nothing, ::Tuple{Marginal, Marginal})
+  from (mapping::MessageMapping)(messages, marginals) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:614
+Arguments
+  mapping::MessageMapping{NormalMeanPrecision, Target{:μ}, Nothing, Val{(:out, :τ)}, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}
+  messages::Core.Const(nothing)
+  marginals::Tuple{Marginal, Marginal}
+Locals
+  @_4::Union{}
+  @_5::Union{}
+  result::ANY
+  qdata::TUPLE{ANY, ANY}
+  mdata::Nothing
+  annotations::ReactiveMP.AnnotationDict
+  span_id::Nothing
+  is_message_initial::Bool
+  is_message_clamped::Bool
+  p@_13::Union{}
+  p@_14::Union{}
+  @_15::Bool
+  @_16::Bool
+  @_17::Bool
+  @_18::ANY
+Body::Message
+1 ──        Core.NewvarNode(:(@_4))
+│           Core.NewvarNode(:(@_5))
+│           Core.NewvarNode(:(result))
+│           Core.NewvarNode(:(qdata))
+│           Core.NewvarNode(:(mdata))
+│           Core.NewvarNode(:(annotations))
+│           Core.NewvarNode(:(span_id))
+│           Core.NewvarNode(:(is_message_initial))
+│           Core.NewvarNode(:(is_message_clamped))
+│    %10  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %11  = ReactiveMP.is_clamped::Core.Const(ReactiveMP.is_clamped)
+│    %12  = (%10)(%11, messages)::Core.Const(true)
+└───        goto #3 if not %12
+2 ── %14  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %15  = ReactiveMP.is_clamped::Core.Const(ReactiveMP.is_clamped)
+│           (@_15 = (%14)(%15, marginals))
+└───        goto #4
+3 ──        Core.Const(:(@_15 = false))
+4 ┄─ %19  = @_15::Bool
+│           (is_message_clamped = %19)
+│    %21  = ReactiveMP.:!::Core.Const(!)
+│    %22  = is_message_clamped::Bool
+│    %23  = (%21)(%22)::Bool
+└───        goto #9 if not %23
+5 ── %25  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %26  = ReactiveMP.is_clamped_or_initial::Core.Const(ReactiveMP.is_clamped_or_initial)
+│    %27  = (%25)(%26, messages)::Core.Const(true)
+└───        goto #7 if not %27
+6 ── %29  = ReactiveMP.__check_all::Core.Const(ReactiveMP.__check_all)
+│    %30  = ReactiveMP.is_clamped_or_initial::Core.Const(ReactiveMP.is_clamped_or_initial)
+│           (@_17 = (%29)(%30, marginals))
+└───        goto #8
+7 ──        Core.Const(:(@_17 = false))
+8 ┄─ %34  = @_17::Bool
+│           (@_16 = %34)
+└───        goto #10
+9 ──        (@_16 = false)
+10 ┄ %38  = @_16::Bool
+│           (is_message_initial = %38)
+│    %40  = ReactiveMP.generate_span_id::Core.Const(ReactiveMP.generate_span_id)
+│    %41  = Base.getproperty(mapping, :callbacks)::Core.Const(nothing)
+│           (span_id = (%40)(%41))
+│    %43  = ReactiveMP.invoke_callback::Core.Const(ReactiveMP.invoke_callback)
+│    %44  = Base.getproperty(mapping, :callbacks)::Core.Const(nothing)
+│    %45  = ReactiveMP.BeforeMessageRuleCallEvent::Core.Const(ReactiveMP.BeforeMessageRuleCallEvent)
+│    %46  = span_id::Core.Const(nothing)
+│    %47  = (%45)(mapping, messages, marginals, %46)::ReactiveMP.BeforeMessageRuleCallEvent{MessageMapping{NormalMeanPrecision, Target{:μ}, Nothing, Val{(:out, :τ)}, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}, Nothing, Tuple{Marginal, Marginal}, Nothing}
+│           (%43)(%44, %47)
+│    %49  = ReactiveMP.AnnotationDict::Core.Const(ReactiveMP.AnnotationDict)
+│           (annotations = (%49)())
+│    %51  = ReactiveMP.:!::Core.Const(!)
+│    %52  = ReactiveMP.isnothing::Core.Const(isnothing)
+│    %53  = Base.getproperty(mapping, :annotations)::Core.Const(nothing)
+│    %54  = (%52)(%53)::Core.Const(true)
+│    %55  = (%51)(%54)::Core.Const(false)
+└───        goto #12 if not %55
+11 ─        Core.Const(:(Base.getproperty(mapping, :annotations)))
+│           Core.Const(:(@_5 = Base.iterate(%57)))
+│           Core.Const(:(@_5))
+│           Core.Const(:(%59 === nothing))
+│           Core.Const(:(Base.not_int(%60)))
+│           Core.Const(:(goto %76 if not %61))
+│           Core.Const(:(@_5))
+│           Core.Const(:(p@_13 = Core.getfield(%63, 1)))
+│           Core.Const(:(Core.getfield(%63, 2)))
+│           Core.Const(:(ReactiveMP.pre_rule_annotations!))
+│           Core.Const(:(p@_13))
+│           Core.Const(:(annotations))
+│           Core.Const(:((%66)(%67, %68, mapping, messages, marginals)))
+│           Core.Const(:(@_5 = Base.iterate(%57, %65)))
+│           Core.Const(:(@_5))
+│           Core.Const(:(%71 === nothing))
+│           Core.Const(:(Base.not_int(%72)))
+│           Core.Const(:(goto %76 if not %73))
+└───        Core.Const(:(goto %63))
+12 ┄ %76  = ReactiveMP.data_of::Core.Const(ReactiveMP.data_of)
+│    %77  = (%76)(messages)::Core.Const(nothing)
+│    %78  = ReactiveMP.data_of::Core.Const(ReactiveMP.data_of)
+│    %79  = (%78)(marginals)::TUPLE{ANY, ANY}
+│           (mdata = %77)
+│           (qdata = %79)
+│    %82  = ReactiveMP.has_missing_data::Core.Const(ReactiveMP.has_missing_data)
+│    %83  = mdata::Core.Const(nothing)
+│    %84  = (%82)(%83)::Core.Const(false)
+└───        goto #14 if not %84
+13 ─        Core.Const(:(goto %91))
+14 ┄ %87  = ReactiveMP.has_missing_data::Core.Const(ReactiveMP.has_missing_data)
+│    %88  = qdata::TUPLE{ANY, ANY}
+│    %89  = (%87)(%88)::UNION{MISSING, BOOL}
+└───        goto #16 if not %89
+15 ─        (@_18 = ReactiveMP.missing)
+└───        goto #17
+16 ─ %93  = ReactiveMP.run_message_rule::Core.Const(ReactiveMP.run_message_rule)
+│    %94  = mdata::Core.Const(nothing)
+│    %95  = qdata::TUPLE{ANY, ANY}
+│    %96  = ReactiveMP.annotations_of::Core.Const(ReactiveMP.annotations_of)
+│    %97  = (%96)(messages)::Core.Const(nothing)
+│    %98  = ReactiveMP.annotations_of::Core.Const(ReactiveMP.annotations_of)
+│    %99  = (%98)(marginals)::Tuple{ReactiveMP.AnnotationDict, ReactiveMP.AnnotationDict}
+│    %100 = annotations::ReactiveMP.AnnotationDict
+└───        (@_18 = (%93)(mapping, %94, %95, %97, %99, %100))
+17 ┄ %102 = @_18::ANY
+│           (result = %102)
+│    %104 = ReactiveMP.:!::Core.Const(!)
+│    %105 = ReactiveMP.isnothing::Core.Const(isnothing)
+│    %106 = Base.getproperty(mapping, :annotations)::Core.Const(nothing)
+│    %107 = (%105)(%106)::Core.Const(true)
+│    %108 = (%104)(%107)::Core.Const(false)
+└───        goto #19 if not %108
+18 ─        Core.Const(:(ReactiveMP.:!==))
+│           Core.Const(:(result))
+│           Core.Const(:(ReactiveMP.missing))
+│           Core.Const(:((%110)(%111, %112)))
+│           Core.Const(:(goto %135 if not %113))
+│           Core.Const(:(Base.getproperty(mapping, :annotations)))
+│           Core.Const(:(@_4 = Base.iterate(%115)))
+│           Core.Const(:(@_4))
+│           Core.Const(:(%117 === nothing))
+│           Core.Const(:(Base.not_int(%118)))
+│           Core.Const(:(goto %135 if not %119))
+│           Core.Const(:(@_4))
+│           Core.Const(:(p@_14 = Core.getfield(%121, 1)))
+│           Core.Const(:(Core.getfield(%121, 2)))
+│           Core.Const(:(ReactiveMP.post_rule_annotations!))
+│           Core.Const(:(p@_14))
+│           Core.Const(:(annotations))
+│           Core.Const(:(result))
+│           Core.Const(:((%124)(%125, %126, mapping, messages, marginals, %127)))
+│           Core.Const(:(@_4 = Base.iterate(%115, %123)))
+│           Core.Const(:(@_4))
+│           Core.Const(:(%130 === nothing))
+│           Core.Const(:(Base.not_int(%131)))
+│           Core.Const(:(goto %135 if not %132))
+└───        Core.Const(:(goto %121))
+19 ┄ %135 = ReactiveMP.invoke_callback::Core.Const(ReactiveMP.invoke_callback)
+│    %136 = Base.getproperty(mapping, :callbacks)::Core.Const(nothing)
+│    %137 = ReactiveMP.AfterMessageRuleCallEvent::Core.Const(ReactiveMP.AfterMessageRuleCallEvent)
+│    %138 = result::ANY
+│    %139 = annotations::ReactiveMP.AnnotationDict
+│    %140 = span_id::Core.Const(nothing)
+│    %141 = (%137)(mapping, messages, marginals, %138, %139, %140)::REACTIVEMP.AFTERMESSAGERULECALLEVENT{MESSAGEMAPPING{NORMALMEANPRECISION, TARGET{:Μ}, NOTHING, VAL{(:OUT, :Τ)}, DEFAULTALGORITHM, NOTHING, NOTHING, NOTHING, NOTHING}, NOTHING, TUPLE{MARGINAL, MARGINAL}, _A, REACTIVEMP.ANNOTATIONDICT, NOTHING} WHERE _A
+│           (%135)(%136, %141)
+│    %143 = ReactiveMP.Message::Core.Const(Message)
+│    %144 = result::ANY
+│    %145 = is_message_clamped::Bool
+│    %146 = is_message_initial::Bool
+│    %147 = annotations::ReactiveMP.AnnotationDict
+│    %148 = (%143)(%144, %145, %146, %147)::Message
+└───        return %148
+
+
+   lines with ::Any = 0
+JET report_opt (runtime dispatch / captured vars): 37 reports
+═════ 37 possible errors found ═════
+┌ (::MessageMapping{…})(messages::Nothing, marginals::Tuple{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:646
+│┌ run_message_rule(mapping::MessageMapping{…}, mdata::Nothing, qdata::Tuple{…}, mann::Nothing, qann::Tuple{…}, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:675
+││┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:63
+│││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:333
+││││┌ lock(rl::ReentrantLock) @ Base ./lock.jl:195
+│││││┌ (::Base.var"#slowlock#lock##0")(rl::ReentrantLock) @ Base ./lock.jl:218
+││││││┌ yield() @ Base ./task.jl:1099
+│││││││┌ wait() @ Base ./task.jl:1292
+││││││││┌ getindex(once::OncePerThread{Task, Base.var"#612#613"}, tid::Int64) @ Base ./lock.jl:858
+│││││││││ failed to optimize due to recursion: getindex(::OncePerThread{Task, Base.var"#612#613"}, ::Int64)
+││││││││└────────────────────
+││││││││┌ (::OncePerThread{Task, Base.var"#612#613"})() @ Base ./lock.jl:857
+│││││││││ failed to optimize due to recursion: (::OncePerThread{Task, Base.var"#612#613"})()
+││││││││└────────────────────
+│││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:335
+││││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+│││││┌ push!(s::Set{Tuple{Symbol, Int64, Any}}, x::Tuple{Symbol, Int64, Any}) @ Base ./set.jl:137
+││││││┌ setindex!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, v0::Nothing, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:358
+│││││││┌ ht_keyindex2_shorthash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:270
+││││││││┌ rehash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, newsz::Int64) @ Base ./dict.jl:169
+│││││││││ runtime dispatch detected: Base.hashindex(%109::Tuple{Symbol, Int64, Any}, %19::Int64)::Tuple{Int64, UInt8}
+││││││││└────────────────────
+││││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+│││││ runtime dispatch detected: ReactiveMP.in(%7::Tuple{Symbol, Int64, Any}, ReactiveMP.REPORTED_NOT_INPLACE)::Bool
+││││└────────────────────
+││││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+│││││ runtime dispatch detected: ReactiveMP.push!(ReactiveMP.REPORTED_NOT_INPLACE, %7::Tuple{Symbol, Int64, Any})::Any
+││││└────────────────────
+││┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:67
+│││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+││││┌ display_name(x::Type) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:43
+│││││┌ string(xs::Type) @ Base ./strings/io.jl:186
+││││││┌ print_to_string(xs::Type) @ Base ./strings/io.jl:145
+│││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+││││││││┌ show(io::IOBuffer, x::Type) @ Base ./show.jl:978
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:983
+││││││││││┌ show_typealias(io::IOBuffer, x::Type) @ Base ./show.jl:821
+│││││││││││┌ show_typealias(io::IOBuffer, name::GlobalRef, x::Type, env::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:768
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+│││││││││││││┌ show(io::IOContext{IOBuffer}, tv::TypeVar) @ Base ./show.jl:2724
+││││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOContext{IOBuffer}, b::Any) @ Base ./show.jl:2716
+│││││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, b::Any)::Any
+││││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+│││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %269::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+│││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %338::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+│││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %200::Any)::Any
+││││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:986
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType) @ Base ./show.jl:1139
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1142
+││││││││││││┌ maybe_kws_nt(x::DataType) @ Base ./show.jl:1130
+│││││││││││││ runtime dispatch detected: eltype(%60::DataType)::Any
+││││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1231
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+│││││││││││││┌ show(io::IOBuffer, tv::TypeVar) @ Base ./show.jl:2724
+││││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOBuffer, b::Any) @ Base ./show.jl:2716
+│││││││││││││││ runtime dispatch detected: show(io::IOBuffer, b::Any)::Any
+││││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+│││││││││││││ runtime dispatch detected: show(io::IOBuffer, %245::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+│││││││││││││ runtime dispatch detected: show(io::IOBuffer, %302::Any)::Any
+││││││││││││└────────────────────
+││││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+│││││││││││││ runtime dispatch detected: show(io::IOBuffer, %188::Any)::Any
+││││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %223::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %53::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+││││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOBuffer, %320::Tuple, %319::DataType)::Any
+│││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:989
+││││││││││┌ show_unionaliases(io::IOBuffer, x::Union) @ Base ./show.jl:922
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %66::Any)::Any
+││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:993
+││││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool) @ Base ./show.jl:1423
+│││││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool, i1::Int64, l::Int64) @ Base ./show.jl:1434
+││││││││││││ runtime dispatch detected: show(%3::IOContext{IOBuffer}, %50::Any)::Any
+│││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1020
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %260::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %65::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+│││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+│││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %431::Tuple, %430::DataType)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1225
+│││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %516::Tuple, %520::DataType)::Any
+││││││││││└────────────────────
+│││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1022
+││││││││││ runtime dispatch detected: show(%77::IOContext{IOBuffer}, %78::Any)::Any
+│││││││││└────────────────────
+│││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+││││││││ runtime dispatch detected: show(io::IOBuffer, x::Type)::Any
+│││││││└────────────────────
+││││┌ string(::String, ::Any) @ Base ./strings/io.jl:186
+│││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:140
+││││││ runtime dispatch detected: Base._str_sizehint(%9::Any)::Int64
+│││││└────────────────────
+│││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:145
+││││││ runtime dispatch detected: print(%38::IOBuffer, %46::Any)::Any
+│││││└────────────────────
+│││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+││││ runtime dispatch detected: ReactiveMP.display_name(%8::Any)::Any
+│││└────────────────────
+│││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+││││ runtime dispatch detected: ReactiveMP.target_text(%20::Any)::Any
+│││└────────────────────
+│┌ run_message_rule(mapping::MessageMapping{…}, mdata::Nothing, qdata::Tuple{…}, mann::Nothing, qann::Tuple{…}, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:679
+││┌ scratch_for!(slot::ReactiveMP.ScratchSlot, spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}, checked::Bool) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/scratch.jl:28
+│││┌ rule_scratch(spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}) @ MessagePassingRulesBase /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/lib/MessagePassingRulesBase/src/rulespec.jl:170
+││││ runtime dispatch detected: %5::Union{Nothing, Function}(algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{Nothing, typeof(ReactiveMP.rule_product), Nothing, Random.TaskLocalRNG, Nothing}, args::MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{(), Tuple{}}}, target::Target{:μ})::Any
+│││└────────────────────
+┌ (::MessageMapping{…})(messages::Nothing, marginals::Tuple{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:642
+│ runtime dispatch detected: ReactiveMP.has_missing_data(%42::Tuple{Any, Any})::Union{Missing, Bool}
+└────────────────────
+┌ (::MessageMapping{…})(messages::Nothing, marginals::Tuple{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:646
+│ runtime dispatch detected: ReactiveMP.run_message_rule(mapping::MessageMapping{NormalMeanPrecision, Target{…}, Nothing, Val{…}, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}, nothing, %42::Tuple{Any, Any}, nothing, %52::Tuple{ReactiveMP.AnnotationDict, ReactiveMP.AnnotationDict}, %35::ReactiveMP.AnnotationDict)::Any
+└────────────────────
+┌ (::MessageMapping{…})(messages::Nothing, marginals::Tuple{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:661
+│ runtime dispatch detected: ReactiveMP.AfterMessageRuleCallEvent(mapping::MessageMapping{NormalMeanPrecision, Target{…}, Nothing, Val{…}, DefaultAlgorithm, Nothing, Nothing, Nothing, Nothing}, messages::Nothing, marginals::Tuple{Marginal, Marginal}, %54::Any, %35::ReactiveMP.AnnotationDict, nothing)::ReactiveMP.AfterMessageRuleCallEvent{…} where _A
+└────────────────────
+
+
+== compute_product_of_messages(::RandomVariable, ctx, ::Vector{AbstractMessage})
+return_types = Any[Message]
+return_types two(Message, Message) = Any[Message]
+JET report_opt product: 5 reports
+═════ 5 possible errors found ═════
+┌ compute_product_of_messages(variable::RandomVariable, context::MessageProductContext{…}, messages::Vector{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:310
+│┌ compute_product_of_messages(::ReactiveMP.MessagesProductFromLeftToRight, variable::RandomVariable, context::MessageProductContext{…}, messages::Vector{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:368
+││┌ foldl(op::ReactiveMP.var"#compute_product_of_messages##0#compute_product_of_messages##1"{…}, itr::Vector{…}) @ Base ./reduce.jl:196
+│││┌ foldl(op::ReactiveMP.var"#compute_product_of_messages##0#compute_product_of_messages##1"{…}, itr::Vector{…}; kw::@Kwargs{}) @ Base ./reduce.jl:196
+││││┌ mapfoldl(f::typeof(identity), op::ReactiveMP.var"#compute_product_of_messages##0#compute_product_of_messages##1"{…}, itr::Vector{…}) @ Base ./reduce.jl:173
+│││││┌ mapfoldl(f::typeof(identity), op::ReactiveMP.var"#compute_product_of_messages##0#compute_product_of_messages##1"{…}, itr::Vector{…}; init::Base._InitialValue) @ Base ./reduce.jl:173
+││││││┌ mapfoldl_impl(f::typeof(identity), op::ReactiveMP.var"#compute_product_of_messages##0#compute_product_of_messages##1"{…}, nt::Base._InitialValue, itr::Vector{…}) @ Base ./reduce.jl:42
+│││││││┌ foldl_impl(op::Base.BottomRF{…}, nt::Base._InitialValue, itr::Vector{…}) @ Base ./reduce.jl:46
+││││││││┌ _foldl_impl(op::Base.BottomRF{…}, init::Base._InitialValue, itr::Vector{…}) @ Base ./reduce.jl:60
+│││││││││┌ (::Base.BottomRF{…})(acc::AbstractMessage, x::AbstractMessage) @ Base ./reduce.jl:84
+││││││││││┌ (::ReactiveMP.var"#compute_product_of_messages##0#compute_product_of_messages##1"{…})(left::AbstractMessage, right::AbstractMessage) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:369
+│││││││││││┌ compute_product_of_two_messages(variable::RandomVariable, context::MessageProductContext{…}, left::Message, right::Message) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:237
+││││││││││││ runtime dispatch detected: ReactiveMP.product_kernel(variable::RandomVariable, context::MessageProductContext{…}, %28::Any, %29::Any, %30::ReactiveMP.AnnotationDict, %31::ReactiveMP.AnnotationDict)::Tuple{Any, Any}
+│││││││││││└────────────────────
+│││││││││┌ (::Base.BottomRF{…})(acc::AbstractMessage, x::AbstractMessage) @ Base ./reduce.jl:84
+││││││││││ runtime dispatch detected: %1::ReactiveMP.var"#compute_product_of_messages##0#compute_product_of_messages##1"{…}(acc::AbstractMessage, x::AbstractMessage)::Message
+│││││││││└────────────────────
+┌ compute_product_of_messages(variable::RandomVariable, context::MessageProductContext{…}, messages::Vector{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:310
+│ runtime dispatch detected: as_message(%8::AbstractMessage)::Message
+└────────────────────
+┌ compute_product_of_messages(variable::RandomVariable, context::MessageProductContext{…}, messages::Vector{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:319
+│ runtime dispatch detected: ReactiveMP.BeforeFormConstraintAppliedEvent(variable::RandomVariable, context::MessageProductContext{…}, FormConstraintCheckLast(), %23::Any, nothing)::ReactiveMP.BeforeFormConstraintAppliedEvent{…} where _A
+└────────────────────
+┌ compute_product_of_messages(variable::RandomVariable, context::MessageProductContext{…}, messages::Vector{…}) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:326
+│ runtime dispatch detected: ReactiveMP.AfterFormConstraintAppliedEvent(variable::RandomVariable, context::MessageProductContext{…}, FormConstraintCheckLast(), %23::Any, %23::Any, nothing)::ReactiveMP.AfterFormConstraintAppliedEvent{…} where {…}
+└────────────────────
+
+JET report_opt product of two (concrete Message types): 1 reports
+═════ 1 possible error found ═════
+┌ compute_product_of_two_messages(variable::RandomVariable, context::MessageProductContext{…}, left::Message, right::Message) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:237
+│ runtime dispatch detected: ReactiveMP.product_kernel(variable::RandomVariable, context::MessageProductContext{…}, %28::Any, %29::Any, %30::ReactiveMP.AnnotationDict, %31::ReactiveMP.AnnotationDict)::Tuple{Any, Any}
+└────────────────────
+
+
+== inside the kernels, at the concrete data types
+NMV->out BP: return_types(run_message_rule) = Any[Any]
+NMV->out BP: return_types(kernel_arguments) = Any[MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{(:v, :μ), Tuple{PointMass{Float64}, NormalMeanVariance{Float64}}}, MessagePassingRulesBase.Marginals{(), Tuple{}, (), Tuple{}}}]
+NMV->out BP: JET report_opt run_message_rule: 36 reports
+═════ 36 possible errors found ═════
+┌ run_message_rule(mapping::MessageMapping{…}, mdata::Tuple{…}, qdata::Nothing, mann::Tuple{…}, qann::Nothing, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:675
+│┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:63
+││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:333
+│││┌ lock(rl::ReentrantLock) @ Base ./lock.jl:195
+││││┌ (::Base.var"#slowlock#lock##0")(rl::ReentrantLock) @ Base ./lock.jl:218
+│││││┌ yield() @ Base ./task.jl:1099
+││││││┌ wait() @ Base ./task.jl:1292
+│││││││┌ getindex(once::OncePerThread{Task, Base.var"#612#613"}, tid::Int64) @ Base ./lock.jl:858
+││││││││ failed to optimize due to recursion: getindex(::OncePerThread{Task, Base.var"#612#613"}, ::Int64)
+│││││││└────────────────────
+│││││││┌ (::OncePerThread{Task, Base.var"#612#613"})() @ Base ./lock.jl:857
+││││││││ failed to optimize due to recursion: (::OncePerThread{Task, Base.var"#612#613"})()
+│││││││└────────────────────
+││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:335
+│││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+││││┌ push!(s::Set{Tuple{Symbol, Int64, Any}}, x::Tuple{Symbol, Int64, Any}) @ Base ./set.jl:137
+│││││┌ setindex!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, v0::Nothing, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:358
+││││││┌ ht_keyindex2_shorthash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:270
+│││││││┌ rehash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, newsz::Int64) @ Base ./dict.jl:169
+││││││││ runtime dispatch detected: Base.hashindex(%109::Tuple{Symbol, Int64, Any}, %19::Int64)::Tuple{Int64, UInt8}
+│││││││└────────────────────
+│││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+││││ runtime dispatch detected: ReactiveMP.in(%7::Tuple{Symbol, Int64, Any}, ReactiveMP.REPORTED_NOT_INPLACE)::Bool
+│││└────────────────────
+│││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+││││ runtime dispatch detected: ReactiveMP.push!(ReactiveMP.REPORTED_NOT_INPLACE, %7::Tuple{Symbol, Int64, Any})::Any
+│││└────────────────────
+│┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:67
+││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+│││┌ display_name(x::Type) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:43
+││││┌ string(xs::Type) @ Base ./strings/io.jl:186
+│││││┌ print_to_string(xs::Type) @ Base ./strings/io.jl:145
+││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+│││││││┌ show(io::IOBuffer, x::Type) @ Base ./show.jl:978
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:983
+│││││││││┌ show_typealias(io::IOBuffer, x::Type) @ Base ./show.jl:821
+││││││││││┌ show_typealias(io::IOBuffer, name::GlobalRef, x::Type, env::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:768
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+││││││││││││┌ show(io::IOContext{IOBuffer}, tv::TypeVar) @ Base ./show.jl:2724
+│││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOContext{IOBuffer}, b::Any) @ Base ./show.jl:2716
+││││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, b::Any)::Any
+│││││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %269::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %338::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %200::Any)::Any
+│││││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:986
+│││││││││┌ show_datatype(io::IOBuffer, x::DataType) @ Base ./show.jl:1139
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1142
+│││││││││││┌ maybe_kws_nt(x::DataType) @ Base ./show.jl:1130
+││││││││││││ runtime dispatch detected: eltype(%60::DataType)::Any
+│││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1231
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+││││││││││││┌ show(io::IOBuffer, tv::TypeVar) @ Base ./show.jl:2724
+│││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOBuffer, b::Any) @ Base ./show.jl:2716
+││││││││││││││ runtime dispatch detected: show(io::IOBuffer, b::Any)::Any
+│││││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %245::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %302::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %188::Any)::Any
+│││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %223::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %53::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+│││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOBuffer, %320::Tuple, %319::DataType)::Any
+││││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:989
+│││││││││┌ show_unionaliases(io::IOBuffer, x::Union) @ Base ./show.jl:922
+││││││││││ runtime dispatch detected: show(io::IOBuffer, %66::Any)::Any
+│││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:993
+│││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool) @ Base ./show.jl:1423
+││││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool, i1::Int64, l::Int64) @ Base ./show.jl:1434
+│││││││││││ runtime dispatch detected: show(%3::IOContext{IOBuffer}, %50::Any)::Any
+││││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1020
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %260::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %65::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %431::Tuple, %430::DataType)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1225
+││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %516::Tuple, %520::DataType)::Any
+│││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1022
+│││││││││ runtime dispatch detected: show(%77::IOContext{IOBuffer}, %78::Any)::Any
+││││││││└────────────────────
+││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+│││││││ runtime dispatch detected: show(io::IOBuffer, x::Type)::Any
+││││││└────────────────────
+│││┌ string(::String, ::Any) @ Base ./strings/io.jl:186
+││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:140
+│││││ runtime dispatch detected: Base._str_sizehint(%9::Any)::Int64
+││││└────────────────────
+││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:145
+│││││ runtime dispatch detected: print(%38::IOBuffer, %46::Any)::Any
+││││└────────────────────
+││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+│││ runtime dispatch detected: ReactiveMP.display_name(%8::Any)::Any
+││└────────────────────
+││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+│││ runtime dispatch detected: ReactiveMP.target_text(%20::Any)::Any
+││└────────────────────
+┌ run_message_rule(mapping::MessageMapping{…}, mdata::Tuple{…}, qdata::Nothing, mann::Tuple{…}, qann::Nothing, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:679
+│┌ scratch_for!(slot::ReactiveMP.ScratchSlot, spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}, checked::Bool) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/scratch.jl:28
+││┌ rule_scratch(spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}) @ MessagePassingRulesBase /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/lib/MessagePassingRulesBase/src/rulespec.jl:170
+│││ runtime dispatch detected: %5::Union{Nothing, Function}(algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{Nothing, typeof(ReactiveMP.rule_product), Nothing, Random.TaskLocalRNG, Nothing}, args::MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{…}, MessagePassingRulesBase.Marginals{…}}, target::Target{:out})::Any
+││└────────────────────
+│┌ scratch_for!(slot::ReactiveMP.ScratchSlot, spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}, checked::Bool) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/scratch.jl:27
+││ runtime dispatch detected: ReactiveMP.poison!(%9::Any)::Any
+│└────────────────────
+┌ run_message_rule(mapping::MessageMapping{…}, mdata::Tuple{…}, qdata::Nothing, mann::Tuple{…}, qann::Nothing, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:680
+│ runtime dispatch detected: execute_rule(%10::MessagePassingRulesBase.RuleSpec, ReactiveMP.nothing, %21::Any, DefaultAlgorithm(), MessagePassingRulesBase.RuleContext{…}(nothing, ReactiveMP.rule_product, nothing, Random.TaskLocalRNG(), nothing), %7::MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{…}, MessagePassingRulesBase.Marginals{…}}, %17::MessagePassingRulesBase.RuleAnnotations{…}, :out)::Any
+└────────────────────
+
+NMP->μ VMP: return_types(run_message_rule) = Any[Any]
+NMP->μ VMP: return_types(kernel_arguments) = Any[MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{(), Tuple{}}, MessagePassingRulesBase.Marginals{(:out, :τ), Tuple{PointMass{Float64}, GammaShapeRate{Float64}}, (), Tuple{}}}]
+NMP->μ VMP: JET report_opt run_message_rule: 36 reports
+═════ 36 possible errors found ═════
+┌ run_message_rule(mapping::MessageMapping{…}, mdata::Nothing, qdata::Tuple{…}, mann::Nothing, qann::Tuple{…}, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:675
+│┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:63
+││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:333
+│││┌ lock(rl::ReentrantLock) @ Base ./lock.jl:195
+││││┌ (::Base.var"#slowlock#lock##0")(rl::ReentrantLock) @ Base ./lock.jl:218
+│││││┌ yield() @ Base ./task.jl:1099
+││││││┌ wait() @ Base ./task.jl:1292
+│││││││┌ getindex(once::OncePerThread{Task, Base.var"#612#613"}, tid::Int64) @ Base ./lock.jl:858
+││││││││ failed to optimize due to recursion: getindex(::OncePerThread{Task, Base.var"#612#613"}, ::Int64)
+│││││││└────────────────────
+│││││││┌ (::OncePerThread{Task, Base.var"#612#613"})() @ Base ./lock.jl:857
+││││││││ failed to optimize due to recursion: (::OncePerThread{Task, Base.var"#612#613"})()
+│││││││└────────────────────
+││┌ lock(f::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec}, l::ReentrantLock) @ Base ./lock.jl:335
+│││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+││││┌ push!(s::Set{Tuple{Symbol, Int64, Any}}, x::Tuple{Symbol, Int64, Any}) @ Base ./set.jl:137
+│││││┌ setindex!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, v0::Nothing, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:358
+││││││┌ ht_keyindex2_shorthash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, key::Tuple{Symbol, Int64, Any}) @ Base ./dict.jl:270
+│││││││┌ rehash!(h::Dict{Tuple{Symbol, Int64, Any}, Nothing}, newsz::Int64) @ Base ./dict.jl:169
+││││││││ runtime dispatch detected: Base.hashindex(%109::Tuple{Symbol, Int64, Any}, %19::Int64)::Tuple{Int64, UInt8}
+│││││││└────────────────────
+│││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+││││ runtime dispatch detected: ReactiveMP.in(%7::Tuple{Symbol, Int64, Any}, ReactiveMP.REPORTED_NOT_INPLACE)::Bool
+│││└────────────────────
+│││┌ (::ReactiveMP.var"#audit_rule##0#audit_rule##1"{MessagePassingRulesBase.RuleSpec})() @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:65
+││││ runtime dispatch detected: ReactiveMP.push!(ReactiveMP.REPORTED_NOT_INPLACE, %7::Tuple{Symbol, Int64, Any})::Any
+│││└────────────────────
+│┌ audit_rule(diagnostics::ReactiveMP.EngineDiagnostics, spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:67
+││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+│││┌ display_name(x::Type) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:43
+││││┌ string(xs::Type) @ Base ./strings/io.jl:186
+│││││┌ print_to_string(xs::Type) @ Base ./strings/io.jl:145
+││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+│││││││┌ show(io::IOBuffer, x::Type) @ Base ./show.jl:978
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:983
+│││││││││┌ show_typealias(io::IOBuffer, x::Type) @ Base ./show.jl:821
+││││││││││┌ show_typealias(io::IOBuffer, name::GlobalRef, x::Type, env::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:768
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+││││││││││││┌ show(io::IOContext{IOBuffer}, tv::TypeVar) @ Base ./show.jl:2724
+│││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOContext{IOBuffer}, b::Any) @ Base ./show.jl:2716
+││││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, b::Any)::Any
+│││││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %269::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %338::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOContext{IOBuffer}, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+││││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %200::Any)::Any
+│││││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:986
+│││││││││┌ show_datatype(io::IOBuffer, x::DataType) @ Base ./show.jl:1139
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1142
+│││││││││││┌ maybe_kws_nt(x::DataType) @ Base ./show.jl:1130
+││││││││││││ runtime dispatch detected: eltype(%60::DataType)::Any
+│││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1231
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:732
+││││││││││││┌ show(io::IOBuffer, tv::TypeVar) @ Base ./show.jl:2724
+│││││││││││││┌ (::Base.var"#show_bound#show##0")(io::IOBuffer, b::Any) @ Base ./show.jl:2716
+││││││││││││││ runtime dispatch detected: show(io::IOBuffer, b::Any)::Any
+│││││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:727
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %245::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:730
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %302::Any)::Any
+│││││││││││└────────────────────
+│││││││││││┌ show_typeparams(io::IOBuffer, env::Core.SimpleVector, orig::Core.SimpleVector, wheres::Vector{TypeVar}) @ Base ./show.jl:735
+││││││││││││ runtime dispatch detected: show(io::IOBuffer, %188::Any)::Any
+│││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %223::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %53::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+│││││││││││ runtime dispatch detected: show(io::IOBuffer, %50::Any)::Any
+││││││││││└────────────────────
+││││││││││┌ show_datatype(io::IOBuffer, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+│││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOBuffer, %320::Tuple, %319::DataType)::Any
+││││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:989
+│││││││││┌ show_unionaliases(io::IOBuffer, x::Union) @ Base ./show.jl:922
+││││││││││ runtime dispatch detected: show(io::IOBuffer, %66::Any)::Any
+│││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:993
+│││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool) @ Base ./show.jl:1423
+││││││││││┌ show_delim_array(io::IOBuffer, itr::Vector{Any}, op::Char, delim::Char, cl::Char, delim_one::Bool, i1::Int64, l::Int64) @ Base ./show.jl:1434
+│││││││││││ runtime dispatch detected: show(%3::IOContext{IOBuffer}, %50::Any)::Any
+││││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1020
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1202
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %260::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1207
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1193
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %65::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1195
+││││││││││ runtime dispatch detected: show(io::IOContext{IOBuffer}, %62::Any)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1217
+││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %431::Tuple, %430::DataType)::Any
+│││││││││└────────────────────
+│││││││││┌ show_datatype(io::IOContext{IOBuffer}, x::DataType, wheres::Vector{TypeVar}) @ Base ./show.jl:1225
+││││││││││ runtime dispatch detected: Base.show_at_namedtuple(io::IOContext{IOBuffer}, %516::Tuple, %520::DataType)::Any
+│││││││││└────────────────────
+││││││││┌ _show_type(io::IOBuffer, x::Type) @ Base ./show.jl:1022
+│││││││││ runtime dispatch detected: show(%77::IOContext{IOBuffer}, %78::Any)::Any
+││││││││└────────────────────
+││││││┌ print(io::IOBuffer, x::Type) @ Base ./strings/io.jl:35
+│││││││ runtime dispatch detected: show(io::IOBuffer, x::Type)::Any
+││││││└────────────────────
+│││┌ string(::String, ::Any) @ Base ./strings/io.jl:186
+││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:140
+│││││ runtime dispatch detected: Base._str_sizehint(%9::Any)::Int64
+││││└────────────────────
+││││┌ print_to_string(::String, ::Any) @ Base ./strings/io.jl:145
+│││││ runtime dispatch detected: print(%38::IOBuffer, %46::Any)::Any
+││││└────────────────────
+││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+│││ runtime dispatch detected: ReactiveMP.display_name(%8::Any)::Any
+││└────────────────────
+││┌ rule_description(spec::MessagePassingRulesBase.RuleSpec) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/diagnostics.jl:37
+│││ runtime dispatch detected: ReactiveMP.target_text(%20::Any)::Any
+││└────────────────────
+┌ run_message_rule(mapping::MessageMapping{…}, mdata::Nothing, qdata::Tuple{…}, mann::Nothing, qann::Tuple{…}, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:679
+│┌ scratch_for!(slot::ReactiveMP.ScratchSlot, spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}, checked::Bool) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/scratch.jl:28
+││┌ rule_scratch(spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}) @ MessagePassingRulesBase /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/lib/MessagePassingRulesBase/src/rulespec.jl:170
+│││ runtime dispatch detected: %5::Union{Nothing, Function}(algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{Nothing, typeof(ReactiveMP.rule_product), Nothing, Random.TaskLocalRNG, Nothing}, args::MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{…}, MessagePassingRulesBase.Marginals{…}}, target::Target{:μ})::Any
+││└────────────────────
+│┌ scratch_for!(slot::ReactiveMP.ScratchSlot, spec::MessagePassingRulesBase.RuleSpec, algorithm::DefaultAlgorithm, ctx::MessagePassingRulesBase.RuleContext{…}, args::MessagePassingRulesBase.RuleArgs{…}, target::Target{…}, checked::Bool) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/scratch.jl:27
+││ runtime dispatch detected: ReactiveMP.poison!(%9::Any)::Any
+│└────────────────────
+┌ run_message_rule(mapping::MessageMapping{…}, mdata::Nothing, qdata::Tuple{…}, mann::Nothing, qann::Tuple{…}, annotations::ReactiveMP.AnnotationDict) @ ReactiveMP /var/folders/fs/cv24163n0l75n_dz7knpp1r00000gn/T/msg-kernel/src/message.jl:680
+│ runtime dispatch detected: execute_rule(%10::MessagePassingRulesBase.RuleSpec, ReactiveMP.nothing, %21::Any, DefaultAlgorithm(), MessagePassingRulesBase.RuleContext{…}(nothing, ReactiveMP.rule_product, nothing, Random.TaskLocalRNG(), nothing), %7::MessagePassingRulesBase.RuleArgs{MessagePassingRulesBase.Messages{…}, MessagePassingRulesBase.Marginals{…}}, %17::MessagePassingRulesBase.RuleAnnotations{…}, :μ)::Any
+└────────────────────
+
+JET report_opt product_kernel(NMV, NMV): 0 reports

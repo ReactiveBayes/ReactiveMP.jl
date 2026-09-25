@@ -1,0 +1,540 @@
+A	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	768.8	810.8	16	960
+A	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	779.1	819.9	17	992
+A	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	25.5	26.9	2	144
+A	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	795.8	833.3	17	992
+A	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	892.4	940.1	14	640
+A	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	892.1	950.8	15	672
+A	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	25.4	27.0	2	144
+A	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	905.6	959.6	15	672
+A	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	784.9	822.3	18	1104
+A	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	807.8	848.5	19	1136
+A	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	25.0	26.9	2	144
+A	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	822.1	866.6	19	1136
+A	run1	map/direct  Bernoulli->out m[p]::Beta	916.7	979.2	18	1024
+A	run1	map/barrier Bernoulli->out m[p]::Beta	942.1	1000.0	19	1056
+A	run1	resolve/barrier Bernoulli->out m[p]::Beta	25.3	27.1	2	144
+A	run1	deferred/barrier Bernoulli->out m[p]::Beta	955.8	1015.6	19	1056
+A	run1	map/direct  Categorical->p q[out]::Categorical	1050.0	1112.5	21	1168
+A	run1	map/barrier Categorical->p q[out]::Categorical	1079.2	1120.9	22	1200
+A	run1	resolve/barrier Categorical->p q[out]::Categorical	25.0	27.2	2	144
+A	run1	deferred/barrier Categorical->p q[out]::Categorical	1033.3	1112.5	22	1200
+A	run1	joint-marginal/barrier NMV (out,μ)	145.0	161.6	11	544
+A	run1	product/NMV x3	1233.3	1279.2	12	384
+A	run1	product/deferred NMV x3	1308.3	1354.2	12	384
+A	run1	product/NMV x10	1383.3	1470.8	33	944
+A	run1	product/deferred NMV x10	1579.2	1658.4	33	944
+A	run1	product/MvNMC(3) x3	2041.7	2143.6	34	1648
+A	run1	marginal-at-variable/NMV x3	1629.2	1658.3	14	464
+A	run1	stream/marginal combineLatest x3 round	106.6	115.1	0	0
+A	run1	stream/message combineLatest x3 round	103.6	109.8	0	0
+A	run1	event/AfterMessageRuleCallEvent, result::Any	269.5	282.0	3	128
+A	run1	barrier/kernel(tuple, ann), Any-typed args	22.4	23.7	1	32
+A	run1	barrier/kernel(tuple, ann), known types	3.5	3.7	0	0
+A	run1	barrier/kernel(a, b), Any-typed args	22.7	23.9	1	32
+A	run1	unpack/map(getdata, 2 messages)	2.0	2.1	0	0
+A	run1	graph/iid n=1000 10 it	1.21895e7	1.2657292e7	-1	13446112
+A	run1	graph/chain n=300 10 it	2.4737875e7	2.5427833e7	-1	20297952
+B	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	1462.5	1558.3	26	1440
+B	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1491.7	1604.2	27	1472
+B	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	658.9	692.8	6	272
+B	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1520.8	1595.8	27	1472
+B	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1775.0	1875.0	21	864
+B	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1870.8	1908.4	22	896
+B	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	991.7	1050.0	6	272
+B	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1829.1	1925.0	22	896
+B	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1633.3	1695.8	28	1584
+B	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1616.6	1716.7	29	1616
+B	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	710.8	749.4	6	272
+B	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1641.7	1745.8	29	1616
+B	run1	map/direct  Bernoulli->out m[p]::Beta	1316.6	1400.0	23	1312
+B	run1	map/barrier Bernoulli->out m[p]::Beta	1358.3	1420.8	24	1344
+B	run1	resolve/barrier Bernoulli->out m[p]::Beta	705.4	739.6	6	272
+B	run1	deferred/barrier Bernoulli->out m[p]::Beta	1350.0	1437.5	24	1344
+B	run1	map/direct  Categorical->p q[out]::Categorical	1520.8	1600.0	26	1440
+B	run1	map/barrier Categorical->p q[out]::Categorical	1508.3	1616.6	27	1472
+B	run1	resolve/barrier Categorical->p q[out]::Categorical	806.5	845.0	7	400
+B	run1	deferred/barrier Categorical->p q[out]::Categorical	1554.1	1625.0	27	1472
+B	run1	joint-marginal/barrier NMV (out,μ)	1225.0	1291.7	19	880
+B	run1	product/NMV x3	1308.3	1379.2	13	400
+B	run1	product/deferred NMV x3	1312.5	1383.3	13	400
+B	run1	product/NMV x10	3970.1	4190.4	48	1408
+B	run1	product/deferred NMV x10	3934.4	4136.9	48	1408
+B	run1	product/MvNMC(3) x3	2088.0	2208.3	35	1664
+B	run1	marginal-at-variable/NMV x3	1333.3	1408.4	14	432
+B	run1	stream/marginal combineLatest x3 round	107.2	113.9	0	0
+B	run1	stream/message combineLatest x3 round	113.7	119.6	0	0
+B	run1	event/AfterMessageRuleCallEvent, result::Any	274.1	281.6	3	128
+B	run1	barrier/kernel(tuple, ann), Any-typed args	22.7	23.9	1	32
+B	run1	barrier/kernel(tuple, ann), known types	3.5	3.8	0	0
+B	run1	barrier/kernel(a, b), Any-typed args	22.4	23.1	1	32
+B	run1	unpack/map(getdata, 2 messages)	28.8	30.5	1	32
+B	run1	graph/iid n=1000 10 it	4.5197083e7	4.6736917e7	-1	23212224
+B	run1	graph/chain n=300 10 it	6.6597916e7	6.69715e7	-1	31938304
+C	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	484.5	515.5	18	1008
+C	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	497.8	536.9	19	1040
+C	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	132.3	140.2	2	48
+C	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	509.3	538.8	19	1040
+C	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	435.0	457.9	14	560
+C	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	451.6	478.4	15	592
+C	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	135.8	139.9	2	48
+C	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	454.1	477.2	15	592
+C	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	526.1	553.3	20	1152
+C	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	551.9	593.5	21	1184
+C	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	185.6	194.5	2	48
+C	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	556.8	590.5	21	1184
+C	run1	map/direct  Bernoulli->out m[p]::Beta	480.6	501.6	18	944
+C	run1	map/barrier Bernoulli->out m[p]::Beta	500.9	529.6	19	976
+C	run1	resolve/barrier Bernoulli->out m[p]::Beta	127.9	131.9	2	48
+C	run1	deferred/barrier Bernoulli->out m[p]::Beta	506.7	532.2	19	976
+C	run1	map/direct  Categorical->p q[out]::Categorical	618.2	660.8	21	1072
+C	run1	map/barrier Categorical->p q[out]::Categorical	639.1	675.3	22	1104
+C	run1	resolve/barrier Categorical->p q[out]::Categorical	324.6	343.6	4	208
+C	run1	deferred/barrier Categorical->p q[out]::Categorical	667.7	703.7	22	1104
+C	run1	joint-marginal/barrier NMV (out,μ)	236.9	254.6	16	688
+C	run1	product/NMV x3	735.2	778.9	13	368
+C	run1	product/deferred NMV x3	740.8	778.4	13	368
+C	run1	product/NMV x10	1408.3	1516.7	48	1264
+C	run1	product/deferred NMV x10	1420.9	1529.2	48	1264
+C	run1	product/MvNMC(3) x3	1550.0	1658.3	35	1632
+C	run1	marginal-at-variable/NMV x3	820.3	862.4	14	400
+C	run1	stream/marginal combineLatest x3 round	111.0	115.6	0	0
+C	run1	stream/message combineLatest x3 round	110.5	116.6	0	0
+C	run1	event/AfterMessageRuleCallEvent, result::Any	272.1	281.5	3	128
+C	run1	barrier/kernel(tuple, ann), Any-typed args	24.3	26.1	1	32
+C	run1	barrier/kernel(tuple, ann), known types	3.4	3.7	0	0
+C	run1	barrier/kernel(a, b), Any-typed args	23.8	25.4	1	32
+C	run1	unpack/map(getdata, 2 messages)	28.7	30.6	1	32
+C	run1	graph/iid n=1000 10 it	1.4408875e7	1.5184958e7	-1	19530864
+C	run1	graph/chain n=300 10 it	3.5150666e7	3.626975e7	-1	25378704
+D	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	513.0	539.9	13	832
+D	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	526.0	552.5	14	864
+D	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	26.8	28.3	2	144
+D	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	538.8	572.0	14	864
+D	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	632.7	660.0	11	512
+D	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	648.1	677.7	12	544
+D	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.8	28.5	2	144
+D	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	665.9	701.3	12	544
+D	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	534.4	563.9	15	976
+D	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	557.8	587.8	16	1008
+D	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	26.3	28.4	2	144
+D	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	570.2	601.9	16	1008
+D	run1	map/direct  Bernoulli->out m[p]::Beta	674.6	705.9	15	928
+D	run1	map/barrier Bernoulli->out m[p]::Beta	691.0	729.5	16	960
+D	run1	resolve/barrier Bernoulli->out m[p]::Beta	26.6	28.4	2	144
+D	run1	deferred/barrier Bernoulli->out m[p]::Beta	703.2	736.0	16	960
+D	run1	map/direct  Categorical->p q[out]::Categorical	776.6	815.9	18	1056
+D	run1	map/barrier Categorical->p q[out]::Categorical	804.3	846.4	19	1088
+D	run1	resolve/barrier Categorical->p q[out]::Categorical	26.6	28.5	2	144
+D	run1	deferred/barrier Categorical->p q[out]::Categorical	811.8	848.7	19	1088
+D	run1	joint-marginal/barrier NMV (out,μ)	149.8	163.8	11	544
+D	run1	product/NMV x3	490.8	514.4	9	272
+D	run1	product/deferred NMV x3	548.6	565.1	9	272
+D	run1	product/NMV x10	685.0	715.4	30	832
+D	run1	product/deferred NMV x10	861.1	894.0	30	832
+D	run1	product/MvNMC(3) x3	1304.1	1400.0	31	1536
+D	run1	marginal-at-variable/NMV x3	536.3	559.4	10	320
+D	run1	stream/marginal combineLatest x3 round	107.3	112.5	0	0
+D	run1	stream/message combineLatest x3 round	116.7	123.2	0	0
+D	run1	event/AfterMessageRuleCallEvent, result::Any	268.7	280.9	3	128
+D	run1	barrier/kernel(tuple, ann), Any-typed args	24.5	26.0	1	32
+D	run1	barrier/kernel(tuple, ann), known types	3.5	3.7	0	0
+D	run1	barrier/kernel(a, b), Any-typed args	24.6	25.5	1	32
+D	run1	unpack/map(getdata, 2 messages)	2.0	2.1	0	0
+D	run1	graph/iid n=1000 10 it	9.458917e6	9.805541e6	-1	10884416
+D	run1	graph/chain n=300 10 it	1.9702084e7	2.0406625e7	-1	17662496
+E	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	211.8	227.7	15	880
+E	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	257.1	274.6	16	912
+E	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	135.2	140.0	2	48
+E	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	245.3	268.5	16	912
+E	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	154.0	164.7	11	432
+E	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	203.6	214.7	12	464
+E	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	133.9	141.8	2	48
+E	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	197.5	210.9	12	464
+E	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	253.0	269.1	17	1024
+E	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	284.2	305.6	18	1056
+E	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	184.4	193.5	2	48
+E	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	273.9	291.1	18	1056
+E	run1	map/direct  Bernoulli->out m[p]::Beta	199.6	216.7	15	848
+E	run1	map/barrier Bernoulli->out m[p]::Beta	229.7	248.7	16	880
+E	run1	resolve/barrier Bernoulli->out m[p]::Beta	127.1	133.2	2	48
+E	run1	deferred/barrier Bernoulli->out m[p]::Beta	238.3	260.3	16	880
+E	run1	map/direct  Categorical->p q[out]::Categorical	305.9	330.7	18	960
+E	run1	map/barrier Categorical->p q[out]::Categorical	329.0	352.1	19	992
+E	run1	resolve/barrier Categorical->p q[out]::Categorical	271.0	284.1	4	208
+E	run1	deferred/barrier Categorical->p q[out]::Categorical	336.2	358.8	19	992
+E	run1	joint-marginal/barrier NMV (out,μ)	232.3	250.8	16	688
+E	run1	product/NMV x3	228.2	247.5	11	288
+E	run1	product/deferred NMV x3	230.1	252.6	11	288
+E	run1	product/NMV x10	955.6	1050.0	46	1184
+E	run1	product/deferred NMV x10	932.1	1020.1	46	1184
+E	run1	product/MvNMC(3) x3	1033.4	1104.2	33	1552
+E	run1	marginal-at-variable/NMV x3	270.6	289.5	12	320
+E	run1	stream/marginal combineLatest x3 round	107.4	113.1	0	0
+E	run1	stream/message combineLatest x3 round	112.3	118.6	0	0
+E	run1	event/AfterMessageRuleCallEvent, result::Any	276.2	285.5	3	128
+E	run1	barrier/kernel(tuple, ann), Any-typed args	24.1	25.5	1	32
+E	run1	barrier/kernel(tuple, ann), known types	3.5	3.8	0	0
+E	run1	barrier/kernel(a, b), Any-typed args	24.3	25.3	1	32
+E	run1	unpack/map(getdata, 2 messages)	28.7	30.6	1	32
+E	run1	graph/iid n=1000 10 it	1.2602875e7	1.3012125e7	-1	16969808
+E	run1	graph/chain n=300 10 it	1.7728333e7	1.8686375e7	-1	21500848
+E	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	206.9	223.0	15	880
+E	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	248.5	265.7	16	912
+E	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	129.9	135.7	2	48
+E	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	240.0	259.4	16	912
+E	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	150.8	159.3	11	432
+E	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	195.5	208.1	12	464
+E	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	132.1	138.1	2	48
+E	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	188.2	200.7	12	464
+E	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	228.4	246.7	17	1024
+E	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	271.1	289.5	18	1056
+E	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	181.8	189.7	2	48
+E	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	262.8	280.7	18	1056
+E	run2	map/direct  Bernoulli->out m[p]::Beta	192.1	207.1	15	848
+E	run2	map/barrier Bernoulli->out m[p]::Beta	218.2	237.2	16	880
+E	run2	resolve/barrier Bernoulli->out m[p]::Beta	121.7	125.5	2	48
+E	run2	deferred/barrier Bernoulli->out m[p]::Beta	232.0	246.8	16	880
+E	run2	map/direct  Categorical->p q[out]::Categorical	289.6	314.2	18	960
+E	run2	map/barrier Categorical->p q[out]::Categorical	319.0	343.8	19	992
+E	run2	resolve/barrier Categorical->p q[out]::Categorical	269.2	285.1	4	208
+E	run2	deferred/barrier Categorical->p q[out]::Categorical	323.9	349.6	19	992
+E	run2	joint-marginal/barrier NMV (out,μ)	232.6	249.3	16	688
+E	run2	product/NMV x3	226.7	247.3	11	288
+E	run2	product/deferred NMV x3	226.1	247.3	11	288
+E	run2	product/NMV x10	953.9	1032.9	46	1184
+E	run2	product/deferred NMV x10	877.6	993.2	46	1184
+E	run2	product/MvNMC(3) x3	1050.0	1108.3	33	1552
+E	run2	marginal-at-variable/NMV x3	268.2	289.5	12	320
+E	run2	stream/marginal combineLatest x3 round	108.7	115.4	0	0
+E	run2	stream/message combineLatest x3 round	107.8	114.5	0	0
+E	run2	event/AfterMessageRuleCallEvent, result::Any	279.8	293.7	3	128
+E	run2	barrier/kernel(tuple, ann), Any-typed args	22.2	23.2	1	32
+E	run2	barrier/kernel(tuple, ann), known types	3.5	3.8	0	0
+E	run2	barrier/kernel(a, b), Any-typed args	22.3	23.1	1	32
+E	run2	unpack/map(getdata, 2 messages)	28.7	30.4	1	32
+E	run2	graph/iid n=1000 10 it	1.2574e7	1.2773416e7	-1	16969808
+E	run2	graph/chain n=300 10 it	1.9402375e7	2.0565084e7	-1	21500848
+D	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	494.8	520.0	13	832
+D	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	505.4	533.9	14	864
+D	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	25.7	27.1	2	144
+D	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	521.2	543.6	14	864
+D	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	630.1	663.8	11	512
+D	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	652.3	687.8	12	544
+D	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	25.9	27.5	2	144
+D	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	646.4	681.5	12	544
+D	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	511.7	536.7	15	976
+D	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	535.9	563.7	16	1008
+D	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	25.5	27.1	2	144
+D	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	547.0	573.8	16	1008
+D	run2	map/direct  Bernoulli->out m[p]::Beta	653.1	687.5	15	928
+D	run2	map/barrier Bernoulli->out m[p]::Beta	683.1	715.6	16	960
+D	run2	resolve/barrier Bernoulli->out m[p]::Beta	25.7	27.4	2	144
+D	run2	deferred/barrier Bernoulli->out m[p]::Beta	685.2	716.3	16	960
+D	run2	map/direct  Categorical->p q[out]::Categorical	754.1	791.5	18	1056
+D	run2	map/barrier Categorical->p q[out]::Categorical	779.7	826.5	19	1088
+D	run2	resolve/barrier Categorical->p q[out]::Categorical	25.7	27.6	2	144
+D	run2	deferred/barrier Categorical->p q[out]::Categorical	790.4	835.5	19	1088
+D	run2	joint-marginal/barrier NMV (out,μ)	151.3	164.3	11	544
+D	run2	product/NMV x3	473.4	494.9	9	272
+D	run2	product/deferred NMV x3	537.7	560.8	9	272
+D	run2	product/NMV x10	660.1	696.0	30	832
+D	run2	product/deferred NMV x10	838.1	870.2	30	832
+D	run2	product/MvNMC(3) x3	1312.5	1391.7	31	1536
+D	run2	marginal-at-variable/NMV x3	527.6	555.3	10	320
+D	run2	stream/marginal combineLatest x3 round	111.2	117.4	0	0
+D	run2	stream/message combineLatest x3 round	107.5	112.5	0	0
+D	run2	event/AfterMessageRuleCallEvent, result::Any	268.4	275.9	3	128
+D	run2	barrier/kernel(tuple, ann), Any-typed args	23.0	24.2	1	32
+D	run2	barrier/kernel(tuple, ann), known types	3.4	3.7	0	0
+D	run2	barrier/kernel(a, b), Any-typed args	23.3	24.2	1	32
+D	run2	unpack/map(getdata, 2 messages)	2.0	2.1	0	0
+D	run2	graph/iid n=1000 10 it	9.136208e6	9.503084e6	-1	10884416
+D	run2	graph/chain n=300 10 it	1.7581083e7	1.7864417e7	-1	17662496
+C	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	491.4	517.0	18	1008
+C	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	529.8	557.4	19	1040
+C	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	134.7	140.7	2	48
+C	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	518.9	546.2	19	1040
+C	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	435.8	453.1	14	560
+C	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	473.4	498.7	15	592
+C	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	137.7	145.4	2	48
+C	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	459.8	479.9	15	592
+C	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	554.7	582.9	20	1152
+C	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	580.4	607.9	21	1184
+C	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	185.4	191.2	2	48
+C	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	569.5	594.7	21	1184
+C	run2	map/direct  Bernoulli->out m[p]::Beta	492.3	509.2	18	944
+C	run2	map/barrier Bernoulli->out m[p]::Beta	525.9	552.2	19	976
+C	run2	resolve/barrier Bernoulli->out m[p]::Beta	127.7	131.1	2	48
+C	run2	deferred/barrier Bernoulli->out m[p]::Beta	520.2	541.9	19	976
+C	run2	map/direct  Categorical->p q[out]::Categorical	630.8	659.4	21	1072
+C	run2	map/barrier Categorical->p q[out]::Categorical	651.3	674.2	22	1104
+C	run2	resolve/barrier Categorical->p q[out]::Categorical	317.2	323.8	4	208
+C	run2	deferred/barrier Categorical->p q[out]::Categorical	645.2	681.2	22	1104
+C	run2	joint-marginal/barrier NMV (out,μ)	235.5	250.1	16	688
+C	run2	product/NMV x3	730.7	760.7	13	368
+C	run2	product/deferred NMV x3	742.6	771.7	13	368
+C	run2	product/NMV x10	1395.8	1479.1	48	1264
+C	run2	product/deferred NMV x10	1458.3	1525.0	48	1264
+C	run2	product/MvNMC(3) x3	1620.8	1675.0	35	1632
+C	run2	marginal-at-variable/NMV x3	771.2	798.0	14	400
+C	run2	stream/marginal combineLatest x3 round	111.0	117.2	0	0
+C	run2	stream/message combineLatest x3 round	109.2	114.9	0	0
+C	run2	event/AfterMessageRuleCallEvent, result::Any	273.3	279.2	3	128
+C	run2	barrier/kernel(tuple, ann), Any-typed args	24.4	25.6	1	32
+C	run2	barrier/kernel(tuple, ann), known types	3.5	3.7	0	0
+C	run2	barrier/kernel(a, b), Any-typed args	24.3	25.3	1	32
+C	run2	unpack/map(getdata, 2 messages)	28.7	30.5	1	32
+C	run2	graph/iid n=1000 10 it	1.526175e7	1.5728375e7	-1	19530864
+C	run2	graph/chain n=300 10 it	3.3738625e7	3.7401625e7	-1	25378704
+B	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	1529.2	1587.5	26	1440
+B	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1554.1	1620.8	27	1472
+B	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	673.5	695.3	6	272
+B	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1562.5	1616.7	27	1472
+B	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1833.4	1895.8	21	864
+B	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1845.8	1908.3	22	896
+B	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1025.0	1058.3	6	272
+B	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1858.4	1925.0	22	896
+B	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1670.8	1733.3	28	1584
+B	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1683.3	1766.7	29	1616
+B	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	727.1	751.9	6	272
+B	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1704.1	1766.6	29	1616
+B	run2	map/direct  Bernoulli->out m[p]::Beta	1366.6	1429.1	23	1312
+B	run2	map/barrier Bernoulli->out m[p]::Beta	1387.5	1437.5	24	1344
+B	run2	resolve/barrier Bernoulli->out m[p]::Beta	731.6	744.4	6	272
+B	run2	deferred/barrier Bernoulli->out m[p]::Beta	1400.0	1458.4	24	1344
+B	run2	map/direct  Categorical->p q[out]::Categorical	1545.8	1604.2	26	1440
+B	run2	map/barrier Categorical->p q[out]::Categorical	1583.3	1620.8	27	1472
+B	run2	resolve/barrier Categorical->p q[out]::Categorical	821.5	843.1	7	400
+B	run2	deferred/barrier Categorical->p q[out]::Categorical	1591.6	1629.2	27	1472
+B	run2	joint-marginal/barrier NMV (out,μ)	1270.8	1295.9	19	880
+B	run2	product/NMV x3	1337.5	1383.4	13	400
+B	run2	product/deferred NMV x3	1358.3	1395.9	13	400
+B	run2	product/NMV x10	4089.3	4178.6	48	1408
+B	run2	product/deferred NMV x10	4095.1	4196.4	48	1408
+B	run2	product/MvNMC(3) x3	2129.6	2208.3	35	1664
+B	run2	marginal-at-variable/NMV x3	1362.5	1412.5	14	432
+B	run2	stream/marginal combineLatest x3 round	108.2	113.4	0	0
+B	run2	stream/message combineLatest x3 round	112.9	115.8	0	0
+B	run2	event/AfterMessageRuleCallEvent, result::Any	265.0	277.0	3	128
+B	run2	barrier/kernel(tuple, ann), Any-typed args	23.2	23.5	1	32
+B	run2	barrier/kernel(tuple, ann), known types	3.4	3.7	0	0
+B	run2	barrier/kernel(a, b), Any-typed args	22.9	24.0	1	32
+B	run2	unpack/map(getdata, 2 messages)	28.7	30.4	1	32
+B	run2	graph/iid n=1000 10 it	4.2968292e7	4.3505416e7	-1	23212224
+B	run2	graph/chain n=300 10 it	6.5596041e7	6.6187459e7	-1	31938304
+A	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	793.7	820.1	16	960
+A	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	805.1	830.9	17	992
+A	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	26.8	28.0	2	144
+A	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	797.3	839.5	17	992
+A	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	923.8	952.4	14	640
+A	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	932.3	963.5	15	672
+A	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.7	28.0	2	144
+A	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	942.5	978.1	15	672
+A	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	819.4	852.9	18	1104
+A	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	838.5	876.9	19	1136
+A	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	26.3	27.9	2	144
+A	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	858.9	890.4	19	1136
+A	run2	map/direct  Bernoulli->out m[p]::Beta	955.9	992.6	18	1024
+A	run2	map/barrier Bernoulli->out m[p]::Beta	974.4	1006.4	19	1056
+A	run2	resolve/barrier Bernoulli->out m[p]::Beta	26.9	28.2	2	144
+A	run2	deferred/barrier Bernoulli->out m[p]::Beta	981.0	1019.0	19	1056
+A	run2	map/direct  Categorical->p q[out]::Categorical	1095.8	1133.3	21	1168
+A	run2	map/barrier Categorical->p q[out]::Categorical	1075.0	1141.7	22	1200
+A	run2	resolve/barrier Categorical->p q[out]::Categorical	26.9	28.4	2	144
+A	run2	deferred/barrier Categorical->p q[out]::Categorical	1112.5	1154.2	22	1200
+A	run2	joint-marginal/barrier NMV (out,μ)	148.2	161.6	11	544
+A	run2	product/NMV x3	1329.1	1391.7	12	384
+A	run2	product/deferred NMV x3	1383.3	1433.4	12	384
+A	run2	product/NMV x10	1504.1	1554.1	33	944
+A	run2	product/deferred NMV x10	1700.0	1750.0	33	944
+A	run2	product/MvNMC(3) x3	2129.7	2222.2	34	1648
+A	run2	marginal-at-variable/NMV x3	1579.1	1625.0	14	464
+A	run2	stream/marginal combineLatest x3 round	111.5	114.1	0	0
+A	run2	stream/message combineLatest x3 round	108.7	112.6	0	0
+A	run2	event/AfterMessageRuleCallEvent, result::Any	263.1	275.2	3	128
+A	run2	barrier/kernel(tuple, ann), Any-typed args	24.2	25.0	1	32
+A	run2	barrier/kernel(tuple, ann), known types	3.5	3.7	0	0
+A	run2	barrier/kernel(a, b), Any-typed args	24.0	25.2	1	32
+A	run2	unpack/map(getdata, 2 messages)	2.0	2.1	0	0
+A	run2	graph/iid n=1000 10 it	1.2245875e7	1.2518166e7	-1	13446112
+A	run2	graph/chain n=300 10 it	2.464875e7	2.4889125e7	-1	20297952
+C	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	462.2	491.5	18	1008
+C	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	495.0	519.2	19	1040
+C	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	131.3	137.3	2	48
+C	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	496.1	516.5	19	1040
+C	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	428.0	447.2	14	560
+C	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	456.2	472.5	15	592
+C	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	133.5	139.5	2	48
+C	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	452.6	469.3	15	592
+C	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	508.2	529.9	20	1152
+C	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	541.4	557.3	21	1184
+C	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	185.7	190.4	2	48
+C	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	529.3	558.5	21	1184
+C	run3	map/direct  Bernoulli->out m[p]::Beta	467.1	487.7	18	944
+C	run3	map/barrier Bernoulli->out m[p]::Beta	501.3	516.8	19	976
+C	run3	resolve/barrier Bernoulli->out m[p]::Beta	125.0	131.5	2	48
+C	run3	deferred/barrier Bernoulli->out m[p]::Beta	506.9	529.0	19	976
+C	run3	map/direct  Categorical->p q[out]::Categorical	594.1	622.9	21	1072
+C	run3	map/barrier Categorical->p q[out]::Categorical	624.8	648.3	22	1104
+C	run3	resolve/barrier Categorical->p q[out]::Categorical	303.0	315.3	4	208
+C	run3	deferred/barrier Categorical->p q[out]::Categorical	645.3	672.6	22	1104
+C	run3	joint-marginal/barrier NMV (out,μ)	233.0	247.4	16	688
+C	run3	product/NMV x3	716.7	757.0	13	368
+C	run3	product/deferred NMV x3	739.9	762.0	13	368
+C	run3	product/NMV x10	1404.1	1479.2	48	1264
+C	run3	product/deferred NMV x10	1412.5	1495.8	48	1264
+C	run3	product/MvNMC(3) x3	1570.9	1620.9	35	1632
+C	run3	marginal-at-variable/NMV x3	821.3	854.7	14	400
+C	run3	stream/marginal combineLatest x3 round	109.4	116.1	0	0
+C	run3	stream/message combineLatest x3 round	106.5	112.8	0	0
+C	run3	event/AfterMessageRuleCallEvent, result::Any	265.7	278.4	3	128
+C	run3	barrier/kernel(tuple, ann), Any-typed args	23.4	24.1	1	32
+C	run3	barrier/kernel(tuple, ann), known types	3.5	3.8	0	0
+C	run3	barrier/kernel(a, b), Any-typed args	23.7	24.4	1	32
+C	run3	unpack/map(getdata, 2 messages)	28.1	30.5	1	32
+C	run3	graph/iid n=1000 10 it	1.4615833e7	1.482775e7	-1	19530864
+C	run3	graph/chain n=300 10 it	3.2545042e7	3.2908208e7	-1	25378704
+A	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	780.4	823.3	16	960
+A	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	812.5	833.3	17	992
+A	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	26.8	28.0	2	144
+A	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	820.0	844.9	17	992
+A	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	897.6	947.6	14	640
+A	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	930.6	956.8	15	672
+A	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.8	28.4	2	144
+A	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	934.0	974.0	15	672
+A	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	823.3	853.4	18	1104
+A	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	826.9	876.8	19	1136
+A	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	26.4	27.8	2	144
+A	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	840.6	890.4	19	1136
+A	run3	map/direct  Bernoulli->out m[p]::Beta	929.2	991.6	18	1024
+A	run3	map/barrier Bernoulli->out m[p]::Beta	967.6	1006.9	19	1056
+A	run3	resolve/barrier Bernoulli->out m[p]::Beta	26.8	28.2	2	144
+A	run3	deferred/barrier Bernoulli->out m[p]::Beta	972.2	1020.8	19	1056
+A	run3	map/direct  Categorical->p q[out]::Categorical	1058.3	1116.7	21	1168
+A	run3	map/barrier Categorical->p q[out]::Categorical	1066.6	1129.2	22	1200
+A	run3	resolve/barrier Categorical->p q[out]::Categorical	26.7	28.4	2	144
+A	run3	deferred/barrier Categorical->p q[out]::Categorical	1079.2	1150.0	22	1200
+A	run3	joint-marginal/barrier NMV (out,μ)	147.5	161.4	11	544
+A	run3	product/NMV x3	1312.5	1370.8	12	384
+A	run3	product/deferred NMV x3	1379.2	1429.1	12	384
+A	run3	product/NMV x10	1525.0	1558.3	33	944
+A	run3	product/deferred NMV x10	1670.9	1758.3	33	944
+A	run3	product/MvNMC(3) x3	2152.8	2222.2	34	1648
+A	run3	marginal-at-variable/NMV x3	1554.2	1633.3	14	464
+A	run3	stream/marginal combineLatest x3 round	110.8	114.7	0	0
+A	run3	stream/message combineLatest x3 round	109.7	114.1	0	0
+A	run3	event/AfterMessageRuleCallEvent, result::Any	266.4	279.7	3	128
+A	run3	barrier/kernel(tuple, ann), Any-typed args	24.1	25.4	1	32
+A	run3	barrier/kernel(tuple, ann), known types	3.4	3.7	0	0
+A	run3	barrier/kernel(a, b), Any-typed args	24.1	24.9	1	32
+A	run3	unpack/map(getdata, 2 messages)	2.0	2.1	0	0
+A	run3	graph/iid n=1000 10 it	1.2026459e7	1.2883792e7	-1	13446112
+A	run3	graph/chain n=300 10 it	2.4969042e7	2.53915e7	-1	20297952
+E	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	217.7	231.0	15	880
+E	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	242.6	253.6	16	912
+E	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	132.0	140.1	2	48
+E	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	253.1	269.9	16	912
+E	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	163.7	172.6	11	432
+E	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	185.2	193.7	12	464
+E	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	134.2	141.0	2	48
+E	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	200.8	211.0	12	464
+E	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	249.4	262.9	17	1024
+E	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	269.4	288.5	18	1056
+E	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	180.9	190.7	2	48
+E	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	278.3	297.8	18	1056
+E	run3	map/direct  Bernoulli->out m[p]::Beta	206.5	220.1	15	848
+E	run3	map/barrier Bernoulli->out m[p]::Beta	231.1	248.2	16	880
+E	run3	resolve/barrier Bernoulli->out m[p]::Beta	129.7	135.3	2	48
+E	run3	deferred/barrier Bernoulli->out m[p]::Beta	258.8	278.0	16	880
+E	run3	map/direct  Categorical->p q[out]::Categorical	306.2	328.2	18	960
+E	run3	map/barrier Categorical->p q[out]::Categorical	325.7	344.6	19	992
+E	run3	resolve/barrier Categorical->p q[out]::Categorical	271.4	283.7	4	208
+E	run3	deferred/barrier Categorical->p q[out]::Categorical	345.5	377.2	19	992
+E	run3	joint-marginal/barrier NMV (out,μ)	232.1	254.2	16	688
+E	run3	product/NMV x3	225.9	242.5	11	288
+E	run3	product/deferred NMV x3	232.4	248.2	11	288
+E	run3	product/NMV x10	936.2	1017.2	46	1184
+E	run3	product/deferred NMV x10	928.8	1003.5	46	1184
+E	run3	product/MvNMC(3) x3	1041.6	1083.4	33	1552
+E	run3	marginal-at-variable/NMV x3	270.3	292.2	12	320
+E	run3	stream/marginal combineLatest x3 round	108.0	113.4	0	0
+E	run3	stream/message combineLatest x3 round	114.0	120.0	0	0
+E	run3	event/AfterMessageRuleCallEvent, result::Any	268.6	281.2	3	128
+E	run3	barrier/kernel(tuple, ann), Any-typed args	24.3	25.4	1	32
+E	run3	barrier/kernel(tuple, ann), known types	3.4	3.7	0	0
+E	run3	barrier/kernel(a, b), Any-typed args	23.9	25.0	1	32
+E	run3	unpack/map(getdata, 2 messages)	28.7	30.5	1	32
+E	run3	graph/iid n=1000 10 it	1.1450834e7	1.1981875e7	-1	16969808
+E	run3	graph/chain n=300 10 it	1.7903541e7	1.8102458e7	-1	21500848
+B	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	1529.2	1600.0	26	1440
+B	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1550.0	1620.8	27	1472
+B	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	680.8	711.8	6	272
+B	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1579.2	1629.2	27	1472
+B	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1837.5	1895.8	21	864
+B	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1854.2	1916.7	22	896
+B	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1004.1	1062.5	6	272
+B	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1875.0	1937.5	22	896
+B	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1650.0	1750.0	28	1584
+B	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1704.2	1779.1	29	1616
+B	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	737.3	759.6	6	272
+B	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1700.0	1791.7	29	1616
+B	run3	map/direct  Bernoulli->out m[p]::Beta	1362.5	1416.6	23	1312
+B	run3	map/barrier Bernoulli->out m[p]::Beta	1375.0	1433.3	24	1344
+B	run3	resolve/barrier Bernoulli->out m[p]::Beta	712.2	744.0	6	272
+B	run3	deferred/barrier Bernoulli->out m[p]::Beta	1416.7	1475.0	24	1344
+B	run3	map/direct  Categorical->p q[out]::Categorical	1562.5	1608.3	26	1440
+B	run3	map/barrier Categorical->p q[out]::Categorical	1562.5	1633.4	27	1472
+B	run3	resolve/barrier Categorical->p q[out]::Categorical	802.1	841.2	7	400
+B	run3	deferred/barrier Categorical->p q[out]::Categorical	1579.1	1641.6	27	1472
+B	run3	joint-marginal/barrier NMV (out,μ)	1258.3	1308.3	19	880
+B	run3	product/NMV x3	1358.3	1391.7	13	400
+B	run3	product/deferred NMV x3	1354.1	1400.0	13	400
+B	run3	product/NMV x10	3982.1	4172.7	48	1408
+B	run3	product/deferred NMV x10	3958.4	4148.9	48	1408
+B	run3	product/MvNMC(3) x3	2083.3	2222.2	35	1664
+B	run3	marginal-at-variable/NMV x3	1366.7	1408.4	14	432
+B	run3	stream/marginal combineLatest x3 round	106.5	111.9	0	0
+B	run3	stream/message combineLatest x3 round	111.0	116.9	0	0
+B	run3	event/AfterMessageRuleCallEvent, result::Any	260.7	274.1	3	128
+B	run3	barrier/kernel(tuple, ann), Any-typed args	22.2	22.9	1	32
+B	run3	barrier/kernel(tuple, ann), known types	3.5	3.8	0	0
+B	run3	barrier/kernel(a, b), Any-typed args	22.3	22.9	1	32
+B	run3	unpack/map(getdata, 2 messages)	29.1	30.5	1	32
+B	run3	graph/iid n=1000 10 it	4.4065125e7	4.5326417e7	-1	23212224
+B	run3	graph/chain n=300 10 it	6.7838917e7	6.9630417e7	-1	31938304
+D	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	483.3	512.2	13	832
+D	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	503.7	520.7	14	864
+D	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	25.1	26.8	2	144
+D	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	505.0	538.0	14	864
+D	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	619.3	643.7	11	512
+D	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	622.0	649.5	12	544
+D	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	25.5	27.3	2	144
+D	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	643.5	673.4	12	544
+D	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	504.8	531.0	15	976
+D	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	529.3	552.5	16	1008
+D	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	24.9	26.6	2	144
+D	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	536.8	565.8	16	1008
+D	run3	map/direct  Bernoulli->out m[p]::Beta	660.7	686.3	15	928
+D	run3	map/barrier Bernoulli->out m[p]::Beta	673.1	712.2	16	960
+D	run3	resolve/barrier Bernoulli->out m[p]::Beta	25.3	27.1	2	144
+D	run3	deferred/barrier Bernoulli->out m[p]::Beta	680.6	717.3	16	960
+D	run3	map/direct  Categorical->p q[out]::Categorical	746.9	778.8	18	1056
+D	run3	map/barrier Categorical->p q[out]::Categorical	781.2	807.1	19	1088
+D	run3	resolve/barrier Categorical->p q[out]::Categorical	24.7	27.2	2	144
+D	run3	deferred/barrier Categorical->p q[out]::Categorical	783.5	817.0	19	1088
+D	run3	joint-marginal/barrier NMV (out,μ)	152.9	161.1	11	544
+D	run3	product/NMV x3	473.7	495.9	9	272
+D	run3	product/deferred NMV x3	536.1	558.6	9	272
+D	run3	product/NMV x10	656.7	685.8	30	832
+D	run3	product/deferred NMV x10	815.8	865.3	30	832
+D	run3	product/MvNMC(3) x3	1266.7	1320.8	31	1536
+D	run3	marginal-at-variable/NMV x3	518.8	541.9	10	320
+D	run3	stream/marginal combineLatest x3 round	110.0	114.9	0	0
+D	run3	stream/message combineLatest x3 round	106.4	114.1	0	0
+D	run3	event/AfterMessageRuleCallEvent, result::Any	260.3	271.9	3	128
+D	run3	barrier/kernel(tuple, ann), Any-typed args	22.6	23.4	1	32
+D	run3	barrier/kernel(tuple, ann), known types	3.5	3.7	0	0
+D	run3	barrier/kernel(a, b), Any-typed args	22.7	23.4	1	32
+D	run3	unpack/map(getdata, 2 messages)	2.0	2.1	0	0
+D	run3	graph/iid n=1000 10 it	8.877667e6	9.311833e6	-1	10884416
+D	run3	graph/chain n=300 10 it	1.7790083e7	1.8354125e7	-1	17662496

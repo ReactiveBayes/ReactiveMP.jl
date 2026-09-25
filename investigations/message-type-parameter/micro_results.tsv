@@ -1,0 +1,186 @@
+A	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	786.8	829.3	16	960
+A	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	783.5	830.8	17	992
+A	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	26.0	27.8	2	144
+A	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	805.1	844.8	17	992
+A	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	879.2	929.4	14	640
+A	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	915.3	963.5	15	672
+A	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.3	28.0	2	144
+A	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	908.6	974.5	15	672
+A	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	800.8	846.7	18	1104
+A	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	825.3	870.7	19	1136
+A	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	25.8	27.7	2	144
+A	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	836.9	883.3	19	1136
+A	run1	map/direct  Bernoulli->out m[p]::Beta	937.5	998.2	18	1024
+A	run1	map/barrier Bernoulli->out m[p]::Beta	943.6	1009.8	19	1056
+A	run1	resolve/barrier Bernoulli->out m[p]::Beta	26.2	28.1	2	144
+A	run1	deferred/barrier Bernoulli->out m[p]::Beta	948.5	1017.2	19	1056
+A	run1	map/direct  Categorical->p q[out]::Categorical	1041.6	1112.5	21	1168
+A	run1	map/barrier Categorical->p q[out]::Categorical	1070.8	1133.3	22	1200
+A	run1	resolve/barrier Categorical->p q[out]::Categorical	26.7	28.4	2	144
+A	run1	deferred/barrier Categorical->p q[out]::Categorical	1083.3	1150.0	22	1200
+A	run1	joint-marginal/barrier NMV (out,μ)	148.2	164.2	11	544
+A	run1	product/NMV x3	1295.8	1354.1	12	384
+A	run1	product/deferred NMV x3	1362.5	1420.8	12	384
+A	run1	product/NMV x10	1458.4	1545.8	33	944
+A	run1	product/deferred NMV x10	1670.8	1758.3	33	944
+A	run1	product/MvNMC(3) x3	2088.0	2222.2	34	1648
+A	run1	marginal-at-variable/NMV x3	1604.2	1637.5	14	464
+A	run1	stream/marginal combineLatest x3 round	109.8	118.8	0	0
+A	run1	stream/message combineLatest x3 round	108.6	115.7	0	0
+A	run1	graph/iid n=1000 10 it	1.2004375e7	1.2130667e7	-1	13446112
+A	run1	graph/chain n=300 10 it	2.3800042e7	2.4255417e7	-1	20297952
+B	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	1545.9	1625.0	26	1440
+B	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1541.6	1620.8	27	1472
+B	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	665.3	700.1	6	272
+B	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1529.1	1645.8	27	1472
+B	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1870.8	1920.9	21	864
+B	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1833.3	1925.0	22	896
+B	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1037.5	1058.3	6	272
+B	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1887.5	1941.7	22	896
+B	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1679.1	1762.5	28	1584
+B	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1654.1	1779.2	29	1616
+B	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	720.4	761.5	6	272
+B	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1670.8	1800.0	29	1616
+B	run1	map/direct  Bernoulli->out m[p]::Beta	1425.0	1470.8	23	1312
+B	run1	map/barrier Bernoulli->out m[p]::Beta	1354.2	1433.3	24	1344
+B	run1	resolve/barrier Bernoulli->out m[p]::Beta	701.7	737.9	6	272
+B	run1	deferred/barrier Bernoulli->out m[p]::Beta	1375.0	1450.0	24	1344
+B	run1	map/direct  Categorical->p q[out]::Categorical	1620.9	1716.7	26	1440
+B	run1	map/barrier Categorical->p q[out]::Categorical	1550.0	1650.0	27	1472
+B	run1	resolve/barrier Categorical->p q[out]::Categorical	819.6	858.3	7	400
+B	run1	deferred/barrier Categorical->p q[out]::Categorical	1612.5	1658.3	27	1472
+B	run1	joint-marginal/barrier NMV (out,μ)	1266.7	1312.5	19	880
+B	run1	product/NMV x3	1333.3	1404.2	13	400
+B	run1	product/deferred NMV x3	1345.8	1416.7	13	400
+B	run1	product/NMV x10	4023.9	4232.1	48	1408
+B	run1	product/deferred NMV x10	4029.7	4244.0	48	1408
+B	run1	product/MvNMC(3) x3	2120.3	2328.7	35	1664
+B	run1	marginal-at-variable/NMV x3	1429.1	1470.8	14	432
+B	run1	stream/marginal combineLatest x3 round	113.6	118.5	0	0
+B	run1	stream/message combineLatest x3 round	107.6	113.4	0	0
+B	run1	graph/iid n=1000 10 it	4.4205e7	4.5833292e7	-1	23212224
+B	run1	graph/chain n=300 10 it	6.8017625e7	7.3688458e7	-1	31938304
+B	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	1566.7	1625.0	26	1440
+B	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1558.3	1620.9	27	1472
+B	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	662.7	696.7	6	272
+B	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1579.1	1629.2	27	1472
+B	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1820.9	1929.1	21	864
+B	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1887.5	1933.3	22	896
+B	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1025.0	1062.5	6	272
+B	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1887.5	1950.0	22	896
+B	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1700.0	1750.0	28	1584
+B	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1687.5	1758.4	29	1616
+B	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	721.7	758.0	6	272
+B	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1712.5	1775.0	29	1616
+B	run2	map/direct  Bernoulli->out m[p]::Beta	1350.0	1425.0	23	1312
+B	run2	map/barrier Bernoulli->out m[p]::Beta	1387.5	1437.5	24	1344
+B	run2	resolve/barrier Bernoulli->out m[p]::Beta	714.9	743.4	6	272
+B	run2	deferred/barrier Bernoulli->out m[p]::Beta	1379.1	1462.5	24	1344
+B	run2	map/direct  Categorical->p q[out]::Categorical	1554.2	1637.5	26	1440
+B	run2	map/barrier Categorical->p q[out]::Categorical	1558.3	1645.9	27	1472
+B	run2	resolve/barrier Categorical->p q[out]::Categorical	816.1	855.4	7	400
+B	run2	deferred/barrier Categorical->p q[out]::Categorical	1595.9	1670.8	27	1472
+B	run2	joint-marginal/barrier NMV (out,μ)	1258.3	1312.5	19	880
+B	run2	product/NMV x3	1320.8	1395.9	13	400
+B	run2	product/deferred NMV x3	1333.3	1416.6	13	400
+B	run2	product/NMV x10	4017.9	4214.3	48	1408
+B	run2	product/deferred NMV x10	4101.1	4220.3	48	1408
+B	run2	product/MvNMC(3) x3	2111.1	2231.4	35	1664
+B	run2	marginal-at-variable/NMV x3	1341.6	1420.8	14	432
+B	run2	stream/marginal combineLatest x3 round	108.4	113.1	0	0
+B	run2	stream/message combineLatest x3 round	115.5	119.9	0	0
+B	run2	graph/iid n=1000 10 it	4.408175e7	4.4594958e7	-1	23212224
+B	run2	graph/chain n=300 10 it	6.9136125e7	7.2541834e7	-1	31938304
+A	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	770.3	795.7	16	960
+A	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	801.4	829.1	17	992
+A	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	26.6	28.1	2	144
+A	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	816.8	853.7	17	992
+A	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	888.9	915.0	14	640
+A	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	919.4	943.5	15	672
+A	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.9	28.2	2	144
+A	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	901.5	954.5	15	672
+A	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	783.0	824.2	18	1104
+A	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	807.2	848.9	19	1136
+A	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	26.4	27.8	2	144
+A	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	819.3	862.5	19	1136
+A	run2	map/direct  Bernoulli->out m[p]::Beta	944.0	975.2	18	1024
+A	run2	map/barrier Bernoulli->out m[p]::Beta	963.2	995.1	19	1056
+A	run2	resolve/barrier Bernoulli->out m[p]::Beta	26.3	28.6	2	144
+A	run2	deferred/barrier Bernoulli->out m[p]::Beta	948.8	1012.8	19	1056
+A	run2	map/direct  Categorical->p q[out]::Categorical	1033.3	1083.3	21	1168
+A	run2	map/barrier Categorical->p q[out]::Categorical	1066.7	1108.4	22	1200
+A	run2	resolve/barrier Categorical->p q[out]::Categorical	26.8	28.5	2	144
+A	run2	deferred/barrier Categorical->p q[out]::Categorical	1075.0	1129.1	22	1200
+A	run2	joint-marginal/barrier NMV (out,μ)	150.0	164.8	11	544
+A	run2	product/NMV x3	1333.3	1379.2	12	384
+A	run2	product/deferred NMV x3	1383.3	1433.3	12	384
+A	run2	product/NMV x10	1487.5	1554.2	33	944
+A	run2	product/deferred NMV x10	1687.5	1750.0	33	944
+A	run2	product/MvNMC(3) x3	2148.1	2236.1	34	1648
+A	run2	marginal-at-variable/NMV x3	1537.5	1625.0	14	464
+A	run2	stream/marginal combineLatest x3 round	107.7	113.2	0	0
+A	run2	stream/message combineLatest x3 round	110.1	117.9	0	0
+A	run2	graph/iid n=1000 10 it	1.2223417e7	1.344925e7	-1	13446112
+A	run2	graph/chain n=300 10 it	2.3994917e7	2.4822458e7	-1	20297952
+A	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	779.6	810.9	16	960
+A	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	806.2	841.3	17	992
+A	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	26.7	28.3	2	144
+A	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	820.6	854.4	17	992
+A	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	898.8	933.5	14	640
+A	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	922.6	976.2	15	672
+A	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.8	28.4	2	144
+A	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	933.6	981.5	15	672
+A	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	811.0	848.6	18	1104
+A	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	836.4	870.0	19	1136
+A	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	26.3	28.2	2	144
+A	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	850.1	900.5	19	1136
+A	run3	map/direct  Bernoulli->out m[p]::Beta	933.0	996.4	18	1024
+A	run3	map/barrier Bernoulli->out m[p]::Beta	964.8	1006.5	19	1056
+A	run3	resolve/barrier Bernoulli->out m[p]::Beta	26.6	28.4	2	144
+A	run3	deferred/barrier Bernoulli->out m[p]::Beta	977.5	1019.2	19	1056
+A	run3	map/direct  Categorical->p q[out]::Categorical	1070.8	1108.4	21	1168
+A	run3	map/barrier Categorical->p q[out]::Categorical	1083.3	1129.2	22	1200
+A	run3	resolve/barrier Categorical->p q[out]::Categorical	26.8	28.4	2	144
+A	run3	deferred/barrier Categorical->p q[out]::Categorical	1104.2	1154.2	22	1200
+A	run3	joint-marginal/barrier NMV (out,μ)	154.6	165.1	11	544
+A	run3	product/NMV x3	1320.8	1375.0	12	384
+A	run3	product/deferred NMV x3	1337.5	1445.8	12	384
+A	run3	product/NMV x10	1479.1	1550.0	33	944
+A	run3	product/deferred NMV x10	1695.8	1758.3	33	944
+A	run3	product/MvNMC(3) x3	2148.1	2250.0	34	1648
+A	run3	marginal-at-variable/NMV x3	1545.9	1633.3	14	464
+A	run3	stream/marginal combineLatest x3 round	105.5	111.2	0	0
+A	run3	stream/message combineLatest x3 round	110.5	118.5	0	0
+A	run3	graph/iid n=1000 10 it	1.2109667e7	1.2440958e7	-1	13446112
+A	run3	graph/chain n=300 10 it	2.4321792e7	2.5067709e7	-1	20297952
+B	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	1533.3	1620.9	26	1440
+B	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1541.7	1616.7	27	1472
+B	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	678.7	707.5	6	272
+B	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	1558.3	1641.6	27	1472
+B	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1837.5	1929.1	21	864
+B	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1850.0	1912.5	22	896
+B	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1025.0	1062.5	6	272
+B	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	1862.5	1941.7	22	896
+B	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1670.8	1766.7	28	1584
+B	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1679.2	1775.0	29	1616
+B	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	738.2	769.4	6	272
+B	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	1700.0	1804.1	29	1616
+B	run3	map/direct  Bernoulli->out m[p]::Beta	1366.6	1437.5	23	1312
+B	run3	map/barrier Bernoulli->out m[p]::Beta	1387.5	1466.7	24	1344
+B	run3	resolve/barrier Bernoulli->out m[p]::Beta	720.9	745.4	6	272
+B	run3	deferred/barrier Bernoulli->out m[p]::Beta	1395.8	1470.8	24	1344
+B	run3	map/direct  Categorical->p q[out]::Categorical	1562.5	1645.8	26	1440
+B	run3	map/barrier Categorical->p q[out]::Categorical	1575.0	1658.4	27	1472
+B	run3	resolve/barrier Categorical->p q[out]::Categorical	833.3	866.3	7	400
+B	run3	deferred/barrier Categorical->p q[out]::Categorical	1591.6	1675.0	27	1472
+B	run3	joint-marginal/barrier NMV (out,μ)	1270.8	1337.5	19	880
+B	run3	product/NMV x3	1354.1	1408.3	13	400
+B	run3	product/deferred NMV x3	1354.1	1408.3	13	400
+B	run3	product/NMV x10	4166.6	4327.3	48	1408
+B	run3	product/deferred NMV x10	4107.1	4256.0	48	1408
+B	run3	product/MvNMC(3) x3	2106.4	2199.1	35	1664
+B	run3	marginal-at-variable/NMV x3	1375.0	1420.8	14	432
+B	run3	stream/marginal combineLatest x3 round	116.2	123.7	0	0
+B	run3	stream/message combineLatest x3 round	115.8	122.3	0	0
+B	run3	graph/iid n=1000 10 it	4.2331416e7	4.4647292e7	-1	23212224
+B	run3	graph/chain n=300 10 it	6.6521416e7	7.04155e7	-1	31938304

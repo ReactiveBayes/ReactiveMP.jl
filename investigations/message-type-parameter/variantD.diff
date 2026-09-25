@@ -1,0 +1,133 @@
+diff --git a/src/callbacks.jl b/src/callbacks.jl
+index b9d27b70..4c3ee95f 100644
+--- a/src/callbacks.jl
++++ b/src/callbacks.jl
+@@ -53,6 +53,14 @@ Does nothing and returns the event if `callbacks` is `nothing`.
+ 
+ See also: [`ReactiveMP.handle_event`](@ref), [`ReactiveMP.Event`](@ref), [`ReactiveMP.merge_callbacks`](@ref)
+ """
++# Builds the event only when there are callbacks to hand it to: an event whose fields are
++# inferred abstractly is instantiated at run time, which costs even when nothing listens.
++macro invoke_callback(callbacks, event)
++    return esc(:(let cb = $callbacks
++        cb === nothing ? nothing : invoke_callback(cb, $event)
++    end))
++end
++
+ function invoke_callback(callbacks::Nothing, event::Event)
+     return event
+ end
+diff --git a/src/message.jl b/src/message.jl
+index d16427d8..50b5bfeb 100644
+--- a/src/message.jl
++++ b/src/message.jl
+@@ -215,7 +215,7 @@ function compute_product_of_two_messages(
+         right::Message,
+     )
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         BeforeProductOfTwoMessagesEvent(
+             variable, context, left, right, span_id
+@@ -237,7 +237,7 @@ function compute_product_of_two_messages(
+ 
+     if context.form_constraint_check_strategy === FormConstraintCheckEach()
+         form_span_id = generate_span_id(context.callbacks)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             BeforeFormConstraintAppliedEvent(
+                 variable,
+@@ -249,7 +249,7 @@ function compute_product_of_two_messages(
+         )
+         unconstrained_dist = new_dist
+         new_dist = constrain_form(context.form_constraint, new_dist)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             AfterFormConstraintAppliedEvent(
+                 variable,
+@@ -268,7 +268,7 @@ function compute_product_of_two_messages(
+     new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+     result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
+ 
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         AfterProductOfTwoMessagesEvent(
+             variable, context, left, right, result, new_ann, span_id
+@@ -298,7 +298,7 @@ function compute_product_of_messages(
+         variable::AbstractVariable, context::MessageProductContext, messages
+     )
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         BeforeProductOfMessagesEvent(variable, context, messages, span_id),
+     )
+@@ -312,14 +312,14 @@ function compute_product_of_messages(
+     if context.form_constraint_check_strategy === FormConstraintCheckLast()
+         dist = getdata(result)
+         form_span_id = generate_span_id(context.callbacks)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             BeforeFormConstraintAppliedEvent(
+                 variable, context, FormConstraintCheckLast(), dist, form_span_id
+             ),
+         )
+         constrained_dist = constrain_form(context.form_constraint, dist)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             AfterFormConstraintAppliedEvent(
+                 variable,
+@@ -338,7 +338,7 @@ function compute_product_of_messages(
+         )
+     end
+ 
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         AfterProductOfMessagesEvent(
+             variable, context, messages, result, span_id
+@@ -622,7 +622,7 @@ function (mapping::MessageMapping)(messages, marginals)
+     )
+ 
+     span_id = generate_span_id(mapping.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         mapping.callbacks,
+         BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id),
+     )
+@@ -661,7 +661,7 @@ function (mapping::MessageMapping)(messages, marginals)
+         end
+     end
+ 
+-    invoke_callback(
++    @invoke_callback(
+         mapping.callbacks,
+         AfterMessageRuleCallEvent(
+             mapping, messages, marginals, result, annotations, span_id
+diff --git a/src/variables/random.jl b/src/variables/random.jl
+index 85a9a540..486e0d60 100644
+--- a/src/variables/random.jl
++++ b/src/variables/random.jl
+@@ -162,14 +162,14 @@ function _compute_marginal_from_messages(
+     )
+     context = options.prod_context_for_marginal_computation
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         BeforeMarginalComputationEvent(randomvar, context, messages, span_id),
+     )
+     result = as_marginal(
+         compute_product_of_messages(randomvar, context, messages)
+     )
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         AfterMarginalComputationEvent(
+             randomvar, context, messages, result, span_id

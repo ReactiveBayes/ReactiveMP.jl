@@ -1,0 +1,106 @@
+A	ssm1	first-infer-s	11.541383958	compile-s	11.400202946
+A	ssm2	first-infer-s	8.295204125	compile-s	8.081036708
+A	iid	first-infer-s	3.356150875	compile-s	3.280567337
+A	nl	first-infer-s	6.403279958	compile-s	6.304867826
+A	hmm	first-infer-s	8.851481	compile-s	8.746352228
+A	ReactiveMP	specialisations	5849
+A	ReactiveMP	  invoke_callback	226
+A	ReactiveMP	  #48#val	226
+A	ReactiveMP	  #45#val	226
+A	ReactiveMP	  #52#val	226
+A	ReactiveMP	  #47#val	226
+A	ReactiveMP	  #46#val	226
+A	ReactiveMP	  MessageMapping	141
+A	ReactiveMP	  as_message	129
+A	ReactiveMP	  #158#val	129
+A	ReactiveMP	  rule_marginals	108
+A	ReactiveMP	  #205#val	108
+A	ReactiveMP	  rule_annotations	88
+A	ReactiveMP	  #207#val	88
+A	ReactiveMP	  connect!	84
+A	ReactiveMP	  #125#val	83
+A	Rocket	specialisations	19581
+A	Rocket	  #407#val	1153
+A	Rocket	  on_subscribe!	1153
+A	Rocket	  subscribe!	998
+A	Rocket	  #358#val	998
+A	Rocket	  call_source_proxy!	614
+A	Rocket	  as_proxy_observable	611
+A	Rocket	  on_next!	575
+A	Rocket	  #319#val	575
+A	Rocket	  #357#val	561
+A	Rocket	  as_subscribable	561
+A	Rocket	  next!	478
+A	Rocket	  #316#val	478
+A	Rocket	  on_call!	470
+A	Rocket	  #439#val	470
+A	Rocket	  call_actor_proxy!	410
+A	RxInfer	specialisations	1265
+A	RxInfer	  limitstack	65
+A	RxInfer	  #578#val	52
+A	RxInfer	  apply_diagnostic_check	52
+A	RxInfer	  apply_init!	44
+A	RxInfer	  __infer_create_factor_graph_model	35
+A	RxInfer	  getvarref	29
+A	RxInfer	  save_init!	28
+A	RxInfer	  LimitStackSubscription	27
+A	RxInfer	  isdeclarednode	21
+A	RxInfer	  ConditionedModelGenerator	20
+A	RxInfer	  apply_alias_transformation	20
+A	RxInfer	  #599#val	20
+A	RxInfer	  getconditioned_on	20
+A	RxInfer	  condition_on	20
+A	RxInfer	  #597#val	20
+B	ssm1	first-infer-s	11.598993125	compile-s	11.440928073
+B	ssm2	first-infer-s	8.110564042	compile-s	7.873635994
+B	iid	first-infer-s	3.45709175	compile-s	3.347055748
+B	nl	first-infer-s	6.087982291	compile-s	5.938390832
+B	hmm	first-infer-s	8.959886333	compile-s	8.799455117
+B	ReactiveMP	specialisations	4384
+B	ReactiveMP	  rule_marginals	168
+B	ReactiveMP	  #205#val	168
+B	ReactiveMP	  MessageMapping	141
+B	ReactiveMP	  as_message	116
+B	ReactiveMP	  #158#val	116
+B	ReactiveMP	  invoke_callback	115
+B	ReactiveMP	  #48#val	115
+B	ReactiveMP	  #45#val	115
+B	ReactiveMP	  #52#val	115
+B	ReactiveMP	  #47#val	115
+B	ReactiveMP	  #46#val	115
+B	ReactiveMP	  connect!	75
+B	ReactiveMP	  #125#val	72
+B	ReactiveMP	  scratch_for!	72
+B	ReactiveMP	  AfterMessageRuleCallEvent	66
+B	Rocket	specialisations	18123
+B	Rocket	  #407#val	1145
+B	Rocket	  on_subscribe!	1145
+B	Rocket	  subscribe!	990
+B	Rocket	  #358#val	990
+B	Rocket	  call_source_proxy!	591
+B	Rocket	  as_proxy_observable	588
+B	Rocket	  #357#val	505
+B	Rocket	  as_subscribable	505
+B	Rocket	  on_call!	442
+B	Rocket	  #439#val	442
+B	Rocket	  call_actor_proxy!	386
+B	Rocket	  call_operator!	385
+B	Rocket	  on_next!	374
+B	Rocket	  #319#val	374
+B	Rocket	  next!	349
+B	RxInfer	specialisations	1251
+B	RxInfer	  limitstack	58
+B	RxInfer	  #578#val	52
+B	RxInfer	  apply_diagnostic_check	52
+B	RxInfer	  apply_init!	44
+B	RxInfer	  __infer_create_factor_graph_model	35
+B	RxInfer	  getvarref	29
+B	RxInfer	  save_init!	28
+B	RxInfer	  LimitStackSubscription	27
+B	RxInfer	  isdeclarednode	21
+B	RxInfer	  ConditionedModelGenerator	20
+B	RxInfer	  apply_alias_transformation	20
+B	RxInfer	  #599#val	20
+B	RxInfer	  getconditioned_on	20
+B	RxInfer	  condition_on	20
+B	RxInfer	  #597#val	20

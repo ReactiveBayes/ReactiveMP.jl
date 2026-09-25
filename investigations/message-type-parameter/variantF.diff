@@ -1,0 +1,197 @@
+diff --git a/src/ReactiveMP.jl b/src/ReactiveMP.jl
+index e93a0746..0d574c69 100644
+--- a/src/ReactiveMP.jl
++++ b/src/ReactiveMP.jl
+@@ -31,7 +31,7 @@ include("marginal.jl")
+ 
+ # A marginal is formed in its public type (`MessagePassingRulesBase.public_equivalent`): an
+ # efficient working type such as `WishartFast` does not leave the product of messages.
+-as_marginal(message::Message) = Marginal(MessagePassingRulesBase.public_equivalent(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
++as_marginal(message::Message) = new_marginal(MessagePassingRulesBase.public_equivalent(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
+ as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal))
+ 
+ getdata(::Nothing) = nothing
+diff --git a/src/callbacks.jl b/src/callbacks.jl
+index b9d27b70..4c3ee95f 100644
+--- a/src/callbacks.jl
++++ b/src/callbacks.jl
+@@ -53,6 +53,14 @@ Does nothing and returns the event if `callbacks` is `nothing`.
+ 
+ See also: [`ReactiveMP.handle_event`](@ref), [`ReactiveMP.Event`](@ref), [`ReactiveMP.merge_callbacks`](@ref)
+ """
++# Builds the event only when there are callbacks to hand it to: an event whose fields are
++# inferred abstractly is instantiated at run time, which costs even when nothing listens.
++macro invoke_callback(callbacks, event)
++    return esc(:(let cb = $callbacks
++        cb === nothing ? nothing : invoke_callback(cb, $event)
++    end))
++end
++
+ function invoke_callback(callbacks::Nothing, event::Event)
+     return event
+ end
+diff --git a/src/marginal.jl b/src/marginal.jl
+index 86407093..4ffdcac2 100644
+--- a/src/marginal.jl
++++ b/src/marginal.jl
+@@ -79,6 +79,10 @@ end
+ Marginal(data, is_clamped::Bool, is_initial::Bool) =
+     Marginal(data, is_clamped, is_initial, AnnotationDict())
+ 
++# Variant F: as `new_message`.
++@noinline new_marginal(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
++    Marginal(data, is_clamped, is_initial, annotations)
++
+ function Base.show(io::IO, marginal::Marginal)
+     print(io, "Marginal(", getdata(marginal), ")")
+     ann = getannotations(marginal)
+@@ -296,7 +300,7 @@ function (mapping::MarginalMapping)(dependencies)
+         compute_marginal(mapping, messages, marginals)
+     end
+ 
+-    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
++    return new_marginal(marginal, is_marginal_clamped, is_marginal_initial, AnnotationDict())
+ end
+ 
+ function compute_marginal(mapping::MarginalMapping, messages, marginals)
+diff --git a/src/message.jl b/src/message.jl
+index d16427d8..c0126dc5 100644
+--- a/src/message.jl
++++ b/src/message.jl
+@@ -87,6 +87,11 @@ end
+ Message(data, is_clamped::Bool, is_initial::Bool) =
+     Message(data, is_clamped, is_initial, AnnotationDict())
+ 
++# Variant F: a barrier for building a `Message` from a value inferred abstractly (a rule's
++# result): the call dispatches on the value's type, instead of computing `D` at run time.
++@noinline new_message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
++    Message(data, is_clamped, is_initial, annotations)
++
+ """
+     as_message(::AbstractMessage)
+ 
+@@ -215,7 +220,7 @@ function compute_product_of_two_messages(
+         right::Message,
+     )
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         BeforeProductOfTwoMessagesEvent(
+             variable, context, left, right, span_id
+@@ -237,7 +242,7 @@ function compute_product_of_two_messages(
+ 
+     if context.form_constraint_check_strategy === FormConstraintCheckEach()
+         form_span_id = generate_span_id(context.callbacks)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             BeforeFormConstraintAppliedEvent(
+                 variable,
+@@ -249,7 +254,7 @@ function compute_product_of_two_messages(
+         )
+         unconstrained_dist = new_dist
+         new_dist = constrain_form(context.form_constraint, new_dist)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             AfterFormConstraintAppliedEvent(
+                 variable,
+@@ -268,7 +273,7 @@ function compute_product_of_two_messages(
+     new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+     result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
+ 
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         AfterProductOfTwoMessagesEvent(
+             variable, context, left, right, result, new_ann, span_id
+@@ -298,7 +303,7 @@ function compute_product_of_messages(
+         variable::AbstractVariable, context::MessageProductContext, messages
+     )
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         BeforeProductOfMessagesEvent(variable, context, messages, span_id),
+     )
+@@ -312,14 +317,14 @@ function compute_product_of_messages(
+     if context.form_constraint_check_strategy === FormConstraintCheckLast()
+         dist = getdata(result)
+         form_span_id = generate_span_id(context.callbacks)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             BeforeFormConstraintAppliedEvent(
+                 variable, context, FormConstraintCheckLast(), dist, form_span_id
+             ),
+         )
+         constrained_dist = constrain_form(context.form_constraint, dist)
+-        invoke_callback(
++        @invoke_callback(
+             context.callbacks,
+             AfterFormConstraintAppliedEvent(
+                 variable,
+@@ -330,7 +335,7 @@ function compute_product_of_messages(
+                 form_span_id,
+             ),
+         )
+-        result = Message(
++        result = new_message(
+             constrained_dist,
+             is_clamped(result),
+             is_initial(result),
+@@ -338,7 +343,7 @@ function compute_product_of_messages(
+         )
+     end
+ 
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         AfterProductOfMessagesEvent(
+             variable, context, messages, result, span_id
+@@ -622,7 +627,7 @@ function (mapping::MessageMapping)(messages, marginals)
+     )
+ 
+     span_id = generate_span_id(mapping.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         mapping.callbacks,
+         BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id),
+     )
+@@ -661,12 +666,12 @@ function (mapping::MessageMapping)(messages, marginals)
+         end
+     end
+ 
+-    invoke_callback(
++    @invoke_callback(
+         mapping.callbacks,
+         AfterMessageRuleCallEvent(
+             mapping, messages, marginals, result, annotations, span_id
+         ),
+     )
+ 
+-    return Message(result, is_message_clamped, is_message_initial, annotations)
++    return new_message(result, is_message_clamped, is_message_initial, annotations)
+ end
+diff --git a/src/variables/random.jl b/src/variables/random.jl
+index 85a9a540..486e0d60 100644
+--- a/src/variables/random.jl
++++ b/src/variables/random.jl
+@@ -162,14 +162,14 @@ function _compute_marginal_from_messages(
+     )
+     context = options.prod_context_for_marginal_computation
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         BeforeMarginalComputationEvent(randomvar, context, messages, span_id),
+     )
+     result = as_marginal(
+         compute_product_of_messages(randomvar, context, messages)
+     )
+-    invoke_callback(
++    @invoke_callback(
+         context.callbacks,
+         AfterMarginalComputationEvent(
+             randomvar, context, messages, result, span_id

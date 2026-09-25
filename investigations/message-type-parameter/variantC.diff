@@ -1,0 +1,340 @@
+diff --git a/src/marginal.jl b/src/marginal.jl
+index 86407093..5accccb3 100644
+--- a/src/marginal.jl
++++ b/src/marginal.jl
+@@ -69,8 +69,8 @@ This is intentional: annotations are out-of-band metadata about *how* a marginal
+ not part of the belief it represents. Compare `getannotations` explicitly when you need
+ annotation-sensitive equality.
+ """
+-mutable struct Marginal{D}
+-    const data::D
++mutable struct Marginal
++    const data::Any
+     const is_clamped::Bool
+     const is_initial::Bool
+     const annotations::AnnotationDict
+@@ -173,7 +173,6 @@ MacroHelpers.@proxy_methods Marginal getdata [
+ 
+ # Eltype is special here, because it should be only defined on types
+ # Otherwise it causes invalidations and slower compile times
+-Base.eltype(::Type{<:Marginal{D}}) where {D} = Base.eltype(D)
+ 
+ Distributions.mean(fn::Function, marginal::Marginal) =
+     mean(fn, getdata(marginal))
+@@ -189,7 +188,6 @@ function as_marginal end
+ 
+ as_marginal(marginal::Marginal) = marginal
+ 
+-dropproxytype(::Type{<:Marginal{T}}) where {T} = T
+ 
+ skip_initial() = filter(v -> !is_initial(v))
+ skip_clamped() = filter(v -> !is_clamped(v))
+@@ -290,20 +288,25 @@ function (mapping::MarginalMapping)(dependencies)
+             __check_all(is_clamped_or_initial, marginals)
+     )
+ 
+-    marginal = if has_missing_inputs(messages) || has_missing_inputs(marginals)
++    mdata, qdata = data_of(messages), data_of(marginals)
++    marginal = if has_missing_data(mdata) || has_missing_data(qdata)
+         missing
+     else
+-        compute_marginal(mapping, messages, marginals)
++        run_marginal_rule(mapping, mdata, qdata, annotations_of(messages), annotations_of(marginals))
+     end
+ 
+     return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
+ end
+ 
+-function compute_marginal(mapping::MarginalMapping, messages, marginals)
++compute_marginal(mapping::MarginalMapping, messages, marginals) =
++    run_marginal_rule(mapping, data_of(messages), data_of(marginals), annotations_of(messages), annotations_of(marginals))
++
++# Variant C: the kernel of a marginal rule call, compiled for the concrete types of the data.
++function run_marginal_rule(mapping::MarginalMapping, mdata, qdata, mann, qann)
+     fform = marginal_mapping_fform(mapping)
+-    args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
++    args = kernel_arguments(mapping.msgs_names, mdata, mapping.marginals_names, qdata)
+     spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)))
+-    ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
++    ann = kernel_annotations(mapping.msgs_names, mann, mapping.marginals_names, qann, qdata, MessagePassingRulesBase.NoAnnotations())
+     ctx = rule_context(mapping.factornode, mapping.rng)
+     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+     scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+diff --git a/src/message.jl b/src/message.jl
+index d16427d8..46a95431 100644
+--- a/src/message.jl
++++ b/src/message.jl
+@@ -77,8 +77,8 @@ This is intentional: annotations are out-of-band metadata about *how* a message
+ not part of the belief the message represents. Compare `getannotations` explicitly when you
+ need annotation-sensitive equality.
+ """
+-mutable struct Message{D} <: AbstractMessage
+-    const data::D
++mutable struct Message <: AbstractMessage
++    const data::Any
+     const is_clamped::Bool
+     const is_initial::Bool
+     const annotations::AnnotationDict
+@@ -233,6 +233,21 @@ function compute_product_of_two_messages(
+     # process distributions
+     left_dist = getdata(left)
+     right_dist = getdata(right)
++    # Variant C: the barrier, one dynamic dispatch on the two distributions' types.
++    new_dist, new_ann = product_kernel(variable, context, left_dist, right_dist, getannotations(left), getannotations(right))::Tuple{Any, AnnotationDict}
++    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
++
++    invoke_callback(
++        context.callbacks,
++        AfterProductOfTwoMessagesEvent(
++            variable, context, left, right, result, new_ann, span_id
++        ),
++    )
++
++    return result
++end
++
++function product_kernel(variable, context, left_dist, right_dist, left_ann, right_ann)
+     new_dist = prod(context.prod_constraint, left_dist, right_dist)
+ 
+     if context.form_constraint_check_strategy === FormConstraintCheckEach()
+@@ -263,19 +278,8 @@ function compute_product_of_two_messages(
+     end
+ 
+     # process annotations
+-    left_ann = getannotations(left)
+-    right_ann = getannotations(right)
+     new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+-    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
+-
+-    invoke_callback(
+-        context.callbacks,
+-        AfterProductOfTwoMessagesEvent(
+-            variable, context, left, right, result, new_ann, span_id
+-        ),
+-    )
+-
+-    return result
++    return new_dist, new_ann
+ end
+ 
+ # Sometimes we call the product on the `DeferredMessage` that need to be casted to a `Message`
+@@ -439,7 +443,6 @@ MacroHelpers.@proxy_methods Message getdata [
+ 
+ # Eltype is special here, because it should be only defined on types
+ # Otherwise it causes invalidations and slower compile times
+-Base.eltype(::Type{<:Message{D}}) where {D} = Base.eltype(D)
+ 
+ Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
+ 
+@@ -498,7 +501,6 @@ function as_message(
+     return computed
+ end
+ 
+-dropproxytype(::Type{<:Message{T}}) where {T} = T
+ 
+ ## Message observable
+ 
+@@ -636,17 +638,12 @@ function (mapping::MessageMapping)(messages, marginals)
+         end
+     end
+ 
+-    result = if has_missing_inputs(messages) || has_missing_inputs(marginals)
++    mdata, qdata = data_of(messages), data_of(marginals)
++    result = if has_missing_data(mdata) || has_missing_data(qdata)
+         missing
+     else
+-        fform = message_mapping_fform(mapping)
+-        args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
+-        spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)))
+-        ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
+-        ctx = rule_context(mapping.factornode, mapping.rng)
+-        algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+-        scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+-        MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
++        # Variant C: the barrier, one dynamic dispatch on the data's concrete types.
++        run_message_rule(mapping, mdata, qdata, annotations_of(messages), annotations_of(marginals), annotations)
+     end
+ 
+     # Run annotation processors after the rule has been executed
+@@ -670,3 +667,15 @@ function (mapping::MessageMapping)(messages, marginals)
+ 
+     return Message(result, is_message_clamped, is_message_initial, annotations)
+ end
++
++# Variant C: the kernel of a message rule call, compiled for the concrete types of the data.
++function run_message_rule(mapping::MessageMapping, mdata, qdata, mann, qann, annotations)
++    fform = message_mapping_fform(mapping)
++    args = kernel_arguments(mapping.msgs_names, mdata, mapping.marginals_names, qdata)
++    spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)))
++    ann = kernel_annotations(mapping.msgs_names, mann, mapping.marginals_names, qann, qdata, annotations)
++    ctx = rule_context(mapping.factornode, mapping.rng)
++    algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
++    scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
++    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
++end
+diff --git a/src/rule_arguments.jl b/src/rule_arguments.jl
+index 25b8bf0f..f15e878f 100644
+--- a/src/rule_arguments.jl
++++ b/src/rule_arguments.jl
+@@ -129,7 +129,9 @@ rule_marginals(f::F, ::Nothing, ::Nothing) where {F} = Marginals(NamedTuple())
+ # the methods that existed when it was defined. They are closed; no other method is expected.
+ # The block labels of a marginal holding a `FactorizedCluster`, or `nothing`.
+ factorized_blocks(::Type) = nothing
+-factorized_blocks(::Type{<:Marginal{<:MessagePassingRulesBase.FactorizedCluster{K}}}) where {K} = K
++# Variant B (untyped `Marginal`): the blocks are read off the type of the marginal's data,
++# which only a call with the data themselves can see.
++factorized_blocks(::Type{<:MessagePassingRulesBase.FactorizedCluster{K}}) where {K} = K
+ 
+ # A block's value is its part of the cluster; its annotations are the joint's.
+ block_value(::typeof(getdata), marginal, block) = getdata(marginal)[block]
+@@ -145,10 +147,20 @@ function partitions(blocks, members)
+     return all(block -> issorted(map(member -> findfirst(==(member), members), block)), blocks)
+ end
+ 
++# Variant B: a joint may hold a `FactorizedCluster`, which the untyped `Marginal` no longer
++# says in its type; such calls go through the data's types, a dynamic dispatch.
+ @generated function rule_marginals(f::F, ::Val{N}, inputs::Tuple) where {F, N}
++    any(name -> name isa Tuple, N) || return :(rule_marginals(f, Val{N}(), inputs, nothing))
++    return :(rule_marginals(f, Val{N}(), inputs, map(marginal_data, inputs)))
++end
++# Only a `Marginal`'s data can hold the blocks, as with `Marginal{<:FactorizedCluster}` before.
++marginal_data(marginal::Marginal) = getdata(marginal)
++marginal_data(_) = nothing
++
++@generated function rule_marginals(f::F, ::Val{N}, inputs::Tuple, datas) where {F, N}
+     singlekeys, singlevalues, jointkeys, jointvalues, i = Symbol[], Any[], Any[], Any[], 1
+     for name in N
+-        blocks = name isa Tuple ? factorized_blocks(inputs.parameters[i]) : nothing
++        blocks = name isa Tuple ? factorized_blocks(datas.parameters[i]) : nothing
+         if blocks !== nothing
+             partitions(blocks, name) || return :(
+                 throw(
+@@ -210,3 +222,35 @@ function resolve_rule(spec)
+     spec isa MessagePassingRulesBase.RuleNotFound && throw(RuleNotFoundError(spec))
+     return spec
+ end
++
++## Variant C: function barriers ("kernel functions") over the unpacked data.
++#
++# The untyped `Message`/`Marginal` hide their data's type from the compiler. The engine unpacks
++# the data into a tuple once, and passes it to a kernel with one method: the call is one dynamic
++# dispatch, and the kernel is compiled for the concrete types of the data, so building
++# `RuleArgs`, resolving the rule and running it are all static inside it.
++
++# The inputs' data, and their annotations, as tuples; `nothing` stays `nothing`.
++data_of(::Nothing) = nothing
++data_of(inputs::Tuple) = map(getdata, inputs)
++annotations_of(::Nothing) = nothing
++annotations_of(inputs::Tuple) = map(getannotations, inputs)
++
++# Reads an input that is already the data.
++struct AsData end
++(::AsData)(data) = data
++block_value(::AsData, data, block) = data[block]
++
++# Barrier: the missing check over the unpacked data, compiled per data types.
++has_missing_data(::Nothing) = false
++has_missing_data(data::Tuple) = any(ismissing, TupleTools.flatten(data))
++
++# The kernel's `Marginals`: `inputs` are the data (`AsData()`) or the annotations (`identity`),
++# `data` the data, whose types say which joints are factorised clusters.
++kernel_marginals(f, ::Nothing, ::Nothing, ::Nothing) = Marginals(NamedTuple())
++kernel_marginals(f, names::Val, inputs::Tuple, data::Tuple) = rule_marginals(f, names, inputs, data)
++
++kernel_arguments(mnames, mdata, qnames, qdata) =
++    RuleArgs(rule_messages(AsData(), mnames, mdata), kernel_marginals(AsData(), qnames, qdata, qdata))
++kernel_annotations(mnames, mann, qnames, qann, qdata, out) =
++    RuleAnnotations(rule_messages(identity, mnames, mann), kernel_marginals(identity, qnames, qann, qdata), out)
+diff --git a/src/score/node.jl b/src/score/node.jl
+index c66214f7..4f696824 100644
+--- a/src/score/node.jl
++++ b/src/score/node.jl
+@@ -76,12 +76,8 @@ function score(
+             algorithm = algorithm
+ 
+         (marginals) -> begin
+-            args = RuleArgs(rule_messages(getdata, nothing, nothing), rule_marginals(getdata, marginals_names, marginals))
+-            spec = resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args))
+-            ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
+-            average_energy = MessagePassingRulesBase.execute_rule(
+-                spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing
+-            )
++            # Variant C: the barrier, over the marginals' data.
++            average_energy = average_energy_kernel(fform, algorithm, ctx, marginals_names, data_of(marginals), annotations_of(marginals))
+             clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
+             return convert(T, average_energy - clusters_entropy)
+         end
+@@ -92,3 +88,13 @@ function score(
+ 
+     return stream_of_scores
+ end
++
++# Variant C: the kernel of an average energy, compiled for the concrete types of the data.
++function average_energy_kernel(fform, algorithm, ctx, marginals_names, qdata, qann)
++    args = kernel_arguments(nothing, nothing, marginals_names, qdata)
++    spec = resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args))
++    ann = kernel_annotations(nothing, nothing, marginals_names, qann, qdata, MessagePassingRulesBase.NoAnnotations())
++    return MessagePassingRulesBase.execute_rule(
++        spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing
++    )
++end
+diff --git a/src/score/score.jl b/src/score/score.jl
+index e961c485..d5b129ff 100644
+--- a/src/score/score.jl
++++ b/src/score/score.jl
+@@ -25,11 +25,12 @@ struct KLDivergence end
+ 
+ # A `FactorizedCluster`'s entropy is the sum over its blocks, which BayesBase's
+ # `FactorizedJoint` gives; v6 needed a method of its own for its NamedTuple joints.
+-score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
++score(::DifferentialEntropy, marginal::Marginal) = score_entropy(getdata(marginal))
++score_entropy(data) = entropy(data)
+ # A point mass whose point is a distribution, the constant of a prior `x ~ d`, is −∞ like any
+ # other, in the distribution's float type; BayesBase would take the distribution's type for it.
+-score(::DifferentialEntropy, marginal::Marginal{<:PointMass{<:Distribution}}) =
+-    BayesBase.MinusInfinity(paramfloattype(BayesBase.getpointmass(getdata(marginal))))
++score_entropy(data::PointMass{<:Distribution}) =
++    BayesBase.MinusInfinity(paramfloattype(BayesBase.getpointmass(data)))
+ 
+ ## Kl KlDivergence
+ 
+diff --git a/test/variables/variable_tests.jl b/test/variables/variable_tests.jl
+index b377f0fa..975d4ed4 100644
+--- a/test/variables/variable_tests.jl
++++ b/test/variables/variable_tests.jl
+@@ -41,7 +41,7 @@
+         subscription = subscribe!(
+             get_stream_of_marginals(variable),
+             (marginal) -> begin
+-                @test typeof(marginal) <: Marginal{T}
++                @test typeof(marginal) <: Marginal && ReactiveMP.typeofdata(marginal) <: T
+                 @test mean(marginal) === mean(dist)
+                 @test var(marginal) === var(dist)
+                 marginal_subscription_flag = true
+@@ -70,7 +70,7 @@
+                     variable, node_index
+                 ),
+                 (message) -> begin
+-                    @test typeof(message) <: Message{T}
++                    @test typeof(message) <: Message && ReactiveMP.typeofdata(message) <: T
+                     @test mean(message) === mean(dist)
+                     @test var(message) === var(dist)
+                     message_subscription_flag = true
+@@ -125,7 +125,7 @@
+             (marginals) -> begin
+                 @test length(marginals) === length(variables)
+                 foreach(marginals) do marginal
+-                    @test typeof(marginal) <: Marginal{T}
++                    @test typeof(marginal) <: Marginal && ReactiveMP.typeofdata(marginal) <: T
+                     @test mean(marginal) === mean(dist)
+                     @test var(marginal) === var(dist)
+                 end
+@@ -163,7 +163,7 @@
+                 (messages) -> begin
+                     @test length(messages) === length(variables)
+                     foreach(messages) do message
+-                        @test typeof(message) <: Message{T}
++                        @test typeof(message) <: Message && ReactiveMP.typeofdata(message) <: T
+                         @test mean(message) === mean(dist)
+                         @test var(message) === var(dist)
+                     end
