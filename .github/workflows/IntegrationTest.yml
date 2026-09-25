@@ -22,12 +22,15 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                julia-version: ['1']
+                # Julia 1.13 while the rewrite targets it: the downstream branch wires this
+                # repository with [sources].
+                julia-version: ['1.13']
                 os: [ubuntu-latest]
                 package:
                     # Add downstream packages that depend on ReactiveMP here
                     # Each entry runs as a separate parallel job
-                    - { user: ReactiveBayes, repo: RxInfer.jl }
+                    # RxInfer's branch adapted to ReactiveMP v7 (Phase 7), until its release.
+                    - { user: ReactiveBayes, repo: RxInfer.jl, ref: refactor/reactivemp-v7 }
 
 
         steps:
@@ -44,16 +47,22 @@ jobs:
               uses: actions/checkout@v6
               with:
                   repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
+                  ref: ${{ matrix.package.ref }}
                   path: downstream
+
+            # The branch reaches ReactiveMP and its rule packages through [sources] at the
+            # sibling path `../ReactiveMP.jl`; here this repository is the downstream's parent.
+            - name: Point the downstream's [sources] at this checkout
+              run: sed -i 's#\.\./ReactiveMP\.jl#..#g' downstream/Project.toml
 
             - name: Load this and run the downstream tests
               shell: julia --project=downstream {0}
               run: |
                   using Pkg
                   try
-                      # Force downstream to use this PR version of ReactiveMP
-                      Pkg.develop(PackageSpec(path="."))  # add this version
-                      Pkg.update()
+                      # The downstream's [sources] already use this checkout of ReactiveMP
+                      # and its rule packages.
+                      Pkg.instantiate()
                       Pkg.test()  # run downstream tests
                   catch err
                       err isa Pkg.Resolve.ResolverError || rethrow()
