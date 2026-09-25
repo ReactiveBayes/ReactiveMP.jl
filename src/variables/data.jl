@@ -147,7 +147,7 @@ function activate!(
     return nothing
 end
 
-__link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false))
+__link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false, AnnotationDict(), 0))
 __link_getmarginal(l::AbstractVariable) = get_stream_of_marginals(l)
 __link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
     collectLatest(map(get_stream_of_marginals, l))
@@ -199,7 +199,8 @@ function new_observation!(datavar::DataVariable, data)
     __assert_valid_observation(datavar, data)
     return new_observation!(datavar, PointMass(data))
 end
-new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
+# An observation is a point mass: its log scale is zero.
+new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false, AnnotationDict(), 0))
 new_observation!(datavar::DataVariable, ::Missing) = next!(datavar.messageout, Message(missing, false, false))
 
 # `PointMass` only defines `variate_form` (and hence usable `mean`/`var`) for these payloads.

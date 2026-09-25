@@ -93,7 +93,7 @@ end
         qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
         qa = MvNormalMeanCovariance(a0, diageye(1))
         qW = Wishart(dy, diageye(dy))
-        result = call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => qyx,), q = (a = qa, W = qW), algorithm = CTVMP(transformation))
+        result = getresult(call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => qyx,), q = (a = qa, W = qW), algorithm = CTVMP(transformation)))
         @test result isa MvNormalWeightedMeanPrecision{Float64}
         ξ, Λ = weightedmean_precision(result)
         @test length(ξ) == 1 && all(isfinite, ξ)

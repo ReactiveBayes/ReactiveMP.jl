@@ -34,18 +34,18 @@ spread(a, b, d) = [a + (b - a) * (k - 1) / max(d - 1, 1) for k in 1:d]
             (:γ, NamedTuple(), (θ = q_θ,), ((:y, :x) => joint,)),
         ]
         for (target, m, q, clusters) in cases
-            v7 = call_message_update_rule(SoftDot, target; m, q, clusters)
+            v7 = getresult(call_message_update_rule(SoftDot, target; m, q, clusters))
             v6_q = isempty(clusters) ? q : merge((y_x = last(only(clusters)),), q)
             v6, _ = v6_message_update(ReactiveMP.SoftDot, target, m, v6_q)
             @test compare_with_reference("SoftDot:$target:order $d", v7, v6; node = "SoftDot", target = ":$target").outcome === :agree
         end
-        v7 = call_marginal_update_rule(SoftDot, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ))
+        v7 = getresult(call_marginal_update_rule(SoftDot, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ)))
         v6 = v6_marginal_update(ReactiveMP.SoftDot, (:y, :x), (y = m_y, x = m_x), (θ = q_θ, γ = q_γ))
         @test compare_with_reference("SoftDot:joint:order $d", v7, v6; node = "SoftDot", target = "(:y, :x)").outcome === :agree
-        v7 = call_average_energy(SoftDot; q = (y = q_y, θ = q_θ, x = q_x, γ = q_γ))
+        v7 = getresult(call_average_energy(SoftDot; q = (y = q_y, θ = q_θ, x = q_x, γ = q_γ)))
         v6 = v6_average_energy(ReactiveMP.SoftDot, (y = q_y, θ = q_θ, x = q_x, γ = q_γ))
         @test compare_with_reference("SoftDot:energy:meanfield:order $d", v7, v6; node = "SoftDot", target = "energy").outcome === :agree
-        v7 = call_average_energy(SoftDot; clusters = ((:y, :x) => joint,), q = (θ = q_θ, γ = q_γ))
+        v7 = getresult(call_average_energy(SoftDot; clusters = ((:y, :x) => joint,), q = (θ = q_θ, γ = q_γ)))
         v6 = v6_average_energy(ReactiveMP.SoftDot, (θ = q_θ, γ = q_γ), ((:y, :x) => joint,))
         @test compare_with_reference("SoftDot:energy:structured:order $d", v7, v6; node = "SoftDot", target = "energy").outcome === :agree
     end

@@ -68,7 +68,7 @@
     const ANNOTATES = RuleSpec(
         kind = :message, node = Gauss, target = Target{:μ}, algorithm = DefaultAlgorithm, signature = RuleArgs,
         body = (output, scratch, algo, ctx, args, ann, target) -> begin
-            MessagePassingRulesBase.annotate!(ann, :logscale, 1.5)
+            MessagePassingRulesBase.annotate!(ann, :note, 1.5)
             ctx.node
         end,
     )
@@ -76,7 +76,7 @@
 
     const POINT = RuleArgs(m = (μ = 1.0, v = 2.0))
 
-    measure(args) = (message_passing_rule(Gauss, Target(:out), DefaultAlgorithm(), args); @allocated message_passing_rule(Gauss, Target(:out), DefaultAlgorithm(), args))
+    measure(args) = (getresult(message_passing_rule(Gauss, Target(:out), DefaultAlgorithm(), args)); @allocated getresult(message_passing_rule(Gauss, Target(:out), DefaultAlgorithm(), args)))
 end
 
 @testitem "dispatch:resolution" tags = [:base] setup = [HandRules] begin
@@ -105,25 +105,25 @@ end
         RuleContext, RuleAnnotations, AnnotationStore, getannotation, RuleNotFoundError
     H = HandRules
 
-    @test message_passing_rule(H.Gauss, Target(:out), DefaultAlgorithm(), H.POINT) == 3.0
+    @test getresult(message_passing_rule(H.Gauss, Target(:out), DefaultAlgorithm(), H.POINT)) == 3.0
 
     mix_args = RuleArgs(q = (p = (10.0, 20.0, 30.0),))
-    @test message_passing_rule(H.Mix, IndexedTarget(:m, 2), H.MixtureVMP(), mix_args) == 20.0
+    @test getresult(message_passing_rule(H.Mix, IndexedTarget(:m, 2), H.MixtureVMP(), mix_args)) == 20.0
 
     joint_args = RuleArgs(m = (out = 1.0, μ = 2.0))
-    @test message_passing_marginalrule(H.Gauss, ClusterTarget((:out, :μ)), DefaultAlgorithm(), joint_args) == (1.0, 2.0)
-    @test message_passing_average_energy(H.Gauss, DefaultAlgorithm(), RuleArgs()) == 42.0
+    @test getresult(message_passing_marginalrule(H.Gauss, ClusterTarget((:out, :μ)), DefaultAlgorithm(), joint_args)) == (1.0, 2.0)
+    @test getresult(message_passing_average_energy(H.Gauss, DefaultAlgorithm(), RuleArgs())) == 42.0
 
     # `ctx` carries the node; `ann` is where the rule writes.
     ann = RuleAnnotations(out = AnnotationStore())
     node = :some_node_instance
-    @test message_passing_rule(H.Gauss, Target(:μ), DefaultAlgorithm(), RuleArgs(), RuleContext(node = node), ann) === node
-    @test getannotation(ann, :logscale) == 1.5
+    @test getresult(message_passing_rule(H.Gauss, Target(:μ), DefaultAlgorithm(), RuleArgs(), RuleContext(node = node), ann)) === node
+    @test getannotation(ann, :note) == 1.5
 
     # The same not-found path for all three.
-    @test_throws RuleNotFoundError message_passing_rule(H.Missing, Target(:out), DefaultAlgorithm(), H.POINT)
-    @test_throws RuleNotFoundError message_passing_marginalrule(H.Missing, ClusterTarget((:a, :b)), DefaultAlgorithm(), RuleArgs())
-    @test_throws RuleNotFoundError message_passing_average_energy(H.Missing, DefaultAlgorithm(), RuleArgs())
+    @test_throws RuleNotFoundError getresult(message_passing_rule(H.Missing, Target(:out), DefaultAlgorithm(), H.POINT))
+    @test_throws RuleNotFoundError getresult(message_passing_marginalrule(H.Missing, ClusterTarget((:a, :b)), DefaultAlgorithm(), RuleArgs()))
+    @test_throws RuleNotFoundError getresult(message_passing_average_energy(H.Missing, DefaultAlgorithm(), RuleArgs()))
 end
 
 @testitem "dispatch:fallback-contract" tags = [:base] setup = [HandRules] begin
@@ -155,14 +155,14 @@ end
     H = HandRules
 
     args = RuleArgs(m = (x = [1.0, 2.0],))
-    allocated = message_passing_rule(H.Gauss, Target(:v), DefaultAlgorithm(), args)
+    allocated = getresult(message_passing_rule(H.Gauss, Target(:v), DefaultAlgorithm(), args))
     buffer = zeros(2)
-    inplace = message_passing_rule!(buffer, H.Gauss, Target(:v), DefaultAlgorithm(), args)
+    inplace = getresult(message_passing_rule!(buffer, H.Gauss, Target(:v), DefaultAlgorithm(), args))
     @test inplace === buffer
     @test allocated == inplace == [2.0, 4.0]
 
     # `rule!` on a rule with no in-place form is an error, not a silent allocation.
-    @test_throws ArgumentError message_passing_rule!(zeros(1), H.Gauss, Target(:out), DefaultAlgorithm(), H.POINT)
+    @test_throws ArgumentError getresult(message_passing_rule!(zeros(1), H.Gauss, Target(:out), DefaultAlgorithm(), H.POINT))
 end
 
 @testitem "dispatch:purity" tags = [:base] setup = [HandRules] begin
@@ -183,7 +183,7 @@ end
     using MessagePassingRulesBase: Target, DefaultAlgorithm
     H = HandRules
     # Resolve and execute at a call site that can reach exactly one rule.
-    @test (@inferred message_passing_rule(H.Gauss, Target(:out), DefaultAlgorithm(), H.POINT)) === 3.0
+    @test (@inferred getresult(message_passing_rule(H.Gauss, Target(:out), DefaultAlgorithm(), H.POINT))) === 3.0
     @test H.measure(H.POINT) == 0
 end
 
@@ -205,8 +205,8 @@ end
     @test :matrix_correction in DEFAULT_CONTEXT_SERVICES
     @test RuleContext().matrix_correction === nothing
     args = RuleArgs(m = (in = 2.0,))
-    @test message_passing_rule(Corrected, Target(:out), DefaultAlgorithm(), args) == 4.0
-    @test message_passing_rule(Corrected, Target(:out), DefaultAlgorithm(), args, RuleContext(matrix_correction = x -> 10x)) == 20.0
+    @test getresult(message_passing_rule(Corrected, Target(:out), DefaultAlgorithm(), args)) == 4.0
+    @test getresult(message_passing_rule(Corrected, Target(:out), DefaultAlgorithm(), args, RuleContext(matrix_correction = x -> 10x))) == 20.0
     @test matrix_correction(RuleContext(), nothing) === nothing
     @test matrix_correction(RuleContext(matrix_correction = :set), :default) === :set
 
@@ -231,7 +231,7 @@ end
     @test ctx.scale === 3.0 && ctx.rng === nothing
     @test ctx isa RuleContext{@NamedTuple{scale::Float64}} && ismutable(ctx)
     args = RuleArgs(m = (in = 2.0,))
-    @test message_passing_rule(Scaled, Target(:out), DefaultAlgorithm(), args, ctx) == 6.0
+    @test getresult(message_passing_rule(Scaled, Target(:out), DefaultAlgorithm(), args, ctx)) == 6.0
     spec = find_message_rule(Scaled, Target(:out), DefaultAlgorithm(), args)
     @test missing_services(spec, ctx) == () && missing_services(spec, RuleContext()) == (:scale,)
     # Merging overrides and adds, as an engine layers a model's services over its defaults.

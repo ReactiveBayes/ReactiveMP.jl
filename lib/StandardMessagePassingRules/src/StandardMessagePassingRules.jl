@@ -12,8 +12,8 @@ factorisation declares an algorithm of its own, as [`NormalMixture`](@ref) does.
 module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
-using MessagePassingRulesBase: annotate!, matrix_correction, hasannotation, getannotation
-using StatsFuns: log2π, logπ
+using MessagePassingRulesBase: matrix_correction
+using StatsFuns: log2π, logπ, loghalf
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma, besselk
 using Base.Broadcast: BroadcastFunction
 using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument

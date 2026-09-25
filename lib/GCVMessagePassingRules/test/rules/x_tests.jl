@@ -7,7 +7,7 @@
     # depends on `y` and `x` only through `y - x`, so the two rules are structurally identical
     # with the roles swapped; the cross-rule symmetry itself is asserted in `y_tests.jl`.
     algorithm = default_algorithm()
-    to_x(; kwargs...) = call_message_update_rule(GCV, :x; algorithm, kwargs...)
+    to_x(; kwargs...) = getresult(call_message_update_rule(GCV, :x; algorithm, kwargs...))
 
     @testset "Belief-propagation-style: (m_y, q_z, q_κ, q_ω)" begin
         for (; q_y, q_z, q_κ, q_ω) in parameter_sets()

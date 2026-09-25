@@ -26,10 +26,11 @@ tuple in member order, with `nothing` where the rule does not take a member.
 
 Each case is also run with its inputs converted to other float types (`float_types`), checking
 that the result's type follows, unless `check_type_promotion = false`. Tolerances are `atol`
-and `rtol`. A case that expects annotations as well as a value gives an
-[`ExpectedWithAnnotations`](@ref). A rule that reads its inputs' annotations, such as a mixture's
-log scales, is called directly with them: `call_message_update_rule(node, target; m, ann =
-RuleAnnotations(m = …))`. A rule with [scratch](@ref rules-defining-scratch) is also run on a
+and `rtol`. A case that expects a log scale as well as a value gives an
+[`ExpectedWithLogScale`](@ref); the log scale is checked on the case's inputs, and its float type
+on every promoted run. A case for a rule that reads its inputs' log scales, such as a mixture's,
+gives them as `logscale = (out = …,)` beside `m`. A case that expects annotations gives an
+[`ExpectedWithAnnotations`](@ref). A rule with [scratch](@ref rules-defining-scratch) is also run on a
 reused scratch that [`MessagePassingRulesTestUtils.poison!`](@ref) filled with NaN, and must give
 the same result.
 
@@ -40,6 +41,7 @@ the same result.
 test_message_update_rule
 test_marginal_update_rule
 test_average_energy
+ExpectedWithLogScale
 ExpectedWithAnnotations
 check_rule_coverage
 MessagePassingRulesTestUtils.RuleCoverageGap

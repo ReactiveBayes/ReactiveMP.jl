@@ -12,7 +12,7 @@
         )
         @test_message_update_rule(
             node = T.Gauss, target = :μ,
-            cases = [(m = (out = Normal(0.0, 3.0), σ = PointMass(4.0)),) => ExpectedWithAnnotations(Normal(0.0, 5.0); logscale = 0.0)],
+            cases = [(m = (out = Normal(0.0, 3.0), σ = PointMass(4.0)),) => ExpectedWithLogScale(Normal(0.0, 5.0), 0.0)],
         )
         @test_marginal_update_rule(
             node = T.Gauss, target = (:out, :μ),
@@ -66,10 +66,10 @@ end
     end
     @test length(Recording.failures(wrong_type)) == 1
 
-    wrong_annotation = Recording.recorded() do
-        @test_message_update_rule(node = T.Gauss, target = :μ, check_type_promotion = false, cases = [(m = (out = Normal(0.0, 3.0), σ = PointMass(4.0)),) => ExpectedWithAnnotations(Normal(0.0, 5.0); logscale = 1.0)])
+    wrong_logscale = Recording.recorded() do
+        @test_message_update_rule(node = T.Gauss, target = :μ, check_type_promotion = false, cases = [(m = (out = Normal(0.0, 3.0), σ = PointMass(4.0)),) => ExpectedWithLogScale(Normal(0.0, 5.0), 1.0)])
     end
-    @test length(Recording.failures(wrong_annotation)) == 1
+    @test length(Recording.failures(wrong_logscale)) == 1
 
     ignores_buffer = Recording.recorded() do
         @test_message_update_rule(node = T.Buffered, target = :x, check_nonallocating = true, check_type_promotion = false, cases = [(m = (out = [2.0, 4.0],),) => [1.0, 2.0]])
@@ -186,4 +186,41 @@ end
         )
     end
     @test isempty(Recording.failures(set))
+end
+
+@testitem "tables:log scales" tags = [:testutils] setup = [Recording] begin
+    using MessagePassingRulesBase, MessagePassingRulesTestUtils, Distributions, BayesBase
+
+    struct Pick end
+    @define_factor_node(node = Pick, type = Stochastic, interfaces = [:out, :in])
+    # Reads the incoming log scale, which a case gives beside its messages.
+    @define_message_update_rule(
+        node = Pick, target = :out, args = (m[:in]::Normal,), logscale = from_body, reads_logscale = true,
+        body = (args) -> with_logscale(args.m[:in], args.logscale.m[:in] + 1),
+    )
+    # A computed log scale that ignores the inputs' precision.
+    @define_message_update_rule(node = Pick, target = :in, args = (m[:out]::Normal,), logscale = (args) -> log(2.0), body = (args) -> args.m[:out])
+
+    passing = Recording.recorded() do
+        @test_message_update_rule(
+            node = Pick, target = :out, check_type_promotion = false,
+            cases = [(m = (in = Normal(0.0, 1.0),), logscale = (in = 0.5,)) => ExpectedWithLogScale(Normal(0.0, 1.0), 1.5)],
+        )
+    end
+    @test isempty(Recording.failures(passing))
+
+    missing_incoming = Recording.recorded() do
+        @test_message_update_rule(node = Pick, target = :out, check_type_promotion = false, cases = [(m = (in = Normal(0.0, 1.0),),) => Normal(0.0, 1.0)])
+    end
+    @test contains(Recording.failure_text(missing_incoming), "reads the log scales of its inbound messages")
+
+    too_wide = Recording.recorded() do
+        @test_message_update_rule(
+            node = Pick, target = :in, float_types = (Float32,),
+            cases = [(m = (out = Normal(0.0, 1.0),),) => ExpectedWithLogScale(Normal(0.0, 1.0), log(2.0))],
+        )
+    end
+    @test contains(Recording.failure_text(too_wide), "the log scale is a Float64, the inputs ask for Float32")
+
+    @test_throws ArgumentError ExpectedWithAnnotations(1.0; logscale = 0.0)
 end

@@ -499,7 +499,7 @@ end
 
     annotated_dict() = begin
         ann = AnnotationDict()
-        ReactiveMP.annotate!(ann, :logscale, 1.0)
+        ReactiveMP.annotate!(ann, :note, 1.0)
         ann
     end
 
@@ -590,7 +590,7 @@ end
         mapping, (left, right), nothing, span
     )
     after_rule = AfterMessageRuleCallEvent(
-        mapping, (left, right), nothing, result, ann, span
+        mapping, (left, right), nothing, result, ann, nothing, span
     )
     @test compact(before_rule) ==
         "BeforeMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, span=ab12…)"

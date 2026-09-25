@@ -28,8 +28,8 @@ end
         return (log(2π) - mean(log, q_γ) + mean(q_γ) * Eyθx) / 2
     end
 
-    softdot_meanfield_ae(q_y, q_θ, q_x, q_γ) = call_average_energy(SoftDot; q = (y = q_y, θ = q_θ, x = q_x, γ = q_γ))
-    softdot_structured_ae(q_y_x, q_θ, q_γ) = call_average_energy(SoftDot; q = (θ = q_θ, γ = q_γ), clusters = ((:y, :x) => q_y_x,))
+    softdot_meanfield_ae(q_y, q_θ, q_x, q_γ) = getresult(call_average_energy(SoftDot; q = (y = q_y, θ = q_θ, x = q_x, γ = q_γ)))
+    softdot_structured_ae(q_y_x, q_θ, q_γ) = getresult(call_average_energy(SoftDot; q = (θ = q_θ, γ = q_γ), clusters = ((:y, :x) => q_y_x,)))
 
     @testset "AverageEnergy: mean-field variant matches the closed-form reference" begin
         # Cover a range of `mean(q_γ)` values, including `mean(q_γ) ≠ 1`, which is where an

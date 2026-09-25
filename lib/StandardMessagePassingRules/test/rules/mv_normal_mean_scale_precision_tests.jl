@@ -62,7 +62,7 @@ end
     # (d log 2π - d E[log γ] + E[γ] tr S) / 2, with γ ~ GammaShapeRate(2, 4): E[γ] = 1/2 and
     # E[log γ] = digamma(2) - log(4); S = I + I + ΔΔᵀ for Δ = (0.5, -0.5).
     q = (out = MvNormalMeanCovariance([1.5, 0.5], I2), μ = MvNormalMeanCovariance([1.0, 1.0], I2), γ = GammaShapeRate(2.0, 4.0))
-    @test call_average_energy(MvNormalMeanScalePrecision; q) ≈ (2 * log2π - 2 * (digamma(2.0) - log(4.0)) + 0.5 * (4.0 + 0.5)) / 2
+    @test getresult(call_average_energy(MvNormalMeanScalePrecision; q)) ≈ (2 * log2π - 2 * (digamma(2.0) - log(4.0)) + 0.5 * (4.0 + 0.5)) / 2
     whole = MvNormalMeanCovariance([1.0, 1.0, 1.0, 1.0], [1.0 0 0 0; 0 1.0 0 0; 0 0 1.0 0; 0 0 0 1.0])
-    @test call_average_energy(MvNormalMeanScalePrecision; q = (γ = PointMass(0.5),), clusters = ((:out, :μ) => whole,)) ≈ (2 * log2π - 2 * log(0.5) + 0.5 * 4.0) / 2
+    @test getresult(call_average_energy(MvNormalMeanScalePrecision; q = (γ = PointMass(0.5),), clusters = ((:out, :μ) => whole,))) ≈ (2 * log2π - 2 * log(0.5) + 0.5 * 4.0) / 2
 end

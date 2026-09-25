@@ -25,7 +25,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
 
     columns(x) = eachslice(x, dims = Tuple(2:ndims(x)))
-    by_columns(α, a) = sum(call_average_energy(Dirichlet; q = (out = Dirichlet(collect(α_k)), a = PointMass(collect(a_k)))) for (α_k, a_k) in zip(columns(α), columns(a)))
+    by_columns(α, a) = sum(getresult(call_average_energy(Dirichlet; q = (out = Dirichlet(collect(α_k)), a = PointMass(collect(a_k))))) for (α_k, a_k) in zip(columns(α), columns(a)))
 
     α2, a2 = [2.0 1.0; 1.5 3.0; 1.0 2.5], [1.0 2.0; 3.0 0.5; 2.0 1.5]
     α3, a3 = reshape(collect(1.0:12.0) ./ 4, 3, 2, 2), reshape(collect(12.0:-1.0:1.0) ./ 5, 3, 2, 2)

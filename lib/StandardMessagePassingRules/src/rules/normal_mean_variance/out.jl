@@ -5,14 +5,15 @@ variational_variance(q_v) = inv(mean(inv, q_v))
 @define_message_update_rule(
     node = NormalMeanVariance, target = :out,
     args = (m[:μ]::PointMass, m[:v]::PointMass),
+    logscale = 0,
     body = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
 )
 
 @define_message_update_rule(
     node = NormalMeanVariance, target = :out,
     args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
-    body = (args, ann) -> begin
-        annotate!(ann, :logscale, 0)
+    logscale = 0,
+    body = (args) -> begin
         μ_mean, μ_var = mean_var(args.m[:μ])
         NormalMeanVariance(μ_mean, μ_var + mean(args.m[:v]))
     end,
@@ -21,6 +22,7 @@ variational_variance(q_v) = inv(mean(inv, q_v))
 @define_message_update_rule(
     node = NormalMeanVariance, target = :out,
     args = (q[:μ]::PointMass, q[:v]::PointMass),
+    logscale = 0,
     body = (args) -> NormalMeanVariance(mean(args.q[:μ]), mean(args.q[:v])),
 )
 
@@ -48,8 +50,8 @@ variational_variance(q_v) = inv(mean(inv, q_v))
 @define_message_update_rule(
     node = NormalMeanVariance, target = :out,
     args = (m[:μ]::UnivariateNormalDistributionsFamily, q[:v]::PointMass),
-    body = (args, ann) -> begin
-        annotate!(ann, :logscale, 0)
+    logscale = 0,
+    body = (args) -> begin
         μ_mean, μ_var = mean_var(args.m[:μ])
         NormalMeanVariance(μ_mean, μ_var + mean(args.q[:v]))
     end,

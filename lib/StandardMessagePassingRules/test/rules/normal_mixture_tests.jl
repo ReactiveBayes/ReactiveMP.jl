@@ -10,7 +10,7 @@
         node = NormalMixture, target = (:m, 2), float_types = (Float32, Float64),
         cases = [(q = (out = PointMass(1.5), switch = Categorical([0.3, 0.7]), p = (nothing, GammaShapeRate(3.0, 1.0))),) => NormalMeanPrecision(1.5, 0.7 * 3)],
     )
-    @test_throws ErrorException call_message_update_rule(NormalMixture, (:m, 1); q = (out = PointMass(1.5), switch = PointMass(1), p = (GammaShapeRate(3.0, 1.0), nothing)))
+    @test_throws ErrorException getresult(call_message_update_rule(NormalMixture, (:m, 1); q = (out = PointMass(1.5), switch = PointMass(1), p = (GammaShapeRate(3.0, 1.0), nothing))))
 end
 
 @testitem "rules:NormalMixture:p" tags = [:rules] begin
@@ -21,7 +21,7 @@ end
         node = NormalMixture, target = (:p, 1), float_types = (Float32, Float64),
         cases = [(q = (out = PointMass(1.5), switch = Categorical([0.3, 0.7]), m = (NormalMeanVariance(0.0, 1.0), nothing)),) => GammaShapeRate(1.15, 0.4875)],
     )
-    @test_throws ErrorException call_message_update_rule(NormalMixture, (:p, 1); q = (out = PointMass(1.5), switch = PointMass(1), m = (NormalMeanVariance(0.0, 1.0), nothing)))
+    @test_throws ErrorException getresult(call_message_update_rule(NormalMixture, (:p, 1); q = (out = PointMass(1.5), switch = PointMass(1), m = (NormalMeanVariance(0.0, 1.0), nothing))))
 end
 
 @testitem "rules:NormalMixture:switch-out-energy" tags = [:rules] begin
@@ -103,7 +103,7 @@ end
     )
     # The energy is each component's MvNormalMeanPrecision energy, weighted by the switch.
     q_out, q_m, q_p = MvNormalMeanCovariance([0.0], [1.0]), (MvNormalMeanPrecision([1.0], [2.0]), MvNormalMeanPrecision([3.0], [4.0])), (WishartFast(3.0, fill(3.0, 1, 1)), WishartFast(4.0, fill(5.0, 1, 1)))
-    component(k) = call_average_energy(MvNormalMeanPrecision; q = (out = q_out, μ = q_m[k], Λ = q_p[k]))
-    @test call_average_energy(NormalMixture; q = (out = q_out, switch = Categorical([0.5, 0.5]), m = q_m, p = q_p)) ≈ (component(1) + component(2)) / 2
+    component(k) = getresult(call_average_energy(MvNormalMeanPrecision; q = (out = q_out, μ = q_m[k], Λ = q_p[k])))
+    @test getresult(call_average_energy(NormalMixture; q = (out = q_out, switch = Categorical([0.5, 0.5]), m = q_m, p = q_p))) ≈ (component(1) + component(2)) / 2
     @test GaussianMixture === NormalMixture
 end

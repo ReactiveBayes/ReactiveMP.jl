@@ -8,5 +8,6 @@ end
 @define_message_update_rule(
     node = MatrixNormalWishart, target = :out,
     args = (q[:M]::PointMass, q[:U]::PointMass, q[:V]::PointMass, q[:ν]::PointMass),
+    logscale = 0,
     body = (args) -> promoted_matrix_normal_wishart(mean(args.q[:M]), mean(args.q[:U]), mean(args.q[:V]), mean(args.q[:ν])),
 )

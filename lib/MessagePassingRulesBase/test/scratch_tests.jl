@@ -60,8 +60,8 @@ end
 
     # The allocating path builds a fresh scratch on every call.
     S.BUILT[] = 0
-    @test message_passing_rule(S.Summing, Target(:out), DefaultAlgorithm(), args) == 12.0
-    @test message_passing_rule(S.Summing, Target(:out), DefaultAlgorithm(), args) == 12.0
+    @test getresult(message_passing_rule(S.Summing, Target(:out), DefaultAlgorithm(), args)) == 12.0
+    @test getresult(message_passing_rule(S.Summing, Target(:out), DefaultAlgorithm(), args)) == 12.0
     @test S.BUILT[] == 2
 
     # An engine builds one with `rule_scratch` and passes it on every call.
@@ -88,17 +88,17 @@ end
     inargs = RuleArgs(m = (out = [1.0, 2.0],))
     inspec = find_message_rule(S.Summing, Target(:in), DefaultAlgorithm(), inargs)
     output = similar([1.0, 2.0])
-    @test message_passing_rule!(output, S.Summing, Target(:in), DefaultAlgorithm(), inargs) === output
+    @test getresult(message_passing_rule!(output, S.Summing, Target(:in), DefaultAlgorithm(), inargs)) === output
     @test output == [6.0, 9.0]
 
     # A group target's scratch is built with its index.
     wspec = find_message_rule(S.Summing, IndexedTarget(:w, 3), DefaultAlgorithm(), args)
     @test rule_scratch(wspec, DefaultAlgorithm(), RuleContext(), args, IndexedTarget(:w, 3)).work == [3.0, 3.0, 3.0]
-    @test message_passing_rule(S.Summing, IndexedTarget(:w, 2), DefaultAlgorithm(), args) == 12.0
+    @test getresult(message_passing_rule(S.Summing, IndexedTarget(:w, 2), DefaultAlgorithm(), args)) == 12.0
 
     # A marginal rule takes scratch too.
     margs = RuleArgs(m = (out = [3.0, 1.0], in = [1.0, 1.0]))
-    @test message_passing_marginalrule(S.Summing, ClusterTarget((:out, :in)), DefaultAlgorithm(), margs) == 2.0
+    @test getresult(message_passing_marginalrule(S.Summing, ClusterTarget((:out, :in)), DefaultAlgorithm(), margs)) == 2.0
 
     # The display says so.
     @test contains(sprint(show, MIME("text/plain"), spec), "scratch: yes")

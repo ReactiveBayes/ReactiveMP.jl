@@ -104,7 +104,7 @@ replacement".
 | `@average_energy` | `macro` | `src/score/score.jl` | `base` | became `@define_average_energy`; `score(AverageEnergy(), …)` became `message_passing_average_energy` |
 | `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
 | `@call_rule` | `macro` | `src/rule.jl` | `base` | renamed `@call_message_update_rule`, with `@call_marginal_update_rule` and `@call_average_energy`; see PLAN.md § Naming |
-| `@logscale` | `macro` | `src/rule.jl` | `base` | deleted as a macro; becomes `annotate!(ann, :logscale, v)` on the annotations body slot |
+| `@logscale` | `macro` | `src/rule.jl` | `base` | deleted as a macro; a rule declares its log scale with the `logscale` keyword of `@define_message_update_rule` (`DISCUSSION.md` §3.50) |
 | `@marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
 | `@node` | `macro` | `src/nodes/nodes.jl` | `base` | renamed `@define_factor_node` |
 | `@rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
@@ -118,7 +118,7 @@ replacement".
 | `AbstractMessage` | `type` | `src/message.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Adam` | `type` | `src/approximations/optimizers/adam.jl` | `delete` | optimiser for the old `ProdCVI` path; use Optimisers.jl directly |
 | `AdditiveCouplingLayer` | `type` | `src/nodes/predefined/flow/layers/additive_coupling_layer.jl` | `node:Flow` |  |
-| `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `engine` | the v5 name; its error points to `LogScaleAnnotations`. stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
+| `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `delete` | the v5 name; log scales are part of a message now, tracked with the activation option `logscales = true` (`DISCUSSION.md` §3.50); see the v6 → v7 guide |
 | `AddonMemory` | `function` | `src/annotations/input_arguments.jl` | `engine` | the v5 name; its error points to `InputArgumentsAnnotations`. stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
 | `Autoregressive` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` | alias |
 | `AverageEnergy` | `type` | `src/score/score.jl` | `delete` | replaced by `message_passing_average_energy` / `call_average_energy` in the base package; the v6 → v7 guide maps `score(AverageEnergy(), …)` to `call_average_energy` |
@@ -177,7 +177,7 @@ replacement".
 | `InverseWishart` | `type` | `src/nodes/predefined/wishart_inverse.jl` | `standard` |  |
 | `LaplaceApproximation` | `type` | `src/approximations/laplace.jl` | `delete` | no in-tree consumer; takes Optim with it; no replacement |
 | `Linearization` | `type` | `src/approximations/linearization.jl` | `approximations` |  |
-| `LogScaleAnnotations` | `type` | `src/annotations/logscale.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`). Log scales are experimental; Phase 7 decides whether to fix or drop them |
+| `LogScaleAnnotations` | `type` | `src/annotations/logscale.jl` | `delete` | replaced by the activation option `logscales = true`, RxInfer's `infer(...; logscales = true)`: the log scale is part of `Message` and `Marginal`, not an annotation (`DISCUSSION.md` §3.50); see the v6 → v7 guide |
 | `Marginal` | `type` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `Marginalisation` | `type` | `src/nodes/nodes.jl` | `delete` | dead dispatch axis, hardcoded at all 5 construction sites; absorbed by the algorithm axis |
 | `MeanBased` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
@@ -242,7 +242,7 @@ replacement".
 | `getdata` | `function` | `src/marginal.jl` | `engine` | value type; stays in the engine with its observable half (`PLAN.md` § Package split) |
 | `getinterfaces` | `function` | `src/nodes/nodes.jl` | `engine` |  |
 | `getlayers` | `function` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
-| `getlogscale` | `function` | `src/annotations/logscale.jl` | `engine` | reads the engine's `AnnotationDict`; stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
+| `getlogscale` | `function` | `src/annotations/logscale.jl` | `base` | a generic function of the base package, with its `RuleResult` method; the engine adds the `Message` and `Marginal` ones and re-exports it (`DISCUSSION.md` §3.50) |
 | `getmodel` | `function` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` | unexported, `getmodel(algorithm)`; the field `model` holds it |
 | `ghcubature` | `function` | `src/approximations/gausshermite.jl` | `approximations` | Pólya, Probit and GCV use it, so it goes to the numerics package with FastGaussQuadrature, over means and covariances only (Phase 6 entry brief, `DISCUSSION.md` §3.40) |
 | `huge` | `const` | `src/ReactiveMP.jl` | `engine` | re-exported from TinyHugeNumbers by the engine; the rule packages take it from BayesBase |

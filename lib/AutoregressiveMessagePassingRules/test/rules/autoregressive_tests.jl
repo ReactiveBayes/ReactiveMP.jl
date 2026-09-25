@@ -32,8 +32,8 @@
             V[(order + 1):end, (order + 1):end] = cov(q_x)
             q_y_x = MvNormalMeanCovariance([mean(q_y); mean(q_x)], V)
 
-            meanfield = call_average_energy(AR; q = (y = q_y, x = q_x, θ = q_θ, γ = q_γ), algorithm)
-            structured = call_average_energy(AR; clusters = ((:y, :x) => q_y_x,), q = (θ = q_θ, γ = q_γ), algorithm)
+            meanfield = getresult(call_average_energy(AR; q = (y = q_y, x = q_x, θ = q_θ, γ = q_γ), algorithm))
+            structured = getresult(call_average_energy(AR; clusters = ((:y, :x) => q_y_x,), q = (θ = q_θ, γ = q_γ), algorithm))
             @test isfinite(meanfield)
             @test structured ≈ meanfield
         end

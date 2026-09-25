@@ -4,6 +4,7 @@
 @define_message_update_rule(
     node = Wishart, target = :out,
     args = (m[:ν]::PointMass, m[:S]::PointMass),
+    logscale = 0,
     body = (args) -> WishartFast(mean(args.m[:ν]), cholinv(mean(args.m[:S]))),
 )
 

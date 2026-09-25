@@ -42,7 +42,7 @@
     # message itself will not provide any information or might not match. The rules take any
     # marginal, so a rule is found and fails inside.
     @testset "VMP: Incorrect Inputs" begin
-        to_γ(q) = call_message_update_rule(SoftDot, :γ; q)
+        to_γ(q) = getresult(call_message_update_rule(SoftDot, :γ; q))
         # 2**: INCORRECT (y cannot be Mv)
         @test_throws DimensionMismatch to_γ((y = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), θ = NormalMeanVariance(7.0, 11.0), x = NormalMeanVariance(13.0, 5.0)))
         # *02, *20, *12, *21: INCORRECT (θ and x have to have the same dimensions)

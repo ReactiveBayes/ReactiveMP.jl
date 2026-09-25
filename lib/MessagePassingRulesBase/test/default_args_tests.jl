@@ -47,19 +47,19 @@ end
     N = DefaultArgsNodes
 
     # Whatever the factorisation delivers, beside the typed input.
-    @test call_message_update_rule(N.Tensor, :out; m = (T = (1.0, 2.0),), q = (a = 2.0, in = 3.0)) == 2.0 * 6.0
-    @test call_message_update_rule(N.Tensor, :out; clusters = ((:in, (:T, 1)) => 5.0,), q = (a = 1.0, T = (nothing, 1.0))) == 6.0
+    @test getresult(call_message_update_rule(N.Tensor, :out; m = (T = (1.0, 2.0),), q = (a = 2.0, in = 3.0))) == 2.0 * 6.0
+    @test getresult(call_message_update_rule(N.Tensor, :out; clusters = ((:in, (:T, 1)) => 5.0,), q = (a = 1.0, T = (nothing, 1.0)))) == 6.0
     # The typed input is required, and of its type.
-    @test_throws RuleNotFoundError call_message_update_rule(N.Tensor, :out; q = (in = 3.0,))
-    @test_throws RuleNotFoundError call_message_update_rule(N.Tensor, :out; q = (a = 2, in = 3.0))
+    @test_throws RuleNotFoundError getresult(call_message_update_rule(N.Tensor, :out; q = (in = 3.0,)))
+    @test_throws RuleNotFoundError getresult(call_message_update_rule(N.Tensor, :out; q = (a = 2, in = 3.0)))
     # A rule with explicit inputs wins.
-    @test call_message_update_rule(N.Tensor, :out; m = (in = 1.0,), q = (a = 2.0,)) == -1.0
+    @test getresult(call_message_update_rule(N.Tensor, :out; m = (in = 1.0,), q = (a = 2.0,))) == -1.0
     # A group target and its index.
-    @test call_message_update_rule(N.Tensor, (:T, 3); m = (out = 1.0,), q = (a = 2.0, in = 1.0)) == 6.0
+    @test getresult(call_message_update_rule(N.Tensor, (:T, 3); m = (out = 1.0,), q = (a = 2.0, in = 1.0))) == 6.0
     # A marginal rule over any cluster, with its key bound.
-    @test call_marginal_update_rule(N.Tensor, (:out, (:T, 1)); m = (out = 1.0, T = (2.0,)), q = (a = 1.0,)) == ((:out, (:T, 1)), 3.0)
-    @test call_marginal_update_rule(N.Tensor, (:out, :in); m = (out = 1.0, in = 2.0), q = (a = 1.0,)) == ((:out, :in), 3.0)
-    @test call_average_energy(N.Tensor; clusters = ((:out, :in) => 2.0,), q = (a = 1.0,)) == 3.0
+    @test getresult(call_marginal_update_rule(N.Tensor, (:out, (:T, 1)); m = (out = 1.0, T = (2.0,)), q = (a = 1.0,))) == ((:out, (:T, 1)), 3.0)
+    @test getresult(call_marginal_update_rule(N.Tensor, (:out, :in); m = (out = 1.0, in = 2.0), q = (a = 1.0,))) == ((:out, :in), 3.0)
+    @test getresult(call_average_energy(N.Tensor; clusters = ((:out, :in) => 2.0,), q = (a = 1.0,))) == 3.0
     # Checked, and nested rather than ambiguous with the explicit rule.
     @test isempty(check_rules(N))
     @test isempty(check_rule_ambiguities(N))

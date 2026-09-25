@@ -9,7 +9,6 @@ as `nothing`, and [`missing_services`](@ref) lists them.
 
 The services an engine supplies by default, [`DEFAULT_CONTEXT_SERVICES`](@ref):
 - `node`: the factor node the rule belongs to, e.g. for [`getnodefn`](@ref)`(ctx.node, target)`;
-- `product`: `(left, right) -> (distribution, logscale)`;
 - `rng`: the random number generator, owned by the caller;
 - `matrix_correction`: how a rule corrects a matrix it builds before using it, such as a
   precision that must stay positive definite: a strategy from MatrixCorrectionTools, or
@@ -35,10 +34,10 @@ Base.show(io::IO, ctx::RuleContext) = print(io, "RuleContext", getfield(ctx, :se
 """
     DEFAULT_CONTEXT_SERVICES
 
-The context services an engine supplies by default: `node`, `product`, `rng` and
-`matrix_correction` (see [`RuleContext`](@ref)). A rule may declare others.
+The context services an engine supplies by default: `node`, `rng` and `matrix_correction` (see
+[`RuleContext`](@ref)). A rule may declare others.
 """
-const DEFAULT_CONTEXT_SERVICES = (:node, :product, :rng, :matrix_correction)
+const DEFAULT_CONTEXT_SERVICES = (:node, :rng, :matrix_correction)
 
 """
     matrix_correction(ctx::RuleContext, default)

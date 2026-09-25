@@ -68,24 +68,24 @@ v6_stype(::ARunsafe) = ReactiveMP.ARunsafe()
             (:γ, NamedTuple(), (y = q_y, x = q_x, θ = q_θ), ()),
         ]
         for (target, m, q, clusters) in cases
-            v7 = call_message_update_rule(AR, target; m, q, clusters, algorithm)
+            v7 = getresult(call_message_update_rule(AR, target; m, q, clusters, algorithm))
             v6_q = isempty(clusters) ? q : merge((y_x = last(only(clusters)),), q)
             v6, _ = v6_message_update(ReactiveMP.AR, target, m, v6_q; meta)
             @test compare_with_reference("AR:$target:$label", dense(v7), dense(v6); node = "AR", target = ":$target").outcome === :agree
         end
 
         # AR, the joint: ARsafe agrees, ARunsafe is v6's bug corrected.
-        v7 = call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm)
+        v7 = getresult(call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm))
         v6 = attempt(() -> v6_marginal_update(ReactiveMP.AR, (:y, :x), (y = m_y, x = m_x), (θ = q_θ, γ = q_γ); meta))
         id = "AR:joint:$label"
         declared = stype === ARunsafe() ? [DeclaredDisagreement(id; kind = :correction, reasoning = ARUNSAFE_JOINT)] : DeclaredDisagreement[]
         @test compare_with_reference(id, v7, v6; node = "AR", target = "(:y, :x)", declared).outcome === (stype === ARunsafe() ? :correction : :agree)
 
         # AR, the energies.
-        v7 = call_average_energy(AR; clusters = ((:y, :x) => joint,), q = (θ = q_θ, γ = q_γ), algorithm)
+        v7 = getresult(call_average_energy(AR; clusters = ((:y, :x) => joint,), q = (θ = q_θ, γ = q_γ), algorithm))
         v6 = v6_average_energy(ReactiveMP.AR, (θ = q_θ, γ = q_γ), ((:y, :x) => joint,); meta)
         @test compare_with_reference("AR:energy:structured:$label", v7, v6; node = "AR", target = "energy").outcome === :agree
-        v7 = call_average_energy(AR; q = (y = q_y, x = q_x, θ = q_θ, γ = q_γ), algorithm)
+        v7 = getresult(call_average_energy(AR; q = (y = q_y, x = q_x, θ = q_θ, γ = q_γ), algorithm))
         v6 = v6_average_energy(ReactiveMP.AR, (y = q_y, x = q_x, θ = q_θ, γ = q_γ); meta)
         @test compare_with_reference("AR:energy:meanfield:$label", v7, v6; node = "AR", target = "energy").outcome === :agree
 
@@ -100,17 +100,17 @@ v6_stype(::ARunsafe) = ReactiveMP.ARunsafe()
             (:w, NamedTuple(), NamedTuple(), ((:y, :x) => joint,)),
         ]
         for (target, m, q, clusters) in cases
-            v7 = call_message_update_rule(ConjugateAR, target; m, q, clusters, algorithm)
+            v7 = getresult(call_message_update_rule(ConjugateAR, target; m, q, clusters, algorithm))
             v6_q = isempty(clusters) ? q : merge((y_x = last(only(clusters)),), q)
             v6, _ = v6_message_update(ReactiveMP.ConjugateAR, target, m, v6_q; meta)
             @test compare_with_reference("ConjugateAR:$target:$label", dense(v7), dense(v6); node = "ConjugateAR", target = ":$target").outcome === :agree
         end
-        v7 = call_marginal_update_rule(ConjugateAR, (:y, :x); m = (y = m_y, x = m_x), q = (w = q_w,), algorithm)
+        v7 = getresult(call_marginal_update_rule(ConjugateAR, (:y, :x); m = (y = m_y, x = m_x), q = (w = q_w,), algorithm))
         v6 = attempt(() -> v6_marginal_update(ReactiveMP.ConjugateAR, (:y, :x), (y = m_y, x = m_x), (w = q_w,); meta))
         id = "ConjugateAR:joint:$label"
         declared = stype === ARunsafe() ? [DeclaredDisagreement(id; kind = :correction, reasoning = ARUNSAFE_JOINT)] : DeclaredDisagreement[]
         @test compare_with_reference(id, v7, v6; node = "ConjugateAR", target = "(:y, :x)", declared).outcome === (stype === ARunsafe() ? :correction : :agree)
-        v7 = call_average_energy(ConjugateAR; clusters = ((:y, :x) => joint,), q = (w = q_w,), algorithm)
+        v7 = getresult(call_average_energy(ConjugateAR; clusters = ((:y, :x) => joint,), q = (w = q_w,), algorithm))
         v6 = v6_average_energy(ReactiveMP.ConjugateAR, (w = q_w,), ((:y, :x) => joint,); meta)
         @test compare_with_reference("ConjugateAR:energy:$label", v7, v6; node = "ConjugateAR", target = "energy").outcome === :agree
     end

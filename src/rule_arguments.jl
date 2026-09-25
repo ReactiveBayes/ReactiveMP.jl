@@ -1,12 +1,7 @@
 # The arguments a rule receives, built from the latest messages and marginals a node holds.
 
-import MessagePassingRulesBase: Messages, Marginals, RuleArgs, RuleAnnotations, RuleContext
+import MessagePassingRulesBase: Messages, Marginals, RuleArgs, RuleAnnotations, RuleContext, RuleLogScales
 import Random
-
-function rule_product(left, right)
-    result = prod(BayesBase.GenericProd(), left, right)
-    return result, BayesBase.compute_logscale(result, left, right)
-end
 
 """
     ReactiveMP.GroupInputs{G, N, K}()
@@ -171,14 +166,25 @@ end
 
 
 """
-    ReactiveMP.rule_arguments(messages_names, messages, marginals_names, marginals)
+    ReactiveMP.rule_arguments(messages_names, messages, marginals_names, marginals[, logscales])
 
-The `RuleArgs` of a rule call: the data of the messages and marginals it depends on.
+The `RuleArgs` of a rule call: the data of the messages and marginals it depends on, and, with
+`logscales = Val(true)`, the log scales that arrived with the messages, `args.logscale.m[...]`.
 """
 rule_arguments(messages_names, messages, marginals_names, marginals) = RuleArgs(
     rule_messages(getdata, messages_names, messages),
     rule_marginals(getdata, marginals_names, marginals),
 )
+rule_arguments(messages_names, messages, marginals_names, marginals, ::Val{false}) =
+    rule_arguments(messages_names, messages, marginals_names, marginals)
+rule_arguments(messages_names, messages, marginals_names, marginals, ::Val{true}) = RuleArgs(
+    rule_messages(getdata, messages_names, messages),
+    rule_marginals(getdata, marginals_names, marginals),
+    RuleLogScales(rule_messages(message_logscale, messages_names, messages)),
+)
+
+message_logscale(message::Message) = message.logscale
+message_logscale(message) = as_message(message).logscale
 
 """
     ReactiveMP.rule_annotations(messages_names, messages, marginals_names, marginals, out)

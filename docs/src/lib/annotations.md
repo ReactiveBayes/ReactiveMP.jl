@@ -1,6 +1,6 @@
 # [Annotations](@id lib-annotations)
 
-Messages and marginals in ReactiveMP carry a probability distribution as their primary content. Annotations are an optional side-channel that can travel alongside a message, holding arbitrary extra information keyed by `Symbol`. Typical uses include tracking log-scale factors (see [`LogScaleAnnotations`](@ref lib-annotations-logscale)), recording which messages were used to compute a result, or attaching debugging information.
+Messages and marginals in ReactiveMP carry a probability distribution as their primary content. Annotations are an optional side-channel that can travel alongside a message, holding arbitrary extra information keyed by `Symbol`. Typical uses include recording which messages were used to compute a result, or attaching debugging information. A message's log scale is not an annotation: it is part of the message (see [Log scales](@ref lib-logscale)).
 
 Annotations are designed to be zero-cost when unused: the underlying dictionary is only allocated on the first write.
 
@@ -68,6 +68,6 @@ Processors are passed to `FactorNodeActivationOptions` (for rule-time annotation
 ## Built-in annotation processors
 
 ```@contents
-Pages = ["annotations/logscale.md", "annotations/input_arguments.md"]
+Pages = ["annotations/input_arguments.md"]
 Depth = 1
 ```

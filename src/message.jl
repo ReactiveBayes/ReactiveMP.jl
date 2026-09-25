@@ -17,7 +17,7 @@ abstract type AbstractMessage end
 # immutable one through the equality chain, and lighter everywhere
 # (`scripts/benchmark_message_representation.jl`).
 """
-    Message(data, is_clamped, is_initial[, annotations])
+    Message(data, is_clamped, is_initial[, annotations[, logscale]])
 
 An implementation of a message in variational message passing framework.
 
@@ -25,7 +25,10 @@ An implementation of a message in variational message passing framework.
 - `data::D`: message always holds some data object associated with it, which is usually a probability distribution, but can also be an arbitrary function
 - `is_clamped::Bool`, specifies if this message was the result of constant computations (e.g. clamped constants)
 - `is_initial::Bool`, specifies if this message was used for initialization
-- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. log-scale, input arguments). Defaults to an empty `AnnotationDict()`.
+- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. input arguments). Defaults to an empty `AnnotationDict()`.
+- `logscale`: the log of the normalising constant `data` leaves out (see [`getlogscale`](@ref)): a
+  number, a `MessagePassingRulesBase.UndefinedLogScale` with its reason, or `nothing` where log
+  scales are not tracked, the default.
 
 # Example
 
@@ -52,40 +55,41 @@ true
 
 # Equality
 
-`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations`. Two messages
-carrying the same distribution are equal even when their annotations differ — including
-`:logscale`, which underpins free-energy bookkeeping:
+`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations` or the log scale.
+Two messages carrying the same distribution are equal even when their annotations or log
+scales differ:
 
 ```jldoctest
 julia> using ReactiveMP, BayesBase, ExponentialFamily
 
 julia> a = Message(NormalMeanVariance(0.0, 1.0), false, false);
 
-julia> b = Message(NormalMeanVariance(0.0, 1.0), false, false);
-
-julia> ReactiveMP.annotate!(ReactiveMP.getannotations(b), :logscale, 42.0);
+julia> b = Message(NormalMeanVariance(0.0, 1.0), false, false, ReactiveMP.AnnotationDict(), -0.5);
 
 julia> a == b
 true
 
-julia> ReactiveMP.getannotations(a) == ReactiveMP.getannotations(b)
-false
+julia> getlogscale(b)
+-0.5
 
 ```
 
-This is intentional: annotations are out-of-band metadata about *how* a message was computed,
-not part of the belief the message represents. Compare `getannotations` explicitly when you
-need annotation-sensitive equality.
+This is intentional: annotations and log scales are out-of-band information about *how* a
+message was computed, not part of the belief it represents. Compare `getannotations` or
+`getlogscale` explicitly when you need them.
 """
-mutable struct Message{D} <: AbstractMessage
+mutable struct Message{D, L} <: AbstractMessage
     const data::D
     const is_clamped::Bool
     const is_initial::Bool
     const annotations::AnnotationDict
+    const logscale::L
 end
 
 Message(data, is_clamped::Bool, is_initial::Bool) =
-    Message(data, is_clamped, is_initial, AnnotationDict())
+    Message(data, is_clamped, is_initial, AnnotationDict(), nothing)
+Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
+    Message(data, is_clamped, is_initial, annotations, nothing)
 
 """
     as_message(::AbstractMessage)
@@ -124,6 +128,15 @@ Returns the [`AnnotationDict`](@ref) associated with the `message`.
 """
 getannotations(message::Message) = message.annotations
 
+"""
+    getlogscale(message::Message)
+
+The log scale of `message`: the log of the normalising constant its distribution leaves out, a
+number, or a `MessagePassingRulesBase.UndefinedLogScale` saying why it is not known. Log scales
+are tracked when the graph is activated with `logscales = true`; otherwise this throws.
+"""
+getlogscale(message::Message) = tracked_logscale(message.logscale)
+
 typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
@@ -133,6 +146,7 @@ getdata(messages::AbstractArray{<:Message}) = map(getdata, messages)
 
 function show(io::IO, message::Message)
     print(io, "Message(", getdata(message), ")")
+    message.logscale === nothing || print(io, " with logscale = ", message.logscale)
     ann = getannotations(message)
     return if !isempty(ann)
         print(io, " with ", ann)
@@ -196,6 +210,14 @@ Computes the product of two messages `left` and `right` for a given `variable` u
 Returns a new message with the result of the multiplication (not necessarily normalized).
 Applies `context.form_constraint` if `context.form_constraint_check_strategy` is set to [`ReactiveMP.FormConstraintCheckEach`](@ref).
 
+## The log scale
+
+The product's log scale is the sum of the two messages' log scales and the product's own,
+`BayesBase.compute_logscale`. It is undefined when either side's is, when the pair has no
+`compute_logscale`, or when a form constraint changes the product (returns something else than it
+was given); a `missing` side leaves the
+other side's; `nothing` on either side, log scales not tracked, gives `nothing`.
+
 The `variable` argument identifies which variable this product is being computed for, which is useful for callbacks (see [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)).
 
 ## `is_clamped` and `is_initial`
@@ -234,6 +256,7 @@ function compute_product_of_two_messages(
     left_dist = getdata(left)
     right_dist = getdata(right)
     new_dist = prod(context.prod_constraint, left_dist, right_dist)
+    new_logscale = product_logscale(new_dist, left_dist, right_dist, left.logscale, right.logscale)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
         form_span_id = generate_span_id(context.callbacks)
@@ -249,6 +272,7 @@ function compute_product_of_two_messages(
         )
         unconstrained_dist = new_dist
         new_dist = constrain_form(context.form_constraint, new_dist)
+        new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale)
         invoke_callback(
             context.callbacks,
             AfterFormConstraintAppliedEvent(
@@ -266,7 +290,7 @@ function compute_product_of_two_messages(
     left_ann = getannotations(left)
     right_ann = getannotations(right)
     new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
-    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
+    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann, new_logscale)
 
     invoke_callback(
         context.callbacks,
@@ -335,6 +359,7 @@ function compute_product_of_messages(
             is_clamped(result),
             is_initial(result),
             getannotations(result),
+            constrained_logscale(dist, constrained_dist, result.logscale),
         )
     end
 
@@ -547,7 +572,7 @@ function connect!(message::MessageObservable, source)
 end
 
 function set_initial_message!(message::MessageObservable, value)
-    next!(message.subject, Message(value, false, true))
+    next!(message.subject, Message(value, false, true, AnnotationDict(), INITIAL_LOGSCALE))
     return nothing
 end
 
@@ -561,17 +586,21 @@ A callable structure representing a deferred computation of a message. It stores
 needed to compute the message later: the node type, the rule's target, the names of the
 messages and marginals it depends on, the algorithm, the annotation processors, the factor
 node, the callbacks, the [`ReactiveMP.EngineDiagnostics`](@ref), the node's rule context (see
-[`ReactiveMP.node_context`](@ref)), the rule fallback and the scratch the rule reuses across
-calls.
+[`ReactiveMP.node_context`](@ref)), the rule fallback, the scratch the rule reuses across
+calls, and whether log scales are tracked, `Val(true)` or `Val(false)`.
 
 When invoked, it resolves the rule with `find_message_rule` and runs it with `execute_rule`,
 unless an input is `missing`, in which case the message is `missing` and no rule runs. When
 no rule matches, the rule fallback, if one is set, gives the message; otherwise that is a
 `RuleNotFoundError`.
 
+When log scales are tracked, the rule reads the incoming ones as `args.logscale.m[...]` and the
+message carries the log scale it declares; a message a rule fallback gives has an undefined one.
+When they are not, a rule declared with `reads_logscale = true` is an error.
+
 See also: [`Message`](@ref), [`DeferredMessage`](@ref)
 """
-struct MessageMapping{F, T, N, M, A, X, R, E, G, B}
+struct MessageMapping{F, T, N, M, A, X, R, E, G, B, S}
     target::T
     msgs_names::N
     marginals_names::M
@@ -583,6 +612,7 @@ struct MessageMapping{F, T, N, M, A, X, R, E, G, B}
     context::G
     rulefallback::B
     scratch::ScratchSlot
+    logscales::S
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -606,12 +636,15 @@ function Base.show(io::IO, mapping::MessageMapping)
 end
 
 # `context` holds the services the rules run with, merged over the engine's (`node_context`);
-# `rulefallback` gives the message where no rule matches, `nothing` for none.
-MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing) where {F, T, N, M, A, X, R, E, B} =
-    (c = node_context(factornode, context); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot()))
+# `rulefallback` gives the message where no rule matches, `nothing` for none; `logscales` tracks
+# log scales.
+MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing, logscales::Bool = false) where {F, T, N, M, A, X, R, E, B} =
+    (c = node_context(factornode, context); s = Val(logscales); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot(), s))
 
-MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing) where {F <: Function, T, N, M, A, X, R, E, B} =
-    (c = node_context(factornode, context); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot()))
+MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing, logscales::Bool = false) where {F <: Function, T, N, M, A, X, R, E, B} =
+    (c = node_context(factornode, context); s = Val(logscales); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot(), s))
+
+tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
 
 # The fallback's message where no rule matched; the not-found error where it has none either.
 function fallback_message(fallback, notfound, fform, target, args)
@@ -647,28 +680,31 @@ function (mapping::MessageMapping)(messages, marginals)
         end
     end
 
-    result = if has_missing_inputs(messages) || has_missing_inputs(marginals)
-        missing
+    result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals)
+        missing, nothing
     else
         fform = message_mapping_fform(mapping)
-        args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
+        args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
         found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
         if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
-            fallback_message(mapping.rulefallback, found, fform, mapping.target, args)
+            fallback_message(mapping.rulefallback, found, fform, mapping.target, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
         else
             spec = audit_rule(mapping.diagnostics, resolve_rule(found))
+            MessagePassingRulesBase.check_reads_logscale(spec, args)
             ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
             ctx = mapping.context
             algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
             scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
-            MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+            if tracks_logscales(mapping)
+                MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+            else
+                MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing
+            end
         end
     end
 
-    # Run annotation processors after the rule has been executed
-    # Skip them entirely when the rule was short-circuited to `missing`: no rule ran, so
-    # post-rule processors (e.g. `LogScaleAnnotations`, which `error()`s when `:logscale`
-    # was never set and inputs are not all `PointMass`) must not run on a deferred message.
+    # Run annotation processors after the rule has been executed. Skip them entirely when the
+    # rule was short-circuited to `missing`: no rule ran, so there is nothing to annotate.
     if !isnothing(mapping.annotations) && result !== missing
         for p in mapping.annotations
             post_rule_annotations!(
@@ -680,9 +716,9 @@ function (mapping::MessageMapping)(messages, marginals)
     invoke_callback(
         mapping.callbacks,
         AfterMessageRuleCallEvent(
-            mapping, messages, marginals, result, annotations, span_id
+            mapping, messages, marginals, result, annotations, logscale, span_id
         ),
     )
 
-    return Message(result, is_message_clamped, is_message_initial, annotations)
+    return Message(result, is_message_clamped, is_message_initial, annotations, logscale)
 end

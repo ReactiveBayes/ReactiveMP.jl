@@ -9,7 +9,7 @@
         node = NormalMeanPrecision, target = :out,
         cases = [
             (m = (μ = PointMass(1.0), τ = PointMass(2.0)),) => NormalMeanPrecision(1.0, 2.0),
-            (m = (μ = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),) => ExpectedWithAnnotations(NormalMeanPrecision(0.0, 2 / 3); logscale = 0),
+            (m = (μ = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),) => ExpectedWithLogScale(NormalMeanPrecision(0.0, 2 / 3), 0),
             (q = (μ = PointMass(1.0), τ = PointMass(2.0)),) => NormalMeanPrecision(1.0, 2.0),
             (q = (μ = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)),) => NormalMeanPrecision(1.0, 1.5),
             (m = (μ = PointMass(-1.0),), q = (τ = GammaShapeRate(3.0, 2.0),)) => NormalMeanPrecision(-1.0, 1.5),
@@ -25,7 +25,7 @@ end
         node = NormalMeanPrecision, target = :μ,
         cases = [
             (m = (out = PointMass(1.0), τ = PointMass(2.0)),) => NormalMeanPrecision(1.0, 2.0),
-            (m = (out = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),) => ExpectedWithAnnotations(NormalMeanVariance(0.0, 1.5); logscale = 0),
+            (m = (out = NormalMeanVariance(0.0, 1.0), τ = PointMass(2.0)),) => ExpectedWithLogScale(NormalMeanVariance(0.0, 1.5), 0),
             (q = (out = PointMass(1.0), τ = PointMass(2.0)),) => NormalMeanPrecision(1.0, 2.0),
             (q = (out = NormalMeanVariance(1.0, 2.0), τ = GammaShapeRate(3.0, 2.0)),) => NormalMeanPrecision(1.0, 1.5),
             (m = (out = PointMass(-1.0),), q = (τ = GammaShapeRate(3.0, 2.0),)) => NormalMeanPrecision(-1.0, 1.5),

@@ -18,7 +18,7 @@
     # negated noise precision -- which is also the reciprocal of the variance the `:y`/`:x`
     # rules add. That cross-consistency is asserted below.
     algorithm = default_algorithm()
-    joint_of(m_y, m_x, q_z, q_κ, q_ω) = call_marginal_update_rule(GCV, (:y, :x); m = (y = m_y, x = m_x), q = (z = q_z, κ = q_κ, ω = q_ω), algorithm)
+    joint_of(m_y, m_x, q_z, q_κ, q_ω) = getresult(call_marginal_update_rule(GCV, (:y, :x); m = (y = m_y, x = m_x), q = (z = q_z, κ = q_κ, ω = q_ω), algorithm))
 
     @testset "Against the derived weighted-mean/precision form" begin
         for (; q_y, q_x, q_z, q_κ, q_ω) in parameter_sets()
@@ -39,7 +39,7 @@
         # against a shared reference value.
         for (; q_y, q_x, q_z, q_κ, q_ω) in parameter_sets()
             W = invcov(joint_of(q_y, q_x, q_z, q_κ, q_ω))
-            to_y = call_message_update_rule(GCV, :y; m = (x = q_x,), q = (z = q_z, κ = q_κ, ω = q_ω), algorithm)
+            to_y = getresult(call_message_update_rule(GCV, :y; m = (x = q_x,), q = (z = q_z, κ = q_κ, ω = q_ω), algorithm))
             added_variance = var(to_y) - var(q_x)
             @test W[1, 2] ≈ W[2, 1]
             @test -W[1, 2] ≈ inv(added_variance)

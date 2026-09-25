@@ -76,7 +76,7 @@ end
     towards_factor(x) = log(integral(y -> pdf(m_out, x * y) * pdf(m_y, y), -8.0, 10.0))
     for target in (:A, :in)
         other = target === :A ? :in : :A
-        message = call_message_update_rule(*, target; m = NamedTuple{(:out, other)}((m_out, m_y)))
+        message = getresult(call_message_update_rule(*, target; m = NamedTuple{(:out, other)}((m_out, m_y))))
         @test message isa ContinuousUnivariateLogPdf
         for x in (-2.0, -0.5, 0.7, 1.9)
             @test logpdf(message, x) ≈ towards_factor(x) rtol = 1.0e-8
@@ -84,7 +84,7 @@ end
     end
     # Towards out: ∫ p_A(a) p_in(z / a) / |a| da, split at a = 0; the Bessel series is truncated.
     m_A, m_in = NormalMeanVariance(1.0, 0.5), NormalMeanVariance(0.5, 0.4)
-    product = call_message_update_rule(*, :out; m = (A = m_A, in = m_in))
+    product = getresult(call_message_update_rule(*, :out; m = (A = m_A, in = m_in)))
     towards_out(z) = log(integral(a -> pdf(m_A, a) * pdf(m_in, z / a) / abs(a), -8.0, 0.0) + integral(a -> pdf(m_A, a) * pdf(m_in, z / a) / abs(a), 0.0, 8.0))
     for z in (-1.0, 0.3, 1.2, 2.5)
         @test logpdf(product, z) ≈ towards_out(z) rtol = 1.0e-3
@@ -94,16 +94,16 @@ end
     # the log-density is log 3000 above the integral's, up to the draws' error.
     ctx = RuleContext(rng = StableRNG(42))
     g, b = GammaShapeRate(3.0, 2.0), Beta(2.0, 3.0)
-    sampled_in = call_message_update_rule(*, :in; m = (out = g, A = b), ctx)
+    sampled_in = getresult(call_message_update_rule(*, :in; m = (out = g, A = b), ctx))
     for x in (0.5, 2.0, 4.0)
         @test logpdf(sampled_in, x) - log(3000) ≈ log(integral(y -> pdf(g, x * y) * pdf(b, y), 0.0, 1.0)) atol = 0.05
     end
-    sampled_out = call_message_update_rule(*, :out; m = (A = b, in = g), ctx)
+    sampled_out = getresult(call_message_update_rule(*, :out; m = (A = b, in = g), ctx))
     for z in (0.3, 1.0, 2.0)
         @test logpdf(sampled_out, z) - log(3000) ≈ log(integral(a -> pdf(b, a) * pdf(g, z / a) / a, 0.0, 1.0)) atol = 0.05
     end
     # Towards `A`, the same ratio with the roles of `A` and `in` exchanged.
-    sampled_A = call_message_update_rule(*, :A; m = (out = g, in = b), ctx)
+    sampled_A = getresult(call_message_update_rule(*, :A; m = (out = g, in = b), ctx))
     for a in (0.5, 2.0, 4.0)
         @test logpdf(sampled_A, a) - log(3000) ≈ log(integral(y -> pdf(g, a * y) * pdf(b, y), 0.0, 1.0)) atol = 0.05
     end
@@ -111,28 +111,26 @@ end
     # The number of draws is the algorithm's, 3000 by default.
     @test default_algorithm(*) === MultiplicationSampling() && MultiplicationSampling().samples == 3000
     algorithm = MultiplicationSampling(samples = 5)
-    few = call_message_update_rule(*, :in; m = (out = g, A = b), ctx = RuleContext(rng = StableRNG(1)), algorithm)
+    few = getresult(call_message_update_rule(*, :in; m = (out = g, A = b), ctx = RuleContext(rng = StableRNG(1)), algorithm))
     ys = rand(StableRNG(1), b, 5)
     @test logpdf(few, 2.0) ≈ log(sum(y -> pdf(g, 2.0 * y), ys))
 end
 
 @testitem "rules:*:logscale-correction-refusals" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesBase, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
-    using MessagePassingRulesBase: AnnotationStore, getannotation, RuleNotFoundError, RuleContext
+    using MessagePassingRulesBase: RuleNotFoundError, RuleContext
     using MatrixCorrectionTools: NoCorrection
     using BayesBase: tiny
 
     # m(x) = N_out(a x) integrates to |a|^(-d): the log-scale is -d log |a|, for a < 0 too.
     for (a, out) in ((-2.0, NormalMeanVariance(1.0, 1.0)), (-2.0, MvNormalMeanCovariance([1.0, 2.0], [1.0 0.0; 0.0 1.0])), (0.5, MvNormalMeanCovariance([1.0, 2.0, 3.0], [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0])))
-        store = AnnotationStore()
-        call_message_update_rule(*, :in; m = (out = out, A = PointMass(a)), ann = store)
-        @test getannotation(store, :logscale, nothing) ≈ -length(mean(out)) * log(abs(a))
+        @test getlogscale(call_message_update_rule(*, :in; m = (out = out, A = PointMass(a)))) ≈ -length(mean(out)) * log(abs(a))
     end
     # A zero column in A gives A'WA a zero on its diagonal: replaced by default, kept by NoCorrection.
     m = (out = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), A = PointMass([1.0 0.0; 0.0 0.0]))
-    @test precision(call_message_update_rule(*, :in; m)) == [1.0 0.0; 0.0 tiny]
-    @test precision(call_message_update_rule(*, :in; m, ctx = RuleContext(matrix_correction = NoCorrection()))) == [1.0 0.0; 0.0 0.0]
+    @test precision(getresult(call_message_update_rule(*, :in; m))) == [1.0 0.0; 0.0 tiny]
+    @test precision(getresult(call_message_update_rule(*, :in; m, ctx = RuleContext(matrix_correction = NoCorrection())))) == [1.0 0.0; 0.0 0.0]
     # A matrix `in` does not commute with A, so in * A is refused.
-    @test_throws RuleNotFoundError call_message_update_rule(*, :A; m = (out = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), in = PointMass([1.0 2.0; 0.0 1.0])))
-    @test_throws RuleNotFoundError call_message_update_rule(*, :out; m = (A = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), in = PointMass([1.0 2.0; 0.0 1.0])))
+    @test_throws RuleNotFoundError getresult(call_message_update_rule(*, :A; m = (out = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), in = PointMass([1.0 2.0; 0.0 1.0]))))
+    @test_throws RuleNotFoundError getresult(call_message_update_rule(*, :out; m = (A = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), in = PointMass([1.0 2.0; 0.0 1.0]))))
 end

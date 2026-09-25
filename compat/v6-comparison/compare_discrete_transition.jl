@@ -57,7 +57,7 @@ as_v7(v6) = v6
 function compare_message(id, target, m, q, n; declared = DeclaredDisagreement[])
     m7, _ = v7_named(m, n)
     q7, clusters = v7_named(q, n)
-    v7 = call_message_update_rule(DiscreteTransition, target; m = m7, q = q7, clusters)
+    v7 = getresult(call_message_update_rule(DiscreteTransition, target; m = m7, q = q7, clusters))
     v6, _ = v6_message_update(DT6, v6_key(target), v6_named(m), v6_named(q))
     return compare_with_reference(id, v7, v6; node = "DiscreteTransition", target = repr(target), declared).outcome
 end
@@ -65,7 +65,7 @@ end
 function compare_marginal(id, members, m, q, n)
     m7, _ = v7_named(m, n)
     q7, clusters = v7_named(q, n)
-    v7 = call_marginal_update_rule(DiscreteTransition, members; m = m7, q = q7, clusters)
+    v7 = getresult(call_marginal_update_rule(DiscreteTransition, members; m = m7, q = q7, clusters))
     v6 = v6_marginal_update(DT6, map(v6_key, members), v6_named(m), v6_named(q))
     return compare_with_reference(id, v7, as_v7(v6); node = "DiscreteTransition", target = repr(members)).outcome
 end
@@ -76,7 +76,7 @@ end
 # square tensor.
 function compare_energy(id, q, n; generic = false)
     q7, clusters = v7_named(q, n)
-    v7 = call_average_energy(DiscreteTransition; q = q7, clusters)
+    v7 = getresult(call_average_energy(DiscreteTransition; q = q7, clusters))
     inputs = v6_named(q)
     names = Val(keys(inputs))
     marginals = map(value -> ReactiveMP.Marginal(value, false, false), Tuple(values(inputs)))
@@ -132,7 +132,7 @@ interface_size(key, n) = sizes(n)[key === :out ? 1 : key === :in ? 2 : 2 + last(
         for (label, q_a) in tensor_marginals(1)
             q = [:in => Bernoulli(0.3), (:T, 1) => categorical(4), :a => q_a]
             q7, _ = v7_named(q, 1)
-            v7 = call_message_update_rule(DiscreteTransition, :out; q = q7)
+            v7 = getresult(call_message_update_rule(DiscreteTransition, :out; q = q7))
             v6, _ = v6_message_update(DT6, :out, NamedTuple(), v6_named(as_categorical(q)))
             @test compare_with_reference("MF Bernoulli in:$label", v7, v6; node = "DiscreteTransition", target = ":out").outcome === :agree
         end
@@ -226,7 +226,7 @@ interface_size(key, n) = sizes(n)[key === :out ? 1 : key === :in ? 2 : 2 + last(
         for (label, q_a) in tensor_marginals(1)
             m = [:out => categorical(3), :in => categorical(2), (:T, 1) => onehot(4, 2)]
             m7, _ = v7_named(m, 1)
-            v7 = call_marginal_update_rule(DiscreteTransition, (:out, :in, :T); m = m7, q = (a = q_a,))
+            v7 = getresult(call_marginal_update_rule(DiscreteTransition, (:out, :in, :T); m = m7, q = (a = q_a,)))
             v6 = v6_marginal_update(DT6, (:out, :in, :T1), v6_named(m), v6_named([:a => q_a]))
             joint = components(v6.out_in) .* reshape(mean(v6.T1), 1, 1, 4)
             @test v7 isa Contingency && components(v7) ≈ joint
@@ -253,7 +253,7 @@ interface_size(key, n) = sizes(n)[key === :out ? 1 : key === :in ? 2 : 2 + last(
             q7, _ = v7_named(q, 2)
             v6 = compare_energy("Bernoulli in, as v6's Categorical:$label", as_categorical(q), 2)
             @test v6 === :agree
-            @test call_average_energy(DiscreteTransition; q = q7) ≈ call_average_energy(DiscreteTransition; q = first(v7_named(as_categorical(q), 2)))
+            @test getresult(call_average_energy(DiscreteTransition; q = q7)) ≈ getresult(call_average_energy(DiscreteTransition; q = first(v7_named(as_categorical(q), 2))))
         end
     end
 end

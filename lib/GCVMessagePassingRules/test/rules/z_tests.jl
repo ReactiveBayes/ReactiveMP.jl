@@ -14,8 +14,8 @@
     end
 
     algorithm = default_algorithm()
-    to_z(; kwargs...) = call_message_update_rule(GCV, :z; algorithm, kwargs...)
-    to_κ(; kwargs...) = call_message_update_rule(GCV, :κ; algorithm, kwargs...)
+    to_z(; kwargs...) = getresult(call_message_update_rule(GCV, :z; algorithm, kwargs...))
+    to_κ(; kwargs...) = getresult(call_message_update_rule(GCV, :κ; algorithm, kwargs...))
 
     @testset "Mean-field: (q_y, q_x, q_κ, q_ω)" begin
         for (; q_y, q_x, q_κ, q_ω) in parameter_sets()

@@ -3,14 +3,15 @@
 @define_message_update_rule(
     node = MvNormalMeanPrecision, target = :out,
     args = (m[:μ]::PointMass, m[:Λ]::PointMass),
+    logscale = 0,
     body = (args) -> MvNormalMeanPrecision(mean(args.m[:μ]), mean(args.m[:Λ])),
 )
 
 @define_message_update_rule(
     node = MvNormalMeanPrecision, target = :out,
     args = (m[:μ]::MultivariateNormalDistributionsFamily, m[:Λ]::PointMass),
-    body = (args, ann) -> begin
-        annotate!(ann, :logscale, 0)
+    logscale = 0,
+    body = (args) -> begin
         μ, V = mean_cov(args.m[:μ])
         MvNormalMeanCovariance(μ, V + cholinv(mean(args.m[:Λ])))
     end,
@@ -21,6 +22,7 @@
 @define_message_update_rule(
     node = MvNormalMeanPrecision, target = :out,
     args = (q[:μ]::PointMass, q[:Λ]::PointMass),
+    logscale = 0,
     body = (args) -> MvNormalMeanPrecision(mean(args.q[:μ]), mean(args.q[:Λ])),
 )
 

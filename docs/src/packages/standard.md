@@ -35,9 +35,9 @@ find every rule.
   `MultiplicationSampling(; samples = 3000)`.
 - **Products that do not commute.** For a matrix operand, `*` computes `A * in` only.
 - **Mixtures.** `NormalMixture` and `GammaMixture` are always variational, under their own
-  algorithms. `Mixture` is always belief propagation, under `MixtureBP`; its rules need their
-  inputs' log scales, so a graph with one needs log-scale annotations, and it has no average
-  energy, so the free energy of a model with one is an error.
+  algorithms. `Mixture` is always belief propagation, under `MixtureBP`; its rules read their
+  inputs' log scales (`reads_logscale = true`), so a graph with one tracks log scales
+  (`logscales = true`), and it has no average energy, so the free energy of a model with one is an error.
 
 ```@docs
 MultiplicationSampling

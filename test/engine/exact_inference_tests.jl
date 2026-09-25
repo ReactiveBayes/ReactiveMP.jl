@@ -5,7 +5,6 @@
 @testitem "engine:iid normals: exact posterior and evidence" tags = [:engine] setup = [EngineHarness] begin
     # x ~ N(0, 10), y[i] ~ N(x, 1): the posterior is conjugate, and y ~ N(0, 10 11ᵀ + I).
     using ExponentialFamily, Distributions, LinearAlgebra, StandardMessagePassingRules
-    import ReactiveMP: LogScaleAnnotations
     H = EngineHarness
 
     Y = [1.2, 0.7, 2.1, 1.6, 0.9, 1.4]
@@ -22,7 +21,7 @@
 
     result = H.run(
         graph; data = [y => Y, prior_v => 10.0, v => 1.0], iterations = 2,
-        posteriors = [:x => x], annotations = (LogScaleAnnotations(),),
+        posteriors = [:x => x], logscales = true,
     )
     precision = 1 / 10 + length(Y)
     @test mean(result.posteriors["x"]) ≈ sum(Y) / precision atol = 1.0e-12
@@ -361,7 +360,6 @@ end
     # s ~ Cat(0.3, 0.7), x[k] ~ N(∓2, 1), z = x[s], y ~ N(z, 0.5) observed at 1.5. Given s = k,
     # y ~ N(μ[k], 1.5), so p(s = k | y) ∝ π[k] N(y; μ[k], 1.5), and that sum is the evidence.
     using ExponentialFamily, StandardMessagePassingRules, Distributions
-    import ReactiveMP: LogScaleAnnotations
     H = EngineHarness
 
     graph = H.Graph()
@@ -377,7 +375,7 @@ end
 
     result = H.run(
         graph; data = [y => 1.5], iterations = 2,
-        posteriors = [:s => s, :x => x], annotations = (LogScaleAnnotations(),), free_energy = false,
+        posteriors = [:s => s, :x => x], logscales = true, free_energy = false,
     )
     weights = [0.3 * pdf(Normal(-2.0, sqrt(1.5)), 1.5), 0.7 * pdf(Normal(2.0, sqrt(1.5)), 1.5)]
     @test probs(result.posteriors["s"]) ≈ weights ./ sum(weights) atol = 1.0e-12

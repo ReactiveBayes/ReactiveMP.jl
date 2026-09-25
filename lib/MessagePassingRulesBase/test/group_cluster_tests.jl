@@ -56,15 +56,15 @@ end
     G = GroupClusterRules
 
     # The joint's rule, towards the cluster `(:in,)`.
-    joint = message_passing_marginalrule(G.DeltaToy, ClusterTarget((:in,)), G.ToyDelta(), RuleArgs(m = (out = 1.0, in = (2.0, 3.0))))
+    joint = getresult(message_passing_marginalrule(G.DeltaToy, ClusterTarget((:in,)), G.ToyDelta(), RuleArgs(m = (out = 1.0, in = (2.0, 3.0)))))
     @test joint.members == [3.0, 4.0]
 
     # A rule consuming it: the engine builds the joint under the key `(:in,)`.
     args = RuleArgs(m = (in = (nothing, 3.0),), q = Marginals(NamedTuple(), Val(((:in,),)), (joint,)))
-    @test message_passing_rule(G.DeltaToy, IndexedTarget(:in, 2), G.ToyDelta(), args) == 1.0
+    @test getresult(message_passing_rule(G.DeltaToy, IndexedTarget(:in, 2), G.ToyDelta(), args)) == 1.0
 
     mixed = RuleArgs(q = Marginals(NamedTuple(), Val(((:out, :in),)), (G.Joint([7.0, 8.0]),)))
-    @test message_passing_rule(G.DeltaToy, Target(:out), G.Mixed(), mixed) == 7.0
+    @test getresult(message_passing_rule(G.DeltaToy, Target(:out), G.Mixed(), mixed)) == 7.0
 
     # The rules agree with their node and with the dependencies.
     @test isempty(check_rules(G))

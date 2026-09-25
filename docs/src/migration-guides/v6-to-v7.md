@@ -82,7 +82,7 @@ end
     body = (args) -> NormalMeanPrecision(mean(args.q[:μ]), mean(args.q[:τ])),
 )
 
-call_message_update_rule(MyGaussian, :out; q = (μ = NormalMeanVariance(1.0, 1.0), τ = GammaShapeRate(2.0, 1.0)))
+getresult(call_message_update_rule(MyGaussian, :out; q = (μ = NormalMeanVariance(1.0, 1.0), τ = GammaShapeRate(2.0, 1.0))))
 ```
 
 A joint marginal, `q_out_μ` in v6, is `q[:out, :μ]`, its members in interface order:
@@ -105,7 +105,7 @@ end
     end,
 )
 
-call_message_update_rule(MyGaussian, :τ; clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.0], [1.0 0.0; 0.0 1.0]),))
+getresult(call_message_update_rule(MyGaussian, :τ; clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.0], [1.0 0.0; 0.0 1.0]),)))
 ```
 
 ## Marginal rules
@@ -132,7 +132,7 @@ end
     ),
 )
 
-call_marginal_update_rule(MyGaussian, (:out, :μ); m = (out = PointMass(1.0), μ = NormalMeanPrecision(0.0, 1.0)), q = (τ = PointMass(1.0),))
+getresult(call_marginal_update_rule(MyGaussian, (:out, :μ); m = (out = PointMass(1.0), μ = NormalMeanPrecision(0.0, 1.0)), q = (τ = PointMass(1.0),)))
 ```
 
 ## Average energies
@@ -153,18 +153,27 @@ end
     body = (args) -> (log(2π) - mean(log, args.q[:τ]) + mean(args.q[:τ]) * (var(args.q[:out]) + var(args.q[:μ]) + abs2(mean(args.q[:out]) - mean(args.q[:μ])))) / 2,
 )
 
-call_average_energy(MyGaussian; q = (out = PointMass(1.0), μ = PointMass(0.0), τ = PointMass(1.0)))
+getresult(call_average_energy(MyGaussian; q = (out = PointMass(1.0), μ = PointMass(0.0), τ = PointMass(1.0))))
 ```
 
-## Log scales and annotations
+## Log scales
 
-`@logscale v` becomes `annotate!(ann, :logscale, v)` on the rule's `ann` slot. A rule reads the
-log scales its inputs arrived with from `ann.m[:x]` (and `ann.q[:x]`), where v6 read them from
-the raw `messages` tuple.
+A message's log scale is no longer an annotation: it is part of the message, the scalar with
+`message = exp(logscale) · distribution` (see [Log scales](@ref lib-logscale)). A rule declares
+it with the `logscale` keyword instead of writing it in its body: `@logscale v` becomes
+`logscale = v` for a constant, `logscale = (args) -> …` for one computed from the inputs, or
+`logscale = from_body` with the body returning `with_logscale(result, v)`. A rule that reads the
+log scales its inputs arrived with, which v6 read from the raw `messages` tuple, declares
+`reads_logscale = true` and reads `args.logscale.m[:x]`.
 
-Log scales are experimental in v7, as they were in effect in v6: their gaps are kept, not
-fixed, and a later release may change how they are carried or remove them. Port a rule's log
-scale when it has one, but do not build new functionality on them.
+The engine tracks them with the activation option `logscales = true`, which replaces
+`LogScaleAnnotations`; RxInfer's `infer(...; logscales = true)` replaces
+`annotations = LogScaleAnnotations()`, and `getlogscale(getannotations(q))` becomes
+`getlogscale(q)`. A rule that declares none no longer makes inference fail: its message's log
+scale is an `UndefinedLogScale` saying why, which propagates through products, and only a rule or
+a user that needs the number errors. v6's fallback, which set zero whenever every input was a
+point mass, is gone, since it was not right for every rule; the rules it covered declare their log
+scale.
 
 ```julia
 # v6
@@ -182,15 +191,20 @@ struct MyBernoulli end
 @define_message_update_rule(
     node = MyBernoulli, target = :p,
     args = (m[:out]::PointMass,),
-    body = (args, ann) -> begin
-        annotate!(ann, :logscale, -log(2))
-        Beta(1 + mean(args.m[:out]), 2 - mean(args.m[:out]))
-    end,
+    logscale = -log(2),
+    body = (args) -> Beta(1 + mean(args.m[:out]), 2 - mean(args.m[:out])),
 )
 
-store = MessagePassingRulesBase.AnnotationStore()
-call_message_update_rule(MyBernoulli, :p; m = (out = PointMass(1.0),), ann = store), getannotation(store, :logscale)
+result = call_message_update_rule(MyBernoulli, :p; m = (out = PointMass(1.0),))
+getresult(result), getlogscale(result)
 ```
+
+## Calling a rule
+
+`@call_rule` returned the message, or a tuple with its add-ons under an option. Every call now
+returns a `RuleResult`, the same shape whatever the rule: `getresult(result)` is the message,
+`getlogscale(result)` its log scale, and `getrule`, `MessagePassingRulesBase.getalgorithm` and
+the other getters say what produced it.
 
 ## [Groups](@id migration-v6-to-v7-groups)
 
@@ -227,7 +241,7 @@ struct MySum end
     end,
 )
 
-call_message_update_rule(MySum, (:in, 1); m = (out = NormalMeanVariance(3.0, 1.0), in = (nothing, NormalMeanVariance(2.0, 1.0))))
+getresult(call_message_update_rule(MySum, (:in, 1); m = (out = NormalMeanVariance(3.0, 1.0), in = (nothing, NormalMeanVariance(2.0, 1.0)))))
 ```
 
 A group may be empty where the node declares `min_group_length = 0`. A joint may hold some of a
@@ -256,7 +270,7 @@ struct MyTensor end
 )
 
 # Under q(out) q(in, T1) q(T2): the joint by its key, and the second member of `T`.
-call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) => 0.5,), q = (T = (nothing, 1.0),))
+getresult(call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) => 0.5,), q = (T = (nothing, 1.0),)))
 ```
 
 ## `meta`
@@ -294,7 +308,7 @@ schedule in variational message passing.
 
 | v6 | v7 |
 |---|---|
-| `@call_rule Node(:out, Marginalisation) (m_x = …,)` | `call_message_update_rule(Node, :out; m = (x = …,))`, or `@call_message_update_rule` |
+| `@call_rule Node(:out, Marginalisation) (m_x = …,)` | `getresult(call_message_update_rule(Node, :out; m = (x = …,)))`, or `@call_message_update_rule` |
 | `@call_marginalrule` | `call_marginal_update_rule`, `@call_marginal_update_rule` |
 | `score(AverageEnergy(), Node, Val{…}(), marginals, meta)` | `call_average_energy(Node; q = …)` |
 | a rule calling another rule | both calling a plain helper function |
@@ -308,11 +322,12 @@ schedule in variational message passing.
 
 These need a person who knows what the rule means. Stop and ask.
 
-- **Rules reading the raw `messages` or `marginals` tuple**, often for their annotations. Each
-  use has to be matched to a named input or to `ann.m`/`ann.q`, which depends on what the rule
-  meant by the index.
-- **Rules building graph objects**, such as a `randomvar` for a product with a log scale. A
-  product is the `ctx.product` service; anything else has no counterpart.
+- **Rules reading the raw `messages` or `marginals` tuple**, often for their annotations or log
+  scales. Each use has to be matched to a named input, to `ann.m`/`ann.q` or to
+  `args.logscale.m`, which depends on what the rule meant by the index.
+- **Rules building graph objects**, such as a `randomvar` for a product with a log scale. The log
+  scale of a product of two distributions is `BayesBase.compute_logscale` of it, as `Mixture`'s
+  rule towards its switch computes it; anything else has no counterpart.
 - **`meta` used as mutable workspace**, such as a cache filled across calls. A rule is pure unless
   it says `pure = false`; state belongs to an algorithm that declares itself impure, and whether
   that is right depends on the model.
@@ -473,5 +488,5 @@ The engine no longer defines these internal helpers, none of which it used: `ski
 `getinboundinterfaces`, `interfaceindices`, `ReactiveMP.hasfield` (which shadowed
 `Base.hasfield`), `split_underscored_symbol`, `fields`, `swapped`, and the macro helpers other than
 `@proxy_methods`. The v5 stubs `AddonLogScale` and `AddonMemory`, which only raised an error
-pointing to their replacements, are gone too: use `LogScaleAnnotations` and
+pointing to their replacements, are gone too: use the `logscales = true` option and
 `InputArgumentsAnnotations`.

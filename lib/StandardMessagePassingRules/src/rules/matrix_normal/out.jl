@@ -1,6 +1,7 @@
 @define_message_update_rule(
     node = MatrixNormal, target = :out,
     args = (m[:M]::PointMass, m[:U]::PointMass, m[:V]::PointMass),
+    logscale = 0,
     body = (args) -> MatrixNormal(mean(args.m[:M]), mean(args.m[:U]), mean(args.m[:V])),
 )
 

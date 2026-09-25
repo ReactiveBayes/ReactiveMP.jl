@@ -1854,6 +1854,57 @@ inferred. The engine builds one per node at activation, its defaults (`node`, `p
 task's `rng`) merged with the node's `context` option, which adds or overrides services; RxInfer
 forwards the option.
 
+### 3.50 Log scales are first-class; `RuleResult`; no `product` service (user, 2026-09-25)
+
+The user found the `product` context service obscure: a default service of every node,
+`(left, right) -> (distribution, logscale)` with `GenericProd`, used by one rule, Mixture's switch,
+and returning a log scale the base package did not own. Discussing it reopened log scales
+themselves, and supersedes §3.34 (the service), §3.37 (log scales experimental, the key
+ownerless) and §3.48 (log scales as v6 has them past the release).
+
+- **What a log scale is** (user): a rule's result may stand for an unnormalised function, for
+  whatever reason; the log scale is the scalar with `message = exp(logscale) · result`. Belief
+  propagation is the common case where it is known, not its definition; a naive variational
+  message has none. BayesBase (`compute_logscale`) and ExponentialFamily already treat it as core
+  design, and the engine only propagates it where it can be computed.
+- **It is part of the message**, not an annotation: `Message{D, L}`, `Marginal{D, L}`. Annotations
+  stay the generic side channel for arbitrary information. v5 carried the log scale with the
+  message too (its rules returned `(message, addons)`, `AddonLogScale`); this is that idea,
+  declared and structured.
+- **A rule declares it statically**, `logscale = …`: a constant (an `Irrational` such as
+  `loghalf` keeps the float type; `-logtwo` would not, since negating an `Irrational` gives a
+  `Float64`), a function of the body's slots, or `from_body`, the body returning
+  `with_logscale(result, logscale)`. The declaration is rule metadata (`RuleSpec.logscale`), so
+  which rules provide one is visible in the code and to tooling. Omitted, it is an
+  `UndefinedLogScale(:no_declaration, spec)`.
+- **Undefined propagates instead of erroring**: through products, with its first reason; only
+  `require_logscale` (a consumer such as Mixture, or a user) errors. v6's zero for all-point-mass
+  inputs is gone: it was wrong in general (Bernoulli towards `p` from an observed `out` is
+  `log(1/2)`), and the rules it covered declare zero where that is exact.
+- **Incoming log scales** are `args.logscale.m[:x]`, for a rule declaring `reads_logscale = true`
+  (checked when the rule is resolved). `args` carries them in a third, dispatch-free type parameter
+  of `RuleArgs`; the engine builds them whenever it tracks log scales, since it builds `args`
+  before it knows the rule. They no longer go through `ann.m`.
+- **`RuleResult`**: every public call of a rule returns one, one shape for every rule (v5's
+  `@call_rule` returned a message or a tuple depending on an option). The engine never builds
+  one; inlined, `getresult(message_passing_rule(...))` allocates nothing, as the routing gates
+  show. Its generic getters other than `getresult`, `getlogscale`, `getrule` and `getannotations`
+  are public, not exported, since RxInfer (and users) define `getcontext` and `getarguments` of
+  their own. It must support **rich visualisation** (terminal, Jupyter, Pluto, Documenter, via
+  `show(io, mime, x)`): recorded as a requirement, not built in this change.
+- **The `product` service is removed**: the switch rule computes `compute_logscale` of the
+  product itself, under the strategy on its algorithm, `MixtureBP(; prod = GenericProd())`.
+- **The engine** tracks them with `logscales = true` (an activation option; RxInfer's `infer`
+  keyword and option). Otherwise messages carry `nothing`, which absorbs in products, so there is
+  no cost. Observations and constants carry zero; initial messages, fallback messages and form-
+  constrained products are undefined.
+- **Rejected**: keeping `product` as the variables' `MessageProductContext` (an engine type in
+  rules, still one user); a custom service Mixture declares (the engine still has to supply it);
+  scaled messages as values flowing into rules (every rule's dispatch would see the wrapper — the
+  output-only `with_logscale` avoids it); dropping log scales.
+- **Deferred, before 7.0**: deriving the log scales of Standard's remaining belief-propagation
+  rules, each verified by quadrature, with a gate for them.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

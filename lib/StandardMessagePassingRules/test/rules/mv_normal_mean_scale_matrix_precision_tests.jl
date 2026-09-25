@@ -106,9 +106,9 @@ end
     # E[log |G|] = digamma(3/2) + digamma(1) + 2 log 2; S = I + I + ΔΔᵀ for Δ = (0.5, -0.5).
     q = (out = MvNormalMeanCovariance([1.5, 0.5], I2), μ = MvNormalMeanCovariance([1.0, 1.0], I2), γ = GammaShapeRate(2.0, 4.0), G = Wishart(3.0, I2))
     ElogG = digamma(1.5) + digamma(1.0) + 2 * log(2.0)
-    @test call_average_energy(MvNormalMeanScaleMatrixPrecision; q) ≈ (2 * log2π - 2 * (digamma(2.0) - log(4.0)) - ElogG + 0.5 * 3 * (4.0 + 0.5)) / 2
+    @test getresult(call_average_energy(MvNormalMeanScaleMatrixPrecision; q)) ≈ (2 * log2π - 2 * (digamma(2.0) - log(4.0)) - ElogG + 0.5 * 3 * (4.0 + 0.5)) / 2
     # The joint with S = 2I, γ = 1/2 and G = 2I: E[γ] tr(E[G] S) = 4.
     whole = MvNormalMeanCovariance([1.0, 1.0, 1.0, 1.0], [1.0 0 0 0; 0 1.0 0 0; 0 0 1.0 0; 0 0 0 1.0])
-    @test call_average_energy(MvNormalMeanScaleMatrixPrecision; q = (γ = PointMass(0.5), G = PointMass(2 * I2)), clusters = ((:out, :μ) => whole,)) ≈
+    @test getresult(call_average_energy(MvNormalMeanScaleMatrixPrecision; q = (γ = PointMass(0.5), G = PointMass(2 * I2)), clusters = ((:out, :μ) => whole,))) ≈
         (2 * log2π - 2 * log(0.5) - log(4.0) + 4.0) / 2
 end

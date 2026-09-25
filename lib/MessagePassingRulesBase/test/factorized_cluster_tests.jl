@@ -89,7 +89,7 @@ end
         body = (args) -> FactorizedCluster((:out, :μ) => PointMass([args.m[:out], args.m[:μ]]), (:v,) => PointMass(args.m[:v])),
     )
     target = ClusterTarget((:out, :μ, :v))
-    result = message_passing_marginalrule(Gauss, target, DefaultAlgorithm(), RuleArgs(m = (out = 1.0, μ = 2.0, v = 3.0)))
+    result = getresult(message_passing_marginalrule(Gauss, target, DefaultAlgorithm(), RuleArgs(m = (out = 1.0, μ = 2.0, v = 3.0))))
     @test check_factorized_cluster(target, result)[(:out, :μ)].point == [1.0, 2.0]
 end
 

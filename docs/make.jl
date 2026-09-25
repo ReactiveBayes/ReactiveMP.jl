@@ -45,9 +45,9 @@ makedocs(
             "Free energy" => "lib/score.md",
             "Form constraints" => "custom/custom-functional-form.md",
             "Helpers" => "lib/helpers.md",
+            "Log scales" => "lib/logscale.md",
             "Annotations" => [
                 "Overview" => "lib/annotations.md",
-                "Log scale" => "lib/annotations/logscale.md",
                 "Input arguments" => "lib/annotations/input_arguments.md",
             ],
         ],

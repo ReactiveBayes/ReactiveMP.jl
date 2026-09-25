@@ -189,7 +189,7 @@ function activate_messages!(factornode, options)
 
             mapping = let messagemap = MessageMapping(
                     fform, rule_target(interface), messagesnames, marginalsnames,
-                    algorithm, annotations, factornode, callbacks, getdiagnostics(options), getcontext(options), getrulefallback(options),
+                    algorithm, annotations, factornode, callbacks, getdiagnostics(options), getcontext(options), getrulefallback(options), getlogscales(options),
                 )
                 (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
             end

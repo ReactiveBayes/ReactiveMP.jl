@@ -40,12 +40,16 @@
         )
         # A multivariate message under a univariate algorithm, and a univariate one under a
         # multivariate algorithm, have no meaning.
-        @test_throws MethodError call_message_update_rule(
-            AR, :y; m = (x = MvNormalMeanPrecision([0.0], [1.0;;]),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)), algorithm,
+        @test_throws MethodError getresult(
+            call_message_update_rule(
+                AR, :y; m = (x = MvNormalMeanPrecision([0.0], [1.0;;]),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)), algorithm,
+            )
         )
-        @test_throws MethodError call_message_update_rule(
-            AR, :y; m = (x = NormalMeanPrecision(0.0, 1.0),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)),
-            algorithm = ARVMP(Multivariate, 1, ARsafe()),
+        @test_throws MethodError getresult(
+            call_message_update_rule(
+                AR, :y; m = (x = NormalMeanPrecision(0.0, 1.0),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)),
+                algorithm = ARVMP(Multivariate, 1, ARsafe()),
+            )
         )
     end
 
@@ -65,8 +69,10 @@
     end
 
     @testset "No rule under the default algorithm" begin
-        @test_throws MessagePassingRulesBase.RuleNotFoundError call_message_update_rule(
-            AR, :y; q = (x = NormalMeanVariance(1.0, 1.0), θ = NormalMeanVariance(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)),
+        @test_throws MessagePassingRulesBase.RuleNotFoundError getresult(
+            call_message_update_rule(
+                AR, :y; q = (x = NormalMeanVariance(1.0, 1.0), θ = NormalMeanVariance(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)),
+            )
         )
     end
 end

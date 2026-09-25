@@ -53,7 +53,7 @@ end
     using BayesBase: PreserveTypeProd
     using .ConjugateARTestUtils: diageye, params_approx, likelihood_reference, posterior_reference, random_joint, random_w
 
-    towards_w(q_y_x, order) = call_message_update_rule(ConjugateAR, :w; clusters = ((:y, :x) => q_y_x,), algorithm = ARVMP(Multivariate, order, ARsafe()))
+    towards_w(q_y_x, order) = getresult(call_message_update_rule(ConjugateAR, :w; clusters = ((:y, :x) => q_y_x,), algorithm = ARVMP(Multivariate, order, ARsafe())))
 
     @testset "likelihood factor parameters (orders 1, 2)" begin
         rng = StableRNG(11)
@@ -145,13 +145,13 @@ end
                 input = (; other => MvNormalMeanCovariance(randn(rng, order), diageye(order)))
                 got, expected = if kind === :m
                     (
-                        call_message_update_rule(ConjugateAR, target; m = input, q = (w = q_w,), algorithm),
-                        call_message_update_rule(AR, target; m = input, q = (θ = q_θ, γ = q_γ), algorithm),
+                        getresult(call_message_update_rule(ConjugateAR, target; m = input, q = (w = q_w,), algorithm)),
+                        getresult(call_message_update_rule(AR, target; m = input, q = (θ = q_θ, γ = q_γ), algorithm)),
                     )
                 else
                     (
-                        call_message_update_rule(ConjugateAR, target; q = (; input..., w = q_w), algorithm),
-                        call_message_update_rule(AR, target; q = (; input..., θ = q_θ, γ = q_γ), algorithm),
+                        getresult(call_message_update_rule(ConjugateAR, target; q = (; input..., w = q_w), algorithm)),
+                        getresult(call_message_update_rule(AR, target; q = (; input..., θ = q_θ, γ = q_γ), algorithm)),
                     )
                 end
                 @test same_normal(got, expected)
@@ -173,8 +173,8 @@ end
         m_y = MvNormalMeanCovariance(randn(rng, order), diageye(order))
         m_x = MvNormalMeanCovariance(randn(rng, order), diageye(order))
 
-        got = call_marginal_update_rule(ConjugateAR, (:y, :x); m = (y = m_y, x = m_x), q = (w = q_w,), algorithm)
-        expected = call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm)
+        got = getresult(call_marginal_update_rule(ConjugateAR, (:y, :x); m = (y = m_y, x = m_x), q = (w = q_w,), algorithm))
+        expected = getresult(call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm))
         @test same_normal(got, expected)
     end
 end
@@ -207,8 +207,8 @@ end
             q_w = random_w(rng, order)
             q_θ, q_γ = conjugatear_effective_marginals(q_w)
 
-            ae_car = call_average_energy(ConjugateAR; clusters = ((:y, :x) => q_y_x,), q = (w = q_w,), algorithm)
-            ae_ar = call_average_energy(AR; clusters = ((:y, :x) => q_y_x,), q = (θ = q_θ, γ = q_γ), algorithm)
+            ae_car = getresult(call_average_energy(ConjugateAR; clusters = ((:y, :x) => q_y_x,), q = (w = q_w,), algorithm))
+            ae_ar = getresult(call_average_energy(AR; clusters = ((:y, :x) => q_y_x,), q = (θ = q_θ, γ = q_γ), algorithm))
             @test isfinite(ae_car)
             @test ae_car ≈ ae_ar
         end

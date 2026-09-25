@@ -53,7 +53,7 @@ end
     algorithm = DeltaApproximation(method = CVIProjection())
     m_in = NormalMeanVariance(0, 1)
     q_ins = FactorizedJoint((prod(GenericProd(), m_in, NormalMeanVariance(0, 1)),))
-    message = call_message_update_rule(DeltaFn, (:in, 1); m = (in = (m_in,),), clusters = ((:in,) => q_ins,), algorithm)
+    message = getresult(call_message_update_rule(DeltaFn, (:in, 1); m = (in = (m_in,),), clusters = ((:in,) => q_ins,), algorithm))
     @test prod(GenericProd(), message, m_in) ≈ component(q_ins, 1)
 end
 
@@ -69,7 +69,7 @@ end
     ]
     for (q_in, m_out) in cases
         q_out = q_in
-        message = call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(identity))
+        message = getresult(call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(identity)))
         projected = project_to(ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...), x -> logpdf(message, x) + logpdf(m_out, x); initialpoint = q_out)
         @test mean(projected) ≈ mean(q_out) atol = 5.0e-1
         @test var(projected) ≈ var(q_out) atol = 2.0
@@ -94,7 +94,7 @@ end
     for (q_ins, m_out) in cases
         parts = components(q_ins)
         q_out = MvNormalMeanCovariance(mapreduce(mean, vcat, parts), diagonal(mapreduce(var, vcat, parts)))
-        message = call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => q_ins,), algorithm, ctx = context(f))
+        message = getresult(call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => q_ins,), algorithm, ctx = context(f)))
         projected = project_to(ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...), x -> logpdf(message, x) + logpdf(m_out, x); initialpoint = q_out)
         @test mean(projected) ≈ mean(q_out) rtol = 5.0e-1
         @test var(projected) ≈ var(q_out) rtol = 1.0
@@ -111,7 +111,7 @@ end
             m_out in (NormalMeanVariance(0, 1), NormalMeanVariance(2, 3), NormalMeanVariance(4, 0.1))
         f = x -> a * x + b
         q_out = NormalMeanVariance(a * mean(q_in) + b, a^2 * var(q_in))
-        message = call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(f))
+        message = getresult(call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(f)))
         projected = project_to(ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...), x -> logpdf(message, x) + logpdf(m_out, x))
         @test mean(projected) ≈ mean(q_out) atol = 5.0e-1
         @test var(projected) ≈ var(q_out) atol = 7.0e-1
@@ -127,7 +127,7 @@ end
     q_in = MvNormalMeanCovariance([0.3, 0.7, 10.0], 0.1 * identity_matrix(3))
     m_out = MvNormalMeanCovariance(ones(3), 0.9 * identity_matrix(3))
     q_out = MvNormalMeanCovariance(mean(q_in) + c, cov(q_in))
-    message = call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(x -> x + c))
+    message = getresult(call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(x -> x + c)))
     projected = project_to(ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...), x -> logpdf(message, x), m_out; initialpoint = q_out)
     @test mean(projected) ≈ mean(q_out) rtol = 5.0e-1
     @test var(projected) ≈ var(q_out) rtol = 5.0e-1
@@ -147,7 +147,7 @@ end
         (Exponential(0.5), Exponential(30), Beta(0.5, 1), x -> exp(-x)),
     ]
     for (q_in, m_out, q_out, f) in cases
-        message = call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(f))
+        message = getresult(call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((q_in,)),), algorithm, ctx = context(f)))
         projected = project_to(ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...), x -> logpdf(message, x) + logpdf(m_out, x))
         @test mean(projected) ≈ mean(q_out) atol = 5.0e-1
         @test var(projected) ≈ var(q_out) atol = 1.0e-1
@@ -160,7 +160,7 @@ end
 
     # exp of a standard normal, projected onto a LogNormal: E[exp(x)] = exp(1/2).
     algorithm = DeltaApproximation(method = CVIProjection(out_prjparams = ProjectedTo(LogNormal), outsamples = 1000))
-    message = call_message_update_rule(DeltaFn, :out; m = (out = Gamma(2.0, 2.0),), q = (out = Gamma(2.0, 2.0),), clusters = ((:in,) => FactorizedJoint((NormalMeanVariance(0.0, 1.0),)),), algorithm, ctx = context(exp))
+    message = getresult(call_message_update_rule(DeltaFn, :out; m = (out = Gamma(2.0, 2.0),), q = (out = Gamma(2.0, 2.0),), clusters = ((:in,) => FactorizedJoint((NormalMeanVariance(0.0, 1.0),)),), algorithm, ctx = context(exp)))
     @test message.numerator isa LogNormal
     @test mean(message.numerator) ≈ exp(1 / 2) rtol = 0.05
 
@@ -169,7 +169,7 @@ end
     Σ = [1.0 0.5; 0.5 1.0]
     m_out = q_out = MvNormalMeanCovariance(ones(2), identity_matrix(2))
     for μ in ([0.0, 0.0], [7.0, -3.0])
-        message = call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((MvNormalMeanCovariance(μ, Σ),)),), algorithm, ctx = context(x -> x .^ 2))
+        message = getresult(call_message_update_rule(DeltaFn, :out; m = (out = m_out,), q = (out = q_out,), clusters = ((:in,) => FactorizedJoint((MvNormalMeanCovariance(μ, Σ),)),), algorithm, ctx = context(x -> x .^ 2)))
         @test message.numerator isa MvNormalMeanScalePrecision
         @test mean(message.numerator) ≈ μ .^ 2 .+ [1.0, 1.0] rtol = 0.1
     end
@@ -179,7 +179,7 @@ end
     using DeltaMessagePassingRules, ExponentialFamily, ExponentialFamilyProjection, BayesBase, Distributions, MessagePassingRulesBase
     using .CVIContext: context
 
-    joint(algorithm, f, m_out, m_ins...) = call_marginal_update_rule(DeltaFn, (:in,); m = (out = m_out, in = m_ins), algorithm, ctx = context(f))
+    joint(algorithm, f, m_out, m_ins...) = getresult(call_marginal_update_rule(DeltaFn, (:in,); m = (out = m_out, in = m_ins), algorithm, ctx = context(f)))
 
     # Through the identity, the joint of one input is its message times the message from `out`.
     algorithm = DeltaApproximation(method = CVIProjection())
@@ -232,7 +232,7 @@ end
         samples = [(rand(rng, component(q, 1)), rand(rng, component(q, 2))) for _ in 1:1000]
         return mean(logpdf(component(q, 1), x) + logpdf(component(q, 2), y) - (logpdf(m_x, x) + logpdf(m_y, y) + logpdf(m_out, f(x, y))) for (x, y) in samples)
     end
-    results = map(seed -> call_marginal_update_rule(DeltaFn, (:in,); m = (out = m_out, in = (m_x, m_y)), algorithm, ctx = context(f; seed)), 1:10)
+    results = map(seed -> getresult(call_marginal_update_rule(DeltaFn, (:in,); m = (out = m_out, in = (m_x, m_y)), algorithm, ctx = context(f; seed))), 1:10)
     divergences = map(kl_from_posterior, results)
     @test first(divergences) > 2 * last(divergences)
     # It settles on one mode: both inputs of one sign, as `x * y = 2` requires.

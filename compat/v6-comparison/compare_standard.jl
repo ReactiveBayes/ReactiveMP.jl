@@ -8,7 +8,7 @@ include(joinpath(@__DIR__, "V6Oracle.jl"))
 using .V6Oracle, Test
 using ExponentialFamily, BayesBase, Distributions
 using MessagePassingRulesBase, MessagePassingRulesTestUtils, StandardMessagePassingRules
-using MessagePassingRulesBase: AnnotationStore, getannotation
+using MessagePassingRulesBase: getlogscale, isdefined_logscale
 using LinearAlgebra: dot
 import LinearAlgebra, Random
 using MessagePassingRulesBase: RuleContext
@@ -469,10 +469,12 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
     @testset "message rules" begin
         for (id, node, edge, inputs, flagged) in MESSAGE_CASES
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
-            store = AnnotationStore()
-            v7 = call_message_update_rule(node, edge; m, q, ann = store)
+            result = call_message_update_rule(node, edge; m, q)
+            v7, v7_logscale = getresult(result), getlogscale(result)
             v6, v6_logscale = v6_message_update(v6_node(node), edge, m, q)
-            record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = ":$edge", actual_logscale = getannotation(store, :logscale, nothing), reference_logscale = v6_logscale, declared = declare(id, flagged))
+            # Where v6 has a log scale, v7's must agree; v7 also declares some v6 left out.
+            actual_logscale = v6_logscale === nothing ? nothing : (isdefined_logscale(v7_logscale) ? v7_logscale : nothing)
+            record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = ":$edge", actual_logscale, reference_logscale = v6_logscale, declared = declare(id, flagged))
             # A declared correction must actually differ, or the declaration is stale.
             @test (flagged !== false) == (record.outcome === :correction)
         end
@@ -480,7 +482,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
     @testset "message rules consuming a joint" begin
         for (id, node, edge, clusters, flagged, q...) in CLUSTER_MESSAGE_CASES
             q = isempty(q) ? NamedTuple() : only(q)
-            v7 = call_message_update_rule(node, edge; q, clusters)
+            v7 = getresult(call_message_update_rule(node, edge; q, clusters))
             v6, _ = v6_message_update(node, edge, NamedTuple(), merge(NamedTuple{map(V6Oracle.v6_name, Tuple(first.(clusters)))}(Tuple(last.(clusters))), q))
             record = compare_with_reference(id, v7, v6; inputs = clusters, node = string(node), target = ":$edge", declared = declare(id, flagged))
             @test (flagged !== false) == (record.outcome === :correction)
@@ -488,7 +490,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
     end
     @testset "NormalMixture" begin
         for (id, target, v7_inputs, v6_inputs) in MIXTURE_CASES
-            v7 = call_message_update_rule(NormalMixture, target; q = v7_inputs.q)
+            v7 = getresult(call_message_update_rule(NormalMixture, target; q = v7_inputs.q))
             v6, _ = v6_message_update(V6_NORMAL_MIXTURE, target, NamedTuple(), v6_inputs.q)
             @test compare_with_reference(id, v7, v6; inputs = v7_inputs, node = "NormalMixture", target = string(target)).outcome === :agree
         end
@@ -496,20 +498,20 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
                 ("NormalMixture:energy", (out = PointMass(1.5), switch = MIXTURE_SWITCH, MIXTURE_COMPONENTS...)),
                 ("NormalMixture:mv:energy", (out = MV_MIXTURE_OUT, switch = MIXTURE_SWITCH, MV_MIXTURE_COMPONENTS...)),
             ]
-            v7 = call_average_energy(NormalMixture; q)
+            v7 = getresult(call_average_energy(NormalMixture; q))
             v6 = v6_average_energy(V6_NORMAL_MIXTURE, q)
             @test compare_with_reference(id, v7, v6; node = "NormalMixture", target = "energy").outcome === :agree
         end
     end
     @testset "GammaMixture" begin
         for (id, target, v7_inputs, v6_inputs) in GAMMA_MIXTURE_CASES
-            v7 = call_message_update_rule(GammaMixture, target; q = v7_inputs.q)
+            v7 = getresult(call_message_update_rule(GammaMixture, target; q = v7_inputs.q))
             v6, _ = v6_message_update(V6_GAMMA_MIXTURE, target, NamedTuple(), v6_inputs.q)
             @test compare_with_reference(id, v7, as_v7(GammaMixture, v6); inputs = v7_inputs, node = "GammaMixture", target = string(target)).outcome === :agree
         end
         # v6's energy takes GammaShapeRate rates only.
         q = (out = GammaShapeRate(2.0, 1.0), switch = GAMMA_SWITCH, GAMMA_COMPONENTS...)
-        @test compare_with_reference("GammaMixture:energy", call_average_energy(GammaMixture; q), v6_average_energy(V6_GAMMA_MIXTURE, q); node = "GammaMixture", target = "energy").outcome === :agree
+        @test compare_with_reference("GammaMixture:energy", getresult(call_average_energy(GammaMixture; q)), v6_average_energy(V6_GAMMA_MIXTURE, q); node = "GammaMixture", target = "energy").outcome === :agree
     end
     # Belief propagation towards NMV's `v` is a log-density on the half line with no family;
     # the port and v6 are compared by evaluating it.
@@ -519,7 +521,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
                 (out = NormalMeanVariance(0.5, 2.0), μ = PointMass(-3.5)),
                 (out = NormalMeanVariance(1.0, 0.5), μ = NormalMeanVariance(-1.0, 2.0)),
             ]
-            v7 = call_message_update_rule(NormalMeanVariance, :v; m)
+            v7 = getresult(call_message_update_rule(NormalMeanVariance, :v; m))
             v6, _ = v6_message_update(NormalMeanVariance, :v, m, NamedTuple())
             @test all(v -> logpdf(v7, v) ≈ logpdf(v6, v), (0.1, 1.0, 3.5, 10.0))
         end
@@ -532,13 +534,13 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
     @testset "* log-density messages" begin
         integral(f, lo, hi) = (h = (hi - lo) / 100_000; h * sum(k -> f(lo + (k - 1 / 2) * h), 1:100_000))
         m_out, m_y = NormalMeanVariance(1.5, 0.5), NormalMeanVariance(0.8, 0.3)
-        v7 = call_message_update_rule(*, :in; m = (out = m_out, A = m_y))
+        v7 = getresult(call_message_update_rule(*, :in; m = (out = m_out, A = m_y)))
         v6, _ = v6_message_update(*, :in, (out = m_out, A = m_y), NamedTuple())
         for x in (-2.0, 0.7, 1.9)
             @test logpdf(v7, x) ≈ logpdf(v6, x)
         end
         m_A, m_in = NormalMeanVariance(1.0, 0.5), NormalMeanVariance(0.5, 0.4)
-        v7 = call_message_update_rule(*, :out; m = (A = m_A, in = m_in))
+        v7 = getresult(call_message_update_rule(*, :out; m = (A = m_A, in = m_in)))
         v6, _ = v6_message_update(*, :out, (A = m_A, in = m_in), NamedTuple())
         for z in (-1.0, 0.3, 2.5)
             @test logpdf(v7, z) ≈ logpdf(v6, z)
@@ -546,7 +548,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
         g, b = GammaShapeRate(3.0, 2.0), Beta(2.0, 3.0)
         Random.seed!(42)
         v6_in, _ = v6_message_update(*, :in, (out = g, A = b), NamedTuple())
-        v7_in = call_message_update_rule(*, :in; m = (out = g, A = b), ctx = RuleContext(rng = Random.Xoshiro(42)))
+        v7_in = getresult(call_message_update_rule(*, :in; m = (out = g, A = b), ctx = RuleContext(rng = Random.Xoshiro(42))))
         for x in (0.5, 2.0, 4.0)
             exact = log(integral(y -> pdf(g, x * y) * pdf(b, y), 0.0, 1.0)) + log(3000)
             @test logpdf(v7_in, x) ≈ exact atol = 0.05
@@ -554,7 +556,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
         end
         @info "known disagreement `*:in:sampled` (correction): ReactiveMP.jl#679: v6 weights each draw of the other factor by |y|, the density of out/y; the message is ∫ p_out(x y) p_y(y) dy"
         v6_out, _ = v6_message_update(*, :out, (A = b, in = g), NamedTuple())
-        v7_out = call_message_update_rule(*, :out; m = (A = b, in = g), ctx = RuleContext(rng = Random.Xoshiro(42)))
+        v7_out = getresult(call_message_update_rule(*, :out; m = (A = b, in = g), ctx = RuleContext(rng = Random.Xoshiro(42))))
         for z in (0.3, 1.0, 2.0)
             exact = log(integral(a -> pdf(b, a) * pdf(g, z / a) / a, 0.0, 1.0)) + log(3000)
             @test logpdf(v7_out, z) ≈ exact atol = 0.05
@@ -564,7 +566,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
     @testset "marginal rules" begin
         for (id, node, members, inputs, flagged) in MARGINAL_CASES
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
-            v7 = call_marginal_update_rule(node, members; m, q)
+            v7 = getresult(call_marginal_update_rule(node, members; m, q))
             v6 = v6_marginal_update(v6_node(node), members, m, q)
             record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = string(members), declared = declare(id, flagged))
             @test (flagged !== false) == (record.outcome === :correction)
@@ -573,7 +575,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
     @testset "average energies" begin
         for (id, node, inputs, flagged) in AVERAGE_ENERGY_CASES
             q, clusters = get(inputs, :q, NamedTuple()), get(inputs, :clusters, ())
-            v7 = call_average_energy(node; q, clusters)
+            v7 = getresult(call_average_energy(node; q, clusters))
             v6 = v6_average_energy(v6_node(node), q, clusters)
             record = compare_with_reference(id, v7, v6; inputs, node = string(node), target = "energy", declared = declare(id, flagged))
             @test (flagged !== false) == (record.outcome === :correction)

@@ -10,7 +10,7 @@ import Base: ==, ndims, precision, length, size, iterate
 # immutable one through the equality chain, and lighter everywhere
 # (`scripts/benchmark_message_representation.jl`).
 """
-    Marginal(data, is_clamped, is_initial[, annotations])
+    Marginal(data, is_clamped, is_initial[, annotations[, logscale]])
 
 An implementation of a marginal in variational message passing framework.
 
@@ -18,7 +18,9 @@ An implementation of a marginal in variational message passing framework.
 - `data::D`: marginal always holds some data object associated with it, which is usually a probability distribution
 - `is_clamped::Bool`, specifies if this marginal was the result of constant computations (e.g. clamped constants)
 - `is_initial::Bool`, specifies if this marginal was used for initialization
-- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. log-scale, input arguments). Defaults to an empty `AnnotationDict()`.
+- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. input arguments). Defaults to an empty `AnnotationDict()`.
+- `logscale`: the log scale of the product of messages the marginal was formed from (see
+  [`getlogscale`](@ref)), or `nothing` where log scales are not tracked, the default.
 
 # Example
 
@@ -44,9 +46,9 @@ true
 
 # Equality
 
-`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations` — matching
-[`Message`](@ref). Two marginals carrying the same distribution are equal even when their
-annotations differ:
+`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations` or the log scale
+— matching [`Message`](@ref). Two marginals carrying the same distribution are equal even when
+their annotations differ:
 
 ```jldoctest
 julia> using ReactiveMP, BayesBase, ExponentialFamily
@@ -55,7 +57,7 @@ julia> a = Marginal(NormalMeanVariance(0.0, 1.0), false, false);
 
 julia> b = Marginal(NormalMeanVariance(0.0, 1.0), false, false);
 
-julia> ReactiveMP.annotate!(ReactiveMP.getannotations(b), :logscale, 42.0);
+julia> ReactiveMP.annotate!(ReactiveMP.getannotations(b), :input_count, 2);
 
 julia> a == b
 true
@@ -69,18 +71,22 @@ This is intentional: annotations are out-of-band metadata about *how* a marginal
 not part of the belief it represents. Compare `getannotations` explicitly when you need
 annotation-sensitive equality.
 """
-mutable struct Marginal{D}
+mutable struct Marginal{D, L}
     const data::D
     const is_clamped::Bool
     const is_initial::Bool
     const annotations::AnnotationDict
+    const logscale::L
 end
 
 Marginal(data, is_clamped::Bool, is_initial::Bool) =
-    Marginal(data, is_clamped, is_initial, AnnotationDict())
+    Marginal(data, is_clamped, is_initial, AnnotationDict(), nothing)
+Marginal(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
+    Marginal(data, is_clamped, is_initial, annotations, nothing)
 
 function Base.show(io::IO, marginal::Marginal)
     print(io, "Marginal(", getdata(marginal), ")")
+    marginal.logscale === nothing || print(io, " with logscale = ", marginal.logscale)
     ann = getannotations(marginal)
     return if !isempty(ann)
         print(io, " with ", ann)
@@ -126,6 +132,16 @@ is_initial(marginal::Marginal) = marginal.is_initial
 Returns the [`AnnotationDict`](@ref) associated with the `marginal`.
 """
 getannotations(marginal::Marginal) = marginal.annotations
+
+"""
+    getlogscale(marginal::Marginal)
+
+The log scale of `marginal`: that of the product of messages it was formed from. For a
+variable's posterior in a tree-shaped model inferred exactly by belief propagation, it is the
+log evidence of the data. A number or a `MessagePassingRulesBase.UndefinedLogScale` saying why
+it is not known; this throws where log scales are not tracked (`logscales = true`).
+"""
+getlogscale(marginal::Marginal) = tracked_logscale(marginal.logscale)
 
 typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 

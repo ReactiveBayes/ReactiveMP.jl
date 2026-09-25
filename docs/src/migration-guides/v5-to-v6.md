@@ -176,7 +176,7 @@ The following exports no longer exist in v6:
 | Removed | Replacement |
 |---|---|
 | `AbstractAddon` | [`ReactiveMP.AbstractAnnotations`](@ref) |
-| `AddonLogScale` | [`ReactiveMP.LogScaleAnnotations`](@ref) |
+| `AddonLogScale` | `ReactiveMP.LogScaleAnnotations` (itself replaced in v7 by the `logscales = true` option, see [Log scales](@ref lib-logscale)) |
 | `AddonMemory` | [`ReactiveMP.InputArgumentsAnnotations`](@ref) |
 | `AddonDebug` | *removed* (use [callbacks](@ref lib-callbacks) instead) |
 | `multiply_addons` | [`ReactiveMP.post_product_annotations!`](@ref) |

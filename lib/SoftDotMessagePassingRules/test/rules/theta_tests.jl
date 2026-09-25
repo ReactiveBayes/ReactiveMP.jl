@@ -43,8 +43,10 @@
     # marginal, so it is found and fails inside.
     @testset "VMP: Incorrect Inputs" begin
         # 2**: INCORRECT (y cannot be Mv)
-        @test_throws MethodError call_message_update_rule(
-            SoftDot, :θ; q = (y = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = NormalMeanVariance(7.0, 11.0), γ = GammaShapeScale(13.0, 5.0)),
+        @test_throws MethodError getresult(
+            call_message_update_rule(
+                SoftDot, :θ; q = (y = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = NormalMeanVariance(7.0, 11.0), γ = GammaShapeScale(13.0, 5.0)),
+            )
         )
         # NOTE: γ can theoretically be Any, so also NormalMeanVariance
     end

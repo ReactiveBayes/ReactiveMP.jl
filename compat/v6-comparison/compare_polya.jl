@@ -35,10 +35,10 @@ and for observed counts. The package's energy tests pin the port against enumera
             label = "x = $x, y = $y, n = $n"
 
             # The mean paths.
-            v7 = call_message_update_rule(BinomialPolya, :β; m = (β = m_β,), q)
+            v7 = getresult(call_message_update_rule(BinomialPolya, :β; m = (β = m_β,), q))
             v6, _ = v6_message_update(ReactiveMP.BinomialPolya, :β, (β = m_β,), q)
             @test compare_with_reference("BinomialPolya:β:$label", v7, v6; node = "BinomialPolya", target = ":β").outcome === :agree
-            v7 = call_message_update_rule(BinomialPolya, :y; q = (x = q.x, n = q.n, β = q_β))
+            v7 = getresult(call_message_update_rule(BinomialPolya, :y; q = (x = q.x, n = q.n, β = q_β)))
             v6, _ = v6_message_update(ReactiveMP.BinomialPolya, :y, NamedTuple(), (x = q.x, n = q.n, β = q_β))
             @test compare_with_reference("BinomialPolya:y:$label", v7, v6; node = "BinomialPolya", target = ":y").outcome === :agree
 
@@ -47,21 +47,21 @@ and for observed counts. The package's energy tests pin the port against enumera
             samples = 20_000
             algorithm, ctx = BinomialPolyaApproximation(; samples), RuleContext(rng = Xoshiro(7))
             meta = ReactiveMP.BinomialPolyaMeta(samples, Xoshiro(11))
-            v7 = call_message_update_rule(BinomialPolya, :β; m = (β = m_β,), q, algorithm, ctx)
+            v7 = getresult(call_message_update_rule(BinomialPolya, :β; m = (β = m_β,), q, algorithm, ctx))
             v6, _ = v6_message_update(ReactiveMP.BinomialPolya, :β, (β = m_β,), q; meta)
             @test compare_with_reference("BinomialPolya:β:MC:$label", v7, v6; node = "BinomialPolya", target = ":β", rtol = 2.0e-2).outcome === :agree
-            v7 = call_message_update_rule(BinomialPolya, :y; q = (x = q.x, n = q.n, β = q_β), algorithm, ctx)
+            v7 = getresult(call_message_update_rule(BinomialPolya, :y; q = (x = q.x, n = q.n, β = q_β), algorithm, ctx))
             v6, _ = v6_message_update(ReactiveMP.BinomialPolya, :y, NamedTuple(), (x = q.x, n = q.n, β = q_β); meta)
             @test compare_with_reference("BinomialPolya:y:MC:$label", v7, v6; node = "BinomialPolya", target = ":y", atol = 1.0e-2).outcome === :agree
 
             # The energy: corrected for a normal q(β), and the same for a point mass, where the
             # plug-in is the expectation.
             id = "BinomialPolya:energy:$label"
-            v7 = call_average_energy(BinomialPolya; q = merge(q, (β = q_β,)))
+            v7 = getresult(call_average_energy(BinomialPolya; q = merge(q, (β = q_β,))))
             v6 = v6_average_energy(ReactiveMP.BinomialPolya, merge(q, (β = q_β,)))
             declared = [DeclaredDisagreement(id; kind = :correction, reasoning = BINOMIAL_ENERGY)]
             @test compare_with_reference(id, v7, v6; node = "BinomialPolya", target = "energy", declared).outcome === :correction
-            v7 = call_average_energy(BinomialPolya; q = merge(q, (β = PointMass(mean(q_β)),)))
+            v7 = getresult(call_average_energy(BinomialPolya; q = merge(q, (β = PointMass(mean(q_β)),))))
             v6 = v6_average_energy(ReactiveMP.BinomialPolya, merge(q, (β = PointMass(mean(q_β)),)))
             @test compare_with_reference("BinomialPolya:energy:point mass:$label", v7, v6; node = "BinomialPolya", target = "energy").outcome === :agree
         end
@@ -75,22 +75,22 @@ and for observed counts. The package's energy tests pin the port against enumera
             q_ψ = MvNormalMeanCovariance([-0.3 + 0.7 * (k - 1) / max(K - 2, 1) for k in 1:(K - 1)], Matrix(Diagonal(fill(0.4, K - 1))))
             label = "x = $counts"
 
-            v7 = call_message_update_rule(MultinomialPolya, :ψ; m = (ψ = m_ψ,), q = (x = PointMass(counts), N = PointMass(N)))
+            v7 = getresult(call_message_update_rule(MultinomialPolya, :ψ; m = (ψ = m_ψ,), q = (x = PointMass(counts), N = PointMass(N))))
             v6, _ = v6_message_update(ReactiveMP.MultinomialPolya, :ψ, (ψ = m_ψ,), (x = PointMass(counts), N = PointMass(N)); meta)
             @test compare_with_reference("MultinomialPolya:ψ:$label", v7, v6; node = "MultinomialPolya", target = ":ψ").outcome === :agree
-            v7 = call_message_update_rule(MultinomialPolya, :x; q = (N = PointMass(N), ψ = q_ψ))
+            v7 = getresult(call_message_update_rule(MultinomialPolya, :x; q = (N = PointMass(N), ψ = q_ψ)))
             v6, _ = v6_message_update(ReactiveMP.MultinomialPolya, :x, NamedTuple(), (N = PointMass(N), ψ = q_ψ); meta)
             @test compare_with_reference("MultinomialPolya:x:$label", v7, v6; node = "MultinomialPolya", target = ":x").outcome === :agree
 
             # Observed counts: v6 was right.
             q = (x = PointMass(counts), N = PointMass(N), ψ = q_ψ)
-            v7 = call_average_energy(MultinomialPolya; q)
+            v7 = getresult(call_average_energy(MultinomialPolya; q))
             v6 = v6_average_energy(ReactiveMP.MultinomialPolya, q; meta)
             @test compare_with_reference("MultinomialPolya:energy:$label", v7, v6; node = "MultinomialPolya", target = "energy").outcome === :agree
 
             # A Multinomial q(x): right for N = 1, corrected otherwise.
             q = (x = Multinomial(N, fill(1 / K, K)), N = PointMass(N), ψ = q_ψ)
-            v7 = call_average_energy(MultinomialPolya; q)
+            v7 = getresult(call_average_energy(MultinomialPolya; q))
             v6 = v6_average_energy(ReactiveMP.MultinomialPolya, q; meta)
             id = "MultinomialPolya:energy:Multinomial:$label"
             declared = N == 1 ? DeclaredDisagreement[] : [DeclaredDisagreement(id; kind = :correction, reasoning = MULTINOMIAL_ENERGY)]

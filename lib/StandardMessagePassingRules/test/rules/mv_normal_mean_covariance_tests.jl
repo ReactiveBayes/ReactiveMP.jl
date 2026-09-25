@@ -13,9 +13,9 @@
             cases = [
                 (m = m(PointMass([1.0, 3.0]), PointMass([3.0 2.0; 2.0 4.0])),) => MvNormalMeanCovariance([1.0, 3.0], [3.0 2.0; 2.0 4.0]),
                 (m = m(MvNormalMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]), PointMass([6.0 4.0; 4.0 8.0])),) =>
-                    ExpectedWithAnnotations(MvNormalMeanCovariance([2.0, 1.0], [13 / 2 15 / 4; 15 / 4 67 / 8]); logscale = 0),
+                    ExpectedWithLogScale(MvNormalMeanCovariance([2.0, 1.0], [13 / 2 15 / 4; 15 / 4 67 / 8]), 0),
                 (m = m(MvNormalMeanCovariance([0.0, 0.0], [7.0 -1.0; -1.0 9.0]), PointMass([12.0 -2.0; -2.0 7.0])),) =>
-                    ExpectedWithAnnotations(MvNormalMeanCovariance([0.0, 0.0], [19.0 -3.0; -3.0 16.0]); logscale = 0),
+                    ExpectedWithLogScale(MvNormalMeanCovariance([0.0, 0.0], [19.0 -3.0; -3.0 16.0]), 0),
                 (q = m(PointMass([-1.0, 2.0]), PointMass([7.0 -1.0; -1.0 9.0])),) => MvNormalMeanCovariance([-1.0, 2.0], [7.0 -1.0; -1.0 9.0]),
                 (q = m(MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), PointMass([2.0 0.0; 0.0 2.0])),) => MvNormalMeanCovariance([1.0, 2.0], [2.0 0.0; 0.0 2.0]),
                 # E[Σ⁻¹] = 5 · (2I)⁻¹, so the covariance is 0.4 I, not E[Σ] = I.
@@ -87,13 +87,13 @@ end
     I2 = [1.0 0.0; 0.0 1.0]
     # (2 log 2π + log 4 + tr((2I)⁻¹ · I)) / 2, in each representation of q_μ.
     for q_μ in (MvNormalMeanCovariance([1.0, 1.0], I2), MvNormalMeanPrecision([1.0, 1.0], I2), MvNormalWeightedMeanPrecision([1.0, 1.0], I2))
-        @test call_average_energy(MvNormalMeanCovariance; q = (out = PointMass([1.0, 1.0]), μ = q_μ, Σ = PointMass(2 * I2))) ≈ 3.0310242469692907
+        @test getresult(call_average_energy(MvNormalMeanCovariance; q = (out = PointMass([1.0, 1.0]), μ = q_μ, Σ = PointMass(2 * I2)))) ≈ 3.0310242469692907
     end
     # The joint's form: the same difference moment from the blocks of q(out, μ).
     joint = MvNormalMeanCovariance([1.0, 1.0, 1.0, 1.0], [1.0 0 0 0; 0 1.0 0 0; 0 0 1.0 0; 0 0 0 1.0])
-    @test call_average_energy(MvNormalMeanCovariance; q = (Σ = PointMass(2 * I2),), clusters = ((:out, :μ) => joint,)) ≈ (2 * log2π + log(4.0) + 2.0) / 2
+    @test getresult(call_average_energy(MvNormalMeanCovariance; q = (Σ = PointMass(2 * I2),), clusters = ((:out, :μ) => joint,))) ≈ (2 * log2π + log(4.0) + 2.0) / 2
     # An inverse Wishart q_Σ: E[log |Σ|] and E[Σ⁻¹] = νΨ⁻¹ both enter.
     q_Σ = InverseWishart(5.0, 2 * I2)
-    @test call_average_energy(MvNormalMeanCovariance; q = (out = PointMass([1.0, 1.0]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), Σ = q_Σ)) ≈
+    @test getresult(call_average_energy(MvNormalMeanCovariance; q = (out = PointMass([1.0, 1.0]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), Σ = q_Σ))) ≈
         (2 * log2π + mean(logdet, q_Σ) + (5 / 2) * 2) / 2
 end

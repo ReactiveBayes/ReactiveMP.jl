@@ -27,7 +27,7 @@ end
     # E[-log MatrixNormal(X; M, U, Y⁻¹)] = (n p log 2π + p log |U| - n E[log |Y|]
     # + tr(U⁻¹ (D E[Y] Dᵀ + p Uq))) / 2, and E[-log Wishart(Y; ν, V)] is the Wishart node's energy.
     matrix_normal_part = (n * p * log2π + p * logdet(U) - n * mean(logdet, q_Y) + tr(inv(U) * (D * mean(q_Y) * D' + p * Uq))) / 2
-    wishart_part = call_average_energy(Wishart; q = (out = q_Y, ν = PointMass(ν), S = PointMass(V)))
+    wishart_part = getresult(call_average_energy(Wishart; q = (out = q_Y, ν = PointMass(ν), S = PointMass(V))))
     @test_average_energy(
         node = MatrixNormalWishart,
         cases = [

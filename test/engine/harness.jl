@@ -51,14 +51,15 @@
 
     """
     One rule call: the iteration it happened in (0 before the first data), the node's functional
-    form and the target, as `":out"` or `"(:in, 1)"`, the result and its log scale, if any.
+    form and the target, as `":out"` or `"(:in, 1)"`, the result and its log scale: a number, an
+    `UndefinedLogScale`, or `nothing` when log scales are not tracked.
     """
     struct RuleCall
         iteration::Int
         node::String
         target::String
         result::Any
-        logscale::Union{Nothing, Float64}
+        logscale::Any
     end
 
     """
@@ -66,7 +67,7 @@
     for a vector of variables), `history[name]` every marginal it was given, in order, and
     `predictions` the last prediction of each predicted data variable (`nothing` if none came).
     `free_energy` has one value per iteration, `trace` every rule call, and `logscales[name]` the
-    last marginal's log scale when a run is given annotations.
+    last marginal's log scale when a run tracks log scales.
     """
     struct Run
         id::String
@@ -81,15 +82,13 @@
     target_text(target::Target{E}) where {E} = ":$E"
     target_text(target::IndexedTarget{E}) where {E} = "(:$E, $(target.index))"
 
-    logscale_of(ann) = has_annotation(ann, :logscale) ? Float64(get_annotation(ann, :logscale)) : nothing
-
     unwrapall(history::Vector) = map(getdata, history)
     unwrapall(histories::Vector{<:Vector}) = map(unwrapall, histories)
     final(history::Vector) = getdata(last(history))
     final(histories::Vector{<:Vector}) = map(final, histories)
 
     """
-        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
+        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true)
 
     Activate `graph` as RxInfer does (variables, each followed by its entry in
     `initial_marginals` and then in `initial_messages` (variable => distribution), the latter set
@@ -98,18 +97,18 @@
     variables, then to the free energy, and feed `data` (variable => value, or vectors of
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
     """
-    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], annotations = nothing, free_energy = true)
+    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true)
         trace = RuleCall[]
         iteration = Ref(0)
         callbacks = (
             after_message_rule_call = (event) -> begin
                 node = string(nameof(message_mapping_fform(event.mapping)))
-                push!(trace, RuleCall(iteration[], node, target_text(event.mapping.target), event.result, logscale_of(event.annotations)))
+                push!(trace, RuleCall(iteration[], node, target_text(event.mapping.target), event.result, event.logscale))
                 nothing
             end,
         )
 
-        product = MessageProductContext(; annotations)
+        product = MessageProductContext()
         for variable in graph.variables
             if israndom(variable)
                 activate!(variable, RandomVariableActivationOptions(nothing, product, product))
@@ -124,7 +123,7 @@
             end
         end
         for node in graph.nodes
-            activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], annotations, callbacks))
+            activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], callbacks, logscales))
         end
 
         histories = Dict{String, Any}()
@@ -160,13 +159,13 @@
 
         results = Dict{String, Any}(name => final(history) for (name, history) in histories)
         unwrapped = Dict{String, Any}(name => unwrapall(history) for (name, history) in histories)
-        logscales = Dict{String, Any}()
-        if annotations !== nothing
+        final_logscales = Dict{String, Any}()
+        if logscales
             for (name, history) in histories
                 history isa Vector{<:Vector} && continue
-                logscales[name] = logscale_of(getannotations(last(history)))
+                final_logscales[name] = getlogscale(last(history))
             end
         end
-        return Run(id, results, unwrapped, predicted, energies, trace, logscales)
+        return Run(id, results, unwrapped, predicted, energies, trace, final_logscales)
     end
 end

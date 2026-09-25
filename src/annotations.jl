@@ -29,8 +29,8 @@ mutable struct AnnotationDict
     end
 end
 
-# Overloaded later for `::Message` and `::Marginal` in their respective files
-function getannotations end
+# `MessagePassingRulesBase`'s, overloaded later for `::Message` and `::Marginal` in their respective files
+import MessagePassingRulesBase: getannotations
 
 Base.isempty(ann::AnnotationDict) =
     isnothing(ann.data) || isempty(ann.data::Dict{Symbol, Any})

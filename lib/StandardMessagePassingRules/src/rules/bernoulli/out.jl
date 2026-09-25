@@ -1,8 +1,8 @@
 @define_message_update_rule(
     node = Bernoulli, target = :out,
     args = (m[:p]::Beta,),
-    body = (args, ann) -> begin
-        annotate!(ann, :logscale, 0)
+    logscale = 0,
+    body = (args) -> begin
         Bernoulli(mean(args.m[:p]))
     end,
 )
@@ -10,12 +10,14 @@
 @define_message_update_rule(
     node = Bernoulli, target = :out,
     args = (m[:p]::PointMass,),
+    logscale = 0,
     body = (args) -> Bernoulli(mean(args.m[:p])),
 )
 
 @define_message_update_rule(
     node = Bernoulli, target = :out,
     args = (q[:p]::PointMass,),
+    logscale = 0,
     body = (args) -> Bernoulli(mean(args.q[:p])),
 )
 

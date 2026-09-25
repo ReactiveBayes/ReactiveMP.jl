@@ -93,23 +93,23 @@ end
     end
 
     # The shape fits, a type does not.
-    mismatch = text(() -> message_passing_rule(B.Gauss, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = 1.0, τ = "x"))))
+    mismatch = text(() -> getresult(message_passing_rule(B.Gauss, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = 1.0, τ = "x")))))
     @test contains(mismatch, "type mismatch")
     @test contains(mismatch, "✓ m[:μ]::Real  got Float64")
     @test contains(mismatch, "✗ m[:τ]::Real  got String")
     @test contains(mismatch, "✓ algorithm")
 
     # Wrong inputs altogether.
-    shape = text(() -> message_passing_rule(B.Gauss, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = 1.0,), q = (τ = 1.0,))))
+    shape = text(() -> getresult(message_passing_rule(B.Gauss, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = 1.0,), q = (τ = 1.0,)))))
     @test contains(shape, "no rule of this shape")
     @test contains(shape, "✗ m[:τ]::Real  not provided")
     @test contains(shape, "✗ q[:τ]::Float64  provided but not consumed")
 
     # Right inputs, wrong algorithm.
-    algorithm = text(() -> message_passing_rule(B.Gauss, Target(:out), B.Standalone(), RuleArgs(m = (μ = 1.0, τ = 2.0))))
+    algorithm = text(() -> getresult(message_passing_rule(B.Gauss, Target(:out), B.Standalone(), RuleArgs(m = (μ = 1.0, τ = 2.0)))))
     @test contains(algorithm, "no rule of this shape")
     @test contains(algorithm, "✗ algorithm")
 
-    none = text(() -> message_passing_rule(B.Gauss, Target(:nothing_here), DefaultAlgorithm(), RuleArgs()))
+    none = text(() -> getresult(message_passing_rule(B.Gauss, Target(:nothing_here), DefaultAlgorithm(), RuleArgs())))
     @test contains(none, "no rule exists for this node and target")
 end

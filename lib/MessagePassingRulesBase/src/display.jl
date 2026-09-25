@@ -35,6 +35,7 @@ function Base.show(io::IO, ::MIME"text/plain", spec::RuleSpec)
     println(io, "RuleSpec: ", rule_heading(spec))
     println(io, "  inputs:   ", inputs_label(spec))
     println(io, "  in-place: ", yesno(spec.inplace), " · scratch: ", yesno(spec.scratch !== nothing), " · pure: ", yesno(spec.pure), " · services: ", isempty(spec.services) ? "none" : join(spec.services, ", "))
+    spec.kind === :message && println(io, "  logscale: ", describe_logscale_declaration(spec.logscale), spec.reads_logscale ? " · reads incoming log scales" : "")
     println(io, "  defined:  ", spec.file, ":", spec.line)
     print(io, "  body:     ", spec.source)
     return nothing
@@ -44,6 +45,7 @@ Base.show(io::IO, ::MIME"text/html", spec::RuleSpec) = html_table(
     io, "RuleSpec: " * rule_heading(spec), [
         "inputs" => inputs_label(spec), "in-place" => yesno(spec.inplace), "scratch" => yesno(spec.scratch !== nothing), "pure" => yesno(spec.pure),
         "services" => isempty(spec.services) ? "none" : join(spec.services, ", "),
+        "logscale" => describe_logscale_declaration(spec.logscale), "reads log scales" => yesno(spec.reads_logscale),
         "defined" => "$(spec.file):$(spec.line)", "body" => spec.source,
     ]
 )

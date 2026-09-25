@@ -19,21 +19,19 @@
             @testset "differing annotations do not break equality" begin
                 plain = Wrapper(distribution, false, false)
                 annotated = Wrapper(distribution, false, false)
-                annotate!(getannotations(annotated), :logscale, 42.0)
+                annotate!(getannotations(annotated), :input_count, 2)
 
                 @test plain == annotated
                 # ... while the annotation dicts themselves are clearly different.
                 @test getannotations(plain) != getannotations(annotated)
             end
 
-            @testset "differing :logscale values do not break equality either" begin
-                left = Wrapper(distribution, false, false)
-                right = Wrapper(distribution, false, false)
-                annotate!(getannotations(left), :logscale, 1.0)
-                annotate!(getannotations(right), :logscale, 2.0)
+            @testset "differing log scales do not break equality either" begin
+                left = Wrapper(distribution, false, false, ReactiveMP.AnnotationDict(), 1.0)
+                right = Wrapper(distribution, false, false, ReactiveMP.AnnotationDict(), 2.0)
 
                 @test left == right
-                @test getannotations(left) != getannotations(right)
+                @test getlogscale(left) != getlogscale(right)
             end
 
             @testset "the three compared fields still matter" begin
@@ -363,11 +361,6 @@ end
     @define_factor_node(node = Draw, type = Stochastic, interfaces = [:out, :in])
     @define_message_update_rule(node = Draw, target = :out, args = (m[:in]::Int,), ctx = (:rng,), body = (ctx, args) -> ctx.rng)
 
-    # Multiplies its input by itself through `ctx.product`.
-    struct Square end
-    @define_factor_node(node = Square, type = Stochastic, interfaces = [:out, :in])
-    @define_message_update_rule(node = Square, target = :out, args = (m[:in]::Any,), ctx = (:product,), body = (ctx, args) -> ctx.product(args.m[:in], args.m[:in]))
-
     struct Stranger end
 
     # Working memory: the rule counts how often its scratch is built, and uses it.
@@ -457,7 +450,7 @@ end
     node = N.Draw()
     ctx = node_context(node, (rng = rng, matrix_correction = :identity, gpu = :device))
     @test ctx isa RuleContext && ctx.node === node && ctx.rng === rng && ctx.matrix_correction === :identity && ctx.gpu === :device
-    @test ctx.product !== nothing
+    @test propertynames(node_context(node)) == (:node, :rng, :matrix_correction)
     @test node_context(node).rng === Random.default_rng() && node_context(node).matrix_correction === nothing
 
     # A mapping hands its node's context to the rule.
@@ -476,19 +469,6 @@ end
     set_initial_message!(get_stream_of_inbound_messages(last(getinterfaces(node))), 1)
     unsubscribe!(subscription)
     @test received == [rng]
-end
-
-@testitem "MessageMapping gives a rule the product service" tags = [:engine] setup = [MessageMappingNodes] begin
-    import ReactiveMP: MessageMapping, getdata
-    import MessagePassingRulesBase: Target, DefaultAlgorithm
-    using BayesBase, ExponentialFamily
-    N = MessageMappingNodes
-
-    # The product and its own log scale, log ∫ N(x; 1, 2)² dx = -log(2 √(π · 2)).
-    square = MessageMapping(N.Square, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Square(), nothing)
-    product, logscale = getdata(square((Message(NormalMeanVariance(1.0, 2.0), false, false),), nothing))
-    @test mean_var(product) == (1.0, 1.0)
-    @test logscale ≈ -log(2 * sqrt(2π))
 end
 
 @testitem "MessageMapping throws a RuleNotFoundError when no rule fits" tags = [:engine] setup = [MessageMappingNodes] begin

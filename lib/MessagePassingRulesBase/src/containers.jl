@@ -106,19 +106,25 @@ end
 end
 
 """
-    RuleArgs(; m = NamedTuple(), q = NamedTuple())
+    RuleArgs(; m = NamedTuple(), q = NamedTuple(), logscale = nothing)
 
 The arguments object a rule body receives: `args.m` holds the inbound messages and
-`args.q` the marginals.
+`args.q` the marginals. `args.logscale` holds the log scales that arrived with the messages,
+`args.logscale.m[:out]`, when the caller tracks them, and is `nothing` otherwise; a rule reads
+them only when declared with `reads_logscale = true`. Rules dispatch on `m` and `q` alone.
 """
-struct RuleArgs{M <: Messages, Q <: Marginals}
+struct RuleArgs{M <: Messages, Q <: Marginals, L}
     m::M
     q::Q
+    logscale::L
 end
 
-RuleArgs(; m = NamedTuple(), q = NamedTuple()) = RuleArgs(as_messages(m), as_marginals(q))
+RuleArgs(m::Messages, q::Marginals) = RuleArgs(m, q, nothing)
+RuleArgs(; m = NamedTuple(), q = NamedTuple(), logscale = nothing) = RuleArgs(as_messages(m), as_marginals(q), as_logscales(logscale))
 
 as_messages(m::Messages) = m
 as_messages(m::NamedTuple) = Messages(m)
 as_marginals(q::Marginals) = q
 as_marginals(q::NamedTuple) = Marginals(q)
+as_logscales(::Nothing) = nothing
+as_logscales(logscale::NamedTuple) = RuleLogScales(m = logscale)

@@ -7,6 +7,7 @@ end
 @define_message_update_rule(
     node = MvNormalGamma, target = :out,
     args = (m[:μ]::PointMass, m[:Λ]::PointMass, m[:α]::PointMass, m[:β]::PointMass),
+    logscale = 0,
     body = (args) -> promoted_mv_normal_gamma(mean(args.m[:μ]), mean(args.m[:Λ]), mean(args.m[:α]), mean(args.m[:β])),
 )
 

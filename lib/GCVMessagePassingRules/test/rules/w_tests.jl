@@ -28,7 +28,7 @@
     end
 
     algorithm = default_algorithm()
-    to_ω(; kwargs...) = call_message_update_rule(GCV, :ω; algorithm, kwargs...)
+    to_ω(; kwargs...) = getresult(call_message_update_rule(GCV, :ω; algorithm, kwargs...))
 
     @testset "Mean-field: (q_y, q_x, q_z, q_κ)" begin
         # `z` is deliberately given a mean far from 1 and a non-zero variance: those are
@@ -104,7 +104,7 @@
         q_κ = NormalMeanVariance(0.8, 0.4)
         q_ω = NormalMeanVariance(1.2, 0.5)
         ω_msg = to_ω(q = (y = q_y, x = q_x, z = q_z, κ = q_κ))
-        κ_msg = call_message_update_rule(GCV, :κ; q = (y = q_y, x = q_x, z = q_z, ω = q_ω), algorithm)
+        κ_msg = getresult(call_message_update_rule(GCV, :κ; q = (y = q_y, x = q_x, z = q_z, ω = q_ω), algorithm))
         @test (ω_msg.a, ω_msg.c, ω_msg.d) != (κ_msg.a, κ_msg.c, κ_msg.d)
         # ... and specifically that it is not carrying `z`'s moments
         @test ω_msg.a != mean(q_z)

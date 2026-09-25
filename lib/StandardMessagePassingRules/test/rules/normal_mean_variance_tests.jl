@@ -10,14 +10,14 @@
         cases = [
             (m = (μ = PointMass(-1.0), v = PointMass(2.0)),) => NormalMeanVariance(-1.0, 2.0),
             (m = (μ = PointMass(2.0), v = PointMass(1.0)),) => NormalMeanVariance(2.0, 1.0),
-            (m = (μ = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithAnnotations(NormalMeanVariance(0.0, 3.0); logscale = 0),
-            (m = (μ = NormalMeanPrecision(2.0, 0.5), v = PointMass(1.0)),) => ExpectedWithAnnotations(NormalMeanVariance(2.0, 3.0); logscale = 0),
-            (m = (μ = NormalWeightedMeanPrecision(2.0, 0.5), v = PointMass(1.0)),) => ExpectedWithAnnotations(NormalMeanVariance(4.0, 3.0); logscale = 0),
+            (m = (μ = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithLogScale(NormalMeanVariance(0.0, 3.0), 0),
+            (m = (μ = NormalMeanPrecision(2.0, 0.5), v = PointMass(1.0)),) => ExpectedWithLogScale(NormalMeanVariance(2.0, 3.0), 0),
+            (m = (μ = NormalWeightedMeanPrecision(2.0, 0.5), v = PointMass(1.0)),) => ExpectedWithLogScale(NormalMeanVariance(4.0, 3.0), 0),
             (q = (μ = PointMass(1.0), v = PointMass(2.0)),) => NormalMeanVariance(1.0, 2.0),
             (q = (μ = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)),) => NormalMeanVariance(1.0, 4 / 3),
             (m = (μ = PointMass(-1.0),), q = (v = InverseGamma(3.0, 4.0),)) => NormalMeanVariance(-1.0, 4 / 3),
             (m = (μ = NormalMeanVariance(0.0, 1.0),), q = (v = InverseGamma(3.0, 4.0),)) => NormalMeanVariance(0.0, 1 + 4 / 3),
-            (m = (μ = NormalMeanVariance(2.0, 0.5),), q = (v = PointMass(1.0),)) => ExpectedWithAnnotations(NormalMeanVariance(2.0, 1.5); logscale = 0),
+            (m = (μ = NormalMeanVariance(2.0, 0.5),), q = (v = PointMass(1.0),)) => ExpectedWithLogScale(NormalMeanVariance(2.0, 1.5), 0),
         ],
     )
 end
@@ -29,8 +29,8 @@ end
         node = NormalMeanVariance, target = :μ,
         cases = [
             (m = (out = PointMass(-1.0), v = PointMass(2.0)),) => NormalMeanVariance(-1.0, 2.0),
-            (m = (out = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithAnnotations(NormalMeanVariance(0.0, 3.0); logscale = 0),
-            (m = (out = NormalWeightedMeanPrecision(2.0, 0.5), v = PointMass(1.0)),) => ExpectedWithAnnotations(NormalMeanVariance(4.0, 3.0); logscale = 0),
+            (m = (out = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithLogScale(NormalMeanVariance(0.0, 3.0), 0),
+            (m = (out = NormalWeightedMeanPrecision(2.0, 0.5), v = PointMass(1.0)),) => ExpectedWithLogScale(NormalMeanVariance(4.0, 3.0), 0),
             (q = (out = PointMass(1.0), v = PointMass(2.0)),) => NormalMeanVariance(1.0, 2.0),
             (q = (out = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)),) => NormalMeanVariance(1.0, 4 / 3),
             (m = (out = PointMass(-1.0),), q = (v = InverseGamma(3.0, 4.0),)) => NormalMeanVariance(-1.0, 4 / 3),
@@ -93,7 +93,7 @@ end
         (m = (out = NormalMeanVariance(1.0, 0.5), μ = NormalMeanVariance(-1.0, 2.0)), expected = likelihood(1.0, -1.0, 2.5)),
     ]
     for case in cases
-        message = call_message_update_rule(NormalMeanVariance, :v; m = case.m)
+        message = getresult(call_message_update_rule(NormalMeanVariance, :v; m = case.m))
         @test message isa ContinuousUnivariateLogPdf
         @test all(v -> logpdf(message, v) ≈ case.expected(v), (0.1, 1.0, 3.5, 10.0))
     end

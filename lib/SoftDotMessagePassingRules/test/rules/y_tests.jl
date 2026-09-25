@@ -34,7 +34,7 @@
     # message itself will not provide any information or might not match. The rule takes any
     # marginal, so it is found and fails inside.
     @testset "VMP: Incorrect Inputs" begin
-        to_y(q) = call_message_update_rule(SoftDot, :y; q)
+        to_y(q) = getresult(call_message_update_rule(SoftDot, :y; q))
         # 02*, 12*, 21*: INCORRECT (θ and x have to be of the same dimension)
         @test_throws MethodError to_y((θ = PointMass(7.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), γ = GammaShapeRate(13.0, 5.0)))
         @test_throws MethodError to_y((θ = NormalMeanVariance(7.0, 11.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), γ = GammaShapeRate(13.0, 5.0)))

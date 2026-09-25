@@ -11,21 +11,15 @@
 @define_message_update_rule(
     node = *, target = :in, ctx = (:matrix_correction,),
     args = (m[:out]::NormalDistributionsFamily, m[:A]::PointMass{<:Real}),
-    body = (ctx, args, ann) -> begin
-        a = mean(args.m[:A])
-        annotate!(ann, :logscale, unscaled_logscale(args.m[:out], a))
-        unscaled(ctx, args.m[:out], a)
-    end,
+    logscale = (args) -> unscaled_logscale(args.m[:out], mean(args.m[:A])),
+    body = (ctx, args) -> unscaled(ctx, args.m[:out], mean(args.m[:A])),
 )
 
 @define_message_update_rule(
     node = *, target = :in, ctx = (:matrix_correction,),
     args = (m[:out]::NormalDistributionsFamily, m[:A]::PointMass{<:UniformScaling}),
-    body = (ctx, args, ann) -> begin
-        λ = mean(args.m[:A]).λ
-        annotate!(ann, :logscale, unscaled_logscale(args.m[:out], λ))
-        unscaled(ctx, args.m[:out], λ)
-    end,
+    logscale = (args) -> unscaled_logscale(args.m[:out], mean(args.m[:A]).λ),
+    body = (ctx, args) -> unscaled(ctx, args.m[:out], mean(args.m[:A]).λ),
 )
 
 @define_message_update_rule(

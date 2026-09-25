@@ -4,6 +4,7 @@
 @define_message_update_rule(
     node = InverseWishart, target = :out,
     args = (m[:ν]::PointMass, m[:S]::PointMass),
+    logscale = 0,
     body = (args) -> InverseWishartFast(mean(args.m[:ν]), mean(args.m[:S])),
 )
 

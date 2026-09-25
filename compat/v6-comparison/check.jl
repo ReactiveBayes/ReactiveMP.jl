@@ -13,7 +13,6 @@ using MessagePassingRulesTestUtils
 
 module V7Port
     using MessagePassingRulesBase, ExponentialFamily, BayesBase
-    using MessagePassingRulesBase: annotate!
 
     @define_factor_node(node = NormalMeanVariance, type = Stochastic, interfaces = [:out, :μ, :v])
 
@@ -23,29 +22,29 @@ module V7Port
     )
     @define_message_update_rule(
         node = NormalMeanVariance, target = :out, args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
-        body = (args, ann) -> begin
-            annotate!(ann, :logscale, 0)
+        logscale = 0,
+        body = (args) -> begin
             μ_mean, μ_var = mean_var(args.m[:μ])
             NormalMeanVariance(μ_mean, μ_var + mean(args.m[:v]))
         end,
     )
     @define_message_update_rule(
         node = NormalMeanVariance, target = :μ, args = (m[:out]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
-        body = (args, ann) -> begin
-            annotate!(ann, :logscale, 0)
+        logscale = 0,
+        body = (args) -> begin
             out_mean, out_var = mean_var(args.m[:out])
             NormalMeanVariance(out_mean, out_var + mean(args.m[:v]))
         end,
     )
 end
 
-using MessagePassingRulesBase: RuleArgs, Target, DefaultAlgorithm, AnnotationStore, RuleAnnotations, RuleContext, getannotation
+using MessagePassingRulesBase: RuleArgs, Target, DefaultAlgorithm, getresult, getlogscale, isdefined_logscale
 using MessagePassingRulesBase: message_passing_rule
 
 function v7_message_update(node, edge, m, q)
-    store = AnnotationStore()
-    result = message_passing_rule(node, Target(edge), DefaultAlgorithm(), RuleArgs(m = m, q = q), RuleContext(), RuleAnnotations(out = store))
-    return result, getannotation(store, :logscale, nothing)
+    result = message_passing_rule(node, Target(edge), DefaultAlgorithm(), RuleArgs(m = m, q = q))
+    logscale = getlogscale(result)
+    return getresult(result), isdefined_logscale(logscale) ? logscale : nothing
 end
 
 const CASES = [

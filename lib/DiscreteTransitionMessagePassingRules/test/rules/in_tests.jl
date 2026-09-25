@@ -64,7 +64,7 @@ end
             naive = exp.(eloga' * probvec(q_out))
             naive ./= sum(naive)
 
-            msg = call_message_update_rule(DiscreteTransition, :in; q = (out = q_out, a = q_a))
+            msg = getresult(call_message_update_rule(DiscreteTransition, :in; q = (out = q_out, a = q_a)))
 
             p = probvec(msg)
             @test p ≈ naive

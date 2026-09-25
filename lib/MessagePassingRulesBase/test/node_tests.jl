@@ -189,8 +189,8 @@ end
 
     algorithm = Point((z -> z - 2, z -> z / 2))
     ctx = RuleContext(node = EngineNode((x, y) -> x + 2y))
-    @test message_passing_rule(DeltaToy, Target(:out), algorithm, RuleArgs(m = (in = (1.0, 3.0),)), ctx) == 7.0
-    @test message_passing_rule(DeltaToy, IndexedTarget(:in, 2), algorithm, RuleArgs(m = (out = 7.0,))) == 3.5
+    @test getresult(message_passing_rule(DeltaToy, Target(:out), algorithm, RuleArgs(m = (in = (1.0, 3.0),)), ctx)) == 7.0
+    @test getresult(message_passing_rule(DeltaToy, IndexedTarget(:in, 2), algorithm, RuleArgs(m = (out = 7.0,)))) == 3.5
 
     # Declared, with no methods of its own.
     @test isempty(methods(getnodefn, Tuple{Any, Any}, MessagePassingRulesBase))

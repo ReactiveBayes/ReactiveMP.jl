@@ -1,12 +1,13 @@
 # Towards `switch`: component k's evidence is the log scale of m_out × m_inputs[k], which is the
-# product's own (`ctx.product`) plus the two incoming ones.
+# product's own (`product_logscale`, with the algorithm's product strategy) plus the two incoming
+# ones.
 @define_message_update_rule(
-    node = Mixture, target = :switch, ctx = (:product,),
+    node = Mixture, algorithm = MixtureBP, target = :switch,
     args = (m[:out]::Any, m[:inputs...]::Any),
-    body = (ctx, args, ann) -> begin
-        out = incoming_logscale(ann.m[:out])
-        logscales = [out + incoming_logscale(a) + last(ctx.product(args.m[:out], m)) for (m, a) in zip(args.m[:inputs], ann.m[:inputs])]
-        annotate!(ann, :logscale, logsumexp(logscales))
-        Categorical(softmax(logscales))
+    reads_logscale = true, logscale = from_body,
+    body = (algo, args) -> begin
+        out = incoming_logscale(args.logscale.m[:out])
+        logscales = [out + incoming_logscale(l) + product_logscale(algo.prod, args.m[:out], m) for (m, l) in zip(args.m[:inputs], args.logscale.m[:inputs])]
+        with_logscale(Categorical(softmax(logscales)), logsumexp(logscales))
     end,
 )

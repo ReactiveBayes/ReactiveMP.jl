@@ -17,8 +17,8 @@
     using MessagePassingRulesBase: RuleArgs, Target, DefaultAlgorithm
     const ARGS = RuleArgs(m = (A = [1.0 2.0; 3.0 4.0], x = [1.0, 1.0]))
     const BUFFER = zeros(2)
-    into_buffer() = message_passing_rule!(BUFFER, Affine, Target(:out), DefaultAlgorithm(), ARGS)
-    allocating() = message_passing_rule(Affine, Target(:out), DefaultAlgorithm(), ARGS)
+    into_buffer() = getresult(message_passing_rule!(BUFFER, Affine, Target(:out), DefaultAlgorithm(), ARGS))
+    allocating() = getresult(message_passing_rule(Affine, Target(:out), DefaultAlgorithm(), ARGS))
     measure(f) = (f(); @allocated f())
 end
 

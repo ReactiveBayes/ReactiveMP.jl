@@ -116,7 +116,7 @@ function verify_message_update(message, logdensity, interfaces, target::Symbol; 
     shape = record_check(spread <= atol, :(shape_matches_node_definition), () -> "$label: log-ratio to the node definition varies by $spread over the test points; differences $(differences)", source)
     if shape && mode === :bp && logscale !== nothing
         offset = mean(differences)
-        record_check(abs(offset + logscale) <= atol, :(logscale_matches_node_definition), () -> "$label: the node definition implies log scale $(-offset), the rule annotated $logscale", source)
+        record_check(abs(offset + logscale) <= atol, :(logscale_matches_node_definition), () -> "$label: the node definition implies log scale $(-offset), the rule declares $logscale", source)
     end
     return differences
 end
@@ -125,7 +125,7 @@ end
     verify_message_update_rule(node, target; m, q, algorithm, points, atol)
 
 [`verify_message_update`](@ref) for a rule defined with the base package: its output
-against `nodefunction(node)`, with the log scale it annotates.
+against `nodefunction(node)`, with the log scale it declares.
 """
 function verify_message_update_rule(node, target::Symbol; m = NamedTuple(), q = NamedTuple(), algorithm = MessagePassingRulesBase.default_algorithm(node), points = nothing, atol = 1.0e-6, source = LineNumberNode(0, :unknown))
     resolved_target = MessagePassingRulesBase.as_target(target)
@@ -134,9 +134,11 @@ function verify_message_update_rule(node, target::Symbol; m = NamedTuple(), q = 
         spec = MessagePassingRulesBase.find_message_rule(node, resolved_target, algorithm, args)
         spec isa MessagePassingRulesBase.RuleSpec || throw(MessagePassingRulesBase.RuleNotFoundError(spec))
         record_selected_rule!(spec, source)
-        store = MessagePassingRulesBase.AnnotationStore()
-        output = MessagePassingRulesBase.execute_rule(spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), MessagePassingRulesBase.RuleContext(), args, MessagePassingRulesBase.RuleAnnotations(out = store), resolved_target)
-        return output, MessagePassingRulesBase.getannotation(store, :logscale, nothing)
+        output, logscale = MessagePassingRulesBase.execute_rule_with_logscale(
+            spec, nothing, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), MessagePassingRulesBase.RuleContext(), args,
+            MessagePassingRulesBase.NoAnnotations(), resolved_target,
+        )
+        return output, logscale isa Real ? logscale : nothing
     end
     return verify_message_update(message, MessagePassingRulesBase.nodefunction(node), MessagePassingRulesBase.interfaces(node), target; m, q, points, atol, source)
 end

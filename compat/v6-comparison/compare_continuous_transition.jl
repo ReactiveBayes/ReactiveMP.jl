@@ -63,7 +63,7 @@ const TRANSFORMATIONS = [
             (:W, "mean-field", NamedTuple(), (y = q_y, x = q_x, a = q_a), ()),
         ]
         for (target, form, m, q, clusters) in cases
-            v7 = call_message_update_rule(ContinuousTransition, target; m, q, clusters, algorithm)
+            v7 = getresult(call_message_update_rule(ContinuousTransition, target; m, q, clusters, algorithm))
             v6_q = isempty(clusters) ? q : merge((y_x = last(only(clusters)),), q)
             v6, _ = v6_message_update(ReactiveMP.ContinuousTransition, target, m, v6_q; meta)
             id = "ContinuousTransition:$target:$form:$name"
@@ -72,13 +72,13 @@ const TRANSFORMATIONS = [
             @test compare_with_reference(id, v7, v6; node = "ContinuousTransition", target = ":$target", declared).outcome === (corrected ? :correction : :agree)
         end
 
-        v7 = call_marginal_update_rule(ContinuousTransition, (:y, :x); m = (y = m_y, x = m_x), q = (a = q_a, W = q_W), algorithm)
+        v7 = getresult(call_marginal_update_rule(ContinuousTransition, (:y, :x); m = (y = m_y, x = m_x), q = (a = q_a, W = q_W), algorithm))
         v6 = v6_marginal_update(ReactiveMP.ContinuousTransition, (:y, :x), (y = m_y, x = m_x), (a = q_a, W = q_W); meta)
         @test compare_with_reference("ContinuousTransition:joint:$name", v7, v6; node = "ContinuousTransition", target = "(:y, :x)").outcome === :agree
 
         for (form, v7, v6) in (
-                ("structured", call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm), v6_average_energy(ReactiveMP.ContinuousTransition, (a = q_a, W = q_W), ((:y, :x) => q_y_x,); meta)),
-                ("mean-field", call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm), v6_average_energy(ReactiveMP.ContinuousTransition, (y = q_y, x = q_x, a = q_a, W = q_W); meta)),
+                ("structured", getresult(call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm)), v6_average_energy(ReactiveMP.ContinuousTransition, (a = q_a, W = q_W), ((:y, :x) => q_y_x,); meta)),
+                ("mean-field", getresult(call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm)), v6_average_energy(ReactiveMP.ContinuousTransition, (y = q_y, x = q_x, a = q_a, W = q_W); meta)),
             )
             id = "ContinuousTransition:energy:$form:$name"
             declared = [DeclaredDisagreement(id; kind = :correction, reasoning = ENERGY)]

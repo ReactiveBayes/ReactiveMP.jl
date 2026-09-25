@@ -196,9 +196,9 @@ end
         out = MvNormalMeanPrecision([1.0, 2.0], [2.0 0; 0 1]), in = MvNormalMeanPrecision([1.0, 2.0], [1.0 0; 0 2]),
         zprev = TerminalProdArgument(MvNormalMeanPrecision([1.0, 2.0], [1.0 0; 0 2])), znext = MvNormalMeanPrecision([1.0, 2.0], [1.0 0; 0 3]),
     )
-    @test_throws BIFMMessagePassingRules.BIFMFreeEnergyError call_marginal_update_rule(BIFM, (:in, :zprev, :znext); m, algorithm)
+    @test_throws BIFMMessagePassingRules.BIFMFreeEnergyError getresult(call_marginal_update_rule(BIFM, (:in, :zprev, :znext); m, algorithm))
     error = try
-        call_marginal_update_rule(BIFM, (:in, :zprev, :znext); m, algorithm)
+        getresult(call_marginal_update_rule(BIFM, (:in, :zprev, :znext); m, algorithm))
     catch e
         e
     end

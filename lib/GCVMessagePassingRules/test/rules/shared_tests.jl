@@ -60,13 +60,13 @@ end
     for (; q_y, q_x, q_z, q_κ, q_ω) in parameter_sets()
         clusters = ((:y, :x) => block_diagonal_joint(q_y, q_x),)
         @testset "κ" begin
-            meanfield = call_message_update_rule(GCV, :κ; q = (y = q_y, x = q_x, z = q_z, ω = q_ω), algorithm)
-            structured = call_message_update_rule(GCV, :κ; clusters, q = (z = q_z, ω = q_ω), algorithm)
+            meanfield = getresult(call_message_update_rule(GCV, :κ; q = (y = q_y, x = q_x, z = q_z, ω = q_ω), algorithm))
+            structured = getresult(call_message_update_rule(GCV, :κ; clusters, q = (z = q_z, ω = q_ω), algorithm))
             @test all(coefficients(meanfield) .≈ coefficients(structured))
         end
         @testset "z" begin
-            meanfield = call_message_update_rule(GCV, :z; q = (y = q_y, x = q_x, κ = q_κ, ω = q_ω), algorithm)
-            structured = call_message_update_rule(GCV, :z; clusters, q = (κ = q_κ, ω = q_ω), algorithm)
+            meanfield = getresult(call_message_update_rule(GCV, :z; q = (y = q_y, x = q_x, κ = q_κ, ω = q_ω), algorithm))
+            structured = getresult(call_message_update_rule(GCV, :z; clusters, q = (κ = q_κ, ω = q_ω), algorithm))
             @test all(coefficients(meanfield) .≈ coefficients(structured))
         end
     end
@@ -92,8 +92,8 @@ end
     q_z = NormalMeanVariance(0.5, 0.7)
     q_κ = NormalMeanVariance(0.8, 0.4)
     q_ω = NormalMeanVariance(1.2, 0.5)
-    κ_msg = call_message_update_rule(GCV, :κ; q = (y = q_y, x = q_x, z = q_z, ω = q_ω), algorithm)
-    z_msg = call_message_update_rule(GCV, :z; q = (y = q_y, x = q_x, κ = q_κ, ω = q_ω), algorithm)
+    κ_msg = getresult(call_message_update_rule(GCV, :κ; q = (y = q_y, x = q_x, z = q_z, ω = q_ω), algorithm))
+    z_msg = getresult(call_message_update_rule(GCV, :z; q = (y = q_y, x = q_x, κ = q_κ, ω = q_ω), algorithm))
     shape(d) = (d.a, d.c, d.d)
     @test shape(κ_msg) != shape(z_msg)
     # And each carries the moments of the variable it is *supposed* to have marginalised --

@@ -23,8 +23,8 @@
             (q = (out = GammaShapeRate(4.0, 2.0), switch = Bernoulli(0.8), a = (GammaShapeRate(2.0, 3.0), nothing)),) => GammaShapeRate(1 + 0.2 * (2 / 3), 0.2 * 2.0),
         ],
     )
-    @test_throws ErrorException call_message_update_rule(GammaMixture, (:b, 1); q = (out = GammaShapeRate(2.0, 1.0), switch = PointMass(1), a = (PointMass(1.0), nothing)))
-    @test_throws ErrorException call_message_update_rule(GammaMixture, (:a, 1); q = (out = GammaShapeRate(2.0, 1.0), switch = PointMass(1), b = (GammaShapeRate(1.0, 2.0), nothing)))
+    @test_throws ErrorException getresult(call_message_update_rule(GammaMixture, (:b, 1); q = (out = GammaShapeRate(2.0, 1.0), switch = PointMass(1), a = (PointMass(1.0), nothing))))
+    @test_throws ErrorException getresult(call_message_update_rule(GammaMixture, (:a, 1); q = (out = GammaShapeRate(2.0, 1.0), switch = PointMass(1), b = (GammaShapeRate(1.0, 2.0), nothing))))
 end
 
 @testitem "rules:GammaMixture:out-switch-energy" tags = [:rules] begin
@@ -52,7 +52,7 @@ end
     )
     # The components' GammaShapeRate energies, weighted by the switch.
     q_out, q_a, q_b = GammaShapeRate(1.0, 1.0), (GammaShapeRate(2.0, 3.0), GammaShapeRate(4.0, 5.0)), (GammaShapeRate(1.5, 2.5), GammaShapeRate(3.5, 4.5))
-    component(k) = call_average_energy(GammaShapeRate; q = (out = q_out, α = q_a[k], β = q_b[k]))
+    component(k) = getresult(call_average_energy(GammaShapeRate; q = (out = q_out, α = q_a[k], β = q_b[k])))
     @test_average_energy(
         node = GammaMixture, float_types = (Float64,),
         cases = [(q = (out = q_out, switch = Categorical([0.2, 0.8]), a = q_a, b = q_b),) => 0.2 * component(1) + 0.8 * component(2)],

@@ -50,7 +50,7 @@ end
         @test mean(message) ≈ my
         @test var(message) ≈ Vy
         # And the rule towards `y` under q(y, x) is this formula.
-        @test call_message_update_rule(SoftDot, :y; m = (x = m_x,), q = (θ = q_θ, γ = q_γ)) ≈ message
+        @test getresult(call_message_update_rule(SoftDot, :y; m = (x = m_x,), q = (θ = q_θ, γ = q_γ))) ≈ message
     end
 
     # Order 1, where the companion matrix is ⟨θ⟩ itself: N(θ W_x m_x / D, θ² / D + 1/⟨γ⟩).

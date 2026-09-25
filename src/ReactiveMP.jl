@@ -30,7 +30,7 @@ include("callbacks.jl")
 include("postprocessors.jl")
 include("variable.jl")
 include("annotations.jl")
-include("annotations/logscale.jl")
+include("logscale.jl")
 include("annotations/input_arguments.jl")
 include("scratch.jl")
 include("diagnostics.jl")
@@ -39,8 +39,8 @@ include("marginal.jl")
 
 # A marginal is formed in its public type (`MessagePassingRulesBase.public_equivalent`): an
 # efficient working type such as `WishartFast` does not leave the product of messages.
-as_marginal(message::Message) = Marginal(MessagePassingRulesBase.public_equivalent(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
-as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal))
+as_marginal(message::Message) = Marginal(MessagePassingRulesBase.public_equivalent(getdata(message)), is_clamped(message), is_initial(message), getannotations(message), message.logscale)
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal), marginal.logscale)
 
 getdata(::Nothing) = nothing
 getdata(collection::Tuple) = map(getdata, collection)

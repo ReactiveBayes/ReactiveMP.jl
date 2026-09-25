@@ -13,8 +13,8 @@
     # The marginal variant omits `Var(x)` because under structured VMP the incoming `q_x`
     # marginal already accounts for the backward flow; only its mean is used.
     algorithm = default_algorithm()
-    to_y(; kwargs...) = call_message_update_rule(GCV, :y; algorithm, kwargs...)
-    to_x(; kwargs...) = call_message_update_rule(GCV, :x; algorithm, kwargs...)
+    to_y(; kwargs...) = getresult(call_message_update_rule(GCV, :y; algorithm, kwargs...))
+    to_x(; kwargs...) = getresult(call_message_update_rule(GCV, :x; algorithm, kwargs...))
 
     @testset "Belief-propagation-style: (m_x, q_z, q_κ, q_ω)" begin
         for (; q_x, q_z, q_κ, q_ω) in parameter_sets()

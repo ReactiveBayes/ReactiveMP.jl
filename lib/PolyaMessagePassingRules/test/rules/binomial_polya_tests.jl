@@ -25,7 +25,7 @@
             (BinomialPolyaApproximation(samples = 10), RuleContext(rng = StableRNG(42))),
         ]
         for (algorithm, ctx) in runs
-            out = call_message_update_rule(BinomialPolya, :β; q, m, algorithm, ctx)
+            out = getresult(call_message_update_rule(BinomialPolya, :β; q, m, algorithm, ctx))
             @test weightedmean(out) ≈ ξ rtol = 1.0e-8
             @test diag(precision(out)) ≈ diag(Λ) atol = 1.0e-2
         end
@@ -47,7 +47,7 @@
             (BinomialPolyaApproximation(samples = 1), RuleContext(rng = StableRNG(10))),
         ]
         for (algorithm, ctx) in runs
-            out = call_message_update_rule(BinomialPolya, :β; q, m, algorithm, ctx)
+            out = getresult(call_message_update_rule(BinomialPolya, :β; q, m, algorithm, ctx))
             @test weightedmean(out) ≈ ξ rtol = 1.0e-8
             @test precision(out) ≈ Λ atol = 1.0e-2
         end
@@ -62,12 +62,12 @@ end
     @testset "Predictive distribution: (q_x::PointMass, q_n::PointMass, q_β::MvNormalWeightedMeanPrecision)" begin
         q = (x = PointMass([0.1, 0.2]), n = PointMass(5), β = MvNormalWeightedMeanPrecision([3.0, -1.0], Matrix(1.0I, 2, 2)))
 
-        prediction = call_message_update_rule(BinomialPolya, :y; q)
+        prediction = getresult(call_message_update_rule(BinomialPolya, :y; q))
         @test prediction isa Binomial
         @test ntrials(prediction) == 5
 
         algorithm = BinomialPolyaApproximation(samples = 1000)
-        prediction_mc = call_message_update_rule(BinomialPolya, :y; q, algorithm, ctx = RuleContext(rng = MersenneTwister(42)))
+        prediction_mc = getresult(call_message_update_rule(BinomialPolya, :y; q, algorithm, ctx = RuleContext(rng = MersenneTwister(42))))
         @test prediction_mc isa Binomial
         @test ntrials(prediction_mc) == 5
         @test 0 < succprob(prediction_mc) < 1
@@ -84,11 +84,11 @@ end
 
     algorithm = BinomialPolyaApproximation(samples = 10)
     q = (y = PointMass(2.0), x = PointMass(0.5), n = PointMass(4.0))
-    mean_path = call_message_update_rule(BinomialPolya, :β; m = (β = NormalMeanVariance(0.3, 0.2),), q)
-    sampled = call_message_update_rule(BinomialPolya, :β; m = (β = NormalMeanVariance(0.3, 0.2),), q, algorithm, ctx = RuleContext(rng = StableRNG(1)))
+    mean_path = getresult(call_message_update_rule(BinomialPolya, :β; m = (β = NormalMeanVariance(0.3, 0.2),), q))
+    sampled = getresult(call_message_update_rule(BinomialPolya, :β; m = (β = NormalMeanVariance(0.3, 0.2),), q, algorithm, ctx = RuleContext(rng = StableRNG(1))))
     @test sampled isa NormalWeightedMeanPrecision
     @test weightedmean(sampled) ≈ weightedmean(mean_path)
     @test isfinite(precision(sampled)) && precision(sampled) > 0
-    y = call_message_update_rule(BinomialPolya, :y; q = (x = PointMass(0.5), n = PointMass(4.0), β = NormalMeanVariance(0.3, 0.2)), algorithm, ctx = RuleContext(rng = StableRNG(1)))
+    y = getresult(call_message_update_rule(BinomialPolya, :y; q = (x = PointMass(0.5), n = PointMass(4.0), β = NormalMeanVariance(0.3, 0.2)), algorithm, ctx = RuleContext(rng = StableRNG(1))))
     @test y isa Binomial && ntrials(y) == 4 && 0 < succprob(y) < 1
 end

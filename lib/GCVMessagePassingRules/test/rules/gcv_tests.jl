@@ -80,8 +80,8 @@ end
     end
 
     algorithm = GCVApproximation(method = GaussHermiteCubature(20))
-    meanfield_ae(q_y, q_x, q_z, q_κ, q_ω) = call_average_energy(GCV; q = (y = q_y, x = q_x, z = q_z, κ = q_κ, ω = q_ω), algorithm)
-    structured_ae(q_y_x, q_z, q_κ, q_ω) = call_average_energy(GCV; clusters = ((:y, :x) => q_y_x,), q = (z = q_z, κ = q_κ, ω = q_ω), algorithm)
+    meanfield_ae(q_y, q_x, q_z, q_κ, q_ω) = getresult(call_average_energy(GCV; q = (y = q_y, x = q_x, z = q_z, κ = q_κ, ω = q_ω), algorithm))
+    structured_ae(q_y_x, q_z, q_κ, q_ω) = getresult(call_average_energy(GCV; clusters = ((:y, :x) => q_y_x,), q = (z = q_z, κ = q_κ, ω = q_ω), algorithm))
 
     parameter_sets = (
         (NormalMeanVariance(3.0, 1.0), NormalMeanVariance(1.0, 2.0), NormalMeanVariance(0.5, 0.7), NormalMeanVariance(0.8, 0.4), NormalMeanVariance(1.2, 0.5)),

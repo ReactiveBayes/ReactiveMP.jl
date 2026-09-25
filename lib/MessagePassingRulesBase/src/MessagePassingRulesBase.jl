@@ -23,16 +23,23 @@ export @call_message_update_rule, @call_marginal_update_rule, @call_average_ener
 export @which_message_update_rule, @which_marginal_update_rule, @which_average_energy
 export call_message_update_rule, call_marginal_update_rule, call_average_energy
 export which_message_update_rule, which_marginal_update_rule, which_average_energy
+export UndefinedLogScale, UndefinedLogScaleError, require_logscale, isdefined_logscale
+export with_logscale, from_body, getlogscale
+export RuleResult, getresult, getrule, getannotations
+# Generic names a downstream package may well define for itself: public, not exported.
+public getalgorithm, getcontext, getscratch, getarguments, gettarget
 
 include("targets.jl")
 include("factorized_cluster.jl")
 include("public_equivalent.jl")
 include("containers.jl")
+include("logscale.jl")
 include("annotations.jl")
 include("algorithms.jl")
 include("context.jl")
 include("buffers.jl")
 include("rulespec.jl")
+include("result.jl")
 include("macrohelpers.jl")
 include("nodes.jl")
 include("dependencies.jl")

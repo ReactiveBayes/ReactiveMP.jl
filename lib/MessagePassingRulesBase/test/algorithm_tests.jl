@@ -34,7 +34,7 @@ end
 
     @test default_algorithm(A.Gauss) === DefaultAlgorithm()
     args = RuleArgs(m = (μ = 1.0, v = 2.0))
-    @test message_passing_rule(A.Gauss, Target(:out), DefaultAlgorithm(), args) == (DefaultAlgorithm(), 3.0)
+    @test getresult(message_passing_rule(A.Gauss, Target(:out), DefaultAlgorithm(), args)) == (DefaultAlgorithm(), 3.0)
 end
 
 @testitem "algorithm:extension-inherits" tags = [:base] setup = [AlgorithmRules] begin
@@ -44,17 +44,17 @@ end
     out_point = RuleArgs(m = (out = 1.0, v = 2.0))
 
     # No rule of its own: the default's, run with `DefaultAlgorithm()` in its `algo` slot.
-    @test message_passing_rule(A.Gauss, Target(:out), A.Tweaked(), point) == (DefaultAlgorithm(), 3.0)
+    @test getresult(message_passing_rule(A.Gauss, Target(:out), A.Tweaked(), point)) == (DefaultAlgorithm(), 3.0)
     inherited = find_message_rule(A.Gauss, Target(:out), A.Tweaked(), point)
     @test inherited isa RuleSpec && inherited.algorithm === DefaultAlgorithm
     @test rule_algorithm(inherited, A.Tweaked()) === DefaultAlgorithm()
 
     # Its own rule wins, even though the default's is more specific in the inputs.
-    @test message_passing_rule(A.Gauss, Target(:μ), A.Tweaked(), out_point) === :tweaked
+    @test getresult(message_passing_rule(A.Gauss, Target(:μ), A.Tweaked(), out_point)) === :tweaked
     own = find_message_rule(A.Gauss, Target(:μ), A.Tweaked(), out_point)
     @test rule_algorithm(own, A.Tweaked()) === A.Tweaked()
-    @test message_passing_rule(A.Gauss, Target(:μ), DefaultAlgorithm(), out_point) === :default
-    @test message_passing_rule(A.Gauss, Target(:μ), A.Plain(), out_point) === :default
+    @test getresult(message_passing_rule(A.Gauss, Target(:μ), DefaultAlgorithm(), out_point)) === :default
+    @test getresult(message_passing_rule(A.Gauss, Target(:μ), A.Plain(), out_point)) === :default
 end
 
 @testitem "algorithm:standalone-inherits-nothing" tags = [:base] setup = [AlgorithmRules] begin

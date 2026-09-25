@@ -1,6 +1,7 @@
 @define_message_update_rule(
     node = Poisson, target = :out,
     args = (m[:l]::PointMass,),
+    logscale = 0,
     body = (args) -> Poisson(mean(args.m[:l])),
 )
 

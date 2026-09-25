@@ -14,7 +14,7 @@
             cases = [
                 (m = m(PointMass([1.0, 3.0]), PointMass([3.0 2.0; 2.0 4.0])),) => MvNormalMeanPrecision([1.0, 3.0], [3.0 2.0; 2.0 4.0]),
                 (m = m(MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]), PointMass([6.0 4.0; 4.0 8.0] ./ 4)),) =>
-                    ExpectedWithAnnotations(MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0] + inv([6.0 4.0; 4.0 8.0] ./ 4)); logscale = 0),
+                    ExpectedWithLogScale(MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0] + inv([6.0 4.0; 4.0 8.0] ./ 4)), 0),
                 (q = m(PointMass([-1.0, 2.0]), PointMass([7.0 -1.0; -1.0 9.0])),) => MvNormalMeanPrecision([-1.0, 2.0], [7.0 -1.0; -1.0 9.0]),
                 (q = m(MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), PointMass([2.0 0.0; 0.0 2.0])),) => MvNormalMeanPrecision([1.0, 2.0], [2.0 0.0; 0.0 2.0]),
                 (m = NamedTuple{(other,)}((PointMass([1.0, 3.0]),)), q = (Λ = PointMass([2.0 0.0; 0.0 2.0]),)) => MvNormalMeanPrecision([1.0, 3.0], [2.0 0.0; 0.0 2.0]),
@@ -55,8 +55,8 @@ end
     # The scale matrix goes through `ctx.matrix_correction`: a zero on the diagonal, from two
     # point masses agreeing in a coordinate, is replaced by the strategy's value.
     degenerate = (q = (out = PointMass([1.0, 2.0]), μ = PointMass([1.0, 5.0])),)
-    @test call_message_update_rule(MvNormalMeanPrecision, :Λ; degenerate...) == WishartFast(4.0, [0.0 0.0; 0.0 9.0])
-    @test call_message_update_rule(MvNormalMeanPrecision, :Λ; degenerate..., ctx = RuleContext(matrix_correction = ReplaceZeroDiagonalEntries(1.0e-3))) ==
+    @test getresult(call_message_update_rule(MvNormalMeanPrecision, :Λ; degenerate...)) == WishartFast(4.0, [0.0 0.0; 0.0 9.0])
+    @test getresult(call_message_update_rule(MvNormalMeanPrecision, :Λ; degenerate..., ctx = RuleContext(matrix_correction = ReplaceZeroDiagonalEntries(1.0e-3)))) ==
         WishartFast(4.0, [1.0e-3 0.0; 0.0 9.0])
 end
 
@@ -103,15 +103,15 @@ end
     I2 = [1.0 0.0; 0.0 1.0]
     # In each representation of q_μ, with a Wishart q_Λ.
     for q_μ in (MvNormalMeanPrecision([1.0, 1.0], I2), MvNormalMeanCovariance([1.0, 1.0], I2), MvNormalWeightedMeanPrecision([1.0, 1.0], I2))
-        @test call_average_energy(MvNormalMeanPrecision; q = (out = PointMass([1.0, 1.0]), μ = q_μ, Λ = Wishart(3, 2 * I2))) ≈ 6.721945550750932
+        @test getresult(call_average_energy(MvNormalMeanPrecision; q = (out = PointMass([1.0, 1.0]), μ = q_μ, Λ = Wishart(3, 2 * I2)))) ≈ 6.721945550750932
     end
     # By hand: (d log 2π - E[log |Λ|] + tr(E[Λ] S)) / 2, the Wishart shortcut against the mean.
     q_Λ = Wishart(4.0, [1.0 0.2; 0.2 0.5])
     q = (out = MvNormalMeanCovariance([0.5, 1.0], [1.0 0.2; 0.2 0.5]), μ = MvNormalMeanCovariance([1.0, 1.0], I2), Λ = q_Λ)
     S = [1.0 0.2; 0.2 0.5] + I2 + [0.25 0.0; 0.0 0.0]
-    @test call_average_energy(MvNormalMeanPrecision; q) ≈ (2 * log2π - mean(logdet, q_Λ) + sum(mean(q_Λ) .* S)) / 2
-    @test call_average_energy(MvNormalMeanPrecision; q = (q..., Λ = PointMass(mean(q_Λ)))) ≈ (2 * log2π - logdet(mean(q_Λ)) + sum(mean(q_Λ) .* S)) / 2
+    @test getresult(call_average_energy(MvNormalMeanPrecision; q)) ≈ (2 * log2π - mean(logdet, q_Λ) + sum(mean(q_Λ) .* S)) / 2
+    @test getresult(call_average_energy(MvNormalMeanPrecision; q = (q..., Λ = PointMass(mean(q_Λ))))) ≈ (2 * log2π - logdet(mean(q_Λ)) + sum(mean(q_Λ) .* S)) / 2
     # The joint's blocks give S = V₁₁ + V₂₂ - V₁₂ - V₂₁ = 2I, so tr(E[Λ] S) = tr(I/2 · 2I) = 2.
     joint = MvNormalMeanCovariance([1.0, 1.0, 1.0, 1.0], [1.0 0 0 0; 0 1.0 0 0; 0 0 1.0 0; 0 0 0 1.0])
-    @test call_average_energy(MvNormalMeanPrecision; q = (Λ = PointMass(I2 / 2),), clusters = ((:out, :μ) => joint,)) ≈ (2 * log2π - logdet(I2 / 2) + 2.0) / 2
+    @test getresult(call_average_energy(MvNormalMeanPrecision; q = (Λ = PointMass(I2 / 2),), clusters = ((:out, :μ) => joint,))) ≈ (2 * log2π - logdet(I2 / 2) + 2.0) / 2
 end

@@ -70,7 +70,7 @@ const MARGINAL_CASES = [
         algorithm, meta = DeltaApproximation(method = method), ReactiveMP.DeltaMeta(method = v6_method)
         @testset "$label towards out" begin
             for (index, (f, inputs)) in enumerate(OUT_CASES)
-                v7 = call_message_update_rule(DeltaFn{typeof(f)}, :out; m = (in = inputs,), algorithm, ctx = RuleContext(node = FunctionNode(f)))
+                v7 = getresult(call_message_update_rule(DeltaFn{typeof(f)}, :out; m = (in = inputs,), algorithm, ctx = RuleContext(node = FunctionNode(f))))
                 v6, _ = v6_message_update(ReactiveMP.DeltaFn{typeof(f)}, :out, (ins = inputs,), NamedTuple(); meta, node = v6_delta_node(f, meta))
                 @test compare_with_reference("Delta:$label:out:$index", v7, v6; node = "DeltaFn", target = ":out").outcome === :agree
             end
@@ -80,7 +80,7 @@ const MARGINAL_CASES = [
                 inverted = DeltaApproximation(method = method, inverse = inverse)
                 inverted_meta = ReactiveMP.DeltaMeta(method = v6_method, inverse = inverse)
                 group = k == 1 ? (nothing, others...) : (others..., nothing)
-                v7 = call_message_update_rule(DeltaFn{typeof(f)}, (:in, k); m = (out = m_out, in = group), algorithm = inverted)
+                v7 = getresult(call_message_update_rule(DeltaFn{typeof(f)}, (:in, k); m = (out = m_out, in = group), algorithm = inverted))
                 v6_m = isempty(others) ? (out = m_out, ins = nothing) : (out = m_out, ins = others)
                 v6, _ = v6_message_update(ReactiveMP.DeltaFn{typeof(f)}, (:in, k), v6_m, NamedTuple(); meta = inverted_meta, node = v6_delta_node(f, inverted_meta))
                 @test compare_with_reference("Delta:$label:in:known:$index", v7, v6; node = "DeltaFn", target = "(:in, $k)").outcome === :agree
@@ -89,14 +89,14 @@ const MARGINAL_CASES = [
         @testset "$label towards an input, unknown inverse" begin
             for (index, (k, m_in, joint)) in enumerate(UNKNOWN_INVERSE_CASES)
                 group = ntuple(i -> i == k ? m_in : nothing, length(joint.ds))
-                v7 = call_message_update_rule(DeltaFn{typeof(h)}, (:in, k); m = (in = group,), clusters = ((:in,) => joint,), algorithm)
+                v7 = getresult(call_message_update_rule(DeltaFn{typeof(h)}, (:in, k); m = (in = group,), clusters = ((:in,) => joint,), algorithm))
                 v6, _ = v6_message_update(ReactiveMP.DeltaFn{typeof(h)}, (:in, k), (in = m_in,), (ins = joint,); meta, node = v6_delta_node(h, meta))
                 @test compare_with_reference("Delta:$label:in:unknown:$index", v7, v6; node = "DeltaFn", target = "(:in, $k)").outcome === :agree
             end
         end
         @testset "$label joint over the inputs" begin
             for (index, (f, m_out, inputs)) in enumerate(MARGINAL_CASES)
-                v7 = call_marginal_update_rule(DeltaFn{typeof(f)}, (:in,); m = (out = m_out, in = inputs), algorithm, ctx = RuleContext(node = FunctionNode(f)))
+                v7 = getresult(call_marginal_update_rule(DeltaFn{typeof(f)}, (:in,); m = (out = m_out, in = inputs), algorithm, ctx = RuleContext(node = FunctionNode(f))))
                 v6 = v6_marginal_update(ReactiveMP.DeltaFn{typeof(f)}, (:ins,), (out = m_out, ins = inputs), NamedTuple(); meta, node = v6_delta_node(f, meta))
                 @test compare_with_reference("Delta:$label:joint:$index", v7, v6; node = "DeltaFn", target = "(:in,)").outcome === :agree
             end

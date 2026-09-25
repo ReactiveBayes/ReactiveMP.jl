@@ -261,7 +261,7 @@ function collect_factorisation(fform, spec::NodeSpec, interfaces, factorisation)
 end
 
 """
-    ReactiveMP.FactorNodeActivationOptions(; algorithm, postprocessor, annotations, callbacks, diagnostics, context, rulefallback)
+    ReactiveMP.FactorNodeActivationOptions(; algorithm, postprocessor, annotations, callbacks, diagnostics, context, rulefallback, logscales)
 
 Everything needed to activate a [`FactorNode`](@ref):
 
@@ -280,6 +280,9 @@ Everything needed to activate a [`FactorNode`](@ref):
 - `rulefallback` — the message where no rule matches, such as
   `MessagePassingRulesBase.NodeFunctionRuleFallback()`; `nothing`, the default, makes that a
   `RuleNotFoundError`. It is consulted only when no rule is found, so it never replaces a rule.
+- `logscales` — whether the node's messages carry log scales (see [`getlogscale`](@ref)): each
+  rule's declared one, read by the rules that need their inputs' (`reads_logscale = true`);
+  `false`, the default, tracks none.
 
 Every option is a keyword with these defaults; `FactorNodeActivationOptions(algorithm,
 postprocessor, annotations, callbacks)` gives the first four positionally.
@@ -292,13 +295,14 @@ struct FactorNodeActivationOptions{A, P, N, E, C <: NamedTuple, B}
     diagnostics::EngineDiagnostics
     context::C
     rulefallback::B
+    logscales::Bool
 end
 
 FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks) =
-    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, EngineDiagnostics(), NamedTuple(), nothing)
+    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, EngineDiagnostics(), NamedTuple(), nothing, false)
 
-FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing) =
-    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics, something(context, NamedTuple()), rulefallback)
+FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing, logscales::Bool = false) =
+    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics, something(context, NamedTuple()), rulefallback, logscales)
 
 getpostprocessor(options::FactorNodeActivationOptions) = options.postprocessor
 getannotations(options::FactorNodeActivationOptions) = options.annotations
@@ -306,6 +310,7 @@ getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 getdiagnostics(options::FactorNodeActivationOptions) = options.diagnostics
 getcontext(options::FactorNodeActivationOptions) = options.context
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
+getlogscales(options::FactorNodeActivationOptions) = options.logscales
 
 """
     ReactiveMP.getalgorithm(fform, options::FactorNodeActivationOptions)

@@ -7,13 +7,13 @@
     # The message towards `out` is the distribution itself, whatever its family.
     d = Beta(4.0, 8.0)
     truncated_normal = Truncated(Normal(0.5, 1.0), 0.0, 1.0)
-    @test call_message_update_rule(StandaloneDistribution, :out; q = (distribution = PointMass(d),)) === d
-    @test call_message_update_rule(StandaloneDistribution, :out; q = (distribution = PointMass(truncated_normal),)) === truncated_normal
+    @test getresult(call_message_update_rule(StandaloneDistribution, :out; q = (distribution = PointMass(d),))) === d
+    @test getresult(call_message_update_rule(StandaloneDistribution, :out; q = (distribution = PointMass(truncated_normal),))) === truncated_normal
 
     # The average energy is the cross entropy E_q[-log d(out)] = KL(q ‖ d) + H(q), so the node's
     # free-energy term, the energy less H(q), is KL(q ‖ d).
     q = Beta(6.0, 9.0)
-    energy = call_average_energy(StandaloneDistribution; q = (out = q, distribution = PointMass(d)))
+    energy = getresult(call_average_energy(StandaloneDistribution; q = (out = q, distribution = PointMass(d))))
     @test energy ≈ kldivergence(q, d) + entropy(q)
     @test energy - entropy(q) ≈ kldivergence(q, d)
     # Against the integral.

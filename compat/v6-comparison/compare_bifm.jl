@@ -45,7 +45,7 @@ const SLICES = [
         end
         v7_inputs(target) = target === :zprev ? (out = m_out, in = m_in, znext = m_znext) : all
         for target in (:zprev, :znext, :in, :out)
-            v7 = call_message_update_rule(BIFM, target; m = v7_inputs(target), algorithm)
+            v7 = getresult(call_message_update_rule(BIFM, target; m = v7_inputs(target), algorithm))
             @test compare_with_reference("BIFM:$target:$name", v7, v6_after_pass(target); node = "BIFM", target = ":$target").outcome === :agree
         end
     end
@@ -54,7 +54,7 @@ const SLICES = [
     m_out = MvNormalWeightedMeanPrecision([0.3, 0.1], [0.5 0.1; 0.1 0.4])
     q_in = MvNormalMeanCovariance([0.4, -0.2], [0.6 0.1; 0.1 0.7])
     v6, _ = v6_message_update(ReactiveMP.BIFMHelper, :in, (out = m_out,), NamedTuple())
-    @test compare_with_reference("BIFMHelper:in", call_message_update_rule(BIFMHelper, :in; m = (out = m_out,)), v6; node = "BIFMHelper", target = ":in").outcome === :agree
+    @test compare_with_reference("BIFMHelper:in", getresult(call_message_update_rule(BIFMHelper, :in; m = (out = m_out,))), v6; node = "BIFMHelper", target = ":in").outcome === :agree
     v6, _ = v6_message_update(ReactiveMP.BIFMHelper, :out, NamedTuple(), (in = q_in,))
-    @test compare_with_reference("BIFMHelper:out", call_message_update_rule(BIFMHelper, :out; q = (in = q_in,)), v6; node = "BIFMHelper", target = ":out").outcome === :agree
+    @test compare_with_reference("BIFMHelper:out", getresult(call_message_update_rule(BIFMHelper, :out; q = (in = q_in,))), v6; node = "BIFMHelper", target = ":out").outcome === :agree
 end

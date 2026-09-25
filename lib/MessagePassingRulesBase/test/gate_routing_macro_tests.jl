@@ -22,14 +22,14 @@
     const MEMBER = RuleArgs(q = (p = (nothing, 5.0),))
     const OUT = RuleArgs(m = (out = 1.0,))
 
-    one_rule() = message_passing_rule(Gauss, Target(:out), DefaultAlgorithm(), POINT)
-    indexed() = message_passing_rule(Gauss, IndexedTarget(:p, 2), DefaultAlgorithm(), MEMBER)
+    one_rule() = getresult(message_passing_rule(Gauss, Target(:out), DefaultAlgorithm(), POINT))
+    indexed() = getresult(message_passing_rule(Gauss, IndexedTarget(:p, 2), DefaultAlgorithm(), MEMBER))
     # A call site whose algorithm is only known at run time can reach two rules.
-    two_rules(flag::Bool) = message_passing_rule(Gauss, Target(:out), flag ? DefaultAlgorithm() : Alternative(), POINT)
+    two_rules(flag::Bool) = getresult(message_passing_rule(Gauss, Target(:out), flag ? DefaultAlgorithm() : Alternative(), POINT))
     # An extension with no rule of its own reaches the default's through the fallback.
-    inherited() = message_passing_rule(Gauss, Target(:out), Extension(), POINT)
+    inherited() = getresult(message_passing_rule(Gauss, Target(:out), Extension(), POINT))
     # Negative control: the body allocates, so the gate must see it.
-    allocating() = message_passing_rule(Gauss, Target(:μ), DefaultAlgorithm(), OUT)
+    allocating() = getresult(message_passing_rule(Gauss, Target(:μ), DefaultAlgorithm(), OUT))
 
     measure(f, args...) = (f(args...); @allocated f(args...))
 end

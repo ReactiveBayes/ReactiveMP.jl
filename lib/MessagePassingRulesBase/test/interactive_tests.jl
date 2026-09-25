@@ -1,23 +1,36 @@
 @testitem "interactive:call_message_update_rule" tags = [:base] setup = [RepresentativeRules] begin
     using MessagePassingRulesBase
-    using MessagePassingRulesBase: AnnotationStore, getannotation, RuleContext
+    using MessagePassingRulesBase: AnnotationStore, getannotation, RuleContext, DefaultAlgorithm, getalgorithm, getcontext, getscratch, getarguments, gettarget
     S = RepresentativeRules
     P, N = S.Point, S.Normal
 
-    @test (@call_message_update_rule(node = S.NMV, target = :out, m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
+    @test (getresult(@call_message_update_rule(node = S.NMV, target = :out, m = (μ = P(1.0), v = P(2.0))))) == N(1.0, 2.0)
     # Function form, identical.
-    @test call_message_update_rule(S.NMV, :out; m = (μ = P(1.0), v = P(2.0))) == N(1.0, 2.0)
+    @test getresult(call_message_update_rule(S.NMV, :out; m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
     # Indexed target and the node's default algorithm (its own, `MixtureVMP`, here).
-    @test (@call_message_update_rule(node = S.NormalMixture, target = (:m, 2), q = (out = N(0.5, 1.0), switch = S.Categorical([0.5, 0.5]), p = (nothing, P(20.0))))) == N(0.5, 20.0)
+    @test (getresult(@call_message_update_rule(node = S.NormalMixture, target = (:m, 2), q = (out = N(0.5, 1.0), switch = S.Categorical([0.5, 0.5]), p = (nothing, P(20.0)))))) == N(0.5, 20.0)
     # A cluster given by its members.
-    @test (@call_message_update_rule(node = S.NMV, target = :v, clusters = ((:out, :μ) => (1.0, 4.0),))) == P(9.0)
+    @test (getresult(@call_message_update_rule(node = S.NMV, target = :v, clusters = ((:out, :μ) => (1.0, 4.0),)))) == P(9.0)
+    # The result carries the rule's log scale and what produced it.
+    result = @call_message_update_rule(node = S.NMV, target = :μ, m = (out = P(3.0), v = P(1.0)))
+    @test getresult(result) == N(3.0, 1.0)
+    @test getlogscale(result) === 0.0
+    @test getrule(result) === which_message_update_rule(S.NMV, :μ; m = (out = P(3.0), v = P(1.0)))
+    @test getalgorithm(result) === DefaultAlgorithm() && gettarget(result) === MessagePassingRulesBase.Target(:μ)
+    @test getarguments(result).m[:out] == P(3.0) && getarguments(result).logscale === nothing
+    @test getcontext(result) isa RuleContext && getscratch(result) === nothing
+    @test getannotations(result) === MessagePassingRulesBase.NoAnnotations()
+    # Incoming log scales are given like the messages.
+    switch = call_message_update_rule(S.Mixture, :switch; m = (out = N(0.0, 1.0), inputs = (N(1.0, 1.0), N(2.0, 1.0))), logscale = (out = 0.0, inputs = (-1.0, -4.0)))
+    @test getresult(switch).p == [-1.0, -4.0] && getlogscale(switch) == -5.0
     # Annotations are collected when asked for.
     ann = AnnotationStore()
-    @call_message_update_rule(node = S.NMV, target = :μ, m = (out = P(3.0), v = P(1.0)), ann = ann)
-    @test getannotation(ann, :logscale) == 0.0
+    @test getannotations(call_message_update_rule(S.NMV, :μ; m = (out = P(3.0), v = P(1.0)), ann = ann)) === ann
+    # A marginal and an energy have no log scale.
+    @test getlogscale(call_average_energy(S.NMV; q = (out = N(0.0, 1.0), μ = N(1.0, 2.0), v = P(2.0)))) === nothing
 
-    @test (@call_marginal_update_rule(node = S.NMV, target = (:out, :μ), m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),))) == (1.0, 2.0)
-    @test (@call_average_energy(node = S.NMV, q = (out = N(0.0, 1.0), μ = N(1.0, 2.0), v = P(2.0)))) == 2.0
+    @test (getresult(@call_marginal_update_rule(node = S.NMV, target = (:out, :μ), m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),)))) == (1.0, 2.0)
+    @test (getresult(@call_average_energy(node = S.NMV, q = (out = N(0.0, 1.0), μ = N(1.0, 2.0), v = P(2.0))))) == 2.0
 end
 
 @testitem "interactive:queries" tags = [:base] setup = [RepresentativeRules] begin

@@ -28,7 +28,7 @@ end
             node = MvNormalGamma,
             cases = [(q = (out = q, μ = PointMass(μ), Λ = PointMass(Λ), α = PointMass(α), β = PointMass(β)),) => entropy(q)],
         )
-        other = call_average_energy(MvNormalGamma; q = (out = q, μ = PointMass(μ .+ 1), Λ = PointMass(2Λ), α = PointMass(α / 2), β = PointMass(β + 1)))
+        other = getresult(call_average_energy(MvNormalGamma; q = (out = q, μ = PointMass(μ .+ 1), Λ = PointMass(2Λ), α = PointMass(α / 2), β = PointMass(β + 1))))
         @test isfinite(other) && other > entropy(q)
     end
 end

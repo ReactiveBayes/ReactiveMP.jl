@@ -15,7 +15,7 @@ end
     using BayesBase: tiny
 
     diageye(n) = Matrix{Float64}(I, n, n)
-    energy(q_out_in, q_a) = call_average_energy(DiscreteTransition; clusters = ((:out, :in) => q_out_in,), q = (a = q_a,))
+    energy(q_out_in, q_a) = getresult(call_average_energy(DiscreteTransition; clusters = ((:out, :in) => q_out_in,), q = (a = q_a,)))
 
     contingency_matrix = [0.2 0.3; 0.4 0.1]
     a_matrix = [0.7 0.3; 0.2 0.8]
@@ -42,7 +42,7 @@ end
     using DiscreteTransitionMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
     using BayesBase: tiny
 
-    energy(q_out, q_in, q_a) = call_average_energy(DiscreteTransition; q = (out = q_out, in = q_in, a = q_a))
+    energy(q_out, q_in, q_a) = getresult(call_average_energy(DiscreteTransition; q = (out = q_out, in = q_in, a = q_a)))
 
     q_out = Categorical([0.3, 0.7])
     q_in = Categorical([0.8, 0.2])
@@ -65,7 +65,7 @@ end
     import Base.Broadcast: BroadcastFunction
 
     # The joint over both `T`s covers the whole group, and is keyed by it.
-    energy(q_out_in, q_T1_T2, q_a) = call_average_energy(DiscreteTransition; clusters = ((:out, :in) => q_out_in, (:T,) => q_T1_T2), q = (a = q_a,))
+    energy(q_out_in, q_T1_T2, q_a) = getresult(call_average_energy(DiscreteTransition; clusters = ((:out, :in) => q_out_in, (:T,) => q_T1_T2), q = (a = q_a,)))
 
     q_out_in = Contingency([0.3 0.7; 0.4 0.6])
     q_T1_T2 = Contingency([0.8 0.2; 0.1 0.9])

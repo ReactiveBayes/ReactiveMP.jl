@@ -36,13 +36,13 @@ end
 
     ann = AnnotationDict()
 
-    @test !has_annotation(ann, :logscale)
+    @test !has_annotation(ann, :note)
 
-    annotate!(ann, :logscale, 1.0)
+    annotate!(ann, :note, 1.0)
 
-    @test has_annotation(ann, :logscale)
-    @test get_annotation(ann, :logscale) == 1.0
-    @test @inferred(get_annotation(ann, Float64, :logscale)) == 1.0
+    @test has_annotation(ann, :note)
+    @test get_annotation(ann, :note) == 1.0
+    @test @inferred(get_annotation(ann, Float64, :note)) == 1.0
 end
 
 @testitem "AnnotationDict can be copied with copy constructor" tags = [:engine] begin
@@ -81,11 +81,11 @@ end
     @test repr(ann) == "AnnotationDict()"
     @test sprint(show, ann; context = :compact => true) == "AnnotationDict()"
 
-    annotate!(ann, :logscale, 1.0)
+    annotate!(ann, :note, 1.0)
     # Default form (`:compact => false`) keeps the full key/value listing —
     # this is what an interactive user sees in REPL/Pluto.
     long = repr(ann)
-    @test occursin("logscale", long)
+    @test occursin("note", long)
     @test occursin("1.0", long)
     # Compact form (used by trace loggers) collapses to the entry count.
     @test sprint(show, ann; context = :compact => true) == "AnnotationDict(n=1)"
@@ -101,7 +101,7 @@ end
 
     function foo()
         ann = AnnotationDict()
-        return has_annotation(ann, :logscale)
+        return has_annotation(ann, :note)
     end
 
     foo()
@@ -172,15 +172,15 @@ end
 
     left_ann = AnnotationDict()
     right_ann = AnnotationDict()
-    annotate!(right_ann, :logscale, 5.0)
+    annotate!(right_ann, :note, 5.0)
 
     dist = AnnotationsTestUtils.Normal(0.0, 1.0)
 
     result = post_product_annotations!(
         nothing, left_ann, right_ann, dist, missing, dist
     )
-    @test has_annotation(result, :logscale)
-    @test get_annotation(result, :logscale) == 5.0
+    @test has_annotation(result, :note)
+    @test get_annotation(result, :note) == 5.0
 end
 
 @testitem "post_product_annotations! with missing right_dist copies left_ann" tags = [
@@ -195,15 +195,15 @@ end
 
     left_ann = AnnotationDict()
     right_ann = AnnotationDict()
-    annotate!(left_ann, :logscale, 3.0)
+    annotate!(left_ann, :note, 3.0)
 
     dist = AnnotationsTestUtils.Normal(0.0, 1.0)
 
     result = post_product_annotations!(
         nothing, left_ann, right_ann, dist, dist, missing
     )
-    @test has_annotation(result, :logscale)
-    @test get_annotation(result, :logscale) == 3.0
+    @test has_annotation(result, :note)
+    @test get_annotation(result, :note) == 3.0
 end
 
 @testitem "post_product_annotations! with both dists missing returns empty AnnotationDict" tags = [
@@ -214,12 +214,12 @@ end
 
     left_ann = AnnotationDict()
     right_ann = AnnotationDict()
-    annotate!(left_ann, :logscale, 1.0)
-    annotate!(right_ann, :logscale, 2.0)
+    annotate!(left_ann, :note, 1.0)
+    annotate!(right_ann, :note, 2.0)
 
     result = post_product_annotations!(
         nothing, left_ann, right_ann, missing, missing, missing
     )
     @test result isa AnnotationDict
-    @test !has_annotation(result, :logscale)
+    @test !has_annotation(result, :note)
 end

@@ -40,10 +40,10 @@ end
     N = PartialGroupNodes
 
     # A rule reads a partial joint by its key, however the call orders the clusters.
-    @test call_message_update_rule(N.Tensor, :in; clusters = ((:out, (:T, 1)) => 0.5,), q = (T = (nothing, 3.0),)) == 5.0
-    @test call_message_update_rule(N.Tensor, :out; clusters = (((:T, 1), (:T, 2)) => 0.25,), q = (in = 1.0,)) == 1.25
-    @test call_average_energy(N.Tensor; clusters = ((:out, (:T, 1)) => 3.0,), q = (in = 1.0, T = (nothing, 2.0))) == 2.0
-    @test call_marginal_update_rule(N.Tensor, (:out, (:T, 1)); m = (out = 2.0, T = (3.0, nothing)), q = (in = 1.0,)) == 6.0
+    @test getresult(call_message_update_rule(N.Tensor, :in; clusters = ((:out, (:T, 1)) => 0.5,), q = (T = (nothing, 3.0),))) == 5.0
+    @test getresult(call_message_update_rule(N.Tensor, :out; clusters = (((:T, 1), (:T, 2)) => 0.25,), q = (in = 1.0,))) == 1.25
+    @test getresult(call_average_energy(N.Tensor; clusters = ((:out, (:T, 1)) => 3.0,), q = (in = 1.0, T = (nothing, 2.0)))) == 2.0
+    @test getresult(call_marginal_update_rule(N.Tensor, (:out, (:T, 1)); m = (out = 2.0, T = (3.0, nothing)), q = (in = 1.0,))) == 6.0
     # They are well formed.
     @test isempty(check_rules(N))
 end

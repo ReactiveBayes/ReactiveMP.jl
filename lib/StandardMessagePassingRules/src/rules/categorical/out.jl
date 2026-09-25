@@ -1,8 +1,8 @@
 @define_message_update_rule(
     node = Categorical, target = :out,
     args = (m[:p]::Dirichlet,),
-    body = (args, ann) -> begin
-        annotate!(ann, :logscale, 0)
+    logscale = 0,
+    body = (args) -> begin
         Categorical(mean(args.m[:p]))
     end,
 )
@@ -22,11 +22,13 @@
 @define_message_update_rule(
     node = Categorical, target = :out,
     args = (m[:p]::PointMass,),
+    logscale = 0,
     body = (args) -> Categorical(mean(args.m[:p])),
 )
 
 @define_message_update_rule(
     node = Categorical, target = :out,
     args = (q[:p]::PointMass,),
+    logscale = 0,
     body = (args) -> Categorical(mean(args.q[:p])),
 )

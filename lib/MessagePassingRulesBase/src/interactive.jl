@@ -6,11 +6,11 @@ as_target(target::Union{Target, IndexedTarget}) = target
 as_cluster(members::Tuple{Vararg{ClusterMember}}) = ClusterTarget(members)
 as_cluster(target::ClusterTarget) = target
 
-function interactive_args(m, q, clusters)
-    isempty(clusters) && return RuleArgs(m = m, q = q)
+function interactive_args(m, q, clusters, logscale = nothing)
+    isempty(clusters) && return RuleArgs(m = m, q = q, logscale = logscale)
     keys = Tuple(first.(clusters))
     values = Tuple(last.(clusters))
-    return RuleArgs(as_messages(m), Marginals(q, Val(keys), values))
+    return RuleArgs(as_messages(m), Marginals(q, Val(keys), values), as_logscales(logscale))
 end
 
 # Called with every rule an interactive call below selects, before it runs. Test tooling
@@ -25,7 +25,7 @@ end
 
 function call_resolved(spec, output, algorithm, ctx, args, ann, target)
     spec = selected_interactively(throw_if_not_found(spec))
-    return execute_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, target)
+    return run_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, target)
 end
 
 as_annotations(::Nothing) = NoAnnotations()
@@ -33,15 +33,17 @@ as_annotations(ann::RuleAnnotations) = ann
 as_annotations(store) = RuleAnnotations(out = store)
 
 """
-    call_message_update_rule(node, target; m = (;), q = (;), clusters = (), algorithm, ctx, ann)
+    call_message_update_rule(node, target; m = (;), q = (;), clusters = (), logscale, algorithm, ctx, ann)
 
 Run the message rule of `node` towards `target` (`:out`, or `(:m, 2)` for a group member)
-on the given inputs. `clusters` gives structural clusters as `(:y, :x) => value` pairs.
-`algorithm` defaults to the node's; pass an `AnnotationStore` as `ann` to collect what the
-rule annotates.
+on the given inputs and return a [`RuleResult`](@ref): [`getresult`](@ref) is the message and
+[`getlogscale`](@ref) its log scale. `clusters` gives structural clusters as `(:y, :x) => value`
+pairs. `logscale` gives the log scales that arrived with the messages, keyed like `m`, for a
+rule declared with `reads_logscale = true`. `algorithm` defaults to the node's; pass an
+`AnnotationStore` as `ann` to collect what the rule annotates.
 """
-function call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
-    resolved_target, args = as_target(target), interactive_args(m, q, clusters)
+function call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), logscale = nothing, algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
+    resolved_target, args = as_target(target), interactive_args(m, q, clusters, logscale)
     return call_resolved(find_message_rule(node, resolved_target, algorithm, args), nothing, algorithm, ctx, args, as_annotations(ann), resolved_target)
 end
 
@@ -49,6 +51,7 @@ end
     call_marginal_update_rule(node, target; m, q, clusters, algorithm, ctx, ann)
 
 As [`call_message_update_rule`](@ref), for the marginal of the cluster `target`, e.g. `(:out, :μ)`.
+Returns a [`RuleResult`](@ref), with no log scale.
 """
 function call_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
     cluster, args = as_cluster(target), interactive_args(m, q, clusters)
@@ -58,7 +61,8 @@ end
 """
     call_average_energy(node; q, clusters, algorithm, ctx)
 
-As [`call_message_update_rule`](@ref), for a node's average energy.
+As [`call_message_update_rule`](@ref), for a node's average energy. Returns a
+[`RuleResult`](@ref), with no log scale.
 """
 function call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
     args = interactive_args(m, q, clusters)
@@ -126,11 +130,14 @@ julia> @define_message_update_rule(
            node = Shift,
            target = :out,
            args = (m[:in]::Real,),
+           logscale = 0,
            body = (args) -> args.m[:in] + 1,
        )
 
-julia> @call_message_update_rule(node = Shift, target = :out, m = (in = 1.0,))
-2.0
+julia> result = @call_message_update_rule(node = Shift, target = :out, m = (in = 1.0,));
+
+julia> getresult(result), getlogscale(result)
+(2.0, 0)
 ```
 """
 macro call_message_update_rule(args...)

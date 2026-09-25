@@ -106,7 +106,7 @@ end
 
         qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
         qa = MvNormalMeanCovariance(zeros(1), diageye(1))
-        result = call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => qyx,), q = (a = qa,), algorithm = CTVMP(transformation))
+        result = getresult(call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => qyx,), q = (a = qa,), algorithm = CTVMP(transformation)))
         @test result isa WishartFast
         ν, invS = params(result)
         @test ν == dy + 2

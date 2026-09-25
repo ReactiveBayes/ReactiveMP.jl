@@ -35,18 +35,16 @@ until after the release (§3.48). Phases 5 and 6 are closed too.
 |---|---|---|
 | typed annotations (`Message{D, A}`), if at all | after the release | `DISCUSSION.md` §3.48 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
-| `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | after the release, with log scales | Phase 5 review; §3.48 |
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only), and its `mean(loggamma, ::GammaShapeRate)` is a Float64 (GammaMixture's switch and energy tables run in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
-| `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log-scale | after the release, with log scales | § Phase 5, *Step 7 brief*; §3.48 |
-| `@test_message_update_rule` cases taking incoming annotations (`ann.m`), for rules that read log scales | when a second node needs it | § Phase 5, *Step 8 brief* |
+| `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log scale; the sampled rules declare none | with the remaining log scales, before 7.0 | § Phase 5, *Step 7 brief*; §3.50 |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
-| **inconsistent, to settle** (user, 2026-09-25): the context service `product` is a fixed engine function, `(left, right) -> (distribution, logscale)` with `GenericProd`, not the product context the variables use (`MessageProductContext`), and it returns a log scale although a rule has nothing to do with log scales; only Mixture's switch rule uses it (§3.34) | **before the release** (user), after this cleanup | `DISCUSSION.md` §3.34 |
 | **inconsistent, to settle** (user, 2026-09-25): `visualize_spec` is a public, documented entry point with no backend anywhere, so every call is a `MethodError`; its backend was decided (§3.12, Phase P), an extension on GraphPPL's pattern, but is tracked nowhere. The intent (user): comprehensive visualisations of nodes, dependencies and rules, rendered in the documentation, for teaching as well. The Phase C audit took it for dead code and removed it; restored at the user's request | undecided (user) | `DISCUSSION.md` §3.12 |
 | the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
-| log scales: fix v6's gaps or drop the feature (and with it Mixture's rules) | after the release | `DISCUSSION.md` §3.37, §3.48 |
+| log scales for Standard's remaining belief-propagation rules (about 60 message-only rules declare none), each verified by `@verify_message_update_rule` against the node's definition, then a gate: every message-only rule declares one or is listed with a reason | before 7.0 (user) | `DISCUSSION.md` §3.50 |
+| `RuleResult` supports rich visualisation: a `text/plain` report in colour and `text/html` with the node drawn (its interfaces, the inputs used, the target), for the terminal, Jupyter, Pluto and Documenter, through `show(io, mime, x)`; the type keeps its arguments, rule and target for it | undecided (user), beside `visualize_spec` | `DISCUSSION.md` §3.50; `PLAN.md` § Rich display of `RuleResult` |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
@@ -3692,6 +3690,13 @@ without v6 as reference; history out of code and tests; docs and READMEs; the wo
 wait for the release):
 - *Rule fallbacks and the open rule context — done* (§3.49), with RxInfer's options forwarding
   `context` and `rulefallback`.
+- *First-class log scales — done* (§3.50, user): the log scale is part of `Message` and
+  `Marginal`, declared by rules with the `logscale` keyword (`from_body`, `with_logscale`),
+  undefined values propagating; `reads_logscale` and `args.logscale.m`; the activation option
+  `logscales` in place of `LogScaleAnnotations`; every public rule call returns a `RuleResult`;
+  the `product` service removed, `MixtureBP(; prod)`. Standard's rules with all-point-mass inputs
+  declare zero where it is exact. RxInfer forwards `logscales` on its branch (not pushed). Left:
+  the remaining rules' log scales and their gate, and `RuleResult`'s rich display (not-done table).
 - *History out of the twelve node packages — done* (three subagents, one per group; every diff
   reviewed: renames and comments only, no assertion touched). Their migration-guide candidates
   are merged with the docs step.

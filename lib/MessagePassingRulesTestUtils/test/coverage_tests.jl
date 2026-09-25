@@ -48,9 +48,9 @@ end
     @test length(check_rule_coverage(N)) == 4      # three rules, one node
     # A rule a test runs by hand counts as tested, as a table case does: the interactive calls
     # report the rule they selected.
-    @test call_message_update_rule(N.Node, :out; m = (x = PointMass(1.0),)) == PointMass(1.0)
-    @test call_marginal_update_rule(N.Node, (:out, :x); m = (out = PointMass(1.0), x = PointMass(2.0))) == PointMass(1.0)
+    @test getresult(call_message_update_rule(N.Node, :out; m = (x = PointMass(1.0),))) == PointMass(1.0)
+    @test getresult(call_marginal_update_rule(N.Node, (:out, :x); m = (out = PointMass(1.0), x = PointMass(2.0)))) == PointMass(1.0)
     @test length(check_rule_coverage(N)) == 1
-    @test call_average_energy(N.Node; q = (out = PointMass(1.0), x = PointMass(2.0))) == 0.0
+    @test getresult(call_average_energy(N.Node; q = (out = PointMass(1.0), x = PointMass(2.0)))) == 0.0
     @test isempty(check_rule_coverage(N))
 end

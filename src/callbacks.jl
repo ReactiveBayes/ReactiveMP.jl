@@ -238,17 +238,19 @@ This event fires right after computing the message and calling the corresponding
 - `marginals`: typically of type `Tuple` if present, `nothing` otherwise
 - `result`: the result of the rule invocation (or `rulefallback`), can be any type
 - `annotations`: the annotations attached to the result, of type [`ReactiveMP.AnnotationDict`](@ref)
+- `logscale`: the log scale of the result, as the message carries it (see [`getlogscale`](@ref)); `nothing` where log scales are not tracked
 - `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, S} <:
+struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, S} <:
     Event{:after_message_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
     result::R
     annotations::A
+    logscale::L
     span_id::S
 end
 
@@ -503,6 +505,7 @@ function Base.show(io::IO, ev::AfterMessageRuleCallEvent)
     show(io, ev.result)
     print(io, ", annotations=")
     show(io, ev.annotations)
+    ev.logscale === nothing || (print(io, ", logscale="); show(io, ev.logscale))
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing

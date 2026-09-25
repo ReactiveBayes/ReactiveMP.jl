@@ -50,23 +50,23 @@
         with_dim = FlowApproximation(model; method = Unscented(2))
         without_dim = FlowApproximation(model; method = Unscented())
         for m in inputs
-            @test call_message_update_rule(Flow, :out; m = (in = m,), algorithm = without_dim) ≈ call_message_update_rule(Flow, :out; m = (in = m,), algorithm = with_dim)
-            @test call_message_update_rule(Flow, :in; m = (out = m,), algorithm = without_dim) ≈ call_message_update_rule(Flow, :in; m = (out = m,), algorithm = with_dim)
+            @test getresult(call_message_update_rule(Flow, :out; m = (in = m,), algorithm = without_dim)) ≈ getresult(call_message_update_rule(Flow, :out; m = (in = m,), algorithm = with_dim))
+            @test getresult(call_message_update_rule(Flow, :in; m = (out = m,), algorithm = without_dim)) ≈ getresult(call_message_update_rule(Flow, :in; m = (out = m,), algorithm = with_dim))
         end
     end
 
     @testset "Unscented(dim) must match the flow's dimension" begin
         algorithm = FlowApproximation(model; method = Unscented(3))
         for m in inputs
-            @test_throws DimensionMismatch call_message_update_rule(Flow, :out; m = (in = m,), algorithm)
-            @test_throws DimensionMismatch call_message_update_rule(Flow, :in; m = (out = m,), algorithm)
+            @test_throws DimensionMismatch getresult(call_message_update_rule(Flow, :out; m = (in = m,), algorithm))
+            @test_throws DimensionMismatch getresult(call_message_update_rule(Flow, :in; m = (out = m,), algorithm))
         end
     end
 
     @testset "No rule under the default algorithm" begin
         m = MvNormalMeanCovariance([-5.0, -2.5], diagm([1.0, 2.0]))
-        @test_throws MessagePassingRulesBase.RuleNotFoundError call_message_update_rule(Flow, :out; m = (in = m,))
-        @test_throws MessagePassingRulesBase.RuleNotFoundError call_message_update_rule(Flow, :in; m = (out = m,))
-        @test_throws MessagePassingRulesBase.RuleNotFoundError call_message_update_rule(Flow, :out; m = (in = m,), algorithm = DefaultAlgorithm())
+        @test_throws MessagePassingRulesBase.RuleNotFoundError getresult(call_message_update_rule(Flow, :out; m = (in = m,)))
+        @test_throws MessagePassingRulesBase.RuleNotFoundError getresult(call_message_update_rule(Flow, :in; m = (out = m,)))
+        @test_throws MessagePassingRulesBase.RuleNotFoundError getresult(call_message_update_rule(Flow, :out; m = (in = m,), algorithm = DefaultAlgorithm()))
     end
 end

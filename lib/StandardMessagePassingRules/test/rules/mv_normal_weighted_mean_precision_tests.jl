@@ -26,7 +26,7 @@
     Λ = [2.0 0.3; 0.3 1.5]
     ξ = [0.5, -1.0]
     for q_out in (PointMass([0.2, 0.4]), MvNormalMeanCovariance([0.2, 0.4], [1.0 0.1; 0.1 0.7]))
-        @test call_average_energy(MvNormalWeightedMeanPrecision; q = (out = q_out, ξ = PointMass(ξ), Λ = PointMass(Λ))) ≈
-            call_average_energy(MvNormalMeanPrecision; q = (out = q_out, μ = PointMass(Λ \ ξ), Λ = PointMass(Λ)))
+        @test getresult(call_average_energy(MvNormalWeightedMeanPrecision; q = (out = q_out, ξ = PointMass(ξ), Λ = PointMass(Λ)))) ≈
+            getresult(call_average_energy(MvNormalMeanPrecision; q = (out = q_out, μ = PointMass(Λ \ ξ), Λ = PointMass(Λ))))
     end
 end

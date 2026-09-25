@@ -39,12 +39,16 @@
         )
         # A multivariate message under a univariate algorithm, and a univariate one under a
         # multivariate algorithm, have no meaning.
-        @test_throws MethodError call_message_update_rule(
-            AR, :x; m = (y = MvNormalMeanPrecision([0.0], [1.0;;]),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)), algorithm,
+        @test_throws MethodError getresult(
+            call_message_update_rule(
+                AR, :x; m = (y = MvNormalMeanPrecision([0.0], [1.0;;]),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)), algorithm,
+            )
         )
-        @test_throws MethodError call_message_update_rule(
-            AR, :x; m = (y = NormalMeanPrecision(0.0, 1.0),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)),
-            algorithm = ARVMP(Multivariate, 1, ARsafe()),
+        @test_throws MethodError getresult(
+            call_message_update_rule(
+                AR, :x; m = (y = NormalMeanPrecision(0.0, 1.0),), q = (θ = NormalMeanPrecision(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)),
+                algorithm = ARVMP(Multivariate, 1, ARsafe()),
+            )
         )
     end
 

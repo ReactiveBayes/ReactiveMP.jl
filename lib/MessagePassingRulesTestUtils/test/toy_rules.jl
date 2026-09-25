@@ -10,11 +10,8 @@
         body = (args) -> Normal(mean(args.m[:μ]), mean(args.m[:σ])),
     )
     @define_message_update_rule(
-        node = Gauss, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
-        body = (args, ann) -> begin
-            annotate!(ann, :logscale, 0.0)
-            Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2))
-        end,
+        node = Gauss, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass), logscale = 0,
+        body = (args) -> Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2)),
     )
     @define_marginal_update_rule(
         node = Gauss, target = (:out, :μ), args = (m[:out]::Normal, m[:μ]::Normal, q[:σ]::PointMass),

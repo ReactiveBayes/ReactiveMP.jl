@@ -33,7 +33,7 @@ end
     @test_message_update_rule(
         node = Categorical, target = :out, float_types = (Float32, Float64),
         cases = [
-            (m = (p = Dirichlet([1.0, 3.0]),),) => ExpectedWithAnnotations(Categorical([0.25, 0.75]); logscale = 0),
+            (m = (p = Dirichlet([1.0, 3.0]),),) => ExpectedWithLogScale(Categorical([0.25, 0.75]), 0),
             (q = (p = Dirichlet([1.0, 3.0]),),) => Categorical(softened),
             (m = (p = PointMass([0.2, 0.8]),),) => Categorical([0.2, 0.8]),
             (q = (p = PointMass([0.2, 0.8]),),) => Categorical([0.2, 0.8]),
@@ -42,11 +42,11 @@ end
     @test_message_update_rule(
         node = Categorical, target = :p, float_types = (Float32, Float64),
         cases = [
-            (q = (out = Categorical([0.3, 0.7]),),) => ExpectedWithAnnotations(Dirichlet([1.3, 1.7]); logscale = -log(2.0)),
-            (q = (out = PointMass([0.0, 1.0]),),) => ExpectedWithAnnotations(Dirichlet([1.0, 2.0]); logscale = -log(2.0)),
+            (q = (out = Categorical([0.3, 0.7]),),) => ExpectedWithLogScale(Dirichlet([1.3, 1.7]), -log(2.0)),
+            (q = (out = PointMass([0.0, 1.0]),),) => ExpectedWithLogScale(Dirichlet([1.0, 2.0]), -log(2.0)),
         ],
     )
-    @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = PointMass([0.5, 0.5]),))
+    @test_throws ArgumentError getresult(call_message_update_rule(Categorical, :p; q = (out = PointMass([0.5, 0.5]),)))
     @test_average_energy(
         node = Categorical, float_types = (Float32, Float64),
         cases = [(q = (out = Categorical([0.3, 0.7]), p = Dirichlet([1.0, 3.0])),) => -sum([0.3, 0.7] .* (digamma.([1.0, 3.0]) .- digamma(4.0)))],
@@ -132,8 +132,8 @@ end
     )
 
     # Towards `p` from anything but a Categorical or a one-hot point mass is an error.
-    @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = PointMass(1.0),))
-    @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = 1.0,))
+    @test_throws ArgumentError getresult(call_message_update_rule(Categorical, :p; q = (out = PointMass(1.0),)))
+    @test_throws ArgumentError getresult(call_message_update_rule(Categorical, :p; q = (out = 1.0,)))
 end
 
 @testitem "rules:Dirichlet:marginals" tags = [:rules] begin

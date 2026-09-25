@@ -117,7 +117,7 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   An earlier draft proposed a `ScopedValue` for the default; that was never necessary,
   since a plain default argument does the same job, and it would have raised the Julia
   floor to 1.11 for no gain.
-- Rules declare which context **services** they need (e.g. `ctx = (:linalg, :product)`)
+- Rules declare which context **services** they need (e.g. `ctx = (:rng, :matrix_correction)`)
   so the engine can check availability and diagnose missing services.
 
 ### Rule surface
@@ -138,22 +138,28 @@ arguments object** — not a body the macro rewrites. One form, used by every ru
 )
 ```
 
-With a node's own algorithm, a variadic group and a log scale:
+With a node's own algorithm, a variadic group and a log scale (`DISCUSSION.md` §3.50):
 
 ```julia
 @define_message_update_rule(
-    node      = Mixture,
-    target    = :switch,
-    algorithm = MixtureBP,
-    ctx       = (:product,),
-    args      = (m[:out]::Any, m[:inputs...]::Any),
-    body      = (ctx, args, ann) -> begin
+    node           = Mixture,
+    target         = :switch,
+    algorithm      = MixtureBP,
+    args           = (m[:out]::Any, m[:inputs...]::Any),
+    reads_logscale = true,          # reads args.logscale.m[...]
+    logscale       = from_body,     # or a constant, `logscale = 0`, or `(args) -> ...`
+    body           = (algo, args) -> begin
         ...
-        annotate!(ann, :logscale, ls)
-        ...
+        with_logscale(Categorical(softmax(ls)), logsumexp(ls))
     end,
 )
 ```
+
+The log scale is part of the message, not an annotation: the scalar with
+`message = exp(logscale) · result` for the normalised result a rule returns. A rule declares it
+statically; one that omits it declares none, and its message's log scale is an
+`UndefinedLogScale` that propagates. Every public call of a rule returns a `RuleResult`
+(`getresult`, `getlogscale`, `getrule`, …); the engine never builds one.
 
 **Why symbols.** In a real lambda, `args.m[μ]` is an `UndefVarError` — `μ` is not a
 variable. Only `args.m[:μ]` works, so the body is *forced* to symbols; the declaration
@@ -226,14 +232,15 @@ omits `algorithm` belongs to its node's default, `DefaultAlgorithm` for almost e
 `ctx` and `ann` are deliberately separate: `ctx` is immutable infrastructure the rule
 *reads*; `ann` carries annotations in **both** directions — the incoming ones, keyed exactly
 like the inputs (`ann.m[:out]`, `ann.q[:μ]`), and the outgoing sink the rule writes with
-`annotate!(ann, :logscale, v)`. Annotations never take part in dispatch: they must not select
-the mathematics. Merging `ann` into `ctx` is a category error.
+`annotate!(ann, key, v)`. Annotations never take part in dispatch: they must not select
+the mathematics. Merging `ann` into `ctx` is a category error. A log scale is not an annotation
+(`DISCUSSION.md` §3.50): it is declared with `logscale` and read as `args.logscale.m[:out]`.
 
 ```julia
 body = (args, ann) -> begin
-    ls_in = getlogscale(ann.m[:out])   # incoming, arrived with m[:out]
+    count = getannotation(ann.m[:out], :input_count)   # incoming, arrived with m[:out]
     ...
-    annotate!(ann, :logscale, ls)      # outgoing
+    annotate!(ann, :input_count, count + 1)            # outgoing
     result
 end
 ```
@@ -310,6 +317,19 @@ built on it.
   node's interfaces/groups, of what a rule receives under a given factorisation, and of the
   coverage matrix activate when a plotting package is loaded, and otherwise fail with a
   descriptive "load X to enable this" message rather than a `MethodError`.
+- **Rich display of `RuleResult`** (user, `DISCUSSION.md` §3.50; a requirement, not built yet).
+  What a call returns can show itself, through Julia's multimedia `show(io, mime, x)`: a
+  `text/plain` report in the terminal (the node and the target with its direction, the inputs
+  with their types and values, marked `m` or `q`, the incoming log scales, the algorithm and its
+  parameters, the context services the rule declared, the scratch, the result, the log scale and
+  where it came from, the rule's signature and source), in colour only when the stream has
+  `:color`, respecting `:compact` and `:limit`; and `text/html` for Jupyter, Pluto and
+  Documenter's `@example` blocks: a self-contained card, inline CSS following the reader's theme,
+  with an inline SVG of the node — its interfaces as edges, the inputs used as incoming arrows
+  styled as messages or marginals, the unused interfaces greyed, the target the highlighted
+  outgoing arrow — and the report's sections as tables. Dependency-free; `visualize_spec` stays
+  the extension point for richer backends. Built today: the one-line and plain `text/plain`
+  forms.
 - **Error messages are pedagogy.** The "no rule found" output showing near-miss rules with
   per-slot ✓/✗ diffs is a teaching tool for students who get an input wrong, which is the
   common case in a classroom.

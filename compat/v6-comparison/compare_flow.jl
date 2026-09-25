@@ -54,7 +54,7 @@ end
             for input in inputs, target in (:out, :in)
                 other = target === :out ? :in : :out
                 m = NamedTuple{(other,)}((input,))
-                v7 = call_message_update_rule(F.Flow, target; m, algorithm)
+                v7 = getresult(call_message_update_rule(F.Flow, target; m, algorithm))
                 v6, _ = v6_message_update(ReactiveMP.Flow, target, m, NamedTuple(); meta)
                 id = "Flow:$target:$kind:$label:$(nameof(typeof(input)))"
                 @test compare_with_reference(id, v7, v6; node = "Flow", target = ":$target", atol = 1.0e-8).outcome === :agree
@@ -62,7 +62,7 @@ end
             # v6's marginal over `(in,)`: the marginal of `in`, m_in times the message towards `in`.
             m_out, m_in = inputs[1], MvNormalMeanCovariance([0.1, 0.2], [1.0 0.0; 0.0 1.0])
             v6 = v6_marginal_update(ReactiveMP.Flow, (:in,), (out = m_out, in = m_in), NamedTuple(); meta)
-            v7 = prod(GenericProd(), m_in, call_message_update_rule(F.Flow, :in; m = (out = m_out,), algorithm))
+            v7 = prod(GenericProd(), m_in, getresult(call_message_update_rule(F.Flow, :in; m = (out = m_out,), algorithm)))
             @test isapprox(mean(v7), mean(v6); atol = 1.0e-8) && isapprox(cov(v7), cov(v6); atol = 1.0e-8)
         end
     end

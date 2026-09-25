@@ -26,8 +26,8 @@
                 (NormalMeanPrecision(0.0, 1.0), NormalMeanPrecision(0.0, 1.0), NormalMeanPrecision(1.0, 1.0), GammaShapeRate(1.0, 1.0)),
                 (NormalMeanVariance(0.3, 2.0), NormalMeanPrecision(-1.2, 0.7), NormalMeanVariance(0.6, 0.2), GammaShapeRate(3.0, 2.0)),
             )
-            safe = call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Univariate, 1, ARsafe()))
-            unsafe = call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Univariate, 1, ARunsafe()))
+            safe = getresult(call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Univariate, 1, ARsafe())))
+            unsafe = getresult(call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Univariate, 1, ARunsafe())))
             @test unsafe isa MvNormalMeanCovariance
             @test mean(unsafe) ≈ mean(safe)
             @test cov(unsafe) ≈ cov(safe)
@@ -76,8 +76,8 @@
             q_θ = MvNormalMeanCovariance(randn(rng, order), Matrix(0.1I, order, order))
             q_γ = GammaShapeRate(3.0, 2.0)
             μ, Σ = exact_joint(order, m_y, m_x, q_θ, q_γ)
-            safe = call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Multivariate, order, ARsafe()))
-            unsafe = call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Multivariate, order, ARunsafe()))
+            safe = getresult(call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Multivariate, order, ARsafe())))
+            unsafe = getresult(call_marginal_update_rule(AR, (:y, :x); m = (y = m_y, x = m_x), q = (θ = q_θ, γ = q_γ), algorithm = ARVMP(Multivariate, order, ARunsafe())))
             @test unsafe isa MvNormalMeanCovariance
             @test isapprox(mean(unsafe), μ; atol = 1.0e-10)
             @test isapprox(cov(unsafe), Σ; atol = 1.0e-10)

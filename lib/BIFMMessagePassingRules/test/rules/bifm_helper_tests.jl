@@ -29,9 +29,9 @@ end
     using BIFMMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 
     q = (out = MvNormalMeanCovariance([1.0, 1.0], [2.0 0; 0 3.0]), in = MvNormalMeanCovariance([1.0, 1.0], [2.0 0; 0 3.0]))
-    @test_throws BIFMMessagePassingRules.BIFMFreeEnergyError call_average_energy(BIFMHelper; q)
+    @test_throws BIFMMessagePassingRules.BIFMFreeEnergyError getresult(call_average_energy(BIFMHelper; q))
     error = try
-        call_average_energy(BIFMHelper; q = (out = MvNormalMeanCovariance([1.0, 2.0], [2.0 0; 0 1.0]), in = MvNormalMeanPrecision([1.0, 2.0], [0.5 0; 0 1.0])))
+        getresult(call_average_energy(BIFMHelper; q = (out = MvNormalMeanCovariance([1.0, 2.0], [2.0 0; 0 1.0]), in = MvNormalMeanPrecision([1.0, 2.0], [0.5 0; 0 1.0]))))
     catch e
         e
     end

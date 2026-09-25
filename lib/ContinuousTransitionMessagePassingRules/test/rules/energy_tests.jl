@@ -15,8 +15,8 @@
     q_a, q_W = MvNormalMeanCovariance(zeros(dx * dy), Matrix(1.0I, dx * dy, dx * dy)), Wishart(dy + 1, Matrix(1.0I, dy, dy))
     expected = log(2π) - (digamma(3 / 2) + digamma(1) + 2 * log(2)) / 2 + tr(3 * 4 * I(dy)) / 2
     @test expected ≈ 13.415092731310878
-    @test call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm) ≈ expected
-    @test call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm) ≈ expected
+    @test getresult(call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm)) ≈ expected
+    @test getresult(call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm)) ≈ expected
 end
 
 @testitem "rules:ContinuousTransition:energy, against Monte Carlo" tags = [:rules] begin
@@ -44,14 +44,14 @@ end
         q_x = MvNormalMeanCovariance([-0.5 + 1.3 * (k - 1) / (dx - 1) for k in 1:dx], 0.4 * spd(dx, 1.0))
         q_y_x = MvNormalMeanCovariance(vcat(mean(q_y), mean(q_x)), 0.3 * spd(dy + dx, 1.5))
 
-        meanfield = call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm)
+        meanfield = getresult(call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm))
         @test meanfield ≈ monte_carlo(f, rng -> (rand(rng, q_y), rand(rng, q_x)), q_a, q_W, dy) rtol = 5.0e-3
-        structured = call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm)
+        structured = getresult(call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm))
         @test structured ≈ monte_carlo(f, rng -> (z = rand(rng, q_y_x); (z[1:dy], z[(dy + 1):end])), q_a, q_W, dy) rtol = 5.0e-3
 
         # A joint without cross-covariance is the mean-field energy.
         block = MvNormalMeanCovariance(vcat(mean(q_y), mean(q_x)), [cov(q_y) zeros(dy, dx); zeros(dx, dy) cov(q_x)])
-        @test call_average_energy(ContinuousTransition; clusters = ((:y, :x) => block,), q = (a = q_a, W = q_W), algorithm) ≈ meanfield
+        @test getresult(call_average_energy(ContinuousTransition; clusters = ((:y, :x) => block,), q = (a = q_a, W = q_W), algorithm)) ≈ meanfield
     end
 end
 
@@ -62,5 +62,5 @@ end
     algorithm = CTVMP(a -> reshape(a, 2, 2))
     q_y, q_x = MvNormalMeanCovariance(Float32[1, 0], Matrix{Float32}(I, 2, 2)), MvNormalMeanCovariance(Float32[0, 1], Matrix{Float32}(I, 2, 2))
     q_a, q_W = MvNormalMeanCovariance(Float32[1, 0, 0, 1], Matrix{Float32}(I, 4, 4)), Wishart(3.0f0, Matrix{Float32}(I, 2, 2))
-    @test call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm) isa Float32
+    @test getresult(call_average_energy(ContinuousTransition; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm)) isa Float32
 end

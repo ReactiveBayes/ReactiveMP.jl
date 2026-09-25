@@ -41,7 +41,8 @@ src/
     static_inputs.jl   StaticFold, getnodefn on FactorNode, with_statics
     equality.jl        equality-chain optimisation for high-degree variables
   annotations.jl       AnnotationDict, the per-message annotation store
-  annotations/         per-message metadata (log scale, input arguments)
+  logscale.jl          log scales: products, constants, initial messages
+  annotations/         per-message metadata (input arguments)
   callbacks.jl         rule-call and other engine events
   postprocessors.jl    stream postprocessors (with postprocessors/)
   constraints/         form constraints
@@ -107,12 +108,12 @@ locally. The workflows under `.github/` run these same checks, on 1.13.
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (177 of them across 27 files), each self-contained and
+Tests are `@testitem` blocks (172 of them across 27 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (29) and `:engine` (146 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (29) and `:engine` (141 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate and the engine's doctests. Rules
 are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
@@ -168,7 +169,7 @@ discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT
 - Aqua's checks run in full in `test/runtests.jl`, `ambiguities` included; `deps_compat` checks
   `[extras]` too.
 - A rule reads its services from `ctx`, a `RuleContext` wrapping a `NamedTuple`: the engine
-  supplies `node`, `product`, `rng` and `matrix_correction` (`node_context`), and the activation
+  supplies `node`, `rng` and `matrix_correction` (`node_context`), and the activation
   option `context`, any `NamedTuple`, is merged over them. A name nobody supplies reads as
   `nothing`.
 - The activation option `rulefallback` (e.g. `NodeFunctionRuleFallback()`) gives a message only
@@ -206,10 +207,17 @@ discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT
   the two mixtures declare all three.
 - The v6 → v7 migration guide is the docs page `docs/src/migration-guides/v6-to-v7.md`; there is
   no `MIGRATION.md`.
-- Log scales (`:logscale` annotations, `LogScaleAnnotations`) are **experimental**: the engine
-  owns the policy, the base package only carries annotations, and they do exactly what v6 did:
-  no rule gains or loses one, and nothing new is required of rules, until a decision after the
-  release.
+- A **log scale** is part of a message (`Message{D, L}`, `Marginal{D, L}`), not an annotation:
+  the scalar with `message = exp(logscale) · distribution`. A rule declares it with the
+  `logscale` keyword (a constant, a function of `args`, or `from_body` with the body returning
+  `with_logscale`); one that omits it gives an `UndefinedLogScale` naming it, which propagates
+  and errors only where a number is needed (`require_logscale`). The engine tracks them only
+  with the activation option `logscales = true`; otherwise messages carry `nothing`. A rule
+  reading its inputs' ones declares `reads_logscale = true` and reads `args.logscale.m[:x]`.
+- Every public call of a rule (`call_*`, `@call_*`, `message_passing_*`) returns a
+  `RuleResult`; `getresult` is the value, `getlogscale` its log scale. The engine uses
+  `execute_rule`/`execute_rule_with_logscale` and never builds one; inlined,
+  `getresult(message_passing_rule(...))` still allocates nothing (the routing gates).
 - The v6 code is only in the 6.5.0 release and in git. The inventory gate runs in
   `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
 - `visualize_spec` is a deliberate entry point for visualisation backends (extensions), none

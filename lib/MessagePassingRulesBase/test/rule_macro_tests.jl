@@ -38,15 +38,13 @@
         body = (args) -> Normal(mean(args.m[:μ]), mean(args.m[:v])),
     )
 
-    # 2. Writing a log scale through `ann`.
+    # 2. Declaring a log scale.
     @define_message_update_rule(
         node = NMV,
         target = :μ,
         args = (m[:out]::Point, m[:v]::Point),
-        body = (args, ann) -> begin
-            annotate!(ann, :logscale, 0.0)
-            Normal(mean(args.m[:out]), mean(args.m[:v]))
-        end,
+        logscale = 0.0,
+        body = (args) -> Normal(mean(args.m[:out]), mean(args.m[:v])),
     )
 
     # 3. A function node.
@@ -81,13 +79,14 @@
         body = (args) -> sum(map(mean, args.m[:inputs]) .* args.m[:switch].p),
     )
 
-    # 6. The context service that replaces the engine leak.
+    # 6. Reading the incoming log scales, and computing the outgoing one in the body.
     @define_message_update_rule(
         node = Mixture,
         target = :switch,
-        ctx = (:product,),
         args = (m[:out]::Normal, m[:inputs...]::Normal),
-        body = (ctx, args) -> Categorical(collect(map(input -> last(ctx.product(args.m[:out], input)), args.m[:inputs]))),
+        logscale = from_body,
+        reads_logscale = true,
+        body = (args) -> with_logscale(Categorical(collect(args.logscale.m[:inputs])), sum(args.logscale.m[:inputs])),
     )
 
     # 7 and 8. Same node, target and algorithm type, different parameters: dispatch on the
@@ -171,44 +170,46 @@ end
     S = RepresentativeRules
     P, N, C = S.Point, S.Normal, S.Categorical
 
-    @test message_passing_rule(S.NMV, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = P(1.0), v = P(2.0)))) == N(1.0, 2.0)
+    @test getresult(message_passing_rule(S.NMV, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = P(1.0), v = P(2.0))))) == N(1.0, 2.0)
 
-    ann = RuleAnnotations(out = AnnotationStore())
-    @test message_passing_rule(S.NMV, Target(:μ), DefaultAlgorithm(), RuleArgs(m = (out = P(3.0), v = P(1.0))), RuleContext(), ann) == N(3.0, 1.0)
-    @test getannotation(ann, :logscale) == 0.0
+    result = message_passing_rule(S.NMV, Target(:μ), DefaultAlgorithm(), RuleArgs(m = (out = P(3.0), v = P(1.0))))
+    @test getresult(result) == N(3.0, 1.0)
+    @test getlogscale(result) === 0.0
 
-    @test message_passing_rule(+, Target(:in2), DefaultAlgorithm(), RuleArgs(m = (out = P(5.0), in1 = P(2.0)))) == P(3.0)
+    @test getresult(message_passing_rule(+, Target(:in2), DefaultAlgorithm(), RuleArgs(m = (out = P(5.0), in1 = P(2.0))))) == P(3.0)
 
     # Only member 2 is selected; the rest of the group is `nothing`.
     canary = RuleArgs(q = (out = N(0.5, 1.0), switch = C([0.5, 0.5]), p = (nothing, P(20.0))))
-    @test message_passing_rule(S.NormalMixture, IndexedTarget(:m, 2), S.MixtureVMP(), canary) == N(0.5, 20.0)
+    @test getresult(message_passing_rule(S.NormalMixture, IndexedTarget(:m, 2), S.MixtureVMP(), canary)) == N(0.5, 20.0)
 
     mix = RuleArgs(m = (switch = C([0.25, 0.75]), inputs = (N(1.0, 1.0), N(3.0, 1.0))))
-    @test message_passing_rule(S.Mixture, Target(:out), DefaultAlgorithm(), mix) == 0.25 * 1.0 + 0.75 * 3.0
+    @test getresult(message_passing_rule(S.Mixture, Target(:out), DefaultAlgorithm(), mix)) == 0.25 * 1.0 + 0.75 * 3.0
 
-    product = (left, right) -> (nothing, -abs2(S.mean(left) - S.mean(right)))
-    switch = RuleArgs(m = (out = N(0.0, 1.0), inputs = (N(1.0, 1.0), N(2.0, 1.0))))
-    @test message_passing_rule(S.Mixture, Target(:switch), DefaultAlgorithm(), switch, RuleContext(product = product)).p == [-1.0, -4.0]
+    switch = RuleArgs(m = (out = N(0.0, 1.0), inputs = (N(1.0, 1.0), N(2.0, 1.0))), logscale = (out = 0.0, inputs = (-1.0, -4.0)))
+    result = message_passing_rule(S.Mixture, Target(:switch), DefaultAlgorithm(), switch)
+    @test getresult(result).p == [-1.0, -4.0]
+    @test getlogscale(result) == -5.0
+    @test_throws ArgumentError message_passing_rule(S.Mixture, Target(:switch), DefaultAlgorithm(), RuleArgs(m = switch.m))
 
     lin = RuleArgs(m = (in = (nothing, nothing, N(1.0, 2.0)),), q = (in = (1, 2, 3),))
-    @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 3), S.ToyDelta(nothing), lin) == N(1.0, 5.0)
+    @test getresult(message_passing_rule(S.DeltaFn, IndexedTarget(:in, 3), S.ToyDelta(nothing), lin)) == N(1.0, 5.0)
     inv = RuleArgs(m = (out = P(4.0),))
-    @test message_passing_rule(S.DeltaFn, IndexedTarget(:in, 1), S.ToyDelta(sqrt), inv) == P(2.0)
+    @test getresult(message_passing_rule(S.DeltaFn, IndexedTarget(:in, 1), S.ToyDelta(sqrt), inv)) == P(2.0)
 
-    @test message_passing_marginalrule(S.NMV, ClusterTarget((:out, :μ)), DefaultAlgorithm(), RuleArgs(m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),))) == (1.0, 2.0)
+    @test getresult(message_passing_marginalrule(S.NMV, ClusterTarget((:out, :μ)), DefaultAlgorithm(), RuleArgs(m = (out = P(1.0), μ = P(2.0)), q = (v = P(1.0),)))) == (1.0, 2.0)
     joint = RuleArgs(q = Marginals(NamedTuple(), Val(((:out, :μ),)), ((1.0, 4.0),)))
-    @test message_passing_rule(S.NMV, Target(:v), DefaultAlgorithm(), joint) == P(9.0)
+    @test getresult(message_passing_rule(S.NMV, Target(:v), DefaultAlgorithm(), joint)) == P(9.0)
 
     vec_args = RuleArgs(m = (μ = [1.0, 2.0], out = [10.0, 20.0]))
     buffer = zeros(2)
-    @test message_passing_rule!(buffer, S.Vec, Target(:out), DefaultAlgorithm(), vec_args) === buffer
+    @test getresult(message_passing_rule!(buffer, S.Vec, Target(:out), DefaultAlgorithm(), vec_args)) === buffer
     @test buffer == [11.0, 22.0]
-    @test message_passing_rule(S.Vec, Target(:out), DefaultAlgorithm(), vec_args) == [11.0, 22.0]
+    @test getresult(message_passing_rule(S.Vec, Target(:out), DefaultAlgorithm(), vec_args)) == [11.0, 22.0]
 
-    @test message_passing_rule(S.Stack, IndexedTarget(:x, 2), DefaultAlgorithm(), RuleArgs(m = (out = [7.0, 8.0, 9.0],))) == [7.0, 8.0]
+    @test getresult(message_passing_rule(S.Stack, IndexedTarget(:x, 2), DefaultAlgorithm(), RuleArgs(m = (out = [7.0, 8.0, 9.0],)))) == [7.0, 8.0]
 
     energy = RuleArgs(q = (out = N(0.0, 1.0), μ = N(1.0, 2.0), v = P(2.0)))
-    @test message_passing_average_energy(S.NMV, DefaultAlgorithm(), energy) == (1.0 + 2.0 + 1.0) / 2.0
+    @test getresult(message_passing_average_energy(S.NMV, DefaultAlgorithm(), energy)) == (1.0 + 2.0 + 1.0) / 2.0
 end
 
 @testitem "rules:specs" tags = [:base] setup = [RepresentativeRules] begin
@@ -226,7 +227,7 @@ end
     @test contains(spec.source, "Normal(mean(args.m[:μ])")
 
     switch = only(filter(s -> s.node === S.Mixture && s.target === MessagePassingRulesBase.Target{:switch}, ours))
-    @test switch.services === (:product,)
+    @test switch.reads_logscale && switch.logscale === from_body
 
     counter = only(filter(s -> s.node === S.Counter, ours))
     @test !counter.pure

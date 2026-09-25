@@ -41,7 +41,7 @@
         cases = [(m = (out = Categorical([0.2, 0.5, 0.3]), in = Categorical([0.2, 0.5, 0.3])), q = (a = PointMass(A_int),)) => Categorical([1 / 3, 1 / 3, 1 / 3])],
     )
     m32 = Categorical(Float32[0.2, 0.5, 0.3])
-    @test call_message_update_rule(DiscreteTransition, (:T, 1); m = (out = m32, in = m32), q = (a = PointMass(A_int),)) isa Categorical{Float32}
+    @test getresult(call_message_update_rule(DiscreteTransition, (:T, 1); m = (out = m32, in = m32), q = (a = PointMass(A_int),))) isa Categorical{Float32}
 end
 
 @testitem "rules:DiscreteTransition:T:Belief Propagation (q_out::PointMass, m_in::Categorical, q_a::PointMass)" tags = [

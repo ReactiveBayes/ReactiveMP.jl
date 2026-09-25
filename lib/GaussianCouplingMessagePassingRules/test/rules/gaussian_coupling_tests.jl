@@ -24,8 +24,8 @@
 
     # The factor is symmetric in `out` and `in`.
     for (m, a) in ((NormalMeanVariance(1.5, 2.0), 0.75), (NormalMeanPrecision(-2.0, 3.0), -1.25))
-        @test call_message_update_rule(GaussianCoupling, :out; m = (in = m,), q = (a = PointMass(a),)) ≈
-            call_message_update_rule(GaussianCoupling, :in; m = (out = m,), q = (a = PointMass(a),))
+        @test getresult(call_message_update_rule(GaussianCoupling, :out; m = (in = m,), q = (a = PointMass(a),))) ≈
+            getresult(call_message_update_rule(GaussianCoupling, :in; m = (out = m,), q = (a = PointMass(a),)))
     end
 
     # N(out; in, 1/w) ∝ exp(-w out²/2) exp(w out in) exp(-w in²/2): with a = w the coupling is the
@@ -34,7 +34,7 @@
     for (ξ, w_other, w) in ((0.5, 2.0, 1.0), (-1.0, 4.0, 0.5)), (target, other) in ((:in, :out), (:out, :in))
         m = NormalWeightedMeanPrecision(ξ, w_other)
         tilted = NamedTuple{(other,)}((NormalWeightedMeanPrecision(ξ, w_other + w),))
-        message = prod(GenericProd(), NormalWeightedMeanPrecision(0.0, w), call_message_update_rule(GaussianCoupling, target; m = tilted, q = (a = PointMass(w),)))
+        message = prod(GenericProd(), NormalWeightedMeanPrecision(0.0, w), getresult(call_message_update_rule(GaussianCoupling, target; m = tilted, q = (a = PointMass(w),))))
         @test all(mean_var(message) .≈ (mean(m), var(m) + 1 / w))
     end
 end
@@ -58,7 +58,7 @@ end
     # The joint is proper exactly when w_out ⋅ w_in > a², a local condition on the factor.
     smallest_eigenvalue(W) = (W[1, 1] + W[2, 2]) / 2 - sqrt(((W[1, 1] - W[2, 2]) / 2)^2 + W[1, 2]^2)
     for (w_out, w_in, a, proper) in ((4.0, 4.0, 1.0, true), (2.0, 2.0, 1.9, true), (2.0, 2.0, 2.0, false), (1.0, 1.0, 2.0, false))
-        q = call_marginal_update_rule(GaussianCoupling, (:out, :in); m = (out = NormalWeightedMeanPrecision(0.5, w_out), in = NormalWeightedMeanPrecision(-0.5, w_in)), q = (a = PointMass(a),))
+        q = getresult(call_marginal_update_rule(GaussianCoupling, (:out, :in); m = (out = NormalWeightedMeanPrecision(0.5, w_out), in = NormalWeightedMeanPrecision(-0.5, w_in)), q = (a = PointMass(a),)))
         W = convert(Matrix, precision(q))
         @test (smallest_eigenvalue(W) > sqrt(eps()) * maximum(abs, W)) === proper
         @test (w_out * w_in > abs2(a)) === proper
@@ -96,7 +96,7 @@ end
         message = [NormalWeightedMeanPrecision(0.0, 0.0) for _ in 1:n, _ in 1:n]
         collect_into(i, exclude) = foldl((acc, k) -> prod(GenericProd(), acc, message[k, i]), filter(!=(exclude), neighbours[i]); init = prior[i])
         for _ in 1:iterations, i in 1:n, j in neighbours[i]
-            message[i, j] = call_message_update_rule(GaussianCoupling, :in; m = (out = collect_into(i, j),), q = (a = PointMass(-A[i, j]),))
+            message[i, j] = getresult(call_message_update_rule(GaussianCoupling, :in; m = (out = collect_into(i, j),), q = (a = PointMass(-A[i, j]),)))
         end
         return map(i -> collect_into(i, 0), 1:n)
     end

@@ -1,6 +1,7 @@
 @define_message_update_rule(
     node = GammaShapeRate, target = :out,
     args = (m[:α]::PointMass, m[:β]::PointMass),
+    logscale = 0,
     body = (args) -> GammaShapeRate(mean(args.m[:α]), mean(args.m[:β])),
 )
 

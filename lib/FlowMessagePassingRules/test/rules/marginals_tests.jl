@@ -19,7 +19,7 @@
 
     function check_marginal(algorithm, expected, atol)
         for (m_out, m_in) in pairs
-            marginal = prod(GenericProd(), m_in, call_message_update_rule(Flow, :in; m = (out = m_out,), algorithm))
+            marginal = prod(GenericProd(), m_in, getresult(call_message_update_rule(Flow, :in; m = (out = m_out,), algorithm)))
             @test marginal isa MvNormalWeightedMeanPrecision
             @test isapprox(weightedmean(marginal), weightedmean(expected); atol)
             @test isapprox(precision(marginal), precision(expected); atol)

@@ -19,14 +19,14 @@
         shifted = MvNormalMeanCovariance(T * mean(q_y_x), T * cov(q_y_x) * T')
 
         @test close(
-            call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm = affine),
-            call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => shifted,), q = (a = q_a, W = q_W), algorithm = linear),
+            getresult(call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm = affine)),
+            getresult(call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => shifted,), q = (a = q_a, W = q_W), algorithm = linear)),
         )
-        W_affine = call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => q_y_x,), q = (a = q_a,), algorithm = affine)
-        W_linear = call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => shifted,), q = (a = q_a,), algorithm = linear)
+        W_affine = getresult(call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => q_y_x,), q = (a = q_a,), algorithm = affine))
+        W_linear = getresult(call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => shifted,), q = (a = q_a,), algorithm = linear))
         @test all(map((p, q) -> isapprox(p, q; atol = 1.0e-9), params(W_affine), params(W_linear)))
-        @test call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm = affine) ≈
-            call_average_energy(ContinuousTransition; clusters = ((:y, :x) => shifted,), q = (a = q_a, W = q_W), algorithm = linear)
+        @test getresult(call_average_energy(ContinuousTransition; clusters = ((:y, :x) => q_y_x,), q = (a = q_a, W = q_W), algorithm = affine)) ≈
+            getresult(call_average_energy(ContinuousTransition; clusters = ((:y, :x) => shifted,), q = (a = q_a, W = q_W), algorithm = linear))
 
         # Under mean-field, the offset reaches `a` through E[x xᵀ]: the message equals the one for
         # the linear model on the joint (y - B x, x), whose cross-covariance is -B Vx.
@@ -34,11 +34,11 @@
         independent = MvNormalMeanCovariance(vcat(mean(q_y), mean(q_x)), [cov(q_y) zeros(dy, dx); zeros(dx, dy) cov(q_x)])
         independent_shifted = MvNormalMeanCovariance(T * mean(independent), T * cov(independent) * T')
         @test close(
-            call_message_update_rule(ContinuousTransition, :a; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm = affine),
-            call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => independent_shifted,), q = (a = q_a, W = q_W), algorithm = linear),
+            getresult(call_message_update_rule(ContinuousTransition, :a; q = (y = q_y, x = q_x, a = q_a, W = q_W), algorithm = affine)),
+            getresult(call_message_update_rule(ContinuousTransition, :a; clusters = ((:y, :x) => independent_shifted,), q = (a = q_a, W = q_W), algorithm = linear)),
         )
-        W_meanfield = call_message_update_rule(ContinuousTransition, :W; q = (y = q_y, x = q_x, a = q_a), algorithm = affine)
-        W_shifted = call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => independent_shifted,), q = (a = q_a,), algorithm = linear)
+        W_meanfield = getresult(call_message_update_rule(ContinuousTransition, :W; q = (y = q_y, x = q_x, a = q_a), algorithm = affine))
+        W_shifted = getresult(call_message_update_rule(ContinuousTransition, :W; clusters = ((:y, :x) => independent_shifted,), q = (a = q_a,), algorithm = linear))
         @test all(map((p, q) -> isapprox(p, q; atol = 1.0e-9), params(W_meanfield), params(W_shifted)))
     end
 end

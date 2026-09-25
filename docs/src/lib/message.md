@@ -42,10 +42,10 @@ Message
 
 From an implementation point a view the `Message` structure does nothing but hold some `data` object and redirects most of the statistical related functions to that `data` object. 
 However, this object is used extensively in Julia's multiple dispatch. 
-Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if [product of two messages](@ref lib-messages-product) results in `is_initial` or `is_clamped` posterior marginal. Each message also carries an [`AnnotationDict`](@ref) for optional metadata such as log-scale factors or computation history (see [Annotations](@ref lib-annotations)).
+Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if [product of two messages](@ref lib-messages-product) results in `is_initial` or `is_clamped` posterior marginal. Each message also carries its log scale, when log scales are tracked (see [Log scales](@ref lib-logscale)), and an [`AnnotationDict`](@ref) for optional metadata such as computation history (see [Annotations](@ref lib-annotations)).
 
 !!! note "Equality ignores annotations"
-    `==` on `Message` (and on [`Marginal`](@ref)) compares `data`, `is_clamped` and `is_initial`, but **not** `annotations`. Two messages carrying the same distribution therefore compare equal even when their annotations differ — including `:logscale`, which underpins free-energy bookkeeping. This is intentional: annotations describe *how* a message was computed, not the belief it represents. If you need annotation-sensitive equality (in a cache key, a `unique` call, or your own code), compare [`ReactiveMP.getannotations`](@ref) explicitly alongside the messages. See the `Message` docstring for a worked example.
+    `==` on `Message` (and on [`Marginal`](@ref)) compares `data`, `is_clamped` and `is_initial`, but **not** `annotations` or the log scale. Two messages carrying the same distribution therefore compare equal even when their annotations or log scales differ. This is intentional: annotations and log scales describe *how* a message was computed, not the belief it represents. If you need annotation-sensitive equality (in a cache key, a `unique` call, or your own code), compare [`ReactiveMP.getannotations`](@ref) explicitly alongside the messages. See the `Message` docstring for a worked example.
 
 ```@docs
 ReactiveMP.getdata(message::Message)

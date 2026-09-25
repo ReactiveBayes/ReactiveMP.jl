@@ -47,7 +47,7 @@ end
             [(m = (out = Bernoulli(0.5), in = c),) => NormalWeightedMeanPrecision(0.0, 1.0 * tiny) for c in cavities],
         ),
     )
-    @test_throws ArgumentError call_message_update_rule(Probit, :in; m = (out = PointMass(2.0), in = NormalMeanVariance(1.0, 0.5)))
+    @test_throws ArgumentError getresult(call_message_update_rule(Probit, :in; m = (out = PointMass(2.0), in = NormalMeanVariance(1.0, 0.5))))
 end
 
 @testitem "rules:Probit:in, belief propagation" tags = [:rules] begin
@@ -56,8 +56,8 @@ end
 
     # log(1 - p + (2p - 1) Φ(z)), under DefaultAlgorithm, from a message or a point-mass marginal.
     for (p, expected) in ((1.0, z -> log(normcdf(z))), (0.8, z -> log(0.2 + 0.6 * normcdf(z))), (0.5, z -> log(0.5)), (0.0, z -> log(1 - normcdf(z))))
-        from_message = call_message_update_rule(Probit, :in; m = (out = PointMass(p),), algorithm = DefaultAlgorithm())
-        from_marginal = call_message_update_rule(Probit, :in; q = (out = PointMass(p),), algorithm = DefaultAlgorithm())
+        from_message = getresult(call_message_update_rule(Probit, :in; m = (out = PointMass(p),), algorithm = DefaultAlgorithm()))
+        from_marginal = getresult(call_message_update_rule(Probit, :in; q = (out = PointMass(p),), algorithm = DefaultAlgorithm()))
         for z in (-2.0, -0.5, 0.0, 0.7, 3.0)
             @test logpdf(from_message, z) ≈ expected(z) atol = 1.0e-5
             @test logpdf(from_marginal, z) ≈ expected(z) atol = 1.0e-5
@@ -72,8 +72,8 @@ end
     # The joint of a point-mass output keeps the output, and gives `in` the tilted distribution,
     # which is the cavity times the message towards `in`.
     for (p, m_in) in ((1.0, NormalMeanVariance(1.0, 0.5)), (0.0, NormalMeanPrecision(-0.5, 3.0)), (1.0, NormalWeightedMeanPrecision(2.0, 2.0)))
-        joint = call_marginal_update_rule(Probit, (:out, :in); m = (out = PointMass(p), in = m_in))
-        message = call_message_update_rule(Probit, :in; m = (out = PointMass(p), in = m_in))
+        joint = getresult(call_marginal_update_rule(Probit, (:out, :in); m = (out = PointMass(p), in = m_in)))
+        message = getresult(call_message_update_rule(Probit, :in; m = (out = PointMass(p), in = m_in)))
         @test joint[(:out,)] == PointMass(p)
         @test all(mean_var(joint[(:in,)]) .≈ mean_var(prod(GenericProd(), m_in, message)))
     end
@@ -96,16 +96,16 @@ end
 
     # E[-log Φ(x)] = E[-log Φ(-x)] = 1 for a standard normal x, whatever the output's probability.
     for algorithm in (ProbitEP(), ProbitEP(p = 100), DefaultAlgorithm())
-        @test call_average_energy(Probit; q = (out = Bernoulli(1), in = NormalMeanVariance(0.0, 1.0)), algorithm) ≈ 1.0
-        @test call_average_energy(Probit; q = (out = PointMass(1), in = NormalMeanVariance(0.0, 1.0)), algorithm) ≈ 1.0
+        @test getresult(call_average_energy(Probit; q = (out = Bernoulli(1), in = NormalMeanVariance(0.0, 1.0)), algorithm)) ≈ 1.0
+        @test getresult(call_average_energy(Probit; q = (out = PointMass(1), in = NormalMeanVariance(0.0, 1.0)), algorithm)) ≈ 1.0
     end
     for k in 0:0.1:1
-        @test call_average_energy(Probit; q = (out = Bernoulli(k), in = NormalMeanVariance(0.0, 1.0)), algorithm = ProbitEP(p = 100)) ≈ 1.0
+        @test getresult(call_average_energy(Probit; q = (out = Bernoulli(k), in = NormalMeanVariance(0.0, 1.0)), algorithm = ProbitEP(p = 100))) ≈ 1.0
     end
     # A wide q(in) and 100 points reach x ≈ ±37, where log(Φ(x)) underflows to -Inf, which would
     # make the energy Inf, or NaN for a point-mass output (0 ⋅ -Inf); log Φ is computed directly.
     for q_out in (PointMass(1.0), PointMass(0.0), Bernoulli(0.3))
-        energy = call_average_energy(Probit; q = (out = q_out, in = NormalMeanVariance(-2.0, 4.0)), algorithm = ProbitEP(p = 100))
+        energy = getresult(call_average_energy(Probit; q = (out = q_out, in = NormalMeanVariance(-2.0, 4.0)), algorithm = ProbitEP(p = 100)))
         @test isfinite(energy) && energy > 0
     end
 end

@@ -16,7 +16,6 @@ unknowns:
 
 ```@example defining
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
-import MessagePassingRulesBase: annotate!
 
 struct Shift end
 
@@ -25,10 +24,8 @@ struct Shift end
 @define_message_update_rule(
     node = Shift, target = :out,
     args = (m[:in]::NormalMeanVariance, m[:c]::PointMass),
-    body = (args, ann) -> begin
-        annotate!(ann, :logscale, 0)
-        NormalMeanVariance(mean(args.m[:in]) + mean(args.m[:c]), var(args.m[:in]))
-    end,
+    logscale = 0,
+    body = (args) -> NormalMeanVariance(mean(args.m[:in]) + mean(args.m[:c]), var(args.m[:in])),
 )
 
 @define_message_update_rule(
@@ -37,7 +34,14 @@ struct Shift end
     body = (args) -> NormalMeanVariance(mean(args.m[:out]) - mean(args.m[:c]), var(args.m[:out])),
 )
 
-call_message_update_rule(Shift, :out; m = (in = NormalMeanVariance(1.0, 2.0), c = PointMass(3.0)))
+result = call_message_update_rule(Shift, :out; m = (in = NormalMeanVariance(1.0, 2.0), c = PointMass(3.0)))
+```
+
+A call returns a [`RuleResult`](@ref): the message is `getresult(result)` and the log scale the
+rule declares `getlogscale(result)`.
+
+```@example defining
+getresult(result), getlogscale(result)
 ```
 
 A stochastic node declares an average energy for the free energy too. Here `out ~ N(μ, 1)`,
@@ -60,7 +64,7 @@ struct UnitNormal end
     body = (args) -> (log(2π) + var(args.q[:out]) + var(args.q[:μ]) + abs2(mean(args.q[:out]) - mean(args.q[:μ]))) / 2,
 )
 
-call_average_energy(UnitNormal; q = (out = NormalMeanVariance(0.0, 1.0), μ = PointMass(0.0)))
+getresult(call_average_energy(UnitNormal; q = (out = NormalMeanVariance(0.0, 1.0), μ = PointMass(0.0))))
 ```
 
 ## [Nodes](@id rules-defining-nodes)
@@ -113,10 +117,18 @@ A rule names its node, its target and its inputs, and gives its body as a lambda
   working memory), `algo` (the algorithm it runs under), `ctx` (the context services), `args`
   and `ann` (the annotations).
 - `ctx = (:rng,)` declares the context services the body uses. `ctx.rng` is the random number
-  generator the caller owns; `ctx.product(left, right)` multiplies two distributions and returns
-  the product with its own log scale; `matrix_correction(ctx, default)` is the correction a rule
-  applies to a matrix it builds, its own `default` when none is set.
+  generator the caller owns; `matrix_correction(ctx, default)` is the correction a rule applies
+  to a matrix it builds, its own `default` when none is set. The context is open: a rule may
+  declare a service of its own, which the caller supplies.
 - `pure = false` marks a rule with side effects.
+- `logscale` declares the log scale of the message: the scalar with
+  `message = exp(logscale) · result` for the normalised result the rule returns. A constant
+  (`logscale = 0`, `logscale = loghalf`), a function of the inputs (`logscale = (args) -> …`),
+  or `logscale = from_body`, the body then returning `with_logscale(result, logscale)`. A rule
+  that omits it declares none, and its message's log scale is undefined. See
+  [Log scales](@ref lib-logscale).
+- `reads_logscale = true` marks a rule that reads the log scales its inputs arrived with, as
+  `args.logscale.m[:x]`.
 
 A rule that reuses another's computation calls a plain helper function both share, rather than
 the other rule.
@@ -205,9 +217,9 @@ public_equivalent
 
 ## [Annotations](@id rules-defining-annotations)
 
-A rule records facts about its result, such as its log scale, with
-[`ReactiveMP.annotate!`](@ref)`(ann, key, value)`, and reads what its inputs arrived with from
-`ann.m[:x]` and `ann.q[:x]`.
+A rule records other facts about its result with [`ReactiveMP.annotate!`](@ref)`(ann, key,
+value)`, and reads what its inputs arrived with from `ann.m[:x]` and `ann.q[:x]`. The log scale
+is not an annotation: a rule declares it with the `logscale` keyword.
 
 ```@docs
 MessagePassingRulesBase.RuleAnnotations
@@ -220,7 +232,9 @@ MessagePassingRulesBase.getannotation
 ## [Calling rules](@id rules-defining-calling)
 
 Any rule can be called directly, without a graph, which is how rules are tested and explored.
-`which_*` returns the rule a call would run.
+Every call returns a [`RuleResult`](@ref): the result together with its log scale, the rule that
+ran, and what it ran with. A rule that reads its inputs' log scales is given them as
+`logscale = (out = …,)`, keyed like `m`. `which_*` returns the rule a call would run.
 
 ```@example defining
 which_message_update_rule(Shift, :in; m = (out = NormalMeanVariance(4.0, 2.0), c = PointMass(3.0)))
@@ -244,6 +258,16 @@ message_passing_rule!
 message_passing_marginalrule
 message_passing_marginalrule!
 message_passing_average_energy
+RuleResult
+getresult
+getrule
+MessagePassingRulesBase.getalgorithm
+MessagePassingRulesBase.getcontext
+MessagePassingRulesBase.getscratch
+MessagePassingRulesBase.getarguments
+MessagePassingRulesBase.gettarget
 MessagePassingRulesBase.execute_rule
+MessagePassingRulesBase.execute_rule_with_logscale
+MessagePassingRulesBase.check_reads_logscale
 MessagePassingRulesBase.rule_scratch
 ```

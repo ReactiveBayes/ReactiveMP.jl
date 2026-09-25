@@ -1,6 +1,5 @@
 @testmodule VerifiedRules begin
     using MessagePassingRulesBase, Distributions, BayesBase
-    using MessagePassingRulesBase: annotate!
 
     struct Gauss
         μ::Float64
@@ -12,7 +11,8 @@
     @define_message_update_rule(node = Gauss, target = :out, args = (m[:μ]::PointMass, m[:σ]::PointMass), body = (args) -> Normal(mean(args.m[:μ]), mean(args.m[:σ])))
     @define_message_update_rule(
         node = Gauss, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
-        body = (args, ann) -> (annotate!(ann, :logscale, 0.0); Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2))),
+        logscale = 0.0,
+        body = (args) -> Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2)),
     )
     @define_message_update_rule(
         node = Gauss, target = :μ, args = (q[:out]::Normal, q[:σ]::PointMass),
@@ -28,7 +28,8 @@
     @define_factor_node(node = WrongShape, type = Stochastic, interfaces = [:out, :μ, :σ])
     @define_message_update_rule(
         node = WrongShape, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
-        body = (args, ann) -> (annotate!(ann, :logscale, 0.0); Normal(mean(args.m[:out]), mean(args.m[:σ]))),
+        logscale = 0.0,
+        body = (args) -> Normal(mean(args.m[:out]), mean(args.m[:σ])),
     )
 
     # Right shape, wrong normalisation.
@@ -40,7 +41,8 @@
     @define_factor_node(node = WrongScale, type = Stochastic, interfaces = [:out, :μ, :σ])
     @define_message_update_rule(
         node = WrongScale, target = :μ, args = (m[:out]::Normal, m[:σ]::PointMass),
-        body = (args, ann) -> (annotate!(ann, :logscale, 1.0); Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2))),
+        logscale = 1.0,
+        body = (args) -> Normal(mean(args.m[:out]), sqrt(var(args.m[:out]) + mean(args.m[:σ])^2)),
     )
 
     # Two continuous inputs, integrated in two dimensions.
@@ -52,7 +54,8 @@
     @define_factor_node(node = SumOfTwo, type = Stochastic, interfaces = [:out, :a, :b])
     @define_message_update_rule(
         node = SumOfTwo, target = :out, args = (m[:a]::Normal, m[:b]::Normal),
-        body = (args, ann) -> (annotate!(ann, :logscale, 0.0); Normal(mean(args.m[:a]) + mean(args.m[:b]), sqrt(1 + var(args.m[:a]) + var(args.m[:b])))),
+        logscale = 0.0,
+        body = (args) -> Normal(mean(args.m[:a]) + mean(args.m[:b]), sqrt(1 + var(args.m[:a]) + var(args.m[:b]))),
     )
 
     # A default rule reached under an extension runs with `DefaultAlgorithm()`.
@@ -89,7 +92,7 @@ end
         @verify_message_update_rule(node = V.Shifted, target = :out, algorithm = V.Extended(), m = (μ = PointMass(1.0), σ = PointMass(2.0)))
     end
     @test isempty(Recording.failures(set))
-    # Shape for all six, scale for the two rules that annotate one.
+    # Shape for all six, scale for the two rules that declare one.
     @test Recording.passes(set) == 6 + 2
 end
 

@@ -51,5 +51,5 @@ end
     @test isempty(target_dependencies(spec, Target(:y)))
     # No algorithm of its own: under the default one, no rule is found.
     @test default_algorithm(ContinuousTransition) === DefaultAlgorithm()
-    @test_throws Exception call_message_update_rule(ContinuousTransition, :y; q = (x = nothing, a = nothing, W = nothing))
+    @test_throws Exception getresult(call_message_update_rule(ContinuousTransition, :y; q = (x = nothing, a = nothing, W = nothing)))
 end

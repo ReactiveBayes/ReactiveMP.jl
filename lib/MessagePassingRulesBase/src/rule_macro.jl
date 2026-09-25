@@ -1,8 +1,10 @@
 const BODY_SLOTS = (:output, :scratch, :algo, :ctx, :args, :ann)
 const PREALLOCATE_SLOTS = (:algo, :ctx, :args)
 const SCRATCH_SLOTS = PREALLOCATE_SLOTS
+const LOGSCALE_SLOTS = PREALLOCATE_SLOTS
 
-const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx)
+const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx, :logscale, :reads_logscale)
+const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx)
 const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
 
 """
@@ -39,7 +41,16 @@ Define the rule for the message a node sends towards one of its interfaces.
   calls, and the engine may keep, drop or rebuild it whenever it likes. It never leaves the
   rule, is never shared with another rule, and combines with `inplace`.
 - `pure = false` marks a rule that has side effects, whatever its algorithm declares.
-- `ctx = (:product, ...)`: the context services the rule needs.
+- `ctx = (:rng, ...)`: the context services the rule needs.
+- `logscale`: the log scale of the message, the scalar with `message = exp(logscale) · result`
+  for the normalised `result` the rule returns: the rule's result may stand for an unnormalised
+  function, as a belief-propagation message does, and this is its log normaliser. A number, `logscale = 0` or `logscale = loghalf` (an `Irrational`
+  keeps the message's float type); a function of the inputs over the slots `(algo, ctx, args)`,
+  `logscale = (args) -> -log(abs(mean(args.m[:A])))`; or `logscale = from_body`, when the body
+  returns [`with_logscale`](@ref)`(result, logscale)`. A rule that omits it declares none: its
+  message's log scale is an [`UndefinedLogScale`](@ref) naming the rule.
+- `reads_logscale = true`: the rule reads the log scales of its inbound messages, as
+  `args.logscale.m[:out]`, which its caller must then track.
 
 ```julia
 @define_message_update_rule(
@@ -58,8 +69,8 @@ end
     @define_marginal_update_rule(node = ..., target = (:y, :x), args = (...), body = ...)
 
 Define the rule for the marginal of a structural cluster. Takes the same keywords as
-[`@define_message_update_rule`](@ref); `target` lists the cluster members in interface
-order.
+[`@define_message_update_rule`](@ref) except `logscale` and `reads_logscale`; `target` lists the
+cluster members in interface order.
 """
 macro define_marginal_update_rule(args...)
     return esc(define_rule_expr(:marginal, __source__, args))
@@ -69,7 +80,8 @@ end
     @define_average_energy(node = ..., args = (...), body = ...)
 
 Define a node's average energy. Takes the keywords of
-[`@define_message_update_rule`](@ref) except `target`, `inplace`, `preallocate` and `scratch`.
+[`@define_message_update_rule`](@ref) except `target`, `inplace`, `preallocate`, `scratch`,
+`logscale` and `reads_logscale`.
 """
 macro define_average_energy(args...)
     return esc(define_rule_expr(:average_energy, __source__, args))
@@ -83,7 +95,7 @@ const RULE_MACRO_NAMES = Dict(
 
 function define_rule_expr(kind, source, macroargs)
     name = RULE_MACRO_NAMES[kind]
-    allowed = kind === :average_energy ? AVERAGE_ENERGY_KEYWORDS : MESSAGE_KEYWORDS
+    allowed = kind === :average_energy ? AVERAGE_ENERGY_KEYWORDS : kind === :marginal ? MARGINAL_KEYWORDS : MESSAGE_KEYWORDS
     required = kind === :average_energy ? (:node, :args, :body) : (:node, :target, :args, :body)
     keywords = parse_keywords(name, macroargs, allowed, required)
 
@@ -97,6 +109,8 @@ function define_rule_expr(kind, source, macroargs)
     pure = get(keywords, :pure, nothing)
     pure === nothing || pure isa Bool || error("@$name: `pure` must be `true` or `false`")
     services = parse_services(name, get(keywords, :ctx, :(())))
+    reads_logscale = get(keywords, :reads_logscale, false)
+    reads_logscale isa Bool || error("@$name: `reads_logscale` must be `true` or `false`")
 
     body = keywords[:body]
     slots = parse_slots(name, body, BODY_SLOTS)
@@ -147,6 +161,27 @@ function define_rule_expr(kind, source, macroargs)
         scratch_fn = :(($(sc_args...), $sc_target) -> $user_sc($(sc_passed...), $(sc_index...)))
     end
 
+    logscale_defs = []
+    logscale_fn = nothing
+    if haskey(keywords, :logscale)
+        declaration = keywords[:logscale]
+        if declaration isa Expr && declaration.head === :->
+            ls_slots = parse_slots(name, declaration, LOGSCALE_SLOTS; what = "logscale")
+            user_ls = gensym(:logscale)
+            ls_args = [gensym(slot) for slot in LOGSCALE_SLOTS]
+            ls_passed = [ls_args[findfirst(==(slot), LOGSCALE_SLOTS)] for slot in ls_slots]
+            ls_target = gensym(:target)
+            ls_index = index_name === nothing ? () : (:($index_fn($ls_target)),)
+            push!(logscale_defs, :(const $user_ls = $(append_parameter(declaration, index_name))))
+            logscale_fn = :(($(ls_args...), $ls_target) -> $user_ls($(ls_passed...), $(ls_index...)))
+        elseif declaration === :from_body
+            logscale_fn = from_body
+        else
+            # A number, checked by `RuleSpec`.
+            logscale_fn = declaration
+        end
+    end
+
     algorithm_type = haskey(keywords, :algorithm) ? :($algorithm_dispatch_type($(keywords[:algorithm]))) :
         :(typeof($default_algorithm($node)))
     # A rule over the default scheme's inputs takes any arguments for its node, target and
@@ -184,6 +219,7 @@ function define_rule_expr(kind, source, macroargs)
         const $user_body = $(append_parameter(body, index_name))
         $(prealloc_defs...)
         $(scratch_defs...)
+        $(logscale_defs...)
         const $spec_sym = $RuleSpec(
             kind = $(QuoteNode(kind)),
             node = $node,
@@ -198,6 +234,8 @@ function define_rule_expr(kind, source, macroargs)
             inplace = $inplace,
             pure = $pure,
             services = $services,
+            logscale = $logscale_fn,
+            reads_logscale = $reads_logscale,
             source = $(string(MacroTools.prettify(body; alias = false))),
             file = $(QuoteNode(Symbol(something(source.file, :none)))),
             line = $(source.line),
@@ -246,7 +284,7 @@ function parse_services(name, ex)
     services = Symbol[]
     for entry in entries
         symbol = quoted_symbol(entry)
-        symbol === nothing && error("@$name: `ctx` lists services as symbols, like `ctx = (:product,)`; got `$entry`")
+        symbol === nothing && error("@$name: `ctx` lists services as symbols, like `ctx = (:rng,)`; got `$entry`")
         push!(services, symbol)
     end
     return Tuple(services)
