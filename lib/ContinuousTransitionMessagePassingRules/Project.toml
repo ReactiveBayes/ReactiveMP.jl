@@ -3,8 +3,7 @@ uuid = "be169b08-8551-4d4c-a46b-881478acc6d9"
 version = "0.1.0-DEV"
 
 # The ContinuousTransition node, y ~ N(f(a) x, W⁻¹), with its algorithm CTVMP(f) and its
-# variational rules, mean-field or structured q(y, x). INVENTORY.md records this package as
-# `node:ContinuousTransition`.
+# variational rules, mean-field or structured q(y, x).
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

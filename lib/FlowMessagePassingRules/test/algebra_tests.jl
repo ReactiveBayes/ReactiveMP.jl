@@ -1,6 +1,3 @@
-# PermutationMatrix, from v6's `test/helpers/algebra/permutation_matrix_tests.jl`, with what the
-# port adds: the products of two permutations, which were ambiguous, and an explicit generator.
-
 @testitem "algebra:PermutationMatrix" tags = [:algebra] begin
     using FlowMessagePassingRules, LinearAlgebra, Random, StableRNGs
     using FlowMessagePassingRules: getind, PT_X_P
@@ -58,9 +55,7 @@ end
 @testitem "algebra:PermutationMatrix, a product of two" tags = [:algebra] begin
     using FlowMessagePassingRules, LinearAlgebra, StableRNGs
 
-    # A product of two permutations is a permutation, with the indices composed. v6's methods
-    # for a permutation times a matrix and a matrix times a permutation both matched it, which
-    # was ambiguous.
+    # A product of two permutations is a permutation, with the indices composed.
     P, Q = PermutationMatrix(StableRNG(1), 4), PermutationMatrix(StableRNG(2), 4)
     for A in (P, P', transpose(P)), B in (Q, Q', transpose(Q))
         product = A * B

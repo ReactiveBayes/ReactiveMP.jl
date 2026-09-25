@@ -10,7 +10,7 @@
 # and its transpose, as their own type so that `mA'` stays structured. Both are internal. Their
 # products are written out only against dense `Matrix` and `Vector`, the combinations the rules
 # form; any other operand takes the generic `AbstractMatrix` fallback, which reads `getindex`.
-# v6 wrote them against `AbstractMatrix`, which Aqua counted at 75 ambiguities.
+# Written only against concrete operands, no method of theirs is ambiguous.
 struct CompanionMatrix{R <: Real, T <: AbstractVector{R}} <: AbstractMatrix{R}
     θ::T
 end

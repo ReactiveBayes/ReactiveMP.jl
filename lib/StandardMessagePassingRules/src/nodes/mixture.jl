@@ -7,7 +7,7 @@ whatever the factorisation, under its own algorithm, [`MixtureBP`](@ref).
 
 The rules need the log scales of their incoming messages, so a graph with a Mixture needs
 log-scale annotations on its messages. The node has no average energy: a free energy of a model
-with one is an error, not the zero v6 returned.
+with one is an error.
 """
 struct Mixture end
 

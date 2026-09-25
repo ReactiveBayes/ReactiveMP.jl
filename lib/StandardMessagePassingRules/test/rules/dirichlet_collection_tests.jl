@@ -1,4 +1,4 @@
-# DirichletCollection: v6 has no rule tables, so the cases are hand-derived, and the energy is
+# DirichletCollection: the cases are hand-derived, and the energy is
 # checked against the Dirichlet node's, column by column, for rank 2 (DiscreteTransition's
 # case) and rank 3.
 

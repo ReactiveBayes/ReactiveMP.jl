@@ -1,5 +1,4 @@
-# The node's distribution ExponentialLinearQuadratic and its average energy, from v6's
-# `test/nodes/predefined/gcv_tests.jl`.
+# The node's distribution ExponentialLinearQuadratic and its average energy.
 
 @testitem "ExponentialLinearQuadratic" tags = [:rules] begin
     using GCVMessagePassingRules, BayesBase, ExponentialFamily, Distributions, StableRNGs
@@ -46,8 +45,8 @@
             q = NormalMeanVariance(approximate_meancov(approximation, (x) -> exp(logpdf(left, x) + logpdf(right, x) + x^2 / 2), 0.0, 1.0)...)
             # The product's cubature is centred on the normal, where the doubly exponential
             # factor is poorly resolved: for these draws it is off by up to 3.5e-2 in the
-            # variance (the reference agrees with a fine grid to 1e-3). v6 asserted 1e-2, which
-            # held only for the draws of its MersenneTwister(1234).
+            # variance (the reference agrees with a fine grid to 1e-3), so a tolerance of 1e-2
+            # would hold only for particular draws.
             @test all(isapprox.(mean_var(q), mean_var(prod(GenericProd(), left, right)), atol = 5.0e-2))
             @test all(isapprox.(mean_var(q), mean_var(prod(GenericProd(), right, left)), atol = 5.0e-2))
         end
@@ -114,8 +113,7 @@ end
 
     @testset "The two variants agree at zero y-x covariance" begin
         # With Cov(y, x) = 0 the structured q(y, x) carries exactly the information of the
-        # factorized pair, so the two average energies must agree. This is the same invariant
-        # that caught the softdot mean-field bug in #615.
+        # factorized pair, so the two average energies must agree.
         for (q_y, q_x, q_z, q_κ, q_ω) in parameter_sets
             q_y_x = MvNormalMeanCovariance([mean(q_y), mean(q_x)], [var(q_y) 0.0; 0.0 var(q_x)])
             @test meanfield_ae(q_y, q_x, q_z, q_κ, q_ω) ≈ structured_ae(q_y_x, q_z, q_κ, q_ω)

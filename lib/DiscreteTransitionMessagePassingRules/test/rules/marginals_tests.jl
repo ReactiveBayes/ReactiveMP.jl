@@ -1,4 +1,3 @@
-# From v6's `test/rules/discrete_transition/marginals_tests.jl`.
 @testitem "rules:DiscreteTransition:marginals:out_in: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" tags = [
     :rules,
 ] begin

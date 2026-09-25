@@ -28,7 +28,6 @@ const CTransition = ContinuousTransition
 
 The algorithm of [`ContinuousTransition`](@ref), which the model must give: `f` takes the vector
 `a` to the matrix `A` and must return a matrix. A nonlinear `f` is linearised with ForwardDiff.
-v6 called it `CTMeta`, or `ContinuousTransitionMeta`.
 
 ```jldoctest
 julia> using ContinuousTransitionMessagePassingRules
@@ -48,7 +47,7 @@ gettransformation(algo::CTVMP) = algo.f
 @define_factor_node(node = ContinuousTransition, type = Stochastic, interfaces = [:y, :x, :a, :W])
 
 # Every target follows the factorisation; the one towards `a` also reads `q(a)`, its expansion
-# point, which v6 declared with `RequireMarginalFunctionalDependencies(a = nothing)`.
+# point.
 @define_dependencies(
     node = ContinuousTransition, algorithm = CTVMP,
     dependencies = [:y => (default,), :x => (default,), :a => (default, q[:a]), :W => (default,)],
@@ -65,8 +64,7 @@ function jacobians(algo::CTVMP, a)
 end
 
 # `A` for the rules: `f` linearised at `a0 = a + epsilon` and evaluated at `a`, which is `f(a)`
-# exactly for a linear `f`. v6 expanded at the mean plus a standard deviation of `q(a)`, and the
-# port keeps it. v6 added to `f(a0)`'s result in place; this builds a new matrix.
+# exactly for a linear `f`. The rules expand at the mean plus a standard deviation of `q(a)`.
 function ct_matrix(algo::CTVMP, a, epsilon)
     f = gettransformation(algo)
     a0 = a + epsilon
@@ -87,7 +85,7 @@ end
 
 # The linearised A as an offset plus a part linear in `a`: row `i` is `Āᵢ + (Fᵢ (a - m_a))ᵀ`, so
 # `A(a) = O + [(Fᵢ a)ᵀ]ᵢ` with `O = Ā - [(Fᵢ m_a)ᵀ]ᵢ`. O is zero for an `f` linear through the
-# origin, such as `reshape`; v6's rules towards `a` and `W` assumed it always was.
+# origin, such as `reshape`, and the rules towards `a` and `W` keep it for any other `f`.
 ct_offset(Ā, Fs, ma) = Ā - reduce(vcat, [(F * ma)' for F in Fs])
 
 # Σⱼ W[j, i] Fs[j] for each `i`: the term the rules and the energy weight the Jacobians by.

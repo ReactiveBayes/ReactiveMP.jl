@@ -4,7 +4,7 @@ version = "0.1.0-DEV"
 
 # The GCV node, the Gaussian controlled variance, y ~ N(x, exp(κz + ω)), its algorithm and its
 # distribution ExponentialLinearQuadratic, with the rules that let NormalMeanVariance and
-# NormalMeanPrecision take its messages. INVENTORY.md records this package as `node:GCV`.
+# NormalMeanPrecision take its messages.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

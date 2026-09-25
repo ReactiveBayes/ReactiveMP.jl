@@ -1,5 +1,5 @@
 # The likelihood of V: |V|^(-n/2) exp(-tr(V⁻¹ Ψ)/2) with Ψ = E[(out - M)ᵀ E[U⁻¹] (out - M)], an
-# InverseWishart with n - p - 1 degrees of freedom, improper when p ≥ n, as in v6.
+# InverseWishart with n - p - 1 degrees of freedom, improper when p ≥ n.
 
 @define_message_update_rule(
     node = MatrixNormal, target = :V,

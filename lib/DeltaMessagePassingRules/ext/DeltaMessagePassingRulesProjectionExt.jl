@@ -1,4 +1,4 @@
-# The rules of `CVIProjection`, ported from v6's `ReactiveMPProjectionExt`: loaded with
+# The rules of `CVIProjection`: loaded with
 # ExponentialFamilyProjection, which does the projections.
 module DeltaMessagePassingRulesProjectionExt
 

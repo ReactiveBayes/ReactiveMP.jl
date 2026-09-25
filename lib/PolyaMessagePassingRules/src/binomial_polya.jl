@@ -17,7 +17,7 @@ struct BinomialPolya end
 [`BinomialPolya`](@ref)'s algorithm. With `samples = nothing`, the default, the rules use the
 means: the Pólya-Gamma mean at `xᵀ` times the mean of `β`, and `σ(xᵀβ)` at it. With a number of
 samples they average over that many draws of `β` from the rule context's generator, `ctx.rng`,
-which the caller owns. v6 called it `BinomialPolyaMeta(n_samples, rng)`.
+which the caller owns.
 
 The average energy does not sample: `xᵀβ` is normal under a normal `q(β)`, so its expectation is
 computed by Gauss–Hermite cubature.
@@ -39,7 +39,7 @@ BinomialPolyaApproximation(; samples = nothing) = BinomialPolyaApproximation(sam
 )
 
 # `k` draws of `β` from `d`, each a sample: the columns of a multivariate draw, the entries of a
-# univariate one. v6 took `eachcol` of both, which for a univariate `β` is one column of `k` draws.
+# univariate one.
 draws(rng, d::MultivariateDistribution, k) = eachcol(rand(rng, d, k))
 draws(rng, d::UnivariateDistribution, k) = rand(rng, d, k)
 
@@ -92,8 +92,8 @@ end
 const BINOMIAL_POLYA_CUBATURE_POINTS = 32
 
 # ⟨-log p(y | n, x, β)⟩ = -log C(n, y) - y ⟨ψ⟩ + n ⟨softplus(ψ)⟩ with ψ = xᵀβ, normal under a normal
-# q(β). v6 took softplus at the mean of ψ, and overwrote the Monte Carlo estimate it computed
-# with that plug-in, which is biased low since softplus is convex.
+# q(β). softplus at the mean of ψ would be biased low, since softplus is convex, so the
+# expectation is computed by cubature.
 @define_average_energy(
     node = BinomialPolya, algorithm = BinomialPolyaApproximation,
     args = (q[:y]::PointMass, q[:x]::PointMass, q[:n]::PointMass, q[:β]::Any),

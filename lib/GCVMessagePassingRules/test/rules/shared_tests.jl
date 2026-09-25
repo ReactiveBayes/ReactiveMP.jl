@@ -52,8 +52,8 @@ end
     # With no posterior covariance between `y` and `x`, a structured `q(y, x)` carries exactly
     # the information of the factorized pair, so every structured rule must reduce to its
     # mean-field sibling. This needs no reference values at all -- only that the two
-    # implementations agree -- which makes it the cheapest possible guard against the class of
-    # copy-paste defect found in #621.
+    # implementations agree -- which makes it the cheapest possible guard against a mean-field
+    # rule whose body was copied from a sibling rule's.
     #
     # The `:ω` case of this invariant lives in `w_tests.jl`; `:κ` and `:z` are covered here.
     algorithm = default_algorithm()
@@ -77,7 +77,7 @@ end
     using .GCVRulesTestUtils: default_algorithm
 
     # `:ω`, `:κ` and `:z` all return an `ExponentialLinearQuadratic` and their bodies look
-    # near-identical, which is exactly how the #621 copy-paste survived review. Their
+    # near-identical, so a body copied from one to another is easy to miss in review. Their
     # coefficients encode genuinely different structure:
     #
     #   :ω → (1,    ψ·B, -1,    0     )   ω multiplies nothing; constant coefficient

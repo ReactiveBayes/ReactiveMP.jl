@@ -43,8 +43,7 @@ struct ARunsafe end
 The algorithm of [`AR`](@ref) and [`ConjugateAR`](@ref), which the model must give: neither
 node has a default. `form` is `Univariate` or `Multivariate`, the variate form of `y` and `x`;
 `Univariate` is an AR(1) and forces `order` to `1`, with a warning for any other. `order` is
-the order `p`, and `stype` is [`ARsafe`](@ref)`()` or [`ARunsafe`](@ref)`()`. v6 called it
-`ARMeta`.
+the order `p`, and `stype` is [`ARsafe`](@ref)`()` or [`ARunsafe`](@ref)`()`.
 
 ```julia
 ARVMP(Multivariate, 3, ARsafe())
@@ -175,9 +174,8 @@ end
 #     Σ₀ = [A P Aᵀ + mV  A P; P Aᵀ  P],   μ₀ = [A μx; μx],   P = D⁻¹, μx = P Wx mx,
 #
 # conditioned on the message on `y` as on an observation of covariance Vy, by the Kalman gain.
-# v6 wrote a block inversion through the inverse of the companion matrix whose Schur complement
-# had the wrong sign (and one transpose too many), and so disagreed with ARsafe even for a
-# univariate AR(1), where ARsafe regularises nothing; `test/rules/marginals_tests.jl` pins it.
+# For a univariate AR(1), where ARsafe regularises nothing, the two agree;
+# `test/rules/marginals_tests.jl` checks it.
 function ar_joint(::ARunsafe, algo::ARVMP, m_y, m_x, q_θ, q_γ)
     mθ, Vθ = mean_cov(q_θ)
     mγ = mean(q_γ)
@@ -233,7 +231,6 @@ function ar_energy(algo::ARVMP, q_y_x, q_θ, q_γ)
     ) / 2
 
     if is_multivariate(algo)
-        # v6 built the index vector with LazyArrays.Vcat.
         noisy = [1; x_range]
         AE += entropy(q_y_x)
         AE -= entropy(MvNormalMeanCovariance(myx[noisy], Vyx[noisy, noisy]))

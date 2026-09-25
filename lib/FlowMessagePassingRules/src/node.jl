@@ -13,8 +13,7 @@ struct Flow end
 
 [`Flow`](@ref)'s algorithm: the compiled flow model and how a normal is pushed through it,
 `Linearization()` by the model's own Jacobians, or `Unscented()` by sigma points. `Unscented(dim)`
-fixes the dimension; `Unscented()` takes it from the input. v6 called it `FlowMeta(model,
-approximation)`.
+fixes the dimension; `Unscented()` takes it from the input.
 """
 struct FlowApproximation{M <: AbstractCompiledFlowModel, A <: Union{Linearization, Unscented}} <: AbstractAlgorithm
     model::M

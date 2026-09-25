@@ -3,7 +3,7 @@ uuid = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
 version = "0.1.0-DEV"
 
 # The Probit node, a binary output through the standard normal CDF of its input, with its own
-# algorithm, expectation propagation. INVENTORY.md records this package as `node:Probit`.
+# algorithm, expectation propagation.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

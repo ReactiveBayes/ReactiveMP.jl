@@ -27,8 +27,8 @@
 variance_likelihood(a, b, s) =
     ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> -log(s + x) / 2 - (a - b)^2 / (2 * (s + x)))
 
-# Variational: an inverse gamma with shape -1/2, which v6 builds without checking its
-# arguments; the scale is half the expected squared difference of `out` and `μ`.
+# Variational: an inverse gamma with shape -1/2, built without checking its arguments; the
+# scale is half the expected squared difference of `out` and `μ`.
 
 @define_message_update_rule(
     node = NormalMeanVariance, target = :v,

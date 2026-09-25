@@ -30,7 +30,7 @@ is_delta_node_compatible(::Linearization) = Val(true)
 
 [`DeltaFn`](@ref)'s algorithm: `method` approximates the pushforward through the function, and
 `inverse`, when given, is the known inverse towards the input, or a tuple of them, one per
-input. v6 called it `DeltaMeta`. Without an inverse, a message towards an input divides the
+input. Without an inverse, a message towards an input divides the
 joint over the inputs by that input's own message; with one, it pushes the other messages
 through the inverse.
 """
@@ -61,7 +61,7 @@ check_inverse(method, inverse) = nothing
 function incompatible_method_message(method)
     message = "`$method` is not an approximation method of the Delta node. It takes `Unscented()` and " *
         "`Linearization()` from MessagePassingRulesApproximations, and `CVIProjection()` once " *
-        "ExponentialFamilyProjection is loaded; v6's other methods are gone."
+        "ExponentialFamilyProjection is loaded."
     hint = delta_method_hint(method)
     return hint === nothing ? message : string(message, " ", hint)
 end

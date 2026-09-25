@@ -67,9 +67,9 @@ function flow_unscented(method::Unscented, dim)
     return method
 end
 
-# The normal of `f(x)` for `x ~ N(μ, Σ)`, by v6's sigma points: the rows of the symmetric square
+# The normal of `f(x)` for `x ~ N(μ, Σ)`, by sigma points from the rows of the symmetric square
 # root of `(L + λ) Σ`. The numerics package's `unscented_statistics` takes a Cholesky factor,
-# which gives a nonlinear flow other results, so v6's are kept.
+# which gives a nonlinear flow other results.
 function flow_unscented_statistics(f, model, method, μ, Σ)
     T = eltype(model)
     approximation = flow_unscented(method, length(μ))

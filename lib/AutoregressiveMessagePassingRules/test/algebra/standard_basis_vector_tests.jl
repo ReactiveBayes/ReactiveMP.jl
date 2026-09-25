@@ -1,6 +1,4 @@
-# From v6's `test/helpers/algebra/standard_basis_vector_tests.jl`, with StableRNG(1234). v6's
-# `v_a_vT` is not ported, having no user, and its assertions are argument and dimension errors.
-# Every product is checked against the dense vector, whether a method of the port's or the
+# Every product is checked against the dense vector, whether a method of the package's or the
 # generic fallback computes it.
 
 @testitem "StandardBasisVector" tags = [:rules] begin
@@ -116,7 +114,7 @@ end
     using AutoregressiveMessagePassingRules, StandardMessagePassingRules, LinearAlgebra
     using AutoregressiveMessagePassingRules: StandardBasisVector
 
-    # e a eᵀ as v6 built it for `dot`'s precision: a diagonal with one entry.
+    # e a eᵀ, `dot`'s precision: a diagonal with one entry.
     W = StandardMessagePassingRules.v_a_vT(StandardBasisVector(3, 2, 2.0), 0.5)
     @test W isa Diagonal && W == Diagonal([0.0, 2.0, 0.0])
 end

@@ -1,6 +1,5 @@
-# MatrixNormalWishart: v6's cases, and the energy in closed form. v6 checked it by Monte Carlo
-# at rtol = 0.1; here it is split into its two factors, the Wishart one computed by the
-# Wishart node's own energy.
+# MatrixNormalWishart: tables of cases, and the energy in closed form, split into its two
+# factors, the Wishart one computed by the Wishart node's own energy.
 
 @testitem "rules:MatrixNormalWishart:out" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions

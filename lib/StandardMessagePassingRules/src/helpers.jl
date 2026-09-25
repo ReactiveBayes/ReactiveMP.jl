@@ -15,14 +15,14 @@ end
 
 # `cluster` with every block in the float type of all `inputs` together. A rule's output must
 # carry the promoted float type of every input, and that includes a block that passes an input
-# through unchanged, such as v6's `v = m_v`.
+# through unchanged, such as `v = m_v`.
 promoted_cluster(cluster::FactorizedCluster, inputs...) =
     BayesBase.convert_paramfloattype(BayesBase.promote_paramfloattype(inputs...), cluster)
 
 """
     v_a_vT(v, a)
 
-`v a vᵀ`, as v6 computed it: for a vector `v` and a scalar `a`, `(v vᵀ) a`, which is exactly
+`v a vᵀ`: for a vector `v` and a scalar `a`, `(v vᵀ) a`, which is exactly
 symmetric where `(v a) vᵀ` is not always. A package with a structured vector adds a method, as
 the AR package's standard basis vector does.
 """
@@ -125,8 +125,8 @@ function difference_moment(q_joint)
     return @views V[1:d, 1:d] - V[1:d, (d + 1):end] - V[(d + 1):end, 1:d] + V[(d + 1):end, (d + 1):end] + Δ * Δ'
 end
 
-# The covariance a marginal `q_Σ` of a covariance contributes under naive VMP, E[Σ⁻¹]⁻¹; v6 used
-# E[Σ] (ReactiveMP.jl#673, the multivariate form of #669). They agree for a point mass.
+# The covariance a marginal `q_Σ` of a covariance contributes under naive VMP, E[Σ⁻¹]⁻¹. For a
+# point mass it is Σ itself.
 variational_covariance(q_Σ) = cholinv(mean(cholinv, q_Σ))
 
 # The Gaussian message `m` through Gaussian noise of precision `Λ_f`: the mean of `m` and the

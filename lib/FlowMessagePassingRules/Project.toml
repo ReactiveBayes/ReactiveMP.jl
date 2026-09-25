@@ -3,7 +3,7 @@ uuid = "adabaeda-8474-4dd2-bb94-9124d4d2b701"
 version = "0.1.0-DEV"
 
 # The Flow node, a deterministic invertible transformation, with its flow models (layers and
-# coupling flows) and PermutationMatrix. INVENTORY.md records this package as `node:Flow`.
+# coupling flows) and PermutationMatrix.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

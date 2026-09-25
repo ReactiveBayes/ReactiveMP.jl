@@ -1,5 +1,5 @@
 # Towards A from a known `in`, which must commute with A: a scalar, or a vector for a scalar A.
-# v6 also took a matrix `in`, computing in * A for A * in; that is refused here.
+# A matrix `in` is refused: in * A is not A * in.
 
 @define_message_update_rule(
     node = *, target = :A,
@@ -15,7 +15,7 @@
     body = (ctx, args) -> unscaled(ctx, args.m[:out], mean(args.m[:in])),
 )
 
-# No log-scale here, as in v6: a gap for the log-scale milestone.
+# No log-scale here: log scales are experimental, and this is one of their gaps.
 @define_message_update_rule(
     node = *, target = :A, ctx = (:matrix_correction,),
     args = (m[:out]::NormalDistributionsFamily, m[:in]::PointMass{<:Real}),

@@ -1,4 +1,4 @@
-# GammaMixture: v6's tables, with a group as a tuple in member order and `nothing` where the
+# GammaMixture: tables of cases, with a group as a tuple in member order and `nothing` where the
 # dependency leaves a member out; its energy against the components' GammaShapeRate energies;
 # and GammaShapeLikelihood, the shape message.
 

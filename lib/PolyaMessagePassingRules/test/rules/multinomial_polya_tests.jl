@@ -1,7 +1,6 @@
-# v6's `test/rules/multinomial_polya/{psi_tests,x_tests}.jl`, under `MultinomialPolyaApproximation()`,
-# v6's `MultinomialPolyaMeta(21)`, and with v6's `check_type_promotion = false`. The rules take
-# the mode of q(N), and each q(N) below has mode 3. v6's node test checked the average energy
-# only, and `energy_tests.jl` replaces it.
+# MultinomialPolya's rules under `MultinomialPolyaApproximation()`, 21 cubature points, with
+# `check_type_promotion = false`. The rules take the mode of q(N), and each q(N) below has mode 3.
+# The average energy is tested in `energy_tests.jl`.
 
 @testitem "rules:MultinomialPolya:ψ" tags = [:rules] begin
     using PolyaMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions

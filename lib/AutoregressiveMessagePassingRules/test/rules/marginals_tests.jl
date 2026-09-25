@@ -1,5 +1,3 @@
-# From v6's `test/rules/autoregressive/marginals_tests.jl`.
-
 @testitem "rules:AR:marginals" tags = [:rules] begin
     using AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
 
@@ -16,14 +14,13 @@
                     MvNormalWeightedMeanPrecision(zeros(2), [2.0 -1.0; -1.0 3.0]),
             ],
         )
-        # v6 has no test of the multivariate joint: the regularising precision on the
-        # noiseless components makes its values unstable.
+        # The multivariate joint has no table: the regularising precision on the noiseless
+        # components makes its values unstable.
     end
 
-    # v6 never tested ARunsafe, and its joint was wrong: for a univariate AR(1), where ARsafe
-    # regularises nothing, v6's covariance for the first case was [0.4286 0.1429; 0.1429 0.3810]
-    # where the inverse of the precision [2 -1; -1 3] is [0.6 0.2; 0.2 0.4]. The port computes it
-    # by the Kalman gain (see `ar_joint` in src/autoregressive.jl), and these tests pin it.
+    # For a univariate AR(1), where ARsafe regularises nothing, ARunsafe's joint by the Kalman
+    # gain (see `ar_joint` in src/autoregressive.jl) must equal ARsafe's: for the first case its
+    # covariance is the inverse of the precision [2 -1; -1 3], [0.6 0.2; 0.2 0.4].
     @testset "y_x: ARunsafe agrees with ARsafe, univariate" begin
         for (m_y, m_x, q_θ, q_γ) in (
                 (NormalMeanPrecision(0.0, 1.0), NormalMeanPrecision(0.0, 1.0), NormalMeanPrecision(1.0, 1.0), GammaShapeRate(1.0, 1.0)),

@@ -1,5 +1,4 @@
-# The rules of the Gaussian methods, Unscented and Linearization, ported from v6's
-# `rules/delta/unscented/` and `rules/delta/linearization/`, most of whose routines came from
+# The rules of the Gaussian methods, Unscented and Linearization, most of whose routines come from
 # ForneyLab.jl. The two methods differ only in `approximate_normal` and `forward_statistics`.
 
 const GaussianApproximation = DeltaApproximation{<:Union{Unscented, Linearization}}
@@ -34,7 +33,7 @@ const GaussianApproximation = DeltaApproximation{<:Union{Unscented, Linearizatio
     body = (args) -> begin
         ξ_in, Λ_in = weightedmean_precision(component(args.q[(:in,)], k))
         ξ_fw, Λ_fw = weightedmean_precision(args.m[:in][k])
-        # The subtraction may leave a precision that is not positive definite, as in v6.
+        # The subtraction may leave a precision that is not positive definite.
         convert(promote_variate_type(typeof(ξ_in), NormalWeightedMeanPrecision), ξ_in - ξ_fw, Λ_in - Λ_fw)
     end,
 )

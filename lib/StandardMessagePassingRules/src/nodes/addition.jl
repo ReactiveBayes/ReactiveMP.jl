@@ -1,4 +1,4 @@
-# `out = in1 + in2`: the function `+` is the node, as in v6.
+# `out = in1 + in2`: the function `+` is the node.
 @define_factor_node(node = +, type = Deterministic, interfaces = [:out, :in1, :in2])
 
 # A Gaussian message or a known value; the arithmetic nodes' rules take either.
@@ -7,7 +7,7 @@ const NormalOrPoint = Union{PointMass, NormalDistributionsFamily}
 # The message for `a + b` and for `a - b`, given the messages of `a` and `b`, in the parameters
 # the inputs come in. `+` and `-` both use them: towards `out` of `+` is `sum_message(in1, in2)`,
 # towards `in1` is `difference_message(out, in2)`, and so on. A multivariate normal's moments are
-# taken together, `mean_cov`, as v6 took them, which rounds as v6 did.
+# taken together, with `mean_cov`.
 sum_message(a::PointMass, b::PointMass) = PointMass(mean(a) + mean(b))
 sum_message(a::Distribution, b::Distribution) = convolve(a, b)
 sum_message(a::UnivariateNormalDistributionsFamily, b::UnivariateNormalDistributionsFamily) = NormalMeanVariance(mean(a) + mean(b), var(a) + var(b))

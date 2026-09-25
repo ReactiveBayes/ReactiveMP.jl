@@ -1,5 +1,3 @@
-# From v6's `test/rules/continuous_transition/W_tests.jl`.
-
 @testitem "rules:ContinuousTransition:W" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
     using ExponentialFamily: WishartFast
@@ -30,7 +28,7 @@
             return WishartFast(dy + 2, Matrix(Symmetric(G)))
         end
 
-        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, meta::CTMeta)" begin
+        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, algo::CTVMP)" begin
             for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
                 transformation = (a) -> reshape(a, dy, dx)
                 mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
@@ -68,7 +66,7 @@
         return WishartFast(dy + 2, Matrix(Symmetric(G)))
     end
 
-    @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, meta::CTMeta)" begin
+    @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, algo::CTVMP)" begin
         for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
             transformation = (a) -> reshape(a, dy, dx)
             mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
@@ -90,17 +88,16 @@
     end
 end
 
-# v6's rotation case, whose value v6 took from rows of A linear in `a` through the origin. The
-# port computes E[(y - A x)(y - A x)ᵀ] with the offset f(m_a) - J m_a of a nonlinear f, so its
-# value differs from v6's WishartFast(4, 2 * diageye(2)); the exact tests of the correction are
-# elsewhere, and this one only asserts a proper result.
-@testitem "rules:ContinuousTransition:W, v6's nonlinear cases (corrected)" tags = [:rules] begin
+# A rotation: the rule computes E[(y - A x)(y - A x)ᵀ] with the offset f(m_a) - J m_a of a
+# nonlinear f, so the value is not the one rows of A linear in `a` through the origin would give.
+# The offset is tested exactly in `offset_tests.jl`; this item only asserts a proper result.
+@testitem "rules:ContinuousTransition:W, a nonlinear transformation" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
     using ExponentialFamily: WishartFast
 
     diageye(n) = Matrix{Float64}(I, n, n)
 
-    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, meta::CTMeta)" begin
+    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, algo::CTVMP)" begin
         dy, dx = 2, 2
         transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
 

@@ -2,13 +2,13 @@
     GammaMixture
 
 A mixture of Gamma distributions: `out` is drawn from the component `switch` selects, a
-`GammaShapeRate` with shape `a` and rate `b`, both groups with one member per component. v6
-called it `GammaMixture{N}`; the number of components is now the groups' length. A node needs
-at least two components, as many shapes as rates, and a mean-field factorisation.
+`GammaShapeRate` with shape `a` and rate `b`, both groups with one member per component; the
+number of components is the groups' length. A node needs at least two components, as many
+shapes as rates, and a mean-field factorisation.
 
 Its rules run under its own algorithm, [`GammaMixtureVMP`](@ref), and are always variational.
 The `:out` and `:switch` dependencies list the rates before the shapes, which is the update
-schedule, as v6 had it; the order within a group changes nothing.
+schedule; the order within a group changes nothing.
 """
 struct GammaMixture end
 

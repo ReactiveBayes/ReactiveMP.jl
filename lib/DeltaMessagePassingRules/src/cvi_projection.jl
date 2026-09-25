@@ -55,9 +55,8 @@ be loaded (`using ExponentialFamilyProjection`) for the node to accept it.
   joint rule, so the method carries state and its rules are impure;
 - `sampling_strategy`: [`FullSampling`](@ref) or [`MeanBased`](@ref).
 
-The samples are drawn from the rule context's generator, `ctx.rng`, which the engine owns. v6's
-`CVIProjection` held its own, `MersenneTwister(42)`; the field is gone. A known inverse is not
-used, and is ignored with a warning.
+The samples are drawn from the rule context's generator, `ctx.rng`, which the engine owns. A
+known inverse is not used, and is ignored with a warning.
 """
 Base.@kwdef struct CVIProjection{S, OF, IFS, PD, SS} <: MessagePassingRulesApproximations.AbstractApproximationMethod
     outsamples::S = 100

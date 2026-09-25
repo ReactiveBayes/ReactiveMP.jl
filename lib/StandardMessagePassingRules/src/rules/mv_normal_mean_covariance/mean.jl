@@ -16,7 +16,7 @@
     end,
 )
 
-# Variational; a `q_Σ` contributes E[Σ⁻¹]⁻¹ (#669 corrected).
+# Variational; a `q_Σ` contributes E[Σ⁻¹]⁻¹.
 
 @define_message_update_rule(
     node = MvNormalMeanCovariance, target = :μ,

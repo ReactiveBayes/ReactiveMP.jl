@@ -37,9 +37,8 @@ struct BIFM end
     BIFMSmoother(A, B, C)
 
 [`BIFM`](@ref)'s algorithm: the transition matrices of `znext = A zprev + B in` and
-`out = C znext`. v6 called it `BIFMMeta(A, B, C)`, a mutable cache its rules shared; the port
-keeps nothing between calls, and `BIFMMeta`'s five-argument form, which fixed the input's
-statistics, has no counterpart, since the message on `in` gives them.
+`out = C znext`. It keeps nothing between calls; the statistics of the input come from the
+message on `in`.
 
 ```jldoctest
 julia> using BIFMMessagePassingRules
@@ -64,8 +63,7 @@ end
 
 @define_factor_node(node = BIFM, type = Deterministic, interfaces = [:out, :in, :zprev, :znext])
 
-# Each forward rule also reads the message on its own edge, where v6 read the cache the rule
-# towards `zprev` had filled.
+# Each forward rule also reads the message on its own edge, to recompute the backward quantities.
 @define_dependencies(
     node = BIFM, algorithm = BIFMSmoother,
     dependencies = [:out => (default, m[:out]), :in => (default, m[:in]), :zprev => (default,), :znext => (default, m[:znext])],
@@ -83,7 +81,7 @@ function bifm_scratch(algo::BIFMSmoother, messages...)
 end
 
 # The backward quantities, computed from the messages on `out`, `in` and `znext` into
-# `scratch`, in v6's order of operations:
+# `scratch`, in this order of operations:
 #
 #     ξz = Cᵀξ_out + ξ_znext,      Λz = CᵀΛ_out C + Λ_znext,      H = (Λ_in + BᵀΛz B)⁻¹,
 #     ξ̃z = ξz + Λz B H (-ξ_in - Bᵀξz),      Λ̃z = Λz (I - B H Bᵀ Λz).
@@ -198,7 +196,7 @@ end
     BIFMFreeEnergyError(node)
 
 The free energy of a model with [`BIFM`](@ref) or [`BIFMHelper`](@ref) was asked for, which is
-not supported: v6 could not compute it either.
+not supported.
 """
 struct BIFMFreeEnergyError <: Exception
     node::Symbol
@@ -210,8 +208,7 @@ Base.showerror(io::IO, e::BIFMFreeEnergyError) = print(
 )
 
 # A deterministic node's free energy reads the marginal of its inputs' joint, and BIFM's is where
-# the free energy of a BIFM model is asked for. v6's rule returned the joint of `in` and `zprev`
-# only, for a cluster over all three, and is not ported.
+# the free energy of a BIFM model is asked for, so this rule throws.
 @define_marginal_update_rule(
     node = BIFM, target = (:in, :zprev, :znext), algorithm = BIFMSmoother,
     args = (m[:out]::Any, m[:in]::Any, m[:zprev]::Any, m[:znext]::Any),

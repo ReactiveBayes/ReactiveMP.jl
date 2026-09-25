@@ -1,7 +1,7 @@
 # NormalMeanVariance and NormalMeanPrecision with an ExponentialLinearQuadratic message on `out`,
 # as a GCV node's `y` sends one: the message is reduced to a normal of its moments and the
 # normal's own rule applied, its formulas written out here with Standard's helpers, since a rule
-# does not call another. v6 wrote these as `@call_rule`s and never tested them.
+# does not call another.
 
 moments_normal(m::ExponentialLinearQuadratic) = NormalMeanVariance(mean_var(m)...)
 

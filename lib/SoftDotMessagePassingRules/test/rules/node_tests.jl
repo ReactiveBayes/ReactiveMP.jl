@@ -2,8 +2,7 @@
     using SoftDotMessagePassingRules, MessagePassingRulesBase
     using MessagePassingRulesBase: interfaces, alias_interface, sdtype, default_algorithm
 
-    # As v6's `@node softdot Stochastic [y, (θ, aliases = [theta]), x, (γ, aliases = [gamma])]`,
-    # with no algorithm of its own.
+    # Interfaces y, θ (alias theta), x, γ (alias gamma), stochastic, with no algorithm of its own.
     @test softdot === SoftDot
     @test interfaces(SoftDot) == (:y, :θ, :x, :γ)
     @test sdtype(SoftDot) === Stochastic()
@@ -19,9 +18,8 @@ end
     # Closed-form mean-field average energy for `softdot`, written out explicitly from
     #     U = ½( log2π − ⟨log γ⟩ + ⟨γ⟩·⟨(y − θᵀx)²⟩ ),
     # where the whole ⟨(y − θᵀx)²⟩ bracket is multiplied by a *single* power of ⟨γ⟩.
-    # Used as an independent reference for the mean-field average energy. This anchors the
-    # regression for the historical bug in which the cross term carried a spurious extra ⟨γ⟩
-    # (see issue #615).
+    # Used as an independent reference for the mean-field average energy, which guards against a
+    # spurious extra ⟨γ⟩ on the cross term.
     function softdot_meanfield_ae_reference(q_y, q_θ, q_x, q_γ)
         m_y, V_y = mean_cov(q_y)
         m_θ, V_θ = mean_cov(q_θ)
@@ -34,8 +32,8 @@ end
     softdot_structured_ae(q_y_x, q_θ, q_γ) = call_average_energy(SoftDot; q = (θ = q_θ, γ = q_γ), clusters = ((:y, :x) => q_y_x,))
 
     @testset "AverageEnergy: mean-field variant matches the closed-form reference" begin
-        # Cover a range of `mean(q_γ)` values, including `mean(q_γ) ≠ 1`, which is where the
-        # historical extra-`mean(q_γ)` bug on the cross term manifested.
+        # Cover a range of `mean(q_γ)` values, including `mean(q_γ) ≠ 1`, which is where an
+        # extra `mean(q_γ)` on the cross term would show.
         configs = (
             (NormalMeanVariance(3.0, 7.0), NormalMeanVariance(11.0, 13.0), NormalMeanVariance(5.0, 9.0), GammaShapeRate(3 / 2, 4242 / 2)),
             (NormalMeanVariance(0.4, 0.6), NormalMeanVariance(1.2, 0.25), NormalMeanVariance(0.5, 0.3), GammaShapeRate(4.0, 1.0)),
@@ -51,9 +49,9 @@ end
         end
     end
 
-    @testset "AverageEnergy: mean-field regression against a hand-computed value (issue #615)" begin
-        # Exact reproducer from issue #615. The buggy implementation (extra `mean(q_γ)` on
-        # the cross term) returned a value ½·⟨γ⟩·(⟨γ⟩−1)·(−2·m_y·m_θᵀm_x) = −2.88 too low here.
+    @testset "AverageEnergy: mean-field against a hand-computed value" begin
+        # An extra `mean(q_γ)` on the cross term would give a value
+        # ½·⟨γ⟩·(⟨γ⟩−1)·(−2·m_y·m_θᵀm_x) = −2.88 too low here.
         q_y = NormalMeanVariance(0.4, 0.6)
         q_θ = NormalMeanVariance(1.2, 0.25)
         q_x = NormalMeanVariance(0.5, 0.3)
@@ -70,7 +68,8 @@ end
     @testset "AverageEnergy: mean-field and structured variants agree (zero y-x covariance)" begin
         # With no posterior covariance between y and x, the structured q(y, x) variant reduces
         # to the fully factorized mean-field one, so the two average energies must agree
-        # for any `mean(q_γ)`. Under the issue #615 bug they disagreed whenever `mean(q_γ) ≠ 1`.
+        # for any `mean(q_γ)`. With an extra ⟨γ⟩ on the cross term they would disagree whenever
+        # `mean(q_γ) ≠ 1`.
         q_γ = GammaShapeRate(4.0, 1.0) # mean(q_γ) = 4
 
         # Univariate x
@@ -101,7 +100,7 @@ end
     end
 
     @testset "AverageEnergy: structured variant" begin
-        # The structured q(y, x) variant is unaffected by the issue #615 fix; these pin its values.
+        # These pin the values of the structured q(y, x) variant.
         begin
             q_y_x = MvNormalMeanCovariance(zeros(2), Matrix(1.0I, 2, 2))
             q_θ = NormalMeanVariance(0.0, 1.0)

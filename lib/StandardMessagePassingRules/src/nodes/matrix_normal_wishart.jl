@@ -8,7 +8,7 @@
 # Uq, Vq, νq): with E[Y] = νq Vq, L = E[log |Y|] and D = Mq - M,
 #   n p/2 log 2π + p/2 log |U| + ν p/2 log 2 + ν/2 log |V| + log Γ_p(ν/2) - (n + ν - p - 1)/2 L
 #   + (tr(U⁻¹ D E[Y] Dᵀ) + p tr(U⁻¹ Uq) + tr(V⁻¹ E[Y])) / 2.
-# v6 took the parameters as `Any` and used f(E[x]) for E[f(x)]; they are known here.
+# The parameters are known.
 function matrix_normal_wishart_energy(q_out, M, U, V, ν)
     Mq, Uq, Vq, νq = params(q_out)
     n, p = size(Mq)

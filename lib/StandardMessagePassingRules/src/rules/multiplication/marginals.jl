@@ -9,8 +9,8 @@
     ),
 )
 
-# A known scalar or vector `in` for a univariate A. v6 took an MvNormalMeanPrecision `out` only
-# with a vector `in`; any multivariate Gaussian is accepted, as its message rule does.
+# A known scalar or vector `in` for a univariate A. With a vector `in`, any multivariate
+# Gaussian `out` is accepted, as its message rule does.
 @define_marginal_update_rule(
     node = *, target = (:A, :in), ctx = (:matrix_correction,),
     args = (m[:out]::NormalDistributionsFamily, m[:A]::UnivariateNormalDistributionsFamily, m[:in]::PointMass{<:Union{Real, AbstractVector}}),

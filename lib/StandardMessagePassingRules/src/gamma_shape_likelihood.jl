@@ -3,7 +3,7 @@
 
 The likelihood of a Gamma distribution's shape `α`, `exp(γα - p⋅loggamma(α))` on the positive
 half line, as the message towards `α` of a `GammaShapeRate` node. Two of them multiply by
-adding their parameters. v6 defined it with its Gamma mixture.
+adding their parameters.
 """
 struct GammaShapeLikelihood{T <: Real} <: ContinuousUnivariateDistribution
     p::T

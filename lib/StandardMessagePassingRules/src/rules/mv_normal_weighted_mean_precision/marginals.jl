@@ -1,5 +1,4 @@
-# v6 labelled this cluster's blocks `m_out`, `m_ξ`, `m_Λ`, which name no interface; the blocks
-# here are `out`, `ξ` and `Λ` (ReactiveMP.jl#674).
+# The cluster's blocks are labelled `out`, `ξ` and `Λ`, by interface.
 @define_marginal_update_rule(
     node = MvNormalWeightedMeanPrecision, target = (:out, :ξ, :Λ),
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:ξ]::PointMass, m[:Λ]::PointMass),

@@ -1,11 +1,11 @@
-# The rules, each one contraction over whatever inputs the factorisation delivers (`default`),
-# as v6's generic ones. The inputs that are marginals sum their axes out of `E[log A]` before it
+# The rules, each one contraction over whatever inputs the factorisation delivers (`default`).
+# The inputs that are marginals sum their axes out of `E[log A]` before it
 # is exponentiated, and the messages multiply the result along theirs.
 
 const BroadcastFunction = Base.Broadcast.BroadcastFunction
 
 # `E[log A]`, clamped away from `log 0`. An integer tensor takes the float type of the other
-# inputs, `inputs` being `key => value` pairs, as v6's rules took theirs from the messages.
+# inputs, `inputs` being `key => value` pairs.
 expected_log_tensor(q_a, inputs) = mean(BroadcastFunction(clamplog), q_a)
 expected_log_tensor(q_a::PointMass{<:AbstractArray{<:Integer}}, inputs) = clamplog.(float_tensor(q_a, inputs))
 
@@ -15,7 +15,7 @@ float_tensor(q_a::PointMass, inputs) = mean(q_a)
 
 # `exp(E[log A])` with the marginals summed out of `E[log A]` first, up to a constant factor.
 # A point mass with nothing to sum out is `A` itself, clamped as `clamplog` would: no logarithm
-# and no exponential, as v6's explicit rules for belief propagation computed it.
+# and no exponential.
 function exponentiated_tensor(q_a, marginals, inputs)
     if q_a isa PointMass && all(((key, _),) -> key === :a, marginals)
         return clamp.(float_tensor(q_a, inputs), tiny, huge)
@@ -79,7 +79,7 @@ end
 # The marginal of any cluster: the messages of its members multiply the exponentiated tensor
 # along their axes. Point-mass messages are observations: they are summed out like marginals,
 # and those that are members of the cluster in their own right are split off as blocks of their
-# own, as v6 did. One inside a whole group `T` stays in the joint, as a one-hot axis.
+# own. One inside a whole group `T` stays in the joint, as a one-hot axis.
 @define_marginal_update_rule(
     node = DiscreteTransition, target = members, args = (default, q[:a]::DiscreteTransitionTensor),
     body = (args) -> begin

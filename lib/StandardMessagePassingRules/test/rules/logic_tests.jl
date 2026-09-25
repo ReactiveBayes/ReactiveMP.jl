@@ -1,4 +1,4 @@
-# Phase 5, step 4: the logic nodes, against v6's own tables. A marginal is the Contingency
+# The logic nodes, against tables of cases. A marginal is the Contingency
 # table of the inputs, rows `in1` and columns `in2`, false first.
 
 @testitem "rules:AND" tags = [:rules] begin

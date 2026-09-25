@@ -1,4 +1,4 @@
-# `-`: v6's tables, converted.
+# `-`: tables of cases.
 
 @testitem "rules:-:out" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
@@ -176,7 +176,7 @@ end
             (m = (out = NormalWeightedMeanPrecision(2.0, 2.0), in1 = NormalMeanPrecision(1.0, 2.0), in2 = PointMass(-1.0)),) => FactorizedCluster((:in1,) => NormalWeightedMeanPrecision(2.0, 4.0), (:in2,) => PointMass(-1.0)),
             (m = (out = NormalMeanVariance(3.0, 3.0), in1 = NormalWeightedMeanPrecision(2.0, 1.0), in2 = PointMass(2.0)),) => FactorizedCluster((:in1,) => NormalWeightedMeanPrecision(11 / 3, 4 / 3), (:in2,) => PointMass(2.0)),
             (m = (out = NormalWeightedMeanPrecision(2.0, 4.0), in1 = NormalMeanVariance(2.0, 2.0), in2 = PointMass(1.0)),) => FactorizedCluster((:in1,) => NormalWeightedMeanPrecision(7.0, 9 / 2), (:in2,) => PointMass(1.0)),
-            # A known in1: in2 = in1 - out, where v6's tables asserted out - in1 (ReactiveMP.jl#678).
+            # A known in1: in2 = in1 - out, not out - in1.
             (m = (out = NormalMeanVariance(3.0, 4.0), in1 = PointMass(2.0), in2 = NormalMeanVariance(2.0, 2.0)),) => FactorizedCluster((:in1,) => PointMass(2.0), (:in2,) => NormalWeightedMeanPrecision(0.75, 0.75)),
             (m = (out = NormalMeanPrecision(3, 4), in1 = PointMass(1.0), in2 = NormalMeanPrecision(1, 4)),) => FactorizedCluster((:in1,) => PointMass(1.0), (:in2,) => NormalWeightedMeanPrecision(-4.0, 8.0)),
             (m = (out = NormalWeightedMeanPrecision(3.0, 4.0), in1 = PointMass(1.0), in2 = NormalWeightedMeanPrecision(1.0, 4.0)),) => FactorizedCluster((:in1,) => PointMass(1.0), (:in2,) => NormalWeightedMeanPrecision(2.0, 8.0)),

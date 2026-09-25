@@ -10,7 +10,7 @@
         my, Vy, mx, Vx, Vxy = split_y_x(MvNormalMeanCovariance(m, V))
         @test my == m[1] && Vy == V[1, 1]
         if order == 1
-            # Scalars, as v6's `ar_slice(Univariate, …)` gave them.
+            # Scalars for order 1.
             @test (mx, Vx, Vxy) == (m[2], V[2, 2], V[2, 1])
         else
             @test mx == m[2:end] && Vx == V[2:end, 2:end] && Vxy == V[2:end, 1]
@@ -23,7 +23,7 @@ end
     using SoftDotMessagePassingRules: y_from_x
     using LinearAlgebra: I
 
-    # v6's rule, for reference: AR's `y` message, formed with the dense companion matrix of ⟨θ⟩
+    # The reference: AR's `y` message, formed with the dense companion matrix of ⟨θ⟩
     # and the transition noise 1/⟨γ⟩ on the first component, and then its first component.
     function ar_y_first_component(m_x, q_θ, q_γ)
         mθ, Vθ = mean_cov(q_θ)

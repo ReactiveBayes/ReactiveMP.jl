@@ -1,5 +1,5 @@
 # The joint of `out` and `μ` from their messages, and a split cluster when one of them is a
-# point mass. A `q_Σ` contributes the precision E[Σ⁻¹] (#669 corrected).
+# point mass. A `q_Σ` contributes the precision E[Σ⁻¹].
 
 mv_coupled(m_out, m_μ, W_bar) = begin
     xi_out, W_out = weightedmean_precision(m_out)

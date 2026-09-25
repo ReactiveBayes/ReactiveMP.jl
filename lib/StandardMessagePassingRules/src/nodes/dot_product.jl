@@ -1,8 +1,8 @@
-# `out = dot(in1, in2)`: the function `dot` is the node, as in v6. One input must be known; two
+# `out = dot(in1, in2)`: the function `dot` is the node. One input must be known; two
 # Gaussian inputs have no closed form, and SoftDot is the node for them.
 @define_factor_node(node = dot, type = Deterministic, interfaces = [:out, :in1, :in2])
 
-# v6's default: a zero on the precision's diagonal is replaced, so it stays invertible.
+# The default: a zero on the precision's diagonal is replaced, so it stays invertible.
 dot_default_correction() = ReplaceZeroDiagonalEntries(tiny)
 
 const DOT_OF_NORMALS = "The rule for the dot product node between two NormalDistributionsFamily instances is not available in closed form. Please use SoftDot instead."

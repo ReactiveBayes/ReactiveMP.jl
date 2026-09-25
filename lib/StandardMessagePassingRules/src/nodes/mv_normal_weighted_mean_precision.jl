@@ -4,8 +4,8 @@
 )
 
 # -log N(x; Λ⁻¹ξ, Λ⁻¹) = (d log 2π - log |Λ| + xᵀΛx - 2xᵀξ + ξᵀΛ⁻¹ξ) / 2, in expectation over
-# independent marginals. v6 took E[log |Λ|] as `mean(chollogdet, q_Λ)`, defined for a point
-# mass only; `mean(logdet, q_Λ)` is the same there and defined for a Wishart too.
+# independent marginals. E[log |Λ|] is `mean(logdet, q_Λ)`, defined for a point mass and for a
+# Wishart.
 @define_average_energy(
     node = MvNormalWeightedMeanPrecision,
     args = (q[:out]::Any, q[:ξ]::Any, q[:Λ]::Any),

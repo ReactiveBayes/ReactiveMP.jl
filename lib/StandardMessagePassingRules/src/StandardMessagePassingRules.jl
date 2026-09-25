@@ -6,7 +6,7 @@ mixtures, written with `MessagePassingRulesBase`. Every distribution node runs u
 `DefaultAlgorithm`, and its rules name no algorithm: whether a rule computes a belief
 propagation, variational or structured update follows from the factorisation, through the
 engine's default dependency scheme, which gives each rule the messages inside its own cluster
-and the marginals of the other clusters, as in v6. A node whose rules ignore the
+and the marginals of the other clusters. A node whose rules ignore the
 factorisation declares an algorithm of its own, as [`NormalMixture`](@ref) does.
 """
 module StandardMessagePassingRules
@@ -28,8 +28,8 @@ import DomainSets
 
 export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, Mixture, MixtureBP, GammaShapeLikelihood, HalfNormal, Uninformative, StandaloneDistribution
 export AND, OR, NOT, IMPLY, MultiplicationSampling
-# v6 exported both from the engine: `dot`, LinearAlgebra's, is the node `out = dot(A, in)`, and
-# `diageye` builds the identity matrices models write.
+# `dot`, LinearAlgebra's, is the node `out = dot(A, in)`, and `diageye` builds the identity
+# matrices models write.
 export dot, diageye
 
 include("helpers.jl")

@@ -1,6 +1,6 @@
-# `*`: v6's tables, converted; the messages without a closed form checked against quadrature
+# `*`: tables of cases; the messages without a closed form checked against quadrature
 # of their defining integrals, the sampled ones with a StableRNG (never the default generator,
-# whose stream changes between Julia versions); the corrected log-scale; the correction; and
+# whose stream changes between Julia versions); the log-scale towards `in`; the correction; and
 # the refused non-commuting products.
 
 @testitem "rules:*:tables" tags = [:rules] begin
@@ -26,8 +26,7 @@
             (m = (A = MvNormalMeanCovariance([1, 2], [3 2; 2 6]), in = PointMass(2)),) => MvNormalMeanCovariance([2, 4], [12 8; 8 24]),
         ],
     )
-    # v6's tables for `:in` ran its reversed-order rules, which returned moment forms; the rule
-    # that runs returns the same distributions with a weighted mean.
+    # Towards `:in`, the distributions come in weighted-mean form.
     @test_message_update_rule(
         node = *, target = :in,
         cases = [
@@ -91,7 +90,7 @@ end
         @test logpdf(product, z) ≈ towards_out(z) rtol = 1.0e-3
     end
 
-    # Any other two univariate distributions: 3000 draws, whose sum v6 left unnormalised, so
+    # Any other two univariate distributions: 3000 draws, whose sum is left unnormalised, so
     # the log-density is log 3000 above the integral's, up to the draws' error.
     ctx = RuleContext(rng = StableRNG(42))
     g, b = GammaShapeRate(3.0, 2.0), Beta(2.0, 3.0)
@@ -109,7 +108,7 @@ end
         @test logpdf(sampled_A, a) - log(3000) ≈ log(integral(y -> pdf(g, a * y) * pdf(b, y), 0.0, 1.0)) atol = 0.05
     end
 
-    # The number of draws is the algorithm's, 3000 by default, as in v6.
+    # The number of draws is the algorithm's, 3000 by default.
     @test default_algorithm(*) === MultiplicationSampling() && MultiplicationSampling().samples == 3000
     algorithm = MultiplicationSampling(samples = 5)
     few = call_message_update_rule(*, :in; m = (out = g, A = b), ctx = RuleContext(rng = StableRNG(1)), algorithm)
@@ -133,7 +132,7 @@ end
     m = (out = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), A = PointMass([1.0 0.0; 0.0 0.0]))
     @test precision(call_message_update_rule(*, :in; m)) == [1.0 0.0; 0.0 tiny]
     @test precision(call_message_update_rule(*, :in; m, ctx = RuleContext(matrix_correction = NoCorrection()))) == [1.0 0.0; 0.0 0.0]
-    # A matrix  does not commute with A; v6 computed in * A, the port refuses.
+    # A matrix `in` does not commute with A, so in * A is refused.
     @test_throws RuleNotFoundError call_message_update_rule(*, :A; m = (out = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), in = PointMass([1.0 2.0; 0.0 1.0])))
     @test_throws RuleNotFoundError call_message_update_rule(*, :out; m = (A = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0]), in = PointMass([1.0 2.0; 0.0 1.0])))
 end

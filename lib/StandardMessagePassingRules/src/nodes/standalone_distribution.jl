@@ -4,7 +4,7 @@
 The node `out ~ d` for a distribution value `d`, of any family, given as the constant
 `distribution`: what a model writes as `x ~ prior`, `prior` a distribution rather than a
 family with its parameters. Its message towards `out` is `d` itself, and its average energy
-the cross entropy `E_q[-log d(out)]`, `KL(q ‖ d) + H(q)`. v6's StandaloneDistributionNode.
+the cross entropy `E_q[-log d(out)]`, `KL(q ‖ d) + H(q)`.
 """
 struct StandaloneDistribution end
 

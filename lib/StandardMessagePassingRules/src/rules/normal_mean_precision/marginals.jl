@@ -10,7 +10,7 @@
 )
 
 # A point-mass message splits the cluster: each block is its own marginal. A precision's
-# expectation is the right one to use (no #669 here).
+# expectation is the right one to use.
 
 @define_marginal_update_rule(
     node = NormalMeanPrecision, target = (:out, :μ),

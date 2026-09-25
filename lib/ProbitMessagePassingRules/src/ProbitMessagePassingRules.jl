@@ -2,7 +2,7 @@
     ProbitMessagePassingRules
 
 The Probit node, `out ~ Bernoulli(Φ(in))` with `Φ` the standard normal CDF, and its rules: its
-own algorithm, [`ProbitEP`](@ref), expectation propagation, and v6's plain belief-propagation and
+own algorithm, [`ProbitEP`](@ref), expectation propagation, and plain belief-propagation and
 variational rules under `DefaultAlgorithm`.
 """
 module ProbitMessagePassingRules
@@ -32,9 +32,7 @@ struct Probit end
 
 [`Probit`](@ref)'s algorithm, expectation propagation: towards `in` from the message from `out`
 and the message on `in` itself, towards `out` from the message on `in`. `p` is the number of
-Gauss–Hermite points of its average energy. v6 called it `ProbitMeta`, with
-`RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`, whose initial message
-the node now declares.
+Gauss–Hermite points of its average energy.
 """
 struct ProbitEP <: AbstractAlgorithm
     p::Int
@@ -100,8 +98,8 @@ end
 )
 
 # E_q[-log p(out | in)], by Gauss–Hermite cubature over q(in) with `p` points. log Φ is computed
-# directly: v6's log(Φ(x)) underflowed at a far point and turned 0 ⋅ log Φ into NaN for a
-# point-mass output.
+# directly, as `normlogcdf`: log(Φ(x)) underflows at a far point and would turn 0 ⋅ log Φ into NaN
+# for a point-mass output.
 function probit_energy(points, q_out, q_in)
     p = mean(q_out)
     m, v = mean_var(q_in)
@@ -116,7 +114,7 @@ end
     body = (algo, args) -> probit_energy(algo.p, args.q[:out], args.q[:in]),
 )
 
-# v6's rules without expectation propagation, for a model that runs Probit under
+# The rules without expectation propagation, for a model that runs Probit under
 # `DefaultAlgorithm()`: the factorisation decides what they read, messages in a joint cluster or
 # marginals under mean-field, and the rule towards `in` does not read its own edge.
 @define_message_update_rule(

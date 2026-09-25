@@ -2,7 +2,7 @@
     using SoftDotMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     using LinearAlgebra: I
 
-    # Semi-exhaustive combinations of input types, as v6's table, labelled y, θ, γ by
+    # Semi-exhaustive combinations of input types, labelled y, θ, γ by
     #     0: PointMass, 1: NormalMeanVariance, 2: MvNormalMeanCovariance, 3: GammaShapeScale.
     # Each output has weighted mean z = ⟨γ⟩ m_θ m_y and precision D = ⟨γ⟩ (V_θ + m_θ m_θᵀ).
     @testset "VMP: Mean-field" begin
@@ -40,7 +40,7 @@
 
     # TODO: these errors have to be caught in the implementations themselves. The error type and
     # message itself will not provide any information or might not match. The rule takes any
-    # marginal, as v6's did, so it is found and fails inside, as in v6.
+    # marginal, so it is found and fails inside.
     @testset "VMP: Incorrect Inputs" begin
         # 2**: INCORRECT (y cannot be Mv)
         @test_throws MethodError call_message_update_rule(

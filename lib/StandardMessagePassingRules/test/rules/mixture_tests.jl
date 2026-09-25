@@ -1,4 +1,4 @@
-# Mixture: v6 has no rule tests, so the cases are hand-derived. Its rules read their inputs' log
+# Mixture: the cases are hand-derived. Its rules read their inputs' log
 # scales, which the tables cannot supply, so they are called directly with `ann`.
 
 @testmodule MixtureInputs begin
@@ -55,6 +55,6 @@ end
     # A message without a log scale: the rule names the annotations it needs.
     ann = M.annotations(m = (out = AnnotationStore(), switch = M.logscaled(0.0)))
     @test_throws r"LogScaleAnnotations" call_message_update_rule(Mixture, (:inputs, 1); m = (out = NormalMeanVariance(1.0, 2.0), switch = Categorical([0.5, 0.5])), ann)
-    # No average energy, where v6 returned 0.0 with a warning.
+    # No average energy: a free energy with a Mixture is an error.
     @test_throws MessagePassingRulesBase.RuleNotFoundError call_average_energy(Mixture; m = (out = NormalMeanVariance(0.0, 1.0), switch = Categorical([0.5, 0.5]), inputs = (NormalMeanVariance(0.0, 1.0), NormalMeanVariance(1.0, 1.0))))
 end

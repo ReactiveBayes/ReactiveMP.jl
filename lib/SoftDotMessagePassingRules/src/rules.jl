@@ -1,4 +1,4 @@
-# The SoftDot rules, from v6's `rules/softdot/`. Belief propagation does not exist for SoftDot:
+# The SoftDot rules. Belief propagation does not exist for SoftDot:
 # every rule is variational, mean-field or under a structured q(y, x), which the default
 # dependency scheme tells apart by what it passes, marginals, messages or the joint.
 
@@ -12,7 +12,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
     body = (args) -> NormalMeanPrecision(mean(args.q[:θ])' * mean(args.q[:x]), mean(args.q[:γ])),
 )
 
-# Under q(y, x), from the message on `x`: v6 called AR's `y` rule and kept its first component.
+# Under q(y, x), from the message on `x`: the first component of AR's `y` message.
 @define_message_update_rule(
     node = SoftDot, target = :y, args = (q[:θ]::Any, m[:x]::NormalDistributionsFamily, q[:γ]::Any),
     body = (args) -> y_from_x(args.m[:x], args.q[:θ], args.q[:γ]),
@@ -51,8 +51,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
 )
 
 # Under q(y, x), from the message on `y` of variance V_y: the noise variance becomes
-# V_y + 1/⟨γ⟩ along ⟨θ⟩, and ⟨γ⟩ V_θ is added to the precision. v6 noted that AR's rule could
-# not serve here, since it expects `m_y` univariate.
+# V_y + 1/⟨γ⟩ along ⟨θ⟩, and ⟨γ⟩ V_θ is added to the precision.
 @define_message_update_rule(
     node = SoftDot, target = :x, args = (m[:y]::UnivariateNormalDistributionsFamily, q[:θ]::Any, q[:γ]::Any),
     body = (args) -> begin

@@ -1,5 +1,5 @@
-# MvNormalMeanPrecision: v6's own tables, and hand-derived cases for the marginal rules, which
-# v6 does not test. A q_Λ contributes the precision E[Λ]; for Wishart(ν, S), E[Λ] = νS.
+# MvNormalMeanPrecision: tables of cases, and hand-derived ones for the marginal rules. A q_Λ
+# contributes the precision E[Λ]; for Wishart(ν, S), E[Λ] = νS.
 
 @testitem "rules:MvNormalMeanPrecision:out-μ" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
@@ -7,7 +7,8 @@
     for target in (:out, :μ)
         other = target === :out ? :μ : :out
         m(value, Λ) = NamedTuple{(other, :Λ)}((value, Λ))
-        # BigFloat and Float32 through a Wishart's Cholesky factor are v6's float types only.
+        # The Wishart cases are checked in Float64 only, not in BigFloat and Float32, which go
+        # through a Wishart's Cholesky factor.
         @test_message_update_rule(
             node = MvNormalMeanPrecision, target = target,
             cases = [
@@ -41,7 +42,7 @@ end
     using FastCholesky: cholinv
     import ExponentialFamily: WishartFast
 
-    # v6's tables: WishartFast(d + 2, E[(out - μ)(out - μ)ᵀ]).
+    # WishartFast(d + 2, E[(out - μ)(out - μ)ᵀ]).
     @test_message_update_rule(
         node = MvNormalMeanPrecision, target = :Λ,
         cases = [
@@ -100,7 +101,7 @@ end
     using LinearAlgebra: logdet
 
     I2 = [1.0 0.0; 0.0 1.0]
-    # v6's node test, in each representation of q_μ, with a Wishart q_Λ.
+    # In each representation of q_μ, with a Wishart q_Λ.
     for q_μ in (MvNormalMeanPrecision([1.0, 1.0], I2), MvNormalMeanCovariance([1.0, 1.0], I2), MvNormalWeightedMeanPrecision([1.0, 1.0], I2))
         @test call_average_energy(MvNormalMeanPrecision; q = (out = PointMass([1.0, 1.0]), μ = q_μ, Λ = Wishart(3, 2 * I2))) ≈ 6.721945550750932
     end

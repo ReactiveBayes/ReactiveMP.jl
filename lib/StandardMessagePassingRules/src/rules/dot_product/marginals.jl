@@ -1,5 +1,5 @@
 # The joint of the inputs with one known: the other's marginal is its message times its prior.
-# v6 accepted any Gaussian `out`, which its message rule then refused; it is univariate here.
+# `out` is univariate, as the message rule requires.
 
 @define_marginal_update_rule(
     node = dot, target = (:in1, :in2), ctx = (:matrix_correction,),

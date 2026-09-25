@@ -1,5 +1,5 @@
-# Cases from v6's `test/rules/normal_mean_variance/`, except where `q_v` is not a point mass:
-# there v6 used `E[v]` (ReactiveMP.jl#669) and these expect `1/E[1/v]`. For
+# NormalMeanVariance: where `q_v` is not a point mass, the variance it contributes is
+# `1/E[1/v]`, not `E[v]`. For
 # `InverseGamma(3, 4)`, `E[1/v] = 3/4`.
 
 @testitem "rules:NormalMeanVariance:out" tags = [:rules] begin
@@ -34,7 +34,7 @@ end
             (q = (out = PointMass(1.0), v = PointMass(2.0)),) => NormalMeanVariance(1.0, 2.0),
             (q = (out = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)),) => NormalMeanVariance(1.0, 4 / 3),
             (m = (out = PointMass(-1.0),), q = (v = InverseGamma(3.0, 4.0),)) => NormalMeanVariance(-1.0, 4 / 3),
-            # No log scale, as in v6: see `rules/normal_mean_variance/mean.jl`.
+            # No log scale: see `rules/normal_mean_variance/mean.jl`.
             (m = (out = NormalMeanVariance(0.0, 1.0),), q = (v = InverseGamma(3.0, 4.0),)) => NormalMeanVariance(0.0, 1 + 4 / 3),
         ],
     )
@@ -72,7 +72,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     # Against the node's own log-density, not against stored numbers: belief propagation and
-    # variational inputs. The variational cases are the ones v6 got wrong. Rules mixing
+    # variational inputs, the latter checking the variance 1/E[1/v]. Rules mixing
     # messages and marginals are checked by their tables only: the verification tool takes
     # one kind of input or the other.
     @verify_message_update_rule(node = NormalMeanVariance, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
@@ -98,7 +98,7 @@ end
         @test all(v -> logpdf(message, v) ≈ case.expected(v), (0.1, 1.0, 3.5, 10.0))
     end
 
-    # Variational: an unchecked inverse gamma of shape -1/2 (v6's own tables).
+    # Variational: an unchecked inverse gamma of shape -1/2.
     @test_message_update_rule(
         node = NormalMeanVariance, target = :v, check_type_promotion = false,
         cases = [
@@ -129,7 +129,7 @@ end
                 FactorizedCluster((:out,) => PointMass(1.0), (:μ,) => NormalWeightedMeanPrecision(0.5, 1.5)),
             (m = (out = NormalMeanVariance(0.0, 1.0), μ = PointMass(1.0)), q = (v = PointMass(2.0),)) =>
                 FactorizedCluster((:out,) => NormalWeightedMeanPrecision(0.5, 1.5), (:μ,) => PointMass(1.0)),
-            # An inverse gamma q_v, InverseGamma(3, 4): E[1/v] = 3/4, so the precision added is 3/4 (#669).
+            # An inverse gamma q_v, InverseGamma(3, 4): E[1/v] = 3/4, so the precision added is 3/4.
             (m = (out = PointMass(1.0), μ = NormalMeanVariance(0.0, 1.0)), q = (v = InverseGamma(3.0, 4.0),)) =>
                 FactorizedCluster((:out,) => PointMass(1.0), (:μ,) => NormalWeightedMeanPrecision(0.75, 1.75)),
         ],

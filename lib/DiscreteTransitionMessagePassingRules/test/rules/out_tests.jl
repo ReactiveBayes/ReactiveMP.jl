@@ -1,4 +1,3 @@
-# From v6's `test/rules/discrete_transition/out_tests.jl`.
 @testitem "rules:DiscreteTransition:out:Belief Propagation: (q_in::PointMass, q_a::PointMass)" tags = [
     :rules,
 ] begin

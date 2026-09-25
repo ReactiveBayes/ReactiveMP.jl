@@ -1,5 +1,3 @@
-# From v6's `test/rules/continuous_transition/x_tests.jl`.
-
 @testitem "rules:ContinuousTransition:x" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
     using BayesBase: tiny
@@ -21,7 +19,7 @@
             return MvNormalWeightedMeanPrecision(ξ, Λ)
         end
 
-        @testset "Structured: (m_y::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta)" begin
+        @testset "Structured: (m_y::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, algo::CTVMP)" begin
             for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
                 dydx = dy * dx
                 transformation = (a) -> reshape(a, dy, dx)
@@ -44,7 +42,7 @@
     end
 
     @testset "Nonlinear transformation" begin
-        @testset "Structured: (m_y::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)" begin
+        @testset "Structured: (m_y::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, algo::CTVMP)" begin
             dy, dx = 2, 2
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
 
@@ -71,7 +69,7 @@
         return MvNormalWeightedMeanPrecision(ξ, Λ)
     end
 
-    @testset "Mean-field: (q_y::Any, q_a::Any, q_W::Any, meta::CTMeta)" begin
+    @testset "Mean-field: (q_y::Any, q_a::Any, q_W::Any, algo::CTVMP)" begin
         for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
             dydx = dy * dx
             transformation = (a) -> reshape(a, dy, dx)

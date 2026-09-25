@@ -3,7 +3,7 @@
 
 The Delta node, `z = f(x₁, …, xₙ)` for a deterministic function `f`, written with
 `MessagePassingRulesBase`: [`DeltaFn`](@ref), its own algorithm [`DeltaApproximation`](@ref)
-(the approximation method and an optional known inverse, v6's `DeltaMeta`), the dependencies
+(the approximation method and an optional known inverse), the dependencies
 each form of the algorithm declares, and the rules for the `Unscented` and `Linearization`
 methods.
 

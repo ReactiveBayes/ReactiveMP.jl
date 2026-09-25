@@ -26,7 +26,7 @@ const softdot = SoftDot
 @define_factor_node(node = SoftDot, type = Stochastic, interfaces = [:y, (:θ, aliases = [:theta]), :x, (:γ, aliases = [:gamma])])
 
 # ⟨-log N(y | θᵀx, γ⁻¹)⟩ = ½(log 2π - ⟨log γ⟩ + ⟨γ⟩ ⟨(y - θᵀx)²⟩), with the whole bracket under a
-# single ⟨γ⟩ (ReactiveMP.jl#615: v6 once had a second ⟨γ⟩ on the cross term).
+# single ⟨γ⟩, the cross term included.
 softdot_energy(q_γ, expected_square) = (-mean(log, q_γ) + log2π + mean(q_γ) * expected_square) / 2
 
 @define_average_energy(

@@ -46,7 +46,7 @@ end
     @test default_algorithm(BIFM) === DefaultAlgorithm()
     algorithm = BIFMSmoother([1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], [1.0 0.0])
     spec = dependencies_spec(BIFM, algorithm)
-    # The forward rules also read their own edge's message, where v6 read a cache.
+    # The forward rules also read their own edge's message.
     for (target, own) in ((:out, ((:m, :out),)), (:in, ((:m, :in),)), (:zprev, ()), (:znext, ((:m, :znext),)))
         @test extends_default_scheme(spec, Target(target))
         @test map(d -> (d.container, d.key), target_dependencies(spec, Target(target))) == own

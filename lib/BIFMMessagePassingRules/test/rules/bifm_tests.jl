@@ -1,16 +1,12 @@
-# BIFM's rules under BIFMSmoother. v6's meta was a cache: its rule towards `zprev` wrote the
-# backward quantities, its rule towards `znext` wrote `μu`/`Σu`, and the rules towards `in`, `out`
-# and `znext` read them back. The port recomputes them from the messages, so its forward rules
-# take `m[:in]` and `m[:znext]` as well.
+# BIFM's rules under BIFMSmoother. The rules keep no state: the forward rules recompute the
+# backward quantities from the messages, so they take `m[:in]` and `m[:znext]` as well.
 
-# From v6's `test/rules/bifm/zprev_tests.jl`, whose rule computed the cache from its messages and
-# so ports as it is: v6's inputs, values, tolerances and promotion settings. v6's meta also held
-# a cache (`H = [5 0; 0 4]`, ...) that its rule overwrote; it has no counterpart. The last two
-# cases are not v6's: their values are ReactiveMP 6.5.0's, computed as described below.
+# The backward rule, towards `zprev`. The expected values are reference values of the BIFM
+# recursion for these inputs; the last two cases are computed as described below.
 @testitem "rules:BIFM:zprev" tags = [:rules] begin
     using BIFMMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 
-    @testset "v6's table" begin
+    @testset "diagonal matrices" begin
         algorithm = BIFMSmoother([2.0 0; 0 1], [3.0 0; 0 2], [4.0 0; 0 3])
         @test_message_update_rule(
             node = BIFM, target = :zprev, algorithm = algorithm,
@@ -60,16 +56,12 @@
     end
 end
 
-# The forward rules. v6's tables for them filled the meta's cache with numbers inconsistent with
-# their messages (`H = [5 0; 0 4]`, `Λz = [7 0; 0 6]`, ...), which a stateless rule cannot
-# reproduce, so these tables are new. Their expected values are ReactiveMP 6.5.0's, pasted as
-# literals: in `compat/v6-comparison`, for each case and each target, a fresh
-# `ReactiveMP.BIFMMeta(A, B, C)` was filled the way v6's schedule filled it, by v6's rule towards
-# `zprev` on (out, in, znext) and then v6's rule towards `znext` on (out, in, zprev), which sets
-# `μu`/`Σu` from m_in, and then v6's rule under test was run on it.
+# The forward rules. Their expected values are reference values of the BIFM recursion for these
+# inputs: for each case, the backward quantities computed from (out, in, znext) and the input's
+# statistics from m_in, then the forward step under test.
 #
-# The first three cases are v6's input sets: `m_out`, `m_in` and `m_znext` of v6's `zprev` table,
-# and `m_zprev` of v6's `in` table. The fourth has non-diagonal matrices and messages with a
+# The first three cases have diagonal matrices, with the messages of the `zprev` table's first
+# cases. The fourth has non-diagonal matrices and messages with a
 # 3-dimensional state and a 2-dimensional input and output; the fifth a 2-dimensional state and
 # a scalar input and output.
 @testmodule BIFMForwardCases begin
@@ -120,7 +112,7 @@ end
 
     # The tolerance is chosen by the output's float type. A promotion that converts one input to
     # Float32 still gives a Float64 output, from an input rounded to Float32, so the Float64
-    # tolerance covers that rounding, about 1e-7 here; v6's own tables allowed 1e-2 for both.
+    # tolerance covers that rounding, about 1e-7 here.
     const ATOL = Dict(Float32 => 1.0e-3, Float64 => 1.0e-5, BigFloat => 1.0e-10)
 
     # One table per algorithm, the cases in the order of INPUTS.
@@ -189,14 +181,13 @@ end
     @test BIFMSmoother([1 0; 0 1], [1; 0;;], [1 0]) isa BIFMSmoother{Int}
 
     # Inconsistent sizes: a non-square A, a B with the wrong number of rows, a C with the wrong
-    # number of columns. v6 asserted the second.
+    # number of columns.
     @test_throws DimensionMismatch BIFMSmoother(ones(2, 3), ones(2, 2), ones(2, 2))
     @test_throws DimensionMismatch BIFMSmoother(ones(2, 2), ones(3, 2), ones(2, 2))
     @test_throws DimensionMismatch BIFMSmoother(ones(2, 2), ones(2, 2), ones(2, 3))
 end
 
-# v6's marginal rule returned the joint of `in` and `zprev` only, for a cluster over all three;
-# the port throws, since the free energy of a BIFM model is not supported.
+# The marginal rule throws, since the free energy of a BIFM model is not supported.
 @testitem "rules:BIFM:marginal (:in, :zprev, :znext)" tags = [:rules] begin
     using BIFMMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 

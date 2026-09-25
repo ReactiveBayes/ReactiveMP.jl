@@ -1,7 +1,5 @@
-# `CVIProjection`, from v6's `test/ext/ReactiveMPProjectionExt/`. The rules draw from the
-# context's generator, a StableRNG here; the checks are v6's, statistical and loose. v6's JET
-# checks and its tests of `optimize_parameters` and `create_density_function`, helpers no rule
-# called, are not ported, nor is its benchmark of the two sampling strategies.
+# `CVIProjection`. The rules draw from the context's generator, a StableRNG here; the checks are
+# statistical and loose.
 
 @testmodule CVIContext begin
     using MessagePassingRulesBase: MessagePassingRulesBase, Target, RuleContext
@@ -218,9 +216,9 @@ end
 # The joint rule replaces the proposal with its result, and the next call samples the inputs from
 # it; within a call the inputs are projected in turn, each against the others' latest
 # projections. Repeated calls then bring the proposal closer to the posterior, by the KL
-# divergence, for `x * y` observed at 2, whose posterior has two modes. v6 projected every input
-# against the same samples of the previous proposal, and there the inputs flip between modes of
-# opposite sign (`PHASES.md` § Phase 6, step 2).
+# divergence, for `x * y` observed at 2, whose posterior has two modes. Projecting every input
+# against the same samples of the previous proposal instead makes the inputs flip between modes of
+# opposite sign.
 @testitem "cvi:joint: the proposal converges" tags = [:rules] setup = [CVIContext] begin
     using DeltaMessagePassingRules, ExponentialFamily, ExponentialFamilyProjection, BayesBase, Distributions, MessagePassingRulesBase, StableRNGs
     using .CVIContext: context

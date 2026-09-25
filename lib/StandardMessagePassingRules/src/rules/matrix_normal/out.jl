@@ -34,8 +34,8 @@
     end,
 )
 
-# Mean field: MatrixNormal(E[M], E[U⁻¹]⁻¹, E[V⁻¹]⁻¹), symmetrised. v6 took a MatrixNormal
-# `q_M` only; a point mass has the same mean, so both are accepted.
+# Mean field: MatrixNormal(E[M], E[U⁻¹]⁻¹, E[V⁻¹]⁻¹), symmetrised. A MatrixNormal
+# `q_M` and a point mass are both accepted.
 @define_message_update_rule(
     node = MatrixNormal, target = :out,
     args = (q[:M]::PointOrMatrixNormal, q[:U]::Union{InverseWishartDistributionsFamily, PointMass}, q[:V]::Union{InverseWishartDistributionsFamily, PointMass}),

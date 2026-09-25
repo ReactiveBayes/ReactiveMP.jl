@@ -1,4 +1,3 @@
-# From v6's `test/rules/discrete_transition/a_tests.jl`.
 @testitem "rules:DiscreteTransition:a:Variational Bayes: (q_out::Any, q_in::Categorical)" tags = [
     :rules,
 ] begin

@@ -1,10 +1,6 @@
-# From v6's `test/rules/flow/marginals_tests.jl`.
-#
-# v6 had a marginal rule over `(in,)`, which computed `m_in` times the rule's own message
-# towards `in`. v7 does not port it: a single-input deterministic node's clusters are the
-# variables' own marginals, and the marginal of `in` is the product of its incoming messages,
-# `m_in` and the message towards `in`. So v6's cases become checks of that product, with v6's
-# expected marginals and tolerances (v6's default `atol` was `1e-6` for `Float64`).
+# A single-input deterministic node's clusters are the variables' own marginals, and the
+# marginal of `in` is the product of its incoming messages, `m_in` and the message towards `in`.
+# These cases check that product against the expected marginals.
 
 @testitem "rules:Flow:marginals" tags = [:rules] begin
     using FlowMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, MessagePassingRulesApproximations, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
@@ -18,7 +14,7 @@
     mp = MvNormalMeanPrecision([-5.0, -2.5], diagm([1.0, 1 / 2.0]))
     mw = MvNormalWeightedMeanPrecision([-5.0, -1.25], diagm([1.0, 1 / 2.0]))
 
-    # v6's nine cases, as `(m_out, m_in)`, in v6's order.
+    # Nine cases, as `(m_out, m_in)`.
     pairs = [(mc, mc), (mp, mp), (mw, mw), (mc, mp), (mp, mc), (mw, mp), (mp, mw), (mc, mw), (mw, mc)]
 
     function check_marginal(algorithm, expected, atol)

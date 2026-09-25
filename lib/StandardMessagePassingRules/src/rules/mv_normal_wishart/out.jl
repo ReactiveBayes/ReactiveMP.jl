@@ -1,4 +1,4 @@
-# Known parameters only, as in v6. ExponentialFamily's constructor keeps each parameter's own
+# Known parameters only. ExponentialFamily's constructor keeps each parameter's own
 # float type; a message has one.
 function promoted_mv_normal_wishart(μ, W, λ, ν)
     T = promote_type(eltype(μ), eltype(W), typeof(λ), typeof(ν))

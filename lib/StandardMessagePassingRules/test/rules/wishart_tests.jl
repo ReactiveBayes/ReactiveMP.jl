@@ -1,5 +1,5 @@
-# Wishart: v6's tables, hand-derived cases for a `q_S`, which v6 never tested with anything but
-# a point mass, and `public_equivalent`.
+# Wishart: tables of cases, hand-derived ones for a `q_S` that is not a point mass, and
+# `public_equivalent`.
 
 @testitem "rules:Wishart:out" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions

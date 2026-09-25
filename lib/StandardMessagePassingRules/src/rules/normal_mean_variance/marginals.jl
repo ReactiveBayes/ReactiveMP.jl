@@ -9,8 +9,8 @@
     end,
 )
 
-# A point-mass message splits the cluster: each block is its own marginal. #669 is corrected
-# as in the rules above: a `q_v` contributes the variance 1/E[1/v].
+# A point-mass message splits the cluster: each block is its own marginal. As in the rules
+# above, a `q_v` contributes the variance 1/E[1/v].
 
 @define_marginal_update_rule(
     node = NormalMeanVariance, target = (:out, :μ),

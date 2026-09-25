@@ -1,5 +1,5 @@
 # The joint of the inputs. With one of them known, the other's marginal is its message times its
-# prior: in1 = out + in2, and in2 = in1 - out, where v6 took out - in1 (ReactiveMP.jl#678).
+# prior: in1 = out + in2, and in2 = in1 - out.
 # With both Gaussian, a joint Gaussian over [in1; in2].
 
 @define_marginal_update_rule(

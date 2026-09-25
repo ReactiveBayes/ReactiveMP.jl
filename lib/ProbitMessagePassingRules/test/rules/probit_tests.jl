@@ -1,5 +1,4 @@
-# Probit, from v6's `test/rules/probit/` and `test/nodes/predefined/probit_tests.jl`. The rules
-# towards `out` exist under both algorithms; the log-density messages towards `in` are compared
+# Probit. The rules towards `out` exist under both algorithms; the log-density messages towards `in` are compared
 # at points, as TestUtils compares no log-density by value.
 
 @testitem "rules:Probit:out" tags = [:rules] begin
@@ -103,8 +102,8 @@ end
     for k in 0:0.1:1
         @test call_average_energy(Probit; q = (out = Bernoulli(k), in = NormalMeanVariance(0.0, 1.0)), algorithm = ProbitEP(p = 100)) ≈ 1.0
     end
-    # A wide q(in) and 100 points reach x ≈ ±37, where v6's log(Φ(x)) underflowed to -Inf: the
-    # energy was Inf, or NaN for a point-mass output (0 ⋅ -Inf). log Φ is computed directly now.
+    # A wide q(in) and 100 points reach x ≈ ±37, where log(Φ(x)) underflows to -Inf, which would
+    # make the energy Inf, or NaN for a point-mass output (0 ⋅ -Inf); log Φ is computed directly.
     for q_out in (PointMass(1.0), PointMass(0.0), Bernoulli(0.3))
         energy = call_average_energy(Probit; q = (out = q_out, in = NormalMeanVariance(-2.0, 4.0)), algorithm = ProbitEP(p = 100))
         @test isfinite(energy) && energy > 0

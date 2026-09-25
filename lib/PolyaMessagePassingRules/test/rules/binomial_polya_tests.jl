@@ -1,8 +1,6 @@
-# v6's `test/rules/binomial_polya/{beta_tests,y_tests}.jl`. v6's `BinomialPolyaMeta(k, rng)` is
-# `BinomialPolyaApproximation(samples = k)` with the generator in the rule context, seeded as
-# v6 seeded its meta. The Monte Carlo checks are v6's, against the mean path within a tolerance.
-# v6's node test checked the average energy only, against its plug-in, and `energy_tests.jl`
-# replaces it.
+# BinomialPolya's rules. Sampling is `BinomialPolyaApproximation(samples = k)` with a seeded
+# generator in the rule context; the Monte Carlo checks compare with the mean path within a
+# tolerance. The average energy is tested in `energy_tests.jl`.
 
 @testitem "rules:BinomialPolya:β" tags = [:rules] begin
     using PolyaMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions, StableRNGs
@@ -61,7 +59,6 @@ end
     using MessagePassingRulesBase: RuleContext
     using LinearAlgebra: I
 
-    # v6 named this item "rules:BinomialPolya:beta" as well.
     @testset "Predictive distribution: (q_x::PointMass, q_n::PointMass, q_β::MvNormalWeightedMeanPrecision)" begin
         q = (x = PointMass([0.1, 0.2]), n = PointMass(5), β = MvNormalWeightedMeanPrecision([3.0, -1.0], Matrix(1.0I, 2, 2)))
 
@@ -80,9 +77,8 @@ end
 end
 
 @testitem "rules:BinomialPolya:a univariate β, several samples" tags = [:rules] begin
-    # v6 drew the samples of a univariate β as a vector and took its one "column", so that
-    # `dot(x, column)` threw for more than one sample; v6 only tested one. The draws are the
-    # samples themselves now.
+    # The draws of a univariate β are the samples themselves, so `dot(x, sample)` works for
+    # more than one sample.
     using PolyaMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions, StableRNGs
     using MessagePassingRulesBase: RuleContext
 

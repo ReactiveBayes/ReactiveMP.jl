@@ -1,5 +1,5 @@
 # A Gamma likelihood of the rate, weighted by the responsibility π: shape 1 + π E[a], rate
-# π E[out]. Not clamped, as in v6.
+# π E[out]. Not clamped.
 @define_message_update_rule(
     node = GammaMixture, target = (:b, k),
     args = (q[:out]::Any, q[:switch]::Union{Categorical, Bernoulli, PointMass{<:AbstractVector}}, q[:a][k]::Any),

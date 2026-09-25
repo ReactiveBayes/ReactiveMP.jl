@@ -15,12 +15,12 @@ struct Uninformative end
 )
 
 # The product with an `Uninformative` is the other factor. The strategy is this package's own,
-# so its `prod` methods cannot be ambiguous with anyone else's; v6's generic
-# `PreserveTypeProd{T}` methods were, eleven times over. The last five `default_prod_rule`
+# so its `prod` methods cannot be ambiguous with anyone else's, as generic
+# `PreserveTypeProd{T}` methods would be. The last five `default_prod_rule`
 # methods settle the overlaps with BayesBase's own rules for lazy products, mixtures and
 # terminal arguments. They encode BayesBase's rules, so a new one there can bring an ambiguity
 # back; the fix is for BayesBase to own `Uninformative` as a product identity, as it treats
-# `missing` (`PHASES.md` § Phase 5, step 3).
+# `missing`.
 struct UninformativeProd end
 
 BayesBase.default_prod_rule(::Type{<:Uninformative}, ::Type) = UninformativeProd()

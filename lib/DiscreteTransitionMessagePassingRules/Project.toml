@@ -4,7 +4,7 @@ version = "0.1.0-DEV"
 
 # DiscreteTransition, a factor over a tensor of transition probabilities with any number of
 # conditioning categoricals, as a tensor node: its rules are written once for any
-# factorisation. INVENTORY.md records this package as `node:DiscreteTransition`.
+# factorisation.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

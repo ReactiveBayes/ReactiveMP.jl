@@ -1,4 +1,4 @@
-# `out = A * in`: the function `*` is the node, as in v6. A known factor may be a scalar, a
+# `out = A * in`: the function `*` is the node. A known factor may be a scalar, a
 # vector (then the other factor is a scalar) or a matrix; for a matrix, only `A * in` is
 # computed, never `in * A`.
 """
@@ -6,7 +6,7 @@
 
 The algorithm of the node `*`, its default: every rule is exact but the three between two
 univariate distributions with no closed form, which draw `samples` values of one factor from
-`ctx.rng`. 3000 is v6's number. An extension of `DefaultAlgorithm`, so rules other packages
+`ctx.rng`. An extension of `DefaultAlgorithm`, so rules other packages
 define for `*` under it still apply.
 """
 Base.@kwdef struct MultiplicationSampling <: DefaultAlgorithmExtension
@@ -15,7 +15,7 @@ end
 
 @define_factor_node(node = *, type = Deterministic, interfaces = [:out, :A, :in], algorithm = MultiplicationSampling)
 
-# v6's default: a zero on a precision's diagonal is replaced, so it stays invertible.
+# The default: a zero on a precision's diagonal is replaced, so it stays invertible.
 multiplication_default_correction() = ReplaceZeroDiagonalEntries(tiny)
 corrected(ctx, W) = correction!(matrix_correction(ctx, multiplication_default_correction()), W)
 
@@ -27,7 +27,7 @@ scaled(c::Real, m::MvNormalWeightedMeanPrecision) = ((ξ, W) = weightedmean_prec
 scaled(c::Real, m::GammaDistributionsFamily) = GammaShapeRate(shape(m), rate(m) / c)
 scaled(C::AbstractMatrix, m::NormalDistributionsFamily) =
     ((μ, Σ) = mean_cov(m); promote_variate_type(variate_form(typeof(m)), NormalMeanVariance)(C * μ, C * Σ * C'))
-# A vector times a scalar: a covariance of rank one, as in v6, whose TODO noted it is singular.
+# A vector times a scalar: a covariance of rank one, which is singular.
 scaled(c::AbstractVector, m::UnivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m) * c, var(m) * c * c')
 
 # Backward: the likelihood of x from `out = c * x` for a known c, a Gaussian or Gamma in x.
@@ -51,8 +51,7 @@ function unscaled(ctx, m_out::MvNormalMeanCovariance, c::AbstractVector)
     return NormalWeightedMeanPrecision(dot(cᵀΣ⁻¹, μ), corrected(ctx, dot(cᵀΣ⁻¹, c)))
 end
 
-# m(x) = N_out(c x) integrates to |c|^(-d) over x ∈ Rᵈ. v6 took -logdet(c), which fails for
-# c < 0 and misses d (ReactiveMP.jl#680).
+# m(x) = N_out(c x) integrates to |c|^(-d) over x ∈ Rᵈ, for c of either sign.
 unscaled_logscale(m_out, c::Real) = -length(mean(m_out)) * log(abs(c))
 
 # Between two univariate Gaussians, towards one factor x from `out = x * y`:
@@ -64,15 +63,15 @@ function gaussian_ratio_logpdf(m_out, m_y)
 end
 
 # Towards a factor x from any two univariate distributions: ∫ p_out(x y) p_y(y) dy, by draws of
-# y. v6 weighted each draw by |y|, the density of out/y instead (ReactiveMP.jl#679). The sum
-# is v6's, unnormalised.
+# y. Each draw has weight one; a weight |y| would give the density of out/y instead. The sum
+# is unnormalised.
 function sampled_ratio_logpdf(rng, m_out, m_y, samples)
     ys = rand(rng, m_y, samples)
     return ContinuousUnivariateLogPdf(x -> log(sum(y -> pdf(m_out, x * y), ys)))
 end
 
 # Towards `out` from any two univariate distributions: ∫ p_A(a) p_in(z / a) / |a| da, by draws of
-# a, unnormalised as in v6.
+# a, unnormalised.
 function sampled_product_logpdf(rng, m_A, m_in, samples)
     as = rand(rng, m_A, samples)
     return ContinuousUnivariateLogPdf(z -> log(sum(a -> pdf(m_in, z / a) / abs(a), as)))

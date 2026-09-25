@@ -1,4 +1,5 @@
-# An inverse Wishart in v6's parametrisation with degrees of freedom -d, the likelihood of Σ.
+# An inverse Wishart, in `InverseWishartFast`'s parametrisation, with degrees of freedom -d,
+# the likelihood of Σ.
 
 @define_message_update_rule(
     node = MvNormalMeanCovariance, target = :Σ,

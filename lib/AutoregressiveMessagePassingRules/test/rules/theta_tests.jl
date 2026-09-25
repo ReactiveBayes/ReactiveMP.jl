@@ -1,5 +1,3 @@
-# From v6's `test/rules/autoregressive/theta_tests.jl`.
-
 @testitem "rules:AR:θ" tags = [:rules] begin
     using AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
 

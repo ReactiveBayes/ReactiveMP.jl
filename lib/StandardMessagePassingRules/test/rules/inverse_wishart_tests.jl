@@ -1,5 +1,5 @@
-# InverseWishart: v6's tables, hand-derived cases for a `q_S` and a Wishart-family `out`
-# message, which v6 did not accept.
+# InverseWishart: tables of cases, and hand-derived ones for a `q_S` and a Wishart-family
+# `out` message.
 
 @testitem "rules:InverseWishart:out" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions

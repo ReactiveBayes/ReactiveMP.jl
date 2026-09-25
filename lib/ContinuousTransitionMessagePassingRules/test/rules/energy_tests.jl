@@ -1,9 +1,7 @@
 # The average energies, ⟨-log N(y; A x, W⁻¹)⟩ = dy/2 log 2π - ⟨log det W⟩/2 + tr(⟨W⟩ E[(y - A x)(y - A x)ᵀ])/2.
-# v6's were wrong in three terms (⟨log det W⟩ not halved, the dimension taken as half of q(y)'s or
-# of q(y, x)'s, and the identity for Vx beside the uncertainty of `a`), and v6's node test pinned
-# its own formula; these are the closed form and a Monte Carlo estimate.
+# These are checked against the closed form and a Monte Carlo estimate.
 
-@testitem "rules:ContinuousTransition:energy, v6's node-test inputs" tags = [:rules] begin
+@testitem "rules:ContinuousTransition:energy, closed form" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions, LinearAlgebra
     using SpecialFunctions: digamma
 
@@ -36,7 +34,7 @@ end
         return total / n
     end
 
-    # A linear f, with dy ≠ dx both ways, where v6's dimension term and its identity for Vx fail.
+    # A linear f, with dy ≠ dx both ways, so that the dimension term and the Vx term are exercised.
     for (dy, dx) in ((1, 2), (2, 3), (3, 2))
         f = a -> reshape(a, dy, dx)
         algorithm = CTVMP(f)

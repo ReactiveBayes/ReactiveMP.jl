@@ -1,5 +1,5 @@
-# A Wishart message with inverse scale E[S⁻¹]: `mean(cholinv, q_S)` for a `q_S`, which v6
-# took as E[S]⁻¹ (ReactiveMP.jl#675); the degrees of freedom enter linearly, as E[ν].
+# A Wishart message with inverse scale E[S⁻¹]: `mean(cholinv, q_S)` for a `q_S`, not E[S]⁻¹;
+# the degrees of freedom enter linearly, as E[ν].
 
 @define_message_update_rule(
     node = Wishart, target = :out,

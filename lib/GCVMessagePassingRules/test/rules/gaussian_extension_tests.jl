@@ -1,5 +1,5 @@
 # The rules this package adds to NormalMeanVariance and NormalMeanPrecision for an
-# ExponentialLinearQuadratic message on `out`, which v6 never tested. The message is reduced to a
+# ExponentialLinearQuadratic message on `out`. The message is reduced to a
 # normal of its moments, so each rule must agree with Standard's own rule applied to that normal.
 
 @testitem "rules:GCV:gaussian extension, messages towards μ" tags = [:rules] setup = [GCVRulesTestUtils] begin

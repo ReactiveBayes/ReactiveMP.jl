@@ -1,6 +1,6 @@
-# MvNormalMeanCovariance: v6's own tables where they hold, and hand-derived cases for the
-# marginal rules, which v6 does not test, and for a non-point-mass q_Σ, where v6 used E[Σ] and
-# naive VMP gives E[Σ⁻¹]⁻¹. For Σ ~ InverseWishart(ν, Ψ), E[Σ⁻¹] = νΨ⁻¹.
+# MvNormalMeanCovariance: tables of cases, and hand-derived ones for the marginal rules and for
+# a non-point-mass q_Σ, where naive VMP gives E[Σ⁻¹]⁻¹. For Σ ~ InverseWishart(ν, Ψ),
+# E[Σ⁻¹] = νΨ⁻¹.
 
 @testitem "rules:MvNormalMeanCovariance:out-μ" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
@@ -18,7 +18,7 @@
                     ExpectedWithAnnotations(MvNormalMeanCovariance([0.0, 0.0], [19.0 -3.0; -3.0 16.0]); logscale = 0),
                 (q = m(PointMass([-1.0, 2.0]), PointMass([7.0 -1.0; -1.0 9.0])),) => MvNormalMeanCovariance([-1.0, 2.0], [7.0 -1.0; -1.0 9.0]),
                 (q = m(MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), PointMass([2.0 0.0; 0.0 2.0])),) => MvNormalMeanCovariance([1.0, 2.0], [2.0 0.0; 0.0 2.0]),
-                # E[Σ⁻¹] = 5 · (2I)⁻¹, so the covariance is 0.4 I (v6: E[Σ] = I).
+                # E[Σ⁻¹] = 5 · (2I)⁻¹, so the covariance is 0.4 I, not E[Σ] = I.
                 (q = m(MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), InverseWishart(5.0, [2.0 0.0; 0.0 2.0])),) => MvNormalMeanCovariance([1.0, 2.0], [0.4 0.0; 0.0 0.4]),
             ],
         )
@@ -85,7 +85,7 @@ end
     using StatsFuns: log2π
 
     I2 = [1.0 0.0; 0.0 1.0]
-    # v6's node test: (2 log 2π + log 4 + tr((2I)⁻¹ · I)) / 2, in each representation of q_μ.
+    # (2 log 2π + log 4 + tr((2I)⁻¹ · I)) / 2, in each representation of q_μ.
     for q_μ in (MvNormalMeanCovariance([1.0, 1.0], I2), MvNormalMeanPrecision([1.0, 1.0], I2), MvNormalWeightedMeanPrecision([1.0, 1.0], I2))
         @test call_average_energy(MvNormalMeanCovariance; q = (out = PointMass([1.0, 1.0]), μ = q_μ, Σ = PointMass(2 * I2))) ≈ 3.0310242469692907
     end

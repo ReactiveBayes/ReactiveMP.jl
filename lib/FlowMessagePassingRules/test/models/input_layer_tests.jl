@@ -1,12 +1,8 @@
-# From v6's `test/nodes/predefined/flow/layers/input_layer_tests.jl`.
-
 @testitem "models:Input Layer" tags = [:models] begin
     using FlowMessagePassingRules, StableRNGs
     using LinearAlgebra
 
     using FlowMessagePassingRules: getdim
-
-    # v6 drew from the global generator; the port takes an explicit one.
     rng = StableRNG(1)
 
     @testset "Constructor" begin

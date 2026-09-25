@@ -1,5 +1,5 @@
-# `dot`: v6's tables, converted, v6's `meta` becoming `ctx.matrix_correction`; the default
-# correction for an unset one; and the SoftDot hint for two Gaussian inputs.
+# `dot`: tables of cases, with and without a `ctx.matrix_correction`; the default correction
+# for an unset one; and the SoftDot hint for two Gaussian inputs.
 
 @testitem "rules:dot:out" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions, LinearAlgebra
@@ -161,12 +161,12 @@ end
     )
 end
 
-@testitem "rules:dot:precision as v6 built it" tags = [:rules] begin
+@testitem "rules:dot:precision is symmetric" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions, LinearAlgebra
     using MatrixCorrectionTools: NoCorrection
     using MessagePassingRulesBase: RuleContext
 
-    # The precision towards `in2` is v6's `a aᵀ w`: exactly symmetric, where `(a w) aᵀ` is not
+    # The precision towards `in2` is `a aᵀ w`: exactly symmetric, where `(a w) aᵀ` is not
     # always, which FastCholesky then warns about and symmetrises.
     a = [0.1, 0.7, 1.0 / 3.0, 2.0 / 7.0]
     m = call_message_update_rule(dot, :in2; m = (out = NormalMeanVariance(0.3, 0.9), in1 = PointMass(a)), ctx = RuleContext(matrix_correction = NoCorrection()))

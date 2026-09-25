@@ -1,6 +1,4 @@
-# As MvNormalMeanCovariance's, with the precision E[Λ] coupling `out` and `μ`. v6's two
-# marginal rules for BIFM's `TerminalProdArgument` are not ported: only the free energy of a
-# BIFM model reached them, which is not supported (Phase 6, step 7).
+# As MvNormalMeanCovariance's, with the precision E[Λ] coupling `out` and `μ`.
 
 @define_marginal_update_rule(
     node = MvNormalMeanPrecision, target = (:out, :μ),

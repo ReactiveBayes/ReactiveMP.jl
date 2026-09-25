@@ -1,4 +1,4 @@
-# `out ~ d` for a distribution value `d`, v6's StandaloneDistributionNode: `d` arrives as a
+# `out ~ d` for a distribution value `d`: `d` arrives as a
 # constant's point mass.
 
 @testitem "rules:StandaloneDistribution" tags = [:rules] begin
@@ -11,7 +11,7 @@
     @test call_message_update_rule(StandaloneDistribution, :out; q = (distribution = PointMass(truncated_normal),)) === truncated_normal
 
     # The average energy is the cross entropy E_q[-log d(out)] = KL(q ‖ d) + H(q), so the node's
-    # free-energy term, the energy less H(q), is v6's KL(q ‖ d).
+    # free-energy term, the energy less H(q), is KL(q ‖ d).
     q = Beta(6.0, 9.0)
     energy = call_average_energy(StandaloneDistribution; q = (out = q, distribution = PointMass(d)))
     @test energy ≈ kldivergence(q, d) + entropy(q)

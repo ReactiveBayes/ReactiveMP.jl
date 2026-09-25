@@ -1,5 +1,3 @@
-# From v6's `test/rules/flow/in_tests.jl`.
-
 @testitem "rules:Flow:in" tags = [:rules] begin
     using FlowMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, MessagePassingRulesApproximations, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
     using FlowMessagePassingRules: jacobian, inv_jacobian

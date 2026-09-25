@@ -1,5 +1,3 @@
-# From v6's `test/nodes/predefined/flow/layers/additive_coupling_layer_tests.jl`.
-
 @testitem "models:Additive Coupling Layer" tags = [:models] begin
     using FlowMessagePassingRules, StableRNGs
     using FlowMessagePassingRules:
@@ -14,8 +12,6 @@
         inv_jacobian
     using FlowMessagePassingRules:
         det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
-
-    # v6 drew from the global generator; the port takes an explicit one.
     rng = StableRNG(1)
 
     @testset "Constructor" begin

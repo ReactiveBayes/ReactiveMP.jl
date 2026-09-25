@@ -1,4 +1,4 @@
-# MvNormalGamma: v6's cases, a hand-derived one for an uncertain μ, and the energy checked
+# MvNormalGamma: tables of cases, a hand-derived one for an uncertain μ, and the energy checked
 # against the entropy it must equal when the prior is q(out) itself.
 
 @testitem "rules:MvNormalGamma:out" tags = [:rules] begin

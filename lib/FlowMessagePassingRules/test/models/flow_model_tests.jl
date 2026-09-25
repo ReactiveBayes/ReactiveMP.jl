@@ -1,5 +1,3 @@
-# From v6's `test/nodes/predefined/flow/flow_models/flow_model_tests.jl`.
-
 @testitem "models:Flow Model" tags = [:models] begin
     using FlowMessagePassingRules, StableRNGs
     using FlowMessagePassingRules: getforward, getbackward, getjacobian, getinv_jacobian
@@ -22,8 +20,6 @@
         detinv_jacobian,
         absdetinv_jacobian,
         logabsdetinv_jacobian
-
-    # v6 drew from the global generator; the port takes an explicit one.
     rng = StableRNG(1)
 
     @testset "Constructor" begin

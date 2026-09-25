@@ -16,7 +16,7 @@ struct MultinomialPolya end
     MultinomialPolyaApproximation(; points = 21)
 
 [`MultinomialPolya`](@ref)'s algorithm: its average energy computes `⟨softplus(ψ_k)⟩` by
-Gauss–Hermite cubature with `points` points. v6 called it `MultinomialPolyaMeta(ncubaturepoints)`.
+Gauss–Hermite cubature with `points` points.
 """
 struct MultinomialPolyaApproximation <: AbstractAlgorithm
     points::Int
@@ -124,8 +124,7 @@ function multinomial_polya_energy(algo, q_x, q_N, q_ψ)
     expectation(m, v) = sum(((w, p),) -> w * softplus(p), zip(getweights(gh, m, v), getpoints(gh, m, v)))
     expectations = map(expectation, mean(q_ψ), var(q_ψ))
     # For observed counts, log C is the sum of each break's binomial coefficient. For a
-    # Multinomial q(x), ⟨log C⟩ = log N! - Σ_k ⟨log x_k!⟩ over the binomial marginals; v6 flipped
-    # the sign of the sum and took log N for log N!, which is right only for N = 1.
+    # Multinomial q(x), ⟨log C⟩ = log N! - Σ_k ⟨log x_k!⟩ over the binomial marginals.
     log_coefficient = if q_x isa PointMass
         mapreduce((Nk, y) -> loggamma(Nk + 1) - loggamma(Nk - y + 1) - loggamma(y + 1), +, Nks, x)
     else

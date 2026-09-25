@@ -1,6 +1,5 @@
 # Towards `switch`: component k's evidence is the log scale of m_out × m_inputs[k], which is the
-# product's own (`ctx.product`) plus the two incoming ones. v6 built a throwaway variable and
-# product context to get it.
+# product's own (`ctx.product`) plus the two incoming ones.
 @define_message_update_rule(
     node = Mixture, target = :switch, ctx = (:product,),
     args = (m[:out]::Any, m[:inputs...]::Any),

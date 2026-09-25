@@ -1,7 +1,6 @@
 @define_factor_node(node = GammaInverse, type = Stochastic, interfaces = [:out, (:α, aliases = [:shape]), (:θ, aliases = [:scale])])
 
-# E[θ/x] = θ·E[1/x]. v6 wrote θ/E[x], which is wrong for any q_out that is not a point
-# mass (ReactiveMP.jl#672); the v6 comparison declares the difference.
+# E[θ/x] = θ·E[1/x]; θ/E[x] would be wrong for any q_out that is not a point mass.
 @define_average_energy(
     node = GammaInverse,
     args = (q[:out]::GammaInverse, q[:α]::PointMass, q[:θ]::PointMass),

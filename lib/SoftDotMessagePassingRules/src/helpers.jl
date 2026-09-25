@@ -1,10 +1,10 @@
-# What v6's SoftDot took from the autoregressive node, written out so that this package does not
-# depend on AR's: the slicing of a joint q(y, x) (v6's `ar_slice`) and AR's `y` message from a
-# message on `x`, of which SoftDot kept the first component.
+# What SoftDot needs from the autoregressive node, written out so that this package does not
+# depend on AR's: the slicing of a joint q(y, x) and AR's `y` message from a message on `x`, of
+# which SoftDot keeps the first component.
 
 # The blocks of a joint q(y, x) over a scalar `y` and an `x` of length `order`: the means and
 # variances of `y` and of `x`, and the cross-covariance Cov(x, y). They are scalars when `x` is
-# (order 1), as v6's `ar_slice` gave them.
+# (order 1).
 function split_y_x(q_y_x)
     m, V = mean_cov(q_y_x)
     order = length(m) - 1

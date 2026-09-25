@@ -47,8 +47,8 @@ end
 
     @test default_algorithm(BinomialPolya) === BinomialPolyaApproximation(nothing)
     @test default_algorithm(MultinomialPolya) === MultinomialPolyaApproximation(21)
-    # The rules towards the weights also read the message on their own edge, v6's
-    # `RequireMessageFunctionalDependencies`; every other target follows the factorisation.
+    # The rules towards the weights also read the message on their own edge; every other
+    # target follows the factorisation.
     for (node, algorithm, weights, others) in ((BinomialPolya, BinomialPolyaApproximation(samples = 10), :β, (:y, :x, :n)), (MultinomialPolya, MultinomialPolyaApproximation(), :ψ, (:x, :N)))
         spec = dependencies_spec(node, algorithm)
         @test map(d -> (d.container, d.key), target_dependencies(spec, Target(weights))) == ((:m, weights),)

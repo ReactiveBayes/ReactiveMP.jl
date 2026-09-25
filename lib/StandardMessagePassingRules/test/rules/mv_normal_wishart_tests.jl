@@ -1,4 +1,4 @@
-# MvNormalWishart: v6's case, with ν = 3 in place of v6's ν = 1, which is no Wishart at d = 2.
+# MvNormalWishart: known parameters, with ν ≥ d, as a Wishart at d = 2 needs.
 
 @testitem "rules:MvNormalWishart:out" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions

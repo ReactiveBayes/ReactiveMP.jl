@@ -15,10 +15,10 @@
     #
     # but the true value is `exp(0) = 1`. Summing the exponents first gives the right answer.
     #
-    # Issue #624 reported this class of failure. Its worked example (`ω_mean ≈ 40`) does not
-    # actually overflow -- `A = exp(-40) ≈ 4e-18` and `inv(4e-18) ≈ 2.4e17`, both finite -- and
-    # `:y` only reaches `Inf` around `ω_mean ≈ 740`, where the true variance genuinely exceeds
-    # `floatmax` and `Inf` is the correct answer. The reachable defect is the `NaN` below.
+    # A moderately large `ω_mean`, such as `ω_mean ≈ 40`, does not actually overflow --
+    # `A = exp(-40) ≈ 4e-18` and `inv(4e-18) ≈ 2.4e17`, both finite -- and `:y` only reaches
+    # `Inf` around `ω_mean ≈ 740`, where the true variance genuinely exceeds `floatmax` and `Inf`
+    # is the correct answer. The reachable defect is the `NaN` below.
     algorithm = default_algorithm()
 
     # log A = -(-800) = +800  ⇒  A = Inf

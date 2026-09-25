@@ -1,6 +1,5 @@
-# The Linearization rules against v6's own tables (ReactiveMP 6.5.0's
-# `test/rules/delta/linearization/`), with their type-promotion checks. The functions are v6's,
-# with integer constants, so that a Float32 input stays Float32.
+# The Linearization rules against tables of reference values, with their type-promotion checks.
+# The functions have integer constants, so that a Float32 input stays Float32.
 
 @testitem "rules:Delta:linearization:out" tags = [:rules] setup = [DeltaTestNode] begin
     using DeltaMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesApproximations, ExponentialFamily
@@ -10,7 +9,7 @@
     g(x) = x .^ 2 .- 5
     t, v = 2, 5
     g_closure(x) = x .^ t .- v          # a function of the enclosing scope
-    g_sum(x) = sum(x)                   # v6's dot(x, ones(length(x)))
+    g_sum(x) = sum(x)
     h(x, y) = x .^ 2 .- y
 
     @test_message_update_rule(
@@ -94,8 +93,8 @@ end
             (m = (out = NormalMeanVariance(2.0, 3.0), in = (NormalMeanVariance(2.0, 1.0),)), ctx = context(g)) => JointNormal(NormalMeanVariance(2.6315789473684212, 0.1578947368421053), ((),)),
             (m = (out = MvNormalMeanCovariance([2.0], [3.0;;]), in = (MvNormalMeanCovariance([2.0], [1.0;;]),)), ctx = context(g)) => JointNormal(MvNormalMeanCovariance([2.6315789473684212], [0.1578947368421053;;]), ((1,),)),
             (m = (out = NormalMeanVariance(2.0, 3.0), in = (NormalMeanVariance(2.0, 1.0), NormalMeanVariance(5.0, 1.0))), ctx = context(h)) => JointNormal(joint_h, ((), ())),
-            # ForneyLab: test_delta_extended, MDeltaEInGX 2. v6's comment doubts the sizes of the
-            # left block; they are the inputs' own, one each.
+            # ForneyLab: test_delta_extended, MDeltaEInGX 2. The sizes of the left block are the
+            # inputs' own, one each.
             (m = (out = MvNormalMeanCovariance([2.0], [3.0;;]), in = (MvNormalMeanCovariance([2.0], [1.0;;]), MvNormalMeanCovariance([5.0], [1.0;;]))), ctx = context(h)) => JointNormal(joint_h, ((1,), (1,))),
         ],
     )

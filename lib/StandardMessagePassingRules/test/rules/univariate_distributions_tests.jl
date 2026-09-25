@@ -1,4 +1,4 @@
-# Phase 5, step 3: the univariate distributions, against v6's own tables and node tests.
+# The univariate distributions, against tables of cases and node tests.
 
 @testitem "rules:Beta" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
@@ -87,7 +87,7 @@ end
         ],
     )
     # The energy's E[x/θ] is E[x]·E[1/θ], here 6 · 1/4 for out ~ Gamma(3, scale 2) and
-    # θ ~ Gamma(3, scale 2), where v6 took E[x]/E[θ] = 1. E[log x] = digamma(3) + log(2).
+    # θ ~ Gamma(3, scale 2), not E[x]/E[θ] = 1. E[log x] = digamma(3) + log(2).
     @test_average_energy(
         node = Gamma,
         cases = [
@@ -117,8 +117,7 @@ end
         ],
     )
     # By hand: -α log θ + loggamma(α) + (α + 1) E[log x] + θ E[1/x], with, for x ~ InvGamma(a, b),
-    # E[log x] = log(b) - digamma(a) and E[1/x] = a/b. v6's node tests expected θ/E[x] in the
-    # last term, so their values (-0.268…, -1.434…) are not reproduced.
+    # E[log x] = log(b) - digamma(a) and E[1/x] = a/b: the last term is θ E[1/x], not θ/E[x].
     inverse_gamma_energy(α, θ, a, b) = -α * log(θ) + loggamma(α) + (α + 1) * (log(b) - digamma(a)) + θ * a / b
     @test call_average_energy(GammaInverse; q = (out = GammaInverse(2.0, 1.0), α = PointMass(2.0), θ = PointMass(1.0))) ≈ inverse_gamma_energy(2.0, 1.0, 2.0, 1.0)
     @test call_average_energy(GammaInverse; q = (out = GammaInverse(42.0, 42.0), α = PointMass(42.0), θ = PointMass(42.0))) ≈ inverse_gamma_energy(42.0, 42.0, 42.0, 42.0)
@@ -135,7 +134,6 @@ end
             (q = (v = PointMass(100.0),),) => Truncated(Normal(0.0, 10.0), 0.0, Inf),
         ],
     )
-    # v6's node tests.
     @test call_average_energy(HalfNormal; q = (out = GammaShapeRate(2.0, 1.0), v = PointMass(2.0))) ≈ 2.072364942925
     @test call_average_energy(HalfNormal; q = (out = GammaInverse(3.0, 1.0), v = PointMass(2.0))) ≈ 0.6973649429247
 end
@@ -165,7 +163,7 @@ end
         node = Poisson, target = (:out, :l),
         cases = [(m = (out = PointMass(1.0), l = Gamma(2.0, 1.0)),) => FactorizedCluster((:out,) => PointMass(1.0), (:l,) => Gamma(3.0, 0.5))],
     )
-    # v6's node tests: point masses give -log p(k | λ), and a Poisson q_out its entropy.
+    # Point masses give -log p(k | λ), and a Poisson q_out its entropy.
     @test all(isapprox(call_average_energy(Poisson; q = (out = PointMass(k), l = PointMass(l))), -logpdf(Poisson(l), k); rtol = 1.0e-12) for l in 1:20, k in 1:20)
     @test all(isapprox(call_average_energy(Poisson; q = (out = Poisson(k), l = PointMass(k))), entropy(Poisson(k)); rtol = 1.0e-3) for k in 1:100)
 end
@@ -193,7 +191,7 @@ end
     @test call_message_update_rule(Uninformative, :out) === Uninformative()
     @test call_average_energy(Uninformative; q = (out = NormalMeanVariance(0.0, 1.0),)) === 0.0
 
-    # The product must not be affected (v6's node tests).
+    # The product must not be affected.
     @test prod(GenericProd(), Uninformative(), NormalMeanVariance(0, 1)) == NormalMeanVariance(0, 1)
     @test prod(GenericProd(), NormalMeanVariance(3, 4), Uninformative()) == NormalMeanVariance(3, 4)
     @test prod(GenericProd(), Uninformative(), Uninformative()) === Uninformative()

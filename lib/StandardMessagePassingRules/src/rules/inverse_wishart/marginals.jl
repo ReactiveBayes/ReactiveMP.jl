@@ -1,6 +1,6 @@
 # The whole node under belief propagation, with known ν and S: the message towards `out`
-# times the prior, as an `InverseWishart`. v6 took an `InverseWishartFast` message only; any
-# of the family is accepted, as Wishart's rule does.
+# times the prior, as an `InverseWishart`. A message of any of the family is accepted, as
+# Wishart's rule does.
 @define_marginal_update_rule(
     node = InverseWishart, target = (:out, :ν, :S),
     args = (m[:out]::InverseWishartDistributionsFamily, m[:ν]::PointMass, m[:S]::PointMass),

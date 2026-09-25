@@ -1,5 +1,3 @@
-# From v6's `test/rules/bifm_helper/{in,out}_tests.jl`.
-
 @testitem "rules:BIFMHelper:in" tags = [:rules] begin
     using BIFMMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 
@@ -26,8 +24,7 @@ end
     )
 end
 
-# v6's energy was the entropy of q(in), which v6's node test pinned; the port throws, since the
-# free energy of a BIFM model is not supported.
+# The energy throws, since the free energy of a BIFM model is not supported.
 @testitem "rules:BIFMHelper:energy" tags = [:rules] begin
     using BIFMMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 

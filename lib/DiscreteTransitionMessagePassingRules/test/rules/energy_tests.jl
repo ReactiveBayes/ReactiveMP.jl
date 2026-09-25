@@ -1,8 +1,5 @@
-# From v6's `test/nodes/predefined/discrete_transition_tests.jl`.
-
-# v6 asked `sdtype`, `alias_interface` and `collect_factorisation`; the declaration is what
-# answers those now. v6's aliases were positional (the fourth interface is `T1`): here the
-# fourth is the group `T`, whose members are `(:T, k)`.
+# The node's type, interfaces and factorisation come from its declaration. The fourth interface
+# is the group `T`, whose members are `(:T, k)`.
 @testitem "rules:DiscreteTransition:node properties" tags = [:rules] begin
     using DiscreteTransitionMessagePassingRules, MessagePassingRulesBase
 

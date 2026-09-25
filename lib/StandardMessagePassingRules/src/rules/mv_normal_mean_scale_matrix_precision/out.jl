@@ -1,4 +1,4 @@
-# Variational only, as in v6: `q_γ` and `q_G` contribute the precision E[γ]·E[G].
+# Variational only: `q_γ` and `q_G` contribute the precision E[γ]·E[G].
 
 @define_message_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = :out,

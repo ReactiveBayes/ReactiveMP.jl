@@ -1,4 +1,4 @@
-# The planar flow, from v6's `coupling_flows/planar_flow.jl`.
+# The planar flow.
 
 @doc raw"""
     PlanarFlow(u, w, b)
@@ -40,8 +40,7 @@ function prepare(dim::Int, flow::PlanarFlowPlaceholder)
     return PlanarFlowEmpty(dim)
 end
 
-# The derivative of `tanh`, which v6 took from BayesBase: written here, as not to load BayesBase
-# for it.
+# The derivative of `tanh`, written here so as not to load BayesBase for it.
 dtanh(x) = one(x) - abs2(tanh(x))
 
 # compile placeholder, drawing the parameters from `rng`
@@ -103,15 +102,12 @@ Base.length(f::PlanarFlowEmpty{N}) where {N} = return N
 # forward pass through the PlanarFlow function (multivariate input)
 function _forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
 
-    # fetch values
     u, w, b = getall(f)
 
-    # calculate result
     result = u .* ones(size(u))
     result .*= tanh(dot(w, input) + b)
     result .+= input
 
-    # return result
     return result
 end
 forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
@@ -125,15 +121,12 @@ function _forward(
         f::PlanarFlow{T1, T2}, input::T3
     ) where {T1 <: Real, T2 <: Real, T3 <: Real}
 
-    # fetch values
     u, w, b = getall(f)
 
-    # calculate result
     result = copy(u)
     result *= tanh(dot(w, input) + b)
     result += input
 
-    # return result
     return result
 end
 forward(
@@ -159,13 +152,10 @@ function forward!(
         output::T1, f::PlanarFlow{T1, T2}, input::T1
     ) where {T1, T2 <: Real}
 
-    # check dimensionality
     @assert length(output) == length(input) "The length of the preallocated vector does not seem to match the length of the input vector."
 
-    # fetch values
     u, w, b = getall(f)
 
-    # calculate result
     output .= u
     output .*= tanh(dot(w, input) + b)
     return output .+= input
@@ -174,17 +164,14 @@ end
 # jacobian of the PlanarFlow function (multivariate input)
 function _jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
 
-    # fetch values
     u, w, b = getall(f)
 
-    # calculate result
     result = u * w'
     result .*= dtanh(dot(w, input) + b)
     @inbounds for k in 1:length(input)
         result[k, k] += 1.0
     end
 
-    # return result
     return result
 end
 jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
@@ -198,13 +185,11 @@ function _jacobian(
         f::PlanarFlow{T1, T2}, input::T3
     ) where {T1 <: Real, T2 <: Real, T3 <: Real}
 
-    # fetch values
     u, w, b = getall(f)
 
     # calculate result (optimized)
     result = u * w * dtanh(w * input + b) + 1
 
-    # return result
     return result
 end
 jacobian(
@@ -232,13 +217,10 @@ function jacobian!(
         output::AbstractMatrix{T2}, f::PlanarFlow{T1, T2}, input::T1
     ) where {T1, T2 <: Real}
 
-    # check whether the dimensionality is correct
     @assert size(output) == (length(input), length(f.u)) "The dimensionality of the preallocated jacobian matrix seems incorrect."
 
-    # fetch values
     u, w, b = getall(f)
 
-    # calculate result
     for ku in 1:length(u)
         for kw in 1:length(w)
             output[ku, kw] = u[ku] * w[kw]
@@ -257,13 +239,10 @@ det_jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
 # determinant of the jacobian of the PlanarFlow function (univariate input)
 function det_jacobian(f::PlanarFlow{T, T}, input::T) where {T <: Real}
 
-    # fetch values
     u, w, b = getall(f)
 
-    # calculate result
     result = 1 + dot(u, w) * dtanh(dot(w, input) + b)
 
-    # return result
     return result
 end
 

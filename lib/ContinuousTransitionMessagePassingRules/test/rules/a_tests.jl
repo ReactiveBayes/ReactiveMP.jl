@@ -1,5 +1,3 @@
-# From v6's `test/rules/continuous_transition/a_tests.jl`.
-
 @testitem "rules:ContinuousTransition:a" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
 
@@ -23,7 +21,7 @@
             return MvNormalWeightedMeanPrecision(Λ * vec((Vyx + my * mx') * inv((Vx + mx * mx'))), Λ)
         end
 
-        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta)" begin
+        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, algo::CTVMP)" begin
             for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
                 dydx = dy * dx
                 transformation = (a) -> reshape(a, dy, dx)
@@ -54,7 +52,7 @@
         return MvNormalWeightedMeanPrecision(Λ * (vec(my * mx' * inv(Vx + mx * mx'))), Λ)
     end
 
-    @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta)" begin
+    @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, q_W::Any, algo::CTVMP)" begin
         for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
             dydx = dy * dx
             transformation = (a) -> reshape(a, dy, dx)
@@ -77,16 +75,15 @@
     end
 end
 
-# v6's rotation case, whose value v6 took from rows of A linear in `a` through the origin. The
-# port keeps the offset f(m_a) - J m_a of a nonlinear f, so its value differs from v6's
-# MvNormalWeightedMeanPrecision(zeros(1), 8 * diageye(1)); the exact tests of the correction are
-# elsewhere, and this one only asserts a proper result.
-@testitem "rules:ContinuousTransition:a, v6's nonlinear cases (corrected)" tags = [:rules] begin
+# A rotation: the rule keeps the offset f(m_a) - J m_a of a nonlinear f, so the value is not the
+# one rows of A linear in `a` through the origin would give. The offset is tested exactly in
+# `offset_tests.jl`; this item only asserts a proper result.
+@testitem "rules:ContinuousTransition:a, a nonlinear transformation" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
 
     diageye(n) = Matrix{Float64}(I, n, n)
 
-    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)" begin
+    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, algo::CTVMP)" begin
         dy, dx = 2, 2
         transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
         a0 = zeros(Int, 1)

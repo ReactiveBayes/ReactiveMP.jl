@@ -32,8 +32,8 @@
     body = (args) -> NormalMeanVariance(mean(args.m[:out]), variational_variance(args.q[:v])),
 )
 
-# As in v6, this rule sets no log scale, unlike its mirror towards `:out`; log scales keep
-# v6's behaviour, gaps included, until they get their own milestone.
+# This rule sets no log scale, unlike its mirror towards `:out`: log scales are experimental,
+# and have gaps.
 @define_message_update_rule(
     node = NormalMeanVariance, target = :μ,
     args = (m[:out]::UnivariateNormalDistributionsFamily, q[:v]::Any),

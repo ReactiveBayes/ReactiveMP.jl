@@ -11,7 +11,7 @@ end
 )
 
 # The parameters enter log MvNormalGamma linearly, except through γ (out - μ)ᵀΛ(out - μ) / 2,
-# whose expectation adds tr(E[Λ] Cov μ) / 2 to the rate; v6 dropped it (ReactiveMP.jl#676).
+# whose expectation adds tr(E[Λ] Cov μ) / 2 to the rate.
 @define_message_update_rule(
     node = MvNormalGamma, target = :out,
     args = (q[:μ]::Any, q[:Λ]::Any, q[:α]::Any, q[:β]::Any),

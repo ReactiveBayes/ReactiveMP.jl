@@ -17,8 +17,8 @@
     # with a *constant* coefficient of one and does not appear inside the exponential's
     # quadratic slot at all, so `a = 1`, `c = -1` and `d = 0` — none of them depend on `z`.
     #
-    # This is exactly what issue #621 was about: the mean-field method had been copy-pasted
-    # from the `:κ` rule and carried `a = ⟨z⟩, c = -⟨z⟩, d = Var(z)`.
+    # A mean-field method copied from the `:κ` rule would carry `a = ⟨z⟩, c = -⟨z⟩, d = Var(z)`
+    # instead.
     function gcv_omega_reference(psi, q_z, q_κ)
         m_z, v_z = mean_var(q_z)
         m_κ, v_κ = mean_var(q_κ)
@@ -75,8 +75,8 @@
     @testset "Mean-field and structured variants agree at zero y-x covariance" begin
         # With no posterior covariance between `y` and `x` the structured `q(y, x)` variant
         # reduces to the fully factorized mean-field one, so the two methods must return
-        # *identical* coefficients. This is the invariant that the #621 copy-paste broke:
-        # the structured method was correct while the mean-field one was not.
+        # *identical* coefficients. A mean-field method copied from the `:κ` rule breaks this
+        # invariant while the structured method stays correct.
         for (m_y, v_y, m_x, v_x, m_z, v_z, m_κ, v_κ) in (
                 (3.0, 1.0, 1.0, 2.0, 0.5, 0.7, 0.8, 0.4),
                 (0.4, 0.6, 0.5, 0.3, 2.0, 0.3, 1.2, 0.25),
@@ -94,11 +94,10 @@
     end
 
     @testset "ω message does not reuse the κ message's coefficients" begin
-        # Direct anti-regression for #621. The `:κ` rule legitimately carries
-        # `a = ⟨z⟩, c = -⟨z⟩, d = Var(z)`; the `:ω` rule must not. Asserting the
-        # inequality (rather than only the correct values) documents the specific
-        # failure mode and keeps failing even if the reference above were ever
-        # mis-transcribed in the same direction as the bug.
+        # The `:κ` rule legitimately carries `a = ⟨z⟩, c = -⟨z⟩, d = Var(z)`; the `:ω` rule must
+        # not. Asserting the inequality (rather than only the correct values) documents the
+        # specific failure mode and keeps failing even if the reference above were ever
+        # mis-transcribed in the same direction as the defect.
         q_y = NormalMeanVariance(3.0, 1.0)
         q_x = NormalMeanVariance(1.0, 2.0)
         q_z = NormalMeanVariance(0.5, 0.7) # ⟨z⟩ ≠ 1, Var(z) ≠ 0

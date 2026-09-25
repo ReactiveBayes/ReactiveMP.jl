@@ -1,4 +1,4 @@
-# The GCV rules, from v6's `rules/gcv/`. Towards `y` and `x`, a normal with the effective noise
+# The GCV rules. Towards `y` and `x`, a normal with the effective noise
 # variance 1/⟨e^{-(κz + ω)}⟩; towards `z`, `κ` and `ω`, an ExponentialLinearQuadratic.
 
 # Towards `y` from the message on `x`, or from `q(x)`; towards `x` the mirror image.

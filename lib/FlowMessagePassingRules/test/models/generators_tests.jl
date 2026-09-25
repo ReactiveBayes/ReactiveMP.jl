@@ -1,5 +1,5 @@
-# What the port adds: an explicit generator for everything that draws, the model's random
-# permutations and its initial parameters, defaulting to the task's.
+# An explicit generator for everything that draws, the model's random permutations and its
+# initial parameters, defaulting to the task's.
 
 @testitem "models:generators, compile is reproducible" tags = [:models] begin
     using FlowMessagePassingRules, StableRNGs
@@ -73,7 +73,7 @@ end
         @test getall(RadialFlow(StableRNG(dim), dim)) == getall(RadialFlow(StableRNG(dim), dim))
         @test RadialFlow(dim) isa RadialFlow
     end
-    # the same draws as v6's, in the same order, from the generator given
+    # the parameters are drawn in a fixed order from the generator given
     rng = StableRNG(7)
     u, w, b = randn(rng, 3), randn(rng, 3), randn(rng)
     @test getall(PlanarFlow(StableRNG(7), 3)) == (u, w, b)
@@ -85,8 +85,7 @@ end
 @testitem "models:a model without layers" tags = [:models] begin
     using FlowMessagePassingRules
 
-    # An empty tuple is both a tuple of layers and a tuple of placeholders, which v6 found
-    # ambiguous.
+    # An empty tuple is both a tuple of layers and a tuple of placeholders.
     model = FlowModel(3, ())
     @test getlayers(model) == ()
     @test nr_params(model) == 0

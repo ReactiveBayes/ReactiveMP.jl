@@ -1,7 +1,7 @@
 # The average energies, against exact expectations: a fine quadrature of ⟨softplus(ψ)⟩ over the
-# normal of ψ, and enumeration over a Multinomial q(x). v6's were wrong in both nodes, checked in
-# 6.5.0: BinomialPolya's always took softplus at the mean of ψ, and MultinomialPolya's, for a
-# Multinomial q(x), flipped the sign of Σ ⟨log x_k!⟩ and took log N for log N!.
+# normal of ψ, and enumeration over a Multinomial q(x). BinomialPolya's energy takes the
+# expectation of softplus(ψ), not softplus at the mean of ψ, and MultinomialPolya's, for a
+# Multinomial q(x), carries -log N! + Σ ⟨log x_k!⟩.
 
 @testmodule PolyaReference begin
     using Distributions, LogExpFunctions, SpecialFunctions
@@ -39,7 +39,7 @@ end
     coefficient = loggamma(n + 1) - loggamma(n - y + 1) - loggamma(y + 1)
     exact = -coefficient - y * mψ + n * R.expected_softplus(mψ, vψ)
     q = (y = PointMass(y), x = PointMass(x), n = PointMass(n), β = q_β)
-    # 1.5337, where v6 gave the plug-in 1.0692 whether or not it was asked to sample.
+    # 1.5337, above the plug-in 1.0692, with or without sampling.
     for algorithm in (BinomialPolyaApproximation(), BinomialPolyaApproximation(samples = 100))
         energy = call_average_energy(BinomialPolya; q, algorithm)
         @test energy ≈ exact rtol = 1.0e-8
@@ -58,19 +58,19 @@ end
 
     μψ, vψ = [0.3, -0.4], [0.5, 0.2]
     q_ψ = MvNormalMeanCovariance(μψ, Matrix(Diagonal(vψ)))
-    # v6 gave 1.4016, 4.5592 and 3.9500: right for N = 1 only.
+    # Every N, not N = 1 only.
     for (N, π) in ((1, [0.2, 0.3, 0.5]), (3, [0.2, 0.3, 0.5]), (5, [0.6, 0.1, 0.3]))
         energy = call_average_energy(MultinomialPolya; q = (x = Multinomial(N, π), N = PointMass(N), ψ = q_ψ))
         @test energy ≈ R.multinomial_energy(N, π, μψ, vψ) rtol = 1.0e-6
-        # Observed counts, v6's branch, which was right.
+        # Observed counts.
         x = [N - (N ÷ 2) - (N ÷ 3), N ÷ 2, N ÷ 3]
         Nk = [N, N - x[1]]
         expected = -loggamma(N + 1) + sum(loggamma.(x .+ 1)) - sum(x[k] * μψ[k] - Nk[k] * R.expected_softplus(μψ[k], vψ[k]) for k in 1:2)
         @test call_average_energy(MultinomialPolya; q = (x = PointMass(x), N = PointMass(N), ψ = q_ψ)) ≈ expected rtol = 1.0e-6
     end
-    # v6's node test for observed counts and a point-mass ψ, where its energy was right.
+    # Observed counts and a point-mass ψ.
     @test call_average_energy(MultinomialPolya; q = (x = PointMass([30, 70]), N = PointMass(100), ψ = PointMass([0.5]))) ≈ 23.76 atol = 0.1
-    # The energy of a discrete x is never negative; v6's node test asserted -101.72 here.
+    # The energy of a discrete x is never negative.
     energy = call_average_energy(MultinomialPolya; q = (x = Multinomial(100, [0.2, 0.3, 0.5]), N = PointMass(100), ψ = MvNormalMeanCovariance([0.1, -0.2], [2.0 0.5; 0.5 1.5])))
     @test energy > 0
 end

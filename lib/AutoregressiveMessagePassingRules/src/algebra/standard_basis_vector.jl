@@ -2,8 +2,7 @@
 # picks the first component of the AR state. Internal. Its products are written out only
 # against a scalar, a dense `Matrix` or `Vector` and each other, the combinations the rules
 # form; any other operand takes the generic `AbstractVector` fallback, which reads `getindex`.
-# v6 wrote them against `AbstractMatrix`, `Diagonal` and `Adjoint`, which Aqua counted at 85
-# ambiguities.
+# Written only against concrete operands, no method of theirs is ambiguous.
 struct StandardBasisVector{T <: Real} <: AbstractVector{T}
     length::Int
     index::Int
@@ -59,7 +58,7 @@ function Base.:*(A::Matrix{<:Real}, e::StandardBasisVector)
     return StandardMessagePassingRules.mul_inplace!(e.scale, A[:, e.index])
 end
 
-# e a eᵀ, the precision `dot`'s rules build from it: a diagonal with its one entry, as in v6.
+# e a eᵀ, the precision `dot`'s rules build from it: a diagonal with its one entry.
 function StandardMessagePassingRules.v_a_vT(e::StandardBasisVector, a::Real)
     T = promote_type(eltype(e), typeof(a))
     diagonal = zeros(T, length(e))

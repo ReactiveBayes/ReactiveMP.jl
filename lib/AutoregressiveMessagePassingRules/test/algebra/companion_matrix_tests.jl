@@ -1,5 +1,5 @@
-# v6 had no tests of the companion matrix. Every product is checked against the dense matrix,
-# whether a method of the port's or the generic fallback computes it.
+# Every product is checked against the dense matrix, whether a method of the package's or the
+# generic fallback computes it.
 
 @testitem "CompanionMatrix" tags = [:rules] begin
     using AutoregressiveMessagePassingRules, LinearAlgebra, StableRNGs

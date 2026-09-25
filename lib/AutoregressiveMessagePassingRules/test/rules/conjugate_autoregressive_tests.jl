@@ -1,6 +1,3 @@
-# From v6's `test/rules/conjugate_autoregressive/*` and
-# `test/nodes/predefined/conjugate_autoregressive_tests.jl`, with the same StableRNG seeds.
-
 @testmodule ConjugateARTestUtils begin
     using BayesBase, ExponentialFamily, Distributions, LinearAlgebra
 
@@ -68,12 +65,11 @@ end
         end
     end
 
-    # v6's marginal rule over `w` alone is not ported: the marginal q(w) is the product of the
-    # prior with this message, so its tests are ported onto that product.
+    # There is no marginal rule over `w` alone: the marginal q(w) is the product of the prior
+    # with this message, so that product is what is checked.
     posterior(prior, q_y_x, order) = prod(PreserveTypeProd(Distribution), prior, towards_w(q_y_x, order))
 
     @testset "prod(prior, message) matches the BLR reference (orders 1, 2)" begin
-        # v6's `prod(prior, message) == :w marginal posterior`, StableRNG(22).
         rng = StableRNG(22)
         for order in (1, 2)
             q_y_x = random_joint(rng, order)

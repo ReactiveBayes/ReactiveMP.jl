@@ -1,6 +1,5 @@
 # The variance a variational `q_v` contributes is `1/E[1/v]`, which naive VMP,
-# `exp E_q[log N(out | μ, v)]`, gives. v6 used `E[v]` (ReactiveMP.jl#669); the two agree for
-# a point mass.
+# `exp E_q[log N(out | μ, v)]`, gives. For a point mass it is `E[v]`.
 variational_variance(q_v) = inv(mean(inv, q_v))
 
 @define_message_update_rule(

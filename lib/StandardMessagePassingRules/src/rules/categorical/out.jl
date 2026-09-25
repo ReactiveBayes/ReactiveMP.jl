@@ -11,9 +11,9 @@
     node = Categorical, target = :out,
     args = (q[:p]::Dirichlet,),
     body = (args) -> begin
-        # Softened, so that no category ever gets exactly zero probability. v6 clamped to
-        # `[tiny, Inf]`, and the `Inf` bound turned every input into `Float64`; `max` with
-        # `tiny` keeps the input's precision, and gives the same numbers.
+        # Softened, so that no category ever gets exactly zero probability. `max` with `tiny`
+        # keeps the input's precision, where a clamp to `[tiny, Inf]` would turn every input
+        # into `Float64` through its `Inf` bound.
         rho = max.(exp.(mean(BroadcastFunction(log), args.q[:p])), tiny)
         Categorical(rho ./ sum(rho))
     end,

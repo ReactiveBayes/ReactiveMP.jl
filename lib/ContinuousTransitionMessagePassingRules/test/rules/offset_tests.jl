@@ -1,6 +1,6 @@
 # An affine f = B + reshape(a) is the linear model on y - B x: under q(y, x), every rule and the
-# energy for it equal those for reshape on the joint of (y - B x, x). v6's rules towards `a` and
-# `W` took the rows of A as linear through the origin and dropped B; they keep it now.
+# energy for it equal those for reshape on the joint of (y - B x, x): the rules towards `a` and
+# `W` keep the offset B.
 
 @testitem "rules:ContinuousTransition:an affine transformation is the linear one on y - B x" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions, LinearAlgebra

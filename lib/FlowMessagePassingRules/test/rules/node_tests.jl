@@ -1,6 +1,5 @@
-# From v6's `test/nodes/predefined/flow/flow_tests.jl`, its FlowMeta part: v6's `FlowMeta(model,
-# approximation)` is `FlowApproximation(model; method)` now, and v6's missing `default_meta` is
-# the missing rule under `DefaultAlgorithm()`.
+# The node's algorithm, `FlowApproximation(model; method)`, and the missing rule under
+# `DefaultAlgorithm()`.
 
 @testitem "rules:Flow:node" tags = [:rules] begin
     using FlowMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, MessagePassingRulesApproximations, BayesBase, ExponentialFamily, Distributions, LinearAlgebra

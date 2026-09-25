@@ -1,4 +1,4 @@
-# The permutation layer, from v6's `layers/permutation_layer.jl`.
+# The permutation layer.
 
 @doc raw"""
     PermutationLayer(dim::Int, P::PermutationMatrix)
@@ -21,18 +21,14 @@ end
 PermutationLayer(dim::T) where {T <: Integer} = PermutationLayer(default_rng(), dim)
 function PermutationLayer(rng::AbstractRNG, dim::T) where {T <: Integer}
 
-    # create random permutation matrix
     P = PermutationMatrix(rng, dim)
 
-    # return layer
     return PermutationLayer(dim, P)
 end
 function PermutationLayer(P::PermutationMatrix)
 
-    # create random permutation matrix
     @assert size(P, 1) == size(P, 2) "The passed permutation matrix is not square."
 
-    # return layer
     return PermutationLayer(size(P, 1), P)
 end
 struct PermutationLayerPlaceholder <: AbstractLayerPlaceholder end
@@ -68,13 +64,10 @@ Base.eltype(::Type{PermutationLayer{T}}) where {T} = eltype(T)
 # forward pass through the permutation layer
 function _forward(layer::PermutationLayer, input::AbstractVector{<:Real})
 
-    # fetch variables
     P = getP(layer)
 
-    # determine result
     result = P * input
 
-    # return result
     return result
 end
 forward(layer::PermutationLayer, input::AbstractVector{<:Real}) =
@@ -92,23 +85,18 @@ function forward!(
         input::AbstractVector{<:Real},
     )
 
-    # fetch variables
     P = getP(layer)
 
-    # determine result
     return mul!(output, P, input)
 end
 
 # backward pass through the permutation layer
 function _backward(layer::PermutationLayer, output::AbstractVector{<:Real})
 
-    # fetch variables
     P = getP(layer)
 
-    # determine result
     result = P' * output
 
-    # return result
     return result
 end
 backward(layer::PermutationLayer, output::AbstractVector{<:Real}) =
@@ -126,17 +114,14 @@ function backward!(
         output::AbstractVector{<:Real},
     )
 
-    # fetch variables
     P = getP(layer)
 
-    # determine result
     return mul!(input, P', output)
 end
 
 # jacobian of the additive coupling layer
 function _jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})
 
-    # return result
     return getP(layer)
 end
 jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) =
@@ -150,7 +135,6 @@ Broadcast.broadcasted(
 # inverse jacobian of the additive coupling layer
 function _inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})
 
-    # return result
     return getP(layer)'
 end
 inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) =

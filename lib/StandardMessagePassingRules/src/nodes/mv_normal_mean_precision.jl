@@ -2,7 +2,7 @@
 
 # (d log 2π - E[log |Λ|] + tr(E[Λ] S)) / 2, the average energy of a multivariate normal with
 # precision `Λ` and `S = E[(out - μ)(out - μ)ᵀ]`. A Wishart `q_Λ` gives E[Λ] as `df · S_Λ`
-# without building the mean matrix, as v6 did.
+# without building the mean matrix.
 mv_normal_mean_precision_energy(d, q_Λ, S) = gaussian_energy(d, tr(mean(q_Λ) * S) - mean(logdet, q_Λ))
 
 function mv_normal_mean_precision_energy(d, q_Λ::Wishart, S)

@@ -1,4 +1,4 @@
-# MatrixNormal: v6's tables, with the expected scale matrices written out as v6 derived them,
+# MatrixNormal: tables of cases, with the expected scale matrices written out as derived,
 # and the energy against -logpdf for point masses and a hand-derived second-moment case.
 
 @testitem "rules:MatrixNormal:out-M" tags = [:rules] begin
@@ -27,7 +27,7 @@
                 # E[U⁻¹]⁻¹ = Ψ/ν for an InverseWishart(ν, Ψ).
                 q(MatrixNormal([1.0 2.0; 3.0 4.0], [2.0 0.5; 0.5 3.0], [1.0 0.0; 0.0 2.0]), InverseWishart(5.0, [2.0 0.0; 0.0 2.0]), InverseWishart(4.0, I2)) =>
                     MatrixNormal([1.0 2.0; 3.0 4.0], [2 / 5 0.0; 0.0 2 / 5], [1 / 4 0.0; 0.0 1 / 4]),
-                # A known `src`, which v6 did not accept here.
+                # A known `src`.
                 q(PointMass([1.0 2.0; 3.0 4.0]), InverseWishart(5.0, [2.0 0.0; 0.0 2.0]), PointMass([1.0 0.0; 0.0 2.0])) =>
                     MatrixNormal([1.0 2.0; 3.0 4.0], [2 / 5 0.0; 0.0 2 / 5], [1.0 0.0; 0.0 2.0]),
             ],
@@ -45,8 +45,8 @@ end
     U3, V2 = [0.5 0.0 0.0; 0.0 0.5 0.0; 0.0 0.0 0.5], [1.0 0.0; 0.0 0.5]
     q_V, q_U = InverseWishart(5.0, [2.0 0.0; 0.0 2.0]), InverseWishart(6.0, [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0])
     B, A = mean(cholinv, q_V), mean(cholinv, q_U)
-    # v6's cases, with degrees of freedom p - n - 1 = -2 and n - p - 1 = 0 for a 3×2 `out`, and
-    # v6's looser tolerance for the conversions through an InverseWishart.
+    # Degrees of freedom p - n - 1 = -2 and n - p - 1 = 0 for a 3×2 `out`, and a looser
+    # tolerance for the conversions through an InverseWishart.
     @test_message_update_rule(
         node = MatrixNormal, target = :U, atol = 1.0e-3,
         cases = [

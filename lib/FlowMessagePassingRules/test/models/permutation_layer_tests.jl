@@ -1,5 +1,3 @@
-# From v6's `test/nodes/predefined/flow/layers/permutation_layer_tests.jl`.
-
 @testitem "models:Permutation Layer" tags = [:models] begin
     using FlowMessagePassingRules, StableRNGs
     using LinearAlgebra
@@ -20,8 +18,6 @@
         logdet_jacobian,
         logdet_jacobian,
         logabsdet_jacobian
-
-    # v6 drew from the global generator; the port takes an explicit one.
     rng = StableRNG(1)
 
     @testset "Constructor" begin

@@ -1,5 +1,4 @@
-# The Unscented rules against v6's own tables (ReactiveMP 6.5.0's `test/rules/delta/unscented/`), which
-# check no type promotion either. A rule reaches the function through `getnodefn(ctx.node, …)`,
+# The Unscented rules against tables of reference values, which check no type promotion. A rule reaches the function through `getnodefn(ctx.node, …)`,
 # which the engine's node implements; here a test node stands in for it.
 
 @testmodule DeltaTestNode begin

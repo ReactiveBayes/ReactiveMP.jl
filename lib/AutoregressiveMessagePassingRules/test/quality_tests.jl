@@ -19,7 +19,7 @@ end
     @test "MessagePassingRulesBase" in closure
     @test "StandardMessagePassingRules" in closure
     @test !("ReactiveMP" in closure)
-    # v6's energy used LazyArrays for one index vector; it is gone.
+    # The energy builds its index vector without LazyArrays.
     @test !("LazyArrays" in closure)
     # The test tooling is for tests only, never a dependency of the rules.
     @test !("MessagePassingRulesTestUtils" in closure)

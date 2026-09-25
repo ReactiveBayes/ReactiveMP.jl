@@ -3,8 +3,7 @@ uuid = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
 version = "0.1.0-DEV"
 
 # The autoregressive nodes, AR and ConjugateAR, with their algorithm ARVMP and the companion
-# matrix and standard basis vector their rules use. INVENTORY.md records this package as
-# `node:Autoregressive`.
+# matrix and standard basis vector their rules use.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

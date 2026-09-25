@@ -3691,6 +3691,9 @@ without v6 as reference; history out of code and tests; docs and READMEs; the wo
 wait for the release):
 - *Rule fallbacks and the open rule context — done* (§3.49), with RxInfer's options forwarding
   `context` and `rulefallback`.
+- *History out of the twelve node packages — done* (three subagents, one per group; every diff
+  reviewed: renames and comments only, no assertion touched). Their migration-guide candidates
+  are merged with the docs step.
 
 **Exit criteria**
 - [ ] no mention of phases, steps, cases (a)–(d), the slice, `PLAN.md`, `PHASES.md`,

@@ -1,4 +1,4 @@
-# MvNormalWeightedMeanPrecision: v6's tables, a hand-derived marginal, and v6's node test,
+# MvNormalWeightedMeanPrecision: tables of cases, a hand-derived marginal, and a node test,
 # which checks the energy against MvNormalMeanPrecision's for the same density.
 
 @testitem "rules:MvNormalWeightedMeanPrecision" tags = [:rules] begin

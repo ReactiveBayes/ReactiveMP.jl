@@ -1,4 +1,4 @@
-# MvNormalMeanScaleMatrixPrecision, the multivariate normal with precision γG: v6's tables,
+# MvNormalMeanScaleMatrixPrecision, the multivariate normal with precision γG: tables of cases,
 # and hand-derived cases for the marginal rules and the energy.
 
 @testitem "rules:MvNormalMeanScaleMatrixPrecision:out-μ" tags = [:rules] begin

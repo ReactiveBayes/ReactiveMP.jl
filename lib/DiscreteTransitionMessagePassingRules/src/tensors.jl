@@ -1,4 +1,4 @@
-# The tensor algebra of the node's rules, v6's: multiplying a tensor by a vector or a tensor
+# The tensor algebra of the node's rules: multiplying a tensor by a vector or a tensor
 # along some of its axes, and summing those axes out.
 
 corresponding_size(dim, dims, values) = (occurrence = findfirst(==(dim), dims); occurrence === nothing ? 1 : size(values, occurrence))

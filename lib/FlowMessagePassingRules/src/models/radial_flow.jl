@@ -1,4 +1,4 @@
-# The radial flow, from v6's `coupling_flows/radial_flow.jl`.
+# The radial flow.
 
 @doc raw"""
     RadialFlow(z0, α, β)
@@ -91,10 +91,8 @@ Base.length(f::RadialFlowEmpty{N}) where {N} = return N
 # forward pass through the RadialFlow function (multivariate input)
 function _forward(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
 
-    # fetch values
     z0, α, β = getall(f)
 
-    # calculate result
     denominator = α + norm(input - z0) # Not sure whether this is the correct norm
     denominator /= β
 
@@ -103,7 +101,6 @@ function _forward(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
     result ./= denominator
     result .+= input
 
-    # return result
     return result
 end
 forward(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
@@ -117,10 +114,8 @@ function _forward(
         f::RadialFlow{T1, T2}, input::T3
     ) where {T1 <: Real, T2 <: Real, T3 <: Real}
 
-    # fetch values
     z0, α, β = getall(f)
 
-    # calculate result
     denominator = α + norm(input - z0) # Not sure whether this is the correct norm
     denominator /= β
 
@@ -129,7 +124,6 @@ function _forward(
     result /= denominator
     result += input
 
-    # return result
     return result
 end
 forward(
@@ -155,13 +149,10 @@ function forward!(
         output::T1, f::RadialFlow{T1, T2}, input::T1
     ) where {T1, T2 <: Real}
 
-    # check dimensionality
     @assert length(output) == length(input) "The length of the preallocated vector does not seem to match the length of the input vector."
 
-    # fetch values
     z0, α, β = getall(f)
 
-    # calculate result
     denominator = α + norm(input - z0) # Not sure whether this is the correct norm
     denominator /= β
 
@@ -174,10 +165,8 @@ end
 # jacobian of the RadialFlow function (multivariate input)
 function _jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
 
-    # fetch values
     z0, α, β = getall(f)
 
-    # # calculate result
     diff = input - z0
     result = diff * diff'
     hi = α + norm(diff)
@@ -189,7 +178,6 @@ function _jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
         result[k, k] += βh
     end
 
-    # return result
     return result
 end
 jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
@@ -214,7 +202,6 @@ function _jacobian(
         f::RadialFlow{T1, T2}, input::T3
     ) where {T1 <: Real, T2 <: Real, T3 <: Real}
 
-    # fetch values
     z0, α, β = getall(f)
 
     # calculate result (optimized)
@@ -222,7 +209,6 @@ function _jacobian(
     h = 1 / (α + norm(diff))
     result = 1 + β * h - β * h * h / norm(diff) * diff * diff
 
-    # return result
     return result
 end
 jacobian(
@@ -237,13 +223,10 @@ function jacobian!(
         output::AbstractMatrix{T2}, f::RadialFlow{T1, T2}, input::T1
     ) where {T1, T2 <: Real}
 
-    # check whether the dimensionality is correct
     @assert size(output) == (length(input), length(f.z0)) "The dimensionality of the preallocated jacobian matrix seems incorrect."
 
-    # fetch values
     z0, α, β = getall(f)
 
-    # # calculate result
     diff = input - z0
     for ku in 1:length(diff)
         for kw in 1:length(diff)
@@ -267,15 +250,12 @@ det_jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
 # determinant of the jacobian of the RadialFlow function (univariate input)
 function det_jacobian(f::RadialFlow{T, T}, input::T) where {T <: Real}
 
-    # fetch values
     z0, α, β = getall(f)
 
-    # calculate result
     r = norm(input - z0)
     h = 1 / (α + r)
     result = (1 + β * h - β * h^2 * r) * (1 + β * h)^(length(input) - 1)
 
-    # return result
     return result
 end
 

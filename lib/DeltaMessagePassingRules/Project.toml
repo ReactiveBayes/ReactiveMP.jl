@@ -3,9 +3,7 @@ uuid = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
 version = "0.1.0-DEV"
 
 # The Delta node, z = f(x₁, …, xₙ) for a deterministic function f: its declaration, its own
-# algorithm (the approximation method and an optional known inverse, v6's DeltaMeta) and its
-# rules. The engine owns the node object, the function and its static inputs, and reaches the
-# function for a rule through `getnodefn`. INVENTORY.md records this package as `node:Delta`.
+# algorithm and its rules.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

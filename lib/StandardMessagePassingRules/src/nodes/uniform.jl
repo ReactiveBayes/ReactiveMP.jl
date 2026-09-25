@@ -1,6 +1,6 @@
 @define_factor_node(node = Uniform, type = Stochastic, interfaces = [:out, (:a, aliases = [:α, :left]), (:b, aliases = [:β, :right])])
 
-# Uniform(0, 1) times a Beta is the Beta: v6's special case, which neither package that owns
+# Uniform(0, 1) times a Beta is the Beta, a special case which neither package that owns
 # these types defines. It is piracy, declared as owned in the quality tests, and a candidate
 # for ExponentialFamily.
 BayesBase.default_prod_rule(::Type{<:Uniform}, ::Type{<:Beta}) = PreserveTypeProd(Distribution)

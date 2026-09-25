@@ -1,5 +1,3 @@
-# From v6's `test/rules/autoregressive/x_tests.jl`.
-
 @testitem "rules:AR:x" tags = [:rules] begin
     using AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
 

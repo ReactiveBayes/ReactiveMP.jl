@@ -1,4 +1,4 @@
-# Forward messages are pushed-forward densities, so their log-scale is 0, as v6 annotated.
+# Forward messages are pushed-forward densities, so their log-scale is 0.
 
 @define_message_update_rule(node = *, target = :out, args = (m[:A]::PointMass, m[:in]::PointMass), body = (args) -> PointMass(mean(args.m[:A]) * mean(args.m[:in])))
 

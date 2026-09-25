@@ -1,6 +1,5 @@
-# GaussianCoupling, from v6's `test/rules/gaussian_coupling/` and `test/nodes/predefined/
-# gaussian_coupling_tests.jl`. The messages are the GaBP messages of arXiv:0810.1119 with
-# a = -A[i, j]: ξ = a ⋅ μ, precision -a² ⋅ v, improper by design. v6's cross-checks against
+# GaussianCoupling. The messages are the GaBP messages of arXiv:0810.1119 with
+# a = -A[i, j]: ξ = a ⋅ μ, precision -a² ⋅ v, improper by design. The cross-checks against
 # NormalMeanPrecision's rules are written as their closed forms, N(mean(m), var(m) + 1/w).
 
 @testitem "rules:GaussianCoupling:in-out" tags = [:rules] begin

@@ -4,7 +4,7 @@ version = "0.1.0-DEV"
 
 # BIFM, a time slice of a linear state-space model for backward-information-filter
 # forward-marginal smoothing, and BIFMHelper, which turns its backward pass into the forward
-# one. INVENTORY.md records this package as `node:BIFM`.
+# one.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

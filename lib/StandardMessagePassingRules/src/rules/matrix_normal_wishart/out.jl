@@ -1,4 +1,4 @@
-# Known parameters only, as in v6. ExponentialFamily's constructor promotes the matrices but
+# Known parameters only. ExponentialFamily's constructor promotes the matrices but
 # keeps ν's own float type; a message has one.
 function promoted_matrix_normal_wishart(M, U, V, ν)
     T = promote_type(eltype(M), eltype(U), eltype(V), typeof(ν))

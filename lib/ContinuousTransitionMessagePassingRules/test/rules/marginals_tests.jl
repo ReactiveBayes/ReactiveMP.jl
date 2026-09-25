@@ -1,5 +1,3 @@
-# From v6's `test/rules/continuous_transition/marginals_tests.jl`.
-
 @testitem "rules:ContinuousTransition:marginals" tags = [:rules] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
     using BayesBase: tiny

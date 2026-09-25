@@ -7,7 +7,7 @@ passes the backward message on `out` through, and towards `out` it sends the mar
 `TerminalProdArgument`, the forward pass's starting marginal.
 
 Its rule towards `in` reads the message on `out`, and its rule towards `out` the marginal of
-`in`, as v6 declared: the model keeps `in` and `out` in separate clusters.
+`in`: the model keeps `in` and `out` in separate clusters.
 """
 struct BIFMHelper end
 
@@ -20,6 +20,5 @@ struct BIFMHelper end
 
 @define_message_update_rule(node = BIFMHelper, target = :out, args = (q[:in]::Any,), body = (args) -> TerminalProdArgument(args.q[:in]))
 
-# v6's energy was the entropy of q(in), a trick to cancel its term in a free energy that, for a
-# BIFM model, could not be computed anyway.
+# The free energy of a BIFM model is not supported.
 @define_average_energy(node = BIFMHelper, args = (q[:out]::Any, q[:in]::Any), body = (args) -> throw(BIFMFreeEnergyError(:BIFMHelper)))

@@ -3,7 +3,7 @@ uuid = "a57ce80c-d854-4eb3-973d-f0d0550df039"
 version = "0.1.0-DEV"
 
 # The GaussianCoupling node, the bilinear edge potential of Gaussian belief propagation, and its
-# rules. INVENTORY.md records this package as `node:GaussianCoupling`.
+# rules.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

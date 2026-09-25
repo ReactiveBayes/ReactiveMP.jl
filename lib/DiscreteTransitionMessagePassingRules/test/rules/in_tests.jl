@@ -1,4 +1,3 @@
-# From v6's `test/rules/discrete_transition/in_tests.jl`.
 @testitem "rules:DiscreteTransition:in:Variational Bayes: (q_out::Any, q_a::DirichletCollection)" tags = [
     :rules,
 ] begin
@@ -49,10 +48,9 @@ end
 
     diageye(n) = Matrix{Float64}(I, n, n)
 
-    # v6's 2-interface rule computed `eloga' * probvec(q_out)`, unnormalised log probabilities,
-    # and exponentiated them with `exp` then `normalize!` where its siblings used `softmax!`
-    # (issue #627). Both agree on these inputs, at extreme `q_a` scales too; the generic rule
-    # is pinned to the naive form here.
+    # The naive form computes `eloga' * probvec(q_out)`, unnormalised log probabilities, and
+    # exponentiates them with `exp` then `normalize!`, where the rule uses `softmax!`. Both agree
+    # on these inputs, at extreme `q_a` scales too; the rule is pinned to the naive form here.
     @testset "agrees with the naive form across a wide range of q_a scales" begin
         q_out = PointMass([0.1, 0.4, 0.5])
 

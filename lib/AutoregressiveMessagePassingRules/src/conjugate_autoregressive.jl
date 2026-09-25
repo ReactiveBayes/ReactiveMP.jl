@@ -59,9 +59,8 @@ end
 #
 # and in mean parameters Λ = C, μ = C⁻¹b, α = (3 - d)/2, β = (a - bᵀC⁻¹b)/2. It is improper for
 # order ≥ 3 (α ≤ 0); its product with a prior, the marginal q(w), is the proper MvNormalGamma
-# posterior, since natural parameters add. v6's marginal rule over `w` alone, which computed
-# that posterior from the prior message, is not ported: the engine forms a single interface's
-# marginal from its messages.
+# posterior, since natural parameters add. There is no marginal rule over `w` alone: the engine
+# forms a single interface's marginal from its messages.
 @define_message_update_rule(
     node = ConjugateAR, target = :w, algorithm = ARVMP,
     args = (q[:y, :x]::MultivariateNormalDistributionsFamily,),

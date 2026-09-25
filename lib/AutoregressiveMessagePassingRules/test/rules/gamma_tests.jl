@@ -1,5 +1,3 @@
-# From v6's `test/rules/autoregressive/gamma_tests.jl`.
-
 @testitem "rules:AR:γ" tags = [:rules] begin
     using AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra
 

@@ -19,8 +19,7 @@ column_moment(::PointMass, A, Ψ) = Ψ
 column_moment(q::MatrixNormal, A, Ψ) = ((U, V) = covmats(q); Ψ + dot(A', U) * V)
 
 # (n p log 2π + p E[log |U|] + n E[log |V|] + tr(E[U⁻¹] E[(out - M) E[V⁻¹] (out - M)ᵀ])) / 2.
-# v6 took `q_out` and `q_M` as `Any` and dropped the second moments of anything not a
-# MatrixNormal; they are narrowed to the types whose moments are known.
+# `q_out` and `q_M` are narrowed to the types whose second moments are known.
 @define_average_energy(
     node = MatrixNormal,
     args = (q[:out]::PointOrMatrixNormal, q[:M]::PointOrMatrixNormal, q[:U]::Any, q[:V]::Any),

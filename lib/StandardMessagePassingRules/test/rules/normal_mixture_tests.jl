@@ -54,7 +54,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     import ExponentialFamily: WishartFast
 
-    # v6's tables. Wishart precisions and a two-dimensional `out`; the responsibilities are
+    # Wishart precisions and a two-dimensional `out`; the responsibilities are
     # clamped to [tiny, 1 - tiny], so a one-hot switch agrees to 1e-4.
     W1, W2 = Wishart(3.0, [2.0 -0.25; -0.25 1.0]), Wishart(3.0, [1.0 -0.25; -0.25 2.0])
     @test_message_update_rule(
@@ -84,8 +84,6 @@ end
                 MvNormalWeightedMeanPrecision([0.75, 17.25], [3.0 -0.75; -0.75 6.0]),
         ],
     )
-    # v6 also had cases whose `q_m` and `q_out` precisions are not positive definite; they
-    # are not distributions, and are left out.
     @test_message_update_rule(
         node = NormalMixture, target = (:p, 1), float_types = (Float32, Float64), atol = 1.0e-4,
         cases = [

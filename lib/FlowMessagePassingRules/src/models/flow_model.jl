@@ -1,4 +1,4 @@
-# The flow model and its compiled form, from v6's `flow_models/flow_model.jl`.
+# The flow model and its compiled form.
 
 @doc raw"""
     FlowModel([rng,] dim::Int, layers::Tuple)
@@ -31,8 +31,8 @@ function FlowModel(
     ) where {T <: NTuple{N, AbstractLayerPlaceholder} where {N}}
     return FlowModel(default_rng(), dim, layers)
 end
-# An empty tuple is both a tuple of layers and a tuple of placeholders, which was ambiguous in v6:
-# a model without layers.
+# An empty tuple is both a tuple of layers and a tuple of placeholders; this
+# method resolves it: a model without layers.
 FlowModel(dim::Int, layers::Tuple{}) = FlowModel{0, Tuple{}}(dim, layers)
 function FlowModel(
         rng::AbstractRNG, dim::Int, layers::T
@@ -59,7 +59,7 @@ function FlowModel(
 end
 
 # prepare function for setting correct sizes in the layers (without assigning the parameters yet!),
-# in order, each layer drawing from `rng`; v6 broadcast `prepare.(dim, layers)` for it
+# in order, each layer drawing from `rng`
 prepare(
     rng::AbstractRNG, dim::Int, layers::T
 ) where {
@@ -117,15 +117,12 @@ Return arguments
 """
 function compile(model::FlowModel, params::Vector)
 
-    # assert whether the parameter vector complies with the model
     @assert nr_params(model) == length(params) "The number of parameters in the model does not match the passed number of parameters."
 
-    # compile layers
     return CompiledFlowModel(getdim(model), compile(getlayers(model), params))
 end
 function compile(x::Tuple, params::Vector)
 
-    # fetch number of parameters in layer
     params_in_layer = nr_params(first(x))
 
     if params_in_layer > 0
@@ -194,16 +191,12 @@ function _forward(
         model::CompiledFlowModel, input::AbstractVector{T}
     ) where {T <: Real}
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
-    # allocate space for result
     output = zeros(Ti, size(input))
 
-    # perform calculations
     forward!(output, model, input)
 
-    # return result
     return output
 end
 
@@ -225,17 +218,14 @@ function forward!(
         input::AbstractVector{T},
     ) where {T <: Real}
 
-    # fetch layers
     layers = getlayers(model)
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
     # decouple changing input from actual input
     input_new = zeros(Ti, size(input))
     input_new .= input
 
-    # perform forward pass over all layers
     return forward!(output, layers, input_new)
 end
 
@@ -244,13 +234,10 @@ function forward!(
         output::AbstractVector{<:Real}, layers::T, input::AbstractVector{<:Real}
     ) where {T <: NTuple{N, AbstractLayer} where {N}}
 
-    # perform pass over first layer
     forward!(output, first(layers), input)
 
-    # update intermediate input
     input .= output
 
-    # perform pass over all remaining layers
     return forward!(output, Base.tail(layers), input)
 end
 
@@ -266,16 +253,12 @@ function _backward(
         model::CompiledFlowModel, output::AbstractVector{T}
     ) where {T <: Real}
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
-    # allocate space for result
     input = zeros(Ti, size(output))
 
-    # perform calculations
     backward!(input, model, output)
 
-    # return result
     return input
 end
 
@@ -297,17 +280,14 @@ function backward!(
         output::AbstractVector{T},
     ) where {T <: Real}
 
-    # fetch layers
     layers = getlayers(model)
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
     # decouple changing output from actual output
     output_new = zeros(Ti, size(output))
     output_new .= output
 
-    # perform backward pass over all layers
     return backward!(input, layers, output_new)
 end
 
@@ -316,13 +296,10 @@ function backward!(
         input::AbstractVector{<:Real}, layers::T, output::AbstractVector{<:Real}
     ) where {T <: NTuple{N, AbstractLayer} where {N}}
 
-    # perform pass over last layer
     backward!(input, last(layers), output)
 
-    # update intermediate output
     output .= input
 
-    # perform pass over all remaining layers
     return backward!(input, Base.front(layers), output)
 end
 
@@ -338,23 +315,18 @@ function _forward_jacobian(
         model::CompiledFlowModel, input::AbstractVector{T}
     ) where {T <: Real}
 
-    # fetch layers
     dim = getdim(model)
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
-    # allocate space for output and jacobian
     output = zeros(Ti, dim)
     J = zeros(Ti, dim, dim)
     for k in 1:dim
         J[k, k] = one(Ti)
     end
 
-    # calculate jacobian
     forward_jacobian!(output, J, model, input)
 
-    # return result
     return output, J
 end
 
@@ -377,14 +349,11 @@ function forward_jacobian!(
         input::AbstractVector{<:Real},
     ) where {T <: Real}
 
-    # fetch layers
     layers = getlayers(model)
     dim = getdim(model)
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
-    # allocate space for intermediate output and jacobian
     input_new = zeros(Ti, dim)
     input_new .= input
     J_new = zeros(Ti, dim, dim)
@@ -393,7 +362,6 @@ function forward_jacobian!(
         J_old[k, k] = one(Ti)
     end
 
-    # calculate forward_jacobian over all layers
     return forward_jacobian!(J, J_new, J_old, output, input_new, layers)
 end
 
@@ -407,20 +375,16 @@ function forward_jacobian!(
         layers::T,
     ) where {T <: NTuple{N, AbstractLayer} where {N}}
 
-    # perform pass through first layers
     forward_jacobian!(J, J_new, J_old, output, input_new, first(layers))
 
     # update unless we are on the last layer
     if length(layers) > 1
 
-        # update intermediate input
         input_new .= output
 
-        # update old jacobian
         J_old .= J
     end
 
-    # calculate forward_jacobian of remaining layers
     return forward_jacobian!(J, J_new, J_old, output, input_new, Base.tail(layers))
 end
 
@@ -433,10 +397,8 @@ function forward_jacobian!(
         input_new::AbstractVector{<:Real},
         layer::PermutationLayer,
     )
-    # calculate new output
     forward!(output, layer, input_new)
 
-    # calculate total jacobian
     return mul!(J, jacobian(layer, input_new), J_old)
 end
 
@@ -449,10 +411,8 @@ function forward_jacobian!(
         input_new::AbstractVector{<:Real},
         layer::AbstractLayer,
     )
-    # calculate new jacobian
     forward_jacobian!(output, J_new, layer, input_new)
 
-    # calculate total jacobian
     return mul!(J, J_new, J_old)
 end
 
@@ -471,23 +431,18 @@ function _backward_inv_jacobian(
         model::CompiledFlowModel, output::AbstractVector{T}
     ) where {T <: Real}
 
-    # fetch layers
     dim = getdim(model)
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
-    # allocate space for jacobian
     J = zeros(Ti, dim, dim)
     input = zeros(Ti, dim)
     for k in 1:dim
         J[k, k] = one(Ti)
     end
 
-    # calculate jacobian
     backward_inv_jacobian!(input, J, model, output)
 
-    # return result
     return input, J
 end
 
@@ -511,14 +466,11 @@ function backward_inv_jacobian!(
         output::AbstractVector{<:Real},
     ) where {T <: Real}
 
-    # fetch layers
     layers = getlayers(model)
     dim = getdim(model)
 
-    # promote type for allocating output
     Ti = promote_type(eltype(model), T)
 
-    # allocate space for intermediate output and jacobian
     output_new = zeros(Ti, dim)
     output_new .= output
     J_new = zeros(Ti, dim, dim)
@@ -527,7 +479,6 @@ function backward_inv_jacobian!(
         J_old[k, k] = one(Ti)
     end
 
-    # calculate backward inverse jacobian over all layers
     return backward_inv_jacobian!(J, J_new, J_old, input, output_new, layers)
 end
 
@@ -541,20 +492,16 @@ function backward_inv_jacobian!(
         layers::T,
     ) where {T <: NTuple{N, AbstractLayer} where {N}}
 
-    # perform backward pass through layers
     backward_inv_jacobian!(J, J_new, J_old, input, output_new, last(layers))
 
     # update unless we are on the last/first layer
     if length(layers) > 1
 
-        # update intermediate output
         output_new .= input
 
-        # update old jacobian
         J_old .= J
     end
 
-    # calculate backward inv jacobian of remaining layers
     return backward_inv_jacobian!(
         J, J_new, J_old, input, output_new, Base.front(layers)
     )
@@ -569,10 +516,8 @@ function backward_inv_jacobian!(
         output_new::AbstractVector{<:Real},
         layer::PermutationLayer,
     )
-    # perform forward pass over last layer
     backward!(input, layer, output_new)
 
-    # calculate total jacobian
     return mul!(J, inv_jacobian(layer, output_new), J_old)
 end
 
@@ -585,10 +530,8 @@ function backward_inv_jacobian!(
         output_new::AbstractVector{<:Real},
         layer::AbstractLayer,
     )
-    # perform forward pass over last layer
     backward_inv_jacobian!(input, J_new, layer, output_new)
 
-    # calculate total jacobian
     return mul!(J, J_new, J_old)
 end
 
@@ -625,40 +568,32 @@ function jacobian!(
         J::AbstractMatrix{T1}, model::CompiledFlowModel, input::AbstractVector{T2}
     ) where {T1 <: Real, T2 <: Real}
 
-    # fetch dimension
     dim = getdim(model)
 
-    # promote type for allocating output
     T = promote_type(eltype(model), T1, T2)
 
-    # allocate space for output and jacobian
     output = zeros(T, dim)
     J .= zero(T1)
     for k in 1:dim
         J[k, k] = one(T1)
     end
 
-    # calculate jacobian
     return forward_jacobian!(output, J, model, input)
 end
 function inv_jacobian!(
         J::AbstractMatrix{T1}, model::CompiledFlowModel, output::AbstractVector{T2}
     ) where {T1 <: Real, T2 <: Real}
 
-    # fetch dimension
     dim = getdim(model)
 
-    # promote type for allocating output
     T = promote_type(eltype(model), T1, T2)
 
-    # allocate space for input and jacobian
     input = zeros(T, dim)
     J .= zero(T1)
     for k in 1:dim
         J[k, k] = one(T1)
     end
 
-    # calculate jacobian
     return backward_inv_jacobian!(input, J, model, output)
 end
 

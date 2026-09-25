@@ -1,5 +1,3 @@
-# From v6's `test/nodes/predefined/flow/coupling_flows/radial_flow_tests.jl`.
-
 @testitem "models:Radial Flow" tags = [:models] begin
     using FlowMessagePassingRules, StableRNGs
     using FlowMessagePassingRules: getdim, getz0, getα, getβ, getall, setz0!, setα!, setβ!
@@ -11,8 +9,6 @@
         logdet_jacobian,
         logdet_jacobian,
         logabsdet_jacobian
-
-    # v6 drew from the global generator; the port takes an explicit one.
     rng = StableRNG(1)
 
     @testset "Constructor" begin

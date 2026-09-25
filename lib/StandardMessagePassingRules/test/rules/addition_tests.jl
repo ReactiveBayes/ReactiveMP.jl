@@ -1,4 +1,4 @@
-# `+`: v6's tables, converted; the joint of two Gaussian inputs is one MvNormalWeightedMeanPrecision.
+# `+`: tables of cases; the joint of two Gaussian inputs is one MvNormalWeightedMeanPrecision.
 
 @testitem "rules:+:out" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
@@ -207,12 +207,12 @@ end
     )
 end
 
-@testitem "rules:+:untested-in-v6" tags = [:rules] begin
+@testitem "rules:+:weighted-mean inputs" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
 
     I2 = [1.0 0.0; 0.0 1.0]
-    # in1 = out - in2 for two weighted-mean messages: E[out] = (1, 2), E[in2] = (1, 1), where v6's
-    # BLAS specialisation gave E[in2] - E[out] (ReactiveMP.jl#677).
+    # in1 = out - in2 for two weighted-mean messages: E[out] = (1, 2), E[in2] = (1, 1), so
+    # E[in1] = E[out] - E[in2], not E[in2] - E[out].
     @test_message_update_rule(
         node = +, target = :in1,
         cases = [(m = (out = MvNormalWeightedMeanPrecision([2.0, 4.0], 2 * I2), in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], I2)),) => MvNormalMeanCovariance([0.0, 1.0], 1.5 * I2)],

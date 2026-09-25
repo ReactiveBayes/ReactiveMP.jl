@@ -51,9 +51,9 @@ LinearAlgebra.inv(mat::PermutationMatrix) = adjoint(mat)
 const InversePermutation = Union{Adjoint{<:Integer, <:PermutationMatrix}, Transpose{<:Integer, <:PermutationMatrix}}
 const AnyPermutation = Union{PermutationMatrix, InversePermutation}
 
-# The matrices a permutation multiplies: dense ones and their adjoints and transposes. v6 took any
-# `AbstractMatrix`, which a permutation is too, so its `P * X` and `X * P` both matched a product
-# of two permutations: 18 ambiguities, and 119 with ArrayLayouts loaded.
+# The matrices a permutation multiplies: dense ones and their adjoints and transposes. Not any
+# `AbstractMatrix`, which a permutation is too, so that `P * X` and `X * P` do not both match a
+# product of two permutations, which would be ambiguous.
 const DenseOperand = Union{StridedMatrix, Adjoint{<:Any, <:StridedMatrix}, Transpose{<:Any, <:StridedMatrix}}
 
 # Likewise for vectors: dense ones, since FillArrays' zeros, which BayesBase loads, have their own
@@ -124,7 +124,7 @@ function LinearAlgebra.mul!(Y::AbstractMatrix, X::DenseOperand, P::InversePermut
     return Y
 end
 
-# Two permutations: another permutation, with the indices composed. v6 had no method for it.
+# Two permutations: another permutation, with the indices composed.
 Base.:*(a::AnyPermutation, b::AnyPermutation) = PermutationMatrix(getind(b)[getind(a)])
 LinearAlgebra.mul!(Y::AbstractMatrix, a::AnyPermutation, b::AnyPermutation) = copyto!(Y, a * b)
 

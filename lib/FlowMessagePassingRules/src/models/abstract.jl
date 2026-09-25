@@ -1,5 +1,5 @@
 # The abstract types a flow model is built from, and the functions the Flow node's rules call on a
-# compiled model. From v6's `nodes/predefined/flow/flow.jl`.
+# compiled model.
 
 abstract type AbstractFlowModel end
 abstract type AbstractCompiledFlowModel end

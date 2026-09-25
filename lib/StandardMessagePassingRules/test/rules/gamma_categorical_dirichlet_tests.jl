@@ -77,7 +77,7 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     using SpecialFunctions: loggamma
 
-    # v6's tables. E[log β] under GammaShapeRate(1, 1) is -γₑ, the Euler–Mascheroni constant.
+    # E[log β] under GammaShapeRate(1, 1) is -γₑ, the Euler–Mascheroni constant.
     γₑ = 0.5772156649015315
     @test_message_update_rule(
         node = GammaShapeRate, target = :α,
@@ -114,7 +114,6 @@ end
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     using BayesBase: tiny
 
-    # v6's tables.
     @test_marginal_update_rule(
         node = Categorical, target = (:out, :p), float_types = (Float32, Float64),
         cases = [
@@ -132,7 +131,7 @@ end
         ],
     )
 
-    # Towards `p` from anything but a Categorical or a one-hot point mass is an error, as in v6.
+    # Towards `p` from anything but a Categorical or a one-hot point mass is an error.
     @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = PointMass(1.0),))
     @test_throws ArgumentError call_message_update_rule(Categorical, :p; q = (out = 1.0,))
 end
@@ -140,7 +139,6 @@ end
 @testitem "rules:Dirichlet:marginals" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
 
-    # v6's tables.
     @test_marginal_update_rule(
         node = Dirichlet, target = (:out, :a),
         cases = [

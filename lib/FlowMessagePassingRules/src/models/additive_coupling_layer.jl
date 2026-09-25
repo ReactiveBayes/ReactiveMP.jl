@@ -1,4 +1,4 @@
-# The additive coupling layer, from v6's `layers/additive_coupling_layer.jl`.
+# The additive coupling layer.
 
 @doc raw"""
     AdditiveCouplingLayer(flow; partition_dim::Int = 1, permute::Bool = true)
@@ -120,13 +120,10 @@ Base.eltype(layer::AdditiveCouplingLayer{T}) where {T} =
 # forward pass through the additive coupling layer
 function _forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real})
 
-    # allocate result
     result = similar(input)
 
-    # calculate result
     forward!(result, layer, input)
 
-    # return result
     return result
 end
 forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) =
@@ -144,12 +141,10 @@ function forward!(
         input::AbstractVector{<:Real},
     )
 
-    # fetch variables
     f = getf(layer)
     dim = getdim(layer)
     pdim = getpartitiondim(layer)
 
-    # check dimensionality
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
     # optimized version for scalar partition dimension
@@ -175,13 +170,10 @@ end
 # backward pass through the additive coupling layer
 function _backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real})
 
-    # allocate result
     result = similar(output)
 
-    # calculate result
     backward!(result, layer, output)
 
-    # return result
     return result
 end
 backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) =
@@ -199,15 +191,12 @@ function backward!(
         output::AbstractVector{<:Real},
     )
 
-    # fetch variables
     f = getf(layer)
     dim = getdim(layer)
     pdim = getpartitiondim(layer)
 
-    # check dimensionality
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
-    # determine result
     return if pdim == 1
         input[1] = output[1]
         for k in 2:dim
@@ -232,17 +221,13 @@ function _jacobian(
         layer::AdditiveCouplingLayer, input::AbstractVector{T}
     ) where {T <: Real}
 
-    # fetch variables
     dim = getdim(layer)
 
-    # allocate jacobian
     Ti = promote_type(eltype(layer), T)
     result = zeros(Ti, dim, dim)
 
-    # determine result
     jacobian!(result, layer, input)
 
-    # return result
     return LowerTriangular(result)
 end
 jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) =
@@ -260,15 +245,12 @@ function jacobian!(
         input::AbstractVector{<:Real},
     ) where {T <: Real}
 
-    # fetch variables
     f = getf(layer)
     dim = getdim(layer)
     pdim = getpartitiondim(layer)
 
-    # check dimensionality
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
-    # determine result
     result .= zero(T)
     for k in 1:(dim ÷ pdim)
         result[k, k] = one(T)
@@ -286,17 +268,13 @@ function _inv_jacobian(
         layer::AdditiveCouplingLayer, output::AbstractVector{T}
     ) where {T <: Real}
 
-    # fetch variables
     dim = getdim(layer)
 
-    # allocate jacobian
     Ti = promote_type(eltype(layer), T)
     result = zeros(Ti, dim, dim)
 
-    # determine result
     inv_jacobian!(result, layer, output)
 
-    # return result
     return LowerTriangular(result)
 end
 inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) =
@@ -314,18 +292,15 @@ function inv_jacobian!(
         output::AbstractVector{<:Real},
     ) where {T <: Real}
 
-    # fetch variables
     f = getf(layer)
     dim = getdim(layer)
     pdim = getpartitiondim(layer)
 
-    # check dimensionality
     @assert length(output) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
     # calculate input of layer for simpler jacobian calculation
     input = backward(layer, output)
 
-    # determine result
     result .= zero(T)
     for k in 1:(dim ÷ pdim)
         result[k:end, k] .= one(T)

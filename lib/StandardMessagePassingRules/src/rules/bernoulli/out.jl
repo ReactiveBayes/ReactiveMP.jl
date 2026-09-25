@@ -19,7 +19,7 @@
     body = (args) -> Bernoulli(mean(args.q[:p])),
 )
 
-# exp(E[log p]) against exp(E[log(1 - p)]), normalised; v6 clamps it to [tiny, 1].
+# exp(E[log p]) against exp(E[log(1 - p)]), normalised and clamped to [tiny, 1].
 @define_message_update_rule(
     node = Bernoulli, target = :out,
     args = (q[:p]::Any,),

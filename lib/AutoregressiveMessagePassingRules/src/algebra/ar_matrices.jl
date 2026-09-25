@@ -4,9 +4,8 @@
 # the precision, γ at [1, 1] and `huge` on the rest of the diagonal, a regularised inverse of
 # it. Both are internal. `add_transition` and `add_precision` add one to a matrix, into a new
 # one or, with `!`, in place; for a univariate AR(1) they are scalars and the sum is plain.
-# v6 overloaded `broadcast!(+, matrix, noise)` to mean the in-place sum, which is not what
-# broadcasting means (`broadcast!(+, dest, A)` sets `dest` to `A`); the `!` functions do it
-# instead, and `broadcast` itself is the generic one.
+# `broadcast!` is not overloaded for the in-place sum, since `broadcast!(+, dest, A)` sets `dest`
+# to `A`; the `!` functions do it instead, and `broadcast` itself is the generic one.
 
 struct ARTransitionMatrix{T <: Real} <: AbstractMatrix{T}
     order::Int

@@ -50,8 +50,8 @@ end
 )
 
 # Towards `a`, from E[x yᵀ] and E[x xᵀ]; the Jacobians are taken at the mean of `q(a)`, which is
-# why this rule reads it. The offset O of the linearised A enters as E[x (y - O x)ᵀ]; v6 left it
-# out, which is exact only for an `f` linear through the origin.
+# why this rule reads it. The offset O of the linearised A enters as E[x (y - O x)ᵀ], which
+# leaving it out would make exact only for an `f` linear through the origin.
 function ct_towards_a(algo, Exy, Exx, q_a, q_W)
     ma = mean(q_a)
     mW = mean(q_W)
@@ -100,8 +100,8 @@ function ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)
 end
 
 # Towards `W`: a Wishart with dy + 2 degrees of freedom and the inverse scale
-# E[(y - A x)(y - A x)ᵀ], the energy's. v6's took the rows of A as (Fᵢ a)ᵀ there, which drops the
-# offset of an affine or nonlinear `f`.
+# E[(y - A x)(y - A x)ᵀ], the energy's, with the rows of A as Oᵢ + (Fᵢ a)ᵀ so that the offset of an
+# affine or nonlinear `f` is kept.
 @define_message_update_rule(
     node = ContinuousTransition, target = :W, algorithm = CTVMP,
     args = (q[:y, :x]::MultivariateNormalDistributionsFamily, q[:a]::MultivariateNormalDistributionsFamily),
@@ -145,9 +145,7 @@ end
 )
 
 # ⟨-log N(y; A x, W⁻¹)⟩ = dy/2 log 2π - ⟨log det W⟩/2 + tr(⟨W⟩ E[(y - A x)(y - A x)ᵀ])/2.
-# v6 wrote it with three errors, each checked against Monte Carlo in 6.5.0: ⟨log det W⟩ not
-# halved, the dimension taken as half of q(y)'s (mean-field) or of q(y, x)'s (structured), and
-# the identity where the uncertainty of `a` meets E[x xᵀ] = Vx + mx mxᵀ.
+# The dimension is that of `y`, and the uncertainty of `a` meets E[x xᵀ] = Vx + mx mxᵀ.
 ct_energy(algo, my, Vy, mx, Vx, Vyx, q_a, q_W) =
     StandardMessagePassingRules.gaussian_energy(length(my), tr(mean(q_W) * ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)) - mean(logdet, q_W))
 

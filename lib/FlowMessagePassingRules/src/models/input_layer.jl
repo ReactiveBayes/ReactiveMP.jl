@@ -1,4 +1,4 @@
-# The input layer, from v6's `layers/input_layer.jl`.
+# The input layer.
 
 @doc raw"""
     InputLayer(dim::Int)

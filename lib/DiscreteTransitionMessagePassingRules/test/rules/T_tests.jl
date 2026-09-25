@@ -1,12 +1,10 @@
-# From v6's `test/rules/discrete_transition/t_tests.jl`.
 @testitem "rules:DiscreteTransition:T:Belief Propagation (m_out::Categorical, m_in::Categorical, q_a::PointMass)" tags = [
     :rules,
 ] begin
     using DiscreteTransitionMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Random
 
-    # v6's rules for a point-mass `q(a)` and messages only clamped `A` to at most one, and this
-    # `A`, with entries above one, clamped to all ones: v6 expected a uniform message. The
-    # generic rule contracts `A` itself, Σ A[out, in, T1] m_out m_in, normalised.
+    # An `A` with entries above one is not clamped to at most one: the rule contracts `A`
+    # itself, Σ A[out, in, T1] m_out m_in, normalised, so the message is not uniform.
     A = [
         1.0 6.0 32.0; 2.0 2.0 9.0; 5.0 5.0 6.0;;;
         9.0 5.0 6.0; 4.0 10.0 6.0; 10.0 6.0 32.0;;;
@@ -32,7 +30,7 @@
         ],
     )
 
-    # An integer `A` takes the float type of the messages, as in v6.
+    # An integer `A` takes the float type of the messages.
     A_int = [
         1 0 0; 0 1 0; 0 0 1;;;
         1 0 0; 0 1 0; 0 0 1;;;
@@ -1045,10 +1043,8 @@ end
 
     # Test T3 interface with 5 interfaces (BP with DirichletCollection q_a)
     @testset "Belief Propagation: T3 with 5 interfaces (DirichletCollection q_a)" begin
-        # v6's rule for these inputs normalised `exp(E[log A])` along `out` alone, `softmax!(…; dims = 1)`,
-        # where every other rule normalises it globally: a v6 bug. v6 expected
-        # [0.3327791834414443, 0.33479029996811277, 0.332430516590443] and
-        # [0.3405707102171213, 0.32860320985809627, 0.3308260799247824]; the expected message is Σ exp(E[log A])[out, in, T1, T2, T3] m_out m_in m_T1 m_T2, normalised.
+        # `exp(E[log A])` is normalised globally, as in every other rule, not along `out` alone:
+        # the expected message is Σ exp(E[log A])[out, in, T1, T2, T3] m_out m_in m_T1 m_T2, normalised.
         function reference(inputs)
             tensor = exp.(mean(Base.Broadcast.BroadcastFunction(BayesBase.clamplog), inputs.q.a))
             m_out, m_in = probvec(inputs.m.out), probvec(inputs.m.in)

@@ -3,8 +3,7 @@ uuid = "fdfab25d-afbd-4817-865a-cd280c067f5e"
 version = "0.1.0-DEV"
 
 # The SoftDot node, y ~ N(θᵀx, γ⁻¹), a Gaussian-softened dot product, with its variational
-# rules. Independent of the autoregressive package: what it took from AR is written out here.
-# INVENTORY.md records this package as `node:SoftDot`.
+# rules. Independent of the autoregressive package: what it needs from AR is written out here.
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"

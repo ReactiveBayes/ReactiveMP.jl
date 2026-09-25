@@ -11,7 +11,7 @@ struct GCV end
     GCVApproximation(; method = GaussHermiteCubature(20))
 
 [`GCV`](@ref)'s algorithm: `method` is the cubature of the [`ExponentialLinearQuadratic`](@ref)
-messages towards `z`, `κ` and `ω`. v6 called it `GCVMetadata`.
+messages towards `z`, `κ` and `ω`.
 """
 struct GCVApproximation{M <: AbstractApproximationMethod} <: AbstractAlgorithm
     method::M

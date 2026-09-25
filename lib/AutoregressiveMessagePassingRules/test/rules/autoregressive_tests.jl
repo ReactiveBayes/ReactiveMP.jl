@@ -1,12 +1,11 @@
-# From v6's `test/nodes/predefined/autoregressive_tests.jl`: the node's average energy, its
-# algorithm and its noise matrices.
+# The node's average energy, its algorithm and its noise matrices.
 
 @testitem "AR: average energy" tags = [:rules] begin
     using AutoregressiveMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
 
     diageye(n) = Matrix{Float64}(I, n, n)
 
-    # v6 compared its energies without type promotion; `0.5log2π` is a Float64 literal.
+    # Compared without type promotion: `0.5log2π` is a Float64 literal.
     @test_average_energy(
         node = AR, algorithm = ARVMP(Univariate, 1, ARsafe()), check_type_promotion = false,
         cases = [
@@ -16,7 +15,7 @@
         ],
     )
 
-    # v6 left the multivariate energies untested. With q(y, x) the product of q(y) and q(x),
+    # With q(y, x) the product of q(y) and q(x),
     # the structured energy is the mean-field one: the cross-covariance is zero, and both
     # corrections take out the entropy of y[2:end].
     @testset "multivariate: structured over independent q(y) q(x) is mean-field" begin
@@ -68,7 +67,7 @@ end
     algo = @test_logs (:warn, r"order is forced to 1") ARVMP(Univariate, 3, ARsafe())
     @test getorder(algo) == 1
 
-    # v6's `default_meta(AR)` threw; the node declares no algorithm, and its default has no rules.
+    # The node declares no algorithm, and its default has no rules.
     @test MessagePassingRulesBase.default_algorithm(AR) === DefaultAlgorithm()
     @test Autoregressive === AR
     @test MessagePassingRulesBase.alias_interface(AR, :out) === :y
@@ -95,8 +94,7 @@ end
             @test add_transition(matrix, transition) == (matrix + ftransition)
             @test_throws DimensionMismatch add_transition(zeros(order + 1, order + 1), transition)
 
-            # v6 overloaded `broadcast!(+, matrix, transition)` to add in place; the port keeps
-            # broadcasting's own meaning and adds in place with `add_transition!`.
+            # Broadcasting keeps its own meaning; `add_transition!` adds in place.
             cmatrix = copy(matrix)
             @test add_transition!(cmatrix, transition) === cmatrix
             @test cmatrix == (matrix + ftransition)
