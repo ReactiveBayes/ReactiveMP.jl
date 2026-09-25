@@ -21,7 +21,8 @@ one.
 
 ## Next action
 
-**Phase 7: complete the engine** (§ Phase 7), starting with its entry brief. **Phase 6 is
+**Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
+brief*), and awaits the user's answers to its open questions. **Phase 6 is
 closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
 with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
 deleted.
@@ -101,7 +102,7 @@ generic ones, and no comments that only narrate.
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
 | 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
-| 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | not started |
+| 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | entry brief written |
 | C | Cleanup: the repository rid of historical remarks, before the release | not started |
 | 8 | Release and downstream coordination | not started |
 
@@ -3406,8 +3407,8 @@ ported the rules. The items that moved to Phase 4.5 are group stream wiring, the
 envelope, edge order, `EdgeLabel.index` (#7) and the mixture `reverse` (#6).
 
 Known scope:
-- [ ] every node supported, as Phases 5–6 port their rules out of `legacy/v6/`. The mixtures'
-      per-node `activate!` is already gone: step 4's generic activation replaces it
+- [x] every node supported, as Phases 5–6 port their rules out of `legacy/v6/`. The mixtures'
+      per-node `activate!` is already gone: step 4's generic activation replaces it *(Phase 6)*
 - [ ] `EqualityChain` `BitVector` → `Vector{Bool}`
 - [ ] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
 - [ ] RxInfer adapted to the new engine, as its own major release: node and rule creation,
@@ -3447,6 +3448,56 @@ Known scope:
       job for `DeltaMessagePassingRules`
 - [ ] explicit checks on scheduling order, annotations, retained values and free energy —
       not just numerical rule equality — for every ported node, against recorded v6 fixtures
+
+### Entry brief
+
+**Surveyed** (2026-09-25, after Phase 6 closed):
+- **Every node supported:** done, by Phases 5–6; the item is ticked.
+- **Aqua's `ambiguities`:** `Test.detect_ambiguities(ReactiveMP; recursive = true)` finds **one**
+  pair, where `main` had 322: `getdata(::NTuple{N, <:Message})` (`src/message.jl:129`) and its
+  `Marginal` twin (`src/marginal.jl:132`) both match the empty tuple. A `getdata(::Tuple{}) = ()`
+  removes it, and the check can be switched on. Every lib suite already asserts none of its own.
+- **`EqualityChain`:** four `BitVector` caches (`src/nodes/equality.jl:69–70, 158–159`), whose
+  bit-packed writes race under threads (`DISCUSSION.md` §3.6). Mechanical.
+- **Engine diagnostics:** none exist in the engine. The base has `check_rules`,
+  `check_rule_ambiguities` and `check_factorized_cluster`, and every `RuleSpec` carries `pure` and
+  `inplace`, so an audit reads what resolution returns. `PLAN.md` § Engine diagnostics has the
+  design: opt-in, off by default, naming the offending rule.
+- **Engine fixtures:** 26 of them reach 31 node types. None reaches the arithmetic nodes (`+`,
+  `-`, `*`, `dot`), `Beta`, `ConjugateAR`, `GammaInverse`, `GammaMixture`, `HalfNormal`,
+  `InverseWishart`, `MatrixNormal`, `MatrixNormalWishart`, `MvNormalGamma`,
+  `MvNormalMeanScalePrecision`, `MvNormalWishart`, `Poisson`, `Uniform`, `Uninformative` or
+  `Shift`. Their rules are compared with v6 one by one; the last criterion asks for graph-level
+  checks too.
+- **Workflows:** seven files; `ci.yml` still runs the 1.10 matrix, and `LibTests.yml` has jobs for
+  the Phase 4–5 packages only, with a v6-comparison job on 1.10.
+- **RxInfer:** the local checkout is 5.5.0 (`main`, 2026-06-18). Its `src/` names 52 distinct
+  `ReactiveMP.` symbols in 15 files, mostly events and callbacks, form constraints, activation and
+  the variables; it defines no rule or node. The list above says what changed under it. Its
+  `test/models` and RxInferExamples are the integration check.
+- **Rows of the not-done table pointing here:** the RNG as an activation option and `*`'s number
+  of samples; the Delta `LibTests` job (with the workflows); the log-scale rows (the milestone).
+
+**Proposed order**, one commit per item, test first, open to the user's correction:
+1. **The small engine items:** the ambiguity fixed and `ambiguities` switched on;
+   `EqualityChain`'s caches as `Vector{Bool}`.
+2. **Engine diagnostics:** `check_everything_pure` and `check_everything_inplace` as activation
+   options, each erroring or reporting with the rule's node, target and inputs; checked buffers,
+   poisoning a recycled in-place output.
+3. **The RNG as an activation option**, the engine's `Random.default_rng()` its default, and
+   `*`'s number of samples as a field of its algorithm.
+4. **Engine fixtures** for the nodes listed above, recorded from v6 as before.
+5. **The workflows:** 1.13, the `lib/` layout, a `LibTests` job per package, the comparisons on
+   1.13. They run only on a PR, so this is checked by reading and by `act` if available.
+6. **RxInfer adapted**, on a branch of RxInfer.jl wired to this branch with `[sources]`, as its own
+   major release; its suite and a set of RxInferExamples models are the check. The largest item,
+   with a brief of its own.
+7. **The log-scale milestone:** fixed or dropped, the user's decision (§3.37).
+
+**Open, for the user:** whether log scales are fixed or dropped, and whether now or last; whether
+RxInfer's adaptation is done in this phase, on a local branch, or deferred; and whether the
+diagnostics are activation options that RxInfer forwards (the default) or a separate pass over a
+built graph.
 
 ---
 
