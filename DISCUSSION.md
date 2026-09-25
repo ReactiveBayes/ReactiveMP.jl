@@ -1797,6 +1797,21 @@ user.
   folds and a point mass with nothing to sum out skips the logarithm and the exponential, the
   generic rule is within 1.0–1.6 times v6's explicit ones from ten states on.
 
+### 3.46 Phase 7's three decisions (user, 2026-09-25)
+
+The entry brief asked three questions, and the user answered:
+- **Log scales are fixed, not dropped.** §3.37 left the choice to this milestone. Dropping would
+  have taken Mixture's rules with it, since its switch is a softmax over incoming log scales.
+  Fixing them brings typed annotations (`Message{D, A}`) in place of the mutable `AnnotationDict`,
+  and gives the log-scale key an owner in the base package. The milestone stays the phase's last
+  item, so the rest is settled first.
+- **RxInfer is adapted in this phase**, on a local branch of its checkout wired to this branch
+  with `[sources]`, rather than deferred to a phase of its own. Its suite and RxInferExamples
+  models are the check; nothing is pushed there without asking.
+- **The diagnostics are activation options**, checked as each rule is resolved, rather than a
+  separate pass over a built graph. The engine knows the resolved `RuleSpec` at that point, with
+  its `pure` and `inplace`, and RxInfer forwards the options from `infer`.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

@@ -22,7 +22,7 @@ one.
 ## Next action
 
 **Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
-brief*), and awaits the user's answers to its open questions. **Phase 6 is
+brief*), its questions answered (§3.46); item 1, the small engine fixes, is next. **Phase 6 is
 closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
 with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
 deleted.
@@ -3494,10 +3494,13 @@ Known scope:
    with a brief of its own.
 7. **The log-scale milestone:** fixed or dropped, the user's decision (§3.37).
 
-**Open, for the user:** whether log scales are fixed or dropped, and whether now or last; whether
-RxInfer's adaptation is done in this phase, on a local branch, or deferred; and whether the
-diagnostics are activation options that RxInfer forwards (the default) or a separate pass over a
-built graph.
+**Decided (user, 2026-09-25, `DISCUSSION.md` §3.46):**
+- **log scales are fixed**, not dropped: typed annotations land with them, the log-scale key gets
+  an owner in the base package, and Mixture keeps its rules. The milestone stays last, item 7;
+- **RxInfer is adapted in this phase**, on a local branch of `~/Projects/Julia/RxInfer.jl` wired
+  to this branch with `[sources]`, nothing pushed there without asking; item 6, with its own brief;
+- **the diagnostics are activation options**, on `FactorNodeActivationOptions`, checked as each
+  rule is resolved, which RxInfer's `infer` forwards.
 
 ---
 

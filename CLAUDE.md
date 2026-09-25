@@ -221,7 +221,7 @@ and read whichever exist before proposing changes:
 treat `main` as the whole story.
 
 The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
-review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7, completing the engine, is next: its entry brief is written and awaits the user's answers.
+review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7, completing the engine, is under way: its entry brief is written and answered (log scales fixed, RxInfer adapted on a local branch, diagnostics as activation options; `DISCUSSION.md` §3.46).
 From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
 machinery is kept, and rule lookup and invocation plus node and rule definition and creation
 are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to
