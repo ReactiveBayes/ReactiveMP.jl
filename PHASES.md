@@ -3512,6 +3512,62 @@ Known scope:
 - **the diagnostics are activation options**, on `FactorNodeActivationOptions`, checked as each
   rule is resolved, which RxInfer's `infer` forwards.
 
+
+### Item 6 brief — RxInfer adapted
+
+**Scope, surveyed** (the local checkout, RxInfer 5.5.0, `main`, 8 040 lines in `src/`, 13 662 in
+57 test files):
+- **Node creation**, `set_rmp_factornode!` (`src/model/plugins/reactivemp_inference.jl:507`): the
+  interfaces are `(GraphPPL.getname(edge), variable)` and the factorisation GraphPPL's
+  `VariationalConstraintsFactorizationIndicesKey`, positions. v7's `factornode` wants names, a
+  group's members as `((:m, k), variable)` from GraphPPL's `EdgeLabel.index` (#7), and a
+  factorisation of those keys.
+- **Activation**, `activate_rmp_factornode!` (`:528`): `FactorNodeActivationOptions(metadata,
+  dependencies, postprocessors, annotations, rulefallback, callbacks)`. v7's takes `algorithm`,
+  `postprocessor`, `annotations`, `callbacks`, `diagnostics` and `rng`; `dependencies` and
+  `rulefallback` are gone, and `meta` is the algorithm.
+- **Node queries**, `src/model/graphppl.jl`: GraphPPL's `NodeBehaviour`, `interfaces`,
+  `inputinterfaces`, `aliases` and `factor_alias` read `ReactiveMP.sdtype`,
+  `is_predefined_node`, `interfaces` and `inputinterfaces`. They become
+  `MessagePassingRulesBase.nodespec` and its accessors; a group is a variadic interface.
+- **Free energy** (`reactivemp_free_energy.jl`, 190 lines) assembles v6's `score` terms; v7 has
+  `score(T, FactorBoundFreeEnergy(), node, algorithm, pp)` and `bethe_free_energy`.
+- **The force-marginal plugin** (`:60–74` of its file) calls v6's `marginalrule`; it becomes a
+  `MarginalMapping` over a `ClusterTarget`.
+- **Names that moved:** `ReactiveMP.OR`, `AND`, `IMPLY`, `NOT` and every node live in the rule
+  packages; `@node`, `@rule`, `@marginalrule`, `@average_energy`, `@call_rule` and the
+  `Require*FunctionalDependencies` types are gone. RxInfer's `test/` uses them 48 times in 11
+  files (19 `@node`, 14 `@rule`, 7 `@call_rule`, 6 `RequireMessageFunctionalDependencies`, one
+  each of `@marginalrule` and `@average_energy`) and `@meta` 9 times.
+- **Callbacks** read a `MessageMapping`'s `target` and `algorithm` where they read `vtag`,
+  `vconstraint` and `meta`.
+
+**Proposed, open to the user's correction:**
+- **A branch `refactor/reactivemp-v7`** of the local checkout, RxInfer's version `6.0.0-DEV`, its
+  engine and rule packages wired to this repository with `[sources]` by relative path. Nothing is
+  pushed there without asking.
+- **RxInfer depends on the engine, the base, Standard and Delta**, and re-exports what a model
+  names: the standard nodes, and Delta for `:=` with any function. Every other node package is
+  loaded by the model that uses it, and by RxInfer's tests.
+- **Order**, one commit each in RxInfer, its tests passing at each:
+  1. the dependencies and the names that moved, so it loads;
+  2. node creation by names, groups by `EdgeLabel.index`, and the node queries from `nodespec`;
+  3. activation: the algorithm from the model, the diagnostics and the generator forwarded
+     from `infer`, `dependencies` and `rulefallback` refused with an error saying where they went;
+  4. the free energy through the engine's `bethe_free_energy`, and the force-marginal plugin;
+  5. the tests ported: `@node`/`@rule` to the base's macros, `@call_rule` to
+     `call_message_update_rule`, the dependencies to declarations and initial messages; a value
+     that changes with a declared correction (the Gamma energies, ContinuousTransition's, …) is
+     updated with the correction named;
+  6. RxInferExamples models run against v6's results: the Kalman filter, the hidden Markov model,
+     a mixture, an autoregressive model, and one with Delta.
+- **In this repository:** whatever RxInfer needs of the engine, with its own tests, in its own
+  commits here; `IntegrationTest.yml` points at the branch once it passes.
+
+**Open, for the user:** how a model names a node's algorithm (keep `@meta` and `where { meta = …
+}`, their values now algorithms, or rename them `algorithm`); whether RxInfer's own documentation
+is adapted here or later; and which RxInferExamples models are the check.
+
 ---
 
 ## Phase C — Cleanup: historical remarks out of the repository
