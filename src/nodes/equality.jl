@@ -66,8 +66,8 @@ struct EqualityChain{P, F}
     length::Int
     nodes::Vector{EqualityNode}
     inputmsgs::Vector{MessageObservable{AbstractMessage}}
-    cacheleft::BitVector
-    cacheright::BitVector
+    cacheleft::Vector{Bool}
+    cacheright::Vector{Bool}
     postprocessor::P
     prod_fn::F
 
@@ -79,7 +79,7 @@ struct EqualityChain{P, F}
         n = length(inputmsgs)
         nodes = map(_ -> EqualityNode(), 1:n)
         return new{P, F}(
-            n, nodes, inputmsgs, falses(n), falses(n), postprocessor, prod_fn
+            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn
         )
     end
 end
@@ -105,8 +105,8 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
 @propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, node_index) = chain.cacheleft[node_index] = true
 @propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, node_index) = chain.cacheright[node_index] = true
 
-@propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, range::OrdinalRange) = fill_bitarray!(view(chain.cacheleft, forward_range(range)), true)
-@propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, range::OrdinalRange) = fill_bitarray!(view(chain.cacheright, forward_range(range)), true)
+@propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, range::OrdinalRange) = fill!(view(chain.cacheleft, forward_range(range)), true)
+@propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, range::OrdinalRange) = fill!(view(chain.cacheright, forward_range(range)), true)
 
 @propagate_inbounds function getcache(
         type::EqualityNodeOutboundType, chain::EqualityChain, node_index
@@ -155,8 +155,8 @@ end
 
 struct ChainInvalidationCallback
     index::Int
-    cacheleft::BitVector
-    cacheright::BitVector
+    cacheleft::Vector{Bool}
+    cacheright::Vector{Bool}
 
     function ChainInvalidationCallback(index::Int, chain::EqualityChain)
         return new(index, chain.cacheleft, chain.cacheright)
@@ -167,13 +167,13 @@ Rocket.tap(callback::ChainInvalidationCallback) =
     Rocket.TapOperator{ChainInvalidationCallback}(callback)
 
 function (callback::ChainInvalidationCallback)(_)
-    fill_bitarray!(
+    fill!(
         view(
             callback.cacheleft, firstindex(callback.cacheleft):(callback.index)
         ),
         false,
     )
-    return fill_bitarray!(
+    return fill!(
         view(
             callback.cacheright, (callback.index):lastindex(callback.cacheright)
         ),

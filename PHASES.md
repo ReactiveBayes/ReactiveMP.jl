@@ -22,7 +22,8 @@ one.
 ## Next action
 
 **Phase 7: complete the engine** (§ Phase 7). Its entry brief is written (§ Phase 7, *Entry
-brief*), its questions answered (§3.46); item 1, the small engine fixes, is next. **Phase 6 is
+brief*), its questions answered (§3.46); item 1, the small engine fixes, is done, and item 2, the
+diagnostics, is next. **Phase 6 is
 closed** (§ Phase 6, *Step 10 — the close*): every v6 node is in a package of its own, compared
 with v6 and covered by an engine fixture, the v6 → v7 guide covers each, and `legacy/` is
 deleted.
@@ -3408,7 +3409,7 @@ envelope, edge order, `EdgeLabel.index` (#7) and the mixture `reverse` (#6).
 Known scope:
 - [x] every node supported, as Phases 5–6 port their rules out of `legacy/v6/`. The mixtures'
       per-node `activate!` is already gone: step 4's generic activation replaces it *(Phase 6)*
-- [ ] `EqualityChain` `BitVector` → `Vector{Bool}`
+- [x] `EqualityChain` `BitVector` → `Vector{Bool}` *(item 1, with a test of the caches)*
 - [ ] engine diagnostics: `check_everything_pure`, `check_everything_inplace`, checked buffers
 - [ ] RxInfer adapted to the new engine, as its own major release: node and rule creation,
       a per-node `algorithm` option (replacing `meta` and v6's `where { dependencies = … }`),

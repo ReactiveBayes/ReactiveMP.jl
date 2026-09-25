@@ -119,18 +119,6 @@ __check_all(fn::Function, ::Nothing) = true
 is_clamped_or_initial(something) =
     is_clamped(something) || is_initial(something)
 
-# See: https://github.com/JuliaLang/julia/issues/42795
-function fill_bitarray!(
-        V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x
-    )
-    B = V.parent
-    I0 = V.indices[1]
-    l0 = length(I0)
-    l0 == 0 && return V
-    Base.fill_chunks!(B.chunks, Bool(x), first(I0), l0)
-    return V
-end
-
 ##
 
 forward_range(range::OrdinalRange)::UnitRange =
