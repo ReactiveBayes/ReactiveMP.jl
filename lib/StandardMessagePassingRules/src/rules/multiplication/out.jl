@@ -2,9 +2,9 @@
 
 @define_message_update_rule(node = *, target = :out, args = (m[:A]::PointMass, m[:in]::PointMass), logscale = 0, body = (args) -> PointMass(mean(args.m[:A]) * mean(args.m[:in])))
 
-@define_message_update_rule(node = *, target = :out, args = (m[:A]::PointMass{<:Real}, m[:in]::GammaDistributionsFamily), body = (args) -> scaled(mean(args.m[:A]), args.m[:in]))
+@define_message_update_rule(node = *, target = :out, args = (m[:A]::PointMass{<:Real}, m[:in]::GammaDistributionsFamily), logscale = 0, body = (args) -> scaled(mean(args.m[:A]), args.m[:in]))
 
-@define_message_update_rule(node = *, target = :out, args = (m[:A]::GammaDistributionsFamily, m[:in]::PointMass{<:Real}), body = (args) -> scaled(mean(args.m[:in]), args.m[:A]))
+@define_message_update_rule(node = *, target = :out, args = (m[:A]::GammaDistributionsFamily, m[:in]::PointMass{<:Real}), logscale = 0, body = (args) -> scaled(mean(args.m[:in]), args.m[:A]))
 
 @define_message_update_rule(
     node = *, target = :out,

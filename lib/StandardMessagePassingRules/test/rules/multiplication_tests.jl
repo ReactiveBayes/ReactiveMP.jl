@@ -35,17 +35,17 @@
             (m = (A = PointMass(2I), out = MvNormalMeanCovariance([2.0, 4.0], [12.0 8.0; 8.0 24.0])),) => convert(MvNormalWeightedMeanPrecision, MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 6.0])),
             (m = (A = PointMass([1.0 2.0; 0.0 1.0]), out = MvNormalMeanCovariance([3.0, 1.0], I2)),) => MvNormalWeightedMeanPrecision([3.0, 7.0], [1.0 2.0; 2.0 5.0]),
             (m = (A = PointMass([2.0, 1.0]), out = MvNormalMeanPrecision([2.0, 1.0], I2)),) => NormalWeightedMeanPrecision(5.0, 5.0),
-            (m = (A = PointMass(2.0), out = GammaShapeRate(3.0, 2.0)),) => GammaShapeRate(3.0, 4.0),
+            (m = (A = PointMass(2.0), out = GammaShapeRate(3.0, 2.0)),) => ExpectedWithLogScale(GammaShapeRate(3.0, 4.0), -log(2.0)),
             (m = (A = PointMass([1.0 2.0; 0.0 1.0]), out = PointMass([3.0, 1.0])),) => PointMass([1.0, 1.0]),
         ],
     )
     @test_message_update_rule(
         node = *, target = :A,
         cases = [
-            (m = (in = PointMass(2.0), out = NormalMeanVariance(4.0, 8.0)),) => NormalWeightedMeanPrecision(1.0, 0.5),
+            (m = (in = PointMass(2.0), out = NormalMeanVariance(4.0, 8.0)),) => ExpectedWithLogScale(NormalWeightedMeanPrecision(1.0, 0.5), -log(2.0)),
             (m = (in = PointMass([2.0, 1.0]), out = MvNormalMeanPrecision([2.0, 1.0], I2)),) => NormalWeightedMeanPrecision(5.0, 5.0),
             (m = (in = PointMass(2.0), out = PointMass(6.0)),) => PointMass(3.0),
-            (m = (in = PointMass(2.0), out = GammaShapeRate(3.0, 2.0)),) => GammaShapeRate(3.0, 4.0),
+            (m = (in = PointMass(2.0), out = GammaShapeRate(3.0, 2.0)),) => ExpectedWithLogScale(GammaShapeRate(3.0, 4.0), -log(2.0)),
         ],
     )
     @test_marginal_update_rule(

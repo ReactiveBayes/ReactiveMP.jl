@@ -1,6 +1,6 @@
 @define_message_update_rule(node = *, target = :in, args = (m[:out]::PointMass, m[:A]::PointMass), body = (args) -> unscaled(nothing, args.m[:out], mean(args.m[:A])))
 
-@define_message_update_rule(node = *, target = :in, args = (m[:out]::GammaDistributionsFamily, m[:A]::PointMass{<:Real}), body = (args) -> unscaled(nothing, args.m[:out], mean(args.m[:A])))
+@define_message_update_rule(node = *, target = :in, args = (m[:out]::GammaDistributionsFamily, m[:A]::PointMass{<:Real}), logscale = (args) -> unscaled_logscale(args.m[:out], mean(args.m[:A])), body = (args) -> unscaled(nothing, args.m[:out], mean(args.m[:A])))
 
 @define_message_update_rule(
     node = *, target = :in, ctx = (:matrix_correction,),

@@ -43,7 +43,7 @@ until after the release (§3.48). Phases 5 and 6 are closed too.
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
 | **inconsistent, to settle** (user, 2026-09-25): `visualize_spec` is a public, documented entry point with no backend anywhere, so every call is a `MethodError`; its backend was decided (§3.12, Phase P), an extension on GraphPPL's pattern, but is tracked nowhere. The intent (user): comprehensive visualisations of nodes, dependencies and rules, rendered in the documentation, for teaching as well. The Phase C audit took it for dead code and removed it; restored at the user's request | undecided (user) | `DISCUSSION.md` §3.12 |
 | the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
-| log scales for Standard's remaining belief-propagation rules (about 60 message-only rules declare none), each verified by `@verify_message_update_rule` against the node's definition, then a gate: every message-only rule declares one or is listed with a reason | before 7.0 (user) | `DISCUSSION.md` §3.50 |
+| log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled, Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50 |
 | `RuleResult` supports rich visualisation: a `text/plain` report in colour and `text/html` with the node drawn (its interfaces, the inputs used, the target), for the terminal, Jupyter, Pluto and Documenter, through `show(io, mime, x)`; the type keeps its arguments, rule and target for it | undecided (user), beside `visualize_spec` | `DISCUSSION.md` §3.50; `PLAN.md` § Rich display of `RuleResult` |
 | the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
@@ -3695,8 +3695,13 @@ wait for the release):
   undefined values propagating; `reads_logscale` and `args.logscale.m`; the activation option
   `logscales` in place of `LogScaleAnnotations`; every public rule call returns a `RuleResult`;
   the `product` service removed, `MixtureBP(; prod)`. Standard's rules with all-point-mass inputs
-  declare zero where it is exact. RxInfer forwards `logscales` on its branch (not pushed). Left:
-  the remaining rules' log scales and their gate, and `RuleResult`'s rich display (not-done table).
+  declare zero where it is exact. RxInfer forwards `logscales` on its branch. Then the easy
+  remaining log scales (user): 28 of Standard's 55 message-only rules without one declare it —
+  `+` and `-` (convolutions, 0), the logic nodes (0 towards `out`, the log of the normaliser each
+  rule already computes towards an input), `dot` and `*` towards `out` from a point mass (0), and
+  `*` towards `in`/`A` from a Gamma or Normal and a real point mass (`-d log|c|`, now in the
+  message's precision too) — checked by enumeration and by quadrature. Left: the other 27, and
+  `RuleResult`'s rich display (not-done table).
 - *History out of the twelve node packages — done* (three subagents, one per group; every diff
   reviewed: renames and comments only, no assertion touched). Their migration-guide candidates
   are merged with the docs step.

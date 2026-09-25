@@ -1902,8 +1902,9 @@ ownerless) and §3.48 (log scales as v6 has them past the release).
   rules, still one user); a custom service Mixture declares (the engine still has to supply it);
   scaled messages as values flowing into rules (every rule's dispatch would see the wrapper — the
   output-only `with_logscale` avoids it); dropping log scales.
-- **Deferred, before 7.0**: deriving the log scales of Standard's remaining belief-propagation
-  rules, each verified by quadrature, with a gate for them.
+- **Then, the easy ones** (user: declare a log scale only where it is easy, leave it undeclared
+  where unsure): 28 more of Standard's rules, checked by enumeration or quadrature. The other 27
+  stay undeclared, each with its reason in PHASES; whether a gate should list them is open.
 
 ---
 

@@ -52,7 +52,7 @@ function unscaled(ctx, m_out::MvNormalMeanCovariance, c::AbstractVector)
 end
 
 # m(x) = N_out(c x) integrates to |c|^(-d) over x ∈ Rᵈ, for c of either sign.
-unscaled_logscale(m_out, c::Real) = -length(mean(m_out)) * log(abs(c))
+unscaled_logscale(m_out, c::Real) = -length(mean(m_out)) * log(abs(convert(promote_type(paramfloattype(m_out), float(typeof(c))), c)))
 
 # Between two univariate Gaussians, towards one factor x from `out = x * y`:
 # ∫ N_out(x y) N_y(y) dy = N(μ_out / x; μ_y, v_y + v_out / x²) / |x|.
