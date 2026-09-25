@@ -195,8 +195,9 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
 - The v6 → v7 migration guide is the docs page `docs/src/migration-guides/v6-to-v7.md`; there is
   no `MIGRATION.md`, though older text in the design documents still says so (§3.36).
 - Log scales (`:logscale` annotations, `LogScaleAnnotations`) are **experimental**: the engine
-  owns the policy, the base package only carries annotations, and Phase 7 decides whether to fix
-  or drop the feature (§3.37).
+  owns the policy, the base package only carries annotations, and they do exactly what v6 did:
+  no rule gains or loses one, and nothing new is required of rules, until a decision after the
+  release (§3.48).
 - There is no `legacy/`: every node is ported, and Phase 6 step 10 deleted the directory. The v6
   code is only in the 6.5.0 release and in git. The inventory gate runs in
   `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
