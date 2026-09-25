@@ -127,6 +127,8 @@ getannotations(message::Message) = message.annotations
 typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
+# No inputs at all, which the `Message` and `Marginal` methods above would both match.
+getdata(::Tuple{}) = ()
 getdata(messages::AbstractArray{<:Message}) = map(getdata, messages)
 
 function show(io::IO, message::Message)

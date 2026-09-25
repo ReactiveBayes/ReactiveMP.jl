@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `getdata(())` was ambiguous between the `Message` and the `Marginal` methods, the last method ambiguity in `ReactiveMP` (Phase 7, item 1). Aqua's `ambiguities` check, off since `main` had 322 pairs, is switched on.
 - DiscreteTransition's corrections against v6 (Phase 6, step 9): the five-interface rule towards `T3` under belief propagation with a DirichletCollection `q(a)` normalised over `out` only (`softmax!(…; dims = 1)`), unlike every other rule of the node, and normalises globally now; four five-interface rules towards `T2` read their own edge's message and never matched, and the message towards `T2` is the generic rule's. v6 also failed on a Bernoulli `in` or `out` marginal, on the energy of a joint over three or more axes with a DirichletCollection `q(a)` (an ambiguity) and on that of a non-square `q(out, in)` with a point-mass `q(a)`, where the port computes what v6's generic method did. v6's point-mass rules clamped `A` to at most one, which only showed on a tensor that is not a probability tensor.
 - `rule_inputs` is generated from its container's type: it built a `Vector{Any}` on every call, 336 bytes and 365 ns for one message, and a rule walking its pairs was type-unstable. `@define_factor_node` emits `interface_groups` as a literal, so the lookup folds.
 - The Pólya nodes' energies and one of their rules (Phase 6, step 6):

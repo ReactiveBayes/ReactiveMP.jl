@@ -94,6 +94,8 @@ end
             @test is_clamped((msg1, msg2)) === all([clamped1, clamped2])
             @test is_initial((msg1, msg2)) === all([initial1, initial2])
         end
+        # No messages at all, which the `Message` and `Marginal` methods both matched.
+        @test getdata(()) === ()
     end
 
     @testset "compute product of two messages" begin

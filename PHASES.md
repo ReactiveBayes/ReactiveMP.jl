@@ -32,7 +32,6 @@ deleted.
 | What | Where it lands | Recorded in |
 |---|---|---|
 | typed annotations (`Message{D, A}`), with the log-scale milestone | Phase 7, after the migration | brief item 3; `DISCUSSION.md` §3.23 |
-| Aqua's `ambiguities` check re-measured and re-enabled | Phase 7 | § Phase 7 |
 | the `.github/` workflows brought up to date (1.13, the step-4 layout) before the first PR | Phase 7 | § Phase 7 |
 | RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
 | `LogScaleAnnotations`' all-point-mass fallback does not look inside a `FactorizedCluster` | the log-scale milestone, Phase 7 | Phase 5 review |
@@ -3435,8 +3434,9 @@ Known scope:
         becomes a `MarginalMapping` with a `ClusterTarget`, as `activate_cluster!` builds a joint
         (`src/nodes/clusters.jl`), and the local marginals are now keyed `:μ`, `(:out, :μ)` or,
         for a whole group, `(:in,)`
-- [ ] Aqua's `ambiguities` check re-measured on the new code and re-enabled, or its remaining
-      pairs budgeted; it was 322 pairs on `main`, most in code now in `legacy/`
+- [x] Aqua's `ambiguities` check re-measured on the new code and re-enabled, or its remaining
+      pairs budgeted; it was 322 pairs on `main`, most in code now in `legacy/` *(item 1: one
+      pair left, `getdata(())`, fixed; the check is on)*
 - [ ] the log-scale milestone, after the migration (user): v6's gaps were preserved
       deliberately, and this is where they are fixed, **or the feature is dropped**, decided
       then (`DISCUSSION.md` §3.37). Dropping it takes Mixture's rules with it, since its switch

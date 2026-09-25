@@ -156,9 +156,8 @@ way RxInfer does and records an `EngineTrajectory`, to compare with the v6 fixtu
   the default scheme's inputs plus the listed ones, placed in interface order (§3.41). A
   deterministic node's clusters are always `out` and the joint over its inputs,
   and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)` (§3.25).
-- Aqua's `ambiguities` check is **deliberately disabled** in `test/runtests.jl` (it was 322
-  pairs on `main`, most in v6 code since deleted; to be re-measured). `piracies` is on, and
-  `deps_compat` checks `[extras]` too.
+- Aqua's checks run in full in `test/runtests.jl`, `ambiguities` included since Phase 7 (it was
+  322 pairs on `main`, most in v6 code since moved out); `deps_compat` checks `[extras]` too.
 - `lib/` holds the new packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; the slice's

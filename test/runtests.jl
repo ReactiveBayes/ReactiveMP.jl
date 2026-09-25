@@ -3,9 +3,8 @@ using Aqua, TestItemRunner, ReactiveMP
 if get(ENV, "RUN_AQUA", "true") == "true"
     Aqua.test_all(
         ReactiveMP;
-        # `ambiguities` stays off for now: it was 322 pairs on `main`, most of them in the
-        # algebra helpers that left with their nodes. Re-measuring it is tracked in PHASES.md.
-        ambiguities = false,
+        # `ambiguities` is on: 322 pairs on `main`, most in the v6 algebra helpers and nodes that
+        # left for their packages; each lib suite checks its own.
         deps_compat = (; check_extras = true, check_weakdeps = true),
     )
 end
