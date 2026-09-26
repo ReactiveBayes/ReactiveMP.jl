@@ -93,7 +93,8 @@ function collect_registries!(found, visited, mod::Module)
         registry isa Registry && push!(found, mod => registry)
     end
     for name in names(mod; all = true, imported = false)
-        isdefined(mod, name) || continue
+        # A deprecated binding warns when read, and is never a module of rules.
+        (isdefined(mod, name) && !Base.isdeprecated(mod, name)) || continue
         sub = getfield(mod, name)
         if sub isa Module && sub !== mod && parentmodule(sub) === mod
             collect_registries!(found, visited, sub)

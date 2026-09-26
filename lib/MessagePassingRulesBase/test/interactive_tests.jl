@@ -110,3 +110,36 @@ end
     @test err isa MethodError
     @test contains(sprint(showerror, err), "visualisation backend")
 end
+
+@testitem "interactive:coverage of wildcard and parametric rules" tags = [:base] setup = [DefaultArgsNodes] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: rule_coverage, registries
+
+    # A marginal rule over any cluster has a row of its own.
+    coverage = rule_coverage(DefaultArgsNodes.Tensor)
+    @test "q(any cluster)" in coverage.rows
+    @test contains(sprint(show, MIME"text/plain"(), coverage), "q(any cluster)")
+    @test contains(sprint(show, only(filter(s -> s.kind === :marginal, MessagePassingRulesBase.list_rules(DefaultArgsNodes.Tensor)))), "towards any cluster")
+
+    # A parametric algorithm: rules on the type itself and on one of its variants are two columns,
+    # labelled apart, and the node's own instance adds no empty column of its own.
+    struct Variant{T} <: AbstractAlgorithm end
+    Variant() = Variant{Nothing}()
+    struct Parametric end
+    @define_factor_node(node = Parametric, type = Stochastic, interfaces = [:out, :in], algorithm = Variant)
+    @define_message_update_rule(node = Parametric, target = :out, algorithm = Variant, args = (m[:in]::Float64,), body = (args) -> args.m[:in])
+    @define_message_update_rule(node = Parametric, target = :in, algorithm = Variant{Int}, args = (m[:out]::Float64,), body = (args) -> args.m[:out])
+    coverage = rule_coverage(Parametric)
+    @test Set(coverage.algorithms) == Set([Variant, Variant{Int}])
+    html = sprint(show, MIME"text/html"(), coverage)
+    @test contains(html, "<th>Variant</th>") && contains(html, "<th>Variant{Int64}</th>")
+
+    # Shown from the module that defines them, names are not qualified.
+    @test !contains(sprint(show, MIME"text/html"(), coverage; context = :module => @__MODULE__), string(nameof(@__MODULE__)))
+    spec = only(MessagePassingRulesBase.list_rules(Parametric, :out))
+    @test !contains(sprint(show, MIME"text/plain"(), spec; context = :module => @__MODULE__), string(nameof(@__MODULE__)) * ".")
+
+    # Collecting the registries reads no deprecated binding, which would warn.
+    Base.@deprecate_binding OldName Parametric false
+    @test_logs min_level = Base.CoreLogging.Warn registries()
+end

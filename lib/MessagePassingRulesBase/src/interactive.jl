@@ -558,10 +558,13 @@ end
 target_label(::Type{Target{E}}) where {E} = ":$E"
 target_label(::Type{IndexedTarget{E}}) where {E} = "(:$E, k)"
 target_label(::Type{ClusterTarget{K}}) where {K} = repr(K)
+# A marginal rule over any cluster, declared `target = members`.
+target_label(::Type{ClusterTarget}) = "any cluster"
 target_label(::Type) = ""
 
 function coverage_row(spec::RuleSpec)
     spec.kind === :average_energy && return "average energy"
+    spec.kind === :marginal && spec.target === ClusterTarget && return "q(any cluster)"
     spec.kind === :marginal && return "q(" * join(spec.target.parameters[1], ", ") * ")"
     return spec.target <: IndexedTarget ? "→ ($(target_edge_of(spec.target)), k)" : "→ $(target_edge_of(spec.target))"
 end
@@ -573,9 +576,10 @@ The [`RuleCoverage`](@ref) table of `node`: what can be computed, under which al
 rules in every loaded module. Every interface of a declared node has a row, so a target without
 rules shows as an empty row.
 
-# Throws
-A node with a marginal rule over any cluster, declared `target = members`, is not supported: the
-call throws, as it cannot label that rule's row.
+A marginal rule over any cluster, declared `target = members`, has the row `q(any cluster)`. A
+column is an algorithm type, labelled with its parameters, so the variants of a parametric
+algorithm are told apart; the node's own algorithm has a column even without rules, unless the
+rules are declared on a type that covers it.
 
 For a node `Shift` with interfaces `out` and `in` and a single rule, towards `out`:
 
@@ -605,6 +609,10 @@ function rule_coverage(node)
         spec.algorithm in algorithms || push!(algorithms, spec.algorithm)
         counts[(row, spec.algorithm)] = get(counts, (row, spec.algorithm), 0) + 1
     end
+    # The node's own algorithm is an instance, `MixtureBP{GenericProd}` say, while its rules may be
+    # declared on the parametric type, `MixtureBP`: an empty column that another covers is dropped.
+    empty(a) = !any(((_, column),) -> column === a, keys(counts))
+    filter!(a -> !(empty(a) && any(b -> b !== a && a <: b, algorithms)), algorithms)
     return RuleCoverage(node, rows, algorithms, counts)
 end
 

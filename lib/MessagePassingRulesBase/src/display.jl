@@ -18,22 +18,26 @@ end
 yesno(flag) = flag ? "yes" : "no"
 kind_label(kind) = kind === :average_energy ? "average energy" : "$kind rule"
 
-function rule_heading(spec::RuleSpec)
-    heading = "$(kind_label(spec.kind)) for $(spec.node)"
+# A value as `io` would print it: a type defined in a module other than the one `io` shows from
+# is qualified only as far as that module requires, as at the REPL. Without `io`, as `string`.
+shown(io, x) = io === nothing ? string(x) : sprint(print, x; context = io)
+
+function rule_heading(spec::RuleSpec, io = nothing)
+    heading = "$(kind_label(spec.kind)) for $(shown(io, spec.node))"
     spec.kind === :average_energy || (heading *= " towards $(target_label(spec.target))")
-    return heading * " under $(spec.algorithm)"
+    return heading * " under $(shown(io, spec.algorithm))"
 end
 
-function inputs_label(spec::RuleSpec)
-    labels = [spec.default ? ["default"] : String[]; [input_label(i.container, i.key, i.selection) * "::" * string(i.type) for i in spec.inputs]]
+function inputs_label(spec::RuleSpec, io = nothing)
+    labels = [spec.default ? ["default"] : String[]; [input_label(i.container, i.key, i.selection) * "::" * shown(io, i.type) for i in spec.inputs]]
     return isempty(labels) ? "none" : join(labels, ", ")
 end
 
-Base.show(io::IO, spec::RuleSpec) = print(io, "RuleSpec(", rule_heading(spec), " @ ", spec.file, ":", spec.line, ")")
+Base.show(io::IO, spec::RuleSpec) = print(io, "RuleSpec(", rule_heading(spec, io), " @ ", spec.file, ":", spec.line, ")")
 
 function Base.show(io::IO, ::MIME"text/plain", spec::RuleSpec)
-    println(io, "RuleSpec: ", rule_heading(spec))
-    println(io, "  inputs:   ", inputs_label(spec))
+    println(io, "RuleSpec: ", rule_heading(spec, io))
+    println(io, "  inputs:   ", inputs_label(spec, io))
     println(io, "  in-place: ", yesno(spec.inplace), " · scratch: ", yesno(spec.scratch !== nothing), " · pure: ", yesno(spec.pure), " · services: ", isempty(spec.services) ? "none" : join(spec.services, ", "))
     spec.kind === :message && println(io, "  logscale: ", describe_logscale_declaration(spec.logscale), spec.reads_logscale ? " · reads incoming log scales" : "")
     println(io, "  defined:  ", spec.file, ":", spec.line)
@@ -42,8 +46,8 @@ function Base.show(io::IO, ::MIME"text/plain", spec::RuleSpec)
 end
 
 Base.show(io::IO, ::MIME"text/html", spec::RuleSpec) = html_table(
-    io, "RuleSpec: " * rule_heading(spec), [
-        "inputs" => inputs_label(spec), "in-place" => yesno(spec.inplace), "scratch" => yesno(spec.scratch !== nothing), "pure" => yesno(spec.pure),
+    io, "RuleSpec: " * rule_heading(spec, io), [
+        "inputs" => inputs_label(spec, io), "in-place" => yesno(spec.inplace), "scratch" => yesno(spec.scratch !== nothing), "pure" => yesno(spec.pure),
         "services" => isempty(spec.services) ? "none" : join(spec.services, ", "),
         "logscale" => describe_logscale_declaration(spec.logscale), "reads log scales" => yesno(spec.reads_logscale),
         "defined" => "$(spec.file):$(spec.line)", "body" => spec.source,
@@ -114,9 +118,22 @@ Base.show(io::IO, coverage::RuleCoverage) = print(io, "RuleCoverage(", coverage.
 coverage_cell(coverage, row, algorithm) =
     (n = get(coverage.counts, (row, algorithm), 0); n == 0 ? "" : n == 1 ? "✓" : "✓×$n")
 
+# A column of a coverage table: the algorithm's name with its parameters, unqualified, so that the
+# variants of a parametric algorithm, `BinomialPolyaApproximation{Int64}` and the rules declared on
+# `BinomialPolyaApproximation` itself, are told apart.
+algorithm_label(algorithm::UnionAll) = string(nameof(Base.unwrap_unionall(algorithm)))
+function algorithm_label(algorithm::DataType)
+    parameters = algorithm.parameters
+    isempty(parameters) && return string(nameof(algorithm))
+    return string(nameof(algorithm), "{", join(map(parameter_label, parameters), ", "), "}")
+end
+algorithm_label(algorithm) = string(algorithm)
+parameter_label(parameter::Type) = algorithm_label(parameter)
+parameter_label(parameter) = repr(parameter)
+
 function Base.show(io::IO, ::MIME"text/plain", coverage::RuleCoverage)
     println(io, "Rule coverage for ", coverage.node)
-    names = map(string ∘ nameof, coverage.algorithms)
+    names = map(algorithm_label, coverage.algorithms)
     rowwidth = maximum(length, coverage.rows; init = 0)
     widths = map(name -> max(length(name), 3), names)
     print(io, "  ", " "^rowwidth)
@@ -129,8 +146,8 @@ function Base.show(io::IO, ::MIME"text/plain", coverage::RuleCoverage)
 end
 
 function Base.show(io::IO, ::MIME"text/html", coverage::RuleCoverage)
-    print(io, "<table><caption>Rule coverage for ", html_escape(coverage.node), "</caption><tr><th></th>")
-    foreach(a -> print(io, "<th>", html_escape(nameof(a)), "</th>"), coverage.algorithms)
+    print(io, "<table><caption>Rule coverage for ", html_escape(shown(io, coverage.node)), "</caption><tr><th></th>")
+    foreach(a -> print(io, "<th>", html_escape(algorithm_label(a)), "</th>"), coverage.algorithms)
     print(io, "</tr>")
     for row in coverage.rows
         print(io, "<tr><th style=\"text-align:left\">", html_escape(row), "</th>")

@@ -135,8 +135,9 @@ function other_rules(r::RuleResult)
 end
 
 # One line, however the value shows itself.
-function compact_repr(value; limit = 120)
-    text = replace(strip(sprint(show, value; context = (:compact => true, :limit => true))), r"\s*\n\s*" => " ")
+function compact_repr(value; limit = 120, io = nothing)
+    context = io === nothing ? (:compact => true, :limit => true) : IOContext(io, :compact => true, :limit => true)
+    text = replace(strip(sprint(show, value; context)), r"\s*\n\s*" => " ")
     return length(text) > limit ? first(text, limit - 1) * "…" : text
 end
 
@@ -175,24 +176,24 @@ function Base.show(io::IO, ::MIME"text/plain", r::RuleResult)
         printstyled(io, ROLE_ARROWS[edge.role], "  ", ROLE_TAGS[edge.role]; color, bold = edge.role === :target)
         if edge.role === :target
             print(io, "  ")
-            printstyled(io, compact_repr(r.result); color = :green)
+            printstyled(io, compact_repr(r.result; io); color = :green)
         elseif edge.role !== :unused
-            first && print(io, "  ", compact_repr(edge.value))
+            first && print(io, "  ", compact_repr(edge.value; io))
             isempty(edge.detail) || printstyled(io, "  (", first ? "" : "in ", edge.detail, ")"; color = :light_black)
         end
     end
-    print(io, "\n  result     ", compact_repr(r.result))
+    print(io, "\n  result     ", compact_repr(r.result; io))
     if r.logscale !== nothing
         print(io, "\n  logscale   ")
         printstyled(io, logscale_label(r); color = r.logscale isa UndefinedLogScale ? :yellow : :normal)
     end
     args = r.arguments
     if args.logscale !== nothing
-        print(io, "\n  incoming   ", join(("m[$(repr(k))] = $(compact_repr(v))" for (k, v) in pairs(args.logscale.m.values)), ", "))
+        print(io, "\n  incoming   ", join(("m[$(repr(k))] = $(compact_repr(v; io))" for (k, v) in pairs(args.logscale.m.values)), ", "))
     end
-    print(io, "\n  algorithm  ", compact_repr(r.algorithm))
+    print(io, "\n  algorithm  ", compact_repr(r.algorithm; io))
     isempty(r.rule.services) || print(io, "\n  services   ", join(r.rule.services, ", "))
-    r.scratch === nothing || print(io, "\n  scratch    ", compact_repr(r.scratch))
+    r.scratch === nothing || print(io, "\n  scratch    ", compact_repr(r.scratch; io))
     print(io, "\n  rule       ", inputs_label(r.rule), "  @ ", short_path(r.rule.file), ":", r.rule.line)
     others = other_rules(r)
     isempty(others) || printstyled(io, "\n  and ", length(others), " other rule", length(others) == 1 ? "" : "s", " for this target"; color = :light_black)
@@ -286,7 +287,7 @@ function Base.show(io::IO, ::MIME"text/html", r::RuleResult)
     print(io, "<div class=\"mprb-sections\">")
 
     print(io, "<details open class=\"mprb-result\"><summary>Result</summary>")
-    rows = Pair{String, String}["value" => html_code(compact_repr(r.result; limit = 400)), "type" => html_code(string(typeof(r.result)))]
+    rows = Pair{String, String}["value" => html_code(compact_repr(r.result; limit = 400, io)), "type" => html_code(shown(io, typeof(r.result)))]
     if r.logscale !== nothing
         push!(rows, "log scale" => (r.logscale isa UndefinedLogScale ? "<span class=\"mprb-undefined\">" * html_escape(logscale_label(r)) * "</span>" : html_escape(logscale_label(r))))
     end
@@ -296,14 +297,14 @@ function Base.show(io::IO, ::MIME"text/html", r::RuleResult)
     print(io, "<details open class=\"mprb-inputs\"><summary>Inputs</summary><table><tr><th>edge</th><th></th><th>value</th></tr>")
     for (edge, first) in zip(edges, first_of_joints(edges))
         edge.role === :target && continue
-        value = edge.role === :unused ? "<span class=\"mprb-no\">unused</span>" : first ? html_code(compact_repr(edge.value)) : ""
+        value = edge.role === :unused ? "<span class=\"mprb-no\">unused</span>" : first ? html_code(compact_repr(edge.value; io)) : ""
         detail = isempty(edge.detail) ? "" : " <span class=\"mprb-mode\">" * html_escape(edge.detail) * "</span>"
         print(io, "<tr class=\"", role_class(edge.role), "\"><td>", html_escape(edge.label), "</td><td>", html_escape(ROLE_TAGS[edge.role]), "</td><td>", value, detail, "</td></tr>")
     end
     print(io, "</table>")
     args = r.arguments
     if args.logscale !== nothing
-        html_rows(io, ["incoming log scale $(k)" => html_code(compact_repr(v)) for (k, v) in pairs(args.logscale.m.values)])
+        html_rows(io, ["incoming log scale $(k)" => html_code(compact_repr(v; io)) for (k, v) in pairs(args.logscale.m.values)])
     end
     print(io, "</details>")
 
@@ -311,10 +312,10 @@ function Base.show(io::IO, ::MIME"text/html", r::RuleResult)
     print(io, "<details class=\"mprb-rule\"><summary>Rule</summary>")
     rule_rows = Pair{String, String}[
         "declared inputs" => html_code(inputs_label(spec)),
-        "algorithm" => html_code(compact_repr(r.algorithm)),
+        "algorithm" => html_code(compact_repr(r.algorithm; io)),
     ]
     isempty(spec.services) || push!(rule_rows, "services" => html_code(join(spec.services, ", ")))
-    r.scratch === nothing || push!(rule_rows, "scratch" => html_code(compact_repr(r.scratch)))
+    r.scratch === nothing || push!(rule_rows, "scratch" => html_code(compact_repr(r.scratch; io)))
     spec.kind === :message && push!(rule_rows, "log scale" => html_escape(describe_logscale_declaration(spec.logscale)) * (spec.reads_logscale ? ", reads the incoming ones" : ""))
     push!(rule_rows, "defined" => html_code("$(short_path(spec.file)):$(spec.line)"))
     push!(rule_rows, "body" => "<pre>" * html_escape(spec.source) * "</pre>")
