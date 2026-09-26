@@ -8,7 +8,17 @@ const REGISTRY_NAME = :__message_passing_registry__
 """
     Registry
 
-The rules and nodes one module defines.
+The rules, nodes and dependency declarations one module defines, in its fields `rules`
+([`RuleSpec`](@ref)s), `nodes` ([`NodeSpec`](@ref)s) and `dependencies`
+([`DependenciesSpec`](@ref)s). The definition macros create it in the defining module, as the
+constant `__message_passing_registry__`, and fill it at the module's top level, so a package's
+precompile image carries its own entries. A redefinition, at the REPL say, replaces the entry
+with the same key.
+
+It is for introspection only: listing, checking and displaying rules, and suggesting candidates
+when no rule fits. Resolution never reads it; it is Julia's dispatch.
+
+See also [`registries`](@ref), [`registered_rules`](@ref).
 """
 struct Registry
     rules::Vector{RuleSpec}
@@ -60,10 +70,10 @@ function register!(registry::Registry, declaration::DependenciesSpec)
 end
 
 """
-    registries([modules...])
+    registries(modules::Module...) -> Vector{Pair{Module, Registry}}
 
-Every registry in `modules` and their submodules; by default in every loaded module and
-`Main`.
+Every [`Registry`](@ref) in `modules` and their submodules, each with the module that owns it;
+with no argument, in `Main` and every loaded module.
 """
 function registries(modules::Module...)
     found = Pair{Module, Registry}[]
@@ -93,35 +103,36 @@ function collect_registries!(found, visited, mod::Module)
 end
 
 """
-    registered_rules([modules...])
+    registered_rules(modules::Module...) -> Vector{RuleSpec}
 
-Every rule defined in `modules`, by default in every loaded module.
+Every rule defined in `modules` and their submodules; with no argument, in every loaded module.
 """
 registered_rules(modules::Module...) = RuleSpec[spec for (_, registry) in registries(modules...) for spec in registry.rules]
 
 """
-    registered_nodes([modules...])
+    registered_nodes(modules::Module...) -> Vector{NodeSpec}
 
-Every node declared in `modules`, by default in every loaded module.
+Every node declared in `modules` and their submodules; with no argument, in every loaded module.
 """
 registered_nodes(modules::Module...) = NodeSpec[spec for (_, registry) in registries(modules...) for spec in registry.nodes]
 
 """
-    registered_dependencies([modules...])
+    registered_dependencies(modules::Module...) -> Vector{DependenciesSpec}
 
-Every [`DependenciesSpec`](@ref) declared in `modules`, by default in every loaded module.
+Every [`DependenciesSpec`](@ref) declared in `modules` and their submodules; with no argument, in
+every loaded module.
 """
 registered_dependencies(modules::Module...) =
     DependenciesSpec[spec for (_, registry) in registries(modules...) for spec in registry.dependencies]
 
 """
-    duplicate_rules()
+    duplicate_rules() -> Vector{Vector{Pair{Module, RuleSpec}}}
 
-Rules with identical signatures defined in more than one module, grouped by signature.
-Within one module Julia itself rejects the second definition during precompilation;
-across modules the later method silently replaces the earlier, which this reports.
-Ambiguity — overlapping but different signatures — is a separate question, answered by
-`check_rule_ambiguities`.
+Rules with identical signatures defined in more than one loaded module, one group per
+signature, each rule with its module. Within one module Julia itself rejects the second
+definition during precompilation; across modules the later method silently replaces the
+earlier, which this reports. Ambiguity, overlapping but different signatures, is a separate
+question, answered by [`check_rule_ambiguities`](@ref).
 """
 function duplicate_rules()
     groups = Dict{Any, Vector{Pair{Module, RuleSpec}}}()

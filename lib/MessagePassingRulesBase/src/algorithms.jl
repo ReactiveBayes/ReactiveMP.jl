@@ -12,6 +12,23 @@ a node's own algorithm, when the node needs one. It comes in two kinds:
   dependencies apply to it;
 - a subtype of [`DefaultAlgorithmExtension`](@ref) **extends the default**: where it defines
   no rule or dependencies of its own, those of `DefaultAlgorithm` apply.
+
+An algorithm with parameters stores them as fields, and a rule reads them from its `algo` slot.
+
+```julia
+struct MyVMP{T} <: AbstractAlgorithm
+    iterations::Int
+    tolerance::T
+end
+
+@define_message_update_rule(
+    node = MyNode, target = :out, algorithm = MyVMP,
+    args = (q[:in]::Any,),
+    body = (algo, args) -> solve(args.q[:in]; maxiter = algo.iterations, tol = algo.tolerance),
+)
+```
+
+See also [`ispure`](@ref), [`@define_dependencies`](@ref).
 """
 abstract type AbstractAlgorithm end
 
@@ -22,7 +39,7 @@ The algorithm every node runs under unless it declares its own: Bethe free energ
 minimisation. Whether a rule behaves as belief propagation, variational message passing or
 their structured form depends on the factorisation, through the engine's default dependency
 scheme, not on the algorithm. A rule that omits `algorithm` belongs to its node's default,
-which is this unless the node declares otherwise.
+[`default_algorithm`](@ref)`(node)`, which is this unless the node declares otherwise.
 """
 struct DefaultAlgorithm <: AbstractAlgorithm end
 
@@ -48,9 +65,11 @@ admits(algorithm, rule_algorithm::Type) =
     algorithm isa rule_algorithm || (algorithm isa DefaultAlgorithmExtension && rule_algorithm === DefaultAlgorithm)
 
 """
-    ispure(algorithm::Type{<:AbstractAlgorithm})
+    ispure(algorithm::Type{<:AbstractAlgorithm}) -> Bool
+    ispure(algorithm::AbstractAlgorithm) -> Bool
 
-Whether rules under this algorithm are pure unless they say otherwise.
+Whether rules under this algorithm are pure unless they say otherwise. An impure algorithm
+adds a method, `MessagePassingRulesBase.ispure(::Type{MyAlgorithm}) = false`.
 
 A pure rule mutates neither its inputs nor any state shared beyond one call, such as fields
 of its algorithm. It may write to its own output buffer and to scratch storage it owns, so

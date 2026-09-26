@@ -1,9 +1,10 @@
 """
     RuleResult
 
-What a rule called by hand returns ([`call_message_update_rule`](@ref), the `message_passing_*`
-functions and their macros): the rule's result together with everything that produced it.
-Read it with its getters:
+What a rule called by hand returns: the `call_*` functions ([`call_message_update_rule`](@ref),
+[`call_marginal_update_rule`](@ref), [`call_average_energy`](@ref)), their `@call_*` macros, and
+the `message_passing_*` functions ([`message_passing_rule`](@ref) and its siblings). It holds the
+rule's result together with everything that produced it. Read it with its getters:
 - [`getresult`](@ref): the message, the marginal or the average energy;
 - [`getlogscale`](@ref): the log scale the rule declares for a message, a number or an
   [`UndefinedLogScale`](@ref); `nothing` for a marginal or an energy;
@@ -15,8 +16,9 @@ Read it with its getters:
 
 It shows itself as a report in the terminal (`text/plain`), one line per edge of the node, and as
 a card with the node drawn in a notebook or in documentation (`text/html`): the inputs, the
-result and its log scale, the rule that ran and the other rules for the same target. An engine
-runs rules without building one.
+result and its log scale, the rule that ran and the other rules for the same target. The
+two-argument `show` is compact, `RuleResult(2.0, logscale = 0)`. An engine runs rules through
+[`execute_rule`](@ref) without building one.
 """
 struct RuleResult{R, L, A, C, S, G, N, T}
     result::R
@@ -33,28 +35,30 @@ end
 """
     getresult(r::RuleResult)
 
-The rule's result: the message, the marginal or the average energy.
+The rule's result: the message, the joint marginal or the average energy. For an in-place rule,
+the buffer it wrote into.
 """
 getresult(r::RuleResult) = r.result
 
 getlogscale(r::RuleResult) = r.logscale
 
 """
-    getrule(r::RuleResult)
+    getrule(r::RuleResult) -> RuleSpec
 
-The [`RuleSpec`](@ref) that ran.
+The [`RuleSpec`](@ref) that ran, which shows its inputs, source, file and line.
 """
 getrule(r::RuleResult) = r.rule
 
 """
     getalgorithm(r::RuleResult)
 
-The algorithm value the rule ran with.
+The algorithm value the rule ran with: the call's, or [`DefaultAlgorithm`](@ref)`()` for a rule a
+[`DefaultAlgorithmExtension`](@ref) inherited ([`rule_algorithm`](@ref)).
 """
 getalgorithm(r::RuleResult) = r.algorithm
 
 """
-    getcontext(r::RuleResult)
+    getcontext(r::RuleResult) -> RuleContext
 
 The [`RuleContext`](@ref) the rule ran with.
 """
@@ -68,7 +72,7 @@ The working memory the rule ran with, as it left it; `nothing` for a rule that d
 getscratch(r::RuleResult) = r.scratch
 
 """
-    getarguments(r::RuleResult)
+    getarguments(r::RuleResult) -> RuleArgs
 
 The [`RuleArgs`](@ref) the rule ran on.
 """
@@ -85,7 +89,9 @@ gettarget(r::RuleResult) = r.target
 """
     getannotations(r::RuleResult)
 
-Where the rule recorded its annotations: the store passed as `ann`, or `NoAnnotations()`.
+Where the rule recorded its annotations: the store the call was given as `ann` (the `out` of a
+[`RuleAnnotations`](@ref)), or a [`NoAnnotations`](@ref) when it was given none. Read it with
+[`getannotation`](@ref). An engine adds methods for its messages and marginals.
 """
 getannotations(r::RuleResult) = r.annotations
 

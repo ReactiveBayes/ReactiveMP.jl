@@ -1,16 +1,35 @@
 """
-    FactorizedCluster((:out, :μ) => q_outμ, (:v,) => q_v)
+    FactorizedCluster(block => distribution, ...)
 
-The result of a marginal rule whose cluster factorises into independent blocks: here
-`q(out, μ, v) = q(out, μ) q(v)`. It is a BayesBase `FactorizedJoint` of the blocks, labelled
-with the members each block covers. The joint is the distribution, and BayesBase supplies
-its entropy and float-type conversion. The labels are what the engine needs to hand each
-block on and to score it. Each label is the tuple of the block's members, in the cluster's
-order, and the labels are carried in the type, so a block is read as `fc[(:out, :μ)]` with no
-lookup at run time. A member of a group is written as in a cluster's key, `(:T, 1)`. No
-names are mangled together, so interface names may contain underscores.
+The result of a marginal rule whose cluster factorises into independent blocks:
+`FactorizedCluster((:out, :μ) => q_outμ, (:v,) => q_v)` for `q(out, μ, v) = q(out, μ) q(v)`.
 
-[`check_factorized_cluster`](@ref) confirms the blocks partition the cluster.
+It is a BayesBase `FactorizedJoint` of the blocks, labelled with the members each block covers.
+The joint is the distribution, and BayesBase supplies its `entropy` and float-type conversion.
+The labels are what an engine needs to hand each block on and to score it. Each label is the
+tuple of the block's members, in the cluster's order; a member of a group is written as in a
+cluster's key, `(:T, 1)`. The labels are carried in the type, so a block is read as
+`fc[(:out, :μ)]` with no lookup at run time, and no names are joined together, so interface
+names may contain underscores. `pairs(fc)` gives `block => distribution` pairs, and
+`BayesBase.components(fc)` the distributions.
+
+# Throws
+- `ArgumentError` when given no block;
+- `KeyError` when indexed by a block it does not have.
+
+# Examples
+
+```jldoctest
+julia> fc = FactorizedCluster((:out, :μ) => 1.0, (:v,) => 2.0);
+
+julia> fc[(:v,)]
+2.0
+
+julia> MessagePassingRulesBase.cluster_blocks(fc)
+((:out, :μ), (:v,))
+```
+
+See also [`cluster_blocks`](@ref), [`check_factorized_cluster`](@ref).
 """
 struct FactorizedCluster{K, J <: FactorizedJoint}
     joint::J
@@ -26,9 +45,9 @@ end
 FactorizedCluster() = throw(ArgumentError("a FactorizedCluster needs at least one block"))
 
 """
-    cluster_blocks(fc::FactorizedCluster)
+    cluster_blocks(fc::FactorizedCluster) -> Tuple
 
-The member tuples of the blocks, in order.
+The labels of the blocks of `fc`, in order: one tuple of members per block.
 """
 cluster_blocks(::FactorizedCluster{K}) where {K} = K
 
@@ -56,11 +75,15 @@ function Base.show(io::IO, fc::FactorizedCluster)
 end
 
 """
-    check_factorized_cluster(target::ClusterTarget, fc::FactorizedCluster)
+    check_factorized_cluster(target::ClusterTarget, fc::FactorizedCluster) -> FactorizedCluster
 
-Return `fc` if its blocks partition the members of `target`: every member in exactly one
-block, and each block listing its members in the cluster's order. Throw an `ArgumentError`
-naming the problem otherwise.
+Check that the blocks of `fc` partition the members of `target`, every member in exactly one
+block and each block listing its members in the cluster's order, and return `fc`. For a marginal rule's
+tests; the blocks may come in any order.
+
+# Throws
+`ArgumentError` naming the problem: a member outside the cluster, a member in two blocks, a
+block out of order, or a member no block covers.
 """
 function check_factorized_cluster(target::ClusterTarget, fc::FactorizedCluster)
     members = cluster_members(target)

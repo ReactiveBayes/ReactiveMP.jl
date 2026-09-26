@@ -516,11 +516,20 @@ target_edge_of(::Type{IndexedTarget{E}}) where {E} = E
 target_edge_of(::Type) = nothing
 
 """
-    list_rules(node[, edge]; algorithm)
+    list_rules(node, edge::Union{Nothing, Symbol} = nothing; algorithm = nothing) -> Vector{RuleSpec}
 
-The rules defined for `node`: all of them, or the message rules towards `edge` (a group's
-name for its members). With `algorithm`, only those it can select: its own, and for a
-[`DefaultAlgorithmExtension`](@ref) the default's as well.
+The rules defined for `node` in every loaded module, as [`RuleSpec`](@ref)s: all of them, message
+and marginal rules and average energies, or, with `edge`, only the message rules towards `edge`,
+a group's name standing for all its members.
+
+# Keywords
+- `algorithm`: an algorithm value, keeping only the rules it can select: its own, and for a
+  [`DefaultAlgorithmExtension`](@ref) the default's as well. Default: `nothing`, every algorithm.
+
+```julia
+MessagePassingRulesBase.list_rules(NormalMeanVariance, :out)                 # every rule towards `out`
+MessagePassingRulesBase.list_rules(NormalMeanVariance; algorithm = DefaultAlgorithm())
+```
 """
 function list_rules(node, edge::Union{Nothing, Symbol} = nothing; algorithm = nothing)
     return filter(registered_rules()) do spec
@@ -533,8 +542,11 @@ end
 """
     RuleCoverage
 
-Which rules exist for a node: rows are message targets, marginal clusters and the average
-energy; columns are algorithms; each cell counts rules. Made by [`rule_coverage`](@ref).
+Which rules exist for a node, as [`rule_coverage`](@ref) makes it: rows are message targets
+(`→ out`, and `→ (m, k)` for a group), marginal clusters (`q(out, μ)`) and the average energy;
+columns are algorithms, the node's default first; each cell counts the rules. It shows itself as
+a text table at the REPL, `✓` for one rule and `✓×n` for several, and as an HTML table in a
+notebook or on a documentation page.
 """
 struct RuleCoverage
     node::Any
@@ -555,9 +567,25 @@ function coverage_row(spec::RuleSpec)
 end
 
 """
-    rule_coverage(node)
+    rule_coverage(node) -> RuleCoverage
 
-The [`RuleCoverage`](@ref) matrix of `node`: what can be computed, under which algorithm.
+The [`RuleCoverage`](@ref) table of `node`: what can be computed, under which algorithm, from the
+rules in every loaded module. Every interface of a declared node has a row, so a target without
+rules shows as an empty row.
+
+# Throws
+A node with a marginal rule over any cluster, declared `target = members`, is not supported: the
+call throws, as it cannot label that rule's row.
+
+For a node `Shift` with interfaces `out` and `in` and a single rule, towards `out`:
+
+```julia
+julia> MessagePassingRulesBase.rule_coverage(Shift)
+Rule coverage for Shift
+        │ DefaultAlgorithm
+  → out │ ✓
+  → in  │
+```
 """
 function rule_coverage(node)
     specs = list_rules(node)
@@ -584,8 +612,9 @@ end
     visualize_spec(spec)
 
 Draw a [`NodeSpec`](@ref), [`RuleSpec`](@ref), [`DependenciesSpec`](@ref) or
-[`RuleCoverage`](@ref). Implemented by visualisation backends, which are package
-extensions; without one loaded this is a `MethodError` that says so.
+[`RuleCoverage`](@ref). The function is declared here with no methods: visualisation backends,
+package extensions, provide them, and none exists yet. Without one loaded, a call is a
+`MethodError` whose message says a backend is needed.
 """
 function visualize_spec end
 

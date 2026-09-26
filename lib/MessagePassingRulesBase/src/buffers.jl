@@ -1,13 +1,17 @@
 """
-    buffer_like(x[, T])
+    buffer_like(x)
+    buffer_like(x::AbstractArray, T::Type)
 
-Uninitialised storage shaped like `x` (with element type `T` if given), for an in-place
-rule's `preallocate`. It dispatches on the type of `x`, so the buffer is of a kind that
-matches: `similar` for arrays, which keeps a static array static-sized and mutable and a
-device array on its device; elementwise for tuples and named tuples. Array types and
-devices that need something else extend this function.
+Uninitialised storage shaped like `x`, with element type `T` if given, for an in-place rule's
+`preallocate`. It dispatches on the type of `x`, so the buffer is of a kind that matches:
+`similar` for arrays, which keeps a static array static-sized and mutable and a device array on
+its device; elementwise for tuples and named tuples. Array types and devices that need something
+else add a method.
 
-A number has no storage to write into, so it has no buffer.
+# Throws
+`ArgumentError` for a number, which has no storage to write into.
+
+# Examples
 
 ```jldoctest
 julia> using MessagePassingRulesBase: buffer_like

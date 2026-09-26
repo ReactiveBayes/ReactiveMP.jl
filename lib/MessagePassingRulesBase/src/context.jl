@@ -18,8 +18,23 @@ The services an engine supplies by default, [`DEFAULT_CONTEXT_SERVICES`](@ref):
   explicit identity.
 
 A mutable object holding the services as a typed `NamedTuple`: a caller builds one and passes
-it to every call by reference, and reading a service is inferred. `merge(ctx, services)` adds
-or overrides services, as a caller layers its own over the defaults.
+it to every call by reference, and reading a service is inferred. `propertynames(ctx)` gives
+the services it supplies, and `merge(ctx, services::NamedTuple)` returns a context with
+services added or overridden, as a caller layers its own over the defaults.
+
+```jldoctest
+julia> using MessagePassingRulesBase: RuleContext
+
+julia> ctx = merge(RuleContext(rng = 1), (scale = 2.0,));
+
+julia> ctx.rng, ctx.scale, ctx.node
+(1, 2.0, nothing)
+
+julia> propertynames(ctx)
+(:rng, :scale)
+```
+
+See also [`check_services`](@ref), [`matrix_correction`](@ref).
 """
 mutable struct RuleContext{S <: NamedTuple}
     const services::S
@@ -44,7 +59,9 @@ const DEFAULT_CONTEXT_SERVICES = (:node, :rng, :matrix_correction)
     matrix_correction(ctx::RuleContext, default)
 
 The matrix correction a rule applies: `ctx.matrix_correction` when it is set, and the rule's
-own `default` when it is `nothing`. A rule that corrects nothing by default passes `nothing`.
+own `default` when it is `nothing` or not supplied. A rule that corrects nothing by default
+passes `nothing`. The rule declares `ctx = (:matrix_correction,)`, and applies the strategy with
+MatrixCorrectionTools' `correction!`.
 
 ```julia
 W = correction!(matrix_correction(ctx, ReplaceZeroDiagonalEntries(tiny)), A * w * A')

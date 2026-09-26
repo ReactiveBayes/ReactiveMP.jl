@@ -1,26 +1,52 @@
 """
     DependencySelector
 
-How a dependency selects from its interface: the interface itself ([`SingleInterface`](@ref)), or,
-for a group, all members ([`AllGroupMembers`](@ref)), the member aligned with the target
-([`AlignedGroupMember`](@ref)), all but that one ([`AllGroupMembersButSelf`](@ref)), or a custom function
-([`select_group_members`](@ref)).
+Supertype of how a [`Dependency`](@ref) selects from its interface: the interface itself
+([`SingleInterface`](@ref)), or, for a group, all members ([`AllGroupMembers`](@ref)), the member
+aligned with the target ([`AlignedGroupMember`](@ref)), all but that one
+([`AllGroupMembersButSelf`](@ref)), or the members a function picks
+([`CustomGroupSelector`](@ref), made by [`select_group_members`](@ref)). An engine reads a group
+selection through [`selected_indices`](@ref) and [`selection_arity`](@ref).
 """
 abstract type DependencySelector end
 
-"""`m[:μ]`, or a cluster `q[:y, :x]`."""
+"""
+    SingleInterface()
+
+The [`DependencySelector`](@ref) of a single interface, `m[:μ]`, or of a cluster's joint,
+`q[:y, :x]`: the whole of what the key names.
+"""
 struct SingleInterface <: DependencySelector end
-"""`m[:in...]`: every member of the group."""
+
+"""
+    AllGroupMembers()
+
+The [`DependencySelector`](@ref) of every member of a group, `m[:in...]`: all `n` of a group of
+`n`, whatever the target.
+"""
 struct AllGroupMembers <: DependencySelector end
-"""`m[:in][k]`: the member with the target's index."""
+
+"""
+    AlignedGroupMember()
+
+The [`DependencySelector`](@ref) of the member with the target's index, `m[:in][k]` for the
+indexed target `(:m, k)`: one member. Needs an indexed target.
+"""
 struct AlignedGroupMember <: DependencySelector end
-"""`m[:in][!k]`: every member except the one with the target's index."""
+
+"""
+    AllGroupMembersButSelf()
+
+The [`DependencySelector`](@ref) of every member but the one with the target's index,
+`m[:in][!k]`: `n - 1` of a group of `n`, none of a group of one. Needs an indexed target.
+"""
 struct AllGroupMembersButSelf <: DependencySelector end
 
 """
-    CustomGroupSelector
+    CustomGroupSelector{F}
 
-A user selector made by [`select_group_members`](@ref).
+The [`DependencySelector`](@ref) [`select_group_members`](@ref)`(f; arity)` makes: the members
+`f(k)` returns for target index `k`, always `arity` of them. Fields: `f` and `arity`.
 """
 struct CustomGroupSelector{F} <: DependencySelector
     f::F
@@ -28,19 +54,38 @@ struct CustomGroupSelector{F} <: DependencySelector
 end
 
 """
-    select_group_members(f; arity)
+    select_group_members(f; arity::Integer) -> CustomGroupSelector
 
-A custom group selector: `f(k)` returns the tuple of member indices for target index `k`,
-always of length `arity`. The arity must be static; a selector that returns another length
-is an error when it is resolved.
+A custom group selector, written `m[:in][select_group_members(f; arity)]` in a dependency
+declaration: `f(k)` returns the member indices, a tuple or anything `Tuple` converts, for target
+index `k`, always `arity` of them. The arity is static, so an engine knows how many inputs to
+wait for before it calls `f`.
+
+# Throws
+[`selected_indices`](@ref) throws an `ArgumentError` when `f` returns another number of indices.
+
+```jldoctest
+julia> using MessagePassingRulesBase: select_group_members, selected_indices
+
+julia> previous = select_group_members(k -> (k - 1,); arity = 1);
+
+julia> selected_indices(previous, 3, 4)
+(2,)
+```
 """
 select_group_members(f; arity::Integer) = CustomGroupSelector(f, Int(arity))
 
 """
-    selected_indices(selector, k, n)
+    selected_indices(selector::DependencySelector, k, n) -> Tuple
 
-The member indices `selector` picks from a group of `n` for target index `k`. A selection
-of no members is an empty tuple; an engine must treat it as satisfied, never wait on it.
+The member indices `selector` picks from a group of `n` for target index `k`, in order. A
+selection of no members is an empty tuple; an engine must treat it as satisfied, never wait on
+it. Not defined for [`SingleInterface`](@ref), which selects no members.
+
+# Throws
+`ArgumentError` for a [`CustomGroupSelector`](@ref) whose function returns other than its arity.
+
+# Examples
 
 ```jldoctest
 julia> using MessagePassingRulesBase: selected_indices, AllGroupMembersButSelf, select_group_members
@@ -66,9 +111,12 @@ function selected_indices(selector::CustomGroupSelector, k, n)
 end
 
 """
-    selection_arity(selector, n)
+    selection_arity(selector::DependencySelector, n) -> Int
 
-How many members `selector` picks from a group of `n`.
+How many members `selector` picks from a group of `n`, for any target index: `n` for
+[`AllGroupMembers`](@ref), 1 for [`AlignedGroupMember`](@ref), `n - 1` for
+[`AllGroupMembersButSelf`](@ref), the declared arity for a [`CustomGroupSelector`](@ref). Not
+defined for [`SingleInterface`](@ref).
 """
 selection_arity(::AllGroupMembers, n) = n
 selection_arity(::AlignedGroupMember, n) = 1
@@ -78,8 +126,12 @@ selection_arity(selector::CustomGroupSelector, n) = selector.arity
 """
     Dependency
 
-One input a target depends on: a message (`:m`) or marginal (`:q`) of an interface, or of
-a cluster when `key` is a tuple, selected by a [`DependencySelector`](@ref).
+One input a target consumes, as a dependency declaration lists it. Fields:
+
+- `container::Symbol`: `:m` for a message, `:q` for a marginal;
+- `key`: the interface's or group's name, or, for a cluster's joint, the tuple of its members;
+- `selector::DependencySelector`: what it takes of the interface, a [`DependencySelector`](@ref);
+  [`SingleInterface`](@ref) for an interface or a cluster.
 """
 struct Dependency
     container::Symbol
@@ -90,9 +142,16 @@ end
 """
     TargetDependencies
 
-The inputs one target consumes, `edge` being indexed for a group member. When `default` is
-true, the target was declared with `default`: it consumes the engine's default scheme's inputs,
-which follow the factorisation, and `inputs` are added to them.
+The inputs one target consumes, one entry of a [`DependenciesSpec`](@ref). Fields:
+
+- `edge::Symbol`: the target interface, or the group for an indexed target;
+- `indexed::Bool`: `true` for a group's members, declared `(:m, k) => (...)`, whose inputs may
+  select by `k`; `false` for a single interface, declared `:out => (...)`;
+- `inputs`: the [`Dependency`](@ref)s, in the order declared, which is the order an engine
+  subscribes to them;
+- `default::Bool`: `true` when the target was declared with `default` among its inputs: it
+  consumes the default scheme's inputs, which follow the factorisation, and `inputs` are added to
+  them.
 """
 struct TargetDependencies
     edge::Symbol
@@ -106,10 +165,19 @@ TargetDependencies(edge::Symbol, indexed::Bool, inputs::Tuple{Vararg{Dependency}
 """
     DependenciesSpec
 
-What a node consumes under one algorithm, per target, and optionally the partition free
-energy is computed over. The two are separate: a rule may consume a marginal that is not a
-block of the partition, and that marginal is never scored. When `partition` is `nothing`
-the engine derives it from the factorisation.
+What a node's rules consume under one algorithm, target by target, and optionally the partition
+the free energy is computed over, as [`@define_dependencies`](@ref) or
+[`@define_factor_node`](@ref)'s `dependencies` keyword declares it and [`dependencies_spec`](@ref)
+returns it. Fields:
+
+- `node`, `algorithm`: the node, and the algorithm type the declaration is for;
+- `targets`: one [`TargetDependencies`](@ref) per declared target;
+- `partition`: the free-energy partition, a tuple of member tuples, or `nothing`, and the engine
+  derives it from the factorisation. Read it with [`free_energy_partition`](@ref).
+
+The two are separate: a rule may consume a marginal that is not a block of the partition, and
+that marginal is never scored. Read a target's inputs with [`target_dependencies`](@ref) and
+[`extends_default_scheme`](@ref). It shows itself as a table of targets and their inputs.
 """
 struct DependenciesSpec
     node::Any
@@ -119,19 +187,22 @@ struct DependenciesSpec
 end
 
 """
-    dependencies_spec(node, algorithm)
+    dependencies_spec(node, algorithm) -> Union{DependenciesSpec, Nothing}
 
-The [`DependenciesSpec`](@ref) for `node` under `algorithm`, or `nothing` when none is
-declared and the engine's default scheme applies. A [`DefaultAlgorithmExtension`](@ref)
-that declares none gets the default algorithm's.
+The [`DependenciesSpec`](@ref) declared for `node` under `algorithm`, a value, or `nothing` when
+none is declared and the engine's default scheme applies. A [`DefaultAlgorithmExtension`](@ref)
+that declares none gets the declaration for [`DefaultAlgorithm`](@ref), if any.
 """
 dependencies_spec(node, algorithm) =
     algorithm isa DefaultAlgorithmExtension ? dependencies_spec(node, DefaultAlgorithm()) : nothing
 
 """
-    target_dependencies(declaration, target)
+    target_dependencies(declaration::DependenciesSpec, target) -> Union{Tuple, Nothing}
 
-The inputs `target` consumes under `declaration`, or `nothing` if it declares none for it.
+The [`Dependency`](@ref)s `target`, a [`Target`](@ref) or an [`IndexedTarget`](@ref), consumes
+under `declaration`, in the order declared, or `nothing` when the declaration does not list the
+target. For a target declared with `default`, only the inputs added to the default scheme's
+([`extends_default_scheme`](@ref)).
 """
 function target_dependencies(declaration::DependenciesSpec, target)
     entry = target_entry(declaration, target)
@@ -139,10 +210,10 @@ function target_dependencies(declaration::DependenciesSpec, target)
 end
 
 """
-    extends_default_scheme(declaration, target)
+    extends_default_scheme(declaration::DependenciesSpec, target) -> Bool
 
 Whether `target` was declared with `default`, so that it consumes the engine's default scheme's
-inputs plus those [`target_dependencies`](@ref) lists. False for a target the declaration does
+inputs plus those [`target_dependencies`](@ref) lists. `false` for a target the declaration does
 not list.
 """
 function extends_default_scheme(declaration::DependenciesSpec, target)
@@ -159,7 +230,12 @@ function target_entry(declaration::DependenciesSpec, target)
 end
 
 """
-    free_energy_partition(spec)
+    free_energy_partition(spec::DependenciesSpec) -> Union{Tuple, Nothing}
+
+The partition the free energy is computed over, as declared with `free_energy_partition`: a
+tuple of blocks, each a tuple of interface names, covering every interface once, a group's name
+standing for all its members. `nothing` when none is declared, and the partition is the graph's
+factorisation. An engine refuses a graph whose factorisation is not this partition.
 """
 free_energy_partition(spec::DependenciesSpec) = spec.partition
 

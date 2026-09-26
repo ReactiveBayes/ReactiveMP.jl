@@ -100,7 +100,9 @@ end
 """
     RuleIssue
 
-A problem [`check_rules`](@ref) found with one rule.
+A problem [`check_rules`](@ref) found with one rule. Fields: `rule`, the [`RuleSpec`](@ref), and
+`message`, a sentence saying what is wrong. It shows itself as
+`RuleIssue(file:line: message)`.
 """
 struct RuleIssue
     rule::RuleSpec
@@ -111,11 +113,24 @@ Base.show(io::IO, issue::RuleIssue) =
     print(io, "RuleIssue(", issue.rule.file, ":", issue.rule.line, ": ", issue.message, ")")
 
 """
-    check_rules([modules...])
+    check_rules(modules::Module...) -> Vector{RuleIssue}
 
-Check every rule in `modules` (by default all loaded) against its node's declaration and
-its algorithm's dependency declaration. Returns the problems as [`RuleIssue`](@ref)s; an
-empty vector means none.
+Check every rule defined in `modules`, by default in every loaded module, against its node's
+declaration and the dependency declarations, and return the problems as [`RuleIssue`](@ref)s;
+an empty vector means none. It checks:
+
+- that the rule's node is declared;
+- its target: an interface of the node, a group written `(:m, k)` and a single interface not,
+  and a cluster's members existing, in interface order, a group's members by index, and not a
+  lone single interface, whose marginal is written `q[:x]`;
+- each input: an existing interface, a group selected as `[:m...]`, `[k]` or `[!k]` and a single
+  interface not, and a cluster as for the target;
+- for a message rule whose algorithm has a dependency declaration (its own, or for a
+  [`DefaultAlgorithmExtension`](@ref) that declares none, the default's) listing its target:
+  that it consumes exactly the declared inputs, or, for a target declared with `default`, at
+  least the added ones. A rule declared with `default` in its `args` is not compared.
+
+A package's tests call it on the package's own module.
 """
 function check_rules(modules::Module...)
     issues = RuleIssue[]
@@ -234,13 +249,14 @@ function full_signature(spec::RuleSpec)
 end
 
 """
-    check_rule_ambiguities([modules...])
+    check_rule_ambiguities(modules::Module...) -> Vector{Tuple{RuleSpec, RuleSpec}}
 
-Pairs of rules in `modules` (by default all loaded) that some call could match equally
-well. Only rules consuming the same set of inputs can overlap, so candidates are grouped by
-kind, node, target and input names first. Within a group, each rule's own method of
-`find_message_rule`, `find_marginal_rule` or `find_average_energy` is compared with Julia's
-`Base.isambiguous`.
+The pairs of rules defined in `modules`, by default in every loaded module, that some call could
+match equally well, so that resolution would throw a `MethodError`; an empty vector means none.
+Only rules consuming the same set of inputs can overlap, so candidates are grouped by kind,
+node, target and input names first. Within a group, each rule's own method of
+[`find_message_rule`](@ref), [`find_marginal_rule`](@ref) or [`find_average_energy`](@ref) is
+compared with Julia's `Base.isambiguous`.
 
 Julia's check, not a hand-made `typeintersect`, because the signatures bound their inputs as
 `Messages{N, <:Tuple{…}}`: when a slot is disjoint, the intersection is a valid but empty

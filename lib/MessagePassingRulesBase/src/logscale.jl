@@ -19,8 +19,21 @@ The causes an engine and the base package record:
   method; `detail` is the pair of types;
 - `:form_constraint`: a product whose result a form constraint changed.
 
+A cause outside this list is shown with its `detail`, so an engine may record its own.
+
 It propagates: adding it to a number or to another undefined log scale gives an undefined log
-scale, keeping the first reason. [`require_logscale`](@ref) turns it into an error.
+scale, keeping the first reason. Nothing errors because a log scale is undefined, until
+[`require_logscale`](@ref) is asked for its value. At the REPL it shows its reason.
+
+```jldoctest
+julia> u = UndefinedLogScale(:initial) + 1.5
+UndefinedLogScale: the message is an initial one, not computed by a rule
+
+julia> isdefined_logscale(u), isdefined_logscale(1.5)
+(false, true)
+```
+
+See also [`isdefined_logscale`](@ref), [`UndefinedLogScaleError`](@ref).
 """
 struct UndefinedLogScale
     cause::Symbol
@@ -68,7 +81,9 @@ end
 """
     UndefinedLogScaleError(logscale::UndefinedLogScale)
 
-Thrown by [`require_logscale`](@ref) when a log scale a computation needs is not known.
+The error [`require_logscale`](@ref) throws when a log scale a computation needs is not known.
+Its message gives the reason the [`UndefinedLogScale`](@ref) records, such as the rule that
+declares no `logscale`.
 """
 struct UndefinedLogScaleError <: Exception
     logscale::UndefinedLogScale
@@ -81,18 +96,29 @@ function Base.showerror(io::IO, err::UndefinedLogScaleError)
 end
 
 """
-    require_logscale(logscale)
+    require_logscale(logscale) -> Real
 
-`logscale` itself when it is a number; an [`UndefinedLogScaleError`](@ref) naming the reason when
-it is an [`UndefinedLogScale`](@ref); an `ArgumentError` for `nothing`, a log scale that is not
-tracked. A rule that needs the numbers of its incoming log scales calls it on each.
+Return `logscale` when it is a number, and throw when it is not known. A rule declared with
+`reads_logscale = true` calls it on each incoming log scale whose value it needs.
+
+# Throws
+- [`UndefinedLogScaleError`](@ref), naming the reason, for an [`UndefinedLogScale`](@ref);
+- `ArgumentError` for `nothing`: the caller does not track log scales.
+
+```jldoctest
+julia> require_logscale(-0.5)
+-0.5
+
+julia> require_logscale(UndefinedLogScale(:initial))
+ERROR: UndefinedLogScaleError: a log scale is needed but not known: the message is an initial one, not computed by a rule
+```
 """
 require_logscale(logscale::Real) = logscale
 require_logscale(logscale::UndefinedLogScale) = throw(UndefinedLogScaleError(logscale))
 require_logscale(::Nothing) = throw(ArgumentError("log scales are not tracked; an engine tracks them when asked to, e.g. ReactiveMP's `logscales = true`"))
 
 """
-    isdefined_logscale(logscale)
+    isdefined_logscale(logscale) -> Bool
 
 Whether `logscale` is a number, rather than an [`UndefinedLogScale`](@ref) or `nothing`.
 """
@@ -101,9 +127,9 @@ isdefined_logscale(logscale) = logscale isa Real
 """
     WithLogScale(result, logscale)
 
-A rule's result paired with its log scale, as [`with_logscale`](@ref) builds it. Only a rule
-declared with `logscale = from_body` returns one, and whoever runs the rule unwraps it; no rule
-ever receives one.
+A rule's result paired with its log scale, as [`with_logscale`](@ref) builds it. Only the body of
+a rule declared with `logscale = from_body` returns one, and whoever runs the rule unwraps it; no
+rule receives one, and a caller never sees one.
 """
 struct WithLogScale{R, L}
     result::R
@@ -114,8 +140,16 @@ end
     with_logscale(result, logscale)
     with_logscale(; result, logscale)
 
-What the body of a rule declared with `logscale = from_body` returns: its result and the log
-scale it computed alongside it, for a rule whose log scale shares its work with the result.
+Pair a rule's result with its log scale: what the body of a rule declared with
+`logscale = from_body` returns, for a rule whose log scale shares its work with the result.
+Running the rule unwraps it, so [`getresult`](@ref) is `result` and [`getlogscale`](@ref) is
+`logscale`.
+
+# Throws
+Running the rule throws an `ArgumentError` when a body returns one without the rule declaring
+`logscale = from_body`, or a rule declaring it returns anything else.
+
+# Examples
 
 ```julia
 @define_message_update_rule(
@@ -135,24 +169,26 @@ with_logscale(; result, logscale) = WithLogScale(result, logscale)
 """
     FromBody
 
-The type of [`from_body`](@ref).
+The type of [`from_body`](@ref), the marker a rule's `logscale` declaration is compared against.
 """
 struct FromBody end
 
 """
     from_body
 
-Written `logscale = from_body` in a rule declaration: the rule's body computes its log scale
-and returns it with its result, as [`with_logscale`](@ref)`(result, logscale)`.
+The `logscale` declaration of a rule whose body computes its log scale: written
+`logscale = from_body`, the body then returns [`with_logscale`](@ref)`(result, logscale)`.
 """
 const from_body = FromBody()
 
 """
     RuleLogScales(; m = NamedTuple())
 
-The log scales that arrived with a rule's inbound messages, reached as `args.logscale.m[:out]`,
-keyed exactly like `args.m`; a group is a tuple under its name. Each is a number or an
-[`UndefinedLogScale`](@ref). A rule reads them only when declared with `reads_logscale = true`.
+The log scales that arrived with a rule's inbound messages, `args.logscale` of a
+[`RuleArgs`](@ref), read as `args.logscale.m[:out]` and keyed exactly like `args.m`; a group is a
+tuple under its name. Each is a number or an [`UndefinedLogScale`](@ref). A rule reads them only
+when declared with `reads_logscale = true`, and calls [`require_logscale`](@ref) on those whose
+value it needs.
 """
 struct RuleLogScales{M <: Messages}
     m::M
@@ -163,9 +199,10 @@ RuleLogScales(; m = NamedTuple()) = RuleLogScales(as_messages(m))
 """
     getlogscale(x)
 
-The log scale of `x`: a rule's [`RuleResult`](@ref), or, in an engine, a message or a marginal.
-A number, an [`UndefinedLogScale`](@ref) with its reason, or `nothing` where log scales are not
-tracked.
+The log scale of `x`: a rule's [`RuleResult`](@ref), or, in an engine that adds methods, a
+message or a marginal. A number, an [`UndefinedLogScale`](@ref) with its reason, or `nothing`
+where log scales are not tracked. For a `RuleResult` it is what the rule declares for a message,
+and `nothing` for a marginal or an average energy.
 """
 function getlogscale end
 
