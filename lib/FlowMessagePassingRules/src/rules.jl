@@ -1,7 +1,24 @@
 # Flow's rules: a normal pushed through the model, forwards towards `out` and backwards towards
-# `in`. Linearization uses the model's own Jacobians; Unscented, sigma points.
+# `in`. Linearization uses the model's own Jacobians and returns a covariance form for a covariance
+# input, a mean-precision form for a precision one; Unscented uses sigma points and returns the
+# covariance form.
 
+"""
+    FlowLinearization
+
+The type of a [`FlowApproximation`](@ref) whose method is
+[`Linearization`](@extref MessagePassingRulesApproximations.Linearization), the `algorithm` the
+linearisation rules are declared under.
+"""
 const FlowLinearization = FlowApproximation{<:AbstractCompiledFlowModel, <:Linearization}
+
+"""
+    FlowUnscented
+
+The type of a [`FlowApproximation`](@ref) whose method is
+[`Unscented`](@extref MessagePassingRulesApproximations.Unscented), the `algorithm` the unscented
+rules are declared under.
+"""
 const FlowUnscented = FlowApproximation{<:AbstractCompiledFlowModel, <:Unscented}
 
 @define_message_update_rule(
@@ -13,8 +30,13 @@ const FlowUnscented = FlowApproximation{<:AbstractCompiledFlowModel, <:Unscented
     end,
 )
 
-# In precision form the inverse Jacobian carries the precision, for a mean-precision or a
-# weighted-mean-precision input alike.
+"""
+    flow_forward_precision(algo::FlowLinearization, m_in) -> MvNormalMeanPrecision
+
+The linearised message towards `out` from a normal `m_in` in precision form, mean-precision or
+weighted-mean-precision alike: mean `forward(model, μ)` and precision `Jᵢᵀ Λ Jᵢ`, with `Jᵢ =
+inv_jacobian(model, μ)`, the inverse flow's Jacobian evaluated at the input's mean `μ`.
+"""
 flow_forward_precision(algo, m_in) = begin
     μ_in, Λ_in = mean_precision(m_in)
     Ji = inv_jacobian(getmodel(algo), μ_in)
@@ -40,6 +62,13 @@ end
     end,
 )
 
+"""
+    flow_backward_precision(algo::FlowLinearization, m_out) -> MvNormalMeanPrecision
+
+The linearised message towards `in` from a normal `m_out` in precision form: mean
+`backward(model, μ)` and precision `Jᵀ Λ J`, with `J = jacobian(model, μ)`, the flow's Jacobian
+evaluated at the output's mean `μ`.
+"""
 flow_backward_precision(algo, m_out) = begin
     μ_out, Λ_out = mean_precision(m_out)
     J = jacobian(getmodel(algo), μ_out)
@@ -56,8 +85,16 @@ end
     body = (algo, args) -> flow_backward_precision(algo, args.m[:out]),
 )
 
-# The unscented method with its weights for dimension `dim`: `Unscented(dim)` as given, or built
-# from `Unscented()`'s parameters.
+"""
+    flow_unscented(method::Unscented, dim) -> Unscented
+
+The unscented method with its weights for dimension `dim`: `Unscented(dim)` as given, or one built
+from the parameters of `Unscented()`.
+
+# Throws
+
+A `DimensionMismatch` when `method` was built for a dimension other than `dim`.
+"""
 function flow_unscented(method::Unscented, dim)
     if method.e === nothing
         return Unscented(dim; alpha = method.α, beta = method.β, kappa = method.κ)
@@ -67,9 +104,16 @@ function flow_unscented(method::Unscented, dim)
     return method
 end
 
-# The normal of `f(x)` for `x ~ N(μ, Σ)`, by sigma points from the rows of the symmetric square
-# root of `(L + λ) Σ`. The numerics package's `unscented_statistics` takes a Cholesky factor,
-# which gives a nonlinear flow other results.
+"""
+    flow_unscented_statistics(f, model, method::Unscented, μ, Σ) -> MvNormalMeanCovariance
+
+The normal of `f(model, x)` for `x ~ N(μ, Σ)` by the unscented transform, `f` being
+[`FlowMessagePassingRules.forward`](@ref) or [`FlowMessagePassingRules.backward`](@ref). The
+sigma points are placed along the rows of the symmetric square root of `(L + λ) Σ`, not along a
+Cholesky factor as
+[`unscented_statistics`](@extref MessagePassingRulesApproximations.unscented_statistics) places
+them: both are exact for an affine flow, and they differ for a nonlinear one.
+"""
 function flow_unscented_statistics(f, model, method, μ, Σ)
     T = eltype(model)
     approximation = flow_unscented(method, length(μ))

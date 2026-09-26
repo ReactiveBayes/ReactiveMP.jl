@@ -1,14 +1,14 @@
 # The input layer.
 
-@doc raw"""
+"""
     InputLayer(dim::Int)
 
-The input layer specifies the input dimension to a flow model, `dim > 1`. It starts the tuple of
-layers given to [`FlowModel`](@ref), in place of the dimension.
+The first element of a layer tuple given to [`FlowModel`](@ref)`(layers)`, which gives the
+model's dimension `dim`; `FlowModel((InputLayer(dim), layers...))` is `FlowModel(dim, layers)`.
 
-```julia
-layer = InputLayer(3)
-```
+# Throws
+
+An `AssertionError` unless `dim > 1`.
 """
 struct InputLayer <: AbstractLayerPlaceholder
     dim::Int

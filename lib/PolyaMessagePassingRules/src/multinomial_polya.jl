@@ -1,22 +1,89 @@
 """
     MultinomialPolya
 
-A multinomial through logistic stick-breaking, `x ~ Multinomial(N, p(ψ))` with
-`p_k = σ(ψ_k) Π_{j<k} (1 - σ(ψ_j))` for `K` categories and `K - 1` weights `ψ`, Pólya-Gamma
-augmented so that the message towards `ψ` is normal. Its interfaces are `x`, the counts, `N`,
-the number of trials, and `ψ`. Can be used for multinomial regression.
+The stochastic node of a multinomial through logistic stick-breaking,
 
-Its rules run under its own algorithm, [`MultinomialPolyaApproximation`](@ref). The rule towards
-`ψ` reads the message on `ψ` itself, beside the marginals the factorisation gives, so a model
-initialises that message.
+```math
+p(x \\mid N, \\psi) = \\frac{N!}{\\prod_{k=1}^{K} x_k!} \\prod_{k=1}^{K} p_k^{x_k}, \\qquad
+p_k = \\sigma(\\psi_k) \\prod_{j<k} \\big(1 - \\sigma(\\psi_j)\\big), \\quad
+p_K = \\prod_{j<K} \\big(1 - \\sigma(\\psi_j)\\big),
+```
+
+for `K` categories and `K - 1` log-odds `ψ`, Pólya-Gamma augmented so that the message towards
+`ψ` is normal. The multinomial factors into `K - 1` binomials, the `k`-th of `x_k` out of the
+`N_k = N - Σ_{j<k} x_j` trials left, with log-odds `ψ_k`. With `ψ` a linear function of
+covariates it is multinomial regression.
+
+# Interfaces
+
+- `x`: the counts of the `K` categories, a vector: observed (`PointMass`) or a `Multinomial`;
+- `N`: the number of trials, a `PointMass`, or a `Poisson`, `Binomial` or `Categorical`, whose
+  mode the rules use;
+- `ψ`: the `K - 1` log-odds, `MvNormal`, or a univariate `Normal` for `K = 2`.
+
+# Augmentation
+
+$(DOC_POLYA_AUGMENTATION)
+
+Applied to each binomial of the stick with `b = N_k`, the message towards `ψ` has the weighted
+mean `x_k - N_k / 2` and the diagonal precision `ω_k`, the Pólya-Gamma mean at the `k`-th entry of
+the mean of the message on `ψ`. The message towards `x` is the multinomial at
+[`logistic_stick_breaking`](@ref) of the mean of `q(ψ)`.
+
+The average energy is that of the multinomial itself,
+`-⟨log C(x)⟩ - Σ_{k<K} ⟨x_k⟩⟨ψ_k⟩ + Σ_{k<K} N_k ⟨softplus(ψ_k)⟩`, with each `⟨softplus(ψ_k)⟩`
+by Gauss–Hermite cubature over the mean and variance of `ψ_k`, with the `points` of
+[`MultinomialPolyaApproximation`](@ref). For a `Multinomial` `q(x)`, the coefficient's
+expectation is `log N! - Σ_k ⟨log x_k!⟩` over its binomial marginals.
+
+# Limitations
+
+- The rule towards `ψ` reads the **message on `ψ`** itself, besides the marginals its
+  factorisation gives it, so a model must initialise that message.
+- There is no rule towards `N`, and the average energy takes a `PointMass` `q(N)` only.
+- The rules use the mean of `ψ` only: its variance enters the average energy, not the messages.
+
+# Examples
+
+```jldoctest; setup = :(using PolyaMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily)
+julia> result = @call_message_update_rule(
+           node = MultinomialPolya, target = :ψ,
+           q = (x = PointMass([2, 3, 5]), N = PointMass(10)),
+           m = (ψ = MvNormalWeightedMeanPrecision(zeros(2), [1.0 0.0; 0.0 1.0]),),
+       );
+
+julia> weightedmean(getresult(result)) ≈ [-3.0, -1.0]
+true
+
+julia> precision(getresult(result)) ≈ [2.5 0.0; 0.0 2.0]
+true
+```
+
+The stick's two breaks leave `N_k = 10` and `8` trials, so the weighted means are `2 - 5` and
+`3 - 4` and the precisions, at `ψ = 0`, `N_k / 4`.
+
+See also [`MultinomialPolyaApproximation`](@ref), [`logistic_stick_breaking`](@ref),
+[`compose_Nks`](@ref), [`BinomialPolya`](@ref).
 """
 struct MultinomialPolya end
 
 """
     MultinomialPolyaApproximation(; points = 21)
 
-[`MultinomialPolya`](@ref)'s algorithm: its average energy computes `⟨softplus(ψ_k)⟩` by
-Gauss–Hermite cubature with `points` points.
+The algorithm of [`MultinomialPolya`](@ref), and its default: a model names it only to change
+`points`.
+
+# Keywords
+
+- `points`: the number of Gauss–Hermite points with which the average energy computes each
+  `⟨softplus(ψ_k)⟩`. Default `21`. The messages do not depend on it.
+
+# Examples
+
+```jldoctest; setup = :(using PolyaMessagePassingRules)
+julia> MultinomialPolyaApproximation().points
+21
+```
 """
 struct MultinomialPolyaApproximation <: AbstractAlgorithm
     points::Int
@@ -30,10 +97,13 @@ MultinomialPolyaApproximation(; points = 21) = MultinomialPolyaApproximation(poi
 )
 
 """
-    logistic_stick_breaking(m)
+    logistic_stick_breaking(m) -> Vector{Float64}
 
-The `K` probabilities of logistic stick-breaking with the `K - 1` weights `m`:
-`p_k = σ(m_k) Π_{j<k} (1 - σ(m_j))`, and the rest of the stick for the last.
+The `K` probabilities of logistic stick-breaking with the `K - 1` log-odds `m`:
+`p_k = σ(m_k) Π_{j<k} (1 - σ(m_j))` for `k < K`, and the rest of the stick, `Π_{j<K} (1 - σ(m_j))`,
+for the last. The probabilities of [`MultinomialPolya`](@ref) at `ψ = m`.
+
+# Examples
 
 ```jldoctest
 julia> using PolyaMessagePassingRules
@@ -59,10 +129,13 @@ function logistic_stick_breaking(m)
 end
 
 """
-    compose_Nks(x, N)
+    compose_Nks(x, N) -> Vector
 
-The number of trials left at each of the first `K - 1` breaks of the stick for the counts `x`
-out of `N`: `N_k = N - Σ_{j<k} x_j`.
+The number of trials left at each of the first `K - 1` breaks of the stick, for the `K` counts
+`x` out of `N`: `N_k = N - Σ_{j<k} x_j`, of the element type of `x`. The trials of the binomials
+[`MultinomialPolya`](@ref) factors into.
+
+# Examples
 
 ```jldoctest
 julia> using PolyaMessagePassingRules

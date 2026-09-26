@@ -6,12 +6,25 @@
     PermutationLayer([rng,] dim::Integer)
     PermutationLayer()
 
-The permutation layer specifies an invertible mapping ``{\bf{y}} = g({\bf{x}}) = P{\bf{x}}`` where ``P`` is a permutation matrix.
+A layer of a [`FlowModel`](@ref) that permutes its input, ``y = P x`` for a
+[`PermutationMatrix`](@ref) ``P``. It has no parameters, and its inverse is ``x = P^\top y``.
 
-`PermutationLayer([rng,] dim)` draws a random [`PermutationMatrix`](@ref) of size `dim × dim`
-from `rng`, by default the task's generator. `PermutationLayer()` creates a layer that randomly
-shuffles its input values: its permutation matrix and its dimension are (randomly) generated when
-it is wrapped in a [`FlowModel`](@ref).
+`PermutationLayer(P)` takes the matrix, which must be square. `PermutationLayer([rng,] dim)`
+draws a random `dim × dim` one from `rng`, by default the task's generator. `PermutationLayer()`
+is a placeholder: its dimension and its random permutation are set when it is wrapped in a
+[`FlowModel`](@ref), from the model's generator.
+
+# Examples
+
+```jldoctest; setup = :(using FlowMessagePassingRules)
+julia> layer = PermutationLayer(PermutationMatrix([2, 3, 1]));
+
+julia> FlowMessagePassingRules.forward(layer, [10.0, 20.0, 30.0])
+3-element Vector{Float64}:
+ 20.0
+ 30.0
+ 10.0
+```
 """
 struct PermutationLayer{T} <: AbstractLayer
     dim::Int

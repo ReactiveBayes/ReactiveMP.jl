@@ -1,26 +1,89 @@
 """
     BinomialPolya
 
-A binomial regression through the logistic, `y ~ Binomial(n, σ(xᵀβ))`, with the weights `β`
-Pólya-Gamma augmented so that their message is normal. Its interfaces are `y`, the count, `x`,
-the covariates, `n`, the number of trials, and `β`, the weights.
+The stochastic node of a binomial regression through the logistic,
 
-Its rules run under its own algorithm, [`BinomialPolyaApproximation`](@ref). The rule towards
-`β` reads the message on `β` itself, beside the marginals the factorisation gives, so a model
-initialises that message.
+```math
+p(y \\mid x, n, \\beta) = \\binom{n}{y} \\sigma(x^\\top \\beta)^{y} \\big(1 - \\sigma(x^\\top \\beta)\\big)^{n - y},
+\\qquad \\sigma(\\psi) = \\frac{1}{1 + e^{-\\psi}},
+```
+
+with its weights `β` Pólya-Gamma augmented so that their message is normal. With `n = 1` it is
+logistic regression.
+
+# Interfaces
+
+- `y`: the number of successes, observed, a `PointMass`;
+- `x`: the covariates, observed, a `PointMass` holding a vector (or a number, for a scalar `β`);
+- `n`: the number of trials, observed, a `PointMass`;
+- `β`: the weights, with a normal message and marginal, `MvNormal` for a vector `x`.
+
+# Augmentation
+
+$(DOC_POLYA_AUGMENTATION)
+
+With `ψ = xᵀβ` and `b = n`, the message towards `β` has the weighted mean `(y - n/2) x` and the
+precision `ω x xᵀ`, where `ω` is the Pólya-Gamma mean at `xᵀ` times the mean of the message on
+`β`. The message towards `y` is `Binomial(n, σ(xᵀ mᵦ))`, `mᵦ` the mean of `q(β)`. Both rules
+average over draws of `β` instead when [`BinomialPolyaApproximation`](@ref) is given a number of
+samples.
+
+The average energy is that of the binomial likelihood itself, not of the augmented one:
+`-log C(n, y) - y ⟨ψ⟩ + n ⟨softplus(ψ)⟩`, with `⟨softplus(ψ)⟩` under the normal `ψ = xᵀβ` by
+Gauss–Hermite cubature with a fixed 32 points.
+
+# Limitations
+
+- The rule towards `β` reads the **message on `β`** itself, besides the marginals its
+  factorisation gives it, so a model must initialise that message.
+- `y`, `x` and `n` must be observed: their rules and the average energy take `PointMass`
+  marginals only, and there is no rule towards `x` or `n`.
+- The rule towards `β` also takes a `Multinomial` `q(y)` by its type, and fails on it, since the
+  mean of a `Multinomial` is a vector.
+
+# Examples
+
+```jldoctest; setup = :(using PolyaMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily)
+julia> result = @call_message_update_rule(
+           node = BinomialPolya, target = :y,
+           q = (x = PointMass([1.0, 2.0]), n = PointMass(10), β = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])),
+       );
+
+julia> mean(getresult(result)) ≈ 5.0
+true
+```
+
+At `β = 0` the success probability is `σ(0) = 1/2`, so the message is `Binomial(10, 1/2)`.
+
+See also [`BinomialPolyaApproximation`](@ref), [`MultinomialPolya`](@ref).
 """
 struct BinomialPolya end
 
 """
     BinomialPolyaApproximation(; samples = nothing)
 
-[`BinomialPolya`](@ref)'s algorithm. With `samples = nothing`, the default, the rules use the
-means: the Pólya-Gamma mean at `xᵀ` times the mean of `β`, and `σ(xᵀβ)` at it. With a number of
-samples they average over that many draws of `β` from the rule context's generator, `ctx.rng`,
-which the caller owns.
+The algorithm of [`BinomialPolya`](@ref), and its default: a model names it only to sample.
 
-The average energy does not sample: `xᵀβ` is normal under a normal `q(β)`, so its expectation is
-computed by Gauss–Hermite cubature.
+# Keywords
+
+- `samples`: `nothing` or a number of draws. Default `nothing`. With `nothing`, the rules use
+  means: the Pólya-Gamma mean at `xᵀ` times the mean of `β`, and `σ(xᵀβ)` at the mean of `β`.
+  With a number `k`, they average over `k` draws of `β`, the rule towards `β` over one
+  Pólya-Gamma draw for each, from the rule context's generator, `ctx.rng`. An engine supplies
+  it; a call by hand passes `ctx = MessagePassingRulesBase.RuleContext(rng = …)`.
+
+The average energy does not sample under either: `xᵀβ` is normal under a normal `q(β)`, so its
+expectation is computed by Gauss–Hermite cubature.
+
+# Examples
+
+```jldoctest; setup = :(using PolyaMessagePassingRules)
+julia> BinomialPolyaApproximation().samples === nothing
+true
+
+julia> BinomialPolyaApproximation(samples = 100).samples
+100
+```
 """
 struct BinomialPolyaApproximation{S <: Union{Nothing, Int}} <: AbstractAlgorithm
     samples::S
@@ -89,6 +152,8 @@ end
     end,
 )
 
+# The number of Gauss–Hermite points of the average energy, fixed: the algorithm has no keyword
+# for it.
 const BINOMIAL_POLYA_CUBATURE_POINTS = 32
 
 # ⟨-log p(y | n, x, β)⟩ = -log C(n, y) - y ⟨ψ⟩ + n ⟨softplus(ψ)⟩ with ψ = xᵀβ, normal under a normal

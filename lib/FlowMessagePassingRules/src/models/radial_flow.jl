@@ -5,22 +5,32 @@
     RadialFlow([rng,] dim::Int)
     RadialFlow()
 
-The RadialFlow function is defined as
+The radial flow, a coupling flow for an [`AdditiveCouplingLayer`](@ref):
 
 ```math
-f({\bf{x}}) = {\bf{x}} + \frac{\beta({\bf{x}} - {\bf{z}}_0)}{\alpha + |{\bf{x}} - {\bf{z}}_0|}
+f(x) = x + \frac{\beta (x - z_0)}{\alpha + \lVert x - z_0 \rVert}, \qquad x, z_0 \in \mathbb{R}^D, \; \alpha > 0, \; \beta \in \mathbb{R}.
 ```
 
-with input and output dimension ``D``. Here ``{\bf{x}}\in \mathbb{R}^D`` represents the input of the function. Furthermore ``{\bf{z}}_0\in \mathbb{R}^D``, ``\alpha\in \mathbb{R}`` and ``\beta\in\mathbb{R}`` represent the parameters of the function. The function contracts and expands the input space.
+It contracts and expands the space around ``z_0``. It has ``D + 2`` parameters, taken by
+[`compile`](@ref) in the order ``z_0, \alpha, \beta``. It was introduced by Rezende and Mohamed,
+"Variational inference with normalizing flows", ICML 2015.
 
-`RadialFlow(z0, α, β)` takes the parameters, with `α > 0`. `RadialFlow([rng,] dim)` draws them
-using `rng`, by default the task's generator: `z0` and `β` from a standard (multivariate) normal
-distribution, `α` uniformly from ``[0, 1)``. `RadialFlow()` is a placeholder whose dimension is set
-when it is wrapped in a model, and whose parameters are set by [`compile`](@ref).
+`RadialFlow(z0, α, β)` takes the parameters, `α > 0`. `RadialFlow([rng,] dim)` draws them using
+`rng`, by default the task's generator: `z0` and `β` from a standard normal, `α` uniformly from
+``[0, 1)``. `RadialFlow()` is the placeholder an [`AdditiveCouplingLayer`](@ref) takes: its
+dimension is set by the model, and its parameters by [`compile`](@ref), which draws them the same
+way.
 
-This function has been introduced in:
+# Throws
 
-Rezende, Danilo, and Shakir Mohamed. "Variational inference with normalizing flows." _International conference on machine learning._ PMLR, 2015.
+An `AssertionError` unless `α > 0`.
+
+# Examples
+
+```jldoctest; setup = :(using FlowMessagePassingRules)
+julia> FlowMessagePassingRules.forward(RadialFlow(0.0, 1.0, 2.0), 1.0) ≈ 1.0 + 2.0 / 2.0
+true
+```
 """
 mutable struct RadialFlow{T1, T2 <: Real} <: AbstractCouplingFlow
     z0::T1

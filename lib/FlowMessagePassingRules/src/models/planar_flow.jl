@@ -5,23 +5,28 @@
     PlanarFlow([rng,] dim::Int)
     PlanarFlow()
 
-The PlanarFlow function is defined as
+The planar flow, a coupling flow for an [`AdditiveCouplingLayer`](@ref):
 
 ```math
-f({\bf{x}}) = {\bf{x}} + {\bf{u}} \tanh({\bf{w}}^\top {\bf{x}} + b)
+f(x) = x + u \tanh(w^\top x + b), \qquad x, u, w \in \mathbb{R}^D, \; b \in \mathbb{R}.
 ```
 
-with input and output dimension ``D``. Here ``{\bf{x}}\in \mathbb{R}^D`` represents the input of the function. Furthermore ``{\bf{u}}\in \mathbb{R}^D``, ``{\bf{w}}\in \mathbb{R}^D`` and ``b\in\mathbb{R}`` represent the parameters of the function. The function contracts and expands the input space.
+It contracts and expands the space along ``u``. It has ``2D + 1`` parameters, taken by
+[`compile`](@ref) in the order ``u, w, b``. It was introduced by Rezende and Mohamed,
+"Variational inference with normalizing flows", ICML 2015.
 
 `PlanarFlow(u, w, b)` takes the parameters, `u` and `w` both scalars or both vectors of the same
-length. `PlanarFlow([rng,] dim)` draws them from a standard (multivariate) normal distribution,
-using `rng`, by default the task's generator: scalars for `dim == 1`, vectors of length `dim`
-otherwise. `PlanarFlow()` is a placeholder whose dimension is set when it is wrapped in a model,
-and whose parameters are set by [`compile`](@ref).
+length. `PlanarFlow([rng,] dim)` draws them from a standard normal, using `rng`, by default the
+task's generator: scalars for `dim == 1`, vectors of length `dim` otherwise. `PlanarFlow()` is
+the placeholder an [`AdditiveCouplingLayer`](@ref) takes: its dimension is set by the model, and
+its parameters by [`compile`](@ref), which draws them the same way.
 
-This function has been introduced in:
+# Examples
 
-Rezende, Danilo, and Shakir Mohamed. "Variational inference with normalizing flows." _International conference on machine learning._ PMLR, 2015.
+```jldoctest; setup = :(using FlowMessagePassingRules)
+julia> FlowMessagePassingRules.forward(PlanarFlow(1.0, 2.0, 3.0), 1.0) ≈ 1.0 + tanh(5.0)
+true
+```
 """
 mutable struct PlanarFlow{T1, T2 <: Real} <: AbstractCouplingFlow
     u::T1

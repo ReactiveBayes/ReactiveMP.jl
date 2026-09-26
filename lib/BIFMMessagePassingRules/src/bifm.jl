@@ -1,16 +1,89 @@
 @doc raw"""
     BIFM
 
-A whole time slice of a linear state-space model, for backward-information-filter
-forward-marginal (BIFM) smoothing:
+The deterministic node of a whole time slice of a linear state-space model, for
+backward-information-filter forward-marginal (BIFM) smoothing:
 
 ```math
 z_{next} = A z_{prev} + B u, \qquad out = C z_{next},
 ```
 
-with `in` the input `u`. Its interfaces are `out`, `in`, `zprev` and `znext`. It is used with
-[`BIFMHelper`](@ref) at the start of the chain, and its rules run under [`BIFMSmoother`](@ref),
-which the model gives each BIFM node:
+with the matrices `A`, `B` and `C` carried by its algorithm, [`BIFMSmoother`](@ref), which the
+model must give each BIFM node. A chain of BIFM nodes starts with [`BIFMHelper`](@ref).
+
+# Interfaces
+
+- `out`: the output, `C znext`, a vector;
+- `in`: the input `u`, a vector;
+- `zprev`: the previous state;
+- `znext`: the next state.
+
+Every message the rules read is a multivariate normal; the forward rules read the message on
+`zprev` as a `TerminalProdArgument` wrapping one, the marginal that [`BIFMHelper`](@ref) or the
+previous slice sends.
+
+# Smoothing
+
+Smoothing runs in two passes over the chain. The backward pass sends information-form messages
+towards `zprev`, from the messages on `out`, `in` and `znext`:
+
+```math
+\begin{aligned}
+\xi_z &= C^\top \xi_{out} + \xi_{znext}, &
+\Lambda_z &= C^\top \Lambda_{out} C + \Lambda_{znext}, &
+H &= (\Lambda_{in} + B^\top \Lambda_z B)^{-1}, \\
+\tilde\xi_z &= \xi_z + \Lambda_z B H (-\xi_{in} - B^\top \xi_z), &
+\tilde\Lambda_z &= \Lambda_z (I - B H B^\top \Lambda_z), &
+m_{zprev} &= \mathcal{N}^{-1}(A^\top \tilde\xi_z,\; A^\top \tilde\Lambda_z A).
+\end{aligned}
+```
+
+[`BIFMHelper`](@ref) turns it into the forward pass, whose messages towards `in`, `out` and
+`znext` are the marginals of those variables themselves, as `TerminalProdArgument`s, so that the
+engine takes them as the marginals without a product. Each forward rule reads the message on its
+own edge, besides the others, and recomputes the backward quantities from them: the rules keep
+nothing between calls, so they are independent of the order they run in, and one
+[`BIFMSmoother`](@ref) may serve every node. On a chain the result is the Rauch–Tung–Striebel
+smoother's.
+
+# Limitations
+
+- **No free energy.** A deterministic node's free energy reads the joint marginal of its
+  inputs, `q(in, zprev, znext)`, whose rule here throws a
+  [`BIFMFreeEnergyError`](@ref BIFMMessagePassingRules.BIFMFreeEnergyError), as does the average
+  energy of [`BIFMHelper`](@ref). Run the inference without the free energy.
+- Multivariate normal messages only, with a `TerminalProdArgument` on `zprev` for the forward
+  rules: the chain must start with [`BIFMHelper`](@ref).
+- Under the default algorithm,
+  [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), no rule exists: every
+  node must be given a [`BIFMSmoother`](@ref).
+
+# Examples
+
+A scalar random walk observed without transformation: the message on `out` is `N(1, 1)`, the
+input's `N(0, 1)`, and nothing is known of the next state yet, so the backward message on `zprev`
+is `N(1, 2)`.
+
+```jldoctest; setup = :(using BIFMMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily)
+julia> algorithm = BIFMSmoother([1.0;;], [1.0;;], [1.0;;]);
+
+julia> result = @call_message_update_rule(
+           node = BIFM, target = :zprev, algorithm = algorithm,
+           m = (
+               out = MvNormalMeanPrecision([1.0], [1.0;;]),
+               in = MvNormalMeanPrecision([0.0], [1.0;;]),
+               znext = MvNormalWeightedMeanPrecision([0.0], [0.0;;]),
+           ),
+       );
+
+julia> m, V = mean_cov(getresult(result));
+
+julia> m ≈ [1.0] && V ≈ [2.0;;]
+true
+```
+
+In a model, with RxInfer, the chain starts at a [`BIFMHelper`](@ref) and ends at a flat prior
+on the last state:
 
 ```julia
 z_prior ~ MvNormalMeanPrecision(zeros(2), diageye(2))
@@ -25,20 +98,30 @@ z[end] ~ MvNormalMeanPrecision(zeros(2), zeros(2, 2))
 
 with `z_prior` and `z` in separate clusters, `q(z_prior) q(z)`.
 
-The backward pass sends information-form messages towards `zprev`; the forward pass returns
-`TerminalProdArgument`s, the marginals of `in`, `out` and `znext` themselves. Each forward rule
-reads the message on its own edge, as well as the others, and computes the backward quantities
-from them, so the rules are pure and independent of the order they run in. The free energy of
-a model with BIFM is not supported.
+See also [`BIFMSmoother`](@ref), [`BIFMHelper`](@ref).
 """
 struct BIFM end
 
 """
     BIFMSmoother(A, B, C)
 
-[`BIFM`](@ref)'s algorithm: the transition matrices of `znext = A zprev + B in` and
-`out = C znext`. It keeps nothing between calls; the statistics of the input come from the
-message on `in`.
+The algorithm of [`BIFM`](@ref): the matrices of `znext = A zprev + B in` and `out = C znext`,
+converted to a common element type. It keeps nothing between calls, so one smoother may serve
+every node of a chain; the statistics of the input come from the message on `in`. The node
+declares no algorithm of its own, so a model must give this one.
+
+# Arguments
+
+- `A`: the `d × d` state transition;
+- `B`: the `d × k` input matrix, for a `k`-dimensional input;
+- `C`: the `p × d` output matrix, for a `p`-dimensional output.
+
+# Throws
+
+A `DimensionMismatch` when `A` is not square, `B` has not as many rows as `A`, or `C` has not
+as many columns as `A` has rows.
+
+# Examples
 
 ```jldoctest
 julia> using BIFMMessagePassingRules
@@ -193,10 +276,11 @@ end
 )
 
 """
-    BIFMFreeEnergyError(node)
+    BIFMFreeEnergyError(node::Symbol)
 
-The free energy of a model with [`BIFM`](@ref) or [`BIFMHelper`](@ref) was asked for, which is
-not supported.
+The error thrown when the free energy of a model with [`BIFM`](@ref) or [`BIFMHelper`](@ref)
+is asked for, which is not supported: BIFM smoothing computes the posteriors, and its Bethe free
+energy is not derived. `node` names the node that threw, `:BIFM` or `:BIFMHelper`.
 """
 struct BIFMFreeEnergyError <: Exception
     node::Symbol

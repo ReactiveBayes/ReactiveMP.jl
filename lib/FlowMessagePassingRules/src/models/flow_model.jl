@@ -1,25 +1,38 @@
 # The flow model and its compiled form.
 
-@doc raw"""
+"""
     FlowModel([rng,] dim::Int, layers::Tuple)
     FlowModel([rng,] layers::Tuple)
 
-The FlowModel structure is the most generic type of Flow model, in which the layers are not constrained to be of a specific type. The FlowModel structure contains the input dimensionality and a tuple of layers and can be constructed as `FlowModel( dim, (layer1, layer2, ...) )`, or as `FlowModel( (InputLayer(dim), layer1, layer2, ...) )`.
+A flow model of dimension `dim`, a tuple of layers whose sizes are set and whose parameters are
+not: [`compile`](@ref) gives it its parameters, and the [`Flow`](@ref) node takes the
+[`CompiledFlowModel`](@ref) that results.
 
-It creates a flow model with uninitialized parameters, with its layers appropriately sized
-according to the input dimensionality `dim`. Its random permutations, those of a
-[`PermutationLayer`](@ref)`()` and of an [`AdditiveCouplingLayer`](@ref) with `permute = true`,
-are drawn from `rng`, by default the task's generator.
+# Arguments
 
-Input arguments:
-- `rng::AbstractRNG` - the generator the random permutations are drawn from, optional.
-- `dim::Int` - input dimensionality.
-- `layers<:NTuple{N,AbstractLayer}` - arbitrarily sized tuple containing abstractlayers.
+- `rng`: the generator the random permutations are drawn from, those of a
+  [`PermutationLayer`](@ref)`()` and of an [`AdditiveCouplingLayer`](@ref) with `permute = true`.
+  Default: the task's generator.
+- `dim`: the dimension of the input, and of the output.
+- `layers`: the layers, applied in order: [`AdditiveCouplingLayer`](@ref)s and
+  [`PermutationLayer`](@ref)s. In the second form the tuple starts with an
+  [`InputLayer`](@ref)`(dim)`, which gives the dimension.
 
-Return arguments:
-- `::FlowModel` - model containing layers of which are appropriately sized according to the input dimensionality.
+# Throws
 
-Note: this model can be specialized by constraining the types of layers. This potentially allows for more efficient specialized methods that can deal with specifics of these layers, such as triangular jacobian matrices.
+An `AssertionError` when the second form's tuple does not start with an [`InputLayer`](@ref).
+
+# Examples
+
+```jldoctest; setup = :(using FlowMessagePassingRules)
+julia> model = FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()), AdditiveCouplingLayer(PlanarFlow())));
+
+julia> length(getlayers(model))   # each coupling layer is followed by a permutation
+4
+
+julia> nr_params(model)
+6
+```
 """
 struct FlowModel{N, T <: NTuple{N, AbstractLayer}} <: AbstractFlowModel
     dim::Int
@@ -66,18 +79,19 @@ prepare(
     T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N},
 } = map(layer -> _prepare(rng, dim, layer), layers)
 
-@doc raw"""
+"""
     CompiledFlowModel
 
-The CompiledFlowModel structure is the most generic type of compiled Flow model, in which the layers are not constrained to be of a specific type. The FlowModel structure contains the input dimension and a tuple of compiled layers. Do not manually create a CompiledFlowModel! Instead create a FlowModel first and compile it with `compile(model::FlowModel)`. This will make sure that all layers/mappings are configured with the proper dimensionality and with randomly sampled parameters. Alternatively, if you would like to pass your own parameters, call `compile(model::FlowModel, params::Vector)`.
+A flow model with its parameters set, which the [`Flow`](@ref) node takes through
+[`FlowApproximation`](@ref). It is made by [`compile`](@ref) from a [`FlowModel`](@ref), never by
+hand, so that every layer and coupling flow is sized for the model's dimension.
 
-Its output, Jacobians and inverse are [`FlowMessagePassingRules.forward`](@ref),
-[`FlowMessagePassingRules.backward`](@ref), [`FlowMessagePassingRules.jacobian`](@ref),
-[`FlowMessagePassingRules.inv_jacobian`](@ref), [`FlowMessagePassingRules.forward_jacobian`](@ref)
-and [`FlowMessagePassingRules.backward_inv_jacobian`](@ref), and `eltype(model)` is the element type
-of its parameters.
-
-Note: this model can be specialized by constraining the types of layers. This potentially allows for more efficient specialized methods that can deal with specifics of these layers, such as triangular jacobian matrices.
+Its output and inverse are [`FlowMessagePassingRules.forward`](@ref) and
+[`FlowMessagePassingRules.backward`](@ref), its Jacobians
+[`FlowMessagePassingRules.jacobian`](@ref) and [`FlowMessagePassingRules.inv_jacobian`](@ref),
+with both at once from [`FlowMessagePassingRules.forward_jacobian`](@ref) and
+[`FlowMessagePassingRules.backward_inv_jacobian`](@ref); [`getlayers`](@ref) gives its layers,
+[`nr_params`](@ref) the number of its parameters, and `eltype(model)` their element type.
 """
 struct CompiledFlowModel{N, T <: NTuple{N, AbstractLayer}} <:
     AbstractCompiledFlowModel
@@ -85,17 +99,15 @@ struct CompiledFlowModel{N, T <: NTuple{N, AbstractLayer}} <:
     layers::T
 end
 
-@doc raw"""
-    compile([rng,] model::FlowModel)
+"""
+    compile([rng,] model::FlowModel) -> CompiledFlowModel
 
-`compile()` compiles a model by setting its parameters. It randomly sets parameter values in the layers and flows such that inference in the model can be obtained, drawing them from `rng`, by default the task's generator.
+Give a flow model random parameters, drawn from `rng`, by default the task's generator. Each
+coupling flow draws its own, in the order of the layers: see [`PlanarFlow`](@ref) and
+[`RadialFlow`](@ref) for the distributions. Permutations are the model's, drawn when it was
+built.
 
-Input arguments
-- `rng::AbstractRNG` - the generator the parameters are drawn from, optional.
-- `model::FlowModel` - a model of which the dimensionality of its layers/flows has been initialized, but its parameters have not been set.
-
-Return arguments
-- `::CompiledFlowModel` - a compiled model with set parameters, such that it can be used for processing data.
+See also [`compile(::FlowModel, ::Vector)`](@ref).
 """
 compile(model::FlowModel) = compile(default_rng(), model)
 function compile(rng::AbstractRNG, model::FlowModel)
@@ -103,17 +115,24 @@ function compile(rng::AbstractRNG, model::FlowModel)
     return CompiledFlowModel(model.dim, compile(rng, model.layers))
 end
 
-@doc raw"""
-    compile(model::FlowModel, params::Vector)
+"""
+    compile(model::FlowModel, params::Vector) -> CompiledFlowModel
 
-`compile(model::FlowModel, params::Vector)` lets you initialize a model `model` with a vector of parameters `params`.
+Give a flow model the parameters `params`, which the layers take in order, each coupling flow its
+own consecutive slice. The result is deterministic: nothing is drawn.
 
-Input arguments
-- `model::FlowModel` - a model of which the dimensionality of its layers/flows has been initialized, but its parameters have not been set.
-- `params::Vector`   - a vector of parameters with which the model should be compiled.
+# Throws
 
-Return arguments
-- `::CompiledFlowModel` - a compiled model with set parameters, such that it can be used for processing data.
+An `AssertionError` when `length(params)` is not [`nr_params`](@ref)`(model)`.
+
+# Examples
+
+```jldoctest; setup = :(using FlowMessagePassingRules)
+julia> model = compile(FlowModel(2, (AdditiveCouplingLayer(PlanarFlow(); permute = false),)), [1.0, 2.0, 3.0]);
+
+julia> FlowMessagePassingRules.forward(model, [1.0, 2.0]) ≈ [1.0, 2.0 + 1.0 + tanh(2.0 + 3.0)]
+true
+```
 """
 function compile(model::FlowModel, params::Vector)
 

@@ -1,20 +1,29 @@
 @doc raw"""
     PermutationMatrix(ind::Vector{<:Integer})
-    PermutationMatrix([rng,] dim::Integer; switch_first = true)
+    PermutationMatrix([rng,] dim::Integer; switch_first::Bool = true)
 
 A permutation matrix, with ones at `(k, ind[k])` for `k = 1:length(ind)` and zeros elsewhere, so
-that multiplying by it permutes a vector or a square matrix:
+that `P * v` is `v[ind]`. Its inverse is its adjoint, and products with vectors, square matrices
+and other permutations reorder entries without multiplying.
 
-```math
-A_{ij} \in \{0, 1\}, \qquad \sum_i A_{ij} = 1, \qquad \sum_j A_{ij} = 1.
-```
+# Arguments
 
-The second form draws a random permutation of size `dim × dim` from `rng`, by default the task's
-generator. With `switch_first`, the first index is always moved.
+- `ind`: the permutation, a vector of the indices `1:n` in some order.
+- `rng`: the generator the random permutation is drawn from. Default: the task's generator.
+- `dim`: the size of the random permutation, `dim × dim`.
 
-```jldoctest
-julia> using FlowMessagePassingRules
+# Keywords
 
+- `switch_first`: when `true`, a draw that keeps the first index in place swaps the first two
+  entries, so the first element always moves. Default `true`.
+
+# Throws
+
+A `DimensionMismatch` for a product with a matrix that is not square.
+
+# Examples
+
+```jldoctest; setup = :(using FlowMessagePassingRules)
 julia> PermutationMatrix([2, 1, 3]) * [10, 20, 30]
 3-element Vector{Int64}:
  20

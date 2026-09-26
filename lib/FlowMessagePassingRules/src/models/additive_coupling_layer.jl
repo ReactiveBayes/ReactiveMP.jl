@@ -3,40 +3,45 @@
 @doc raw"""
     AdditiveCouplingLayer(flow; partition_dim::Int = 1, permute::Bool = true)
 
-The additive coupling layer specifies an invertible function ``{\bf{y}} = g({\bf{x}})`` following the specific structure (for the mapping ``g: \mathbb{R}^2 \rightarrow \mathbb{R}^2``):
+A layer of a [`FlowModel`](@ref) that adds to each coordinate a coupling flow of the one before
+it. For an input ``x \in \mathbb{R}^d``,
 
 ```math
-    \begin{align}
-        y_1 &= x_1 \\
-        y_2 &= x_2 + f(x_1)
-    \end{align}
+y_1 = x_1, \qquad y_k = x_k + f_{k-1}(x_{k-1}), \quad k = 2, \dots, d,
 ```
 
-where ``f(\cdot)`` denotes an arbitrary function with mapping ``f: \mathbb{R} \rightarrow \mathbb{R}``. This function can be chosen arbitrarily complex. Non-linear functions (neural networks) are often chosen to model complex relationships. From the definition of the model, invertibility can be easily achieved as
+with a flow ``f_{k-1}`` of its own for each ``k``, all of the kind of `flow`. It is invertible
+whatever the flows are, ``x_k = y_k - f_{k-1}(x_{k-1})`` in order, and its Jacobian is
+lower-triangular with a unit diagonal, so its determinant is one. For ``d = 2`` it is the layer
+of Dinh, Krueger and Bengio, "NICE: Non-linear independent components estimation",
+arXiv:1410.8516 (2014).
 
-```math
-    \begin{align}
-        x_1 &= y_1 \\
-        x_2 &= y_2 - f(y_1)
-    \end{align}
+!!! warning "Scalar partitions only"
+    Only `partition_dim = 1` works: every coordinate is its own partition. A larger
+    `partition_dim` builds a model whose [`FlowMessagePassingRules.forward`](@ref) throws a
+    `MethodError`, since a coupling flow is not applied to a block of coordinates.
+
+# Arguments
+
+- `flow`: the coupling flow placeholder, [`PlanarFlow`](@ref)`()` or [`RadialFlow`](@ref)`()`.
+  The layer's dimension is set when it is wrapped in a [`FlowModel`](@ref), and the flows'
+  parameters by [`compile`](@ref).
+
+# Keywords
+
+- `partition_dim`: the size of a partition, which must divide the model's dimension. Default
+  `1`, the only size that works.
+- `permute`: whether the model places a random [`PermutationLayer`](@ref) after the layer, so
+  that the next coupling layer mixes the coordinates in another order. Default `true`.
+
+# Examples
+
+```jldoctest; setup = :(using FlowMessagePassingRules)
+julia> model = compile(FlowModel(3, (AdditiveCouplingLayer(PlanarFlow(); permute = false),)), zeros(6));
+
+julia> FlowMessagePassingRules.forward(model, [1.0, 2.0, 3.0]) ≈ [1.0, 3.0, 5.0]   # u = 0: each fₖ(x) = x
+true
 ```
-
-The current implementation only allows for the mapping ``g: \mathbb{R}^2 \rightarrow \mathbb{R}^2``, although this layer can be generalized for arbitrary input dimensions.
-
-`AdditiveCouplingLayer(f)` creates the layer structure with function `f`, a coupling flow
-placeholder such as [`PlanarFlow`](@ref)`()` or [`RadialFlow`](@ref)`()`. Its dimension is set
-when it is wrapped in a [`FlowModel`](@ref), and its parameters by [`compile`](@ref). With
-`permute`, the model places a random [`PermutationLayer`](@ref) after it.
-
-### Example
-```julia
-f = PlanarFlow()
-layer = AdditiveCouplingLayer(f)
-```
-
-This layer structure has been introduced in:
-
-Dinh, Laurent, David Krueger, and Yoshua Bengio. "Nice: Non-linear independent components estimation." _arXiv preprint_ arXiv:1410.8516 (2014).
 """
 struct AdditiveCouplingLayer{T <: NTuple{N, AbstractCouplingFlow} where {N}} <:
     AbstractCouplingLayer
