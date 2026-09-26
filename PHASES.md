@@ -3705,7 +3705,8 @@ wait for the release):
   every service is supplied, throws an `ArgumentError` naming the rule, the services and the
   `context` option; the engine calls it wherever it resolves a rule (`MessageMapping`,
   `MarginalMapping`, the node's free energy). The interactive calls do not, since they run with
-  the caller's context, empty by default. Found: the free energy's average energies never see
+  the caller's context, empty by default; their docstrings state it as their contract, and a
+  test pins it (user). Found: the free energy's average energies never see
   the node's `context` option (not-done table).
 - *The working documents reconciled — done* (2026-09-26): `PLAN.md`, `DISCUSSION.md`, this file,
   `INVENTORY.md` and `CLAUDE.md` audited against each other and the code after §3.49–3.51; stale

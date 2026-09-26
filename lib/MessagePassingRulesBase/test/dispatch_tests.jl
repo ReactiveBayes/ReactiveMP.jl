@@ -254,6 +254,12 @@ end
     @test contains(report, "Scaled") && contains(report, ":scale") && contains(report, "context")
     # An entry that is `nothing` counts as supplied.
     @test MessagePassingRulesBase.check_services(spec, RuleContext(scale = nothing)) === nothing
+    # The contract of the calls by hand: they run with the context given and check nothing, so a
+    # declared service it lacks reads as `nothing` inside the rule.
+    @define_message_update_rule(node = Scaled, target = :in, ctx = (:scale,), args = (m[:out]::Float64,), body = (ctx, args) -> ctx.scale)
+    @test getresult(call_message_update_rule(Scaled, :in; m = (out = 1.0,))) === nothing
+    @test getresult(@call_message_update_rule(node = Scaled, target = :in, m = (out = 1.0,))) === nothing
+    @test getresult(message_passing_rule(Scaled, Target(:in), DefaultAlgorithm(), RuleArgs(m = (out = 1.0,)))) === nothing
     # Merging overrides and adds, as an engine layers a model's services over its defaults.
     merged = merge(RuleContext(rng = :default, scale = 1.0), (scale = 2.0, extra = 1))
     @test merged.rng === :default && merged.scale === 2.0 && merged.extra === 1

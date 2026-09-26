@@ -232,6 +232,11 @@ outgoing_annotations(ann) = ann
 
 Resolve the message rule towards `target` and run it, allocating its result. Returns a
 [`RuleResult`](@ref); [`getresult`](@ref) is the message.
+
+`ctx` is the [`RuleContext`](@ref) the rule runs with, empty by default. **Its services are not
+checked**: a service the rule declares and `ctx` does not supply reads as `nothing` inside the
+rule. An engine resolving rules for a graph calls [`check_services`](@ref) before running one;
+the same holds for every `message_passing_*` call below.
 """
 @inline function message_passing_rule(node, target, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_message_rule(node, target, algorithm, args))
@@ -241,7 +246,8 @@ end
 """
     message_passing_rule!(output, node, target, algorithm, args[, ctx, ann])
 
-Resolve an in-place message rule and run it into `output`. Returns a [`RuleResult`](@ref).
+Resolve an in-place message rule and run it into `output`. Returns a [`RuleResult`](@ref). The
+services of `ctx` are not checked, as for [`message_passing_rule`](@ref).
 """
 @inline function message_passing_rule!(output, node, target, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_message_rule(node, target, algorithm, args))
@@ -252,7 +258,8 @@ end
 """
     message_passing_marginalrule(node, cluster, algorithm, args[, ctx, ann])
 
-Resolve the marginal rule for `cluster` and run it. Returns a [`RuleResult`](@ref).
+Resolve the marginal rule for `cluster` and run it. Returns a [`RuleResult`](@ref). The services
+of `ctx` are not checked, as for [`message_passing_rule`](@ref).
 """
 @inline function message_passing_marginalrule(node, cluster, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_marginal_rule(node, cluster, algorithm, args))
@@ -262,7 +269,7 @@ end
 """
     message_passing_marginalrule!(output, node, cluster, algorithm, args[, ctx, ann])
 
-As [`message_passing_marginalrule`](@ref), into `output`.
+As [`message_passing_marginalrule`](@ref), into `output`. The services of `ctx` are not checked.
 """
 @inline function message_passing_marginalrule!(output, node, cluster, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_marginal_rule(node, cluster, algorithm, args))
@@ -273,7 +280,8 @@ end
 """
     message_passing_average_energy(node, algorithm, args[, ctx, ann])
 
-Resolve and compute a node's average energy. Returns a [`RuleResult`](@ref).
+Resolve and compute a node's average energy. Returns a [`RuleResult`](@ref). The services of
+`ctx` are not checked, as for [`message_passing_rule`](@ref).
 """
 @inline function message_passing_average_energy(node, algorithm, args, ctx = RuleContext(), ann = NoAnnotations())
     spec = throw_if_not_found(find_average_energy(node, algorithm, args))
@@ -296,8 +304,12 @@ missing_services(spec::RuleSpec, ctx::RuleContext) =
 Throw when `spec` declares a context service that `ctx` does not supply (see
 [`missing_services`](@ref)), naming the rule and the services. An engine calls it when it
 resolves a rule, before running it, so a service nobody supplies is an error there rather than
-a `nothing` inside the rule. It allocates nothing when every service is supplied. The
-interactive calls do not check, since they run with whatever context the caller passes.
+a `nothing` inside the rule. It allocates nothing when every service is supplied.
+
+The interactive calls ([`call_message_update_rule`](@ref) and its siblings, the `@call_*` macros)
+and the `message_passing_*` calls **do not check**: they run with whatever context the caller
+passes, empty by default, and a service it lacks reads as `nothing`. Call `check_services`
+first for the engine's guarantee.
 """
 @inline function check_services(spec::RuleSpec, ctx::RuleContext)
     # Against the names, which the context's type fixes: `haskey` on the `NamedTuple` would box it.

@@ -41,6 +41,11 @@ on the given inputs and return a [`RuleResult`](@ref): [`getresult`](@ref) is th
 pairs. `logscale` gives the log scales that arrived with the messages, keyed like `m`, for a
 rule declared with `reads_logscale = true`. `algorithm` defaults to the node's; pass an
 `AnnotationStore` as `ann` to collect what the rule annotates.
+
+`ctx` is the [`RuleContext`](@ref) the rule runs with, empty by default. **Its services are not
+checked**: a service the rule declares and `ctx` does not supply reads as `nothing` inside the
+rule, so an unset `matrix_correction` means the rule's own default. An engine checks them when it
+resolves a rule ([`check_services`](@ref)); call it yourself for the same guarantee here.
 """
 function call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), logscale = nothing, algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
     resolved_target, args = as_target(target), interactive_args(m, q, clusters, logscale)
@@ -51,7 +56,8 @@ end
     call_marginal_update_rule(node, target; m, q, clusters, algorithm, ctx, ann)
 
 As [`call_message_update_rule`](@ref), for the marginal of the cluster `target`, e.g. `(:out, :μ)`.
-Returns a [`RuleResult`](@ref), with no log scale.
+Returns a [`RuleResult`](@ref), with no log scale. The services of `ctx` are not checked: one the
+rule declares and `ctx` lacks reads as `nothing` ([`check_services`](@ref)).
 """
 function call_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
     cluster, args = as_cluster(target), interactive_args(m, q, clusters)
@@ -62,7 +68,8 @@ end
     call_average_energy(node; q, clusters, algorithm, ctx)
 
 As [`call_message_update_rule`](@ref), for a node's average energy. Returns a
-[`RuleResult`](@ref), with no log scale.
+[`RuleResult`](@ref), with no log scale. The services of `ctx` are not checked: one the rule
+declares and `ctx` lacks reads as `nothing` ([`check_services`](@ref)).
 """
 function call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
     args = interactive_args(m, q, clusters)
@@ -119,7 +126,8 @@ end
 """
     @call_message_update_rule(node = ..., target = ..., m = (...), q = (...), ...)
 
-[`call_message_update_rule`](@ref), written with keywords.
+[`call_message_update_rule`](@ref), written with keywords; as it does, it runs with the `ctx` given and
+does not check its services.
 
 ```jldoctest
 julia> struct Shift end
@@ -147,7 +155,8 @@ end
 """
     @call_marginal_update_rule(node = ..., target = (:y, :x), ...)
 
-[`call_marginal_update_rule`](@ref), written with keywords.
+[`call_marginal_update_rule`](@ref), written with keywords; as it does, it runs with the `ctx` given and
+does not check its services.
 """
 macro call_marginal_update_rule(args...)
     return esc(keyword_call("call_marginal_update_rule", call_marginal_update_rule, (:node, :target), args))
@@ -156,7 +165,8 @@ end
 """
     @call_average_energy(node = ..., q = (...), ...)
 
-[`call_average_energy`](@ref), written with keywords.
+[`call_average_energy`](@ref), written with keywords; as it does, it runs with the `ctx` given and
+does not check its services.
 """
 macro call_average_energy(args...)
     return esc(keyword_call("call_average_energy", call_average_energy, (:node,), args))
