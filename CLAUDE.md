@@ -98,7 +98,8 @@ julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures
 ```
 
 Work targets **Julia 1.13**, and **no CI runs** until a PR is opened: every check above is run
-locally. The workflows under `.github/` run these same checks, on 1.13.
+locally. The workflows under `.github/` run these same checks, on 1.13 (the format check on
+1.10, where Runic's output is byte-identical).
 
 `test_args` takes three kinds of entry, and they compose:
 
@@ -245,7 +246,7 @@ and read whichever exist before proposing changes:
 treat `main` as the whole story.
 
 The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
-review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7 is closed: RxInfer is adapted on its branch `refactor/reactivemp-v7` (pushed, no PR, run by `IntegrationTest.yml`), the diagnostics are activation options (`DISCUSSION.md` §3.46), and log scales stay exactly as v6 has them until after the release (§3.48). Phase C, the cleanup, is next, with the performance pass before the release.
+review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7 is closed: RxInfer is adapted on its branch `refactor/reactivemp-v7` (pushed, no PR, run by `IntegrationTest.yml`), the diagnostics are activation options (`DISCUSSION.md` §3.46). **Phase C, the cleanup, is in progress**: it has also brought back rule fallbacks and opened the rule context (§3.49), made log scales part of the message with `RuleResult` (§3.50, superseding §3.48's "as v6 has them") and given `RuleResult` its display (§3.51). Next is the engine calling `missing_services` at resolution; before the release, the remaining 27 log scales and the performance pass (`PHASES.md`, *Next action* and the not-done table).
 From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
 machinery is kept, and rule lookup and invocation plus node and rule definition and creation
 are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to
@@ -255,8 +256,9 @@ directory. Breaking downstream
 packages before the release is accepted.
 
 Remarks in code and tests that only record the rewrite's history (phases, steps, cases, what
-v6 did, pointers into these documents) are allowed while it is in progress, and **Phase C**
-removes them before the release, with these documents (`PHASES.md` § Phase C).
+v6 did, pointers into these documents) are already out of `src/` and `lib/`; do not add new
+ones. What remains (the inventory, `compat/`, these documents, the CHANGELOG's step-by-step
+entries) waits for the release, and **Phase C** removes it then (`PHASES.md` § Phase C).
 
 When work is in progress, update `PHASES.md` **in the same commit as the change it
 describes**. Never mark something done as a separate act — status claimed without a diff

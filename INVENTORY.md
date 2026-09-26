@@ -76,12 +76,12 @@ replacement".
 | `ExponentialFamily.NormalMeanVariance` | `node` | `src/nodes/predefined/normal_mean_variance.jl` | `standard` |  |
 | `Flow` | `node` | `src/nodes/predefined/flow/flow.jl` | `node:Flow` |  |
 | `GCV` | `node` | `src/nodes/predefined/gcv.jl` | `node:GCV` | needs StatsFuns, and Gauss–Hermite cubature and `approximate_meancov` from `MessagePassingRulesApproximations` for its `ExponentialLinearQuadratic` (Phase 6 entry brief) |
-| `GammaMixture` | `node` | `src/nodes/predefined/gamma_mixture.jl` | `standard` | ~250-line clone of NormalMixture; collapses with groups |
+| `GammaMixture` | `node` | `src/nodes/predefined/gamma_mixture.jl` | `standard` | a NormalMixture clone in v6; in Standard a short declaration over interface groups, with `matched_groups`, `min_group_length` and `factorisation = :meanfield` (`DISCUSSION.md` §3.38) |
 | `GaussianCoupling` | `node` | `src/nodes/predefined/gaussian_coupling.jl` | `node:GaussianCoupling` |  |
 | `HalfNormal` | `node` | `src/nodes/predefined/half_normal.jl` | `standard` |  |
 | `IMPLY` | `node` | `src/nodes/predefined/implication.jl` | `standard` | logic |
 | `InverseWishart` | `node` | `src/nodes/predefined/wishart_inverse.jl` | `standard` |  |
-| `Mixture` | `node` | `src/nodes/predefined/mixture.jl` | `standard` | escapes `@node` entirely today; variadic groups delete ~70-85% |
+| `Mixture` | `node` | `src/nodes/predefined/mixture.jl` | `standard` | escaped `@node` in v6; in Standard a `@define_factor_node` with an `inputs` group, under `MixtureBP` (`DISCUSSION.md` §3.35) |
 | `MultinomialPolya` | `node` | `src/nodes/predefined/multinomial_polya.jl` | `node:Polya` | GPL-3 via PolyaGammaHybridSamplers; its energy uses Gauss–Hermite cubature, from `MessagePassingRulesApproximations` |
 | `MvNormalGamma` | `node` | `src/nodes/predefined/mv_normal_gamma.jl` | `standard` |  |
 | `MvNormalMeanScaleMatrixPrecision` | `node` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `standard` |  |
@@ -104,7 +104,7 @@ replacement".
 | `@average_energy` | `macro` | `src/score/score.jl` | `base` | became `@define_average_energy`; `score(AverageEnergy(), …)` became `message_passing_average_energy` |
 | `@call_marginalrule` | `macro` | `src/rule.jl` | `base` | short invocation name retained; see PLAN.md § Naming |
 | `@call_rule` | `macro` | `src/rule.jl` | `base` | renamed `@call_message_update_rule`, with `@call_marginal_update_rule` and `@call_average_energy`; see PLAN.md § Naming |
-| `@logscale` | `macro` | `src/rule.jl` | `base` | deleted as a macro; a rule declares its log scale with the `logscale` keyword of `@define_message_update_rule` (`DISCUSSION.md` §3.50) |
+| `@logscale` | `macro` | `src/rule.jl` | `delete` | deleted as a macro; a rule declares its log scale with the `logscale` keyword of `@define_message_update_rule` (`DISCUSSION.md` §3.50); see the v6 → v7 guide |
 | `@marginalrule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
 | `@node` | `macro` | `src/nodes/nodes.jl` | `base` | renamed `@define_factor_node` |
 | `@rule` | `macro` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
@@ -119,7 +119,7 @@ replacement".
 | `Adam` | `type` | `src/approximations/optimizers/adam.jl` | `delete` | optimiser for the old `ProdCVI` path; use Optimisers.jl directly |
 | `AdditiveCouplingLayer` | `type` | `src/nodes/predefined/flow/layers/additive_coupling_layer.jl` | `node:Flow` |  |
 | `AddonLogScale` | `function` | `src/annotations/logscale.jl` | `delete` | the v5 name; log scales are part of a message now, tracked with the activation option `logscales = true` (`DISCUSSION.md` §3.50); see the v6 → v7 guide |
-| `AddonMemory` | `function` | `src/annotations/input_arguments.jl` | `engine` | the v5 name; its error points to `InputArgumentsAnnotations`. stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`) |
+| `AddonMemory` | `function` | `src/annotations/input_arguments.jl` | `delete` | the v5 name, an error stub pointing to `InputArgumentsAnnotations`, which stays in the engine; the stub is removed; see the v6 → v7 guide |
 | `Autoregressive` | `type` | `src/nodes/predefined/autoregressive.jl` | `node:Autoregressive` | alias |
 | `AverageEnergy` | `type` | `src/score/score.jl` | `delete` | replaced by `message_passing_average_energy` / `call_average_energy` in the base package; the v6 → v7 guide maps `score(AverageEnergy(), …)` to `call_average_energy` |
 | `BIFM` | `type` | `src/nodes/predefined/bifm.jl` | `node:BIFM` |  |
@@ -132,8 +132,8 @@ replacement".
 | `CVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection`; `ProdCVI`'s own docstring already says so |
 | `CVIProjection` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
 | `CVISamplingStrategy` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
-| `CompanionMatrix` | `type` | `src/helpers/algebra/companion_matrix.jl` | `node:Autoregressive` | AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules, and its `ARunsafe` path uses its `inv` and `adjoint`; an earlier search for the type's name missed the constructor (Phase 6 entry brief). Its `*` methods contribute 75 Aqua ambiguities and are narrowed when it moves |
-| `CompanionMatrixTransposed` | `type` | `src/helpers/algebra/companion_matrix.jl` | `node:Autoregressive` | AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules, and its `ARunsafe` path uses its `inv` and `adjoint`; an earlier search for the type's name missed the constructor (Phase 6 entry brief). Its `*` methods contribute 75 Aqua ambiguities and are narrowed when it moves |
+| `CompanionMatrix` | `type` | `src/helpers/algebra/companion_matrix.jl` | `node:Autoregressive` | AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules, and its `ARunsafe` path uses its `inv` and `adjoint`; an earlier search for the type's name missed the constructor (Phase 6 entry brief). Its `*` methods, 75 Aqua ambiguities in v6, were narrowed to concrete operands when it moved (Phase 6 step 4) |
+| `CompanionMatrixTransposed` | `type` | `src/helpers/algebra/companion_matrix.jl` | `node:Autoregressive` | AR builds it with `as_companion_matrix` in its `x`, `y`, `γ` and marginal rules, and its `ARunsafe` path uses its `inv` and `adjoint`; an earlier search for the type's name missed the constructor (Phase 6 entry brief). Its `*` methods, 75 Aqua ambiguities in v6, were narrowed to concrete operands when it moved (Phase 6 step 4) |
 | `CompiledFlowModel` | `type` | `src/nodes/predefined/flow/flow_models/flow_model.jl` | `node:Flow` |  |
 | `CompositeFormConstraint` | `type` | `src/constraints/form.jl` | `engine` |  |
 | `ConjugateAR` | `type` | `src/nodes/predefined/conjugate_autoregressive.jl` | `node:Autoregressive` | its single-interface `w` marginal is not ported |
@@ -161,7 +161,7 @@ replacement".
 | `ForwardDiffGrad` | `type` | `src/approximations/cvi.jl` | `delete` | gradient strategy belonging to the old `ProdCVI`; no replacement |
 | `FullSampling` | `type` | `src/approximations/cvi_projection.jl` | `node:Delta` |  |
 | `GCV` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` |  |
-| `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` |  |
+| `GCVMetadata` | `type` | `src/nodes/predefined/gcv.jl` | `node:GCV` | becomes the algorithm `GCVApproximation(; method = GaussHermiteCubature(n))`; see the v6 → v7 guide |
 | `GammaMixture` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `standard` |  |
 | `GammaMixtureNode` | `type` | `src/nodes/predefined/gamma_mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `GaussHermiteCubature` | `type` | `src/approximations/gausshermite.jl` | `approximations` | Pólya, Probit and GCV use it, so it goes to the numerics package with FastGaussQuadrature, over means and covariances only (Phase 6 entry brief, `DISCUSSION.md` §3.40) |
@@ -191,7 +191,7 @@ replacement".
 | `MvNormalMeanScaleMatrixPrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_matrix_precision.jl` | `standard` |  |
 | `MvNormalMeanScalePrecision` | `type` | `src/nodes/predefined/mv_normal_mean_scale_precision.jl` | `standard` |  |
 | `NOT` | `type` | `src/nodes/predefined/not.jl` | `standard` |  |
-| `NodeFunctionRuleFallback` | `type` | `src/rules/fallbacks.jl` | `delete` | v6's rule fallbacks are not carried over (Phase 5 step 9, DISCUSSION §3.36): when no rule fits, the base package reports `RuleNotFound`; a migration-guide entry |
+| `NodeFunctionRuleFallback` | `type` | `src/rules/fallbacks.jl` | `base` | `MessagePassingRulesBase.NodeFunctionRuleFallback(extract = mean)`, given to the engine as the activation option `rulefallback` (`DISCUSSION.md` §3.49; §3.36 had dropped it); consulted only when resolution finds no rule; see the v6 → v7 guide |
 | `NormalMixture` | `type` | `src/nodes/predefined/normal_mixture.jl` | `standard` |  |
 | `NormalMixtureNode` | `type` | `src/nodes/predefined/normal_mixture.jl` | `delete` | no per-node node types: generic activation from the `NodeSpec` replaces it; no replacement to name |
 | `OR` | `type` | `src/nodes/predefined/or.jl` | `standard` |  |
@@ -200,7 +200,7 @@ replacement".
 | `PlanarFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/planar_flow.jl` | `node:Flow` |  |
 | `Poisson` | `type` | `src/nodes/predefined/poisson.jl` | `standard` |  |
 | `Probit` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` |  |
-| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` | becomes Probit's own algorithm (its moment matching), declaring its dependencies (DISCUSSION §3.21) |
+| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` | becomes Probit's own algorithm, `ProbitEP(; p)`, declaring its dependencies and a default initial message (DISCUSSION §3.21) |
 | `ProdCVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection` |
 | `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
 | `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
@@ -211,7 +211,7 @@ replacement".
 | `RequireMessageFunctionalDependencies` | `type` | `src/nodes/dependencies.jl` | `delete` | not ported: a node's dependencies are declared on its own algorithm (Probit, ContinuousTransition), a one-model override is a `DefaultAlgorithmExtension` with its own dependencies, and an initial value is initialization; see DISCUSSION §3.21 |
 | `RuleInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
 | `SoftDot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` | its own package, independent of AR's (`DISCUSSION.md` §3.40) |
-| `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; 85 Aqua ambiguities, narrow first |
+| `StandardBasisVector` | `type` | `src/helpers/algebra/standard_basis_vector.jl` | `node:Autoregressive` | only consumer is `autoregressive.jl`; its 85 Aqua ambiguities in v6 were narrowed away when it moved (Phase 6 step 4) |
 | `Stochastic` | `type` | `src/nodes/nodes.jl` | `base` |  |
 | `UT` | `type` | `src/approximations/unscented.jl` | `approximations` | alias |
 | `Uninformative` | `type` | `src/nodes/predefined/uninformative.jl` | `standard` |  |
@@ -274,12 +274,12 @@ replacement".
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
 | `form constraints` | `hook` | `src/constraints/form.jl` | `engine` | constrains a variable's marginal inside the graph; an engine concept, not a rule one |
-| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `delete` | not carried over (Phase 5 step 9, DISCUSSION §3.36): the fallback protocol is resolution-based, `find_*` returning `RuleNotFound` and never throwing, so an exception inside a selected rule never reaches a fallback (specified in Phase 0); a migration-guide entry |
+| `rule fallbacks` | `hook` | `src/rules/fallbacks.jl` | `engine` | the activation option `rulefallback` (`DISCUSSION.md` §3.49; §3.36 had dropped it): the protocol is resolution-based, `find_*` returning `RuleNotFound` and never throwing, so the engine consults a fallback only there and an exception inside a selected rule never reaches it (specified in Phase 0); the base package supplies `NodeFunctionRuleFallback` |
 | `callbacks` | `hook` | `src/callbacks.jl` | `engine` | 10 event types, all message-passing lifecycle. Exports nothing but is documented public API (`lib/callbacks.md`) |
 | `stream postprocessors` | `hook` | `src/postprocessors.jl` | `engine` | Rocket streams. Exports nothing but is documented public API (`lib/stream-postprocessors.md`) |
 | `scoring` | `hook` | `src/score/` | `engine` | `@average_energy` became the base package's `@define_average_energy` and `AverageEnergy` its `message_passing_average_energy`; `DifferentialEntropy`, `FactorBoundFreeEnergy` and `VariableBoundEntropy` stay in the engine, which assembles the free energy |
 | `node traits (@node-generated)` | `hook` | `src/nodes/nodes.jl` | `base` | `@define_factor_node` emits a `NodeSpec` alongside the 8 method kinds generated today |
-| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec. Done in case (d): the unknown- and known-inverse layouts are two dependency declarations of `DeltaApproximation`; the old CVI layout is deleted, and CVI projection's is Phase 6 |
+| `delta rule layouts` | `hook` | `src/nodes/predefined/delta/` | `node:Delta` | Phase 0 found the collapse real but partial: dependencies absorb input selection, while static gating, the empty group and `q_out` aliasing become engine features keyed off the spec. Done in case (d): the unknown- and known-inverse layouts are two dependency declarations of `DeltaApproximation`; the old CVI layout is deleted, and CVI projection's moved to the Delta package's extension in Phase 6 step 2 |
 | `CVI optimiser hooks` | `hook` | `src/approximations/cvi.jl` | `delete` | `cvi_setup!`/`cvi_update!` belong to the superseded `ProdCVI`, not to `CVIProjection` |
 
 ## Extensions
@@ -289,7 +289,7 @@ replacement".
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
 | `ReactiveMPOptimisersExt` | `ext` | `ext/ReactiveMPOptimisersExt/` | `delete` | exists solely to supply `cvi_setup`/`cvi_update!` for the old `ProdCVI`; predates `CVIProjection` by over a year |
-| `ReactiveMPProjectionExt` | `ext` | `ext/ReactiveMPProjectionExt/` | `node:Delta` | becomes a weakdep extension of the Delta package; the Phase 0 layout result made that possible |
+| `ReactiveMPProjectionExt` | `ext` | `ext/ReactiveMPProjectionExt/` | `node:Delta` | the Delta package's weakdep extension `DeltaMessagePassingRulesProjectionExt`; the Phase 0 layout result made that possible |
 
 ## Rule-level exceptions
 
@@ -297,10 +297,10 @@ replacement".
 
 | symbol | kind | file | destination | note |
 |---|---|---|---|---|
-| `mixture/switch.jl` | `rule` | `src/rules/mixture/switch.jl` | `standard` | the one engine leak in the rules tree: allocates a throwaway `randomvar` to reach product-with-log-scale. Becomes the `product` context service, which returns the product's own log scale; the rule adds the incoming ones from `ann.m` (Phase 5 step 8, DISCUSSION §3.34) |
+| `mixture/switch.jl` | `rule` | `src/rules/mixture/switch.jl` | `standard` | v6 allocated a throwaway `randomvar` to reach product-with-log-scale. The rule computes the product's log scale itself, `compute_logscale` under `MixtureBP(; prod = GenericProd())`, and reads the incoming ones from `args.logscale.m` (`reads_logscale = true`; `DISCUSSION.md` §3.50, superseding §3.34's `product` service) |
 | `delta layout: default` | `rule` | `src/nodes/predefined/delta/layouts/default.jl` | `node:Delta` | includes the known-inverse variant, which the original count missed |
 | `delta layout: cvi` | `rule` | `src/nodes/predefined/delta/layouts/cvi.jl` | `delete` | old `ProdCVI` |
-| `delta layout: cvi-projection` | `rule` | `ext/ReactiveMPProjectionExt/layout/cvi_projection.jl` | `node:Delta` | moves into the Delta package's extension once its engine half is gone |
-| `mixture rules indexing raw inputs` | `rule` | `src/rules/mixture/` | `standard` | raw message access in switch/out/inputs; hand-migrated in Phase 5 step 8, reading incoming log scales from `ann.m` |
+| `delta layout: cvi-projection` | `rule` | `ext/ReactiveMPProjectionExt/layout/cvi_projection.jl` | `node:Delta` | in the Delta package's extension `DeltaMessagePassingRulesProjectionExt` (Phase 6 step 2) |
+| `mixture rules indexing raw inputs` | `rule` | `src/rules/mixture/` | `standard` | raw message access in switch/out/inputs; hand-migrated in Phase 5 step 8, reading incoming log scales from `args.logscale.m` (`DISCUSSION.md` §3.50) |
 | `discrete_transition rules indexing raw inputs` | `rule` | `src/rules/discrete_transition/` | `node:DiscreteTransition` | raw message/marginal access in categoricals and marginals; replaced by `default` rule arguments, the inputs walked by key with `rule_inputs`, nothing parsed |
 | `MessageMapping construction sites` | `rule` | `src/message.jl` | `engine` | 5 sites; engine wiring |

@@ -10,76 +10,76 @@ Branch: `refactor/rule-node-system-rewrite`
 
 `file:line` citations in the three documents were re-verified against the code after Phase 4.5
 closed (`0b8f1caa`) and not since; the Phase 5 briefs cite the code as it was when each was
-written. Citations into v6 code name ReactiveMP 6.5.0's layout. Only the unported nodes, their
-rules and the helpers and approximations they use are still in `legacy/v6/`, under the same
-paths; everything else of v6 (its engine and rule-system files, `clusters.jl`,
-`dependencies.jl`, `score/`, the fallbacks, and every ported node's files) is only in the 6.5.0
-release and in git. A later reformat or edit moves them again, so re-check before relying on
-one.
+written. Citations into v6 code name ReactiveMP 6.5.0's layout; `legacy/` was deleted in Phase 6
+step 10, so v6's code is only in the 6.5.0 release and in git. A later reformat or edit moves
+them again, so re-check before relying on one.
 
 ---
 
 ## Next action
 
-**Phase C: cleanup** (§ Phase C), starting with its entry brief; and, before the release, the
-performance pass recorded in the not-done table below (user). **Phase 7 is closed** (§ Phase 7,
-*The close*): the engine is complete for the release, with the diagnostics, the generator as an
-activation option, Aqua's ambiguity check on, an engine fixture reaching every ported node, the
-workflows on 1.13, and RxInfer adapted on its branch `refactor/reactivemp-v7` (pushed, no PR),
-its whole suite and five RxInferExamples models agreeing with v6; log scales stay as v6 has them
-until after the release (§3.48). Phases 5 and 6 are closed too.
+**Phase C, in progress** (§ Phase C, *Progress*). Next: **the engine calls `missing_services`
+when it resolves a rule** (user, 2026-09-26), so a declared service nobody supplies is an error
+naming the rule rather than a `nothing` inside it. Then what the not-done table lists before the
+release: the remaining 27 log scales, and the performance pass (user); the rest of Phase C's exit
+criteria wait for the release itself.
+
+Done in Phase C so far: rule fallbacks and the open rule context (§3.49); log scales first-class,
+part of the message, and `RuleResult` (§3.50, superseding §3.48), with 28 more of Standard's
+rules declaring one; `RuleResult`'s rich display (§3.51); dead code out; the engine tests
+without v6 as reference; history out of `src/` and `lib/`; the docs and READMEs in present
+terms. **Phase 7 is closed** (§ Phase 7, *The close*): the diagnostics, Aqua's ambiguity check
+on, an engine fixture reaching every ported node, the workflows on 1.13, and RxInfer adapted on
+its branch `refactor/reactivemp-v7` (pushed, no PR), its whole suite and five RxInferExamples
+models agreeing with v6. Phases 0–6 are closed too.
 
 **Everything not done yet, and where it is recorded**, so nothing is lost between sessions:
 
 | What | Where it lands | Recorded in |
 |---|---|---|
-| typed annotations (`Message{D, A}`), if at all | after the release | `DISCUSSION.md` §3.48 |
-| RxInfer adapted to the new engine API | Phase 7 | § Phase 7 |
+| **next**: the engine calls `missing_services` when it resolves a rule, so a declared service nobody supplies is an error naming the rule there rather than a `nothing` inside it | Phase C, next (user, 2026-09-26) | § Phase 5, *Step 8 brief*; `DISCUSSION.md` §3.49 |
+| log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
+| two rule discrepancies the engine tests found, `@test_broken` in `test/engine/variational_tests.jl`: AR's mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]` | for the user to decide | § Phase C, *Progress* |
+| the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
+| typed annotations (`Message{D, A}`), if at all: since §3.50 the log scale is not an annotation, so this is only a performance question for the remaining side channel, the mutable `AnnotationDict` | after the release | `DISCUSSION.md` §3.48, §3.50 |
+| `InputArgumentsAnnotations` records references to the inputs, not copies; sound only while every rule output is freshly allocated, so it is revisited when output buffers are reused (#10) | with output buffer reuse, after the release | `PLAN.md` § Open items #10 |
+| the mutation detector, a debug mode catching a rule that mutates its inputs (`PLAN.md` § Purity): not built; the purity and in-place audits and the poisoned scratch are what exists | after the release, with the diagnostics (user, 2026-09-26) | `PLAN.md` § Purity |
+| `visualize_spec`'s backend: the public entry point is kept (user), the backend not written, so every call is a `MethodError` that says so. Decided in §3.12 (Phase P) as an extension on GraphPPL's pattern; the intent (user) is comprehensive visualisations of nodes, dependencies and rules, rendered in the documentation, for teaching as well; §3.51 leaves graph-scale pictures to it | undecided (user) | `DISCUSSION.md` §3.12, §3.51 |
 | `Uninformative × missing` is `missing` through `UninformativeProd` and `Uninformative()` through `GenericProd` | with the upstream BayesBase identity item | Phase 5 review |
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only), and its `mean(loggamma, ::GammaShapeRate)` is a Float64 (GammaMixture's switch and energy tables run in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
-| `*`'s sampled messages are unnormalised sums, as in v6: a missing constant in their log scale; the sampled rules declare none | with the remaining log scales, before 7.0 | § Phase 5, *Step 7 brief*; §3.50 |
+| RxInfer's documentation adapted to v7 | with the release work (user) | § Phase 7, *Item 6 brief* |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
-| **inconsistent, to settle** (user, 2026-09-25): `visualize_spec` is a public, documented entry point with no backend anywhere, so every call is a `MethodError`; its backend was decided (§3.12, Phase P), an extension on GraphPPL's pattern, but is tracked nowhere. The intent (user): comprehensive visualisations of nodes, dependencies and rules, rendered in the documentation, for teaching as well. The Phase C audit took it for dead code and removed it; restored at the user's request | undecided (user) | `DISCUSSION.md` §3.12 |
-| the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
-| log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled, Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50 |
-| the engine calls `missing_services` when it resolves a rule, so a declared service that is `nothing` is an error there rather than inside the rule | Phase 7 | § Phase 5, *Step 8 brief* |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
 the base package's method table, global already, and the per-module registries are
 introspection only (`DISCUSSION.md` §3.23, Correction 25).
 
-Phase 4.5's four slice cases and its ground rules are in § Phase 4.5: the step-4 clean cut,
-work on **Julia 1.13 only** wired with `[sources]`, and **no CI runs yet**, everything verified
-locally (`DISCUSSION.md` §3.22).
+Ground rules since Phase 4.5: work on **Julia 1.13 only** wired with `[sources]`, and **no CI
+runs until a PR is opened**, everything verified locally (`DISCUSSION.md` §3.22).
 
-Phases 0–5 are closed. `lib/MessagePassingRulesBase` is the rule system;
-`lib/MessagePassingRulesTestUtils` is its test tooling; `lib/StandardMessagePassingRules` holds
-every standard node (the distributions, arithmetic, logic and the mixtures);
-`lib/MessagePassingRulesApproximations` holds `Unscented` and `smoothRTS`;
-`lib/DeltaMessagePassingRules` holds the Delta node; and `compat/v6-comparison` holds the v6
-oracle, the comparisons and the engine fixtures. ReactiveMP itself is the engine on the new rule
-system; the nodes Phase 6 ports are in `legacy/v6/`. The
-tooling's first finding was a real v6 bug: the variational `NormalMeanVariance` rules use
-`E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v` (ReactiveMP.jl#669). It was **corrected
-when NMV was ported in step 3**, and the comparison declares it.
+Phases 0–7 are closed. `lib/` holds the rule system (`MessagePassingRulesBase`), its test tooling
+(`MessagePassingRulesTestUtils`), the standard nodes (`StandardMessagePassingRules`), the numerics
+(`MessagePassingRulesApproximations`: `Unscented`, `Linearization`, Gauss–Hermite cubature,
+`smoothRTS`) and one package per remaining node (Delta, GaussianCoupling, Probit, GCV,
+Autoregressive, SoftDot, ContinuousTransition, Pólya, BIFM, Flow, DiscreteTransition);
+`compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures, and
+`compat/rxinfer-examples` five RxInferExamples models on v6 and v7. ReactiveMP itself is the engine
+on the new rule system. The tooling's first finding was a real v6 bug: the variational
+`NormalMeanVariance` rules use `E[v]` instead of `1/E[1/v]` for a non-point-mass `q_v`
+(ReactiveMP.jl#669). It was **corrected when NMV was ported in Phase 4.5 step 3**, and the
+comparison declares it.
 
-**Picking this up on another machine.** Everything lives in the repository. With Julia 1.13:
+**Picking this up on another machine.** Everything lives in the repository. With Julia 1.13, run
+every check in `CLAUDE.md` § Running things: the root suite (`make test-all`), each
+`make test-<package>`, and the v6 comparisons and the fixture check in `compat/v6-comparison`
+(after `julia --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'`).
 
-```bash
-git switch refactor/rule-node-system-rewrite && git pull
-make test test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv
-julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv; do
-    julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
-done
-julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
-```
-
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.37,
-and this file's § Phase 5 (its step briefs are the pattern Phase 6 follows) and § Phase 6. Working conventions: one commit per step, failing test first,
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.51,
+and this file's § Phase 5 (its step briefs are the pattern later phases follow), § Phase 7 and
+§ Phase C. Working conventions: one commit per step, failing test first,
 `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive names rather than
 generic ones, and no comments that only narrate.
 
@@ -100,8 +100,8 @@ generic ones, and no comments that only narrate.
 | 4.5 | **Engine design and first cut** — the engine refactored in place for four slice cases *(absorbs the start of 7)* | **done**: steps 0–4, the algorithm reconciliation and all four slice cases |
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
 | 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
-| 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | **closed**: items 1–7; RxInfer's branch pushed, no PR |
-| C | Cleanup: the repository rid of historical remarks, before the release | not started |
+| 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | **closed**: items 1–7; RxInfer's branch pushed, no PR *(item 7's outcome, §3.48, superseded in Phase C by §3.50)* |
+| C | Cleanup: the repository rid of historical remarks, before the release | **in progress**: rule fallbacks and the open context, first-class log scales and `RuleResult` with its display, dead code, the engine tests without v6, history out of `src/` and `lib/`, the docs; next `missing_services` (§ Phase C, *Progress*) |
 | 8 | Release and downstream coordination | not started |
 
 ---
@@ -3426,7 +3426,7 @@ Known scope:
         `EdgeLabel.index` as `k` (#7);
       - `FactorNodeActivationOptions(; algorithm, postprocessor, annotations, callbacks)`
         replaces the six positional fields; `metadata`, `dependencies` and `rulefallback` are
-        gone;
+        gone *(`rulefallback` restored in Phase C, §3.49)*;
       - free energy: `score(T, FactorBoundFreeEnergy(), node, algorithm, pp)` takes the
         algorithm where it took `meta`, and `bethe_free_energy` can replace the assembly in
         `reactivemp_free_energy.jl`;
@@ -3444,7 +3444,9 @@ Known scope:
       pairs budgeted; it was 322 pairs on `main`, most in code now in `legacy/` *(item 1: one
       pair left, `getdata(())`, fixed; the check is on)*
 - [x] the log-scale milestone, after the migration (user): v6's gaps were preserved *(item 7:
-      deferred past the release, v6's behaviour kept as it is, §3.48)*; originally: v6's gaps were preserved
+      deferred past the release, v6's behaviour kept as it is, §3.48; **superseded in Phase C by
+      §3.50**: the log scale is part of the message, declared by rules, and typed annotations are
+      not done)*; originally: v6's gaps were preserved
       deliberately, and this is where they are fixed, **or the feature is dropped**, decided
       then (`DISCUSSION.md` §3.37). Dropping it takes Mixture's rules with it, since its switch
       is a softmax over incoming log scales. Typed annotations (`Message{D, A}`, brief item 3)
@@ -3501,7 +3503,8 @@ Known scope:
    poisoning a recycled in-place output.
 3. **The RNG as an activation option**, the engine's `Random.default_rng()` its default, and
    `*`'s number of samples as a field of its algorithm. *Done:* `FactorNodeActivationOptions(;
-   rng)`, a type parameter of the mappings so the rule call stays type-stable, and
+   rng)`, a type parameter of the mappings so the rule call stays type-stable *(superseded by
+   §3.49: the generator is the `rng` service of the `context` option)*, and
    `MultiplicationSampling(; samples = 3000)`, a `DefaultAlgorithmExtension`, as `*`'s algorithm.
 4. **Engine fixtures** for the nodes listed above, recorded from v6 as before.
 5. **The workflows:** 1.13, the `lib/` layout, a `LibTests` job per package, the comparisons on
@@ -3532,7 +3535,8 @@ Known scope:
 - **Activation**, `activate_rmp_factornode!` (`:528`): `FactorNodeActivationOptions(metadata,
   dependencies, postprocessors, annotations, rulefallback, callbacks)`. v7's takes `algorithm`,
   `postprocessor`, `annotations`, `callbacks`, `diagnostics` and `rng`; `dependencies` and
-  `rulefallback` are gone, and `meta` is the algorithm.
+  `rulefallback` are gone, and `meta` is the algorithm. *(Since §3.49: `rulefallback` is back and
+  `rng` is a service of `context`; §3.50 adds `logscales`.)*
 - **Node queries**, `src/model/graphppl.jl`: GraphPPL's `NodeBehaviour`, `interfaces`,
   `inputinterfaces`, `aliases` and `factor_alias` read `ReactiveMP.sdtype`,
   `is_predefined_node`, `interfaces` and `inputinterfaces`. They become
@@ -3591,7 +3595,8 @@ Known scope:
     a `StandaloneDistribution` (§3.47), its hidden constant counted in the free energy.
   - `@algorithm`, `infer(; algorithm)` and `where { algorithm = … }`; `meta` a deprecated alias;
     `where { dependencies = … }` and `rulefallback` errors saying where they went; the
-    `diagnostics` and `rng` options forwarded; the free energy and force-marginal plugins on
+    `diagnostics` and `rng` options forwarded *(in Phase C, `context`, `rulefallback` and
+    `logscales` forwarded instead, §3.49–3.50)*; the free energy and force-marginal plugins on
     the node's algorithm and local marginals.
   - The tests ported (a subagent): v6's macros to the base's, `@call_rule` to
     `call_message_update_rule`, the dependencies to declarations and `@initialization`; no
@@ -3616,10 +3621,10 @@ Known scope:
 *Done (user, 2026-09-25).* Every item of the known scope is ticked: the diagnostics (item 2), the
 generator as an activation option and `*`'s samples (3), the engine fixtures for every ported node
 (4), the workflows (5), RxInfer on its branch (6), and the log-scale milestone, closed with no
-change past the release (7, §3.48); the small engine fixes (1) switched Aqua's ambiguity check on
+change past the release (7, §3.48, *superseded in Phase C by §3.50*); the small engine fixes (1) switched Aqua's ambiguity check on
 and removed the `EqualityChain` race. Left for later, each recorded: RxInfer's documentation (with
 the release work), the performance pass before the release (`investigations/message-type-parameter/`),
-log scales after it, and each package's `LICENSE` with registration (Phase 8).
+log scales after it *(made first-class in Phase C instead, §3.50)*, and each package's `LICENSE` with registration (Phase 8).
 
 ### Item 7 brief — log scales fixed
 
@@ -3672,6 +3677,10 @@ rules annotating them, none removed, no new requirement or error, and no typed a
 mutable `AnnotationDict` stays. What log scales should be is decided after the refactor is
 released. **Item 7 is closed with no change.**
 
+*(Superseded in Phase C, `DISCUSSION.md` §3.50, user: log scales are part of `Message{D, L}` and
+`Marginal{D, L}`, declared by rules with the `logscale` keyword, undefined values propagating;
+typed annotations are still not done. See § Phase C, *Progress*.)*
+
 ---
 
 ## Phase C — Cleanup: historical remarks out of the repository
@@ -3683,10 +3692,20 @@ into `DISCUSSION.md` or `PHASES.md`, `legacy/` paths. They are irrelevant once t
 done, and git keeps the history. Done last, after Phases 5–7 and before the release, so
 that nothing written in between escapes it.
 
+**Scope as it ran** (user): besides the cleanup, Phase C carried the engine and base changes the
+cleanup's audit raised: rule fallbacks and the open rule context (§3.49), first-class log scales
+and `RuleResult` (§3.50), its rich display (§3.51), and next `missing_services` at resolution.
+Each is recorded in *Progress* below.
+
 **Progress** (plan of 2026-09-25: rule fallbacks; dead code and wrong docs; the engine tests
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, `investigations/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
+- *Next (user, 2026-09-26): the engine calls `missing_services` when it resolves a rule* (the
+  not-done table).
+- *The working documents reconciled — done* (2026-09-26): `PLAN.md`, `DISCUSSION.md`, this file,
+  `INVENTORY.md` and `CLAUDE.md` audited against each other and the code after §3.49–3.51; stale
+  present-tense claims corrected, earlier decisions marked superseded rather than rewritten.
 - *Rule fallbacks and the open rule context — done* (§3.49), with RxInfer's options forwarding
   `context` and `rulefallback`.
 - *First-class log scales — done* (§3.50, user): the log scale is part of `Message` and
@@ -3781,9 +3800,10 @@ this phase requires it to pass for release, rather than being its first executio
 Tracked with stable numbers in `PLAN.md` § Open items. Of 14 items, #1, #3, #8, #9, #10,
 #11, #12 and #14 are resolved (#3 and #9–#12 at the Phase 3 sign-off), and #4 is **deferred by
 decision** (Phase 0; reopened only by a concrete ruleset use case). #13 is **parked** by the
-user and holds back only the `linalg` context service. #6 and #7 were engine integration
-requirements, closed in Phase 4.5 case (c) (#7's RxInfer side, passing `EdgeLabel.index`, is
-Phase 7). #2 remains deferred unless needed. #5
+user; since the `linalg` context service is gone (§3.49), it holds back nothing in the rule
+surface, and the rules call FastCholesky directly. #6 and #7 were engine integration
+requirements, closed in Phase 4.5 case (c) (#7's RxInfer side, passing `EdgeLabel.index`, was
+done in Phase 7, item 6). #2 remains deferred unless needed. #5
 (Reactant/StableCholesky) belongs to a separate effort and does not block this rewrite.
 
 ## Structural note

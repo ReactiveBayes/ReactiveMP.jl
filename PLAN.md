@@ -52,7 +52,9 @@ Verified problems driving the redesign:
   `collect_factorisation`, its node struct, `factornode`, `interfaceindex` and `activate!`.
   `GammaMixture` is a ~250-line clone of `NormalMixture`.
 - **One engine leak in the whole rules tree.** `src/rules/mixture/switch.jl` allocates a
-  throwaway `randomvar` inside a rule to reach product-with-log-scale machinery.
+  throwaway `randomvar` inside a rule to reach product-with-log-scale machinery. *(The
+  switch rule computes the product's log scale itself, under `MixtureBP(; prod = GenericProd())`,
+  `DISCUSSION.md` §3.50.)*
 
 ## Architecture
 
@@ -77,7 +79,9 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
     dependencies and inherits every rule;
   - *an initial value*, such as Probit's `in = NormalMeanPrecision(0, 100)` for a rule that
     depends on its own edge, is **initialization**, not a dependency. A node may declare a
-    default initial message on its definition, separately from `dependencies`.
+    default initial message on its definition, separately from `dependencies`: Probit's
+    `@define_factor_node` has `initial_messages = [:in => NormalMeanPrecision(0.0, 100.0)]`,
+    used where the model sets none.
   Mixture's `RequireMarginal` path was unreachable in v6 and goes with them. The user
   documentation is written in Phase 5: a page on declaring dependencies in the new terms
   only, and a `MIGRATION.md` section mapping the old types to the new pieces. *(The guide is
@@ -102,23 +106,25 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   inputs ambiguous with the default rule it replaces. An inherited rule runs with
   `DefaultAlgorithm()` in its `algo` slot, the algorithm it was written for
   (`rule_algorithm(spec, algorithm)` gives the engine that value).
-- **`context` (`ctx`) is infrastructure, never dispatched on**: a reference to the node
-  itself (`ctx.node`), linear-algebra strategy (replacing the global `cholinv` calls — 48 lines in `src/`
-  mention it; counting every FastCholesky function outside `approximations/` gives 46;
-  `StableCholesky.jl` supplies strategies + workspace), RNG, output buffers, engine
-  services. Explicit argument, never shared across tasks.
+- **`context` (`ctx`) is infrastructure, never dispatched on** (`DISCUSSION.md` §3.49): a
+  `RuleContext`, a mutable holder of a typed `NamedTuple` of services, passed by reference and
+  read-only to rules; every read `ctx.name` is inferred. The engine supplies `node` (the node
+  itself), `rng` (the task's generator) and `matrix_correction` (`nothing`, each rule applying
+  its own default) (`src/context.jl`), merged with the activation option `context`, any
+  `NamedTuple`, which adds or overrides services. Any name is allowed, so a rule may need a
+  service of its own; one nobody supplies reads as `nothing`. There is no `linalg` service
+  (#13) and no `product` service (§3.50). Output buffers and scratch are body slots, not
+  services.
 
-  **`ctx` is read-only infrastructure and does not carry annotations.** Annotations are
+  **`ctx` does not carry annotations.** Annotations are
   their own body slot, `ann`, which the rule both reads (the annotations that *arrived* with
-  its inputs) and writes (`annotate!`); context is immutable state the rule only reads. They
-  are separate slots, and merging them is a category error — an earlier draft of this
-  section listed annotations among the context contents, which was wrong. It is an ordinary object that is constructed once and passed down into the
-  rules — most likely held by `MessageMapping` — not a global and not a `ScopedValue`.
-  An earlier draft proposed a `ScopedValue` for the default; that was never necessary,
-  since a plain default argument does the same job, and it would have raised the Julia
-  floor to 1.11 for no gain.
-- Rules declare which context **services** they need (e.g. `ctx = (:rng, :matrix_correction)`)
-  so the engine can check availability and diagnose missing services.
+  its inputs) and writes (`annotate!`); context is state the rule only reads. They
+  are separate slots, and merging them is a category error. The engine builds one context per
+  node at activation and shares it among the node's mappings — not a global and not a
+  `ScopedValue`, which was never necessary, since a plain default argument does the same job.
+- Rules declare which context **services** they need (e.g. `ctx = (:rng, :matrix_correction)`);
+  `missing_services(spec, ctx)` lists the declared ones a context does not supply. The engine
+  does not yet call it at resolution (a Phase C item).
 
 ### Rule surface
 
@@ -158,7 +164,9 @@ With a node's own algorithm, a variadic group and a log scale (`DISCUSSION.md` �
 The log scale is part of the message, not an annotation: the scalar with
 `message = exp(logscale) · result` for the normalised result a rule returns. A rule declares it
 statically; one that omits it declares none, and its message's log scale is an
-`UndefinedLogScale` that propagates. Every public call of a rule returns a `RuleResult`
+`UndefinedLogScale` that propagates; only `require_logscale` errors on it, where a number is
+needed. The engine tracks log scales only under the activation option `logscales = true`;
+otherwise messages carry `nothing`. Every public call of a rule returns a `RuleResult`
 (`getresult`, `getlogscale`, `getrule`, …); the engine never builds one.
 
 **Why symbols.** In a real lambda, `args.m[μ]` is an `UndefVarError` — `μ` is not a
@@ -205,12 +213,18 @@ NamedTuple-backed container is type-stable and allocation-free.
 order:
 
 ```
-(output, algo, ctx, args, ann)
+(output, scratch, algo, ctx, args, ann)
 ```
 
-(An earlier form had a sixth slot, `node`. It was dropped at the Phase 3 sign-off: nothing
+(An earlier form had a slot `node`. It was dropped at the Phase 3 sign-off: nothing
 dispatches on the node, so it lives in the context as `ctx.node`, and a delta rule reaches
 its function as `getnodefn(ctx.node, …)`. See open item #12.)
+
+`scratch` is a rule's working memory (`DISCUSSION.md` §3.44): the rule declares how to build it
+from its inputs, `scratch = (algo, ctx, args) -> …`, and takes it as a slot; the engine keeps
+one per outbound stream and reuses it. It is write-before-read, carries nothing between calls,
+and is never shared between a node's rules, so a rule using it stays pure. It is separate from
+`inplace`, and the two combine.
 
 The macro reads the names written in the lambda and fills the rest. Order is enforced, so
 every rule reads the same way down a file; relaxing that later is easy, tightening it would
@@ -229,7 +243,7 @@ parameter-bag half of the old `meta`). It is *not* the dispatch mechanism: dispa
 `algorithm` keyword, which types the generated method's algorithm argument. A rule that
 omits `algorithm` belongs to its node's default, `DefaultAlgorithm` for almost every node.
 
-`ctx` and `ann` are deliberately separate: `ctx` is immutable infrastructure the rule
+`ctx` and `ann` are deliberately separate: `ctx` is infrastructure the rule only
 *reads*; `ann` carries annotations in **both** directions — the incoming ones, keyed exactly
 like the inputs (`ann.m[:out]`, `ann.q[:μ]`), and the outgoing sink the rule writes with
 `annotate!(ann, key, v)`. Annotations never take part in dispatch: they must not select
@@ -282,8 +296,9 @@ typed once per definition: `@define_message_update_rule`, `@define_marginal_upda
 short, unexported macros that only worked inside a rule body. They were not really macros:
 they were tokens the enclosing definition macro rewrote, which is why using one elsewhere
 failed confusingly. The keyword form removes the category rather than renaming it —
-`@allocate` is the `preallocate` keyword, and `@logscale` is `annotate!(ann, :logscale, v)`,
-an ordinary function call on the annotations sink the body requested as a slot.
+`@allocate` is the `preallocate` keyword, and `@logscale` is the `logscale` keyword: a
+constant, a function of the body's slots, or `from_body` with the body returning
+`with_logscale(result, logscale)` (`DISCUSSION.md` §3.50).
 
 **Invocation macros — exported, and named after what they invoke** (user, Phase 3):
 `@call_message_update_rule`, `@call_marginal_update_rule`, `@call_average_energy`, with
@@ -377,7 +392,8 @@ apart. It can also carry **the body's source text, file and line**, which is wha
 educational and introspection goals above.
 
 **`RuleSpec` carries no type parameters.** It is a plain immutable struct, every field
-ordinary:
+ordinary. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has
+`kind`, `inputs`, `scratch`, `default`, `services`, `logscale` and `reads_logscale`:
 
 ```julia
 struct RuleSpec
@@ -388,7 +404,7 @@ struct RuleSpec
     source::String         # body text, for `@which_message_update_rule`
     file::Symbol
     line::Int
-    # + node, target, algorithm, argument spec, dependency spec, required services
+    # + node, target, algorithm, signature, required services, …
 end
 ```
 
@@ -455,6 +471,13 @@ inputs in the order they are declared, and in variational message passing that o
 which update a rule sees first. It changes how fast a node converges, not where to
 (`DISCUSSION.md` §3.24); `NormalMixture` lists its precisions before its means for that reason.
 
+A declaration may write `default` among a target's inputs, `:a => (default, q[:a])`: the
+default scheme's inputs plus the listed ones, in interface order (§3.41). A rule may likewise
+take `default` among its arguments, whatever inputs the factorisation delivers, beside typed
+ones; a joint may hold part of a group, keyed with its members, `(:out, (:T, 1))` (§3.45).
+A node declares what it requires of the graph, `matched_groups`, `min_group_length` and
+`factorisation = :meanfield`, and `factornode` checks them (§3.38).
+
 For the default dependency scheme, two axes separate:
 
 - **Role** (message vs marginal) stays derived from the factorisation, as today.
@@ -508,8 +531,11 @@ outside the standard free-energy construction need an explicit scoring contract.
 ### Purity
 
 `pure` is declared on the **algorithm**, inherited by its rules, overridable per rule.
-`DefaultAlgorithm` is pure, so the ~350 already-pure rules need no annotation; impure algorithms such as
-`BIFM` carry the marker once rather than once per rule. Narrowing (pure rule under impure
+`DefaultAlgorithm` is pure, so the ~350 already-pure rules need no annotation; an impure
+algorithm carries the marker once rather than once per rule, and a single impure rule declares
+`pure = false`, as `CVIProjection`'s joint rule does
+(`lib/DeltaMessagePassingRules/ext/DeltaMessagePassingRulesProjectionExt.jl`). BIFM, v6's
+offender, is stateless and its rules pure (`DISCUSSION.md` §3.44). Narrowing (pure rule under impure
 algorithm) is always safe; **widening must taint the graph-level check**, or the
 inheritance is unsound in the direction that matters. Multithreading is not implemented —
 the flag exists so it can be, and so impure rules are diagnosable.
@@ -519,20 +545,21 @@ determinism, and absence of side effects is not establishable by test. Writing a
 is the author's declared responsibility.
 
 **But the declarations can be audited at run time, and that is what matters in practice.**
-See Engine diagnostics: `check_everything_pure` walks the graph and errors naming any rule
-whose algorithm (or own override) declares impurity. Motivating case: when differentiating
+See Engine diagnostics: under `check_everything_pure` the engine errors, as each rule is
+resolved, naming any rule whose algorithm (or own override) declares impurity
+(`DISCUSSION.md` §3.46). Motivating case: when differentiating
 through inference, this identifies declared side effects worth investigating. It does not
 establish whether a gradient is correct or whether a rule supports differentiation.
 
-Optionally, when that flag is on, a *mutation detector* can also run — `deepcopy` the
-algorithm, run, compare with `==` — catching the in-tree offender (BIFM mutating its meta).
-It only sees state reachable from that object, so it is a debug aid on top of the audit,
-not a proof.
+A *mutation detector* could also run under that flag — `deepcopy` the algorithm, run,
+compare with `==` — catching v6's offender (BIFM mutating its meta). It only sees state
+reachable from that object, so it would be a debug aid on top of the audit, not a proof. Not
+built; tracked in `PHASES.md`'s not-done table, after the release.
 
-**What `pure = true` actually permits must be written down**, because `ctx` deliberately
-carries mutable buffers, scratch storage, annotations and RNG state — so "no mutation" would
-outlaw the in-place rules the design exists to enable. Intended contract: *no mutation of
-caller inputs or of shared algorithm state; writes to owned output and scratch storage are
+**What `pure = true` actually permits must be written down**, because a rule writes its
+`output` buffer and its `scratch` and advances the RNG it reads from `ctx` — so "no mutation"
+would outlaw the in-place rules the design exists to enable. Contract: *no mutation of
+caller inputs or of shared algorithm state; writes to the rule's own output and scratch are
 permitted.* Without that sentence the label is ambiguous exactly where it matters.
 
 **Purity does not establish gradient correctness**, and an earlier draft overstated this.
@@ -547,8 +574,8 @@ covering both the allocating and in-place paths.
 owned by the caller. An algorithm that carries its own RNG — today `CVIProjection` defaults to
 `MersenneTwister(42)` and `BinomialPolyaMeta` to `default_rng()`, neither ever reset — is
 `pure = false`. `CVIProjection`'s mutable proposal state makes it impure independently.
-Since Phase 5 step 7 (user, `DISCUSSION.md` §3.32), the engine supplies `Random.default_rng()`
-as `ctx.rng` until Phase 7 makes the RNG an activation option; tests pass a `StableRNG`.
+The engine supplies the task's `Random.default_rng()` as the `rng` service, overridden through
+the activation option `context`, `(rng = StableRNG(…),)` in tests (`DISCUSSION.md` §3.32, §3.49).
 
 ### In-place rules
 
@@ -603,10 +630,11 @@ already allocated), the shape must be declared:
 
 Separately and with no ownership reasoning required: decide whether `Message` is immutable
 or a `mutable struct` with `const` fields **by benchmark** (Phase 4.5, user: the mutable form
-is deliberate, since pass-by-reference can avoid copies), make annotations a type
-parameter with a zero-field `NoAnnotations` default, and fold products over raw
-distributions rather than `Message`s. That removes 2–3 of the 4 fixed allocations per
-message and the `2(d-1)` per variable.
+is deliberate, since pass-by-reference can avoid copies), and fold products over raw
+distributions rather than `Message`s. Annotations stay the mutable `AnnotationDict` side
+channel; typed annotations are not done. The type parameter a message gained is its log
+scale, `Message{D, L}`, `L` being `Nothing` when the engine does not track them
+(`DISCUSSION.md` §3.48, §3.50).
 
 ### Engine diagnostics
 
@@ -614,15 +642,20 @@ A family of opt-in audit flags on the inference engine, **all `false` by default
 reporting the *specific offending rule* rather than failing vaguely. Cheap, because the
 registry already knows every declaration.
 
+They are fields of `EngineDiagnostics`, the activation option `diagnostics`, checked as each
+rule is resolved rather than by a pass over a built graph (`src/diagnostics.jl`;
+`DISCUSSION.md` §3.46).
+
 - **`check_everything_pure`** — errors if any rule in the graph declares impurity. For
   differentiating through inference (ForwardDiff), and as the prerequisite audit before
-  multithreading is ever switched on. Optionally also runs the mutation detector (see
-  Purity).
+  multithreading is ever switched on. The mutation detector (see Purity) is not built.
 - **`check_everything_inplace`** — reports rules with no in-place implementation. A coverage
   audit for latency-sensitive use (robotics, real-time), not a correctness one.
-- **Checked buffers** — poisons recycled output buffers as a debugging aid. A stale
-  reference can still observe a valid later value, so pair this with retained-value tests
-  and the ownership contract. Run the full suite in checked mode as a separate CI job.
+- **`checked_buffers`** — poisons recycled memory with `NaN` before each reuse, as a debugging
+  aid. The scratch is the only memory recycled: in-place outputs are allocated per call. A
+  stale reference can still observe a valid later value, so pair this with retained-value
+  tests and the ownership contract. No CI job runs in checked mode: the engine has no global
+  switch for it.
 
 These are also how a user *finds* what to fix: the answer to "why is my model allocating /
 why are my gradients wrong / why can't I thread this" should be a rule name, not a hunt.
@@ -643,8 +676,10 @@ would later belong. Keep `buffer_like` extensible and documented; build nothing 
 ### Package split
 
 The boundary is already almost clean: rules need only `getdata` and distribution math — no
-Rocket, no factor graph, no scheduler. The exceptions are `src/rules/mixture/switch.jl`
-(one `randomvar` call, becomes a context service) and 12 rules using `getnode`/`getnodefn`.
+Rocket, no factor graph, no scheduler. The exceptions were v6's `src/rules/mixture/switch.jl`
+(one `randomvar` call; the switch rule computes the product's log scale under
+`MixtureBP(; prod)`, `DISCUSSION.md` §3.50) and 12 rules using `getnode`/`getnodefn` (now
+`ctx.node`).
 **Granularity beyond the packages below — splitting rules by distribution family — is
 explicitly deferred.**
 
@@ -653,17 +688,17 @@ algorithms out of the core. Sorting today's 28 deps:
 
 | package | contents | deps |
 |---|---|---|
-| `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like`, `public_equivalent` (§3.29) — **not** `Message`/`Marginal`, which stay in the engine | `MacroTools`, `TupleTools`, `BayesBase`, `LinearAlgebra` — **and nothing else** |
-| `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`) and the mixtures | `ExponentialFamily`, `Distributions`, `BayesBase`, `StatsFuns`, `SpecialFunctions`, `LogExpFunctions`, `DomainSets`; `FastCholesky`, `LinearAlgebra` and `MatrixCorrectionTools` from Phase 5 step 5 |
-| node packages | one per non-standard node, among them `GCV`, `Probit`, `SoftDot` and `GaussianCoupling` (user, Phase 5 step 6; `DISCUSSION.md` §3.30) | each its own; `StatsFuns` and the standard rules for those four |
-| `MessagePassingRulesApproximations` | numerical utilities: `Unscented`, `Linearization`, `smoothRTS`, shared point/weight machinery, over means and covariances. **Standalone — does *not* depend on the base package, nor on any distribution package** | `LinearAlgebra`, `FastCholesky`; `ForwardDiff` with `Linearization` |
-| `DeltaMessagePassingRules` | the Delta node `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules (created in Phase 4.5 case (d)) | the base, `MessagePassingRulesApproximations`, `ExponentialFamily`, `Distributions`, `BayesBase` |
+| `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like`, `public_equivalent` (§3.29), scratch (§3.44), rule fallbacks (§3.49), log scales, `RuleResult` and its display (§3.50, §3.51) — **not** `Message`/`Marginal`, which stay in the engine | `BayesBase`, `MacroTools` — **and nothing else** |
+| `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`), the mixtures, `StandaloneDistribution` (§3.47), and the algebra helpers the node packages share (§3.40) | `ExponentialFamily`, `Distributions`, `BayesBase`, `StatsFuns`, `SpecialFunctions`, `LogExpFunctions`, `DomainSets`; `FastCholesky`, `LinearAlgebra` and `MatrixCorrectionTools` from Phase 5 step 5 |
+| node packages | one per non-standard node or family (user, Phase 5 step 6; `DISCUSSION.md` §3.30): `GaussianCoupling`, `Probit`, `GCV`, `Autoregressive` (AR, ConjugateAR), `SoftDot` (independent of the AR package, §3.40), `ContinuousTransition`, `Polya`, `BIFM`, `Flow`, `DiscreteTransition`, each `<Name>MessagePassingRules` | each its own |
+| `MessagePassingRulesApproximations` | numerical utilities over means and covariances: `Unscented`, `Linearization`, Gauss–Hermite cubature, `approximate_meancov`, `smoothRTS`, shared point/weight machinery (§3.40). **Standalone — does *not* depend on the base package, nor on any distribution package** | `LinearAlgebra`, `FastCholesky`, `FastGaussQuadrature`, `ForwardDiff` |
+| `DeltaMessagePassingRules` | the Delta node `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules (created in Phase 4.5 case (d)), and `CVIProjection`, its rules an extension on ExponentialFamilyProjection | the base, `MessagePassingRulesApproximations`, `ExponentialFamily`, `Distributions`, `BayesBase` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
-| `ReactiveMP` | engine | `Rocket`, `MessagePassingRulesBase`, `BayesBase`, `Distributions`, `LinearAlgebra`, `MacroTools`, `TinyHugeNumbers`, `TupleTools`, `UUIDs` |
+| `ReactiveMP` | engine | `Rocket`, `MessagePassingRulesBase`, `BayesBase`, `Distributions`, `LinearAlgebra`, `MacroTools`, `Random`, `TinyHugeNumbers`, `TupleTools`, `UUIDs` |
 
-The base package is genuinely thin. Two current deps are single-node-specific and should
-follow their nodes out: `Tullio` (only `DiscreteTransition`) and `PolyaGammaHybridSamplers`
-(only the Pólya nodes).
+The base package is genuinely thin. The two single-node-specific deps left the engine with their
+nodes: `PolyaGammaHybridSamplers` is a dependency of `PolyaMessagePassingRules` alone, and
+`Tullio` of nothing, since the tensor-node DiscreteTransition needs none (§3.45).
 
 **Where the line falls.** `StandardMessagePassingRules` holds what is generic and
 model-agnostic — distributions, arithmetic, logic, mixtures. Domain-specific models each get
@@ -672,7 +707,8 @@ their own node package (user, Phase 5 step 6, replacing the unnamed `models` pac
 `node:SoftDot` and `node:GaussianCoupling`. A node
 leaves for its own package only for a stated reason, and every such reason is recorded in
 `INVENTORY.md`: a heavy or licence-bearing dependency (`DiscreteTransition`/Tullio,
-Pólya/GPL-3), impurity (`BIFM` mutates its meta from inside message rules), keeping a distribution package
+Pólya/GPL-3), impurity (`BIFM`, whose v6 rules mutated their meta; its package's rules are
+stateless, §3.44), keeping a distribution package
 out of the engine and the standard/node split (`Delta`, `DISCUSSION.md` §3.25; the engine
 coupling once expected turned out to be the engine owning the node's function), or an
 explicit decision (`ContinuousTransition`).
@@ -686,12 +722,12 @@ consult when moving code.
 
 ### Repository layout
 
-**Monorepo now, split at Phase 6.** The new packages live as subdirectories of this
-repository under `lib/` while the API is in flux, and are promoted to their own
-`ReactiveBayes/*` repositories once Phase 3 freezes the base API and Phase 4.5 proves the
-engine interface. Phase 4.5 proved it; the split waits for Phase 6. *(Superseded by
-`DISCUSSION.md` §3.40: the monorepo stays through Phases 6 and 7, and splits in Phase 8, with
-registration.)*
+**Monorepo now, split at Phase 8** (`DISCUSSION.md` §3.40). The new packages live as
+subdirectories of this repository under `lib/`, and are promoted to their own
+`ReactiveBayes/*` repositories at registration, when compat bounds and CI are set anyway.
+Phase 3 froze the base API and Phase 4.5 proved the engine interface; a split before
+registration would turn each cross-package change into pull requests and dev pins for
+packages nobody can yet install.
 
 ```
 ReactiveMP.jl/
@@ -703,10 +739,23 @@ ReactiveMP.jl/
     StandardMessagePassingRules/
     MessagePassingRulesApproximations/
     DeltaMessagePassingRules/
+    GaussianCouplingMessagePassingRules/
+    ProbitMessagePassingRules/
+    GCVMessagePassingRules/
+    AutoregressiveMessagePassingRules/
+    SoftDotMessagePassingRules/
+    ContinuousTransitionMessagePassingRules/
+    PolyaMessagePassingRules/          # GPL-3
+    BIFMMessagePassingRules/
+    FlowMessagePassingRules/
+    DiscreteTransitionMessagePassingRules/
   compat/v6-comparison/     # ReactiveMP@6.5.0, RxInfer 5.5.2 and the new packages: the v6
                             # oracle, the comparisons and the recorded engine fixtures
-  (legacy/v6/)              # Phase 4.5 step 4 to Phase 6 step 10: the unported v6 code; gone
+  compat/rxinfer-examples/  # five RxInferExamples models, on v6 and on RxInfer's v7 branch
+  investigations/           # performance investigations for the performance pass; never loaded
 ```
+
+`legacy/v6/`, the unported v6 code from Phase 4.5 step 4, was deleted in Phase 6 step 10.
 
 **Julia 1.13 only, for now** (Phase 4.5, user; `DISCUSSION.md` §3.22). Every inter-package
 dependency is wired with `[sources]`, test-only ones included, via `[extras]`. The floor, and
@@ -720,8 +769,10 @@ inter-package dependency inside `lib/` is listed in `[deps]` — and in `[source
 **at test time** (`make test-testutils`, `LibTests.yml`);
 no Manifest under `lib/` is committed, so each Julia version resolves for itself. (An earlier
 version of this paragraph said to commit a dev-link Manifest; one resolved on 1.10 cannot
-serve 1.11 and 1.12, so Phase 4 changed it.) Documented in `lib/README.md`. It is the one
-concrete thing the floor decision costs.
+serve 1.11 and 1.12, so Phase 4 changed it.) It was the one concrete thing the floor
+decision cost. `lib/README.md` documents the current wiring: siblings in `[deps]` and
+`[sources]`, test-only ones in `[extras]` and `[sources]`, `Pkg.test()` from each package's own
+project, Julia 1.13, no committed Manifest.
 
 The reason was the open items. Boundaries were still moving when this was decided — #9
 through #13 were API decisions that had not landed (#9–#12 have since been resolved at the
@@ -740,7 +791,8 @@ recorded from v6, not a live side-by-side**, which is why that checker must
 capture results rather than only assert equality. The engine itself is rewritten in place
 in `src/`, with no bridge letting v6 call the new rules; the v6 rule system and every
 unported node moved to `legacy/v6/` in step 4, after their fixtures were recorded
-(`DISCUSSION.md` §3.18, §3.22).
+(`DISCUSSION.md` §3.18, §3.22), and the directory was deleted in Phase 6 step 10, once every
+node was ported.
 ReactiveMP takes a hard `[deps]` entry on `MessagePassingRulesBase`, wired the same way.
 **Downstream breakage before the release is accepted**: only a small internal group uses the
 branch and checks it locally, and the coordinated downstream CI stays a Phase 8 gate.
@@ -762,7 +814,7 @@ Delta-owned value holding the approximation method and the optional known invers
 in `lib/DeltaMessagePassingRules`. Keeping them separate
 leaves the numerics usable outside this ecosystem and keeps the dependency graph flat.
 
-Node packages (Delta, Flow) depend on both.
+Node packages depend on both where they use the numerics: Delta, Flow, Probit, GCV and Pólya.
 
 **Measured disposition of `src/approximations/` (~1922 lines).** Deleting the unused parts
 is what actually removes the heavy cubature dependencies — repackaging them would not have.
@@ -773,7 +825,7 @@ is what actually removes the heavy cubature dependencies — repackaging them wo
 | `rts.jl` (`smoothRTS`) | → same package | `rules/delta/unscented/marginals.jl:25`, `rules/delta/linearization/marginals.jl:27` |
 | `cvi.jl` (`ProdCVI`, aliased `CVI`), `optimizers*` | **delete** | superseded — its own docstring reads *"`ProdCVI` is deprecated in favor of `CVIProjection`"* |
 | `cvi_projection.jl` (`CVIProjection`, sampling strategies) | → Delta node package, implementation in its extension | see *CVI projection* below |
-| `gausshermite.jl` (`ghcubature`) | → Pólya node package | only user is `multinomial_polya` |
+| `gausshermite.jl` (`ghcubature`) | → `MessagePassingRulesApproximations`, with `approximate_meancov` (§3.40) | Pólya, Probit's energy and GCV's `ExponentialLinearQuadratic` use them |
 | `sphericalradial.jl` (`srcubature`) | **delete** | no consumer |
 | `gausslaguerre.jl` (`glcubature`) | **delete** | no consumer |
 | `importance.jl` | **delete** | no consumer |
@@ -783,18 +835,18 @@ Dependency consequences: **`Optim` leaves ReactiveMP entirely** (only `laplace.j
 **`DiffResults` leaves with `cvi.jl`**, its only user; **`ReactiveMPOptimisersExt` and the
 `Optimisers` weakdep are deleted outright** — that extension exists solely to supply
 `cvi_setup!`/`cvi_update!` for the removed method. `FastGaussQuadrature` follows
-`ghcubature` to the Pólya package; `DomainIntegrals` and `HCubature` go to
+`ghcubature` to `MessagePassingRulesApproximations` (§3.40); `DomainIntegrals` and `HCubature` go to
 `MessagePassingRulesTestUtils` (they serve the rule-comparison quadrature in
 `src/rule.jl:1464`, which is test machinery); `DomainSets` stays with
 `StandardMessagePassingRules` (`normal_mean_variance/var.jl`; the ported `gamma_shape_rate/a.jl`
 does not need it).
 
-What survives is small: `Unscented`, `Linearization`, `smoothRTS` and the shared
-point/weight machinery — **no cubature package at all**. *(An earlier version said they need
-only ForwardDiff, Random, LinearAlgebra and Distributions. Porting found that `unscented.jl`
-also used ExponentialFamily, for `JointNormal`, and FastCholesky. The package is now pure
-numerics over means and covariances: `LinearAlgebra` and `FastCholesky`, with `ForwardDiff`
-arriving with `Linearization`.)*
+What survives is small: `Unscented`, `Linearization`, Gauss–Hermite cubature,
+`approximate_meancov`, `smoothRTS` and the shared point/weight machinery, pure numerics over
+means and covariances: `LinearAlgebra`, `FastCholesky`, `FastGaussQuadrature` and `ForwardDiff`
+(§3.40). The methods of `approximate_meancov` that take a distribution stay with the node
+packages, so the package still depends on no distribution package. *(Porting found that v6's
+`unscented.jl` also used ExponentialFamily, for `JointNormal`; the port does without it.)*
 
 **A capability regression — accepted, with conditions.** (An earlier draft called it *the
 only* one. That was wrong: `srcubature`, `LaplaceApproximation` and
@@ -825,9 +877,11 @@ supersedes it) but it moves behind an install.
 
 ### CVI projection, and a hypothesis about delta layouts
 
-`CVIProjection` spans awkward territory today: the type lives in `legacy/v6/src/approximations/` (v6's `src/approximations/`), the
-rules and a *layout* live in `ReactiveMPProjectionExt`, and the layout is engine code — it
-constructs `MessageMapping`, calls `connect!`, wires Rocket streams.
+`CVIProjection` spanned awkward territory in v6: the type lived in `src/approximations/`, the
+rules and a *layout* in `ReactiveMPProjectionExt`, and the layout was engine code — it
+constructs `MessageMapping`, calls `connect!`, wires Rocket streams. It now lives in
+`lib/DeltaMessagePassingRules/src/cvi_projection.jl`, its rules in the package's extension on
+ExponentialFamilyProjection, and the layout is gone.
 
 **Hypothesis: `AbstractDeltaNodeDependenciesLayout` is a bespoke version of the dependency
 language.** Four layouts exist (default, known-inverse, CVI, CVI-projection), implementing
@@ -855,7 +909,7 @@ See `DISCUSSION.md` §3.15.
 
 **On that condition the plan is**: collapse layouts into dependency declarations
 first *(done for the default and known-inverse layouts in Phase 4.5 case (d): two
-declarations of `DeltaApproximation`; the CVI-projection layout remains, Phase 6)*, after which `CVIProjection` has no engine half at all — just an algorithm struct, a
+declarations of `DeltaApproximation`; the CVI-projection layout in Phase 6)*, after which `CVIProjection` has no engine half at all — just an algorithm struct, a
 dependency declaration, and rules. It then ships as a **weakdep extension of the Delta node
 package**, keeping today's pattern, and no separate package is needed. A standalone package
 stays the cheap upgrade later if anyone needs to depend on the projection rules, if compat
@@ -946,9 +1000,10 @@ The dispatch result, ownership contracts and early engine integration are separa
 *(Rewritten at the Phase 4.5 reconciliation for the clean cut, §3.22.)*
 
 - `src/rule.jl` (1984 lines), `src/rules/`, `src/nodes/predefined/`, `src/approximations/`,
-  `ext/` — **moved to `legacy/v6/` in Phase 4.5 step 4**, never loaded, kept for reference.
-  Phase 5 and 6 port them out of there, node by node.
-- `src/nodes/nodes.jl` — `@node` and the v6 traits go to `legacy/v6/`; `FactorNode`,
+  `ext/` — **moved to `legacy/v6/` in Phase 4.5 step 4**, never loaded; Phases 5 and 6 ported
+  them into `lib/`, node by node, and Phase 6 step 10 deleted the directory. v6's code is in
+  the 6.5.0 release and in git.
+- `src/nodes/nodes.jl` — `@node` and the v6 traits are gone; `FactorNode`,
   `factornode` and `activate!` stay in the engine and are rebuilt on the `NodeSpec`:
   `(name, index)` interfaces, clusters as interface-name tuples, arity and aliases from the
   spec, generic activation with no per-node override.
@@ -957,16 +1012,21 @@ The dispatch result, ownership contracts and early engine integration are separa
   carries its member tuple, never a joined name.
 - The mixtures' per-node `factornode`/`activate!`/`collect_latest_*` are not ported: groups and
   declared dependencies replace them (brief item 2).
-- `src/nodes/predefined/delta/` — moved; in case (d) its layouts became a Delta-owned
+- `src/nodes/predefined/delta/` — in case (d) its layouts became a Delta-owned
   algorithm, `DeltaApproximation` in `lib/DeltaMessagePassingRules`, and engine features keyed
   off the spec: static folding and gating (`src/nodes/static_inputs.jl`), `q_out` aliasing and
   the empty group.
 - `src/nodes/interfaces.jl` — v6's `ManyOf` and its helpers are deleted (case (c)); a group
   reaches a rule as a tuple.
-- `src/message.jl`, `src/marginal.jl` — stay in the engine, value types included. Rules see
-  raw distributions in `args`, annotations in `ann` and the node in `ctx.node`, so the
-  envelope (`is_clamped`, `is_initial`, annotations) is unwrapped by the engine before a rule
+- `src/message.jl`, `src/marginal.jl` — stay in the engine, value types included:
+  `Message{D, L}` and `Marginal{D, L}`, `L` the log scale (`DISCUSSION.md` §3.50). Rules see
+  raw distributions in `args`, the incoming log scales in `args.logscale` (for a rule declaring
+  `reads_logscale = true`), annotations in `ann` and the node in `ctx.node`, so the envelope
+  (`is_clamped`, `is_initial`, annotations, log scale) is unwrapped by the engine before a rule
   is called and the base package never knows it (decided while planning Phase 3).
+- `src/scratch.jl` — the scratch slot each message and marginal mapping keeps (§3.44);
+  `src/diagnostics.jl` — `EngineDiagnostics` (§3.46); `src/context.jl` — the node's
+  `RuleContext` (§3.49).
 - `src/nodes/equality.jl` — `BitVector` caches → `Vector{Bool}` (bit-packed writes are
   read-modify-write on a shared word; neighbouring indices race).
 
@@ -975,10 +1035,11 @@ The dispatch result, ownership contracts and early engine integration are separa
 1. ~~**Rule syntax final form.**~~ **RESOLVED.** The surface is fully keyword-based with an
    ordinary lambda body over a real arguments object, symbols throughout
    (`target = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members as `q[:p][k]`,
-   indexed targets as `(:m, k)`, body slots `(output, algo, ctx, args, ann)` (originally
-   with a sixth, `node`, dropped by #12) in
+   indexed targets as `(:m, k)`, body slots `(output, scratch, algo, ctx, args, ann)`
+   (`scratch` added by §3.44; a slot `node` dropped by #12) in
    canonical order, and dispatch carried by the `algorithm` keyword. `@allocate` and
-   `@logscale` are deleted rather than renamed. See § Rule surface.
+   `@logscale` are deleted rather than renamed, into the `preallocate` and `logscale`
+   keywords. See § Rule surface.
 2. **`aligned` generality** — everything in-tree is `k ↔ k`. `q[:p][f(k)]` extends
    naturally; don't build until something needs it. (Not `q[:p[f(k)]]`, which parses as
    `(:p)[f(k)]` — indexing a `Symbol`. See § Rule surface.)
@@ -1009,6 +1070,9 @@ The dispatch result, ownership contracts and early engine integration are separa
    not-found branch only, which is decided before any body runs. An exception from inside a
    selected rule therefore cannot reach the fallback, structurally rather than by discipline.
    This removes v6's asymmetry, where `rule` returns a sentinel and `marginalrule` throws.
+   Built as the activation option `rulefallback`, with the base's `NodeFunctionRuleFallback`,
+   v6's computation from the node function (`lib/MessagePassingRulesBase/src/fallback.jl`;
+   `DISCUSSION.md` §3.49).
 5. **Reactant and StableCholesky** — deferred to their own effort. Per-rule compilation is
    an explicitly supported *research* path when it happens, not a rejected one; whole-sweep
    tracing and `vmap` are a superset of it, not a competing approach. Nothing to decide
@@ -1028,14 +1092,13 @@ The dispatch result, ownership contracts and early engine integration are separa
    pin it before touching, because bit-identical scheduling is what Phase 4.5 compares.
    Since the v6 wiring is replaced rather than bridged, "pinning" means recording v6's
    emission order as a fixture (Phase 4.5 Step 0) that the new engine must reproduce.
-7. ~~**`EdgeLabel.index`**~~ **RESOLVED on the engine side** (Phase 4.5 case (c)). It exists in GraphPPL but RxInfer discards it; ReactiveMP re-derives
+7. ~~**`EdgeLabel.index`**~~ **RESOLVED** (engine side in Phase 4.5 case (c), RxInfer side in Phase 7 item 6). It exists in GraphPPL but RxInfer discarded it; ReactiveMP re-derived
    group indices from position, silently depending on neighbour order. Plumb it through.
-   *(Engine side resolved in Phase 4.5: `factornode` takes `((:m, k), variable)` and the index
-   reaches the rule's `k`, verified by case (c). RxInfer passing `EdgeLabel.index` as `k` is
-   Phase 7.)*
+   *(`factornode` takes `((:m, k), variable)` and the index reaches the rule's `k`, verified
+   by case (c); RxInfer's `refactor/reactivemp-v7` branch passes `EdgeLabel.index` as `k`.)*
 8. ~~**Does `MessagePassingApproximations` exist at all?**~~ **RESOLVED.** Yes, as
-   `MessagePassingRulesApproximations`, holding `Unscented`/`Linearization`/`smoothRTS`
-   and shared point/weight machinery — **standalone numerical utilities that do not depend
+   `MessagePassingRulesApproximations`, holding `Unscented`/`Linearization`/`smoothRTS`,
+   Gauss–Hermite cubature and `approximate_meancov` (§3.40), and shared point/weight machinery — **standalone numerical utilities that do not depend
    on the base package**. Old CVI and unused methods are deleted; CVI projection belongs to
    the Delta package and its extension. See § Approximations are utilities, not algorithms.
 9. ~~**Beliefs consumed vs. the partition whose entropy is counted.**~~ An earlier draft
@@ -1071,8 +1134,10 @@ The dispatch result, ownership contracts and early engine integration are separa
     decided by the engine alone and is **deliberately unspecified** — it may or may not
     happen, and may change between releases. Anything outside the engine (callbacks,
     subscribers, user code) must copy what it wants to keep; any getter the engine offers to
-    outsiders **copies by default**. `InputArgumentsAnnotations` records **deep copies** of
-    its inputs and result. Phase 3's base package defines only `preallocate`/`rule!`; the
+    outsiders **copies by default**. `InputArgumentsAnnotations` records **references** to its
+    inputs and result, not copies (`src/annotations/input_arguments.jl`): safe only because
+    every rule output is freshly allocated, and load-bearing once output buffers are reused
+    (tracked in `PHASES.md`'s not-done table). Phase 3's base package defines only `preallocate`/`rule!`; the
     engine-internal retainers (`DeferredMessage` cache, equality-chain caches, subjects) are
     the engine's own eligibility problem, settled in Phases 4.5/7.
 
@@ -1093,15 +1158,16 @@ The dispatch result, ownership contracts and early engine integration are separa
     moves: the error must also name the method to switch to (today it names only the
     package), and the check belongs in an inner constructor, since the positional
     `DeltaMeta{M, I}(…)` bypasses it (nothing in-tree calls it that way).
-    *(Case (d) moved the guard to `DeltaApproximation(; method, inverse)`
-    (`lib/DeltaMessagePassingRules/src/node.jl`). Both follow-ups are still open, for Phase 6
-    with `CVIProjection`: the positional `DeltaApproximation(method, inverse)` bypasses the
-    check, and the error names neither a package nor an alternative method.)*
+    *(Case (d) moved the guard to `DeltaApproximation`, and Phase 6 step 2 settled both
+    follow-ups: the check is in its inner constructor, so the positional form cannot bypass
+    it, and the error names the methods the node takes and the package that supplies
+    `CVIProjection` (`lib/DeltaMessagePassingRules/src/node.jl:41–66`).)*
 
 12. ~~**Context service contracts.**~~ Phase 0 turned both hard cases into signatures, each
     demonstrated as a standalone call with no graph and no Rocket:
     `product : (left, right) -> (dist, logscale::Real)`, the log scale being the product's own
-    and not the inputs' (Phase 5 step 8, `DISCUSSION.md` §3.34), and
+    and not the inputs' (Phase 5 step 8, `DISCUSSION.md` §3.34; the service is removed,
+    §3.50), and
     `nodefn : (ctx, target) -> a callable of the free arguments only`. Neither carries an
     engine type. **Still open: incoming annotations have no declared route.** The switch rule
     needs the log scales that *arrived* with its messages, but `args` holds message data and
@@ -1110,19 +1176,22 @@ The dispatch result, ownership contracts and early engine integration are separa
     select the mathematics. Settle the representation before the macro surface freezes. Also clarify that "context is non-dispatching" means it does not select
     the mathematical rule — its concrete services may still specialise for efficiency.
     **RESOLVED at the Phase 3 sign-off.**
-    - Incoming annotations go through the existing `ann` slot, which now carries both
+    - Incoming annotations go through the existing `ann` slot, which carries both
       directions: read `ann.m[:out]` / `ann.q[:μ]`, write `annotate!(ann, …)`. The separate
-      `args.ann_in` accessor is not adopted. See § Rule surface.
+      `args.ann_in` accessor is not adopted. See § Rule surface. Incoming **log scales** are
+      not annotations: a rule declaring `reads_logscale = true` reads them as
+      `args.logscale.m[:x]` (`DISCUSSION.md` §3.50).
     - The context holds a reference to the node, `ctx.node`, so the `node` body slot is
-      dropped: slots are `(output, algo, ctx, args, ann)`. Nothing dispatches on the node.
+      dropped: slots are `(output, scratch, algo, ctx, args, ann)`. Nothing dispatches on the node.
     - `nodefn` is therefore not a service: a delta rule calls `getnodefn(ctx.node, …)`.
-    - Services a rule may declare with `ctx = (...)`: `node`, `product`, `linalg`, `rng`, and,
-      since Phase 5 step 5 (user), `matrix_correction`, a MatrixCorrectionTools strategy. Since
-      step 7 (user, `DISCUSSION.md` §3.31), `nothing` means not set: a rule reads it through
-      `matrix_correction(ctx, default)`, falling back to its own default, and an explicit
-      identity is `NoCorrection()`.
-      The concrete `ctx` type may be parameterised so services specialise.
-    - The Cholesky side of `linalg` is not designed yet — it is parked together with #13.
+    - The `product` service is removed (§3.50): Mixture's switch rule, its one user, computes
+      the product's log scale under `MixtureBP(; prod = GenericProd())`.
+    - The engine's default services are `node`, `rng` and `matrix_correction`, a
+      MatrixCorrectionTools strategy (Phase 5 step 5, user); `nothing` means not set: a rule
+      reads it through `matrix_correction(ctx, default)`, falling back to its own default, and
+      an explicit identity is `NoCorrection()` (§3.31). Any other name is allowed, supplied
+      through the activation option `context` (§3.49). `RuleContext{S <: NamedTuple}` is
+      parameterised, so services specialise. There is no `linalg` service.
     - **Missing inputs behave exactly as in v6** (user, closing Phase 3): when any input is
       `missing`, the rule body and the post-rule annotation processors are both skipped and
       the result is `missing`. Written into the `execute_rule` docstring; pinned by an engine
@@ -1135,8 +1204,8 @@ The dispatch result, ownership contracts and early engine integration are separa
     `MessagePassingRulesBase`. The representation remains open until Phase 3.
     **Parked by the user until the late phases** — no proposal is on the table. The entry
     brief's `approx_cholinv`/`approx_cholsqrt` idea was set aside for further thought, not
-    rejected; do not treat it as the plan. Until then the `linalg` context service stays
-    documented as unstable, and Phase 3 closed without it.
+    rejected; do not treat it as the plan. What is parked is the rules' and the numerics'
+    direct FastCholesky calls; no context service stands in for it.
 
 14. ~~**A complete disposition inventory is missing.**~~ **RESOLVED in Phase P.**
     `INVENTORY.md` assigns a destination or a deliberate deletion to all **231** entities —
@@ -1204,7 +1273,7 @@ reader and never executed, since v6 leaves the repository with the refactor.
   concrete pair. An agent should not have to infer the rule from a description.
 - **Complete case coverage**, including the fiddly ones — `ManyOf` → variadic groups,
   indexed edges `(:in, k)`, joint marginals `q_y_x` → `q[:y, :x]`, `meta` → `algorithm`,
-  `@logscale` becoming `annotate!(ann, ...)`, `getnode`/`getnodefn`, `Marginalisation`
+  `@logscale` becoming the `logscale` keyword (§3.50), `getnode`/`getnodefn`, `Marginalisation`
   removal, the renamed macros and the move to the keyword form.
 - **An explicit "cannot be translated mechanically" section.** Rules touching raw
   `messages[i]`/`marginals[i]` tuples, rules constructing graph objects, anything relying on
@@ -1242,19 +1311,19 @@ Applies to **both** the new packages and ReactiveMP itself.
   TestItemRunner is also the julia-vscode-aligned runner, and `@testitem` itself comes from
   TestItems.jl, with VS Code discovering items by scanning source rather than via any runner —
   so the format is portable and this choice stays reversible.
-  Still do: tag taxonomy (`:rules`, `:nodes`, `:engine`, `:alloc`, `:slow`, `:quality`),
-  `make test` = fast subset / `make test-all` = everything. Precompilation, not execution, is
+  Tag taxonomy of the root suite: `:nodes`, `:engine`, `:alloc`, `:quality`, `:slow`; rules
+  are tested in the lib suites. `make test` = fast subset / `make test-all` = everything. Precompilation, not execution, is
   the real latency cost in an agent loop.
   **Revisit ReTestItems only if CI wall-clock becomes the bottleneck** — its one real
   advantage is distributed parallel workers, a CI argument rather than an iteration-speed one.
 - **Runic** replaces JuliaFormatter — **done in Phase 2**. Deterministic and zero-config,
   which eliminates by design the formatter-version drift CI and contributors used to hit;
   measured byte-identical on 1.10 and 1.13. Already in use in StableCholesky.jl.
-- **Aqua checks — done in Phase 2, with one deliberate exception.** `piracies` and
-  `deps_compat`'s `check_extras` are on. `ambiguities` stays **off until after the split**:
-  322 pairs, of which 253 come from `src/helpers/algebra/` (leaving with Flow/AR) and only 27
-  from rule dispatch (removed by construction). The count to beat and the per-file breakdown
-  are in `PHASES.md` § Phase 2. The reasoning below is what led there.
+- **Aqua checks — done in Phase 2, `ambiguities` since.** `piracies`, `deps_compat`'s
+  `check_extras` and `ambiguities` are on in `test/runtests.jl`, and each lib suite checks its
+  own package. `ambiguities` was off in Phase 2: 322 pairs, of which 253 came from
+  `src/helpers/algebra/` and 27 from rule dispatch, both gone with v6's code. The reasoning
+  below is what led there.
   - `ambiguities`: budget it separately. The key-set argument (rules with
     different input sets provably can't be ambiguous) only applies to the **new** design —
     it cannot justify cleaning up v6's existing ambiguities. **Measure the current count
@@ -1312,9 +1381,11 @@ Worth building, and the strongest available answer to a real weakness: the exist
 are **golden-value tests** that lock in whatever a rule produced the day it was written,
 bugs included — a rule wrong from birth has a passing test forever.
 
-The machinery already exists. `@node` generates `nodefunction` (the node's logpdf);
-`src/approximations/` has `ghcubature`, `srcubature` and importance sampling;
-`rules/fallbacks.jl` already builds an unnormalised logpdf from the node function. So the
+The machinery existed in v6: `@node` generated `nodefunction` (the node's logpdf);
+`src/approximations/` had `ghcubature`, `srcubature` and importance sampling; `rules/fallbacks.jl`
+built an unnormalised logpdf from the node function. Here `@define_factor_node` declares
+`nodefunction`, `MessagePassingRulesTestUtils` holds the verification, and
+`NodeFunctionRuleFallback` builds the logpdf (§3.49). So the
 reference update can be computed numerically from the node definition — BP as
 `∫ f(x) ∏_{j≠i} m_j dx_{≠i}`, naive VMP as `exp(E_{q(¬i)}[log f])` — and compared to the
 analytic rule. This tests the *maths*, not a regression table, and is what makes porting
@@ -1409,23 +1480,24 @@ half-maintained copies that drift.
 - `check_rules()` + `check_rule_ambiguities()` + registry/method-table consistency in CI.
 - Allocation regressions, where a rule opts into the non-allocating flag: kernel (`== 0`),
   rule with a provided buffer (`== 0`), full sweep (golden number + tolerance) — three
-  distinct levels, never conflated, and none of them implied by `inplace`. Existing
-  precedents: `test/annotations_tests.jl:107`,
-  `test/rules/mv_normal_mean_scale_precision/out_tests.jl:129-136`.
-- Buffer lifetime checks: run the full suite in checked mode as a separate CI job and test
-  retained results across multiple updates. Poisoning alone does not prove safe reuse.
+  distinct levels, never conflated, and none of them implied by `inplace`. The root suite's
+  `:alloc` items assert allocation counts; v6's precedents were `test/annotations_tests.jl:107`
+  and `test/rules/mv_normal_mean_scale_precision/out_tests.jl:129-136`.
+- Buffer lifetime checks: test retained results across multiple updates; `checked_buffers`
+  poisons the scratch, the only memory recycled, and no CI job runs in checked mode, since the
+  engine has no global switch for it. Poisoning alone does not prove safe reuse.
 - Mixture rewrite: pin current behaviour (including the `reverse` quirk) first, then delete.
   *(Done by recording v6's emission order as the `normal_mixture` fixture, Phase 4.5 step 0.)*
-- *(Scope, set by the user at Phase 4.5: log scales are a niche feature with known gaps. The
-  rewrite preserves v6's behaviour, gaps included, and checks log scales only where v6
-  produces them. Fixing them is a separate milestone after the migration. See `PHASES.md`
-  § Phase 4.5, Step 0.)*
+- Log scales are first-class (`DISCUSSION.md` §3.50, superseding the Phase 4.5 scope that kept
+  v6's behaviour, gaps included, and §3.48): a rule declares one where it is known, checked by
+  enumeration or quadrature, and leaves it undeclared, an `UndefinedLogScale`, where unsure.
 - **Annotation and product behaviour is its own acceptance gate, not a by-product of
   numerical rule tests.** Folding products over raw distributions also touches form
   constraints, fold order, callbacks, and the `is_clamped`/`is_initial` flags — and
-  `Message ==` deliberately ignores annotations, so numerical equality can pass while log
-  scale bookkeeping is silently wrong. Compare observable behaviour explicitly: annotations,
-  log scales, flags, callback order where contractual, and free-energy results. Include the
+  `Message ==` deliberately ignores annotations and log scales (`src/message.jl`), so
+  numerical equality can pass while log scale bookkeeping is silently wrong. Compare
+  observable behaviour explicitly: `getannotations`, `getlogscale`, flags, callback order
+  where contractual, and free-energy results. Include the
   missing-input path, where today a missing input bypasses rule execution *and* the
   post-rule annotation processors.
 - **A dedicated rewrite integration environment.** `.github/workflows/IntegrationTest.yml`

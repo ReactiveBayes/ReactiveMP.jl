@@ -1567,6 +1567,9 @@ algebra over two distributions, and the rule adds the incoming log scales it rea
 `ann.m`, so what it sums is written in the rule. The alternative, the service adding the
 inputs' log scales as v6's context did, would have made it take annotated messages rather
 than distributions. The engine supplies it from `rule_context`, with v6's `GenericProd`.
+*(Superseded by §3.50: the `product` service is removed; the switch rule computes
+`compute_logscale` itself, under `MixtureBP(; prod = GenericProd())`, and reads the incoming log
+scales from `args.logscale.m`.)*
 
 ### 3.35 Mixture has no average energy, and runs under `MixtureBP` (user, 2026-09-23)
 
@@ -1595,7 +1598,9 @@ Four questions shaped step 9, and the user decided each:
 - **`legacy/v6/` keeps only what Phase 6 ports from.** The v6 engine and rule-system files are
   deleted, being replaced and kept by git and by the 6.5.0 release. v6's rule fallbacks and
   `StandaloneDistributionNode` are not carried over, and the guide says so. The helpers the
-  unported nodes still use stay, as those nodes' material.
+  unported nodes still use stay, as those nodes' material. *(Both came back: the standalone
+  distribution node as Standard's `StandaloneDistribution`, §3.47, and the rule fallbacks as the
+  activation option `rulefallback`, §3.49.)*
 
 ### 3.37 Log scales stay where they are, experimental, until Phase 7 decides (user, 2026-09-24)
 
@@ -1619,7 +1624,8 @@ Mixture and contradicts §3.19's "preserve, do not fix". Giving the key an owner
 churn, since typed annotations replace it in Phase 7. **Decided:** the layering stays; the
 docs mark log scales experimental; and Phase 7's log-scale milestone decides whether to fix
 v6's gaps, with typed annotations and the key owned by the base package, or to drop the feature
-and Mixture's rules with it.
+and Mixture's rules with it. *(Decided in §3.46, set aside in §3.48, and superseded by §3.50: the
+log scale is part of the message, not an annotation, and the base package defines it.)*
 
 ### 3.38 A node declares what it requires of the graph (user, 2026-09-24)
 
@@ -1804,7 +1810,7 @@ The entry brief asked three questions, and the user answered:
   have taken Mixture's rules with it, since its switch is a softmax over incoming log scales.
   Fixing them brings typed annotations (`Message{D, A}`) in place of the mutable `AnnotationDict`,
   and gives the log-scale key an owner in the base package. The milestone stays the phase's last
-  item, so the rest is settled first.
+  item, so the rest is settled first. *(Set aside by §3.48, then superseded by §3.50.)*
 - **RxInfer is adapted in this phase**, on a local branch of its checkout wired to this branch
   with `[sources]`, rather than deferred to a phase of its own. Its suite and RxInferExamples
   models are the check; nothing is pushed there without asking.
@@ -1836,6 +1842,7 @@ no new requirement or error; typed annotations are not done, and may not be need
 `AnnotationDict` stays. Every earlier decision about fixing them is void, and what log scales
 should be is decided after the refactor is released. The brief's survey stands as the record:
 22 of Standard's 83 belief-propagation rules annotate a log scale, none elsewhere.
+*(Superseded by §3.50, the same day, in Phase C: log scales are first-class.)*
 
 ### 3.49 Rule fallbacks back; the context services one option (user, 2026-09-25)
 
@@ -1852,7 +1859,9 @@ base documents only those an engine supplies by default. `RuleContext` is a muta
 holding a typed `NamedTuple`, so it is passed by reference and every read of a service is
 inferred. The engine builds one per node at activation, its defaults (`node`, `product`, the
 task's `rng`) merged with the node's `context` option, which adds or overrides services; RxInfer
-forwards the option.
+forwards the option. *(Since §3.50 the defaults are `node`, `rng` and `matrix_correction`, unset
+so each rule applies its own (§3.31); `product` is gone. A name nobody supplies reads as
+`nothing`, and `missing_services` lists them.)*
 
 ### 3.50 Log scales are first-class; `RuleResult`; no `product` service (user, 2026-09-25)
 
@@ -1891,7 +1900,7 @@ ownerless) and §3.48 (log scales as v6 has them past the release).
   show. Its generic getters other than `getresult`, `getlogscale`, `getrule` and `getannotations`
   are public, not exported, since RxInfer (and users) define `getcontext` and `getarguments` of
   their own. It must support **rich visualisation** (terminal, Jupyter, Pluto, Documenter, via
-  `show(io, mime, x)`): recorded as a requirement, not built in this change.
+  `show(io, mime, x)`): recorded as a requirement, not built in this change *(built in §3.51)*.
 - **The `product` service is removed**: the switch rule computes `compute_logscale` of the
   product itself, under the strategy on its algorithm, `MixtureBP(; prod = GenericProd())`.
 - **The engine** tracks them with `logscales = true` (an activation option; RxInfer's `infer`
@@ -2062,7 +2071,8 @@ LinearAlgebra — was wrong: the ported package is pure numerics on LinearAlgebr
 FastCholesky, with ForwardDiff arriving with Linearization, Phase 4.5 step 3)*;
 `DiffResults` leaves with old CVI. `Optim` leaves
 ReactiveMP entirely (only `laplace.jl` used it). `FastGaussQuadrature` follows `ghcubature`
-to the Pólya package. `DomainIntegrals` and `HCubature` go to the test-utils package — they
+to the Pólya package *(superseded by §3.40: both went to `MessagePassingRulesApproximations`)*.
+`DomainIntegrals` and `HCubature` go to the test-utils package *(only `HCubature` did)* — they
 are used by the rule-comparison quadrature at `src/rule.jl:1464,1540`, which is test
 machinery. `DomainSets` stays with the standard rules (`normal_mean_variance/var.jl`; the ported
 `gamma_shape_rate/a.jl` does not need it).
@@ -2168,6 +2178,8 @@ Open as of the Phase 4.5 reconciliation:
 - **Typed annotations** (`Message{D, A}`, brief item 3) — not built in step 4, which kept the
   `AnnotationDict` so as to change one thing at a time; the retained-value test pins that
   nothing mutates it after materialisation. Revisit with the log-scale milestone (§3.23).
+  *(Since §3.50 the log scale is not an annotation, so this is a performance question for the
+  remaining side channel only; after the release.)*
 - ~~**Declared dependencies, groups and a declared free-energy partition in the engine**~~ —
   **RESOLVED in case (c)** (§3.24).
 - **User rule sets beyond one-level extensions** — the registry stays introspection only
@@ -2178,29 +2190,42 @@ Open as of the Phase 4.5 reconciliation:
 - ~~**Distributing a `FactorizedCluster`**~~ — **RESOLVED in Phase 5 step 2**: a joint input
   holding one reaches every rule as its blocks, message rules as well as the average energy,
   where v6 decomposed only for the average energy (`PHASES.md` § Phase 5).
-- **A joint holding only some members of a group** with other interfaces — `activate!` refuses
-  it; built when a node needs one.
+- ~~**A joint holding only some members of a group**~~ — **built in Phase 6 step 9** for
+  DiscreteTransition, keyed with its members, `(:out, (:T, 1))` (§3.45).
 - **`Uninformative` as BayesBase's product identity** — Standard's `UninformativeProd` has 0
   ambiguities only by writing out its overlaps with BayesBase's own rules; BayesBase owning the
   identity, as it does `missing`, removes them by construction. The Uniform(0, 1)×Beta product
   is the same kind of upstream item (Phase 5 step 3, user).
-- **#11's two follow-ups** — `DeltaApproximation`'s positional constructor bypasses the
-  compatibility guard, and the error names neither a package nor an alternative method;
-  Phase 6, with `CVIProjection`.
-- **Default initial messages** — how a node declares one for a rule that depends on its own
-  edge (Probit), separately from `dependencies` (§3.21). Needed when Probit is ported.
-- **Log scales** — preserved as v6 has them, gaps included; fixing them is a milestone of its
-  own after the migration.
+- ~~**#11's two follow-ups**~~ — **RESOLVED in Phase 6 step 2**: the guard is
+  `DeltaApproximation`'s inner constructor, and its error names the package and the methods to
+  switch to.
+- ~~**Default initial messages**~~ — **RESOLVED in Phase 6 step 3**: Probit declares its own
+  with `initial_messages` on its node, separately from `dependencies` (§3.21).
+- ~~**Log scales** — preserved as v6 has them~~ — **first-class since §3.50** (Phase C): part of
+  the message, declared per rule. Still open: 27 of Standard's message-only rules declare none,
+  and whether a gate should list them (`PHASES.md`, not-done table).
 - ~~**The models package's name**~~ — *settled by §3.30: no such package; each node gets its own.*
 - **The Julia floor** — 1.13 only until registration, when 1.10 support is reconsidered
   (§3.22).
+
+Open as of Phase C (2026-09-26; `PHASES.md`'s not-done table is the full list):
+
+- **`missing_services` at resolution** — the engine does not call it yet, so a declared service
+  nobody supplies reaches the rule as `nothing` (§3.49). Phase C's next item (user).
+- **Two rule discrepancies** the engine tests found against closed forms, `@test_broken`: AR's
+  mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]`. For the
+  user to decide.
+- **`visualize_spec`'s backend** — the entry point is kept (user), the extension not written
+  (§3.12, §3.51).
+- **The performance pass** — before the release (§5, the `Message{D}` investigation).
+- **The mutation detector** (`PLAN.md` § Purity) — not built; after the release.
 
 Review added #9–#13 (all but #13 settled at the Phase 3 sign-off, §3.16): belief/entropy separation, buffer ownership, capability metadata,
 context services and the numerical protocol. These block API freeze, not preparation or
 the spike. #14 was the preparation inventory, resolved in Phase P. Purity/RNG contracts and derivative checks
 are separate requirements. Reactant/StableCholesky (#5) remain a separate effort; mixture
 regressions and edge identity (#6–#7) were engine integration requirements, resolved in
-Phase 4.5 case (c) (§3.24; #7's RxInfer side is Phase 7).
+Phase 4.5 case (c) (§3.24; #7's RxInfer side was done in Phase 7).
 
 ---
 
@@ -2222,7 +2247,7 @@ Then base package → test utils with a bounded numerical oracle → **Phase 4.5
 design session and the engine's first cut, refactored in place, as a clean cut** (§3.18–3.25; closed) →
 bulk standard-rule
 migration into it → approximations and node packages → completing the engine → the cleanup
-of historical remarks (Phase C) → coordinated release. Start strict downstream CI as soon as
+of historical remarks (Phase C) → the performance pass → coordinated release (Phase 8). Start strict downstream CI as soon as
 compatible development revisions exist, rather than waiting until release.
 
 Rule kernels and test utilities can be developed independently of the engine, but that
