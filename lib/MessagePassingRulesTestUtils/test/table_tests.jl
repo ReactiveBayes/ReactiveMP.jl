@@ -224,3 +224,22 @@ end
 
     @test_throws ArgumentError ExpectedWithAnnotations(1.0; logscale = 0.0)
 end
+
+@testitem "tables:tolerances and log scales by kind" tags = [:testutils] setup = [ToyRules] begin
+    using MessagePassingRulesTestUtils, Distributions, BayesBase
+    import MessagePassingRulesTestUtils: tolerance_for, relative_tolerance_for
+    T = ToyRules
+
+    # A dictionary of tolerances covers the float types it names; for the others, an absolute
+    # tolerance falls back to the defaults and a relative one to none.
+    @test relative_tolerance_for(Dict(Float32 => 1.0e-3), Float64) == 0.0
+    @test relative_tolerance_for(Dict(Float64 => 1.0e-3), Float64) == 1.0e-3
+    @test tolerance_for(Dict(Float32 => 1.0e-3), Float64) == 1.0e-6
+
+    # A marginal rule and an average energy have no log scale: expecting one is a mistake in the
+    # table, said as such.
+    @test_throws "`ExpectedWithLogScale` is for message rules" @test_marginal_update_rule(
+        node = T.Gauss, target = (:out, :μ), check_type_promotion = false,
+        cases = [(m = (out = Normal(1.0, 1.0), μ = Normal(0.0, 1.0)), q = (σ = PointMass(1.0),)) => ExpectedWithLogScale((1.0, 0.0), 0.0)],
+    )
+end

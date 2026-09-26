@@ -38,6 +38,7 @@ end
     path = joinpath(mktempdir(), "toy.toml")
     save_engine_fixture(path, trajectory; packages = Dict("ReactiveMP" => v"6.5.0"), notes = "recorded by a test")
     header, loaded = load_engine_fixture(path)
+    @test keys(load_engine_fixture(path)) == (:header, :trajectory)
 
     @test header.format == 1
     @test header.packages["ReactiveMP"] == "6.5.0"

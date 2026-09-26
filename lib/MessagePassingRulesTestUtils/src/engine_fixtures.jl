@@ -164,9 +164,10 @@ function encode_rule_call(r::RuleCallRecord)
 end
 
 """
-    load_engine_fixture(path) -> (header, trajectory)
+    load_engine_fixture(path) -> (; header, trajectory)
 
-Read what [`save_engine_fixture`](@ref) wrote, as a `Tuple` of two: `header`, a `NamedTuple` of
+Read what [`save_engine_fixture`](@ref) wrote, as a `NamedTuple`, which destructures by position
+too: `header`, a `NamedTuple` of
 `format`, `julia` (the version that wrote the file, a `String`), `notes` and `packages` (a
 `Dict{String, String}`), and `trajectory`, the [`EngineTrajectory`](@ref). The trajectory's
 posteriors and results come back in their [`encode_fixture_value`](@ref) form, which
@@ -184,7 +185,7 @@ function load_engine_fixture(path::AbstractString)
     t = data["trajectory"]
     trace = [RuleCallRecord(r["iteration"], r["node"], r["target"], r["result"], get(r, "logscale", nothing)) for r in t["trace"]]
     trajectory = EngineTrajectory(t["id"]; description = t["description"], free_energy = t["free_energy"], posteriors = t["posteriors"], trace)
-    return (header, trajectory)
+    return (header = header, trajectory = trajectory)
 end
 
 encoded_close(a::Real, b::Real; atol, rtol) = isapprox(a, b; atol, rtol)

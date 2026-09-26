@@ -56,6 +56,9 @@ const DEFAULT_ATOL = Dict{Type, Float64}(Float32 => 1.0e-4, Float64 => 1.0e-6, B
 tolerance_for(tolerance::Real, ::Type) = tolerance
 tolerance_for(tolerance::AbstractDict, ::Type{T}) where {T} = get(tolerance, T, get(DEFAULT_ATOL, T, 1.0e-6))
 tolerance_for(::Nothing, ::Type{T}) where {T} = get(DEFAULT_ATOL, T, 1.0e-6)
+# A relative tolerance: a float type a dictionary does not name gets none.
+relative_tolerance_for(tolerance::Real, ::Type) = tolerance
+relative_tolerance_for(tolerance::AbstractDict, ::Type{T}) where {T} = get(tolerance, T, 0.0)
 
 value_float_type(value::Number) = float(typeof(value))
 value_float_type(value::AbstractArray) = float(BayesBase.deep_eltype(value))
@@ -158,7 +161,7 @@ end
 
 function check_logscale(table, label, actual, expected, atol, rtol)
     T = output_float_type(expected)
-    ok = actual isa Real && values_close(actual, expected; atol = tolerance_for(atol, T), rtol = tolerance_for(rtol, T))
+    ok = actual isa Real && values_close(actual, expected; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(rtol, T))
     return record_check(ok, :(logscale ≈ expected), () -> "$label: the log scale is $(repr(actual)), expected $(repr(expected))", table.source)
 end
 
@@ -176,7 +179,7 @@ end
 
 function check_value(table, label, result, expected, atol, rtol)
     T = output_float_type(expected)
-    ok = approximately_equal(result, expected; atol = tolerance_for(atol, T), rtol = tolerance_for(rtol, T))
+    ok = approximately_equal(result, expected; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(rtol, T))
     description = "$label: got $(repr(result))::$(typeof(result)), expected $(repr(expected))::$(typeof(expected))"
     return record_check(ok, :(rule_output ≈ expected), description, table.source)
 end
@@ -192,10 +195,13 @@ function check_case(table::TableContext, index, inputs::CaseInputs, expected; at
     for (key, value) in pairs(expected_annotations(expected))
         actual = MessagePassingRulesBase.getannotation(annotations, key, nothing)
         T = output_float_type(value)
-        ok = actual !== nothing && values_close(actual, value; atol = tolerance_for(atol, T), rtol = tolerance_for(something(rtol, 0.0), T))
+        ok = actual !== nothing && values_close(actual, value; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(something(rtol, 0.0), T))
         record_check(ok, :(annotation == expected), "$label: annotation `$key` is $(repr(actual)), expected $(repr(value))", table.source)
     end
     expected_scale = expected_logscale(expected)
+    expected_scale === nothing || table.kind === :message || throw(
+        ArgumentError("$label expects a log scale, but a $(table.kind === :marginal ? "marginal rule" : "average energy") has none: `ExpectedWithLogScale` is for message rules"),
+    )
     expected_scale === nothing || check_logscale(table, label, logscale, expected_scale, atol, something(rtol, 0.0))
 
     if spec.inplace
@@ -204,7 +210,7 @@ function check_case(table::TableContext, index, inputs::CaseInputs, expected; at
         T = output_float_type(result)
         record_check(inplace_result === buffer, :(rule!(buffer) === buffer), "$label: `rule!` returned a new object instead of writing into its buffer", table.source)
         record_check(
-            approximately_equal(inplace_result, result; atol = tolerance_for(atol, T), rtol = tolerance_for(something(rtol, 0.0), T)),
+            approximately_equal(inplace_result, result; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(something(rtol, 0.0), T)),
             :(rule! == rule), () -> "$label: `rule!` into a preallocated buffer gave $(repr(inplace_result)), `rule` gave $(repr(result))", table.source,
         )
     end
@@ -249,7 +255,7 @@ function check_scratch(table::TableContext, label, spec, args, ctx, result, atol
     poison!(scratch)
     poisoned = run()
     T = output_float_type(result)
-    agree(value) = approximately_equal(value, result; atol = tolerance_for(atol, T), rtol = tolerance_for(something(rtol, 0.0), T))
+    agree(value) = approximately_equal(value, result; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(something(rtol, 0.0), T))
     return record_check(
         agree(reused) && agree(poisoned), :(rule_with_reused_scratch == rule),
         () -> "$label: the rule reads its scratch before writing it: fresh $(repr(result)), on a reused scratch $(repr(reused)), after poisoning it $(repr(poisoned))",
