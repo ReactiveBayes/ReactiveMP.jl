@@ -1,20 +1,41 @@
 """
     Linearization()
 
-Propagates moments through a function by its first-order Taylor expansion at the inputs' means.
-It suits differentiable functions only; the Delta and Flow nodes use it.
+The local-linearization method: a function is replaced by its first-order Taylor expansion at
+the inputs' means, computed by automatic differentiation (ForwardDiff), and moments pass
+through the linear map exactly. It has no parameters.
 
-See [`approximate`](@ref)`(::Linearization, g, x̂)` for the linear map it computes.
+It is exact for affine functions and accurate when the function is close to linear over the
+inputs' spread; the function must be differentiable, and written generically enough for
+ForwardDiff's dual numbers. [`Unscented`](@ref) is the alternative that needs no derivatives.
+
+See [`approximate`](@ref)`(::Linearization, g, x̂)` for the map it computes.
 """
 struct Linearization <: AbstractApproximationMethod end
 
-"""
-    approximate(::Linearization, g, x̂::Tuple)
+approximation_name(::Linearization) = "Linearization"
+approximation_short_name(::Linearization) = "LN"
 
-The local linear map `(A, b)` of `g` at the expansion point `x̂`, one entry per argument of `g`,
-so that `g(x) ≈ A * x + b` near `x̂`, where `x` is the arguments concatenated into one vector.
-`A` is a derivative for a scalar function of one scalar, a gradient row for a scalar function
-of a vector, and a Jacobian otherwise. See [`local_linearization`](@ref).
+"""
+    approximate(::Linearization, g, x̂::Tuple) -> (A, b)
+
+The local linear map of `g` at the expansion point `x̂`, so that `g(x) ≈ A * x + b` near `x̂`.
+
+# Arguments
+
+- `g`: a function of one or several arguments, each a number or a vector, returning a number or
+  a vector;
+- `x̂`: the expansion point, a tuple with one entry per argument of `g`, typically the inputs'
+  means.
+
+# Returns
+
+`(A, b)`, where `x` stands for the arguments concatenated into one vector. `A` is a derivative
+for a scalar function of one scalar, a gradient row for a scalar function of a vector, and a
+Jacobian otherwise; `b = g(x̂) - A * x̂`. Propagating a normal `N(m, V)` of `x` gives
+`N(A * m + b, A * V * A')`.
+
+# Examples
 
 ```jldoctest; setup = :(using MessagePassingRulesApproximations)
 julia> approximate(Linearization(), (x, y) -> x .- y, ([1.0, 2.0], [0.5, 0.5]))
@@ -24,10 +45,10 @@ julia> approximate(Linearization(), (x, y) -> x .- y, ([1.0, 2.0], [0.5, 0.5]))
 approximate(::Linearization, g::G, x̂::Tuple) where {G} = local_linearization(g, x̂)
 
 """
-    local_linearization(g, x̂::Tuple)
+    local_linearization(g, x̂::Tuple) -> (A, b)
 
-The components `(A, b)` of the first-order expansion of `g` at `x̂`; see
-[`approximate`](@ref)`(::Linearization, g, x̂)`.
+The first-order expansion of `g` at `x̂`, the function behind
+[`approximate`](@ref)`(::Linearization, g, x̂)`, which documents its arguments and result.
 """
 function local_linearization end
 

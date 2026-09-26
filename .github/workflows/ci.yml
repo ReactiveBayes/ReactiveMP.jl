@@ -78,7 +78,9 @@ jobs:
           version: '1.13'
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
-      - run: make docs
+      # Every package's site, in dependency order, then ReactiveMP's, which links to them.
+      # Only ReactiveMP's is deployed; the package sites are published with the repository split.
+      - run: make docs-all
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

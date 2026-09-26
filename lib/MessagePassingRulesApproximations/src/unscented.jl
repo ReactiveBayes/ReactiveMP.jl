@@ -10,18 +10,37 @@ struct UnscentedExtra{T, R, M, C}
 end
 
 """
-The `Unscented` structure defines the approximation method of the `Delta` and `Flow` factor nodes. 
-More specifically, it contains the hyperparameters used for sigma points computation.
+    Unscented(; alpha = 1e-3, beta = 2.0, kappa = 0.0)
+    Unscented(dim::Int; alpha = 1e-3, beta = 2.0, kappa = 0.0)
 
-# Arguments
-- `α`: Spread parameter for unscented transform #1
-- `β`: Algorithm parameter for incorporating prior information on the (non-Gaussian) distribution of Delta node input
-- `κ`: Spread parameter for unscented transform #2
-- `e`: Internal cache
+The unscented transform: the mean and covariance of `f(x)` for a normal `x`, estimated from
+`2d + 1` deterministically placed sigma points, `d` being the dimension of `x`. It needs no
+derivatives and captures the mean and covariance of `f(x)` to second order. [`UT`](@ref) and
+[`UnscentedTransform`](@ref) are aliases.
 
-The `Unscented` structure with default parameters can be constructed as `Unscented()`.
+# Keywords
 
-A node package uses it through [`approximate`](@ref) and [`unscented_statistics`](@ref).
+- `alpha`: the spread of the sigma points around the mean, a small positive number. Default
+  `1e-3`;
+- `beta`: prior knowledge of the input's distribution, `2` being optimal for a normal. Default
+  `2.0`;
+- `kappa`: the secondary scaling. Default `0.0`.
+
+With `dim`, the weights for that dimension are computed once and stored with the method;
+without it, they are computed on each call, for whatever dimension the inputs have.
+
+It is used through [`approximate`](@ref), for the output's moments, and
+[`unscented_statistics`](@ref), which adds the cross-covariance [`smoothRTS`](@ref) needs.
+[`Linearization`](@ref) is the alternative that expands the function instead.
+
+# Examples
+
+```jldoctest; setup = :(using MessagePassingRulesApproximations)
+julia> m, V = approximate(Unscented(), sin, (0.0,), (1e-4,));
+
+julia> isapprox(m, 0.0; atol = 1e-12) && isapprox(V, 1e-4; rtol = 1e-3)
+true
+```
 """
 struct Unscented{A, B, K, E} <: AbstractApproximationMethod
     α::A
@@ -56,11 +75,22 @@ function Unscented(
     return Unscented(α, β, κ, UnscentedExtra(dim, λ, Wm, Wc))
 end
 
-"""An alias for the [`Unscented`](@ref) approximation method."""
+"""
+    UT
+
+An alias for [`Unscented`](@ref), the unscented transform.
+"""
 const UT = Unscented
 
-"""An alias for the [`Unscented`](@ref) approximation method."""
+"""
+    UnscentedTransform
+
+An alias for [`Unscented`](@ref), the unscented transform.
+"""
 const UnscentedTransform = Unscented
+
+approximation_name(::Unscented) = "Unscented"
+approximation_short_name(::Unscented) = "UT"
 
 # get-functions for the Unscented structure
 
@@ -85,8 +115,23 @@ getWc(extra::UnscentedExtra) = extra.Wc
 """
     approximate(method::Unscented, f, means::Tuple, covs::Tuple) -> (m, V)
 
-The mean and covariance of `f(x₁, x₂, …)` for independent inputs with the given means and
-covariances, one tuple entry per input (a scalar or a vector each).
+The mean and covariance of `f(x₁, x₂, …)` for independent normal inputs, by the unscented
+transform.
+
+# Arguments
+
+- `f`: a function of one argument per input, returning a number or a vector;
+- `means`, `covs`: one entry per input, a number and a variance, or a vector and a covariance
+  matrix. Several inputs are treated jointly, as one normal whose covariance is block diagonal.
+
+# Returns
+
+`(m, V)`: the output's mean and variance, or mean vector and covariance matrix.
+
+# Throws
+
+A `DomainError` when a covariance is infinite. A zero covariance is not an error: the input is a
+point, and the result is `f` at it with zero covariance, after a warning.
 """
 function approximate(
         method::Unscented, f::F, means::Tuple, covs::Tuple
@@ -99,9 +144,10 @@ end
 """
     unscented_statistics(method::Unscented, g, means::Tuple, covs::Tuple) -> (m, V, C)
 
-As [`approximate`](@ref), and also the cross-covariance `C` between the inputs and `g`'s
-output, which [`smoothRTS`](@ref) needs. Several inputs are treated jointly: their means are
-concatenated and their covariances placed on the block diagonal.
+The output's mean `m` and covariance `V`, as [`approximate`](@ref)`(::Unscented, …)` computes
+them, and the cross-covariance `C` between the inputs, concatenated into one vector, and the
+output: the forward statistics [`smoothRTS`](@ref) takes. Arguments and errors are those of
+`approximate`; for a point input, `C` is zero.
 """
 function unscented_statistics(
         method::Unscented, g::G, means::Tuple, covs::Tuple
@@ -275,7 +321,15 @@ function unscented_statistics(
     return (m_tilde, V_tilde, C_tilde)
 end
 
-"""Return the sigma points and weights for a Gaussian distribution"""
+"""
+    sigma_points_weights(method::Unscented, m::Real, V::Real) -> (points, weights_m, weights_c)
+    sigma_points_weights(method::Unscented, m::AbstractVector, V::AbstractMatrix) -> (points, weights_m, weights_c)
+
+The `2d + 1` sigma points of `N(m, V)` under `method`'s parameters, and their weights for the mean
+and for the covariance, in the same order: tuples for a scalar normal, vectors otherwise. The
+first point is the mean. It warns when the parameters make `d + λ` negative, which gives
+unreliable estimates.
+"""
 function sigma_points_weights(method::Unscented, m::Real, V::Real)
     alpha = getα(method)
     beta = getβ(method)

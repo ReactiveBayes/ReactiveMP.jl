@@ -17,13 +17,78 @@ format: scripts_init ## Format Julia code
 check-format: scripts_init ## Check Julia code formatting (does not modify files)
 	julia --project=scripts/ scripts/formatter.jl
 
-.PHONY: doc_init docs
+# Every package has its own documentation site. A site links to the sites of the packages it
+# depends on through their inventories (`docs/build/objects.inv`), so `docs-all` builds them in
+# dependency order and the ReactiveMP site, which links to every package, last.
+.PHONY: doc_init docs docs-all docs-approximations docs-base docs-testutils docs-standard docs-delta docs-gaussian-coupling docs-probit docs-gcv docs-softdot docs-autoregressive docs-continuous-transition docs-polya docs-bifm docs-flow docs-discrete-transition
 
 doc_init:
 	julia --project=docs -e 'using Pkg; Pkg.instantiate();'
 
-docs: doc_init ## Generate the documentation, running its doctests
+docs: doc_init ## Build ReactiveMP's documentation site, running its doctests (needs the package sites: `make docs-all`)
 	julia --startup-file=no --project=docs docs/make.jl
+
+docs-all: docs-approximations docs-base docs-testutils docs-standard docs-delta docs-gaussian-coupling docs-probit docs-gcv docs-softdot docs-autoregressive docs-continuous-transition docs-polya docs-bifm docs-flow docs-discrete-transition docs ## Build every documentation site, in dependency order
+
+docs-approximations: ## Build lib/MessagePassingRulesApproximations's documentation site into its docs/build
+	julia --startup-file=no --project=lib/MessagePassingRulesApproximations/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/MessagePassingRulesApproximations/docs lib/MessagePassingRulesApproximations/docs/make.jl
+
+docs-base: ## Build lib/MessagePassingRulesBase's documentation site into its docs/build
+	julia --startup-file=no --project=lib/MessagePassingRulesBase/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/MessagePassingRulesBase/docs lib/MessagePassingRulesBase/docs/make.jl
+
+docs-testutils: ## Build lib/MessagePassingRulesTestUtils's documentation site into its docs/build
+	julia --startup-file=no --project=lib/MessagePassingRulesTestUtils/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/MessagePassingRulesTestUtils/docs lib/MessagePassingRulesTestUtils/docs/make.jl
+
+docs-standard: ## Build lib/StandardMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/StandardMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/StandardMessagePassingRules/docs lib/StandardMessagePassingRules/docs/make.jl
+
+docs-delta: ## Build lib/DeltaMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/DeltaMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/DeltaMessagePassingRules/docs lib/DeltaMessagePassingRules/docs/make.jl
+
+docs-gaussian-coupling: ## Build lib/GaussianCouplingMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/GaussianCouplingMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/GaussianCouplingMessagePassingRules/docs lib/GaussianCouplingMessagePassingRules/docs/make.jl
+
+docs-probit: ## Build lib/ProbitMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/ProbitMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/ProbitMessagePassingRules/docs lib/ProbitMessagePassingRules/docs/make.jl
+
+docs-gcv: ## Build lib/GCVMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/GCVMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/GCVMessagePassingRules/docs lib/GCVMessagePassingRules/docs/make.jl
+
+docs-softdot: ## Build lib/SoftDotMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/SoftDotMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/SoftDotMessagePassingRules/docs lib/SoftDotMessagePassingRules/docs/make.jl
+
+docs-autoregressive: ## Build lib/AutoregressiveMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/AutoregressiveMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/AutoregressiveMessagePassingRules/docs lib/AutoregressiveMessagePassingRules/docs/make.jl
+
+docs-continuous-transition: ## Build lib/ContinuousTransitionMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/ContinuousTransitionMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/ContinuousTransitionMessagePassingRules/docs lib/ContinuousTransitionMessagePassingRules/docs/make.jl
+
+docs-polya: ## Build lib/PolyaMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/PolyaMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/PolyaMessagePassingRules/docs lib/PolyaMessagePassingRules/docs/make.jl
+
+docs-bifm: ## Build lib/BIFMMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/BIFMMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/BIFMMessagePassingRules/docs lib/BIFMMessagePassingRules/docs/make.jl
+
+docs-flow: ## Build lib/FlowMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/FlowMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/FlowMessagePassingRules/docs lib/FlowMessagePassingRules/docs/make.jl
+
+docs-discrete-transition: ## Build lib/DiscreteTransitionMessagePassingRules's documentation site into its docs/build
+	julia --startup-file=no --project=lib/DiscreteTransitionMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=lib/DiscreteTransitionMessagePassingRules/docs lib/DiscreteTransitionMessagePassingRules/docs/make.jl
 
 .PHONY: test test-all test-base test-testutils test-standard test-approximations test-delta test-gaussian-coupling test-probit test-gcv test-softdot test-autoregressive test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
 

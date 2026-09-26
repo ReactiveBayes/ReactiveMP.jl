@@ -23,6 +23,9 @@
     @test length(ghcubature(5).piter) == 5
     @test approximation_name(GaussHermiteCubature(5)) == "GaussHermite(5)"
     @test approximation_short_name(GaussHermiteCubature(5)) == "GH5"
+    # Every method has a name for display.
+    @test approximation_name(Unscented()) == "Unscented" && approximation_short_name(Unscented()) == "UT"
+    @test approximation_name(Linearization()) == "Linearization" && approximation_short_name(Linearization()) == "LN"
 end
 
 @testitem "approximate_meancov: the moments of g(x) N(x | m, v)" tags = [:approximations] begin

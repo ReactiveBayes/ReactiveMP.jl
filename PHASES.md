@@ -3700,6 +3700,12 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, `investigations/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
+- *The documentation pass — in progress* (user, 2026-09-26): every docstring audited and
+  rewritten to one style (the contributing page), cross-references revised, and one
+  documentation site per package, `make docs-all`, linked by `@extref`. Done: the skeleton, the
+  style, and `MessagePassingRulesApproximations`' site as the template. Then, in parallel, the
+  engine and its site, the base, TestUtils, Standard and the node packages; and the code the
+  audit found contradicting its docstrings.
 - *Declared services checked at resolution — done* (user, 2026-09-26): the base package's
   `check_services(spec, ctx)`, a twin of `check_reads_logscale` that allocates nothing when
   every service is supplied, throws an `ArgumentError` naming the rule, the services and the

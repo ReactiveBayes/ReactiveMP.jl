@@ -9,6 +9,7 @@ callable and testable without an engine.
 module MessagePassingRulesBase
 
 using BayesBase, MacroTools
+using Compat: @compat
 
 export message_passing_rule, message_passing_rule!
 export message_passing_marginalrule, message_passing_marginalrule!
@@ -27,7 +28,7 @@ export UndefinedLogScale, UndefinedLogScaleError, require_logscale, isdefined_lo
 export with_logscale, from_body, getlogscale
 export RuleResult, getresult, getrule, getannotations
 # Generic names a downstream package may well define for itself: public, not exported.
-public getalgorithm, getcontext, getscratch, getarguments, gettarget
+@compat public getalgorithm, getcontext, getscratch, getarguments, gettarget
 
 include("targets.jl")
 include("factorized_cluster.jl")

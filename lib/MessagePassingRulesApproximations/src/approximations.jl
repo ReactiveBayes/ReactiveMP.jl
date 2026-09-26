@@ -1,30 +1,54 @@
 """
     AbstractApproximationMethod
 
-Supertype of the moment-propagation methods, such as [`Unscented`](@ref).
+The supertype of the approximation methods: [`Unscented`](@ref), [`Linearization`](@ref) and
+[`GaussHermiteCubature`](@ref). A method implements what its callers need: [`approximate`](@ref)
+to propagate moments through a function, or [`getpoints`](@ref) and [`getweights`](@ref) for a
+cubature, which gives it [`approximate_meancov`](@ref); and [`approximation_name`](@ref) and
+[`approximation_short_name`](@ref) for display.
 """
 abstract type AbstractApproximationMethod end
 
 """
-    approximation_name(method)
+    approximation_name(method::AbstractApproximationMethod)
 
-The method's full name, for display.
+The method's full name, for display: `"Unscented"`, `"Linearization"`, or
+`"GaussHermite(p)"` with its number of points. See also [`approximation_short_name`](@ref).
 """
 function approximation_name end
 
 """
-    approximation_short_name(method)
+    approximation_short_name(method::AbstractApproximationMethod)
 
-The method's abbreviated name, for display.
+The method's abbreviated name, for display: `"UT"`, `"LN"`, or `"GHp"` with its number of
+points. See also [`approximation_name`](@ref).
 """
 function approximation_short_name end
 
 """
-    approximate_meancov(method, g, m, v)
-    approximate_meancov(method, g, m::AbstractVector, P::AbstractMatrix)
+    approximate_meancov(method, g, m::Real, v::Real) -> (mean, variance)
+    approximate_meancov(method, g, m::AbstractVector, P::AbstractMatrix) -> (mean, covariance)
 
-The mean and variance (or covariance) of the distribution proportional to `g(x) N(x | m, v)`,
-by the cubature `method`, such as a [`GaussHermiteCubature`](@ref). `g` need not be normalised.
+The mean and variance (or covariance) of the density proportional to `g(x) N(x | m, v)`,
+computed by the cubature `method` over the points of `N(m, v)`. This is the projection of a
+normal reweighted by a likelihood onto a normal, the core of an expectation-propagation update.
+
+# Arguments
+
+- `method`: a cubature, such as [`GaussHermiteCubature`](@ref)`(p)`; anything with
+  [`getpoints`](@ref) and [`getweights`](@ref);
+- `g`: a non-negative function of a point, a number for a scalar normal and a vector otherwise.
+  It need not be normalised, but must not vanish at every point;
+- `m`, `v` or `P`: the mean and variance, or mean vector and covariance matrix, of the normal.
+
+# Examples
+
+```jldoctest; setup = :(using MessagePassingRulesApproximations)
+julia> m, v = approximate_meancov(ghcubature(21), x -> exp(-x^2 / 2), 0.0, 1.0);  # N(0, 1) × N(0, 1)
+
+julia> isapprox(m, 0.0; atol = 1e-12) && v ≈ 0.5
+true
+```
 """
 function approximate_meancov end
 
