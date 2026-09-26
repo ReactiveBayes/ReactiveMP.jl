@@ -63,9 +63,13 @@ The algorithm of [`GCV`](@ref)'s rules: it carries the cubature that computes th
   of any number of points. Default `GaussHermiteCubature(20)`. More points give more accurate
   moments at a higher cost.
 
-The node's rules are declared for the default instance's type, so a method other than a
-[`GaussHermiteCubature`](@extref MessagePassingRulesApproximations.GaussHermiteCubature) finds no
-rule. A model names this algorithm only to change the number of points.
+A model names this algorithm only to change the number of points.
+
+# Throws
+
+An `ArgumentError` for a method other than a
+[`GaussHermiteCubature`](@extref MessagePassingRulesApproximations.GaussHermiteCubature): the
+rules take the moments by cubature, through its points and weights.
 
 # Examples
 
@@ -76,9 +80,13 @@ julia> GCVApproximation(method = GaussHermiteCubature(32)) isa GCVApproximation
 true
 ```
 """
-struct GCVApproximation{M <: AbstractApproximationMethod} <: AbstractAlgorithm
+struct GCVApproximation{M <: GaussHermiteCubature} <: AbstractAlgorithm
     method::M
 end
+
+GCVApproximation(method) = throw(
+    ArgumentError("GCVApproximation takes a GaussHermiteCubature, as `GCVApproximation(method = GaussHermiteCubature(20))`; got $(method)"),
+)
 
 GCVApproximation(; method = GaussHermiteCubature(20)) = GCVApproximation(method)
 

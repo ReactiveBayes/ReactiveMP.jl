@@ -141,3 +141,10 @@ end
         @test ae ≈ mc rtol = 5.0e-3
     end
 end
+
+@testitem "GCV: the algorithm takes a Gauss–Hermite cubature" tags = [:rules] begin
+    using GCVMessagePassingRules, MessagePassingRulesApproximations
+    @test GCVApproximation(method = GaussHermiteCubature(8)).method isa GaussHermiteCubature
+    # Its rules take moments by cubature, so another method is refused where it is built.
+    @test_throws ArgumentError GCVApproximation(method = Unscented())
+end

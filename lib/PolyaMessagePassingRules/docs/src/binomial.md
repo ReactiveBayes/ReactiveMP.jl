@@ -101,7 +101,6 @@ result = infer(
 - `y`, `x` and `n` must be **observed**: there are no rules towards `x` or `n`, and the average
   energy takes `PointMass` marginals of all three.
 - The average energy uses a fixed 32-point Gauss–Hermite cubature, which no keyword changes.
-- The rule towards `β` accepts a `Multinomial` `q(y)` by its type, and fails on it.
 
 ## API
 

@@ -38,8 +38,6 @@ Gauss–Hermite cubature with a fixed 32 points.
   factorisation gives it, so a model must initialise that message.
 - `y`, `x` and `n` must be observed: their rules and the average energy take `PointMass`
   marginals only, and there is no rule towards `x` or `n`.
-- The rule towards `β` also takes a `Multinomial` `q(y)` by its type, and fails on it, since the
-  mean of a `Multinomial` is a vector.
 
 # Examples
 
@@ -117,7 +115,7 @@ end
 
 @define_message_update_rule(
     node = BinomialPolya, target = :β, algorithm = BinomialPolyaApproximation{Nothing},
-    args = (q[:y]::Union{PointMass, Multinomial}, q[:x]::PointMass, q[:n]::PointMass, m[:β]::NormalDistributionsFamily),
+    args = (q[:y]::PointMass, q[:x]::PointMass, q[:n]::PointMass, m[:β]::NormalDistributionsFamily),
     body = (args) -> begin
         ω = mean(PolyaGammaHybridSampler(mean(args.q[:n]), dot(mean(args.q[:x]), mean(args.m[:β]))))
         binomial_polya_towards_β(ω, args.q[:y], args.q[:x], args.q[:n], args.m[:β])
@@ -126,7 +124,7 @@ end
 
 @define_message_update_rule(
     node = BinomialPolya, target = :β, algorithm = BinomialPolyaApproximation{Int}, ctx = (:rng,),
-    args = (q[:y]::Union{PointMass, Multinomial}, q[:x]::PointMass, q[:n]::PointMass, m[:β]::NormalDistributionsFamily),
+    args = (q[:y]::PointMass, q[:x]::PointMass, q[:n]::PointMass, m[:β]::NormalDistributionsFamily),
     body = (algo, ctx, args) -> begin
         x, n = mean(args.q[:x]), mean(args.q[:n])
         βs = draws(ctx.rng, args.m[:β], algo.samples)
