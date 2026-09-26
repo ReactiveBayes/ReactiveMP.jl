@@ -321,24 +321,83 @@ end
 
 const DEPENDENCY_KEYWORDS = (:node, :algorithm, :dependencies, :free_energy_partition)
 
+# The vocabulary of a dependency declaration, shared by `@define_dependencies` and
+# `@define_factor_node`'s `dependencies` keyword.
+const DOC_DEPENDENCY_ENTRIES = rstrip(
+    """
+      A vector of `target => (inputs...)` pairs, one per target whose inputs are declared:
+      `dependencies = [:out => (m[:μ], q[:v]), :μ => (m[:out], q[:v])]`. A target is `:out`, or
+      `(:m, k)` for every member of the group `m`, binding `k` for the inputs to select by. The
+      inputs are written as in a rule's `args`, without types:
+      - `m[:μ]`, `q[:μ]`: the message or the marginal of a single interface;
+      - `q[:y, :x]`, or `q[(:y, :x)]`: the joint marginal of a cluster, its members in interface
+        order; `q[(:in,)]` is the joint over the group `in`;
+      - for a group: `m[:in...]` (every member), `m[:in][k]` (the target's own member),
+        `m[:in][!k]` (all but it), or `m[:in][select_group_members(f; arity)]` (the members
+        `f(k)` returns, always `arity` of them, see [`select_group_members`](@ref));
+      - `default`: the default scheme's inputs for that target, which follow the factorisation (the
+        messages of the target's own cluster, the marginals of the others). `:a => (default, q[:a])`
+        is the default scheme's inputs plus `q(a)`, and `:y => (default,)` the default scheme alone.
+        An input listed beside `default` is a single interface's message or marginal, placed among
+        the default scheme's in interface order, and consumed without being scored.
+
+      A target with no inputs is `target => ()`. Every target a graph connects must be declared: one
+      left out is an error when an engine activates the node, so write `target => (default,)` for
+      one that follows the default scheme. The inputs are subscribed to in the order written, which
+      under variational message passing is the update schedule: it changes how fast a node
+      converges, not where to. The declaration is checked against the node's interfaces when it is
+      loaded: unknown names, a group written as a single interface or the other way round, a target
+      or an input given twice, and a cluster out of interface order are errors.
+    """
+)
+
 """
     @define_dependencies(node = ..., algorithm = ..., dependencies = [...], free_energy_partition = [...])
 
-Declare what `node`'s rules consume under `algorithm`. Each entry is `target => (inputs...)`
-in the vocabulary of a rule's `args`: `m[:μ]`, `q[:μ]`, a cluster `q[(:y, :x)]` or
-`q[:y, :x]` (members in interface order; `q[(:in,)]` is the joint over the group `in`), and for a group `m[:in...]` (all members), `m[:in][k]` (the target's own
-index), `m[:in][!k]` (all but it) or `m[:in][select_group_members(f; arity)]`. A target with no inputs
-is written `target => ()`.
+Declare what `node`'s rules consume under `algorithm`, target by target, in place of the
+default scheme, where the inputs follow the factorisation. It is for an algorithm whose rules
+ignore the factorisation, such as a node's own or one of its variants. The macro takes keyword
+arguments only; `node`, `algorithm` and `dependencies` are required. An unknown or repeated
+keyword is an error at definition time, naming the valid ones.
 
-`default` among a target's inputs stands for the engine's default scheme, whose inputs follow
-the factorisation: `:a => (default, q[:a])` is the default scheme's inputs plus `q(a)`, and
-`:y => (default,)` the default scheme alone. The inputs beside it are a single interface's, a
-message or a marginal, and are consumed without being scored.
+A node declares the same for its default algorithm with [`@define_factor_node`](@ref)'s own
+`dependencies` keyword, in the same vocabulary. [`dependencies_spec`](@ref) returns what was
+declared.
 
-`free_energy_partition`, optional, lists the clusters free energy is computed over, covering every
-interface once. What a rule consumes need not be a block of it.
+# Required keywords
 
-A node's own `dependencies` keyword declares the same for its default algorithm.
+- `node`: the node, as declared with [`@define_factor_node`](@ref).
+
+- `algorithm`: the algorithm the declaration is for, a type, or a value whose type is used.
+  With a parametric type `T`, `algorithm = T` covers every `T{…}`.
+
+- `dependencies`: what each target's rule consumes.
+
+$(DOC_DEPENDENCY_ENTRIES)
+
+# Optional keywords
+
+- `free_energy_partition`: the clusters the free energy is computed over, a vector of tuples of
+  interface names covering every interface exactly once: `[(:out, :μ), (:τ,)]`. A group's name
+  stands for all its members. What a rule consumes need not be a block of it: a marginal
+  consumed but outside the partition is never scored. The engine refuses a graph whose
+  factorisation is not this partition, block for block. Default: none, and the partition is the
+  graph's factorisation.
+
+# Example
+
+```julia
+# Declared on the parametric `MixtureBP`, so it covers every product strategy:
+@define_dependencies(
+    node = Mixture,
+    algorithm = MixtureBP,
+    dependencies = [
+        :out => (m[:switch], m[:inputs...]),
+        :switch => (m[:out], m[:inputs...]),
+        (:inputs, k) => (m[:out], m[:switch]),
+    ],
+)
+```
 """
 macro define_dependencies(args...)
     keywords = parse_keywords("define_dependencies", args, DEPENDENCY_KEYWORDS, (:node, :algorithm, :dependencies))

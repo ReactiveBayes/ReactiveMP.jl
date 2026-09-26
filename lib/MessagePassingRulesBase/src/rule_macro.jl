@@ -7,58 +7,188 @@ const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :p
 const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx)
 const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
 
+# Parts of the definition macros' docstrings that several share, written once and interpolated.
+
+const DOC_RULE_NODE = rstrip(
+    """
+    - `node`: the node, as declared with [`@define_factor_node`](@ref): a type, `NormalMeanVariance`,
+      or a function, `+`.
+    """
+)
+
+const DOC_RULE_ARGS = rstrip(
+    """
+    - `args`: the inputs the rule consumes, a tuple of entries `container[key]::T`, the container
+      `m` for a message or `q` for a marginal. A type left out is `Any`; the types are what the rule
+      dispatches on. For a single interface:
+      - `m[:μ]::T`, `q[:μ]::T`: the message or the marginal on `μ`;
+      - `q[:y, :x]::T`, or `q[(:y, :x)]::T`: the joint marginal of a structural cluster, its members
+        in interface order. A group in a cluster means all its members jointly: `q[(:in,)]` is the
+        joint over the group `in`. `(:in, 1)`, with a literal index, is one member:
+        `q[:out, (:in, 1)]` is the joint of `out` and `in`'s first member.
+
+      For a group, whose value is a tuple in member order:
+      - `m[:in...]::T`: every member, each of type `T`;
+      - `m[:in][k]::T`: the target's own member, `k` being the name an indexed target binds;
+      - `m[:in][!k]::T`: every member but the target's own.
+
+      With a selection, the tuple keeps every position and holds `nothing` where the selection
+      leaves a member out, so `args.m[:in][k]` is member `k` whatever was selected.
+
+      `default` among the entries stands for whatever inputs the default scheme delivers under the
+      graph's factorisation. The rule then takes them all, requires the typed entries beside
+      `default`, and walks them with [`rule_inputs`](@ref): one rule for every factorisation.
+    """
+)
+
+const DOC_RULE_BODY_SLOTS = rstrip(
+    """
+      Name only the slots the rule uses, in the order given; a slot that is misspelled, repeated
+      or out of order is an error.
+      - `output`: the buffer to write into, for an in-place rule only, and then first;
+      - `scratch`: the rule's working memory, when it declares `scratch`;
+      - `algo`: the algorithm value the rule runs under, and so its parameters;
+      - `ctx`: the [`RuleContext`](@ref), whose services the rule reads as `ctx.name`;
+      - `args`: the inputs, read as `args.m[:μ]`, `args.q[:y, :x]`, `args.m[:in][k]`;
+      - `ann`: the annotations: those that arrived with the inputs, `ann.m[:μ]`, and the rule's own,
+        written with [`annotate!`](@ref)`(ann, key, value)`.
+    """
+)
+
+const DOC_RULE_ALGORITHM = rstrip(
+    """
+    - `algorithm`: the algorithm the rule runs under, a type, or a value whose type is used.
+      Default: the node's own, [`default_algorithm`](@ref)`(node)`, usually
+      [`DefaultAlgorithm`](@ref); the node must then be declared before the rule is loaded. Almost
+      every rule leaves it out; naming one is for a rule switcher, a
+      [`DefaultAlgorithmExtension`](@ref), or a node's own algorithm. With a parametric algorithm
+      type `T`, `algorithm = T` matches every `T{…}`, while leaving it out binds the rule to the
+      type of the node's default instance only.
+    """
+)
+
+const DOC_RULE_CTX = rstrip(
+    """
+    - `ctx`: the context services the rule reads, a tuple of symbols, `ctx = (:rng,)` or
+      `ctx = (:node, :matrix_correction)`. Any name is allowed, so a rule may need a service of its
+      own. An engine checks that its context supplies each one when it resolves the rule
+      ([`check_services`](@ref)); a call by hand does not. Default: `()`, none.
+    """
+)
+
+const DOC_RULE_INPLACE = rstrip(
+    """
+    - `inplace`: `true` for a rule that writes its result into a buffer it is given rather than
+      allocating one. It needs `preallocate`, and its `body` takes `output` first. Default: `false`.
+
+    - `preallocate`: for an in-place rule, a function building the buffer from the inputs, over the
+      slots `(algo, ctx, args)`: `preallocate = (args) -> similar(mean(args.m[:μ]))`. Allowed only
+      with `inplace = true`.
+    """
+)
+
+const DOC_RULE_SCRATCH = rstrip(
+    """
+    - `scratch`: working memory, a function building it from the inputs over the slots
+      `(algo, ctx, args)`, given to the body as its `scratch` slot:
+      `scratch = (args) -> (work = similar(mean(args.m[:μ])),)`. An engine keeps one per outbound
+      stream and reuses it, so it is **write-before-read**: it carries nothing between calls, and
+      the engine may keep, drop or rebuild it whenever it likes. It never leaves the rule, is never
+      shared with another rule, keeps the rule pure, and combines with `inplace`. The body takes
+      `scratch` exactly when this is given. Default: none.
+    """
+)
+
+const DOC_RULE_PURE = rstrip(
+    """
+    - `pure`: `false` for a rule with side effects, `true` for a pure rule under an impure
+      algorithm. Default: the algorithm's declaration, [`ispure`](@ref), `true` for almost every
+      algorithm. A pure rule mutates neither its inputs nor state shared beyond one call, and draws
+      randomness only from `ctx.rng`.
+    """
+)
+
 """
-    @define_message_update_rule(node = ..., target = ..., args = (...), body = (...) -> ..., ...)
+    @define_message_update_rule(
+        node = ..., target = ..., args = (...), body = (...) -> ...,
+        algorithm = ..., logscale = ..., reads_logscale = ..., ctx = (...),
+        inplace = ..., preallocate = ..., scratch = ..., pure = ...,
+    )
 
-Define the rule for the message a node sends towards one of its interfaces.
+Define the rule for the message a node sends towards one of its interfaces. The macro takes
+keyword arguments only; `node`, `target`, `args` and `body` are required, the rest optional.
+An unknown or repeated keyword is an error at definition time, naming the valid ones.
 
-- `target`: `:out`, or `(:m, k)` for member `k` of the group `m`; writing `k` binds the
-  index in `body`.
-- `args`: the inputs the rule consumes, in the spelling of its dependencies: `m[:μ]::T` for
-  a message, `q[:μ]::T` for a marginal, `q[(:y, :x)]::T` or `q[:y, :x]::T` for a structural
-  cluster (members in interface order; a group in a cluster means all its members jointly,
-  so `q[(:in,)]` is the joint over the group `in`, and `(:in, 1)` is one member, so
-  `q[:out, (:in, 1)]` is the joint of `out` and `in`'s first member), and for a group `m[:in...]::T` (all members), `m[:in][k]::T` (the
-  target's own member) or `m[:in][!k]::T` (all but it). A group arrives as a tuple in member
-  order with `nothing` where the selection leaves a member out, so `args.m[:in][k]` means
-  member `k` whatever was selected. An omitted type is `Any`.
-  `default` among them stands for whatever inputs the default scheme delivers: the rule takes
-  them all, with the typed ones beside `default` required, and walks them with
-  [`rule_inputs`](@ref). A marginal rule over any cluster names its target with a bare name,
-  `target = members`, bound in the body to the cluster's key.
-- `body`: an ordinary lambda over some of the slots `(output, scratch, algo, ctx, args, ann)`,
-  named in that order: `args` holds the inputs, `algo` the algorithm value, `ctx` the
-  [`RuleContext`](@ref), `ann` the annotations (read `ann.m[:out]`, write with
-  [`annotate!`](@ref)), `output` the buffer of an in-place rule and `scratch` its working memory.
-- `algorithm`: the algorithm type the rule runs under. Almost every rule omits it and
-  belongs to its node's default, usually [`DefaultAlgorithm`](@ref), which requires the node
-  to be declared before the rule is loaded. Naming one is for a rule switcher's or a node's
-  own algorithm.
-- `inplace = true` with `preallocate = (args) -> buffer` and a body taking `output` first.
-- `scratch = (args) -> memory`: working memory, built from the inputs (and optionally `algo`
-  and `ctx`, as `preallocate`) and given to the body as `scratch`. An engine keeps one per
-  outbound stream and reuses it, so it is **write-before-read**: it carries nothing between
-  calls, and the engine may keep, drop or rebuild it whenever it likes. It never leaves the
-  rule, is never shared with another rule, and combines with `inplace`.
-- `pure = false` marks a rule that has side effects, whatever its algorithm declares.
-- `ctx = (:rng, ...)`: the context services the rule needs; an engine checks that its context
-  supplies them when it resolves the rule ([`check_services`](@ref)).
-- `logscale`: the log scale of the message, the scalar with `message = exp(logscale) · result`
-  for the normalised `result` the rule returns: the rule's result may stand for an unnormalised
-  function, as a belief-propagation message does, and this is its log normaliser. A number, `logscale = 0` or `logscale = loghalf` (an `Irrational`
-  keeps the message's float type); a function of the inputs over the slots `(algo, ctx, args)`,
-  `logscale = (args) -> -log(abs(mean(args.m[:A])))`; or `logscale = from_body`, when the body
-  returns [`with_logscale`](@ref)`(result, logscale)`. A rule that omits it declares none: its
-  message's log scale is an [`UndefinedLogScale`](@ref) naming the rule.
-- `reads_logscale = true`: the rule reads the log scales of its inbound messages, as
-  `args.logscale.m[:out]`, which its caller must then track.
+The rule becomes a method of [`find_message_rule`](@ref): it is found for its node, target,
+algorithm and the types of the inputs `args` names, from any module, and its module's registry
+lists it for introspection ([`list_rules`](@ref), [`check_rules`](@ref)).
+
+# Required keywords
+
+$(DOC_RULE_NODE)
+
+- `target`: the interface the message goes to:
+  - `:out`, a single interface;
+  - `(:m, k)`, any member of the group `m`. The name `k` is bound to the member's index, an
+    `Int`, in `body` and in the `preallocate`, `scratch` and `logscale` functions, without being
+    listed among their parameters; `args` can select by it.
+
+$(DOC_RULE_ARGS)
+
+- `body`: the rule itself, an ordinary lambda returning the message, whose parameters are some
+  of the slots `(output, scratch, algo, ctx, args, ann)`.
+
+$(DOC_RULE_BODY_SLOTS)
+
+# Optional keywords
+
+$(DOC_RULE_ALGORITHM)
+
+- `logscale`: the message's log scale, the scalar with `message = exp(logscale) · result` for
+  the normalised `result` the rule returns: a rule's result may stand for an unnormalised
+  function, as a belief-propagation message does, and this is the log of its normaliser. One of:
+  - a number: `logscale = 0`, or `logscale = loghalf` (StatsFuns'); an `Irrational` keeps the
+    message's float type, while `-logtwo` would not, being a `Float64`;
+  - a function of the inputs, over the slots `(algo, ctx, args)`, in that order:
+    `logscale = (args) -> -log(abs(mean(args.m[:A])))`;
+  - `from_body`: the body returns [`with_logscale`](@ref)`(result, logscale)`, for a log scale
+    computed alongside the result.
+
+  Default: none declared. The message's log scale is then an [`UndefinedLogScale`](@ref) naming
+  the rule, which propagates through products; only [`require_logscale`](@ref) turns it into an
+  error.
+
+- `reads_logscale`: `true` if the rule reads the log scales of its inbound messages, as
+  `args.logscale.m[:x]`. Its caller must then provide them: an engine does when it tracks log
+  scales, and a call by hand takes them as `logscale = (...)`; without them the call is an error
+  ([`check_reads_logscale`](@ref)). Default: `false`.
+
+$(DOC_RULE_CTX)
+
+$(DOC_RULE_INPLACE)
+
+$(DOC_RULE_SCRATCH)
+
+$(DOC_RULE_PURE)
+
+# Examples
 
 ```julia
 @define_message_update_rule(
-    node    = NormalMeanVariance,
-    target = :out,
-    args    = (m[:μ]::PointMass, m[:v]::PointMass),
-    body    = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
+    node     = NormalMeanVariance,
+    target   = :out,
+    args     = (m[:μ]::PointMass, m[:v]::PointMass),
+    logscale = 0,
+    body     = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
+)
+
+# Towards any member of the group `m`, reading the aligned member of the group `p`;
+# `k` is bound in the body without being listed:
+@define_message_update_rule(
+    node   = NormalMixture,
+    target = (:m, k),
+    args   = (q[:out]::Any, q[:switch]::Categorical, q[:p][k]::Any),
+    body   = (args) -> … probvec(args.q[:switch])[k] …,
 )
 ```
 """
@@ -67,22 +197,125 @@ macro define_message_update_rule(args...)
 end
 
 """
-    @define_marginal_update_rule(node = ..., target = (:y, :x), args = (...), body = ...)
+    @define_marginal_update_rule(
+        node = ..., target = (:y, :x), args = (...), body = (...) -> ...,
+        algorithm = ..., ctx = (...), inplace = ..., preallocate = ..., scratch = ..., pure = ...,
+    )
 
-Define the rule for the marginal of a structural cluster. Takes the same keywords as
-[`@define_message_update_rule`](@ref) except `logscale` and `reads_logscale`; `target` lists the
-cluster members in interface order.
+Define the rule for the joint marginal of a structural cluster: the marginal of, say,
+`(:y, :x)` a node computes from the messages on the cluster's members and the marginals of its
+other interfaces. The macro takes keyword arguments only; `node`, `target`, `args` and `body`
+are required, the rest optional. An unknown or repeated keyword is an error at definition time,
+naming the valid ones.
+
+The rule becomes a method of [`find_marginal_rule`](@ref), found for its node, cluster,
+algorithm and input types, from any module. A marginal carries no log scale, so `logscale` and
+`reads_logscale` are not accepted.
+
+# Required keywords
+
+$(DOC_RULE_NODE)
+
+- `target`: the cluster, its members in interface order:
+  - `(:y, :x)`, a cluster of interfaces;
+  - `(:out, (:T, 1))`, with a member of a group written with a literal index;
+  - a bare name, `target = members`: any cluster of the node, the name bound to the cluster's
+    key in `body` and in the `preallocate` and `scratch` functions, without being listed among
+    their parameters. Used with `default` in `args`, for one rule over every factorisation.
+
+$(DOC_RULE_ARGS)
+
+  A marginal rule typically reads the messages on the cluster's members, `m[:y]` and `m[:x]`,
+  and the marginals of the node's other interfaces.
+
+- `body`: the rule itself, an ordinary lambda returning the joint marginal, whose parameters
+  are some of the slots `(output, scratch, algo, ctx, args, ann)`.
+
+$(DOC_RULE_BODY_SLOTS)
+
+# Optional keywords
+
+$(DOC_RULE_ALGORITHM)
+
+$(DOC_RULE_CTX)
+
+$(DOC_RULE_INPLACE)
+
+$(DOC_RULE_SCRATCH)
+
+$(DOC_RULE_PURE)
+
+# Example
+
+```julia
+@define_marginal_update_rule(
+    node   = NormalMeanVariance,
+    target = (:out, :μ),
+    args   = (m[:out]::NormalMeanVariance, m[:μ]::NormalMeanVariance, q[:v]::PointMass),
+    body   = (args) -> …,
+)
+```
 """
 macro define_marginal_update_rule(args...)
     return esc(define_rule_expr(:marginal, __source__, args))
 end
 
 """
-    @define_average_energy(node = ..., args = (...), body = ...)
+    @define_average_energy(node = ..., args = (...), body = (...) -> ..., algorithm = ..., ctx = (...), pure = ...)
 
-Define a node's average energy. Takes the keywords of
-[`@define_message_update_rule`](@ref) except `target`, `inplace`, `preallocate`, `scratch`,
-`logscale` and `reads_logscale`.
+Define a node's average energy, `E_q[-log f]` under the marginals of its clusters: the node's
+term of the Bethe free energy before the clusters' entropies are subtracted. The macro takes
+keyword arguments only; `node`, `args` and `body` are required, the rest optional. An unknown
+or repeated keyword is an error at definition time, naming the valid ones.
+
+The energy becomes a method of [`find_average_energy`](@ref), found for its node, algorithm and
+input types, from any module. It has no target, returns a number and has no log scale, so
+`target`, `inplace`, `preallocate`, `scratch`, `logscale` and `reads_logscale` are not accepted.
+
+# Required keywords
+
+$(DOC_RULE_NODE)
+
+- `args`: the marginals the energy reads, one per cluster of the node's factorisation, a tuple
+  of entries `q[key]::T`. A type left out is `Any`; the types are what the energy dispatches on.
+  - `q[:μ]::T`: the marginal of a single interface, a cluster of its own;
+  - `q[:y, :x]::T`, or `q[(:y, :x)]::T`: the joint marginal of a structural cluster, its members
+    in interface order; `q[(:in,)]` is the joint over the group `in`, and `(:in, 1)` one member;
+  - `q[:in...]::T`: every member of a group, each a cluster of its own, as a tuple in member
+    order.
+
+  `default` among the entries stands for whatever clusters the graph's factorisation delivers;
+  the energy then takes them all, requires the typed entries beside `default`, and walks them
+  with [`rule_inputs`](@ref): one energy for every factorisation.
+
+- `body`: the energy, an ordinary lambda returning a real number, whose parameters are some of
+  the slots `(algo, ctx, args, ann)`, named in that order:
+  - `algo`: the algorithm value, and so its parameters;
+  - `ctx`: the [`RuleContext`](@ref), whose services the energy reads as `ctx.name`;
+  - `args`: the marginals, read as `args.q[:μ]`, `args.q[:y, :x]`;
+  - `ann`: the annotations that arrived with the marginals, `ann.q[:μ]`.
+
+# Optional keywords
+
+$(DOC_RULE_ALGORITHM)
+
+$(DOC_RULE_CTX)
+
+$(DOC_RULE_PURE)
+
+# Example
+
+```julia
+@define_average_energy(
+    node = NormalMeanVariance,
+    args = (q[:out]::Any, q[:μ]::Any, q[:v]::Any),
+    body = (args) -> begin
+        m_out, v_out = mean_var(args.q[:out])
+        m_μ, v_μ = mean_var(args.q[:μ])
+        (log(2π) + mean(log, args.q[:v]) + mean(inv, args.q[:v]) * (v_out + v_μ + abs2(m_out - m_μ))) / 2
+    end,
+)
+```
 """
 macro define_average_energy(args...)
     return esc(define_rule_expr(:average_energy, __source__, args))

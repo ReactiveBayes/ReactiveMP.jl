@@ -1,43 +1,105 @@
 const NODE_KEYWORDS = (:node, :type, :interfaces, :algorithm, :dependencies, :static_inputs, :matched_groups, :min_group_length, :factorisation, :initial_messages)
 
 """
-    @define_factor_node(node = ..., type = Stochastic | Deterministic, interfaces = [...], algorithm = ...)
+    @define_factor_node(
+        node = ..., type = Stochastic | Deterministic, interfaces = [...],
+        algorithm = ..., dependencies = [...], initial_messages = [...], static_inputs = ...,
+        matched_groups = [...], min_group_length = ..., factorisation = ...,
+    )
 
-Declare a factor node.
+Declare a factor node: its interfaces, its kind, and the algorithm its rules run under. Rules
+are then defined for it with [`@define_message_update_rule`](@ref),
+[`@define_marginal_update_rule`](@ref) and [`@define_average_energy`](@ref), and an engine builds
+the node in a graph from this declaration ([`nodespec`](@ref)). The macro takes keyword
+arguments only; `node`, `type` and `interfaces` are required, the rest optional. An unknown or
+repeated keyword is an error at definition time, naming the valid ones.
 
-- `interfaces` lists names as symbols, `:out`; a variadic group as `:inputs...`; aliases
-  as `(:μ, aliases = [:mean])`. Names may contain underscores.
-- `algorithm` is the algorithm the node's rules run under unless a call asks for another,
-  [`DefaultAlgorithm`](@ref)`()` when omitted, as it should be for almost every node. A node
-  declares its own only when it genuinely needs one, as a mixture does. A type is
-  instantiated with no arguments.
-- `dependencies` declares what the rules consume under that default algorithm; see
-  [`@define_dependencies`](@ref) for the vocabulary.
-- `static_inputs = :fold` folds inputs connected to constants and data into the node function;
-  see [`static_inputs`](@ref).
-- `matched_groups = [(:m, :p)]` requires the named groups to have as many members as each
-  other; see [`matched_groups`](@ref).
-- `min_group_length = 2` requires every group to have at least that many members; see
-  [`min_group_length`](@ref).
-- `factorisation = :meanfield` accepts only clusters of one interface each; see
+For a stochastic node without groups, the macro also defines [`nodefunction`](@ref)`(node)`, the
+log-density `(; out, μ, v) -> logpdf(node(μ, v), out)`, which the rule verification and the
+rule fallbacks use; `node` must then be callable as a distribution of the other interfaces.
+
+# Required keywords
+
+- `node`: what the node is, a type, `NormalMeanVariance`, or a function, `+`. The same value
+  names it in every rule and in a graph.
+
+- `type`: `Stochastic`, for a node with a density `f(out | inputs)`, or `Deterministic`, for
+  `out = f(inputs)`. A deterministic node's clusters are always its output and the joint over its
+  inputs, whatever the graph's factorisation.
+
+- `interfaces`: the node's interfaces, a vector, the output first by convention:
+  - `:μ`, a single interface. Names may contain underscores;
+  - `:inputs...`, a group of any number of members, `(:inputs, 1)`, `(:inputs, 2)`, …, which a
+    graph gives as a whole. A group may be empty unless `min_group_length` says otherwise;
+  - `(:μ, aliases = [:mean])`, an interface with other names a graph may use for it.
+
+# Optional keywords
+
+- `algorithm`: the algorithm the node's rules run under unless a call or a graph asks for
+  another, a type, instantiated with no arguments, or a value. Default:
+  [`DefaultAlgorithm`](@ref)`()`, as it should be for almost every node: under it, whether a rule
+  is belief propagation, variational message passing or their structured form follows from the
+  factorisation. A node declares its own only when its rules ignore the factorisation, as a
+  mixture's do.
+
+- `dependencies`: what each rule consumes under that algorithm, in place of the default scheme.
+
+$(DOC_DEPENDENCY_ENTRIES)
+
+  Default: none, and every target follows the default scheme. Declarations for the node's other
+  algorithms go in [`@define_dependencies`](@ref).
+
+- `initial_messages`: messages an engine seeds on the node's inbound interfaces before inference,
+  where the graph sets none, a vector of `:name => message` pairs:
+  `initial_messages = [:in => NormalMeanPrecision(0.0, 100.0)]`. For a rule that depends on its
+  own edge, which would otherwise wait forever. One per single interface; a group has none.
+  Default: `[]`. See [`initial_messages`](@ref).
+
+- `static_inputs`: how the node treats inputs connected to constants and data. `:none`, the
+  default, treats them like any other input; `:fold` folds them into the node function, reached as
+  [`getnodefn`](@ref)`(ctx.node, target)`, and every update waits until they are available. An
+  engine builds such a node with its function, `factornode(…; nodefn = f)`. See
+  [`static_inputs`](@ref).
+
+- `matched_groups`: groups that must have as many members as each other, a vector of tuples of
+  group names: `matched_groups = [(:m, :p)]` for a mixture whose means and precisions come in
+  pairs. Default: `[]`. See [`matched_groups`](@ref).
+
+- `min_group_length`: the fewest members every group may have, a non-negative integer:
+  `min_group_length = 2` for a mixture of at least two components. Needs a group. Default: `1`.
+  See [`min_group_length`](@ref).
+
+- `factorisation`: `:meanfield` accepts only graphs that give every interface a cluster of its
+  own; `:any`, the default, accepts every factorisation. Not for a deterministic node. See
   [`required_factorisation`](@ref).
 
-The engine checks these three when it creates a node, so a malformed graph is an error there
-rather than a rule silently reading fewer components.
+An engine checks `matched_groups`, `min_group_length` and `factorisation` when it creates the
+node, so a malformed graph is an error there rather than a rule silently reading fewer
+components.
 
-- `initial_messages = [:in => NormalMeanPrecision(0.0, 100.0)]` seeds the node's inbound message
-  on an interface when the user sets none; see [`initial_messages`](@ref).
+# Examples
 
 ```julia
-@define_factor_node(node = NormalMeanVariance, type = Stochastic, interfaces = [:out, :μ, :v])
+@define_factor_node(node = NormalMeanVariance, type = Stochastic, interfaces = [:out, (:μ, aliases = [:mean]), (:v, aliases = [:var])])
 
-# A node whose rules ignore the factorisation, and so declares an algorithm of its own:
-struct MixtureBP <: AbstractAlgorithm end
+@define_factor_node(node = +, type = Deterministic, interfaces = [:out, :in1, :in2])
+
+# A node whose rules ignore the factorisation, and so declares an algorithm of its own and
+# what each rule consumes; the precisions come before the means, the update schedule:
 @define_factor_node(
-    node       = Mixture,
-    type       = Stochastic,
-    interfaces = [:out, :switch, :inputs...],
-    algorithm  = MixtureBP,
+    node             = NormalMixture,
+    type             = Stochastic,
+    interfaces       = [:out, :switch, :m..., :p...],
+    algorithm        = NormalMixtureVMP,
+    matched_groups   = [(:m, :p)],
+    min_group_length = 2,
+    factorisation    = :meanfield,
+    dependencies     = [
+        :out => (q[:switch], q[:p...], q[:m...]),
+        :switch => (q[:out], q[:p...], q[:m...]),
+        (:m, k) => (q[:out], q[:switch], q[:p][k]),
+        (:p, k) => (q[:out], q[:switch], q[:m][k]),
+    ],
 )
 ```
 """
