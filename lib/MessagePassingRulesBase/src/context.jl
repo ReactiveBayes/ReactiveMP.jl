@@ -5,7 +5,8 @@
 The context a rule receives as `ctx`: the services its caller supplies, read as `ctx.name`. It
 never takes part in dispatch. A rule declares the services it reads, `ctx = (:rng,)`; any name
 is allowed, so a rule may need a service of its own. A service the caller does not supply reads
-as `nothing`, and [`missing_services`](@ref) lists them.
+as `nothing`, and [`missing_services`](@ref) lists them; an engine refuses to run such a rule,
+through [`check_services`](@ref), while an interactive call runs it with what it is given.
 
 The services an engine supplies by default, [`DEFAULT_CONTEXT_SERVICES`](@ref):
 - `node`: the factor node the rule belongs to, e.g. for [`getnodefn`](@ref)`(ctx.node, target)`;

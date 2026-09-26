@@ -276,7 +276,8 @@ Everything needed to activate a [`FactorNode`](@ref):
   [`ReactiveMP.EngineDiagnostics`](@ref));
 - `context` — services for the node's rules, a `NamedTuple` such as `(rng = …, matrix_correction =
   …)`, merged over the engine's (see [`ReactiveMP.node_context`](@ref)): any name a rule declares
-  is allowed, and a name the engine supplies is overridden;
+  is allowed, and a name the engine supplies is overridden. A rule declaring a service that no
+  one supplies is an error when it is resolved, naming the rule and the service;
 - `rulefallback` — the message where no rule matches, such as
   `MessagePassingRulesBase.NodeFunctionRuleFallback()`; `nothing`, the default, makes that a
   `RuleNotFoundError`. It is consulted only when no rule is found, so it never replaces a rule.

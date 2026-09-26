@@ -41,7 +41,8 @@ Define the rule for the message a node sends towards one of its interfaces.
   calls, and the engine may keep, drop or rebuild it whenever it likes. It never leaves the
   rule, is never shared with another rule, and combines with `inplace`.
 - `pure = false` marks a rule that has side effects, whatever its algorithm declares.
-- `ctx = (:rng, ...)`: the context services the rule needs.
+- `ctx = (:rng, ...)`: the context services the rule needs; an engine checks that its context
+  supplies them when it resolves the rule ([`check_services`](@ref)).
 - `logscale`: the log scale of the message, the scalar with `message = exp(logscale) · result`
   for the normalised `result` the rule returns: the rule's result may stand for an unnormalised
   function, as a belief-propagation message does, and this is its log normaliser. A number, `logscale = 0` or `logscale = loghalf` (an `Irrational`

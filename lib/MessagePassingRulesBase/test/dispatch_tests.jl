@@ -234,6 +234,26 @@ end
     @test getresult(message_passing_rule(Scaled, Target(:out), DefaultAlgorithm(), args, ctx)) == 6.0
     spec = find_message_rule(Scaled, Target(:out), DefaultAlgorithm(), args)
     @test missing_services(spec, ctx) == () && missing_services(spec, RuleContext()) == (:scale,)
+    # What an engine checks when it resolves a rule: an error naming the rule and the service,
+    # and nothing to allocate when every service is supplied.
+    @test MessagePassingRulesBase.check_services(spec, ctx) === nothing
+    checks(spec, ctx, n) = (
+        for _ in 1:n
+            MessagePassingRulesBase.check_services(spec, ctx)
+        end; nothing
+    )
+    allocations(spec, ctx) = @allocated checks(spec, ctx, 100)
+    allocations(spec, ctx)
+    @test allocations(spec, ctx) == 0
+    @test_throws ArgumentError MessagePassingRulesBase.check_services(spec, RuleContext())
+    report = try
+        MessagePassingRulesBase.check_services(spec, RuleContext(rng = nothing))
+    catch error
+        sprint(showerror, error)
+    end
+    @test contains(report, "Scaled") && contains(report, ":scale") && contains(report, "context")
+    # An entry that is `nothing` counts as supplied.
+    @test MessagePassingRulesBase.check_services(spec, RuleContext(scale = nothing)) === nothing
     # Merging overrides and adds, as an engine layers a model's services over its defaults.
     merged = merge(RuleContext(rng = :default, scale = 1.0), (scale = 2.0, extra = 1))
     @test merged.rng === :default && merged.scale === 2.0 && merged.extra === 1

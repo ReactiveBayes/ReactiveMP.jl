@@ -18,11 +18,10 @@ them again, so re-check before relying on one.
 
 ## Next action
 
-**Phase C, in progress** (§ Phase C, *Progress*). Next: **the engine calls `missing_services`
-when it resolves a rule** (user, 2026-09-26), so a declared service nobody supplies is an error
-naming the rule rather than a `nothing` inside it. Then what the not-done table lists before the
-release: the remaining 27 log scales, and the performance pass (user); the rest of Phase C's exit
-criteria wait for the release itself.
+**Phase C, in progress** (§ Phase C, *Progress*). Next, for the user to choose, what the
+not-done table lists before the release: the remaining 27 log scales, the free energy's context,
+and the performance pass (user); the rest of Phase C's exit criteria wait for the release
+itself.
 
 Done in Phase C so far: rule fallbacks and the open rule context (§3.49); log scales first-class,
 part of the message, and `RuleResult` (§3.50, superseding §3.48), with 28 more of Standard's
@@ -37,7 +36,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 
 | What | Where it lands | Recorded in |
 |---|---|---|
-| **next**: the engine calls `missing_services` when it resolves a rule, so a declared service nobody supplies is an error naming the rule there rather than a `nothing` inside it | Phase C, next (user, 2026-09-26) | § Phase 5, *Step 8 brief*; `DISCUSSION.md` §3.49 |
+| the free energy runs each average energy with the engine's default context, `node_context(node)`, not the node's `context` option, since `score` and `bethe_free_energy` take no activation options (as for the diagnostics, § Phase 7); an average energy declaring a service of its own is therefore refused there even when the node was given it. No average energy declares one today | before the release, with RxInfer's free energy | § Phase C, *Progress* |
 | log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
 | two rule discrepancies the engine tests found, `@test_broken` in `test/engine/variational_tests.jl`: AR's mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]` | for the user to decide | § Phase C, *Progress* |
 | the end-of-refactor performance pass: the two fixes of `investigations/message-type-parameter/` (lazy callback events, a constructor barrier for messages built from `Any`-typed values, 4–63% faster inference), the abstract `RuleSpec` behind `execute_rule`, the product's `Any` tuple, and comprehensive benchmarks | after the migration, before the release (user) | `DISCUSSION.md` §5; `investigations/message-type-parameter/README.md` |
@@ -101,7 +100,7 @@ generic ones, and no comments that only narrate.
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
 | 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | **closed**: items 1–7; RxInfer's branch pushed, no PR *(item 7's outcome, §3.48, superseded in Phase C by §3.50)* |
-| C | Cleanup: the repository rid of historical remarks, before the release | **in progress**: rule fallbacks and the open context, first-class log scales and `RuleResult` with its display, dead code, the engine tests without v6, history out of `src/` and `lib/`, the docs; next `missing_services` (§ Phase C, *Progress*) |
+| C | Cleanup: the repository rid of historical remarks, before the release | **in progress**: rule fallbacks and the open context, first-class log scales and `RuleResult` with its display, dead code, the engine tests without v6, history out of `src/` and `lib/`, the docs, declared services checked at resolution (§ Phase C, *Progress*) |
 | 8 | Release and downstream coordination | not started |
 
 ---
@@ -3694,15 +3693,20 @@ that nothing written in between escapes it.
 
 **Scope as it ran** (user): besides the cleanup, Phase C carried the engine and base changes the
 cleanup's audit raised: rule fallbacks and the open rule context (§3.49), first-class log scales
-and `RuleResult` (§3.50), its rich display (§3.51), and next `missing_services` at resolution.
+and `RuleResult` (§3.50), its rich display (§3.51), and `check_services` at resolution.
 Each is recorded in *Progress* below.
 
 **Progress** (plan of 2026-09-25: rule fallbacks; dead code and wrong docs; the engine tests
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, `investigations/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
-- *Next (user, 2026-09-26): the engine calls `missing_services` when it resolves a rule* (the
-  not-done table).
+- *Declared services checked at resolution — done* (user, 2026-09-26): the base package's
+  `check_services(spec, ctx)`, a twin of `check_reads_logscale` that allocates nothing when
+  every service is supplied, throws an `ArgumentError` naming the rule, the services and the
+  `context` option; the engine calls it wherever it resolves a rule (`MessageMapping`,
+  `MarginalMapping`, the node's free energy). The interactive calls do not, since they run with
+  the caller's context, empty by default. Found: the free energy's average energies never see
+  the node's `context` option (not-done table).
 - *The working documents reconciled — done* (2026-09-26): `PLAN.md`, `DISCUSSION.md`, this file,
   `INVENTORY.md` and `CLAUDE.md` audited against each other and the code after §3.49–3.51; stale
   present-tense claims corrected, earlier decisions marked superseded rather than rewritten.

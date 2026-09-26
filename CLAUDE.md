@@ -109,12 +109,12 @@ locally. The workflows under `.github/` run these same checks, on 1.13 (the form
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (172 of them across 27 files), each self-contained and
+Tests are `@testitem` blocks (174 of them across 27 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (29) and `:engine` (141 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (29) and `:engine` (143 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the inventory gate and the engine's doctests. Rules
 are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
@@ -172,7 +172,9 @@ discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT
 - A rule reads its services from `ctx`, a `RuleContext` wrapping a `NamedTuple`: the engine
   supplies `node`, `rng` and `matrix_correction` (`node_context`), and the activation
   option `context`, any `NamedTuple`, is merged over them. A name nobody supplies reads as
-  `nothing`.
+  `nothing` in an interactive call; the engine refuses a rule that declares one
+  (`check_services`, as it resolves the rule). The free energy's average energies see only the
+  engine's services, not the `context` option.
 - The activation option `rulefallback` (e.g. `NodeFunctionRuleFallback()`) gives a message only
   where no rule matches; an exception inside a rule always propagates.
 - `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:
@@ -246,7 +248,7 @@ and read whichever exist before proposing changes:
 treat `main` as the whole story.
 
 The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
-review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7 is closed: RxInfer is adapted on its branch `refactor/reactivemp-v7` (pushed, no PR, run by `IntegrationTest.yml`), the diagnostics are activation options (`DISCUSSION.md` §3.46). **Phase C, the cleanup, is in progress**: it has also brought back rule fallbacks and opened the rule context (§3.49), made log scales part of the message with `RuleResult` (§3.50, superseding §3.48's "as v6 has them") and given `RuleResult` its display (§3.51). Next is the engine calling `missing_services` at resolution; before the release, the remaining 27 log scales and the performance pass (`PHASES.md`, *Next action* and the not-done table).
+review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7 is closed: RxInfer is adapted on its branch `refactor/reactivemp-v7` (pushed, no PR, run by `IntegrationTest.yml`), the diagnostics are activation options (`DISCUSSION.md` §3.46). **Phase C, the cleanup, is in progress**: it has also brought back rule fallbacks and opened the rule context (§3.49), made log scales part of the message with `RuleResult` (§3.50, superseding §3.48's "as v6 has them") and given `RuleResult` its display (§3.51). The engine checks a rule's declared services as it resolves it; before the release, the remaining 27 log scales and the performance pass (`PHASES.md`, *Next action* and the not-done table).
 From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
 machinery is kept, and rule lookup and invocation plus node and rule definition and creation
 are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to

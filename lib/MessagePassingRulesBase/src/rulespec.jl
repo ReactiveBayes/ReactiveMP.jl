@@ -290,6 +290,34 @@ checked once, when a node is set up, rather than on every call.
 missing_services(spec::RuleSpec, ctx::RuleContext) =
     filter(service -> !haskey(getfield(ctx, :services), service), spec.services)
 
+"""
+    check_services(spec::RuleSpec, ctx::RuleContext)
+
+Throw when `spec` declares a context service that `ctx` does not supply (see
+[`missing_services`](@ref)), naming the rule and the services. An engine calls it when it
+resolves a rule, before running it, so a service nobody supplies is an error there rather than
+a `nothing` inside the rule. It allocates nothing when every service is supplied. The
+interactive calls do not check, since they run with whatever context the caller passes.
+"""
+@inline function check_services(spec::RuleSpec, ctx::RuleContext)
+    # Against the names, which the context's type fixes: `haskey` on the `NamedTuple` would box it.
+    names = keys(getfield(ctx, :services))
+    all(service -> service in names, spec.services) || throw_missing_services(spec, ctx)
+    return nothing
+end
+
+# Kept out of line, so that building the message costs nothing on the path that passes.
+@noinline function throw_missing_services(spec::RuleSpec, ctx::RuleContext)
+    missing = missing_services(spec, ctx)
+    throw(
+        ArgumentError(
+            "the $(rule_heading(spec)) needs the context $(length(missing) == 1 ? "service" : "services") " *
+                "$(join(map(repr, missing), ", ")), which its context does not supply; " *
+                "supply them in the context the rule is called with (ReactiveMP's activation option `context = (name = value, ...)`)",
+        ),
+    )
+end
+
 
 """
     default_inputs_match(args::RuleArgs, ::Val{required}, ::Type{types})

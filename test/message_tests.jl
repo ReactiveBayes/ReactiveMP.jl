@@ -361,6 +361,15 @@ end
     @define_factor_node(node = Draw, type = Stochastic, interfaces = [:out, :in])
     @define_message_update_rule(node = Draw, target = :out, args = (m[:in]::Int,), ctx = (:rng,), body = (ctx, args) -> ctx.rng)
 
+    # Needs a service of its own, which only the node's context can supply.
+    struct Scaled end
+    @define_factor_node(node = Scaled, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Scaled, target = :out, args = (m[:in]::Int,), ctx = (:scale,), body = (ctx, args) -> ctx.scale * args.m[:in])
+    @define_marginal_update_rule(
+        node = Scaled, target = (:out, :in), args = (m[:out]::Int, m[:in]::Int), ctx = (:scale,),
+        body = (ctx, args) -> ctx.scale * (args.m[:out] + args.m[:in]),
+    )
+
     struct Stranger end
 
     # Working memory: the rule counts how often its scratch is built, and uses it.
@@ -469,6 +478,37 @@ end
     set_initial_message!(get_stream_of_inbound_messages(last(getinterfaces(node))), 1)
     unsubscribe!(subscription)
     @test received == [rng]
+end
+
+@testitem "a rule's declared services are checked when it is resolved" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, MarginalMapping, EngineDiagnostics, getdata
+    import MessagePassingRulesBase: Target, ClusterTarget, DefaultAlgorithm
+    N = MessageMappingNodes
+    messages = (Message(2, false, false),)
+    joint_messages = (Message(1, false, false), Message(2, false, false))
+
+    # Not supplied: an error naming the rule and the service, before the rule runs.
+    towards_out = MessageMapping(N.Scaled, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scaled(), nothing)
+    @test_throws ArgumentError towards_out(messages, nothing)
+    message = try
+        towards_out(messages, nothing)
+    catch error
+        sprint(showerror, error)
+    end
+    @test contains(message, "Scaled") && contains(message, ":scale") && contains(message, "`context")
+
+    joint = MarginalMapping(N.Scaled, ClusterTarget((:out, :in)), Val((:out, :in)), nothing, DefaultAlgorithm(), N.Scaled())
+    @test_throws ArgumentError ReactiveMP.compute_marginal(joint, joint_messages, nothing)
+
+    # Supplied through the node's context, the rules run.
+    towards_out = MessageMapping(N.Scaled, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scaled(), nothing, EngineDiagnostics(), (scale = 3,))
+    @test getdata(towards_out(messages, nothing)) == 6
+    joint = MarginalMapping(N.Scaled, ClusterTarget((:out, :in)), Val((:out, :in)), nothing, DefaultAlgorithm(), N.Scaled(), EngineDiagnostics(), (scale = 3,))
+    @test ReactiveMP.compute_marginal(joint, joint_messages, nothing) == 9
+
+    # The engine's own services are always supplied.
+    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing)
+    @test getdata(draw((Message(1, false, false),), nothing)) !== nothing
 end
 
 @testitem "MessageMapping throws a RuleNotFoundError when no rule fits" tags = [:engine] setup = [MessageMappingNodes] begin

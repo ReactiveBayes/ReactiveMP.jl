@@ -100,3 +100,35 @@ end
     @test energy.infinities == 2
     foreach(unsubscribe!, subscriptions)
 end
+
+@testitem "engine:average energy:declared services are checked" tags = [:engine] setup = [EngineHarness] begin
+    # An average energy declaring a service its context does not supply is an error naming the
+    # rule and the service when the free energy resolves it, not a `nothing` inside the rule.
+    using ExponentialFamily, BayesBase, MessagePassingRulesBase
+    import ReactiveMP:
+        activate!, score, FactorBoundFreeEnergy, FactorNodeActivationOptions, RandomVariableActivationOptions, MessageProductContext,
+        CountingReal
+    using Rocket
+    H = EngineHarness
+
+    struct Weighted end
+    @define_factor_node(node = Weighted, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Weighted, target = :out, args = (q[:in]::PointMass,), body = (args) -> NormalMeanVariance(mean(args.q[:in]), 1.0))
+    @define_average_energy(node = Weighted, args = (q[:out]::Any, q[:in]::Any), ctx = (:weight,), body = (ctx, args) -> ctx.weight)
+
+    graph = H.Graph()
+    x = H.random!(graph)
+    node = H.node!(graph, Weighted, [(:out, x), (:in, H.constant!(graph, 1.0))]; factorisation = ((:out,), (:in,)))
+    product = MessageProductContext()
+    activate!(x, RandomVariableActivationOptions(nothing, product, product))
+    activate!(node, FactorNodeActivationOptions())
+
+    error = try
+        subscribe!(score(CountingReal{Float64}, FactorBoundFreeEnergy(), node, nothing, nothing), (f) -> nothing)
+        nothing
+    catch caught
+        caught
+    end
+    @test error isa ArgumentError
+    @test contains(sprint(showerror, error), "Weighted") && contains(sprint(showerror, error), ":weight")
+end

@@ -597,6 +597,8 @@ no rule matches, the rule fallback, if one is set, gives the message; otherwise 
 When log scales are tracked, the rule reads the incoming ones as `args.logscale.m[...]` and the
 message carries the log scale it declares; a message a rule fallback gives has an undefined one.
 When they are not, a rule declared with `reads_logscale = true` is an error.
+A rule declaring a context service the node's context does not supply is an error too, naming
+the rule and the service (`MessagePassingRulesBase.check_services`).
 
 See also: [`Message`](@ref), [`DeferredMessage`](@ref)
 """
@@ -691,8 +693,9 @@ function (mapping::MessageMapping)(messages, marginals)
         else
             spec = audit_rule(mapping.diagnostics, resolve_rule(found))
             MessagePassingRulesBase.check_reads_logscale(spec, args)
-            ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
             ctx = mapping.context
+            MessagePassingRulesBase.check_services(spec, ctx)
+            ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
             algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
             scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
             if tracks_logscales(mapping)

@@ -112,7 +112,8 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   itself), `rng` (the task's generator) and `matrix_correction` (`nothing`, each rule applying
   its own default) (`src/context.jl`), merged with the activation option `context`, any
   `NamedTuple`, which adds or overrides services. Any name is allowed, so a rule may need a
-  service of its own; one nobody supplies reads as `nothing`. There is no `linalg` service
+  service of its own; a rule declaring one nobody supplies is an error when the engine resolves
+  it. There is no `linalg` service
   (#13) and no `product` service (§3.50). Output buffers and scratch are body slots, not
   services.
 
@@ -123,8 +124,10 @@ Rules dispatch on: **node**, **target**, **algorithm**, **inputs**, plus a non-d
   node at activation and shares it among the node's mappings — not a global and not a
   `ScopedValue`, which was never necessary, since a plain default argument does the same job.
 - Rules declare which context **services** they need (e.g. `ctx = (:rng, :matrix_correction)`);
-  `missing_services(spec, ctx)` lists the declared ones a context does not supply. The engine
-  does not yet call it at resolution (a Phase C item).
+  `missing_services(spec, ctx)` lists the declared ones a context does not supply, and the
+  engine calls `check_services(spec, ctx)` as it resolves each rule, message, marginal and
+  average energy, an error naming the rule and the services. The interactive calls do not
+  check: they run with the context their caller passes, empty by default.
 
 ### Rule surface
 

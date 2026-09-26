@@ -78,6 +78,7 @@ function score(
         (marginals) -> begin
             args = RuleArgs(rule_messages(getdata, nothing, nothing), rule_marginals(getdata, marginals_names, marginals))
             spec = resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args))
+            MessagePassingRulesBase.check_services(spec, ctx)
             ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
             average_energy = MessagePassingRulesBase.execute_rule(
                 spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing

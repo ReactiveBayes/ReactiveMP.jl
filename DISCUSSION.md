@@ -2210,8 +2210,10 @@ Open as of the Phase 4.5 reconciliation:
 
 Open as of Phase C (2026-09-26; `PHASES.md`'s not-done table is the full list):
 
-- **`missing_services` at resolution** — the engine does not call it yet, so a declared service
-  nobody supplies reaches the rule as `nothing` (§3.49). Phase C's next item (user).
+- ~~**`missing_services` at resolution**~~ — **done** (Phase C): the engine calls the base's
+  `check_services` as it resolves each rule, so a declared service nobody supplies is an error
+  naming the rule. Left: the free energy's average energies run with the engine's default
+  context, not the node's `context` option.
 - **Two rule discrepancies** the engine tests found against closed forms, `@test_broken`: AR's
   mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]`. For the
   user to decide.
