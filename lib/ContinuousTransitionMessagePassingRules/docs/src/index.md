@@ -9,6 +9,13 @@ a regression with an unknown matrix of coefficients.
 ContinuousTransitionMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 The site is one page: this one. It follows the node from its definition to its rules, an example
 and its limitations, and ends with the API.
 
@@ -85,37 +92,6 @@ julia> m, V = mean_cov(getresult(result));
 
 julia> m ≈ [1.0, 2.0] && V ≈ (1 + 1 / 3) * I
 true
-```
-
-In a model, with RxInfer, the algorithm names the transformation, and the factorisation is
-structured over each transition's `y` and `x`:
-
-```julia
-using RxInfer, ContinuousTransitionMessagePassingRules
-
-@model function rotating_state(y, x0)
-    a ~ MvNormal(mean = zeros(1), covariance = [1.0;;])
-    W ~ Wishart(3, diageye(2))
-    x_prev = x0
-    for i in eachindex(y)
-        x[i] ~ ContinuousTransition(x_prev, a, W)
-        y[i] ~ MvNormal(mean = x[i], covariance = diageye(2))
-        x_prev = x[i]
-    end
-end
-
-@algorithm function rotation_algorithm()
-    ContinuousTransition() -> CTVMP(a -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])])
-end
-
-@constraints function rotation_constraints()
-    q(x0, x, a, W) = q(x0, x)q(a)q(W)
-end
-
-@initialization function rotation_init()
-    q(a) = MvNormalMeanCovariance(zeros(1), [1.0;;])
-    q(W) = Wishart(3, diageye(2))
-end
 ```
 
 ## Limitations

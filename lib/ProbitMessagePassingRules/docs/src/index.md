@@ -9,6 +9,13 @@ classification, where each label `y` is linked to a latent score `x ~ N(…)` by
 ProbitMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 The package has a single node, and this page covers it in full.
 
 ## Overview
@@ -95,26 +102,6 @@ julia> result = @call_message_update_rule(
 julia> getresult(result) isa ContinuousUnivariateLogPdf
 true
 ```
-
-In a model, probit classification of `n` labels with latent scores reads as follows (not run;
-[RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) syntax):
-
-```julia
-@model function probit_classification(y, n)
-    for i in 1:n
-        x[i] ~ Normal(mean = 0.0, variance = 1.0)
-        y[i] ~ Probit(x[i])        # ProbitEP(), the node's own algorithm
-    end
-end
-
-# more cubature points for the free energy
-@algorithm begin
-    Probit() -> ProbitEP(p = 64)
-end
-```
-
-The algorithm block is passed to `infer(..., algorithm = ...)`; without one the node runs
-`ProbitEP()`.
 
 ## Limitations
 

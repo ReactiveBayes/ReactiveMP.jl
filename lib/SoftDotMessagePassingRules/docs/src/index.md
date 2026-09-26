@@ -10,6 +10,13 @@ is a single page.
 SoftDotMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 ## Overview
 
 `SoftDot` replaces the constraint `y = θᵀx` by a Gaussian likelihood of precision `γ` around it.
@@ -75,19 +82,6 @@ julia> message = getresult(@call_message_update_rule(node = SoftDot, target = :�
 
 julia> shape(message) ≈ 1.5 && rate(message) ≈ 2.0
 true
-```
-
-In a model, a Bayesian linear regression with known regressors `X[i]` and a learnt noise
-precision, inferred under mean-field:
-
-```julia
-@model function regression(y, X)
-    θ ~ MvNormalMeanPrecision(zeros(2), diageye(2))
-    γ ~ GammaShapeRate(2.0, 1.0)
-    for i in eachindex(y)
-        y[i] ~ softdot(θ, X[i], γ)
-    end
-end
 ```
 
 ## Limitations

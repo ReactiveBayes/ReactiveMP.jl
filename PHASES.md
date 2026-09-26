@@ -51,6 +51,10 @@ models agreeing with v6. Phases 0–6 are closed too.
 | RxInfer's documentation adapted to v7 | with the release work (user) | § Phase 7, *Item 6 brief* |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
+| Gamma's variational rule towards `out` uses `E[θ]` where naive VMP gives `1/E[1/θ]`, which its own average energy uses; exact for a point-mass `θ`, and the node has no rule towards `θ` | left as v6 has it (user, 2026-09-26) | § Phase C, *Progress* |
+| Beta's average energy takes `log B(E[a], E[b])` for `E[log B(a, b)]`, exact for point-mass `a`, `b` only; the node has no rule towards them | left for now (user, 2026-09-26) | § Phase C, *Progress* |
+| found by the documentation pass, documented as they are: ConjugateAR under `ARVMP(Univariate, …)` is a `MethodError`; `AdditiveCouplingLayer` with `partition_dim > 1` builds and then fails in `forward`; BinomialPolya's and Probit's `DefaultAlgorithm` energies use a fixed 32 cubature points; `test_rule_derivatives` throws where the tables record a failure; the engine and migration fixture headers store `julia` as different types; `FormConstraintCheckPickDefault` is resolved by RxInfer, not the engine; `Dependency.key` cannot name a group member `(:T, 1)` | to discuss | the packages' docs, *Limitations* |
+| the package sites published with the repository split: each `InterLinks` sibling then lists the online `objects.inv` first, so a link follows the deployed pages' URL form | Phase 8 | `docs/make.jl`, `lib/*/docs/make.jl` |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
 the base package's method table, global already, and the per-module registries are
@@ -3700,12 +3704,18 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, `investigations/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
-- *The documentation pass — in progress* (user, 2026-09-26): every docstring audited and
-  rewritten to one style (the contributing page), cross-references revised, and one
-  documentation site per package, `make docs-all`, linked by `@extref`. Done: the skeleton, the
-  style, and `MessagePassingRulesApproximations`' site as the template. Then, in parallel, the
-  engine and its site, the base, TestUtils, Standard and the node packages; and the code the
-  audit found contradicting its docstrings.
+- *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
+  one style (the contributing page, *Documentation*), cross-references revised, and one
+  documentation site and README per package, built by `make docs-all` in dependency order and
+  linked by DocumenterInterLinks `@extref` against the planned addresses and the siblings' local
+  inventories. The names the docs direct users to are declared with `Compat.@compat public`. Rule
+  packages show rule calls, never models (user). The code the docs found contradicting them is
+  fixed: Flow's precision-form linearisation (a declared correction of v6), `rule_coverage` over
+  any cluster and parametric algorithms, `registries` and deprecated bindings, the displays'
+  qualified names, `GCVApproximation`'s method, BinomialPolya's `q(y)`, HalfNormal's
+  `truncated`, `isdeterministic` on nodes, `set_initial_message!`'s errors, `getlogscale` on an
+  initial or joint marginal, TestUtils' relative tolerances, log-scale expectations and fixture
+  loader; `skipindex`, `SkipIndexIterator` and `tag` removed. Left: the not-done table's new rows.
 - *Declared services checked at resolution — done* (user, 2026-09-26): the base package's
   `check_services(spec, ctx)`, a twin of `check_reads_logscale` that allocates nothing when
   every service is supplied, throws an `ArgumentError` naming the rule, the services and the

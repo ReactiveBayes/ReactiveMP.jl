@@ -96,31 +96,6 @@ julia> m ≈ [1.0] && V ≈ [2.0;;]
 true
 ```
 
-In a model, with RxInfer:
-
-```julia
-using RxInfer, BIFMMessagePassingRules
-
-@model function bifm_chain(y, A, B, C, μu, Wu, Wy)
-    z_prior ~ MvNormalMeanPrecision(zeros(2), diageye(2))
-    z[1] ~ BIFMHelper(z_prior)
-    for i in eachindex(y)
-        u[i] ~ MvNormalMeanPrecision(μu, Wu)
-        yt[i] ~ BIFM(u[i], z[i], z[i + 1])
-        y[i] ~ MvNormalMeanPrecision(yt[i], Wy)
-    end
-    z[end] ~ MvNormalMeanPrecision(zeros(2), zeros(2, 2))
-end
-
-@algorithm function bifm_algorithm(A, B, C)
-    BIFM() -> BIFMSmoother(A, B, C)
-end
-
-@constraints function bifm_constraints()
-    q(z_prior, z) = q(z_prior)q(z)
-end
-```
-
 ## Limitations
 
 - **No free energy**: the joint marginal of the inputs and the average energy of

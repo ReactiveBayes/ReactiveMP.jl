@@ -10,6 +10,13 @@ set, such as `Delta`, `AR` or `Probit`, have packages of their own, which build 
 StandardMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 ## A first rule call
 
 Rules are ordinary Julia methods, and
@@ -42,16 +49,6 @@ julia> message = getresult(@call_message_update_rule(
 
 julia> mean(message) ≈ 1.0 && var(message) ≈ inv(mean(inv, GammaShapeRate(3.0, 4.0)))
 true
-```
-
-In a model, the engine picks the rule from the factorisation; nothing names it:
-
-```julia
-@model function noisy_mean(y)
-    μ ~ NormalMeanVariance(0.0, 100.0)
-    τ ~ GammaShapeRate(1.0, 1.0)
-    y .~ NormalMeanPrecision(μ, τ)
-end
 ```
 
 ## Which rules a node has

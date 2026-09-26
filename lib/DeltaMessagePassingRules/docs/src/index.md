@@ -14,6 +14,13 @@ projection onto an exponential family for messages of other families.
 DeltaMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 ## A first example
 
 The message towards `out` of `out = 2in + 1`, by the unscented transform, which is exact for an

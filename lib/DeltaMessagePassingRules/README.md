@@ -22,9 +22,6 @@ result = @call_message_update_rule(
 getresult(result)   # NormalMeanVariance(μ = 1.0, v = 0.5)
 ```
 
-In a model, `@algorithm begin f() -> DeltaApproximation(method = Linearization()) end` names the
-algorithm for the function `f`.
-
 - Documentation: `make docs-delta` from the repository root builds it into `docs/build`; it will
   be published at <https://reactivebayes.github.io/DeltaMessagePassingRules.jl/dev/>.
 - Tests: `make test-delta`.

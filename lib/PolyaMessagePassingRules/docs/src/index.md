@@ -13,6 +13,13 @@ them for binomial or logistic regression, and for multinomial regression.
 PolyaMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 ## The augmentation
 
 For a count `y` out of `b` trials with log-odds `ψ`, the Pólya-Gamma identity of Polson, Scott

@@ -89,27 +89,6 @@ julia> all(mean_var(getresult(result)) .≈ (1.0, 0.5))
 true
 ```
 
-In a model, a nonlinear function becomes a Delta node, and the algorithm is given per function:
-
-```julia
-using RxInfer, DeltaMessagePassingRules
-
-f(x, w) = min(x, w)
-
-@model function identification(y)
-    x ~ Normal(mean = 0.0, var = 1.0)
-    w ~ Normal(mean = 0.0, var = 1.0)
-    s := f(x, w)
-    y ~ Normal(mean = s, var = 0.1)
-end
-
-algorithm = @algorithm begin
-    f() -> DeltaApproximation(method = Linearization())
-end
-
-result = infer(model = identification(), data = (y = 0.3,), algorithm = algorithm)
-```
-
 ## Limitations
 
 - The node has rules only under a [`DeltaApproximation`](@ref), which has no default method.

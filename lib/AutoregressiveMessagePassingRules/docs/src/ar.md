@@ -91,49 +91,6 @@ julia> shape(getresult(result)) ≈ 1.5 && rate(getresult(result)) ≈ 2.6875
 true
 ```
 
-A latent AR(`order`) model observed through its first component, in RxInfer, with the
-structured factorisation and the algorithm given:
-
-```julia
-using RxInfer, AutoregressiveMessagePassingRules
-
-@model function latent_ar(y, order, γ)
-    c = zeros(order); c[1] = 1.0
-    τ ~ Gamma(α = 1.0, β = 1.0)
-    θ ~ MvNormal(mean = zeros(order), precision = diageye(order))
-    x0 ~ MvNormal(mean = zeros(order), precision = diageye(order))
-    x_prev = x0
-    for i in eachindex(y)
-        x[i] ~ AR(x_prev, θ, τ)
-        y[i] ~ Normal(mean = dot(c, x[i]), precision = γ)
-        x_prev = x[i]
-    end
-end
-
-@constraints function ar_constraints()
-    q(x0, x, θ, τ) = q(x0, x)q(θ)q(τ)
-end
-
-@algorithm function ar_algorithm(order)
-    AR() -> ARVMP(Multivariate, order, ARsafe())
-end
-
-@initialization function ar_init(order)
-    q(τ) = GammaShapeRate(1.0, 1.0)
-    q(θ) = MvNormalMeanPrecision(zeros(order), diageye(order))
-end
-
-result = infer(
-    model = latent_ar(order = 5, γ = 2.0),
-    data = (y = observations,),
-    constraints = ar_constraints(),
-    algorithm = ar_algorithm(5),
-    initialization = ar_init(5),
-    iterations = 20,
-    free_energy = true,
-)
-```
-
 ## Limitations
 
 - A model must give [`ARVMP`](@ref); without it the node has no rule.

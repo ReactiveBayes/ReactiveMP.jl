@@ -37,20 +37,6 @@ julia> probvec(switch)[1] > 0.99
 true
 ```
 
-```julia
-@model function gaussian_mixture(y)
-    s ~ Dirichlet([1.0, 1.0])
-    m[1] ~ NormalMeanVariance(-2.0, 10.0)
-    m[2] ~ NormalMeanVariance(2.0, 10.0)
-    p[1] ~ GammaShapeRate(1.0, 1.0)
-    p[2] ~ GammaShapeRate(1.0, 1.0)
-    for i in eachindex(y)
-        z[i] ~ Categorical(s)
-        y[i] ~ NormalMixture(switch = z[i], m = m, p = p)
-    end
-end
-```
-
 ## NormalMixture
 
 ```@example mixtures

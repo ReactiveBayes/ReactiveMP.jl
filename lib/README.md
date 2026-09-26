@@ -23,6 +23,15 @@ through it.
 | `FlowMessagePassingRules` | Flow under `FlowApproximation(model; method)`, the flow models and layers, and `PermutationMatrix` |
 | `DiscreteTransitionMessagePassingRules` | DiscreteTransition as a tensor node: one rule per target, over whatever inputs the factorisation delivers |
 
+## Documentation
+
+Each package has a `README.md` and its own documentation site, `docs/` beside its `src/`, built
+with `make docs-<package>` (the test target's name, `docs-base`, `docs-standard`, …) into
+`docs/build`; `make docs-all` builds every site in dependency order, as CI does. The sites link
+to each other with DocumenterInterLinks `@extref`, against their planned addresses,
+`https://reactivebayes.github.io/<Package>.jl/dev/`, and each sibling's local inventory until they
+are published with the repository split.
+
 ## Dependency constraints
 
 - `MessagePassingRulesBase` never depends on `ExponentialFamily`: the distribution machinery

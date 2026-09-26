@@ -9,6 +9,13 @@ message passing: every off-diagonal entry of `A` becomes one coupling node.
 GaussianCouplingMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 The package holds one node, so this page is the whole site.
 
 ## Overview
@@ -81,22 +88,6 @@ julia> joint = @call_marginal_update_rule(
 
 julia> getresult(joint) ≈ MvNormalWeightedMeanPrecision([2.0, -8.0], [2.0 1.5; 1.5 4.0])
 true
-```
-
-In an RxInfer model, solving `A x = b` for a symmetric `A`:
-
-```julia
-@model function gabp(A, b)
-    n = length(b)
-    for i in 1:n
-        x[i] ~ NormalWeightedMeanPrecision(b[i], A[i, i])
-    end
-    for i in 1:n, j in (i + 1):n
-        if !iszero(A[i, j])
-            x[j] ~ GaussianCoupling(x[i], -A[i, j])
-        end
-    end
-end
 ```
 
 ## Limitations

@@ -40,16 +40,6 @@ julia> mean(scaled) ≈ 2.0 && var(scaled) ≈ 4.0
 true
 ```
 
-```julia
-@model function random_walk(y)
-    x[1] ~ NormalMeanVariance(0.0, 10.0)
-    for t in 2:length(y)
-        x[t] ~ x[t - 1] + 1.0
-        y[t] ~ NormalMeanVariance(2.0 * x[t], 1.0)
-    end
-end
-```
-
 ## Addition, `+`
 
 ```math

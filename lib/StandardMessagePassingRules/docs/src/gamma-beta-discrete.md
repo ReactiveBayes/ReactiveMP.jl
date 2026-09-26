@@ -26,13 +26,6 @@ julia> getlogscale(result) ≈ log(1 / 2)
 true
 ```
 
-```julia
-@model function coin(y)
-    p ~ Beta(1.0, 1.0)
-    y .~ Bernoulli(p)
-end
-```
-
 ## GammaShapeRate
 
 ```math

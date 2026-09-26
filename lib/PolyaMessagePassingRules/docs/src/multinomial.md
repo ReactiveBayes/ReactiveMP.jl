@@ -70,23 +70,6 @@ julia> precision(getresult(result)) ≈ [10/4 0.0; 0.0 8/4]
 true
 ```
 
-In a model, with RxInfer, the message on `ψ` is initialised:
-
-```julia
-using RxInfer, PolyaMessagePassingRules
-
-@model function multinomial_model(x, N, K)
-    ψ ~ MvNormal(mean = zeros(K - 1), covariance = diageye(K - 1))
-    for i in eachindex(x)
-        x[i] ~ MultinomialPolya(N, ψ)
-    end
-end
-
-@initialization function multinomial_init(K)
-    μ(ψ) = MvNormalWeightedMeanPrecision(zeros(K - 1), diageye(K - 1))
-end
-```
-
 ## Limitations
 
 - The rule towards `ψ` needs an **initial message on `ψ`**.

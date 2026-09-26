@@ -53,7 +53,6 @@ ReactiveMP.getvariable
 ReactiveMP.get_stream_of_outbound_messages
 ReactiveMP.get_stream_of_inbound_messages
 ReactiveMP.set_stream_of_outbound_messages!
-ReactiveMP.tag
 ```
 
 ## [Activation](@id lib-node-activation)

@@ -9,6 +9,13 @@ transitions that switch with a regime or an action.
 DiscreteTransitionMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 The site has two pages: this one, the node from its definition to its API, and
 [Internals](internals.md), the tensor algebra its rules are built on.
 
@@ -118,32 +125,6 @@ julia> result = @call_message_update_rule(
 julia> params(getresult(result))[1] ≈ [1.2 1.0; 1.8 1.0]
 true
 ```
-
-In a model, with RxInfer, a hidden Markov model with learned transition and emission matrices,
-under the structured factorisation over the states:
-
-```julia
-using RxInfer, DiscreteTransitionMessagePassingRules
-
-@model function hidden_markov_model(x)
-    A ~ DirichletCollection(ones(3, 3))
-    B ~ DirichletCollection([10.0 1.0 1.0; 1.0 10.0 1.0; 1.0 1.0 10.0])
-    s_0 ~ Categorical(fill(1.0 / 3.0, 3))
-    s_prev = s_0
-    for t in eachindex(x)
-        s[t] ~ DiscreteTransition(s_prev, A)
-        x[t] ~ DiscreteTransition(s[t], B)
-        s_prev = s[t]
-    end
-end
-
-@constraints function hidden_markov_model_constraints()
-    q(s_0, s, A, B) = q(s_0, s)q(A)q(B)
-end
-```
-
-A conditioning categorical is passed after the tensor, `s[t] ~ DiscreteTransition(s_prev, A,
-u[t])`, and is the member `(:T, 1)`.
 
 ## Limitations
 

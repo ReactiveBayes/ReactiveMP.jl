@@ -27,13 +27,6 @@ julia> mean(message) ≈ 3 * diageye(2)
 true
 ```
 
-```julia
-@model function covariance(y)
-    Σ ~ InverseWishart(4.0, diageye(2))
-    y .~ MvNormalMeanCovariance(zeros(2), Σ)
-end
-```
-
 ## Wishart
 
 ```math

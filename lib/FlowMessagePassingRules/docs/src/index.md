@@ -10,6 +10,13 @@ layers, live in this package too: see [Flow models](@ref flow-models).
 FlowMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 The site has three pages: this one, the node; [Flow models](@ref flow-models), the models and
 their layers; and [Internals](@ref flow-internals), the helpers the rules are built on.
 
@@ -83,29 +90,6 @@ julia> unscented = getresult(@call_message_update_rule(node = Flow, target = :ou
 
 julia> isapprox(mean(unscented), mean(linearised); atol = 1e-2)
 true
-```
-
-In a model the algorithm is given per node. With RxInfer:
-
-```julia
-using RxInfer, FlowMessagePassingRules
-
-compiled = compile(FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()), AdditiveCouplingLayer(PlanarFlow()))))
-
-@model function flow_observations(y)
-    x ~ MvNormalMeanCovariance(zeros(2), diageye(2))
-    z ~ Flow(x)
-    for i in eachindex(y)
-        y[i] ~ MvNormalMeanCovariance(z, 0.1 * diageye(2))
-    end
-end
-
-flow_algorithm = @algorithm begin
-    Flow() -> FlowApproximation(compiled)
-end
-
-# `observations`: a vector of two-dimensional data points
-result = infer(model = flow_observations(), data = (y = observations,), algorithm = flow_algorithm)
 ```
 
 ## Limitations

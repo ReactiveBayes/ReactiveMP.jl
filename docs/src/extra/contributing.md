@@ -78,6 +78,11 @@ enough to use the name without reading its source:
   read as the plain name.
 - **Text several docstrings share is written once**, as a `const` string fragment interpolated
   with `$(FRAGMENT)`, so that no docstring says "as X, except …" and the copies cannot drift.
+- **A rule package shows rules, not models.** Its examples call the rules directly
+  (`@call_message_update_rule`), and never use another package's modelling syntax, such as
+  GraphPPL's `@model` or RxInfer's `infer` and `@algorithm`, which a reader of the package does not
+  have. Its overview page links to ReactiveMP, GraphPPL and RxInfer for how the rules are used in
+  a model.
 - **State limitations plainly**: which factorisations a node supports, which message types a
   rule takes, "no average energy", "needs an initial message on `β`".
 - **Present tense, British spelling** ("factorisation", "normalised"), no history ("now",

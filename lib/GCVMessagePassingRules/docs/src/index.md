@@ -9,6 +9,13 @@ layer sets the volatility of the layer below.
 GCVMessagePassingRules
 ```
 
+!!! info "Where these rules run"
+    This package defines message passing rules; it does not build or run models. The
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
+    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
+    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
+    here call the rules directly, as a test or an interactive session does.
+
 ## Overview
 
 A `GCV` node relates an output `y` to its mean `x` with a variance `exp(κz + ω)`: `z` is a latent
@@ -122,28 +129,6 @@ true
 
 In a model, a two-layer hierarchical Gaussian filter: `z` is a random walk that sets the volatility
 of the random walk `x`, under the structured factorisation.
-
-```julia
-@model function hgf(y, κ, ω, z_prior, x_prior)
-    z_prev ~ z_prior
-    x_prev ~ x_prior
-    for t in eachindex(y)
-        z[t] ~ Normal(mean = z_prev, variance = 1.0)
-        x[t] ~ GCV(x_prev, z[t], κ, ω)
-        y[t] ~ Normal(mean = x[t], variance = 1.0)
-        z_prev, x_prev = z[t], x[t]
-    end
-end
-
-constraints = @constraints begin
-    q(x_prev, x, z) = q(x_prev, x)q(z)
-end
-
-# Only to change the cubature's number of points:
-algorithm = @algorithm begin
-    GCV() -> GCVApproximation(method = GaussHermiteCubature(32))
-end
-```
 
 ## Limitations
 

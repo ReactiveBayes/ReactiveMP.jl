@@ -70,31 +70,6 @@ julia> precision(getresult(result)) ≈ (5 / 4) * [0.1, 0.2] * [0.1, 0.2]'
 true
 ```
 
-In a model, with RxInfer, the message on `β` is initialised:
-
-```julia
-using RxInfer, PolyaMessagePassingRules
-
-@model function binomial_regression(y, X, n, d)
-    β ~ MvNormal(mean = zeros(d), covariance = diageye(d))
-    for i in eachindex(y)
-        y[i] ~ BinomialPolya(X[i], n[i], β)
-    end
-end
-
-@initialization function binomial_init(d)
-    μ(β) = MvNormalWeightedMeanPrecision(zeros(d), diageye(d))
-end
-
-result = infer(
-    model = binomial_regression(d = 2),
-    data = (y = y, X = X, n = n),
-    initialization = binomial_init(2),
-    iterations = 20,
-    free_energy = true,
-)
-```
-
 ## Limitations
 
 - The rule towards `β` needs an **initial message on `β`**.

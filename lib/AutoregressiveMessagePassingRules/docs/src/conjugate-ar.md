@@ -76,32 +76,6 @@ julia> μ ≈ [0.4] && Λ ≈ fill(1.25, 1, 1) && α ≈ 1.0 && β ≈ 0.9
 true
 ```
 
-In a model, with RxInfer, `w` takes a normal-gamma prior and the states stay joint:
-
-```julia
-using RxInfer, AutoregressiveMessagePassingRules
-
-@model function latent_conjugate_ar(y, order, γ)
-    c = zeros(order); c[1] = 1.0
-    w ~ MvNormalGamma(zeros(order), diageye(order), 2.0, 1.0)
-    x0 ~ MvNormal(mean = zeros(order), precision = diageye(order))
-    x_prev = x0
-    for i in eachindex(y)
-        x[i] ~ ConjugateAR(x_prev, w)
-        y[i] ~ Normal(mean = dot(c, x[i]), precision = γ)
-        x_prev = x[i]
-    end
-end
-
-@constraints function conjugate_ar_constraints()
-    q(x0, x, w) = q(x0, x)q(w)
-end
-
-@algorithm function conjugate_ar_algorithm(order)
-    ConjugateAR() -> ARVMP(Multivariate, order, ARsafe())
-end
-```
-
 ## Limitations
 
 - A model must give [`ARVMP`](@ref), with the `Multivariate` form; under `Univariate` the rules

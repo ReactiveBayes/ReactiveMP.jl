@@ -33,14 +33,6 @@ julia> mean(message) ≈ 2.0 && precision(message) ≈ 2.0
 true
 ```
 
-```julia
-@model function linear_gaussian(y)
-    x ~ MvNormalMeanCovariance(zeros(2), diageye(2))
-    Λ ~ Wishart(3, diageye(2))
-    y ~ MvNormalMeanPrecision(x, Λ)
-end
-```
-
 ## NormalMeanVariance
 
 ```math

@@ -110,13 +110,6 @@ julia> ARVMP(Multivariate, 3, ARsafe()) isa ARVMP
 true
 ```
 
-In a model, with RxInfer:
-
-```julia
-@algorithm function ar_algorithm(order)
-    AR() -> ARVMP(Multivariate, order, ARsafe())
-end
-```
 """
 struct ARVMP{F <: VariateForm, S} <: AbstractAlgorithm
     order::Int

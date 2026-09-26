@@ -38,14 +38,6 @@ julia> mean(getresult(result)) ≈ 1.0
 true
 ```
 
-```julia
-@model function sprinkler(wet)
-    rain ~ Bernoulli(0.2)
-    sprinkler ~ Bernoulli(0.4)
-    wet ~ OR(rain, sprinkler)
-end
-```
-
 ## AND
 
 ```@example logic

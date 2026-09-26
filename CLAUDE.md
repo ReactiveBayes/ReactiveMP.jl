@@ -76,7 +76,9 @@ make test test_args="tag:nodes name:factornode"    # combined
 RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
-make docs                                  # build the documentation, running its doctests
+make docs-all                              # every documentation site, in dependency order, ReactiveMP's last
+make docs-base                             # one package's site (docs-<package>, as the test targets), into lib/<Pkg>/docs/build
+make docs                                  # ReactiveMP's site alone; it links to the package sites, so they must be built
 make test-base                             # lib/MessagePassingRulesBase's own suite
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
 make test-standard                         # lib/StandardMessagePassingRules
@@ -109,7 +111,7 @@ locally. The workflows under `.github/` run these same checks, on 1.13 (the form
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (174 of them across 27 files), each self-contained and
+Tests are `@testitem` blocks (174 of them across 26 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
@@ -147,6 +149,19 @@ discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT
   and 1.13. The version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
   between releases; use `make scripts_update` to bump it deliberately, and run `make format`
   over the repo in the same commit. `docs/` is excluded.
+- **Documentation**: every package has its own site, `docs/` for the engine and `lib/<Pkg>/docs/`
+  for each package, and a `README.md`. A site documents its own modules only (`checkdocs = :all`,
+  strict), and links into another's with `` [`name`](@extref Package.name) ``, against the planned
+  address `https://reactivebayes.github.io/<Pkg>.jl/dev/` and the sibling's local
+  `docs/build/objects.inv` until the sites are published; a plain `@ref` to another package's
+  name fails the build. Node pages follow one template (overview, definition, interfaces,
+  algorithm, a `rule_coverage` table, example, limitations, API). The docstring style is on the
+  contributing page (`docs/src/extra/contributing.md`, *Documentation*): signature first, then
+  only the sections that carry something, every documented name linked, shared text as
+  interpolated `const DOC_*` fragments, limitations stated plainly. A rule package's docs show
+  rule calls, never models: no GraphPPL `@model`, RxInfer `infer` or `@algorithm`, only a link
+  to them from its overview. A name the docs tell users to
+  call is public: exported, or declared with `Compat.@compat public`, which also parses on 1.10.
 - Julia: work targets **1.13 only**, and siblings are wired with `[sources]`, test-only ones via
   `[extras]` too; the comparison environment is resolved on 1.13 as well. The lowest supported
   version is decided when the packages are registered.
