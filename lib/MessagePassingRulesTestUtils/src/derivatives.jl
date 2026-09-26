@@ -11,13 +11,48 @@ automatic_derivative(f, θ::Real) = ForwardDiff.derivative(f, θ)
 automatic_derivative(f, θ::AbstractVector) = ForwardDiff.gradient(f, θ)
 
 """
-    test_rule_derivatives(node, target; inputs, at, summary = mean, algorithm, step = 1e-6, rtol = 1e-5, atol = 1e-8)
+    test_rule_derivatives(node, target; inputs, at, summary = mean, algorithm = default_algorithm(node),
+        step = 1e-6, rtol = 1e-5, atol = 1e-8) -> nothing
 
-Check that derivatives propagate through a message rule: `ForwardDiff` of
-`θ -> summary(rule(inputs(θ)))` must agree with a central finite difference at `θ = at`.
-`inputs(θ)` returns a named tuple of `m` and `q`; `θ` is a number or a vector. An in-place
-rule is checked a second time through `rule!`, into a buffer preallocated from the dual
-inputs, so both paths are covered.
+Check that derivatives propagate through the message rule of `node` towards `target`: the
+derivative of `θ -> summary(rule(inputs(θ)))` by ForwardDiff must agree with a central finite
+difference at `θ = at`. A rule that drops the dual part of its inputs, or cannot take dual
+numbers, fails. [`@test_rule_derivatives`](@ref) is the same check written with keywords, and
+reports failures at its own line.
+
+The rule is resolved for the inputs at each `θ`, and the one found at `at` is recorded as
+selected for [`check_rule_coverage`](@ref). An in-place rule is checked a second time through
+`rule!`, into a buffer its `preallocate` makes from the dual inputs, so both paths are covered.
+The rule runs with an empty [`RuleContext`](@extref MessagePassingRulesBase.RuleContext), and
+its log scale is not checked.
+
+# Arguments
+
+- `node`: the node, as declared with
+  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node).
+- `target`: the interface the message goes to: `:out`, or `(:m, k)` for member `k` of the group
+  `m`.
+
+# Keywords
+
+- `inputs`: a function of `θ` returning a `NamedTuple` with the rule's inbound messages `m` and
+  marginals `q`: `θ -> (m = (out = Normal(θ, 2.0), σ = PointMass(θ^2)),)`. Required. Joint
+  marginals of clusters are not supported.
+- `at`: the point to differentiate at, a number or a vector. Required.
+- `summary`: a function from the rule's output to a number, whose derivative is compared.
+  Default: `mean`.
+- `algorithm`: the algorithm value to run under. Default:
+  [`default_algorithm`](@extref MessagePassingRulesBase.default_algorithm)`(node)`.
+- `step`: the finite-difference step. Default: `1e-6`.
+- `rtol`, `atol`: the tolerances of the comparison, element by element for a vector `at`.
+  Defaults: `1e-5` and `1e-8`.
+- `source`: the line checks are reported against. Default: `LineNumberNode(0, :unknown)`;
+  the macro form passes its own line.
+
+# Throws
+
+- [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) when no rule
+  takes the inputs, at `at` or at a dual or perturbed `θ`: an error, not a test failure.
 """
 function test_rule_derivatives(node, target; inputs::Function, at, summary = mean, algorithm = MessagePassingRulesBase.default_algorithm(node), step = 1.0e-6, rtol = 1.0e-5, atol = 1.0e-8, source = LineNumberNode(0, :unknown))
     resolved_target = MessagePassingRulesBase.as_target(target)
@@ -52,7 +87,21 @@ end
 """
     @test_rule_derivatives(node = ..., target = ..., inputs = θ -> (m = (...),), at = ..., ...)
 
-[`test_rule_derivatives`](@ref), written with keywords; failures point at this line.
+Check that derivatives propagate through the message rule of a node towards one of its
+interfaces, by ForwardDiff against a central finite difference. It takes the arguments and
+keywords of [`test_rule_derivatives`](@ref), where they are described, all by name.
+
+$(doc_keyword_macro("test_rule_derivatives", "`node` and `target` are"))
+
+# Examples
+
+```julia
+@test_rule_derivatives(
+    node = NormalMeanVariance, target = :out,
+    inputs = θ -> (m = (μ = NormalMeanVariance(θ, 1.0), v = PointMass(θ^2)),),
+    at = 1.5, summary = d -> mean(d) + var(d),
+)
+```
 """
 macro test_rule_derivatives(args...)
     return esc(table_macro_call("test_rule_derivatives", test_rule_derivatives, (:node, :target), args, __source__))

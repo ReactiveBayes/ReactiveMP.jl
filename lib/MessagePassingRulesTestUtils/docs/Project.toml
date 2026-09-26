@@ -1,0 +1,11 @@
+[deps]
+BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterInterLinks = "d12716ef-a0f6-4df4-a9f1-a5a34e75c656"
+MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+MessagePassingRulesTestUtils = "08c5795c-a039-451c-8c5c-d65dcf644a97"
+
+[sources]
+MessagePassingRulesBase = {path = "../../MessagePassingRulesBase"}
+MessagePassingRulesTestUtils = {path = ".."}

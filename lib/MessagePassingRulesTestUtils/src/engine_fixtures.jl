@@ -1,14 +1,37 @@
 """
     encode_fixture_value(x)
 
-The portable form of a value recorded in an engine fixture. Numbers become `Float64`, a
-distribution becomes its family name and parameters (`Dict("type" => "Normal", "params" =>
-[0.5, 2.0])`), a matrix becomes its rows, a tuple or vector is encoded element by element,
-and `nothing` and `missing` are `Dict("type" => "nothing")` and
-`Dict("type" => "missing")`; an array of more axes is its size and its values in column-major
-order. Encoded values encode to themselves, so both
-sides of a comparison can be given either way. It holds no Julia types, which is what lets a
-fixture recorded on one Julia version be read by another.
+The portable form of a value recorded in an engine fixture: numbers, strings, vectors and
+dictionaries with string keys only, so it holds no Julia types and a fixture recorded on one
+Julia version is read by another.
+
+- A real number becomes a `Float64`, and a string a `String`.
+- A vector is encoded element by element, a vector of reals becoming a `Vector{Float64}`, and a
+  tuple likewise; a matrix becomes the vector of its rows; an array of more dimensions becomes
+  `Dict("type" => "Array", "size" => …, "values" => …)`, its values in column-major order.
+- A distribution becomes its family's name and its `params`:
+  `Dict("type" => "Normal", "params" => [0.5, 2.0])`. The name carries no type parameters, so
+  the float type is not kept. A `PointMass` keeps its location; a mixture its `components` and
+  `weights`; a [`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster) its
+  `blocks` and `components`; a `TerminalProdArgument`, a marginal passed as a message, its
+  `argument`.
+- `nothing` and `missing` become `Dict("type" => "nothing")` and `Dict("type" => "missing")`.
+- A dictionary is kept as it is, so encoded values encode to themselves, and either side of a
+  comparison may be given encoded or not.
+
+Any other value is a `MethodError`.
+
+# Examples
+
+```jldoctest; setup = :(using Distributions)
+julia> encode_fixture_value(Normal(0.5, 2.0)) == Dict("type" => "Normal", "params" => [0.5, 2.0])
+true
+
+julia> encode_fixture_value([1 2; 3 4])
+2-element Vector{Any}:
+ [1.0, 2.0]
+ [3.0, 4.0]
+```
 """
 encode_fixture_value(x::Real) = Float64(x)
 encode_fixture_value(x::AbstractString) = String(x)
@@ -40,8 +63,15 @@ encode_fixture_value(x::Distribution) =
 """
     RuleCallRecord(iteration, node, target, result, logscale)
 
-One rule call as an engine made it: the iteration it happened in, the node and the target
-edge as text, the result, and its log scale (`nothing` when none was recorded).
+One rule call as an engine made it, an entry of an [`EngineTrajectory`](@ref)'s trace.
+
+# Fields
+
+- `iteration::Int`: the inference iteration the call happened in.
+- `node::String`, `target::String`: the node and the target edge, as text; the constructor
+  converts them with `string`.
+- `result`: the rule's result, a value or its [`encode_fixture_value`](@ref) form.
+- `logscale::Union{Nothing, Float64}`: its log scale, or `nothing` when none was recorded.
 """
 struct RuleCallRecord
     iteration::Int
@@ -56,9 +86,25 @@ end
 """
     EngineTrajectory(id; description = "", free_energy, posteriors, trace)
 
-What a full inference run produced, for comparing engines rather than rules: the free
-energy per iteration, the final posteriors by variable name, and every rule call in the
-order it happened. Values may be distributions or their [`encode_fixture_value`](@ref) form.
+What a whole inference run produced, for comparing engines rather than rules: the free energy
+per iteration, the final posteriors by variable name, and every rule call in the order it
+happened. Saved with [`save_engine_fixture`](@ref), compared with
+[`compare_engine_trajectory`](@ref).
+
+# Arguments
+
+- `id`: the run's name, by which a [`DeclaredDisagreement`](@ref) refers to it.
+
+# Keywords
+
+- `description`: what the run is, in words. Default: `""`.
+- `free_energy`: the free energy after each iteration, converted to `Vector{Float64}`.
+  Required; empty when the run computes none.
+- `posteriors`: the final posteriors, any collection of `name => value` pairs, stored as a
+  `Dict{String, Any}` with the names converted with `string`. A value is a distribution or its
+  [`encode_fixture_value`](@ref) form. Required.
+- `trace`: the rule calls, a collection of [`RuleCallRecord`](@ref)s in the order they
+  happened. Required.
 """
 struct EngineTrajectory
     id::String
@@ -74,12 +120,24 @@ EngineTrajectory(id::AbstractString; description = "", free_energy, posteriors, 
 const ENGINE_FIXTURE_FORMAT = 1
 
 """
-    save_engine_fixture(path, trajectory; packages = Dict(), notes = "")
+    save_engine_fixture(path, trajectory; packages = Dict{String, Any}(), notes = "") -> path
 
-Write an [`EngineTrajectory`](@ref) as TOML, with a header carrying the format, the Julia and
-package versions it was recorded with, and `notes` — the place to state anything the
-recording deviates from, so that whoever compares against it knows. Unlike
-[`save_migration_fixtures`](@ref) the file is text and readable on any Julia version.
+Write an [`EngineTrajectory`](@ref) to `path` as TOML, its values in their
+[`encode_fixture_value`](@ref) form, with a header of the file format, the Julia version, the
+package versions and `notes`. The file is text, readable by any Julia version and by a person;
+[`save_migration_fixtures`](@ref) writes exact binary records instead.
+
+# Arguments
+
+- `path`: the file to write, replaced if it exists.
+- `trajectory`: the [`EngineTrajectory`](@ref) to write.
+
+# Keywords
+
+- `packages`: the versions of the packages the run was made with, as `name => version`
+  pairs, stored as strings. Default: empty.
+- `notes`: anything the recording deviates from, so that whoever compares against it knows.
+  Default: `""`.
 """
 function save_engine_fixture(path::AbstractString, trajectory::EngineTrajectory; packages = Dict{String, Any}(), notes::AbstractString = "")
     header = Dict{String, Any}(
@@ -108,7 +166,15 @@ end
 """
     load_engine_fixture(path) -> (header, trajectory)
 
-Read what [`save_engine_fixture`](@ref) wrote. The trajectory's values come back encoded.
+Read what [`save_engine_fixture`](@ref) wrote, as a `Tuple` of two: `header`, a `NamedTuple` of
+`format`, `julia` (the version that wrote the file, a `String`), `notes` and `packages` (a
+`Dict{String, String}`), and `trajectory`, the [`EngineTrajectory`](@ref). The trajectory's
+posteriors and results come back in their [`encode_fixture_value`](@ref) form, which
+[`compare_engine_trajectory`](@ref) takes as it is.
+
+# Throws
+
+- `ArgumentError` when the file's format is not the one this version of the package writes.
 """
 function load_engine_fixture(path::AbstractString)
     data = TOML.parsefile(path)
@@ -134,23 +200,43 @@ values_agree(a, b; atol, rtol) = encoded_close(encode_fixture_value(a), encode_f
 describe_call(r::RuleCallRecord) = "$(r.node)($(r.target)) in iteration $(r.iteration) → $(repr(encode_fixture_value(r.result)))"
 
 """
-    compare_engine_trajectory(actual, reference; atol = 1e-6, rtol = 0, declared = [], trace_order = :exact, collapse_repeats = false)
+    compare_engine_trajectory(actual, reference; atol = 1e-6, rtol = 0, declared = DeclaredDisagreement[],
+        trace_order = :exact, collapse_repeats = false) -> Symbol
 
-Compare a run with a recorded reference [`EngineTrajectory`](@ref) and return the outcome:
-`:agree`, the kind of a matching [`DeclaredDisagreement`](@ref) (looked up by the reference's
-id), or `:disagree`. The free energy, each posterior, and the trace — every rule call with its
-result and log scale — are checked and reported separately.
+Compare a run with a recorded reference run, both [`EngineTrajectory`](@ref)s, and return the
+outcome: `:agree`; the `kind` of a [`DeclaredDisagreement`](@ref) whose `id` is the reference's,
+`:migration_bug` or `:correction`, whose reasoning is then logged; or `:disagree`.
 
-With `trace_order = :exact` the rule calls must come **in the same order**, because emission
-order is part of what an engine must reproduce. `trace_order = :within_iteration` declares
-the order of the calls inside an iteration free: each iteration must make the same calls with
-the same results, in any order. It is for a schedule that is changed deliberately where the
-calls it reorders do not depend on each other; say why where it is used.
+Three things are compared, each reported as its own `Test` assertion: the free energy, iteration
+by iteration and of the same length; each posterior, by name, a posterior on one side only
+failing; and the trace, every rule call with its iteration, node, target, result and log scale.
+Values are compared in their [`encode_fixture_value`](@ref) form. Under a declared disagreement
+every assertion passes; without one, each that differs fails.
 
-`collapse_repeats = true` drops from the reference trace every call that repeats an earlier
-call of its own iteration with an agreeing result, before the traces are compared: for a
-reference engine that computes a message once per subscriber where the engine under test
-shares it. A repeat with another result stays, and so does one in a later iteration.
+# Arguments
+
+- `actual`: the run under test.
+- `reference`: the recorded run, typically from [`load_engine_fixture`](@ref).
+
+# Keywords
+
+- `atol`, `rtol`: the tolerances for every number compared. Defaults: `1e-6` and `0`.
+- `declared`: the known disagreements, looked up by the reference's `id`. Default: none.
+- `trace_order`: `:exact` (the default) requires the rule calls in the same order, since
+  emission order is part of what an engine must reproduce. `:within_iteration` leaves the order
+  inside an iteration free: each iteration must make the same calls with the same results, in
+  any order. It is for a schedule that is changed deliberately where the calls it reorders do
+  not depend on each other; say why where it is used.
+- `collapse_repeats`: when `true`, every call of the reference trace that repeats an earlier
+  call of its own iteration with an agreeing result is dropped before the traces are compared:
+  for a reference engine that computes a message once per subscriber where the engine under
+  test shares it. A repeat with another result stays, and so does one in a later iteration.
+  Default: `false`.
+- `source`: the line checks are reported against. Default: `LineNumberNode(0, :unknown)`.
+
+# Throws
+
+- `ArgumentError` when `trace_order` is neither `:exact` nor `:within_iteration`.
 """
 function compare_engine_trajectory(actual::EngineTrajectory, reference::EngineTrajectory; atol = 1.0e-6, rtol = 0.0, declared = DeclaredDisagreement[], trace_order = :exact, collapse_repeats = false, source = LineNumberNode(0, :unknown))
     trace_order in (:exact, :within_iteration) || throw(ArgumentError("`trace_order` is `:exact` or `:within_iteration`, got $(repr(trace_order))"))

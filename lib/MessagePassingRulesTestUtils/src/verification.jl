@@ -74,23 +74,88 @@ function default_points(output)
     return [quantile(output, p) for p in range(0.05, 0.95; length = 9)]
 end
 
+# Parts of the verification docstrings that several share, written once and interpolated.
+
+const DOC_VERIFY_REFERENCE = rstrip(
+    """
+    The reference depends on the kind of inputs, which is one or the other:
+
+    - with messages, `m`, belief propagation: ``\\log \\int f(x, y) \\prod_j m_j(y_j) \\, dy``,
+      the node's density `f` integrated against the normalised inbound messages;
+    - with marginals, `q`, naive variational message passing:
+      ``\\mathrm{E}_{q}[\\log f(x, y)]``.
+
+    Each input is treated by its kind: a `PointMass` is substituted; a discrete univariate
+    distribution with fewer than 10 000 values in its support is enumerated; a continuous
+    univariate distribution is integrated by `HCubature` between its `1e-9` and `1 - 1e-9`
+    quantiles, for at most two such inputs per call.
+
+    Two checks are made, each a `Test` assertion:
+
+    - **shape**: `logpdf(message, x) - reference(x)` is the same at every test point, within
+      `atol`, so the message is the reference up to a constant;
+    - **scale**, for belief propagation when the message comes with a log scale: that constant
+      is `-logscale`, within `atol`, so the message times `exp(logscale)` is the reference
+      itself. It is checked only when the shape holds, since otherwise there is no single
+      constant to compare.
+    """
+)
+
+const DOC_VERIFY_KEYWORDS = rstrip(
+    """
+    - `m`: the inbound messages, a `NamedTuple` keyed by interface name, with one entry for
+      every interface but `target`. Default: none.
+    - `q`: the marginals, keyed the same way. Default: none. Give `m` or `q`, not both.
+    - `points`: the values of the target at which to compare. Default: `nothing`, which is the
+      support of a discrete message, or 9 quantiles of the message, from `0.05` to `0.95`.
+    - `atol`: the absolute tolerance on the log-ratio's spread and on the log scale. Default:
+      `1e-6`.
+    - `source`: the line checks are reported against. Default: `LineNumberNode(0, :unknown)`;
+      the macro form passes its own line.
+    """
+)
+
+const DOC_VERIFY_THROWS = rstrip(
+    """
+    - `ArgumentError` when both `m` and `q` are given, when an interface other than `target`
+      has no input, when an input is neither a point mass nor a univariate distribution, when a
+      discrete input's support has 10 000 values or more, or when more than two inputs need
+      integrating.
+    """
+)
+
 """
-    verify_message_update(message, logdensity, interfaces, target; m, q, points, atol, source)
+    verify_message_update(message, logdensity, interfaces, target::Symbol; m = (;), q = (;),
+        points = nothing, atol = 1e-6) -> Vector{Float64}
 
-Check a message against the node definition it comes from. `message(m, q)` returns the
-outgoing message and its log scale (or `nothing`); `logdensity(; interfaces...)` is the
-node's log-density; `interfaces` lists its interface names.
+Check a message against the node definition it comes from, for any implementation of a rule:
+the message must be, up to a constant, the reference computed numerically from the node's
+log-density. [`verify_message_update_rule`](@ref) does this for a rule defined with the base
+package.
 
-With messages as inputs (`m`), the reference is belief propagation, `log ∫ f ∏ mⱼ`; with
-marginals (`q`), naive variational message passing, `E_q[log f]`. Point masses are
-substituted, finite discrete inputs enumerated, and at most two continuous univariate inputs
-integrated.
+$(DOC_VERIFY_REFERENCE)
 
-Two separate assertions:
-- **shape** — `logpdf(message, x) − reference(x)` is the same at every test point;
-- **scale**, for belief propagation when a log scale is given — that constant is
-  `−logscale`, i.e. the message times `exp(logscale)` is the reference itself. Checked only
-  when the shape holds, since otherwise there is no single constant to compare.
+# Arguments
+
+- `message`: a function `(m, q) -> (message, logscale)`, called once with the keywords `m` and
+  `q`, returning the outbound message, a univariate distribution, and its log scale, a number,
+  or `nothing` to leave the scale unchecked.
+- `logdensity`: the node's log-density, called with one keyword per interface:
+  `logdensity(; out, μ, σ)`.
+- `interfaces`: the node's interface names, `target` among them.
+- `target`: the interface the message goes to.
+
+# Keywords
+
+$(DOC_VERIFY_KEYWORDS)
+
+# Returns
+
+The log-ratio `logpdf(message, x) - reference(x)` at each test point, in order.
+
+# Throws
+
+$(DOC_VERIFY_THROWS)
 """
 function verify_message_update(message, logdensity, interfaces, target::Symbol; m = NamedTuple(), q = NamedTuple(), points = nothing, atol = 1.0e-6, source = LineNumberNode(0, :unknown))
     (isempty(m) || isempty(q)) ||
@@ -122,10 +187,56 @@ function verify_message_update(message, logdensity, interfaces, target::Symbol; 
 end
 
 """
-    verify_message_update_rule(node, target; m, q, algorithm, points, atol)
+    verify_message_update_rule(node, target::Symbol; m = (;), q = (;), algorithm = default_algorithm(node),
+        points = nothing, atol = 1e-6) -> Vector{Float64}
 
-[`verify_message_update`](@ref) for a rule defined with the base package: its output
-against `nodefunction(node)`, with the log scale it declares.
+Check the message rule of `node` towards `target` against the node's definition: the message it
+returns, and the log scale it declares, against its
+[`nodefunction`](@extref MessagePassingRulesBase.nodefunction), integrated numerically.
+[`@verify_message_update_rule`](@ref) is the same check written with keywords, and reports
+failures at its own line. The rule is recorded as selected for [`check_rule_coverage`](@ref).
+
+$(DOC_VERIFY_REFERENCE)
+
+The rule's log scale is checked when it declares one; an undefined log scale leaves the scale
+unchecked.
+
+Limitations: the node must be stochastic and without groups, since only such a node has a
+`nodefunction`; `target` is a single interface, not a group member; the message must be a
+univariate distribution; the rule runs with an empty
+[`RuleContext`](@extref MessagePassingRulesBase.RuleContext), so a rule that reads services
+gets `nothing` for them; and a rule that takes messages and marginals together cannot be
+verified, since the inputs are one kind or the other. Such rules are checked by their tables.
+
+# Arguments
+
+- `node`: the node, as declared with
+  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node).
+- `target`: the interface the message goes to, a `Symbol`.
+
+# Keywords
+
+$(DOC_VERIFY_KEYWORDS)
+- `algorithm`: the algorithm value to run under. Default:
+  [`default_algorithm`](@extref MessagePassingRulesBase.default_algorithm)`(node)`.
+
+# Returns
+
+The log-ratio `logpdf(message, x) - reference(x)` at each test point, in order.
+
+# Throws
+
+$(DOC_VERIFY_THROWS)
+- [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) when no rule
+  takes the inputs.
+- `MethodError` when `node` has no `nodefunction`.
+
+# Examples
+
+```julia
+@verify_message_update_rule(node = NormalMeanVariance, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
+@verify_message_update_rule(node = NormalMeanVariance, target = :μ, q = (out = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)))
+```
 """
 function verify_message_update_rule(node, target::Symbol; m = NamedTuple(), q = NamedTuple(), algorithm = MessagePassingRulesBase.default_algorithm(node), points = nothing, atol = 1.0e-6, source = LineNumberNode(0, :unknown))
     resolved_target = MessagePassingRulesBase.as_target(target)
@@ -146,7 +257,18 @@ end
 """
     @verify_message_update_rule(node = ..., target = ..., m = (...), q = (...), ...)
 
-[`verify_message_update_rule`](@ref), written with keywords; failures point at this line.
+Check the message rule of a node towards one of its interfaces against the node's definition,
+integrated numerically. It takes the arguments and keywords of
+[`verify_message_update_rule`](@ref), where the checks and their limits are described, all by
+name, and returns what it returns.
+
+$(doc_keyword_macro("verify_message_update_rule", "`node` and `target` are"))
+
+# Examples
+
+```julia
+@verify_message_update_rule(node = NormalMeanVariance, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
+```
 """
 macro verify_message_update_rule(args...)
     return esc(table_macro_call("verify_message_update_rule", verify_message_update_rule, (:node, :target), args, __source__))

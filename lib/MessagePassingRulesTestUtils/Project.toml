@@ -4,6 +4,7 @@ version = "0.1.0-DEV"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
@@ -19,6 +20,7 @@ MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 [compat]
 Aqua = "0.8"
 BayesBase = "1.5"
+Compat = "4.10"
 Distributions = "0.25"
 Documenter = "1"
 ForwardDiff = "0.10, 1"

@@ -1,9 +1,18 @@
 """
     ExpectedWithAnnotations(value; annotations...)
+    ExpectedWithAnnotations(value, annotations::NamedTuple)
 
-An expected rule output together with the annotations the rule must write, e.g.
-`ExpectedWithAnnotations(NormalMeanVariance(0.0, 1.0); input_count = 2)`. A log scale is not an
-annotation: see [`ExpectedWithLogScale`](@ref).
+The expected result of a table case together with the annotations the rule must write:
+`ExpectedWithAnnotations(NormalMeanVariance(0.0, 1.0); input_count = 2)`. The result is
+compared as a plain expected value is; each annotation is looked up by name among those the
+rule wrote with [`annotate!`](@extref MessagePassingRulesBase.annotate!), must be present, and
+is compared by value within the table's tolerances, not by type. Annotations are checked on the
+case's own inputs, not on its promoted runs.
+
+# Throws
+
+- `ArgumentError` when `logscale` is among the annotations: a log scale is part of the
+  message, not an annotation, and is expected with [`ExpectedWithLogScale`](@ref).
 """
 struct ExpectedWithAnnotations{V, A <: NamedTuple}
     value::V
@@ -18,12 +27,17 @@ end
 ExpectedWithAnnotations(value; annotations...) = ExpectedWithAnnotations(value, NamedTuple(annotations))
 
 """
-    ExpectedWithLogScale(value, logscale)
+    ExpectedWithLogScale(value, logscale::Real)
 
-An expected message together with the log scale its rule must declare, e.g.
-`ExpectedWithLogScale(Beta(2.0, 1.0), -log(2))`. The log scale is checked on the case's own
-inputs, and its float type on every promoted run: a computed log scale must follow the inputs'
-precision, as the message does.
+The expected message of a table case together with the log scale its rule must declare:
+`ExpectedWithLogScale(Beta(2.0, 1.0), -log(2))`. For message rules only: marginal rules and
+average energies have no log scale, and a case expecting one fails.
+
+The log scale must be a number, so a rule that declares none fails, and it is compared with
+`logscale` within the table's tolerances for the float type of `logscale`. On every promoted
+run of the case (see `check_type_promotion`), a floating-point log scale must also be of the
+inputs' promoted float type, as the message is: a computed log scale follows the inputs'
+precision. A declared integer or irrational constant, `logscale = 0`, passes that check.
 """
 struct ExpectedWithLogScale{V, L <: Real}
     value::V
@@ -244,12 +258,25 @@ function check_scratch(table::TableContext, label, spec, args, ctx, result, atol
 end
 
 """
-    poison!(scratch)
+    poison!(scratch) -> scratch
 
-Overwrite a rule's scratch with values no correct computation reads: NaN in every
-floating-point array, through tuples and named tuples; other storage is left as it is. Table
-tests run a rule with scratch again after poisoning it, and it must give the same result. A
-scratch of another kind extends this function. Returns `scratch`.
+Overwrite a rule's scratch with values no correct computation reads: `NaN` in every
+floating-point array, found through arrays of arrays, tuples and named tuples; any other
+storage is left as it is. Table tests run a rule that has scratch once more after poisoning its
+scratch, and the result must not change: a rule that reads its scratch before writing it
+fails. A package whose scratch holds another kind of storage adds a method.
+
+# Examples
+
+```jldoctest
+julia> scratch = (work = zeros(2), counts = [1, 2]);
+
+julia> MessagePassingRulesTestUtils.poison!(scratch) === scratch
+true
+
+julia> all(isnan, scratch.work), scratch.counts
+(true, [1, 2])
+```
 """
 poison!(x::AbstractArray{<:AbstractFloat}) = fill!(x, NaN)
 poison!(x::AbstractArray) = (foreach(poison!, x); x)
@@ -288,39 +315,223 @@ function run_table(table::TableContext, cases; atol = nothing, rtol = nothing, c
     return nothing
 end
 
+# Parts of the table docstrings that several share, written once and interpolated.
+
+const DOC_TABLE_INPUTS = rstrip(
+    """
+    - `cases`: the table, a vector of `inputs => expected` pairs. Required. `inputs` is a
+      `NamedTuple` with any of these entries:
+      - `m`: the inbound messages, keyed by the interfaces' declared names:
+        `m = (μ = PointMass(1.0), v = PointMass(2.0))`. A group is a tuple of its members in
+        order, with `nothing` for a member the rule does not take.
+      - `q`: the marginals of single interfaces, keyed the same way.
+      - `clusters`: the joint marginals of clusters, a tuple of pairs from the cluster's
+        members, in interface order, to its joint: `clusters = ((:out, :μ) => q_outμ,)`.
+      - `ctx`: the [`RuleContext`](@extref MessagePassingRulesBase.RuleContext) of services the
+        rule reads. Default: an empty one. Its services are not checked: one the rule declares
+        and `ctx` lacks reads as `nothing` inside the rule.
+      - `logscale`: the log scales that arrived with the messages, keyed like `m`:
+        `logscale = (in = 0.5,)`, for a rule declared with `reads_logscale = true`.
+    """
+)
+
+const DOC_TABLE_KEYWORDS = rstrip(
+    """
+    - `algorithm`: the algorithm value to run under. Default:
+      [`default_algorithm`](@extref MessagePassingRulesBase.default_algorithm)`(node)`. Under a
+      [`DefaultAlgorithmExtension`](@extref MessagePassingRulesBase.DefaultAlgorithmExtension)
+      the extension's rules are selected, and the default's where it has none; an inherited
+      rule runs with the value it was written for, as an engine runs it.
+    - `atol`: the absolute tolerance, a number, or a `Dict` from float type to number, looked up
+      by the float type of the expected value. Default: `nothing`, which is `1e-4` for
+      `Float32`, `1e-6` for `Float64`, `1e-8` for `BigFloat` and `1e-6` for any other type; a
+      `Dict` without an entry for a type falls back to the same values.
+    - `rtol`: the relative tolerance, in the same forms. Default: `nothing`, which is `0`. A
+      `Dict` without an entry for a type falls back to the default `atol` values above.
+    - `check_type_promotion`: whether to run each case again with inputs of other float types.
+      `true` (the default) runs it, for every type `T` in `float_types`, with all its inputs
+      converted to `T` and, when it has more than one, with each input alone converted;
+      `:exhaustive` converts every non-empty subset of the inputs instead; `false` skips it. An
+      input is one entry of `m`, `q` or `clusters`, a group's tuple counting as one, converted
+      with `BayesBase.convert_paramfloattype`; `ctx` and `logscale` stay as they are. The
+      expected value is converted to the promoted float type of all the inputs, and the result
+      must equal it, type included.
+    - `float_types`: the types promotion converts to. Default: `(Float32, Float64, BigFloat)`.
+    - `check_nonallocating`: whether the rule must allocate nothing. Default: `false`. When
+      `true`, the call through the engine's entry point,
+      [`message_passing_rule`](@extref MessagePassingRulesBase.message_passing_rule) or its
+      in-place, marginal or average-energy sibling, is measured with `@allocated` on its second
+      run, after compilation, and must allocate 0 bytes.
+    - `source`: the line checks are reported against. Default: `LineNumberNode(0, :unknown)`;
+      the macro form passes its own line.
+    """
+)
+
+const DOC_TABLE_CHECKS = rstrip(
+    """
+    Each case makes these checks, each a `Test` assertion:
+
+    1. A rule is found for the inputs; if none is, the case fails with the
+       [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) text, which
+       lists the closest rules, and its other checks are skipped. The rule found is recorded as
+       selected for [`check_rule_coverage`](@ref).
+    2. The result equals the expected value by [`approximately_equal`](@ref): same type, values
+       within the tolerances.
+    3. The annotations an [`ExpectedWithAnnotations`](@ref) names, and the log scale an
+       [`ExpectedWithLogScale`](@ref) gives.
+    4. For an in-place rule, `rule!` into a buffer from the rule's `preallocate` returns that
+       buffer, and agrees with `rule`.
+    5. For a rule with scratch, two more runs on one scratch from the rule's `scratch` function,
+       the first on the scratch as it is and the second after [`poison!`](@ref), each into a
+       fresh output, agree with the first result.
+    6. With `check_nonallocating = true`, the rule allocates nothing.
+    7. With `check_type_promotion`, every promoted run finds a rule and returns the promoted
+       expected value, and a floating-point log scale of the promoted type when the case expects
+       one. Annotations, `rule!` and scratch are checked on the case's own inputs only.
+    """
+)
+
+const DOC_TABLE_THROWS = rstrip(
+    """
+    - `ArgumentError` when `check_type_promotion` is not `true`, `false` or `:exhaustive`, when a
+      case is not a `Pair`, or when a case's inputs have an entry other than `m`, `q`,
+      `clusters`, `ctx` and `logscale`. A rule that is missing or wrong is a test failure, not
+      an error.
+    """
+)
+
+doc_keyword_macro(f, required) = """
+The macro takes keyword arguments only, written `name = value`, and passes them to
+[`$(f)`](@ref); $(required) required, and a positional argument or a missing required
+keyword is an error when the macro expands. Every check is reported against the line of the
+macro call, so a failure points at the call that made it.
 """
-    test_message_update_rule(node, target; cases, algorithm, atol, rtol, check_type_promotion = true, float_types, check_nonallocating = false)
 
-Check a node's message rule towards `target` against a table of `inputs => expected`
-cases. `inputs` is a named tuple of `m`, `q`, `clusters` (`(:y, :x) => value` pairs), `ctx`
-and `logscale`, the log scales that arrived with the messages, for a rule declared with
-`reads_logscale = true`; `expected` is the output, an [`ExpectedWithLogScale`](@ref) or an
-[`ExpectedWithAnnotations`](@ref).
+"""
+    test_message_update_rule(node, target; cases, algorithm = default_algorithm(node), atol = nothing,
+        rtol = nothing, check_type_promotion = true, float_types = (Float32, Float64, BigFloat),
+        check_nonallocating = false) -> nothing
 
-Each case checks the output and its type. With `check_type_promotion` (the default), it
-also checks the output after converting all the inputs, and each input alone, to every type
-in `float_types`; `:exhaustive` converts every subset of the inputs. An in-place rule is also
-checked for agreement between `rule` and `rule!`, and `check_nonallocating = true` asserts
-the call allocates nothing.
+Check the message rule of `node` towards `target` against a table of cases, each the inputs of
+one call and the message it must return. [`@test_message_update_rule`](@ref) is the same check
+written with keywords, and reports failures at its own line.
 
-`atol` and `rtol` are a number, or a dictionary from float type to tolerance; by default
-`atol` is `1e-4`, `1e-6` and `1e-8` for `Float32`, `Float64` and `BigFloat`.
+# Arguments
+
+- `node`: the node, as declared with
+  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node).
+- `target`: the interface the message goes to: `:out`, or `(:m, k)` for member `k` of the group
+  `m`.
+
+# Keywords
+
+$(DOC_TABLE_INPUTS)
+
+  `expected` is the message: a plain value, an [`ExpectedWithLogScale`](@ref) to check the log
+  scale the rule declares as well, or an [`ExpectedWithAnnotations`](@ref) to check what it
+  annotates.
+
+$(DOC_TABLE_KEYWORDS)
+
+# Checks
+
+$(DOC_TABLE_CHECKS)
+
+# Throws
+
+$(DOC_TABLE_THROWS)
+
+# Examples
+
+```julia
+test_message_update_rule(
+    NormalMeanVariance, :out;
+    cases = [
+        (m = (μ = PointMass(1.0), v = PointMass(2.0)),) => NormalMeanVariance(1.0, 2.0),
+        (m = (μ = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithLogScale(NormalMeanVariance(0.0, 3.0), 0),
+    ],
+)
+```
+
+See also [`test_marginal_update_rule`](@ref), [`test_average_energy`](@ref),
+[`check_rule_coverage`](@ref).
 """
 test_message_update_rule(node, target; cases, algorithm = MessagePassingRulesBase.default_algorithm(node), source = LineNumberNode(0, :unknown), kwargs...) =
     run_table(TableContext(:message, node, MessagePassingRulesBase.as_target(target), algorithm, source), cases; kwargs...)
 
 """
-    test_marginal_update_rule(node, target; cases, ...)
+    test_marginal_update_rule(node, target; cases, algorithm = default_algorithm(node), atol = nothing,
+        rtol = nothing, check_type_promotion = true, float_types = (Float32, Float64, BigFloat),
+        check_nonallocating = false) -> nothing
 
-As [`test_message_update_rule`](@ref), for the marginal of the cluster `target`.
+Check the marginal rule of `node` for the cluster `target` against a table of cases, each the
+inputs of one call and the joint marginal it must return. [`@test_marginal_update_rule`](@ref)
+is the same check written with keywords, and reports failures at its own line.
+
+# Arguments
+
+- `node`: the node, as declared with
+  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node).
+- `target`: the cluster whose joint marginal the rule computes, its members in interface order:
+  `(:out, :μ)`, or `(:out, (:T, 1))` with a group member.
+
+# Keywords
+
+$(DOC_TABLE_INPUTS)
+
+  `expected` is the joint marginal, a plain value or an [`ExpectedWithAnnotations`](@ref); a
+  cluster that factorises is expected as a
+  [`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster). A marginal has no
+  log scale, so an [`ExpectedWithLogScale`](@ref) fails.
+
+$(DOC_TABLE_KEYWORDS)
+
+# Checks
+
+$(DOC_TABLE_CHECKS)
+
+# Throws
+
+$(DOC_TABLE_THROWS)
+
+See also [`test_message_update_rule`](@ref), [`test_average_energy`](@ref).
 """
 test_marginal_update_rule(node, target; cases, algorithm = MessagePassingRulesBase.default_algorithm(node), source = LineNumberNode(0, :unknown), kwargs...) =
     run_table(TableContext(:marginal, node, MessagePassingRulesBase.as_cluster(target), algorithm, source), cases; kwargs...)
 
 """
-    test_average_energy(node; cases, ...)
+    test_average_energy(node; cases, algorithm = default_algorithm(node), atol = nothing,
+        rtol = nothing, check_type_promotion = true, float_types = (Float32, Float64, BigFloat),
+        check_nonallocating = false) -> nothing
 
-As [`test_message_update_rule`](@ref), for a node's average energy.
+Check the average energy of `node` against a table of cases, each the marginals of one call and
+the energy it must return. [`@test_average_energy`](@ref) is the same check written with
+keywords, and reports failures at its own line.
+
+# Arguments
+
+- `node`: the node, as declared with
+  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node).
+
+# Keywords
+
+$(DOC_TABLE_INPUTS)
+
+  An average energy reads marginals, `q` and `clusters`, one per cluster of the factorisation.
+  `expected` is the energy, a number, or an [`ExpectedWithAnnotations`](@ref); an average
+  energy has no log scale, so an [`ExpectedWithLogScale`](@ref) fails.
+
+$(DOC_TABLE_KEYWORDS)
+
+# Checks
+
+$(DOC_TABLE_CHECKS)
+
+# Throws
+
+$(DOC_TABLE_THROWS)
+
+See also [`test_message_update_rule`](@ref), [`test_marginal_update_rule`](@ref).
 """
 test_average_energy(node; cases, algorithm = MessagePassingRulesBase.default_algorithm(node), source = LineNumberNode(0, :unknown), kwargs...) =
     run_table(TableContext(:average_energy, node, nothing, algorithm, source), cases; kwargs...)
@@ -342,13 +553,23 @@ end
 """
     @test_message_update_rule(node = ..., target = ..., cases = [inputs => expected, ...], ...)
 
-[`test_message_update_rule`](@ref), written with keywords; failures point at this line.
+Check the message rule of a node towards one of its interfaces against a table of cases, each
+the inputs of one call and the message it must return. It takes the arguments and keywords of
+[`test_message_update_rule`](@ref), where they are described, all by name.
+
+$(doc_keyword_macro("test_message_update_rule", "`node` and `target` are"))
+
+# Examples
 
 ```julia
 @test_message_update_rule(
-    node    = NormalMeanVariance,
+    node = NormalMeanVariance,
     target = :out,
-    cases   = [(m = (μ = PointMass(1.0), v = PointMass(2.0)),) => NormalMeanVariance(1.0, 2.0)],
+    cases = [
+        (m = (μ = PointMass(1.0), v = PointMass(2.0)),) => NormalMeanVariance(1.0, 2.0),
+        (q = (μ = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)),) => NormalMeanVariance(1.0, 4 / 3),
+        (m = (μ = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithLogScale(NormalMeanVariance(0.0, 3.0), 0),
+    ],
 )
 ```
 """
@@ -357,18 +578,49 @@ macro test_message_update_rule(args...)
 end
 
 """
-    @test_marginal_update_rule(node = ..., target = (:y, :x), cases = [...], ...)
+    @test_marginal_update_rule(node = ..., target = (:out, :μ), cases = [inputs => expected, ...], ...)
 
-[`test_marginal_update_rule`](@ref), written with keywords.
+Check the marginal rule of a node for one of its clusters against a table of cases, each the
+inputs of one call and the joint marginal it must return. It takes the arguments and keywords of
+[`test_marginal_update_rule`](@ref), where they are described, all by name.
+
+$(doc_keyword_macro("test_marginal_update_rule", "`node` and `target` are"))
+
+# Examples
+
+```julia
+@test_marginal_update_rule(
+    node = NormalMeanVariance,
+    target = (:out, :μ),
+    cases = [
+        (m = (out = NormalMeanVariance(1.0, 1.0), μ = NormalMeanVariance(2.0, 1.0)), q = (v = PointMass(1.0),)) => q_outμ,
+    ],
+)
+```
 """
 macro test_marginal_update_rule(args...)
     return esc(table_macro_call("test_marginal_update_rule", test_marginal_update_rule, (:node, :target), args, __source__))
 end
 
 """
-    @test_average_energy(node = ..., cases = [...], ...)
+    @test_average_energy(node = ..., cases = [inputs => expected, ...], ...)
 
-[`test_average_energy`](@ref), written with keywords.
+Check the average energy of a node against a table of cases, each the marginals of one call and
+the energy it must return. It takes the arguments and keywords of
+[`test_average_energy`](@ref), where they are described, all by name.
+
+$(doc_keyword_macro("test_average_energy", "`node` is"))
+
+# Examples
+
+```julia
+@test_average_energy(
+    node = NormalMeanVariance,
+    cases = [
+        (q = (out = NormalMeanVariance(0.0, 1.0), μ = NormalMeanVariance(1.0, 1.0), v = PointMass(1.0)),) => 1.5 + log(2π) / 2,
+    ],
+)
+```
 """
 macro test_average_energy(args...)
     return esc(table_macro_call("test_average_energy", test_average_energy, (:node,), args, __source__))
