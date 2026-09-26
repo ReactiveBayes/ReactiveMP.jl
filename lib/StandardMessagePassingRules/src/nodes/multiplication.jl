@@ -2,12 +2,32 @@
 # vector (then the other factor is a scalar) or a matrix; for a matrix, only `A * in` is
 # computed, never `in * A`.
 """
-    MultiplicationSampling(; samples = 3000)
+    MultiplicationSampling(; samples::Int = 3000)
 
-The algorithm of the node `*`, its default: every rule is exact but the three between two
-univariate distributions with no closed form, which draw `samples` values of one factor from
-`ctx.rng`. An extension of `DefaultAlgorithm`, so rules other packages
-define for `*` under it still apply.
+The algorithm of the node `*`, `out = A * in`, and its default, so a model need not name it.
+With a known factor the rules are closed-form. Between two univariate normals they return a
+`ContinuousUnivariateLogPdf`: towards an input the exact integral, towards `out` a Bessel series
+truncated at ten terms. Between two other univariate distributions, one rule towards each
+interface draws `samples` values of one factor from the rule context's `rng` and returns an
+unnormalised `ContinuousUnivariateLogPdf`.
+
+It extends [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), as a
+[`DefaultAlgorithmExtension`](@extref MessagePassingRulesBase.DefaultAlgorithmExtension), so a
+rule another package defines for `*` under the default still applies.
+
+# Keywords
+
+- `samples`: how many values the sampling rules draw, a positive `Int`. Default `3000`.
+
+# Examples
+
+```jldoctest; setup = :(using StandardMessagePassingRules)
+julia> MultiplicationSampling().samples
+3000
+
+julia> MultiplicationSampling(samples = 500).samples
+500
+```
 """
 Base.@kwdef struct MultiplicationSampling <: DefaultAlgorithmExtension
     samples::Int = 3000

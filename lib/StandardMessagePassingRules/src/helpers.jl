@@ -22,17 +22,33 @@ promoted_cluster(cluster::FactorizedCluster, inputs...) =
 """
     v_a_vT(v, a)
 
-`v a vᵀ`: for a vector `v` and a scalar `a`, `(v vᵀ) a`, which is exactly
-symmetric where `(v a) vᵀ` is not always. A package with a structured vector adds a method, as
-the AR package's standard basis vector does.
+The product `v a vᵀ`. For a vector `v` and a real `a` it is computed as `(v vᵀ) a`, which is
+exactly symmetric where `(v a) vᵀ` is not always; for anything else, as `v * a * v'`. A package
+with a structured vector adds a method, as the autoregressive package does for its standard
+basis vector.
 """
 v_a_vT(v, a) = v * a * v'
 v_a_vT(v::AbstractVector, a::Real) = v * v' * a
 
 """
-    diageye([T = Float64], n)
+    diageye([T = Float64,] n::Integer) -> Matrix{T}
 
-The `n`×`n` identity matrix of element type `T`, dense.
+The `n`×`n` identity matrix of element type `T`, as a dense `Matrix`, for the covariances and
+precisions a model writes, `MvNormalMeanCovariance(zeros(2), diageye(2))`. Unlike
+`LinearAlgebra.I`, it has a size and can be inverted, factorised and mutated.
+
+# Examples
+
+```jldoctest
+julia> diageye(2)
+2×2 Matrix{Float64}:
+ 1.0  0.0
+ 0.0  1.0
+
+julia> diageye(Int, 1)
+1×1 Matrix{Int64}:
+ 1
+```
 """
 diageye(::Type{T}, n::Integer) where {T} = Matrix{T}(I, n, n)
 diageye(n::Integer) = diageye(Float64, n)
@@ -40,7 +56,8 @@ diageye(n::Integer) = diageye(Float64, n)
 """
     negate_inplace!(A)
 
-`-A`, overwriting `A` when it is an `Array`; any other array, and a number, is left as it is.
+Return `-A`, overwriting `A` when it is a dense `Array`. Any other array, a view say, and a
+number are left as they are, and a new value is returned.
 """
 function negate_inplace! end
 
@@ -51,8 +68,8 @@ negate_inplace!(A::Array) = map!(-, A, A)
 """
     mul_inplace!(alpha, A)
 
-`alpha * A`, overwriting `A` when it is an `Array` of `alpha`'s type; any other array, and a
-number, is left as it is.
+Return `alpha * A`, overwriting `A` when it is a dense `Array` whose element type is `alpha`'s
+real type. Any other array and a number are left as they are, and a new value is returned.
 """
 function mul_inplace! end
 
@@ -64,8 +81,9 @@ mul_inplace!(alpha::T, A::Array{T}) where {T <: Real} = LinearAlgebra.lmul!(alph
     rank1update(A, x)
     rank1update(A, x, y)
 
-`A + x * y'` (`y = x` when omitted) in a new matrix, by BLAS for dense matrices of one BLAS
-float type, and by a loop otherwise, as for dual numbers.
+Return `A + x * y'`, with `y = x` when omitted, in a new matrix; `A` is not modified. Dense
+arguments of one BLAS float type go through BLAS `ger!`; any other element types, dual numbers
+say, through a loop in their promoted type. For numbers it is `A + x * y`.
 """
 function rank1update end
 
@@ -88,7 +106,11 @@ end
 """
     mul_trace(A, B)
 
-`tr(A * B)`, without forming the product.
+The trace `tr(A * B)`, computed without forming the product; for numbers, `A * B`.
+
+# Throws
+
+- `DimensionMismatch` when `A` is not square or `B` has another size.
 """
 function mul_trace end
 

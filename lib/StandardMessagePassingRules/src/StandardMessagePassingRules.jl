@@ -1,13 +1,51 @@
 """
     StandardMessagePassingRules
 
-The message passing rules for the standard nodes: distributions, arithmetic, logic and the
-mixtures, written with `MessagePassingRulesBase`. Every distribution node runs under
-`DefaultAlgorithm`, and its rules name no algorithm: whether a rule computes a belief
-propagation, variational or structured update follows from the factorisation, through the
-engine's default dependency scheme, which gives each rule the messages inside its own cluster
-and the marginals of the other clusters. A node whose rules ignore the
-factorisation declares an algorithm of its own, as [`NormalMixture`](@ref) does.
+The message passing rules of the standard nodes, written with MessagePassingRulesBase:
+
+- **distributions**: the normals (`NormalMeanVariance`, `MvNormalMeanPrecision`, …),
+  `GammaShapeRate`, `Gamma`, `GammaInverse`, `Beta`, `Bernoulli`, `Categorical`, `Dirichlet`,
+  `DirichletCollection`, `Poisson`, `Uniform`, `Wishart`, `InverseWishart`, `MatrixNormal`,
+  `MatrixNormalWishart`, `MvNormalGamma`, `MvNormalWishart` and [`HalfNormal`](@ref);
+- **arithmetic**: `+`, `-`, `*` and `dot`, the functions themselves being the nodes;
+- **logic**: [`AND`](@ref), [`OR`](@ref), [`NOT`](@ref) and [`IMPLY`](@ref), over Bernoulli
+  variables;
+- **mixtures**: [`NormalMixture`](@ref), [`GammaMixture`](@ref) and [`Mixture`](@ref);
+- **helpers**: [`StandaloneDistribution`](@ref), a node for a fixed distribution,
+  [`Uninformative`](@ref), a factor of one, and [`diageye`](@ref).
+
+Most nodes are types other packages own, ExponentialFamily's and Distributions' distributions
+and Base's functions; the package exports only the node types it defines. Loading it is enough:
+the rules are methods, and rule lookup finds them by the node, the target and the inputs'
+types. `MessagePassingRulesBase.rule_coverage(node)` shows which rules a node has, and
+[`@which_message_update_rule`](@extref MessagePassingRulesBase.@which_message_update_rule)
+which one a call would run.
+
+Every distribution node runs under
+[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), and its rules name no
+algorithm: whether a rule computes a belief propagation, variational or structured update
+follows from the factorisation, through the engine's default dependency scheme, which gives each
+rule the messages inside its own cluster and the marginals of the other clusters. A node whose
+rules ignore the factorisation declares an algorithm of its own, as [`NormalMixture`](@ref)
+does with [`NormalMixtureVMP`](@ref) and [`Mixture`](@ref) with [`MixtureBP`](@ref); `*` runs
+under [`MultiplicationSampling`](@ref), an extension of the default that carries a sample count.
+
+# Examples
+
+The message towards `out` of a `NormalMeanVariance` node, from a normal message on its mean and
+a known variance:
+
+```jldoctest; setup = :(using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase)
+julia> result = @call_message_update_rule(
+           node = NormalMeanVariance, target = :out,
+           m = (μ = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),
+       );
+
+julia> message = getresult(result);
+
+julia> message isa NormalMeanVariance && mean(message) ≈ 0.0 && var(message) ≈ 3.0
+true
+```
 """
 module StandardMessagePassingRules
 

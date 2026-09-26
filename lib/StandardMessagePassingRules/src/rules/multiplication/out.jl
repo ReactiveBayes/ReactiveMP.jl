@@ -49,7 +49,7 @@
     body = (args) -> scaled(mean(args.m[:A]).λ, args.m[:in]),
 )
 
-# The product of two univariate Gaussians, in closed form.
+# The product of two univariate Gaussians: its density as a Bessel series, truncated at ten terms.
 @define_message_update_rule(
     node = *, target = :out,
     args = (m[:A]::UnivariateGaussianDistributionsFamily, m[:in]::UnivariateGaussianDistributionsFamily),

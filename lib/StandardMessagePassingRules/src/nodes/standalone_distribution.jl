@@ -1,10 +1,27 @@
 """
     StandaloneDistribution
 
-The node `out ~ d` for a distribution value `d`, of any family, given as the constant
-`distribution`: what a model writes as `x ~ prior`, `prior` a distribution rather than a
-family with its parameters. Its message towards `out` is `d` itself, and its average energy
-the cross entropy `E_q[-log d(out)]`, `KL(q ‖ d) + H(q)`.
+The node `out ~ d` for a distribution value `d` of any family, given on its interface
+`distribution` as a constant: what a model writes as `x ~ prior`, with `prior` a distribution
+rather than a family and its parameters. Its interfaces are `out` and `distribution`, and it
+runs under [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm).
+
+**Rules.** The message towards `out` is `d` itself, from the marginal of `distribution`, a
+`PointMass` holding `d`; its log scale is zero. There is no rule towards `distribution`, which
+must be a constant. The average energy is the cross entropy
+`E_q[-log d(out)] = KL(q ‖ d) + H(q)`, defined for every pair `(q, d)` for which Distributions
+has a `kldivergence`.
+
+# Examples
+
+```jldoctest; setup = :(using StandardMessagePassingRules, MessagePassingRulesBase, BayesBase, Distributions)
+julia> prior = Beta(2.0, 3.0);
+
+julia> getresult(@call_message_update_rule(node = StandaloneDistribution, target = :out, q = (distribution = PointMass(prior),))) === prior
+true
+```
+
+See also [`Uninformative`](@ref).
 """
 struct StandaloneDistribution end
 

@@ -1,22 +1,33 @@
 """
     GammaMixture
 
-A mixture of Gamma distributions: `out` is drawn from the component `switch` selects, a
-`GammaShapeRate` with shape `a` and rate `b`, both groups with one member per component; the
-number of components is the groups' length. A node needs at least two components, as many
-shapes as rates, and a mean-field factorisation.
+A mixture of Gamma distributions: `out` is drawn from the component the one-hot `switch`
+selects, a `GammaShapeRate` with shape `a` and rate `b`, both groups with one member per
+component,
+
+```math
+p(\\mathrm{out} \\mid \\mathrm{switch}, a, b) = \\prod_{k=1}^K
+\\mathrm{Gamma}(\\mathrm{out} \\mid a_k, b_k)^{\\mathrm{switch}_k}.
+```
+
+The number of components `K` is the groups' length. Its interfaces are `out`, `switch` and the
+groups `a` and `b`.
+
+$(DOC_MIXTURE_REQUIREMENTS) The rates' marginals must be Gamma distributions.
 
 Its rules run under its own algorithm, [`GammaMixtureVMP`](@ref), and are always variational.
-The `:out` and `:switch` dependencies list the rates before the shapes, which is the update
-schedule; the order within a group changes nothing.
+Towards `out` the message is a `GammaShapeRate`, towards `switch` a `Categorical`, towards
+`(:a, k)` a [`GammaShapeLikelihood`](@ref) and towards `(:b, k)` a `GammaShapeRate`. It has an
+average energy, each component's weighted by the switch. The `:out` and `:switch` dependencies
+list the rates before the shapes, which is the update schedule; the order within a group
+changes nothing.
 """
 struct GammaMixture end
 
 """
     GammaMixtureVMP()
 
-[`GammaMixture`](@ref)'s own algorithm: variational message passing, **regardless of the
-factorisation**. Its rules take the marginals of `out`, `switch` and the components.
+[`GammaMixture`](@ref)'s own algorithm. $(DOC_MIXTURE_VMP)
 """
 struct GammaMixtureVMP <: AbstractAlgorithm end
 

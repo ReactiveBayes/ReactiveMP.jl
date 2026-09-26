@@ -1,13 +1,28 @@
 """
     Mixture
 
-A mixture of arbitrary components: `out` is the input `switch` selects, one member of the
-group `inputs` per component. Its rules are belief propagation over the incoming messages,
-whatever the factorisation, under its own algorithm, [`MixtureBP`](@ref).
+A mixture of arbitrary components: `out` is the member of the group `inputs` that the one-hot
+`switch` selects,
+
+```math
+p(\\mathrm{out} \\mid \\mathrm{switch}, \\mathrm{inputs}) = \\prod_{k=1}^K
+δ(\\mathrm{out} - \\mathrm{inputs}_k)^{\\mathrm{switch}_k}.
+```
+
+Its interfaces are `out`, `switch` and the group `inputs`, one member per component.
+
+Its rules are belief propagation over the incoming messages, whatever the factorisation, under
+its own algorithm, [`MixtureBP`](@ref). Towards `out` the message is a `MixtureDistribution` of
+the inputs' messages, towards `switch` a `Categorical` of each component's evidence, and towards
+`(:inputs, k)` the message from `out`, scaled by the probability of `k`. The switch's message
+must have a `probvec`, a `Categorical` or a `Bernoulli`; the inputs' messages may be of any type
+whose product with the message from `out` has a log scale under the algorithm's product
+strategy.
 
 The rules read the log scales of their incoming messages (`reads_logscale = true`), so a graph
-with a Mixture tracks log scales. The node has no average energy: a free energy of a model with
-one is an error.
+with a Mixture must track log scales (the engine's activation option `logscales = true`); an
+unknown log scale is an error. The node has **no average energy**: the free energy of a model
+with one is an error.
 """
 struct Mixture end
 
@@ -15,8 +30,18 @@ struct Mixture end
     MixtureBP(; prod = GenericProd())
 
 [`Mixture`](@ref)'s own algorithm: belief propagation over the incoming messages, **regardless
-of the factorisation**. `prod` is the product strategy the rule towards `switch` multiplies the
-message from `out` with each input's under, for the log scale of their product.
+of the factorisation**. `MixtureBP(GenericProd())` is the node's default, so a model need not
+name it.
+
+# Keywords
+
+- `prod`: the product strategy under which the rule towards `switch` multiplies the message
+  from `out` with each input's, for the log scale of their product, which is component `k`'s
+  evidence. Any BayesBase product strategy. Default `GenericProd()`.
+
+It stands alone, a direct subtype of
+[`AbstractAlgorithm`](@extref MessagePassingRulesBase.AbstractAlgorithm). Its dependencies and
+rules are declared on `MixtureBP` itself, so they apply for every product strategy.
 """
 struct MixtureBP{P} <: AbstractAlgorithm
     prod::P
