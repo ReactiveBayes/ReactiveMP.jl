@@ -34,13 +34,15 @@ const FlowUnscented = FlowApproximation{<:AbstractCompiledFlowModel, <:Unscented
     flow_forward_precision(algo::FlowLinearization, m_in) -> MvNormalMeanPrecision
 
 The linearised message towards `out` from a normal `m_in` in precision form, mean-precision or
-weighted-mean-precision alike: mean `forward(model, μ)` and precision `Jᵢᵀ Λ Jᵢ`, with `Jᵢ =
-inv_jacobian(model, μ)`, the inverse flow's Jacobian evaluated at the input's mean `μ`.
+weighted-mean-precision alike: mean `forward(model, μ)` and precision `Jᵢᵀ Λ Jᵢ`, with `Jᵢ`
+the inverse flow's Jacobian at the output's mean `forward(model, μ)`. It is the covariance form's
+message, inverted without inverting a matrix.
 """
 flow_forward_precision(algo, m_in) = begin
     μ_in, Λ_in = mean_precision(m_in)
-    Ji = inv_jacobian(getmodel(algo), μ_in)
-    MvNormalMeanPrecision(forward(getmodel(algo), μ_in), Ji' * Λ_in * Ji)
+    μ_out = forward(getmodel(algo), μ_in)
+    Ji = inv_jacobian(getmodel(algo), μ_out)
+    MvNormalMeanPrecision(μ_out, Ji' * Λ_in * Ji)
 end
 
 @define_message_update_rule(
@@ -66,13 +68,14 @@ end
     flow_backward_precision(algo::FlowLinearization, m_out) -> MvNormalMeanPrecision
 
 The linearised message towards `in` from a normal `m_out` in precision form: mean
-`backward(model, μ)` and precision `Jᵀ Λ J`, with `J = jacobian(model, μ)`, the flow's Jacobian
-evaluated at the output's mean `μ`.
+`backward(model, μ)` and precision `Jᵀ Λ J`, with `J` the flow's Jacobian at the input's mean
+`backward(model, μ)`. It is the covariance form's message, inverted without inverting a matrix.
 """
 flow_backward_precision(algo, m_out) = begin
     μ_out, Λ_out = mean_precision(m_out)
-    J = jacobian(getmodel(algo), μ_out)
-    MvNormalMeanPrecision(backward(getmodel(algo), μ_out), J' * Λ_out * J)
+    μ_in = backward(getmodel(algo), μ_out)
+    J = jacobian(getmodel(algo), μ_in)
+    MvNormalMeanPrecision(μ_in, J' * Λ_out * J)
 end
 
 @define_message_update_rule(

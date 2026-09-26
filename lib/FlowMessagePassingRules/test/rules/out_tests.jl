@@ -78,3 +78,21 @@
         )
     end
 end
+
+@testitem "rules:Flow:precision and covariance forms agree" tags = [:rules] begin
+    using FlowMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily, LinearAlgebra
+
+    # A flow that moves every coordinate, so the Jacobians at the input and at the output differ:
+    # linearised, the message in precision form is the one in covariance form, inverted.
+    model = FlowModel((InputLayer(2), AdditiveCouplingLayer(PlanarFlow(); permute = false), PermutationLayer(PermutationMatrix([2, 1])), AdditiveCouplingLayer(PlanarFlow(); permute = false)))
+    algorithm = FlowApproximation(compile(model, collect(range(-0.4, 0.6; length = nr_params(model)))))
+    μ, Σ = [0.5, -0.3], [0.6 0.1; 0.1 0.4]
+    for (target, other) in ((:out, :in), (:in, :out))
+        covariance_form = getresult(call_message_update_rule(Flow, target; m = NamedTuple{(other,)}((MvNormalMeanCovariance(μ, Σ),)), algorithm))
+        for precision_form in (MvNormalMeanPrecision(μ, inv(Σ)), MvNormalWeightedMeanPrecision(inv(Σ) * μ, inv(Σ)))
+            message = getresult(call_message_update_rule(Flow, target; m = NamedTuple{(other,)}((precision_form,)), algorithm))
+            @test mean(message) ≈ mean(covariance_form)
+            @test cov(message) ≈ cov(covariance_form)
+        end
+    end
+end

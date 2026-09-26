@@ -358,7 +358,7 @@ Broadcast.broadcasted(
     ::typeof(forward_jacobian),
     model::CompiledFlowModel,
     input::AbstractVector{<:AbstractVector{<:Real}},
-) = broadcast(_jacobian, Ref(model), input)
+) = broadcast(_forward_jacobian, Ref(model), input)
 
 # inplace forward_jacobian of the Flow model
 function forward_jacobian!(

@@ -240,6 +240,17 @@ registries = "General"
 uuid = "f70d9fcc-98c5-4d4a-abd7-e4cdeebd8ca8"
 version = "1.2.2"
 
+[[deps.Compat]]
+deps = ["TOML", "UUIDs"]
+git-tree-sha1 = "9d8a54ce4b17aa5bdce0ea5c34bc5e7c340d16ad"
+registries = "General"
+uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
+version = "4.18.1"
+weakdeps = ["Dates", "LinearAlgebra"]
+
+    [deps.Compat.extensions]
+    CompatLinearAlgebraExt = "LinearAlgebra"
+
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
@@ -881,13 +892,13 @@ uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 version = "0.1.0-DEV"
 
 [[deps.MessagePassingRulesBase]]
-deps = ["BayesBase", "LinearAlgebra", "MacroTools", "TupleTools"]
+deps = ["BayesBase", "Compat", "MacroTools"]
 path = "../../lib/MessagePassingRulesBase"
 uuid = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 version = "0.1.0-DEV"
 
 [[deps.MessagePassingRulesTestUtils]]
-deps = ["BayesBase", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Serialization", "Statistics", "TOML", "Test"]
+deps = ["BayesBase", "Compat", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Serialization", "Statistics", "TOML", "Test"]
 path = "../../lib/MessagePassingRulesTestUtils"
 uuid = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 version = "0.1.0-DEV"

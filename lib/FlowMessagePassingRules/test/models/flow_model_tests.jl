@@ -355,6 +355,10 @@
         x = randn(rng, 8)
         @test forward_jacobian(compiled_model, x) ==
             (forward(compiled_model, x), jacobian(compiled_model, x))
+        # Broadcast over several inputs, each gives its output and Jacobian.
+        xs = [randn(rng, 8) for _ in 1:3]
+        @test forward_jacobian.(compiled_model, xs) == [forward_jacobian(compiled_model, x) for x in xs]
+        @test jacobian.(compiled_model, xs) == [jacobian(compiled_model, x) for x in xs]
         @test backward_inv_jacobian(compiled_model, x) ==
             (backward(compiled_model, x), inv_jacobian(compiled_model, x))
         @test inv(jacobian(compiled_model, x)) ≈

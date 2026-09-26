@@ -15,6 +15,13 @@ import FlowMessagePassingRules as F
 import MessagePassingRulesApproximations as A
 import ReactiveMP
 
+# A declared correction: linearised in precision form, v6 took the Jacobian at the wrong mean,
+# the inverse flow's at the input's rather than at `forward(μ_in)`, and the flow's at the output's
+# rather than at `backward(μ_out)`. The two coincide for a single coupling layer, which leaves the
+# coordinate it conditions on unchanged, and differ once a permutation moves every coordinate;
+# the corrected messages equal the covariance form's, inverted.
+const PRECISION_JACOBIAN = "the precision-form linearisation evaluates each Jacobian at the mean of the space it maps from"
+
 # The same model on both sides: (v6's layers, the port's layers).
 function models(kind)
     if kind === :planar
@@ -57,7 +64,9 @@ end
                 v7 = getresult(call_message_update_rule(F.Flow, target; m, algorithm))
                 v6, _ = v6_message_update(ReactiveMP.Flow, target, m, NamedTuple(); meta)
                 id = "Flow:$target:$kind:$label:$(nameof(typeof(input)))"
-                @test compare_with_reference(id, v7, v6; node = "Flow", target = ":$target", atol = 1.0e-8).outcome === :agree
+                corrected = kind === :stacked && label == "Linearization" && !(input isa MvNormalMeanCovariance)
+                declared = corrected ? [DeclaredDisagreement(id; kind = :correction, reasoning = PRECISION_JACOBIAN)] : DeclaredDisagreement[]
+                @test compare_with_reference(id, v7, v6; node = "Flow", target = ":$target", atol = 1.0e-8, declared).outcome === (corrected ? :correction : :agree)
             end
             # v6's marginal over `(in,)`: the marginal of `in`, m_in times the message towards `in`.
             m_out, m_in = inputs[1], MvNormalMeanCovariance([0.1, 0.2], [1.0 0.0; 0.0 1.0])
