@@ -137,7 +137,7 @@ end
             kmessage_expected = msg(
                 sum(
                     filter(
-                        !ismissing, getdata.(collect(skipindex(messages, k)))
+                        !ismissing, getdata.(messages[setdiff(eachindex(messages), k)])
                     ),
                 ),
             )

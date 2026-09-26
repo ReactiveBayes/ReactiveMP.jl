@@ -202,8 +202,8 @@ message's log scale is undefined.
 
 # Throws
 
-- `BoundsError` for a random variable not activated yet;
-- `MethodError` for a [`DataVariable`](@ref), whose outbound stream holds its observations;
+- `ArgumentError` for a random variable not activated yet, and for a [`DataVariable`](@ref) or a
+  [`ConstVariable`](@ref), whose messages are their observations and their value;
 - `AssertionError` when an array of variables and a collection of messages differ in length.
 
 See also [`ReactiveMP.set_initial_marginal!`](@ref).

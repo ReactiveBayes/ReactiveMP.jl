@@ -39,6 +39,8 @@ end
     # Not tracked: reading it is an error that says how to track it.
     @test_throws "logscales = true" getlogscale(Message(1.0, false, false))
     @test_throws "logscales = true" getlogscale(Marginal(1.0, false, false))
+    # An initial or joint marginal never carries one, whether log scales are tracked or not.
+    @test_throws "initial marginal" getlogscale(Marginal(1.0, false, true))
     @test U.message(1.0, -2.0) == Message(1.0, false, false)
     @test contains(repr(U.message(1.0, -2.0)), "logscale = -2.0")
 end

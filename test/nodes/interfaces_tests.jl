@@ -6,7 +6,6 @@
         NodeInterface,
         get_stream_of_outbound_messages,
         get_stream_of_inbound_messages,
-        tag,
         getvariable,
         MessageObservable,
         connect!,
@@ -31,7 +30,6 @@
 
     @test name(interface) === :name
     @test occursin("name", repr(interface))
-    @test tag(interface) === Val{:name}()
     @test getvariable(interface) === variable
     @test get_stream_of_inbound_messages(interface) ===
         stream_of_outbound_messages

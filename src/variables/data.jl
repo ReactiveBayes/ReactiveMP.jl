@@ -76,6 +76,10 @@ function get_stream_of_inbound_messages(datavar::DataVariable, index::Int)
     return datavar.input_messages[index]
 end
 
+set_initial_message!(::DataVariable, message) = throw(
+    ArgumentError("a data variable's messages are its observations: give it one with `new_observation!`, not `set_initial_message!`"),
+)
+
 function get_stream_of_outbound_messages(datavar::DataVariable, ::Int)
     return datavar.messageout
 end

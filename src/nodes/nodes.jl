@@ -13,12 +13,12 @@ import MessagePassingRulesBase
 import MessagePassingRulesBase: Stochastic, Deterministic, NodeSpec, nodespec, default_algorithm
 
 """
-    isdeterministic(::Deterministic) -> Bool
-    isdeterministic(::Stochastic) -> Bool
+    isdeterministic(kind::Union{Deterministic, Stochastic}) -> Bool
+    isdeterministic(node) -> Bool
 
-Whether a node kind, as [`sdtype`](@ref) returns it, is
-[`Deterministic`](@extref MessagePassingRulesBase.Deterministic); the types themselves are accepted
-too. A node or a node type is asked through its kind, `isdeterministic(sdtype(node))`.
+Whether a node is [`Deterministic`](@extref MessagePassingRulesBase.Deterministic): given its kind,
+as [`sdtype`](@ref) returns it, or the kind's type, or a node, a factor node or what a node is of
+(`NormalMeanVariance`, `+`), asked through its [`sdtype`](@ref).
 
 # Examples
 
@@ -30,12 +30,12 @@ julia> isdeterministic(Deterministic()), isdeterministic(Stochastic)
 function isdeterministic end
 
 """
-    isstochastic(::Stochastic) -> Bool
-    isstochastic(::Deterministic) -> Bool
+    isstochastic(kind::Union{Stochastic, Deterministic}) -> Bool
+    isstochastic(node) -> Bool
 
-Whether a node kind, as [`sdtype`](@ref) returns it, is
-[`Stochastic`](@extref MessagePassingRulesBase.Stochastic); the types themselves are accepted too.
-A node or a node type is asked through its kind, `isstochastic(sdtype(node))`.
+Whether a node is [`Stochastic`](@extref MessagePassingRulesBase.Stochastic): given its kind, as
+[`sdtype`](@ref) returns it, or the kind's type, or a node, a factor node or what a node is of,
+asked through its [`sdtype`](@ref).
 """
 function isstochastic end
 
@@ -48,6 +48,10 @@ isstochastic(::Stochastic) = true
 isstochastic(::Type{Stochastic}) = true
 isstochastic(::Deterministic) = false
 isstochastic(::Type{Deterministic}) = false
+
+# A node, a factor node or what a node is of: through its kind.
+isdeterministic(node) = isdeterministic(sdtype(node))
+isstochastic(node) = isstochastic(sdtype(node))
 
 """
     sdtype(fform) -> Union{Stochastic, Deterministic}

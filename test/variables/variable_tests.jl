@@ -190,3 +190,26 @@
         end
     end
 end
+
+@testitem "set_initial_message! says when it cannot seed a variable" tags = [:engine] begin
+    using ReactiveMP, BayesBase, ExponentialFamily, MessagePassingRulesBase
+    import ReactiveMP: activate!, set_initial_message!
+
+    struct NodeForSeedingTests end
+    @define_factor_node(node = NodeForSeedingTests, type = Stochastic, interfaces = [:out, :x])
+
+    # A random variable's outbound streams exist once it is activated.
+    x = randomvar()
+    factornode(NodeForSeedingTests, [(:out, randomvar()), (:x, x)])
+    error = try
+        set_initial_message!(x, NormalMeanVariance(0.0, 1.0))
+        nothing
+    catch caught
+        caught
+    end
+    @test error isa ArgumentError && contains(sprint(showerror, error), "activate!")
+
+    # Data and constants send what they hold: their observations, their value.
+    @test_throws ArgumentError set_initial_message!(datavar(), NormalMeanVariance(0.0, 1.0))
+    @test_throws ArgumentError set_initial_message!(constvar(1.0), NormalMeanVariance(0.0, 1.0))
+end

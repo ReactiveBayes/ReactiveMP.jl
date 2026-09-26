@@ -488,7 +488,9 @@ The engine no longer defines these internal helpers, none of which it used: `ski
 `skip_clamped_and_initial` (`skip_initial` stays), `KLDivergence` and its `score` method
 (`BayesBase.kldivergence` computes the divergence directly), `dropproxytype`, `other_clusters`,
 `getinboundinterfaces`, `interfaceindices`, `ReactiveMP.hasfield` (which shadowed
-`Base.hasfield`), `split_underscored_symbol`, `fields`, `swapped`, and the macro helpers other than
-`@proxy_methods`. The v5 stubs `AddonLogScale` and `AddonMemory`, which only raised an error
+`Base.hasfield`), `split_underscored_symbol`, `fields`, `swapped`, the interface's `tag`, and the
+macro helpers other than `@proxy_methods`. The exported `skipindex` and its `SkipIndexIterator`
+are gone as well: nothing used them; `(x for (i, x) in enumerate(xs) if i != k)` or a `deleteat!`
+copy does the same. The v5 stubs `AddonLogScale` and `AddonMemory`, which only raised an error
 pointing to their replacements, are gone too: use the `logscales = true` option and
 `InputArgumentsAnnotations`.

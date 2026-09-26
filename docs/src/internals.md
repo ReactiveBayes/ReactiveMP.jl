@@ -73,11 +73,8 @@ ReactiveMP.MergedCallbacks
 
 ## [Helpers](@id internals-helpers)
 
-`skipindex` and `SkipIndexIterator` are exported, and the engine does not use them.
 `@proxy_methods` defines the statistics `Message` and `Marginal` forward to their data.
 
 ```@docs
-ReactiveMP.SkipIndexIterator
-skipindex
 ReactiveMP.MacroHelpers.@proxy_methods
 ```

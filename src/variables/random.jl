@@ -70,6 +70,14 @@ function get_stream_of_inbound_messages(randomvar::RandomVariable, index::Int)
     return randomvar.input_messages[index]
 end
 
+function set_initial_message!(randomvar::RandomVariable, message)
+    length(randomvar.output_messages) == degree(randomvar) || throw(
+        ArgumentError("a random variable's outbound messages exist once it is activated: call `activate!` on it before `set_initial_message!`"),
+    )
+    foreach(stream -> set_initial_message!(stream, message), randomvar.output_messages)
+    return nothing
+end
+
 function get_stream_of_outbound_messages(randomvar::RandomVariable, index::Int)
     return randomvar.output_messages[index]
 end

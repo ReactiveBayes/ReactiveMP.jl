@@ -73,6 +73,10 @@ function get_stream_of_inbound_messages(::ConstVariable, ::Int)
     error("ConstVariable does not save inbound messages.")
 end
 
+set_initial_message!(::ConstVariable, message) = throw(
+    ArgumentError("a constant's message is its value, a point mass: it takes no initial message"),
+)
+
 function get_stream_of_outbound_messages(constvar::ConstVariable, ::Int)
     return constvar.messageout
 end

@@ -48,6 +48,10 @@ end
     @test !isdeterministic(Stochastic()) && !isdeterministic(Stochastic)
     @test isstochastic(Stochastic()) && isstochastic(Stochastic)
     @test !isstochastic(Deterministic()) && !isstochastic(Deterministic)
+    # A node, or what a node is of, is asked through its kind.
+    node = factornode(N.shift, [(:out, randomvar()), (:in, randomvar())])
+    @test isdeterministic(node) && isdeterministic(N.shift) && !isstochastic(node)
+    @test isstochastic(N.Gaussian) && !isdeterministic(N.Gaussian)
 
     @test sdtype(N.Gaussian) === Stochastic()
     @test sdtype(N.shift) === Deterministic()

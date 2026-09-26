@@ -49,16 +49,6 @@ cluster's local marginal, a name or a tuple of member names. A `Symbol` is its o
 name(symbol::Symbol) = symbol
 name(interface::NodeInterface) = name(interface.name)
 
-"""
-    ReactiveMP.tag(interface::NodeInterface) -> Val
-    ReactiveMP.tag(interface::IndexedNodeInterface) -> Tuple{Val, Int}
-
-The name of an interface as a type, `Val(name)`, and with its index for a member of a group. The
-engine does not use it: rules are found by
-[`find_message_rule`](@extref MessagePassingRulesBase.find_message_rule) from their
-[`ReactiveMP.rule_target`](@ref).
-"""
-tag(interface::NodeInterface) = Val{name(interface)}()
 
 """
     ReactiveMP.get_stream_of_outbound_messages(interface)
@@ -122,7 +112,6 @@ Base.show(io::IO, interface::IndexedNodeInterface) = print(
 
 index(interface::IndexedNodeInterface) = interface.index
 name(interface::IndexedNodeInterface) = name(interface.interface)
-tag(interface::IndexedNodeInterface) = (tag(interface.interface), index(interface))
 
 get_stream_of_outbound_messages(interface::IndexedNodeInterface) =
     get_stream_of_outbound_messages(interface.interface)

@@ -261,7 +261,7 @@ replacement".
 | `rule` | `function` | `src/rule.jl` | `base` | renamed; see PLAN.md § Naming |
 | `score` | `function` | `src/score/score.jl` | `engine` | the engine's free-energy terms (`DifferentialEntropy`, `FactorBoundFreeEnergy`, `VariableBoundEntropy`); average-energy methods became `message_passing_average_energy` in the base package |
 | `sdtype` | `function` | `src/nodes/nodes.jl` | `base` |  |
-| `skipindex` | `function` | `src/helpers/helpers.jl` | `engine` | an engine helper (`src/helpers/helpers.jl`); no rule uses it |
+| `skipindex` | `function` | `src/helpers/helpers.jl` | `delete` | nothing in the engine, the rule packages or RxInfer uses it; removed with `SkipIndexIterator`; see the v6 → v7 guide |
 | `softdot` | `type` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` |  |
 | `srcubature` | `function` | `src/approximations/sphericalradial.jl` | `delete` | no in-tree consumer; no replacement |
 | `tiny` | `const` | `src/ReactiveMP.jl` | `engine` | re-exported from TinyHugeNumbers by the engine; the rule packages take it from BayesBase |

@@ -123,7 +123,12 @@ A data variable's marginal, an observation, has log scale zero, and so does a co
   always for an initial marginal set with [`ReactiveMP.set_initial_marginal!`](@ref) and for the
   joint marginal of a factor node's cluster, which carry none even with `logscales = true`.
 """
-getlogscale(marginal::Marginal) = tracked_logscale(marginal.logscale)
+getlogscale(marginal::Marginal) = marginal.logscale === nothing ? throw(
+        ArgumentError(
+            "this marginal carries no log scale: either log scales are not tracked (activate the graph with `logscales = true`), " *
+            "or it is an initial marginal, set with `set_initial_marginal!`, or the joint marginal of a node's cluster, which carry none",
+        ),
+    ) : marginal.logscale
 
 typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 
