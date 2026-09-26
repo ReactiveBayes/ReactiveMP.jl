@@ -1,9 +1,44 @@
 """
     ProbitMessagePassingRules
 
-The Probit node, `out ~ Bernoulli(Φ(in))` with `Φ` the standard normal CDF, and its rules: its
-own algorithm, [`ProbitEP`](@ref), expectation propagation, and plain belief-propagation and
-variational rules under `DefaultAlgorithm`.
+The [`Probit`](@ref) node and its rules. The node links a binary output to a real latent input
+through the standard normal CDF `Φ`,
+
+    p(out | in) = Φ(in)^out ⋅ (1 - Φ(in))^(1 - out),
+
+the probit link of a binary classifier. `out` is observed as `0` or `1`, or given as the
+probability of a `1`; `in` is a univariate normal.
+
+The node has rules under two algorithms:
+
+- [`ProbitEP`](@ref), the node's own and the one it runs when a model names none: expectation
+  propagation, a normal message towards `in` from the tilted distribution of the message on
+  `in` itself;
+- [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), when a model names it:
+  plain rules, whose message towards `in` is the exact likelihood as a log-density rather than a
+  normal.
+
+Both have an average energy, computed by
+[`GaussHermiteCubature`](@extref MessagePassingRulesApproximations.GaussHermiteCubature). No rule
+declares a log scale.
+
+# Examples
+
+```jldoctest
+julia> using MessagePassingRulesBase, ExponentialFamily, BayesBase
+
+julia> result = @call_message_update_rule(node = Probit, target = :out, m = (in = NormalMeanVariance(1.0, 0.5),));
+
+julia> mean(getresult(result)) ≈ 0.7928919108787374   # Φ(1 / √(1 + 0.5))
+true
+
+julia> result = @call_message_update_rule(
+           node = Probit, target = :in, m = (out = PointMass(1.0), in = NormalMeanPrecision(0.0, 1.0)),
+       );
+
+julia> getresult(result) isa NormalWeightedMeanPrecision
+true
+```
 """
 module ProbitMessagePassingRules
 
@@ -18,21 +53,67 @@ export Probit, ProbitEP
 """
     Probit
 
-The node `out ~ Bernoulli(Φ(in))`, `Φ` the standard normal CDF: a binary output, or its
-probability, through a latent `in`. Its rules run under its own algorithm, [`ProbitEP`](@ref).
+The probit node, `out ~ Bernoulli(Φ(in))` with `Φ` the standard normal CDF: a binary output
+through a real latent input. It is stochastic, with the interfaces
 
-The rule towards `in` reads the message on its own edge, so in a graph with a loop through `in`
-it needs one to start from: the node declares `NormalMeanPrecision(0.0, 100.0)`, set at
-activation where the model sets none (`initial_messages`).
+- `out`: the output, observed as a `PointMass` at `0` or `1`, or
+  a `Bernoulli`; its value, the probability of a `1`, lies in `[0, 1]`;
+- `in`: the latent input, a univariate normal.
+
+Its algorithm is [`ProbitEP`](@ref), and it also has rules under
+[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm).
+
+Under `ProbitEP` the rule towards `in` reads the message on `in` itself, so in a graph with a
+loop through `in` it needs one to start from: the node declares
+`NormalMeanPrecision(0.0, 100.0)`, set at activation wherever the model sets no initial message.
+
+# Throws
+
+- `ArgumentError`, from the expectation-propagation rules towards `in` and the joint marginal,
+  when the value on `out` lies outside `[0, 1]`.
+
+See also [`ProbitEP`](@ref).
 """
 struct Probit end
 
 """
+    ProbitEP(p::Int)
     ProbitEP(; p = 32)
 
-[`Probit`](@ref)'s algorithm, expectation propagation: towards `in` from the message from `out`
-and the message on `in` itself, towards `out` from the message on `in`. `p` is the number of
-Gauss–Hermite points of its average energy.
+[`Probit`](@ref)'s own algorithm, expectation propagation. A model that names no algorithm for
+the node runs this one.
+
+- towards `out`: `Bernoulli(Φ(μ / √(1 + v)))` from a normal message `N(μ, v)` on `in`, or
+  `Bernoulli(Φ(x))` from a point mass at `x`;
+- towards `in`: the normal whose product with the message on `in` (the cavity) matches the
+  mean and variance of the tilted distribution `p(out | in) ⋅ m(in)`, from the message on
+  `out` and the message on `in`; its precision is clamped to be positive, and the tilted
+  variance to be at most the cavity's;
+- the joint marginal `q(out, in)`, for a point-mass `out` only: `out` itself and the tilted
+  distribution of `in`, as a `NormalMeanVariance`;
+- the average energy `E_q[-log p(out | in)]`, from `q(out)` and a normal `q(in)`.
+
+# Keywords
+
+- `p`: the number of Gauss–Hermite points of the average energy, a positive integer. Default
+  `32`. The messages are computed in closed form and do not use it.
+
+# Examples
+
+```jldoctest
+julia> using MessagePassingRulesBase, ExponentialFamily, BayesBase
+
+julia> energy = @call_average_energy(
+           node = Probit, algorithm = ProbitEP(p = 64), q = (out = PointMass(1.0), in = NormalMeanVariance(0.0, 1.0)),
+       );
+
+julia> getresult(energy) ≈ 1.0   # E[-log Φ(z)] for a standard normal z
+true
+```
+
+See also [`Probit`](@ref), and
+[`GaussHermiteCubature`](@extref MessagePassingRulesApproximations.GaussHermiteCubature) for the
+cubature.
 """
 struct ProbitEP <: AbstractAlgorithm
     p::Int

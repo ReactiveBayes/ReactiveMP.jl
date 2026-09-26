@@ -25,7 +25,12 @@ end
 
 @testitem "quality:doctests" tags = [:quality] begin
     using Documenter, DeltaMessagePassingRules
-    DocMeta.setdocmeta!(DeltaMessagePassingRules, :DocTestSetup, :(using DeltaMessagePassingRules); recursive = true)
+    DocMeta.setdocmeta!(
+        DeltaMessagePassingRules,
+        :DocTestSetup,
+        :(using DeltaMessagePassingRules, MessagePassingRulesBase, MessagePassingRulesApproximations, ExponentialFamily, BayesBase);
+        recursive = true,
+    )
     doctest(DeltaMessagePassingRules; manual = false)
 end
 

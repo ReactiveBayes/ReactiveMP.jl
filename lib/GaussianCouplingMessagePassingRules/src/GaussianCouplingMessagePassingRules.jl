@@ -1,8 +1,40 @@
-"""
+@doc raw"""
     GaussianCouplingMessagePassingRules
 
-The GaussianCoupling node, `φ(out, in, a) = exp(out ⋅ a ⋅ in)`, the pairwise potential of Gaussian
-belief propagation, and its rules under the structured factorisation `q(out, in) q(a)`.
+The [`GaussianCoupling`](@ref) node and its rules. The node is the bilinear potential
+
+```math
+\phi(\mathrm{out}, \mathrm{in}, a) = \exp(\mathrm{out} \cdot a \cdot \mathrm{in}),
+```
+
+the pairwise (edge) potential of Gaussian belief propagation: with
+`NormalWeightedMeanPrecision(b[i], A[i, i])` priors on `x[i]` and `a = -A[i, j]` on each edge,
+message passing solves the linear system `A x = b`.
+
+- Interfaces: `out` and `in`, the two coupled scalar variables, and `a`, the coupling
+  coefficient, a `PointMass`.
+- Algorithm: [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm); a model
+  names none.
+- Rules: the messages towards `out` and `in`, the joint marginal `q(out, in)` and the average
+  energy, all under the structured factorisation `q(out, in) q(a)`, which a constant `a` gives by
+  itself.
+
+The messages are improper normals, with negative precision, and univariate normal inputs only.
+There is no mean-field factorisation `q(out) q(in) q(a)`, and the rules declare no log scale.
+
+# Examples
+
+```jldoctest
+julia> using MessagePassingRulesBase, ExponentialFamily, BayesBase
+
+julia> result = @call_message_update_rule(
+           node = GaussianCoupling, target = :in,
+           m = (out = NormalMeanVariance(2.0, 3.0),), q = (a = PointMass(-0.5),),
+       );
+
+julia> getresult(result) ≈ NormalWeightedMeanPrecision(-1.0, -0.75)
+true
+```
 """
 module GaussianCouplingMessagePassingRules
 
@@ -13,13 +45,13 @@ export GaussianCoupling
 @doc raw"""
     GaussianCoupling
 
-A stochastic factor node representing the pairwise Gaussian coupling (a bilinear interaction)
+The pairwise Gaussian coupling, a stochastic factor node with the bilinear potential
 
 ```math
 \phi(\mathrm{out}, \mathrm{in}, a) = \exp(\mathrm{out} \cdot a \cdot \mathrm{in})
 ```
 
-This is the pairwise (edge) potential of Gaussian Belief Propagation as formulated by
+This is the pairwise (edge) potential of Gaussian belief propagation (GaBP) as formulated by
 Shental et al., *Gaussian Belief Propagation for Solving Systems of Linear Equations*
 ([arXiv:0810.1119](https://arxiv.org/abs/0810.1119)), whose edge potential
 ``\psi_{ij}(x_i, x_j) = \exp(-x_i A_{ij} x_j)`` corresponds to ``a = -A_{ij}``. Combined with
@@ -27,21 +59,32 @@ Shental et al., *Gaussian Belief Propagation for Solving Systems of Linear Equat
 ``A x = b`` into message passing on a graph.
 
 # Interfaces
-1. `out` — first interaction variable.
-2. `in` — second interaction variable.
-3. `a` — coupling coefficient, must be a `PointMass`.
 
-# Factorization
+1. `out`: the first coupled variable, scalar; its rules take univariate normal messages.
+2. `in`: the second coupled variable, scalar; its rules take univariate normal messages.
+3. `a`: the coupling coefficient, a `PointMass`.
 
-Only the structured factorization `q(out, in) q(a)` is supported:
+# Factorisation
+
+Only the structured factorisation `q(out, in) q(a)` is supported:
 
 `((:out, :in), (:a,))` in `factornode`, as RxInfer's
 `@constraints begin q(out, in, a) = q(out, in)q(a) end`.
 
 When `a` is supplied as a constant — the intended usage, as in
-`x[j] ~ GaussianCoupling(x[i], -A[i, j])` — this factorization is applied automatically, because
-constant interfaces are always factorized out of the local cluster. `MeanField()` is **not**
+`x[j] ~ GaussianCoupling(x[i], -A[i, j])` — this factorisation is applied automatically, because
+constant interfaces are always factorised out of the local cluster. `MeanField()` is **not**
 supported: there are no `q(out)q(in)` message rules and no mean-field average energy.
+
+# Rules
+
+- towards `in`, from `m(out)` and `q(a)`, and towards `out`, from `m(in)` and `q(a)`:
+  `NormalWeightedMeanPrecision(a ⋅ mean(m), -a² ⋅ var(m))`;
+- the joint marginal `q(out, in)`, from `m(out)`, `m(in)` and `q(a)`:
+  `MvNormalWeightedMeanPrecision([ξ_out, ξ_in], [w_out -a; -a w_in])`;
+- the average energy `⟨-log φ⟩ = -E[a] E[out ⋅ in]`, from `q(out, in)` and `q(a)`.
+
+The rules declare no log scale.
 
 # Improperness
 
@@ -55,20 +98,22 @@ The potential is not integrable on its own, so it is not a conditional distribut
   factor and must not be confused with the convergence conditions below.
 
 The Bethe free energy is still meaningful whenever the product of all factors in the model is
-normalizable. Since ``\langle -\log \phi \rangle = -\mathbb{E}[a]\, \mathbb{E}[\mathrm{out} \cdot
-\mathrm{in}]`` carries no normalizer term, the accumulated score equals
+normalisable. Since ``\langle -\log \phi \rangle = -\mathbb{E}[a]\, \mathbb{E}[\mathrm{out} \cdot
+\mathrm{in}]`` carries no normaliser term, the accumulated score equals
 ``-\log Z + \mathrm{KL}(q \Vert p)``.
 
 # Accuracy
 
 Per Shental et al.:
 
-- if `A` is strictly diagonally dominant, or the diagonally normalized system satisfies
+- if `A` is strictly diagonally dominant, or the diagonally normalised system satisfies
   ``\rho(|I - A|) < 1``, GaBP converges and the inferred **means are exact**, that is, they
   solve ``A x = b``;
 - the inferred **variances are exact only on acyclic graphs**. On graphs with cycles they are
   walk-sum approximations of ``\mathrm{diag}(A^{-1})`` and must not be reported as the marginal
   variances of the exact solution.
+
+See also [`GaussianCouplingMessagePassingRules`](@ref).
 """
 struct GaussianCoupling end
 

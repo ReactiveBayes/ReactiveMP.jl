@@ -27,7 +27,12 @@ end
 
 @testitem "quality:doctests" tags = [:quality] begin
     using Documenter, AutoregressiveMessagePassingRules
-    DocMeta.setdocmeta!(AutoregressiveMessagePassingRules, :DocTestSetup, :(using AutoregressiveMessagePassingRules); recursive = true)
+    DocMeta.setdocmeta!(
+        AutoregressiveMessagePassingRules,
+        :DocTestSetup,
+        :(using AutoregressiveMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily);
+        recursive = true,
+    )
     doctest(AutoregressiveMessagePassingRules; manual = false)
 end
 

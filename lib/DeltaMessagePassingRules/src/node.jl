@@ -1,25 +1,40 @@
 """
     DeltaFn{F}
 
-The Delta node for a function of type `F`: `DeltaFn{typeof(f)}` is the node `z = f(x₁, …, xₙ)`.
-Its interfaces are `out` and the group `in`, one member per input the engine does not fold.
-Inputs connected to constants or data are folded into the function (`static_inputs = :fold`),
-so `(:in, k)` counts the remaining inputs only.
+The Delta node, `out = f(in₁, …, inₙ)` for a deterministic function `f` of type `F`. It is a
+deterministic node: its density is the Dirac delta `δ(out - f(in₁, …, inₙ))`.
 
-The node type carries no function: the engine is given the function when it creates the node,
-and hands it to a rule through `getnodefn`. The node's rules need an algorithm, a
-[`DeltaApproximation`](@ref); under its default, `DefaultAlgorithm`, no rule is found.
+Its interfaces are `out` and the group `in`, one member per input. Inputs connected to constants
+or data are folded into the function (`static_inputs = :fold`), so the group `in` holds the
+remaining, random, inputs only, and `(:in, k)` counts those. As for every deterministic node, its
+clusters are `out` and the joint over its inputs, `(:in,)`, and it takes no factorisation.
+
+The type carries no function: the engine is given `f` when it creates the node (`factornode(…;
+nodefn = f)`) and hands it to a rule as [`getnodefn`](@extref MessagePassingRulesBase.getnodefn)`(ctx.node,
+Target(:out))`, with the static inputs already folded in.
+
+Its rules run only under a [`DeltaApproximation`](@ref), which a model must give: under the
+default, [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), no rule is found.
+There is no average energy: the node's term in the Bethe free energy is minus the entropy of the
+joint over its inputs, which the engine computes from that marginal.
+
+See also [`DeltaApproximation`](@ref), [`CVIProjection`](@ref).
 """
 struct DeltaFn{F} end
 
 @define_factor_node(node = DeltaFn, type = Deterministic, interfaces = [:out, :in...], static_inputs = :fold)
 
 """
-    is_delta_node_compatible(method)
+    is_delta_node_compatible(method) -> Val{Bool}
 
-`Val(true)` for an approximation method a [`DeltaApproximation`](@ref) accepts, `Val(false)`
-otherwise. A package providing a method opts it in by adding a method; every constructor of
-`DeltaApproximation` checks it, and its error adds the method's [`delta_method_hint`](@ref).
+Whether [`DeltaApproximation`](@ref) accepts the approximation method `method`: `Val(true)` for
+[`Unscented`](@extref MessagePassingRulesApproximations.Unscented) and
+[`Linearization`](@extref MessagePassingRulesApproximations.Linearization), and for
+[`CVIProjection`](@ref) once ExponentialFamilyProjection is loaded; `Val(false)` for anything
+else. Every constructor of `DeltaApproximation` checks it.
+
+A package that provides a new method, with its rules for [`DeltaFn`](@ref), opts the method in by
+adding a method of this function that returns `Val(true)`.
 """
 is_delta_node_compatible(method) = Val(false)
 is_delta_node_compatible(::Unscented) = Val(true)
@@ -27,12 +42,58 @@ is_delta_node_compatible(::Linearization) = Val(true)
 
 """
     DeltaApproximation(; method, inverse = nothing)
+    DeltaApproximation(method, inverse)
 
-[`DeltaFn`](@ref)'s algorithm: `method` approximates the pushforward through the function, and
-`inverse`, when given, is the known inverse towards the input, or a tuple of them, one per
-input. Without an inverse, a message towards an input divides the
-joint over the inputs by that input's own message; with one, it pushes the other messages
-through the inverse.
+The algorithm of [`DeltaFn`](@ref): the approximation method its rules push the messages through
+the function with, and an optional known inverse of the function. A model must give it; the node
+has no rules without it.
+
+# Keywords
+
+- `method`: the approximation method, required, with no default. One of
+  - [`Unscented`](@extref MessagePassingRulesApproximations.Unscented)`()`, the unscented
+    transform, for normal messages;
+  - [`Linearization`](@extref MessagePassingRulesApproximations.Linearization)`()`, the
+    first-order expansion at the inputs' means, for normal messages;
+  - [`CVIProjection`](@ref)`()`, sampling and projection onto an exponential family, for any
+    messages; its rules are in a package extension, loaded with `using
+    ExponentialFamilyProjection`.
+- `inverse`: the known inverse of the function towards the inputs, or `nothing`. Default
+  `nothing`. A single function serves every input; a tuple gives one per input, in order.
+  The inverse towards input `k` takes the value of `out` followed by the other inputs, in order:
+  `inverse[k](out, in₁, …, inₖ₋₁, inₖ₊₁, …, inₙ)`.
+
+The inverse decides the node's dependencies, and so the messages towards an input:
+
+- without an inverse, the message towards `(:in, k)` is the input's share of the joint over the
+  inputs, `q[(:in,)]`, divided by that input's own message, `m[:in][k]`. The joint is the forward
+  statistics through the function smoothed with the message from `out`;
+- with an inverse, the message towards `(:in, k)` is the message from `out` and the other inputs'
+  messages pushed through the inverse, `m[:out]` and `m[:in][!k]`, by the same method.
+
+The message towards `out` pushes the inputs' messages through the function in both cases.
+[`CVIProjection`](@ref) does not use an inverse, and ignores one with a warning.
+
+# Throws
+
+An `ArgumentError` when `method` is not one the node accepts
+([`is_delta_node_compatible`](@ref)); for `CVIProjection` without ExponentialFamilyProjection
+loaded, the error says to load it.
+
+# Examples
+
+```jldoctest
+julia> DeltaApproximation(method = Linearization()) isa DeltaApproximation
+true
+
+julia> DeltaApproximation(method = Unscented(), inverse = (y -> y - 1,)) isa DeltaApproximation
+true
+
+julia> DeltaApproximation(method = 1)
+ERROR: ArgumentError: `1` is not an approximation method of the Delta node. It takes `Unscented()` and `Linearization()` from MessagePassingRulesApproximations, and `CVIProjection()` once ExponentialFamilyProjection is loaded.
+```
+
+See also [`DeltaFn`](@ref), [`CVIProjection`](@ref).
 """
 struct DeltaApproximation{M, I} <: AbstractAlgorithm
     method::M
@@ -48,10 +109,11 @@ end
 DeltaApproximation(; method, inverse = nothing) = DeltaApproximation(method, inverse)
 
 """
-    delta_method_hint(method)
+    delta_method_hint(method) -> Union{Nothing, String}
 
-What to do about a `method` the Delta node does not take, appended to the error: `nothing`, or
-a sentence. A method whose rules live in a package extension says which package to load.
+A sentence on what to do about a `method` the Delta node does not accept, which the error of
+[`DeltaApproximation`](@ref) appends, or `nothing`. A method whose rules live in a package
+extension, such as [`CVIProjection`](@ref), names the package to load.
 """
 delta_method_hint(method) = nothing
 
@@ -66,10 +128,22 @@ function incompatible_method_message(method)
     return hint === nothing ? message : string(message, " ", hint)
 end
 
-"""The form of [`DeltaApproximation`](@ref) without a known inverse."""
+"""
+    UnknownInverse
+
+The type of a [`DeltaApproximation`](@ref) without a known inverse, `DeltaApproximation{<:Any,
+Nothing}`. Its dependencies read the joint over the inputs towards an input:
+`(:in, k) => (m[:in][k], q[(:in,)])`.
+"""
 const UnknownInverse = DeltaApproximation{<:Any, Nothing}
 
-"""The form of [`DeltaApproximation`](@ref) with a known inverse, or one per input."""
+"""
+    KnownInverse
+
+The type of a [`DeltaApproximation`](@ref) with a known inverse, a function or a tuple of
+functions, one per input. Its dependencies read the message from `out` and the other inputs'
+messages towards an input: `(:in, k) => (m[:out], m[:in][!k])`.
+"""
 const KnownInverse = DeltaApproximation{<:Any, <:Union{Function, Tuple{Vararg{Function}}}}
 
 inverse_towards(algorithm::DeltaApproximation{<:Any, <:Function}, k) = algorithm.inverse

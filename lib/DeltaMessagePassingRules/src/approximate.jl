@@ -1,8 +1,11 @@
 """
-    approximate_normal(method, f, distributions)
+    approximate_normal(method, f, distributions::Tuple)
 
-The normal approximation of `f(x₁, …, xₙ)` for independent normal inputs, through `method`:
-a `NormalMeanVariance`, or its multivariate form, of the pushforward's mean and covariance.
+The normal approximation of `f(x₁, …, xₙ)` for independent normal inputs `distributions`, by
+`method`, [`Unscented`](@extref MessagePassingRulesApproximations.Unscented) or
+[`Linearization`](@extref MessagePassingRulesApproximations.Linearization): a normal with the
+pushforward's mean and covariance, univariate or multivariate as the output of `f` is. The
+message rules towards `out`, and towards an input through a known inverse, are this call.
 """
 function approximate_normal end
 
@@ -22,11 +25,13 @@ function approximate_normal(method::Linearization, f::F, distributions::NTuple{N
 end
 
 """
-    forward_statistics(method, f, μs, Σs, μ_in, Σ_in)
+    forward_statistics(method, f, μs, Σs, μ_in, Σ_in) -> (μ, Σ, C)
 
-The mean and covariance of `f` of the inputs, and the cross-covariance of the inputs with it,
-through `method`, for inputs with means `μs` and covariances `Σs`, whose joint has mean `μ_in`
-and covariance `Σ_in`. The joint rule smooths these with the message from `out`.
+The mean `μ` and covariance `Σ` of `f` of the inputs, and the cross-covariance `C` of the inputs
+with it, by `method`, for inputs with means `μs` and covariances `Σs` (tuples, one entry per
+input) whose joint has mean `μ_in` and covariance `Σ_in`. The rule for the joint over the inputs
+smooths these with the message from `out`, by
+[`smoothRTS`](@extref MessagePassingRulesApproximations.smoothRTS).
 """
 function forward_statistics end
 

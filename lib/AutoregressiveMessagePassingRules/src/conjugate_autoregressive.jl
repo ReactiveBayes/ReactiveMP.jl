@@ -1,17 +1,47 @@
-@doc raw"""
+@doc """
     ConjugateAR
 
-The autoregressive node with its parameters on one edge: the likelihood of [`AR`](@ref),
-`y₁ ~ N(θᵀx, γ⁻¹)` with the companion-form state, but with `(θ, γ)` joint on the edge `w`,
-an `MvNormalGamma`, where [`AR`](@ref) has an edge for each.
+The autoregressive node with its parameters on one edge: the likelihood of [`AR`](@ref), but
+with the coefficients and the precision joint on the edge `w = (θ, γ)`, a normal-gamma:
 
-Keeping `(θ, γ)` joint makes the parameter update conjugate: under `q(y, x) q(w)` the posterior
-of `w` is an `MvNormalGamma`, that of a Bayesian linear regression with unknown noise
-precision whose statistics are the expected sufficient statistics of `q(y, x)`.
+```math
+p(y \\mid x, w) = \\mathcal{N}\\big(y_1 \\mid \\theta^\\top x, \\, \\gamma^{-1}\\big), \\qquad w = (\\theta, \\gamma).
+```
 
-Its interfaces are `y` (alias `out`), `x` and `w`. Its rules run under [`ARVMP`](@ref), as
-[`AR`](@ref)'s: the node declares no algorithm of its own, and under the default one,
-`DefaultAlgorithm`, no rule exists.
+$(DOC_AR_STATE)
+
+Keeping `(θ, γ)` joint makes the parameter update conjugate: under `q(y, x) q(w)` the message
+towards `w` is a normal-gamma, and so is `q(w)` for a normal-gamma prior, the posterior of a
+Bayesian linear regression with unknown noise precision.
+
+# Interfaces
+
+- `y` (alias `out`): the current state, a multivariate normal;
+- `x`: the previous state, a multivariate normal of the same dimension;
+- `w`: the coefficients and the precision, an `MvNormalGamma` of dimension `p`.
+
+$(DOC_AR_ALGORITHM) Its form must be `Multivariate`, an AR(1) included: every rule reads `q(w)`,
+whose `θ` is a vector.
+
+The rules towards `y` and `x` and the joint marginal `q(y, x)` are [`AR`](@ref)'s, computed
+from the marginals of `θ` and `γ` that `q(w)` implies. The message towards `w` needs the
+structured factorisation `q(y, x) q(w)`; it is improper for `p ≥ 3`, its shape `(3 - p)/2`
+being non-positive, and becomes proper in its product with the prior. There is an average
+energy under `q(y, x) q(w)` only.
+
+# Examples
+
+```jldoctest
+julia> result = @call_message_update_rule(
+           node = ConjugateAR, target = :w, algorithm = ARVMP(Multivariate, 1, ARsafe()),
+           clusters = ((:y, :x) => MvNormalMeanCovariance([1.0, 0.5], [1.0 0.0; 0.0 1.0]),),
+       );
+
+julia> getresult(result) isa MvNormalGamma
+true
+```
+
+See also [`AR`](@ref), [`ARVMP`](@ref).
 """
 struct ConjugateAR end
 

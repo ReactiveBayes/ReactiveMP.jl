@@ -1,10 +1,41 @@
 """
     ExponentialLinearQuadratic(approximation, a, b, c, d)
 
-The density `∝ exp(-(a x + b exp(c x + d x² / 2)) / 2)`, the form of the GCV node's messages
-towards `z`, `κ` and `ω`. It has no closed-form moments: `approximation`, a cubature such as
-`GaussHermiteCubature(20)`, computes them. Its product with a univariate normal is a
-`NormalMeanVariance` of the product's moments.
+The univariate density
+
+```math
+p(x) ∝ \\exp\\Bigl(-\\tfrac12\\bigl(a x + b \\exp(c x + d x^2 / 2)\\bigr)\\Bigr),
+```
+
+the form of [`GCV`](@ref)'s messages towards `z`, `κ` and `ω`. It has no closed-form
+normalisation or moments: `approximation`, a
+[`GaussHermiteCubature`](@extref MessagePassingRulesApproximations.GaussHermiteCubature), computes
+`mean`, `var` and the other moments by weighting a standard normal.
+
+# Arguments
+
+- `approximation`: the cubature of the moments;
+- `a`, `b`, `c`, `d`: real coefficients, promoted to a common floating-point type.
+
+`logpdf` and `pdf` are unnormalised. Its product with a univariate normal is a
+`NormalMeanVariance` with the moments of the product, computed by the same cubature around the
+normal's mean and variance.
+
+# Examples
+
+```jldoctest
+julia> using MessagePassingRulesApproximations: GaussHermiteCubature
+
+julia> using ExponentialFamily, BayesBase
+
+julia> d = ExponentialLinearQuadratic(GaussHermiteCubature(20), 1.0, 2.0, -1.0, 0.0);
+
+julia> logpdf(d, 0.0) ≈ -1.0
+true
+
+julia> prod(GenericProd(), NormalMeanVariance(0.0, 1.0), d) isa NormalMeanVariance
+true
+```
 """
 struct ExponentialLinearQuadratic{A <: AbstractApproximationMethod, T <: Real} <: ContinuousUnivariateDistribution
     approximation::A

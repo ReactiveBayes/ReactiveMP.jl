@@ -1,31 +1,80 @@
-@doc raw"""
-    AR
+# Text shared by the docstrings of AR, ConjugateAR and ARVMP.
+const DOC_AR_ALGORITHM = """
+Its rules run under [`ARVMP`](@ref), which the model must give, since the variate form and the
+order are properties of the model rather than of the node. The node declares no algorithm of its
+own: under [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm) no rule
+exists, and a model that names none gets a "no message rule" error."""
 
-The autoregressive node, a Bayesian autoregressive process of order `p`:
+const DOC_AR_STATE = raw"""
+For `p > 1` the edges `y` and `x` carry the whole state: `x = (yₜ₋₁, …, yₜ₋ₚ)` and
+`y = (yₜ, …, yₜ₋ₚ₊₁)`, related by the companion matrix `A(θ)`, whose first row is `θᵀ` and
+whose sub-diagonal is ones, under noise on the first component only:
 
 ```math
-y_t \sim \mathcal{N}(\theta^\top x_t, \, \gamma^{-1})
+y = A(\theta)\, x + \varepsilon, \qquad \varepsilon \sim \mathcal{N}(0, \operatorname{diag}(\gamma^{-1}, 0, \dots, 0)).
+```"""
+
+@doc """
+    AR
+
+The autoregressive node of order `p`, a Bayesian autoregressive process with the coefficients
+`θ` and the precision `γ` on edges of their own:
+
+```math
+p(y \\mid x, \\theta, \\gamma) = \\mathcal{N}\\big(y_1 \\mid \\theta^\\top x, \\, \\gamma^{-1}\\big).
 ```
 
-where `yₜ` is the current value, `xₜ = (yₜ₋₁, …, yₜ₋ₚ)` the `p` lagged values, `θ` the
-coefficients and `γ` the precision. For `p > 1`, `y` is the whole state `(yₜ, …, yₜ₋ₚ₊₁)`,
-the companion matrix of `θ` shifting `x` down by one under noise on its first component only.
-Also available as `Autoregressive`.
+$(DOC_AR_STATE)
 
-Its interfaces are `y` (alias `out`), `x`, `θ` and `γ`. Its rules run under [`ARVMP`](@ref),
-which gives the variate form and the order: the node declares no algorithm of its own, and
-under the default one, `DefaultAlgorithm`, no rule exists. They follow the factorisation,
-`q(y, x) q(θ) q(γ)` or mean-field. [`ConjugateAR`](@ref) keeps `(θ, γ)` joint on one edge.
+For `p = 1` under `ARVMP(Univariate, …)` every edge is a scalar.
+
+# Interfaces
+
+- `y` (alias `out`): the current state, a normal, univariate or multivariate by the algorithm's
+  form;
+- `x`: the previous state, a normal of the same form and dimension;
+- `θ`: the coefficients, a normal of dimension `p` (univariate for an AR(1));
+- `γ`: the precision of the noise on the first component, a gamma.
+
+$(DOC_AR_ALGORITHM)
+
+The rules follow the factorisation: the structured `q(y, x) q(θ) q(γ)`, with belief propagation
+between `y` and `x` and the joint marginal `q(y, x)`, or the mean field
+`q(y) q(x) q(θ) q(γ)`. Both have an average energy. [`ConjugateAR`](@ref) keeps `(θ, γ)` joint
+on one edge. Also available as [`Autoregressive`](@ref).
+
+# Examples
+
+```jldoctest
+julia> algorithm = ARVMP(Univariate, 1, ARsafe());
+
+julia> result = @call_message_update_rule(
+           node = AR, target = :y, algorithm = algorithm,
+           m = (x = NormalMeanVariance(1.0, 1.0),),
+           q = (θ = NormalMeanVariance(1.0, 1.0), γ = GammaShapeRate(1.0, 1.0)),
+       );
+
+julia> mean_var(getresult(result)) .≈ (0.5, 1.5)
+(true, true)
+```
+
+See also [`ConjugateAR`](@ref), [`ARVMP`](@ref).
 """
 struct AR end
 
+"""
+    Autoregressive
+
+An alias for [`AR`](@ref), the autoregressive node.
+"""
 const Autoregressive = AR
 
 """
     ARsafe()
 
-The numerically safe mode of [`ARVMP`](@ref): the joint `q(y, x)` is formed from a precision
-matrix whose noiseless components are regularised by a large finite precision.
+The numerically safe mode of [`ARVMP`](@ref): the joint `q(y, x)` is formed from its precision
+matrix, the noiseless components of the state regularised by a large finite precision (`huge`
+from BayesBase). The result is exact up to that regularisation. Use it by default.
 """
 struct ARsafe end
 
@@ -33,20 +82,40 @@ struct ARsafe end
     ARunsafe()
 
 The unregularised mode of [`ARVMP`](@ref): the joint `q(y, x)` is formed from its covariance,
-through the inverse of the companion matrix, which is faster and may be numerically fragile.
+by conditioning the prior joint of `(y, x)` on the message on `y` through the Kalman gain. It
+needs no precision of the noise, so it regularises nothing, and agrees with [`ARsafe`](@ref) up
+to that one's regularisation; it may be numerically fragile when the joint covariance is close
+to singular. For a univariate AR(1) the two modes give the same result.
 """
 struct ARunsafe end
 
 """
     ARVMP(form, order, stype)
 
-The algorithm of [`AR`](@ref) and [`ConjugateAR`](@ref), which the model must give: neither
-node has a default. `form` is `Univariate` or `Multivariate`, the variate form of `y` and `x`;
-`Univariate` is an AR(1) and forces `order` to `1`, with a warning for any other. `order` is
-the order `p`, and `stype` is [`ARsafe`](@ref)`()` or [`ARunsafe`](@ref)`()`.
+The algorithm of [`AR`](@ref) and [`ConjugateAR`](@ref): variational message passing for a
+state of the given form and order. Every argument is required, and neither node has a default
+algorithm, so the model must give one.
+
+# Arguments
+
+- `form`: `Univariate` or `Multivariate`, the variate form of `y` and `x`. `Univariate` is an
+  AR(1) with scalar edges, and forces `order` to `1`, with a warning for any other value;
+- `order`: the order `p`, the dimension of the state and of `θ`;
+- `stype`: [`ARsafe`](@ref)`()` or [`ARunsafe`](@ref)`()`, how the joint `q(y, x)` is formed.
+
+# Examples
+
+```jldoctest
+julia> ARVMP(Multivariate, 3, ARsafe()) isa ARVMP
+true
+```
+
+In a model, with RxInfer:
 
 ```julia
-ARVMP(Multivariate, 3, ARsafe())
+@algorithm function ar_algorithm(order)
+    AR() -> ARVMP(Multivariate, order, ARsafe())
+end
 ```
 """
 struct ARVMP{F <: VariateForm, S} <: AbstractAlgorithm

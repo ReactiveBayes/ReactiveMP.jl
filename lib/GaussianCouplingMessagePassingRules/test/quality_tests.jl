@@ -24,7 +24,7 @@ end
 
 @testitem "quality:doctests" tags = [:quality] begin
     using Documenter, GaussianCouplingMessagePassingRules
-    DocMeta.setdocmeta!(GaussianCouplingMessagePassingRules, :DocTestSetup, :(using GaussianCouplingMessagePassingRules); recursive = true)
+    DocMeta.setdocmeta!(GaussianCouplingMessagePassingRules, :DocTestSetup, :(using GaussianCouplingMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase); recursive = true)
     doctest(GaussianCouplingMessagePassingRules; manual = false)
 end
 
