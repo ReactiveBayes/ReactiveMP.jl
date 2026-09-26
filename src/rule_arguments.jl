@@ -6,17 +6,18 @@ import Random
 """
     ReactiveMP.GroupInputs{G, N, K}()
 
-Stands for group `G` among the names of a rule's inputs: its members `K`, in order, of the
-`N` the group has, which are consecutive in the inputs. The rule receives the group as one
-tuple of length `N` in member order, with `nothing` where a member is not an input.
+Group `G` among the names of a rule's inputs: its members `K`, a tuple of indices in order, out
+of the `N` the group has, which are consecutive among the inputs. The rule receives the group as
+one tuple of length `N` in member order, with `nothing` where a member is not an input.
 """
 struct GroupInputs{G, N, K} end
 
 """
-    ReactiveMP.GroupMember(group, index, length)
+    ReactiveMP.GroupMember(group::Symbol, index::Int, length::Int)
 
-The label of member `index` of a group of `length` members, before [`ReactiveMP.input_names`](@ref)
-folds consecutive members into one [`ReactiveMP.GroupInputs`](@ref).
+The label of member `index` of a group of `length` members, before
+[`ReactiveMP.input_names`](@ref) folds consecutive members into one
+[`ReactiveMP.GroupInputs`](@ref).
 """
 struct GroupMember
     group::Symbol
@@ -25,10 +26,10 @@ struct GroupMember
 end
 
 """
-    ReactiveMP.EmptyGroup(group, length)
+    ReactiveMP.EmptyGroup(group::Symbol, length::Int)
 
-The label of a group from which a dependency selects no member, such as `m[:in][!k]` with
-one member: it takes no input, and the rule receives a tuple of `length` `nothing`s.
+The label of a group from which a dependency selects no member, such as `m[:in][!k]` for a group
+of one member: it takes no input, and the rule receives a tuple of `length` `nothing`s.
 """
 struct EmptyGroup
     group::Symbol
@@ -36,11 +37,16 @@ struct EmptyGroup
 end
 
 """
-    ReactiveMP.input_names(labels)
+    ReactiveMP.input_names(labels) -> Val
 
-The names of a rule's inputs, as the `Val` a mapping carries: each label is an interface name,
-a cluster's member tuple, or a [`ReactiveMP.GroupMember`](@ref), and the consecutive members of
-a group become one [`ReactiveMP.GroupInputs`](@ref). A name may appear only once.
+The names of a rule's inputs, as the `Val` a mapping carries. Each label is an interface name, a
+cluster's member tuple, a [`ReactiveMP.GroupMember`](@ref) or a [`ReactiveMP.EmptyGroup`](@ref);
+the consecutive members of a group become one [`ReactiveMP.GroupInputs`](@ref).
+
+# Throws
+
+- `ArgumentError` when a group's members are not in member order, or when a name appears more
+  than once, such as a group whose members are not consecutive.
 """
 function input_names(labels)
     names = Any[]
@@ -82,10 +88,12 @@ end
 input_key(name) = name isa GroupInputs ? group_name(name) : name
 
 """
-    ReactiveMP.rule_messages(f, names, messages)
+    ReactiveMP.rule_messages(f, names, messages) -> Messages
 
-The `Messages` a rule reads, keyed by interface name, each value `f` of the message. A group
-is one tuple under its name (see [`ReactiveMP.GroupInputs`](@ref)).
+The [`Messages`](@extref MessagePassingRulesBase.Messages) a rule reads, `f` of each message keyed
+by its interface name: `getdata` for the rule's arguments, `getannotations` for its annotations.
+A group is one tuple under its name (see [`ReactiveMP.GroupInputs`](@ref)). With `names` and
+`messages` both `nothing`, it is empty.
 """
 rule_messages(f::F, ::Nothing, ::Nothing) where {F} = Messages(NamedTuple())
 
@@ -100,16 +108,24 @@ rule_messages(f::F, ::Nothing, ::Nothing) where {F} = Messages(NamedTuple())
 end
 
 """
-    ReactiveMP.rule_marginals(f, names, marginals)
+    ReactiveMP.rule_marginals(f, names, marginals) -> Marginals
 
-The `Marginals` a rule reads, each value `f` of the marginal. A marginal keyed by a symbol is
-the marginal of one interface; one keyed by a tuple of names is the joint of a cluster; a group
-is one tuple under its name (see [`ReactiveMP.GroupInputs`](@ref)).
+The [`Marginals`](@extref MessagePassingRulesBase.Marginals) a rule reads, `f` of each marginal. A
+marginal keyed by a symbol is the marginal of one interface, one keyed by a tuple of names the
+joint of a cluster, and a group is one tuple under its name (see
+[`ReactiveMP.GroupInputs`](@ref)).
 
-A joint whose value is a `FactorizedCluster` reaches the rule as its blocks instead: a block
-of one member as that member's marginal, `q[:out]`, and a larger one as a joint,
-`q[:out, :μ]`. A block of one member of a group stays a joint of that member, `q[((:T, 1),)]`,
-since the group's length, which `q[:T]` would need, is not known from the cluster. The labels are in the cluster's type, so this is decided at compile time.
+A joint whose value is a
+[`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster) reaches the rule as its
+blocks instead: a block of one interface as that interface's marginal, `q[:out]`, and a larger
+one as a joint, `q[:out, :μ]`. A block of one member of a group stays a joint of that member,
+`q[((:T, 1),)]`, since the group's length, which `q[:T]` needs, is not known from the cluster.
+The blocks are in the cluster's type, so this is decided at compile time.
+
+# Throws
+
+- `ArgumentError` when a `FactorizedCluster`'s blocks do not partition the cluster's members,
+  each block in the cluster's order.
 """
 rule_marginals(f::F, ::Nothing, ::Nothing) where {F} = Marginals(NamedTuple())
 
@@ -166,10 +182,14 @@ end
 
 
 """
-    ReactiveMP.rule_arguments(messages_names, messages, marginals_names, marginals[, logscales])
+    ReactiveMP.rule_arguments(messages_names, messages, marginals_names, marginals)
+    ReactiveMP.rule_arguments(messages_names, messages, marginals_names, marginals, logscales::Val)
 
-The `RuleArgs` of a rule call: the data of the messages and marginals it depends on, and, with
-`logscales = Val(true)`, the log scales that arrived with the messages, `args.logscale.m[...]`.
+The [`RuleArgs`](@extref MessagePassingRulesBase.RuleArgs) of a rule call: the data of the messages
+and marginals it depends on, keyed as the rule declares them, `args.m[:x]` and `args.q[:x]`
+(see [`ReactiveMP.rule_messages`](@ref) and [`ReactiveMP.rule_marginals`](@ref)). With
+`logscales = Val(true)` it also holds the log scales the messages arrived with, read as
+`args.logscale.m[:x]`; `Val(false)` holds none.
 """
 rule_arguments(messages_names, messages, marginals_names, marginals) = RuleArgs(
     rule_messages(getdata, messages_names, messages),
@@ -187,10 +207,13 @@ message_logscale(message::Message) = message.logscale
 message_logscale(message) = as_message(message).logscale
 
 """
-    ReactiveMP.rule_annotations(messages_names, messages, marginals_names, marginals, out)
+    ReactiveMP.rule_annotations(messages_names, messages, marginals_names, marginals, out) -> RuleAnnotations
 
-The `RuleAnnotations` of a rule call: the annotations the inputs carry, keyed like the
-arguments, and `out`, where the rule records its own.
+The [`RuleAnnotations`](@extref MessagePassingRulesBase.RuleAnnotations) of a rule call: the
+annotations its inputs carry, keyed like its arguments, and `out`, where the rule records its
+own: the message's [`ReactiveMP.AnnotationDict`](@ref), or
+[`NoAnnotations`](@extref MessagePassingRulesBase.NoAnnotations) for a marginal rule and an average
+energy.
 """
 rule_annotations(messages_names, messages, marginals_names, marginals, out) = RuleAnnotations(
     rule_messages(getannotations, messages_names, messages),

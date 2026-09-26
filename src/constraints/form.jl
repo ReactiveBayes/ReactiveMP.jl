@@ -17,22 +17,25 @@ import Base: +
 """
     AbstractFormConstraint
 
-Abstract supertype for all form constraints. Subtype this to create custom form constraints
-that can be used with [`constrain_form`](@ref) and [`ReactiveMP.MessageProductContext`](@ref).
+The supertype of form constraints, which give a product of messages a chosen functional form
+(see [`constrain_form`](@ref)). A constraint of another type works too, wrapped by
+[`ReactiveMP.preprocess_form_constraints`](@ref) in a [`ReactiveMP.WrappedFormConstraint`](@ref);
+subtyping it lets constraints be combined with `+` into a [`CompositeFormConstraint`](@ref).
 
-Not strictly required (any object works via [`ReactiveMP.WrappedFormConstraint`](@ref)),
-but makes dispatch easier and is needed for [`ReactiveMP.CompositeFormConstraint`](@ref) composition via `+`.
+A constraint implements [`constrain_form`](@ref), [`default_form_check_strategy`](@ref) and
+[`default_prod_constraint`](@ref).
 """
 abstract type AbstractFormConstraint end
 
 """
-    FormConstraintCheckEach
+    FormConstraintCheckEach()
 
-Form constraint check strategy that applies [`constrain_form`](@ref) after **each** pairwise product
-inside [`ReactiveMP.compute_product_of_two_messages`](@ref). Use this when intermediate results
-need to stay in a specific functional form (e.g. to prevent numerical issues during long product chains).
+The check strategy that applies the form constraint after each pairwise product, inside
+[`ReactiveMP.compute_product_of_two_messages`](@ref): `f(f(μ₁ μ₂) μ₃)`. It keeps every
+intermediate product in the constrained form, where the product would otherwise grow or lose
+its closed form.
 
-See also: [`FormConstraintCheckLast`](@ref), [`ReactiveMP.MessageProductContext`](@ref)
+See also [`FormConstraintCheckLast`](@ref), [`ReactiveMP.MessageProductContext`](@ref).
 """
 struct FormConstraintCheckEach end
 
@@ -44,13 +47,14 @@ function Base.show(io::IO, ::FormConstraintCheckEach)
 end
 
 """
-    FormConstraintCheckLast
+    FormConstraintCheckLast()
 
-Form constraint check strategy that applies [`constrain_form`](@ref) **once** at the very end
-of [`ReactiveMP.compute_product_of_messages`](@ref), after all pairwise products have been folded.
-This is the default strategy and is more efficient when intermediate form doesn't matter.
+The check strategy that applies the form constraint once, to the whole product, at the end of
+[`ReactiveMP.compute_product_of_messages`](@ref): `f(μ₁ μ₂ μ₃)`. It is the default of
+[`ReactiveMP.MessageProductContext`](@ref), and the cheaper where the intermediate form does not
+matter.
 
-See also: [`FormConstraintCheckEach`](@ref), [`ReactiveMP.MessageProductContext`](@ref)
+See also [`FormConstraintCheckEach`](@ref).
 """
 struct FormConstraintCheckLast end
 
@@ -62,45 +66,57 @@ function Base.show(io::IO, ::FormConstraintCheckLast)
 end
 
 """
-    FormConstraintCheckPickDefault
+    FormConstraintCheckPickDefault()
 
-A meta-strategy that defers to the default check strategy of the given form constraint,
-as defined by [`default_form_check_strategy`](@ref).
+The choice of the constraint's own check strategy, [`default_form_check_strategy`](@ref), for
+a caller that resolves it, such as RxInfer when it builds a variable's
+[`ReactiveMP.MessageProductContext`](@ref). The engine does not resolve it: the context's
+`form_constraint_check_strategy` is [`FormConstraintCheckEach`](@ref) or
+[`FormConstraintCheckLast`](@ref), and any other value applies no form constraint.
 """
 struct FormConstraintCheckPickDefault end
 
 """
     default_form_check_strategy(form_constraint)
 
-Returns the default check strategy (either [`FormConstraintCheckEach`](@ref) or [`FormConstraintCheckLast`](@ref))
-for a given form constraint. Override this for custom constraints to control when they are applied.
+The check strategy `form_constraint` applies with by default, [`FormConstraintCheckEach`](@ref)
+or [`FormConstraintCheckLast`](@ref). A constraint implements it; RxInfer calls it to build a
+variable's [`ReactiveMP.MessageProductContext`](@ref), and a [`CompositeFormConstraint`](@ref)
+requires its parts to agree.
 """
 function default_form_check_strategy end
 
 """
     default_prod_constraint(form_constraint)
 
-Returns the default product strategy needed to apply a given `form_constraint`.
-For most form constraints this returns `BayesBase.GenericProd()`.
+The product strategy for `BayesBase.prod` that `form_constraint` needs, such as
+`BayesBase.GenericProd()`, which keeps a product with no closed form as a `ProductOf` for the
+constraint to approximate. A constraint implements it; RxInfer calls it to build a variable's
+[`ReactiveMP.MessageProductContext`](@ref), and a [`CompositeFormConstraint`](@ref) resolves its
+parts' with `BayesBase.resolve_prod_strategy`.
 """
 function default_prod_constraint end
 
 """
     constrain_form(constraint, distribution)
+    constrain_form(constraint, context, distribution)
 
-Applies the form `constraint` to `distribution` and returns the constrained result.
-This is the main extension point for custom form constraints — implement a method of this function
-for your constraint type and the distribution types you want to support.
+`distribution` in the form `constraint` imposes: the `f` of `q(x) = f(μ₁(x) μ₂(x))`. A
+constraint implements it for the distributions it supports; the second form is called for a
+[`ReactiveMP.WrappedFormConstraint`](@ref) with the context its
+[`ReactiveMP.prepare_context`](@ref) prepared. A constraint that returns its input unchanged keeps
+the product's log scale; one that returns something else leaves it undefined.
 
-See also: [`AbstractFormConstraint`](@ref), [`ReactiveMP.MessageProductContext`](@ref)
+See also [`AbstractFormConstraint`](@ref), [`ReactiveMP.MessageProductContext`](@ref).
 """
 function constrain_form end
 
 """
-    UnspecifiedFormConstraint
+    UnspecifiedFormConstraint()
 
-The default form constraint — does nothing and returns the distribution as-is.
-Used when no form constraint has been specified in the [`ReactiveMP.MessageProductContext`](@ref).
+The form constraint that constrains nothing, returning the distribution as it is: the default of
+[`ReactiveMP.MessageProductContext`](@ref). Its check strategy is [`FormConstraintCheckLast`](@ref)
+and its product strategy `BayesBase.GenericProd()`.
 """
 struct UnspecifiedFormConstraint <: AbstractFormConstraint end
 
@@ -112,12 +128,13 @@ default_prod_constraint(::UnspecifiedFormConstraint) = GenericProd()
 constrain_form(::UnspecifiedFormConstraint, something) = something
 
 """
-    WrappedFormConstraint(constraint, context)
+    ReactiveMP.WrappedFormConstraint(constraint, context)
 
-A wrapper that pairs a form constraint with an optional precomputed context.
-Any object that is not a subtype of [`AbstractFormConstraint`](@ref) gets automatically wrapped
-into this during [`ReactiveMP.preprocess_form_constraints`](@ref).
-Use [`ReactiveMP.prepare_context`](@ref) to provide extra context that can be reused across multiple [`constrain_form`](@ref) calls.
+A form constraint of a type that does not subtype [`AbstractFormConstraint`](@ref), with the
+context its [`ReactiveMP.prepare_context`](@ref) returned. [`ReactiveMP.preprocess_form_constraints`](@ref)
+builds it. [`constrain_form`](@ref), [`default_form_check_strategy`](@ref) and
+[`default_prod_constraint`](@ref) forward to `constraint`, the first with the context when there
+is one.
 """
 struct WrappedFormConstraint{C, X} <: AbstractFormConstraint
     constraint::C
@@ -127,19 +144,15 @@ end
 struct WrappedFormConstraintNoContext end
 
 """
-    prepare_context(constraint)
+    ReactiveMP.prepare_context(constraint)
 
-Prepares a reusable context for a given form constraint. Returns `WrappedFormConstraintNoContext` by default (i.e. no context needed).
-Override this to precompute things that should be shared across multiple [`constrain_form`](@ref) calls.
+A context for `constraint`, computed once when it is wrapped and passed to every
+`constrain_form(constraint, context, distribution)` call: a random number generator, a
+precomputed quadrature, and so on. By default there is none, and `constrain_form(constraint,
+distribution)` is called. A constraint that needs one adds a method.
 """
 prepare_context(constraint) = WrappedFormConstraintNoContext()
 
-"""
-    constrain_form(wrapped::WrappedFormConstraint, something)
-
-Unwraps the constraint and delegates to [`constrain_form`](@ref) with the inner constraint.
-If a context was provided via [`ReactiveMP.prepare_context`](@ref), it is passed as the second argument.
-"""
 constrain_form(wrapped::WrappedFormConstraint, something) =
     constrain_form(wrapped, wrapped.context, something)
 constrain_form(
@@ -154,11 +167,12 @@ default_prod_constraint(wrapped::WrappedFormConstraint) =
     default_prod_constraint(wrapped.constraint)
 
 """
-    preprocess_form_constraints(constraints)
+    ReactiveMP.preprocess_form_constraints(constraints)
 
-Converts form constraints into a form compatible with the ReactiveMP inference backend.
-A tuple of constraints becomes a [`ReactiveMP.CompositeFormConstraint`](@ref).
-Objects that are not subtypes of [`AbstractFormConstraint`](@ref) get wrapped into a [`ReactiveMP.WrappedFormConstraint`](@ref).
+Form constraints as the engine takes them: an [`AbstractFormConstraint`](@ref) as it is, a tuple as
+a [`CompositeFormConstraint`](@ref) of its elements, each preprocessed, and any other value
+wrapped in a [`ReactiveMP.WrappedFormConstraint`](@ref) with its
+[`ReactiveMP.prepare_context`](@ref).
 """
 function preprocess_form_constraints end
 
@@ -169,11 +183,16 @@ preprocess_form_constraints(constraint) =
     WrappedFormConstraint(constraint, prepare_context(constraint))
 
 """
-    CompositeFormConstraint
+    CompositeFormConstraint(constraints::Tuple)
 
-A form constraint that chains multiple constraints together, applying them in order via [`constrain_form`](@ref).
-Create one by combining constraints with `+` (e.g. `constraint_a + constraint_b`).
-All composed constraints must share the same [`default_form_check_strategy`](@ref).
+Several form constraints applied in order, the output of each the input of the next. Combine
+constraints with `+`, `a + b`, or give a tuple to [`ReactiveMP.preprocess_form_constraints`](@ref).
+Its product strategy resolves its parts'.
+
+# Throws
+
+- `ErrorException` from [`default_form_check_strategy`](@ref) when its parts' default check
+  strategies differ.
 """
 struct CompositeFormConstraint{C} <: AbstractFormConstraint
     constraints::C

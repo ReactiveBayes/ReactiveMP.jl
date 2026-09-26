@@ -1,4 +1,3 @@
-
 @testitem "ConstVariable: uninitialized" tags = [:engine] begin
     import ReactiveMP:
         get_stream_of_outbound_messages, get_stream_of_inbound_messages

@@ -8,8 +8,33 @@ import Rocket: getrecent
 import Base: ==, *, +, ndims, precision, length, size, show
 import BayesBase: prod
 
+# Text shared by the docstrings of `Message` and `Marginal` and of their accessors.
+const DOC_CLAMPED = """
+A clamped value is the result of computations on constants and observations alone: it never
+changes during inference."""
+
+const DOC_INITIAL = """
+An initial value was set before inference, with [`ReactiveMP.set_initial_message!`](@ref) or
+[`ReactiveMP.set_initial_marginal!`](@ref), or computed from clamped and initial values only,
+at least one of them initial."""
+
+const DOC_EQUALITY = """
+`==` compares the data and the `is_clamped` and `is_initial` flags, not the annotations or the
+log scale: those describe how a value was computed, not the belief it holds. Compare
+[`getannotations`](@ref) and [`getlogscale`](@ref) explicitly where they matter."""
+
+const DOC_STATISTICS = """
+The statistics of the data are forwarded: `mean`, `median`, `mode`, `var`, `std`, `cov`,
+`invcov`, `precision`, `entropy`, `params`, `mean_cov`, `mean_var`, `mean_invcov`,
+`mean_precision`, `weightedmean` and its variants, `shape`, `scale`, `rate`, `probvec`,
+`logdetcov`, `length`, `ndims`, `size`, `pdf` and `logpdf`."""
+
 """
-An abstract supertype for all concrete message types.
+    AbstractMessage
+
+The supertype of the messages the engine passes: a [`Message`](@ref), which holds its value, and a
+[`DeferredMessage`](@ref), which computes it on demand. [`as_message`](@ref) turns either into a
+`Message`.
 """
 abstract type AbstractMessage end
 
@@ -17,66 +42,52 @@ abstract type AbstractMessage end
 # immutable one through the equality chain, and lighter everywhere
 # (`scripts/benchmark_message_representation.jl`).
 """
-    Message(data, is_clamped, is_initial[, annotations[, logscale]])
+    Message(data, is_clamped::Bool, is_initial::Bool)
+    Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict)
+    Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict, logscale)
 
-An implementation of a message in variational message passing framework.
+A message along an edge of the factor graph: its data, usually a distribution, with the flags
+and the metadata the engine tracks for it.
 
 # Arguments
-- `data::D`: message always holds some data object associated with it, which is usually a probability distribution, but can also be an arbitrary function
-- `is_clamped::Bool`, specifies if this message was the result of constant computations (e.g. clamped constants)
-- `is_initial::Bool`, specifies if this message was used for initialization
-- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. input arguments). Defaults to an empty `AnnotationDict()`.
-- `logscale`: the log of the normalising constant `data` leaves out (see [`getlogscale`](@ref)): a
-  number, a `MessagePassingRulesBase.UndefinedLogScale` with its reason, or `nothing` where log
-  scales are not tracked, the default.
 
-# Example
+- `data`: the message itself, usually a distribution, and `missing` where it is not known,
+  such as an unobserved data point;
+- `is_clamped`: whether the message comes from constants and observations alone. $(DOC_CLAMPED)
+- `is_initial`: whether the message was set before inference or computed from initial values
+  only. $(DOC_INITIAL)
+- `annotations`: the [`ReactiveMP.AnnotationDict`](@ref) of optional metadata, empty by default
+  (see [`ReactiveMP.AbstractAnnotations`](@ref));
+- `logscale`: the log of the constant the normalised `data` leaves out (see
+  [`getlogscale`](@ref)): a number, an
+  [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) with its reason, or
+  `nothing`, the default, where log scales are not tracked.
+
+$(DOC_STATISTICS)
+
+$(DOC_EQUALITY)
+
+# Examples
 
 ```jldoctest
-julia> distribution = Gamma(10.0, 2.0)
-Distributions.Gamma{Float64}(α=10.0, θ=2.0)
-
-julia> message = Message(distribution, false, true)
+julia> message = Message(Gamma(10.0, 2.0), false, true)
 Message(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
 
 julia> mean(message)
 20.0
 
-julia> getdata(message)
-Distributions.Gamma{Float64}(α=10.0, θ=2.0)
-
-julia> is_clamped(message)
-false
-
-julia> is_initial(message)
-true
-
-```
-
-# Equality
-
-`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations` or the log scale.
-Two messages carrying the same distribution are equal even when their annotations or log
-scales differ:
-
-```jldoctest
-julia> using ReactiveMP, BayesBase, ExponentialFamily
+julia> is_clamped(message), is_initial(message)
+(false, true)
 
 julia> a = Message(NormalMeanVariance(0.0, 1.0), false, false);
 
 julia> b = Message(NormalMeanVariance(0.0, 1.0), false, false, ReactiveMP.AnnotationDict(), -0.5);
 
-julia> a == b
-true
-
-julia> getlogscale(b)
--0.5
-
+julia> a == b, getlogscale(b)
+(true, -0.5)
 ```
 
-This is intentional: annotations and log scales are out-of-band information about *how* a
-message was computed, not part of the belief it represents. Compare `getannotations` or
-`getlogscale` explicitly when you need them.
+See also [`Marginal`](@ref), [`DeferredMessage`](@ref), [`as_message`](@ref).
 """
 mutable struct Message{D, L} <: AbstractMessage
     const data::D
@@ -92,48 +103,56 @@ Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
     Message(data, is_clamped, is_initial, annotations, nothing)
 
 """
-    as_message(::AbstractMessage)
+    as_message(message::AbstractMessage) -> Message
+    as_message(marginal::Marginal) -> Message
 
-A function that converts an abstract message to an instance of `Message`.
+The [`Message`](@ref) a value stands for: a `Message` itself; the message a
+[`DeferredMessage`](@ref) computes, computed on the first call and cached for the next; or a
+`Marginal`'s data, flags, annotations and log scale as a message.
 """
 function as_message end
 
 as_message(message::Message) = message
 
 """
-    getdata(message::Message)    
+    getdata(message::Message)
 
-Returns `data` associated with the `message`.
+The data of `message`, usually a distribution, or `missing`.
 """
 getdata(message::Message) = message.data
 
 """
-    is_clamped(message::Message)
+    is_clamped(message::Message) -> Bool
 
-Checks if `message` is clamped or not.
+Whether `message` comes from constants and observations alone. $(DOC_CLAMPED)
 """
 is_clamped(message::Message) = message.is_clamped
 
 """
-    is_initial(message::Message)
+    is_initial(message::Message) -> Bool
 
-Checks if `message` is initial or not.
+Whether `message` was set before inference or computed from initial values only. $(DOC_INITIAL)
 """
 is_initial(message::Message) = message.is_initial
 
 """
-    getannotations(message::Message)
+    getannotations(message::Message) -> AnnotationDict
 
-Returns the [`AnnotationDict`](@ref) associated with the `message`.
+The [`ReactiveMP.AnnotationDict`](@ref) of `message`, empty unless annotation processors wrote to it.
 """
 getannotations(message::Message) = message.annotations
 
 """
     getlogscale(message::Message)
 
-The log scale of `message`: the log of the normalising constant its distribution leaves out, a
-number, or a `MessagePassingRulesBase.UndefinedLogScale` saying why it is not known. Log scales
-are tracked when the graph is activated with `logscales = true`; otherwise this throws.
+The log scale of `message`: the log of the constant its normalised distribution leaves out, a
+number, or an [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) saying why
+it is not known. Log scales are tracked when the node that computed the message was activated
+with `logscales = true` (see [`ReactiveMP.FactorNodeActivationOptions`](@ref)).
+
+# Throws
+
+- `ArgumentError` when log scales are not tracked, the message carrying `nothing`.
 """
 getlogscale(message::Message) = tracked_logscale(message.logscale)
 
@@ -162,22 +181,41 @@ function Base.:(==)(left::Message, right::Message)
 end
 
 """
-    MessageProductContext(kwargs...)
+    MessageProductContext(; prod_constraint = GenericProd(), form_constraint = UnspecifiedFormConstraint(), form_constraint_check_strategy = FormConstraintCheckLast(), fold_strategy = MessagesProductFromLeftToRight(), annotations = nothing, callbacks = nothing)
 
-The structure that defines the context for the product of **two** messages within ReactiveMP.
-The product is executed with the [`ReactiveMP.compute_product_of_messages`](@ref) function and 
-uses the `BayesBase.prod` under the hood. See BayesBase product API documentation for detailed description.
+How a variable multiplies messages: the settings [`ReactiveMP.compute_product_of_messages`](@ref)
+and [`ReactiveMP.compute_product_of_two_messages`](@ref) read. A random variable holds two, one for
+its outbound messages and one for its marginal (see
+[`RandomVariableActivationOptions`](@ref)).
 
-The following `kwargs` are supported:
-- `prod_constraint`: defines the first argument for the `BayesBase.prod` function (default is `BayesBase.GenericProd`)
-- `form_constraint`: defines the form constraint to be applied on the result of computation, default is [`ReactiveMP.UnspecifiedFormConstraint`](@ref)
-- `form_constraint_check_strategy`: defines the strategy to check the specified form constraint, either [`ReactiveMP.FormConstraintCheckLast`](@ref) or [`ReactiveMP.FormConstraintCheckEach`](@ref), default is [`ReactiveMP.FormConstraintCheckLast`](@ref)
-    + [`ReactiveMP.FormConstraintCheckLast`](@ref) will only call [`ReactiveMP.constrain_form`](@ref) at the end of the `[ReactiveMP.compute_product_of_messages]`
-    + [`ReactiveMP.FormConstraintCheckEach`](@ref) will call [`ReactiveMP.constrain_form`](@ref) at each of the [`ReactiveMP.compute_product_of_two_messages`](@ref)
-- `fold_strategy`: defines the strategy (or simply speaking the direction) of the messages product for [`ReactiveMP.compute_product_of_messages`](@ref), default is [`MessagesProductFromLeftToRight`](@ref). Can be a custom function that accepts a `variable`, `context` and collection of `messages` and does arbitrary order, but still needs to call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood (unless you do some experimental stuff). By the way it is called __fold__ to reflect the computer science term with "left-fold" or "right-fold" (and we use the builtin Julia `foldl` and `foldr` functions for that).
-- `callbacks`: callbacks handler, see [`ReactiveMP.invoke_callback`](@ref) for more details.
+# Keywords
 
-See also: [`ReactiveMP.compute_product_of_messages`](@ref), [`ReactiveMP.compute_product_of_two_messages`]
+- `prod_constraint`: the strategy `BayesBase.prod` multiplies two distributions with. Default
+  `BayesBase.GenericProd()`, which keeps a product it has no closed form for as a
+  `BayesBase.ProductOf`;
+- `form_constraint`: the form the product is constrained to (see [`constrain_form`](@ref)).
+  Default [`UnspecifiedFormConstraint`](@ref), which leaves it as it is;
+- `form_constraint_check_strategy`: when the form constraint applies, once to the whole product,
+  [`FormConstraintCheckLast`](@ref), the default, or after each pairwise product,
+  [`FormConstraintCheckEach`](@ref);
+- `fold_strategy`: the order the messages are multiplied in:
+  [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), the default,
+  [`ReactiveMP.MessagesProductFromRightToLeft`](@ref), or a function `f(variable, context,
+  messages)` that multiplies them with [`ReactiveMP.compute_product_of_two_messages`](@ref) in any
+  order;
+- `annotations`: the annotation processors that merge the two sides' annotations in each
+  pairwise product, a collection of [`ReactiveMP.AbstractAnnotations`](@ref). Default `nothing`,
+  which gives each product empty annotations, except that a product with a `missing` side keeps
+  the other side's;
+- `callbacks`: the handler of the product events, such as
+  [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref) (see [`ReactiveMP.invoke_callback`](@ref)).
+  Default `nothing`, none.
+
+RxInfer builds it from a variable's form constraint, with [`default_prod_constraint`](@ref) and
+[`default_form_check_strategy`](@ref) of that constraint.
+
+See also [`ReactiveMP.compute_product_of_messages`](@ref),
+[`ReactiveMP.compute_product_of_two_messages`](@ref).
 """
 Base.@kwdef struct MessageProductContext{C, F, S, L, N, A}
     prod_constraint::C = BayesBase.GenericProd()
@@ -204,31 +242,32 @@ function Base.show(io::IO, ctx::MessageProductContext)
 end
 
 """
-    compute_product_of_two_messages(variable::AbstractVariable, context::MessageProductContext, left::Message, right::Message)
+    compute_product_of_two_messages(variable::AbstractVariable, context::MessageProductContext, left, right) -> Message
 
-Computes the product of two messages `left` and `right` for a given `variable` using the provided `context`.
-Returns a new message with the result of the multiplication (not necessarily normalized).
-Applies `context.form_constraint` if `context.form_constraint_check_strategy` is set to [`ReactiveMP.FormConstraintCheckEach`](@ref).
+Multiply two messages for `variable`, with `BayesBase.prod` under `context.prod_constraint`. A
+[`DeferredMessage`](@ref) is computed first (see [`as_message`](@ref)). The product is a
+[`Message`](@ref), not necessarily normalised; `context.form_constraint` applies to it here when
+the strategy is [`FormConstraintCheckEach`](@ref).
 
-## The log scale
+The product is clamped when both messages are, and initial when it is not clamped and each
+side is clamped or initial.
 
-The product's log scale is the sum of the two messages' log scales and the product's own,
-`BayesBase.compute_logscale`. It is undefined when either side's is, when the pair has no
-`compute_logscale`, or when a form constraint changes the product (returns something else than it
-was given); a `missing` side leaves the
-other side's; `nothing` on either side, log scales not tracked, gives `nothing`.
+Its log scale is the sum of the two messages' log scales and the product's own,
+`BayesBase.compute_logscale(new, left, right)`. A `missing` side leaves the other side's; either
+side's `nothing`, log scales not tracked, gives `nothing`. It is undefined, an
+[`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale), when either side's is,
+when the pair has no `compute_logscale`, and when a form constraint changes the product, returning
+something other than it was given.
 
-The `variable` argument identifies which variable this product is being computed for, which is useful for callbacks (see [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)).
+Its annotations are merged by the processors in `context.annotations` (see
+[`ReactiveMP.post_product_annotations!`](@ref)).
 
-## `is_clamped` and `is_initial`
+`variable` names the variable the product is for; it reaches the callbacks, which receive
+[`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref) and
+[`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref), and, with the strategy
+[`FormConstraintCheckEach`](@ref), the form constraint events.
 
-The [`ReactiveMP.Message`](@ref) carries the `is_clamped` and `is_initial` flags.
-The rules for the product are the following:
-- If both messages are clamped, the result is clamped, OR
-- If both messages are either clamped or initial, the result is initial, OR
-- The result is neither clamped nor initial
-
-See: [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref)
+See also [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref).
 """
 function compute_product_of_two_messages(
         variable::AbstractVariable,
@@ -312,11 +351,30 @@ function compute_product_of_two_messages(
 end
 
 """
-    compute_product_of_messages(variable::AbstractVariable, context::MessageProductContext, messages)
+    compute_product_of_messages(variable::AbstractVariable, context::MessageProductContext, messages) -> Message
 
-Computes the product of a **collection** of messages for a given `variable` (as opposed to [`ReactiveMP.compute_product_of_two_messages`](@ref), which handles exactly **two** messages). Uses `context.fold_strategy` to determine the order in which [`ReactiveMP.compute_product_of_two_messages`](@ref) is called. By default this is [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), but can be set to an arbitrary function that accepts `variable`, `context` and `messages` and which **must** call [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood.
+Multiply a collection of messages for `variable`, pairwise with
+[`ReactiveMP.compute_product_of_two_messages`](@ref), in the order `context.fold_strategy` gives.
+With the strategy [`FormConstraintCheckLast`](@ref), `context.form_constraint` applies once, to the
+whole product, and a form constraint that changes it leaves its log scale undefined.
 
-See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref)
+The callbacks receive [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref) and
+[`ReactiveMP.AfterProductOfMessagesEvent`](@ref) around the whole product.
+
+# Examples
+
+```jldoctest
+julia> x = randomvar();
+
+julia> messages = (Message(NormalMeanVariance(0.0, 1.0), false, false), Message(NormalMeanVariance(2.0, 1.0), false, false));
+
+julia> product = ReactiveMP.compute_product_of_messages(x, ReactiveMP.MessageProductContext(), messages);
+
+julia> mean(product) ≈ 1.0 && var(product) ≈ 0.5
+true
+```
+
+See also [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref).
 """
 function compute_product_of_messages(
         variable::AbstractVariable, context::MessageProductContext, messages
@@ -376,7 +434,10 @@ end
 """
     MessagesProductFromLeftToRight()
 
-The default fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Computes the product of messages from left to right using `foldl` within [`ReactiveMP.compute_product_of_messages`](@ref).
+The fold strategy that multiplies messages from the first to the last, with `foldl`: the
+default of [`ReactiveMP.MessageProductContext`](@ref).
+
+See also [`ReactiveMP.MessagesProductFromRightToLeft`](@ref).
 """
 struct MessagesProductFromLeftToRight end
 
@@ -396,7 +457,9 @@ end
 """
     MessagesProductFromRightToLeft()
 
-Alternative fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Computes the product of messages from right to left using `foldr` within [`ReactiveMP.compute_product_of_messages`](@ref).
+The fold strategy that multiplies messages from the last to the first, with `foldr`.
+
+See also [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), [`ReactiveMP.MessageProductContext`](@ref).
 """
 struct MessagesProductFromRightToLeft end
 
@@ -416,9 +479,10 @@ end
 """
     compute_product_of_messages(f::Function, variable::AbstractVariable, context::MessageProductContext, messages)
 
-Custom fold strategy for [`ReactiveMP.compute_product_of_messages`](@ref). When `context.fold_strategy` is set to a `Function`,
-it will be called with `variable`, `context` and `messages` as arguments. The function must call
-[`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood to compute the pairwise products.
+The product under a custom fold strategy, `context.fold_strategy = f`: calls
+`f(variable, context, messages)`, which multiplies the messages with
+[`ReactiveMP.compute_product_of_two_messages`](@ref) in whatever order it chooses and returns the
+product.
 """
 function compute_product_of_messages(
         f::Function,
@@ -471,8 +535,21 @@ Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
 ## Deferred Message
 
 """
-A special type of a message, for which the actual message is not computed immediately, but is computed later on demand (potentially never).
-To compute and get the actual message, one needs to call the `as_message` method.
+    DeferredMessage(messages, marginals, mapping)
+
+A message computed on demand: what a factor node emits on an outbound stream, so that a message
+nobody reads is never computed. [`as_message`](@ref) computes it on the first call, as
+`mapping(getrecent(messages), getrecent(marginals))`, from the latest values of its inputs at
+that time, and caches the resulting [`Message`](@ref) for the next calls.
+
+# Arguments
+
+- `messages`: the stream of the rule's inbound messages, or `nothing` for none;
+- `marginals`: the stream of the rule's marginals, or `nothing` for none;
+- `mapping`: a function of the two, usually a [`ReactiveMP.MessageMapping`](@ref), that returns
+  the `Message`.
+
+A variable computes the deferred messages it receives when it multiplies them.
 """
 mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     const messages::R
@@ -527,19 +604,21 @@ end
 ## Message observable
 
 """
-    ReactiveMP.MessageObservable{M <: AbstractMessage}
+    MessageObservable(M::Type = AbstractMessage)
 
-A lazy, connectable reactive stream for message values of type `M <: AbstractMessage`, used as the per-connection message stream of every variable in the factor graph.
+The stream of the messages along one connection between a variable and a factor node, with
+values of type `M`. Every subscriber shares one upstream subscription, and the latest message is
+kept, so `Rocket.getrecent` returns it and a late subscriber receives it at once.
 
-Internally combines two Rocket.jl primitives:
-- a `RecentSubject{M}` that caches the most recently emitted value, so `Rocket.getrecent` always returns the latest message and late subscribers receive it immediately
-- a `LazyObservable{M}` that is the actual subscription target — initially unconnected, and wired to an upstream source during graph activation via `ReactiveMP.connect!`
+The stream is lazy: activation connects it to its source, the node's rule or the variable's
+product. Before that, [`ReactiveMP.set_initial_message!`](@ref) can seed it with an initial
+message, which is what a rule reads before any message has been computed.
 
-`connect!(observable, source)` sets the lazy stream to `source |> multicast(subject) |> ref_count()`: all subscribers share one upstream subscription, and every emission is forwarded through the cached subject. Before the upstream is connected, [`ReactiveMP.set_initial_message!`](@ref) can push an initial message directly into the subject to seed the graph before inference begins.
+A random and a data variable allocate one per connection
+([`ReactiveMP.create_new_stream_of_inbound_messages!`](@ref)); a constant has one, shared by all
+its connections.
 
-Each variable-to-node connection owns one `MessageObservable`. For [`ReactiveMP.RandomVariable`](@ref) and [`ReactiveMP.DataVariable`](@ref) these are allocated on demand by `ReactiveMP.create_new_stream_of_inbound_messages!`; for [`ReactiveMP.ConstVariable`](@ref) a single shared instance is created at construction time.
-
-See also: [`ReactiveMP.MarginalObservable`](@ref), [`ReactiveMP.set_initial_message!`](@ref)
+See also [`ReactiveMP.MarginalObservable`](@ref).
 """
 struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     subject::Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
@@ -582,25 +661,39 @@ end
 """
     MessageMapping
 
-A callable structure representing a deferred computation of a message. It stores what is
-needed to compute the message later: the node type, the rule's target, the names of the
-messages and marginals it depends on, the algorithm, the annotation processors, the factor
-node, the callbacks, the [`ReactiveMP.EngineDiagnostics`](@ref), the node's rule context (see
-[`ReactiveMP.node_context`](@ref)), the rule fallback, the scratch the rule reuses across
-calls, and whether log scales are tracked, `Val(true)` or `Val(false)`.
+What computes a node's message towards one interface, called with the latest inbound messages
+and marginals the rule depends on: `mapping(messages, marginals) -> Message`. A factor node
+builds one per interface at activation and wraps it in each [`DeferredMessage`](@ref) it emits.
 
-When invoked, it resolves the rule with `find_message_rule` and runs it with `execute_rule`,
-unless an input is `missing`, in which case the message is `missing` and no rule runs. When
-no rule matches, the rule fallback, if one is set, gives the message; otherwise that is a
-`RuleNotFoundError`.
+It holds the node type, the rule's target, the names of its inputs, the algorithm, the
+annotation processors, the factor node, the callbacks, the [`ReactiveMP.EngineDiagnostics`](@ref),
+the rule context (see [`ReactiveMP.node_context`](@ref)), the rule fallback, the rule's scratch
+(reused from call to call) and whether log scales are tracked.
 
-When log scales are tracked, the rule reads the incoming ones as `args.logscale.m[...]` and the
-message carries the log scale it declares; a message a rule fallback gives has an undefined one.
-When they are not, a rule declared with `reads_logscale = true` is an error.
-A rule declaring a context service the node's context does not supply is an error too, naming
-the rule and the service (`MessagePassingRulesBase.check_services`).
+A call:
 
-See also: [`Message`](@ref), [`DeferredMessage`](@ref)
+1. returns a `missing` message, and runs no rule, when an input is `missing`;
+2. resolves the rule with
+   [`find_message_rule`](@extref MessagePassingRulesBase.find_message_rule) under the node's
+   algorithm, from the inputs' types;
+3. where no rule matches, gives the rule fallback's message, if one is set, with an undefined log
+   scale; otherwise throws a
+   [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) listing the near
+   misses;
+4. checks the rule: against the diagnostics, for a declared reading of log scales that are not
+   tracked, and for a declared context service the node's context does not supply
+   ([`check_services`](@extref MessagePassingRulesBase.check_services));
+5. runs it with [`execute_rule`](@extref MessagePassingRulesBase.execute_rule), with the
+   annotation processors before and after it.
+
+The message is clamped when every input is, and initial when it is not clamped and every input
+is clamped or initial. When log scales are tracked, its log scale is the one the rule declares.
+
+The callbacks receive [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref) and
+[`ReactiveMP.AfterMessageRuleCallEvent`](@ref) around each call, the latter also for a `missing`
+message.
+
+See also [`Message`](@ref), [`ReactiveMP.rule_arguments`](@ref).
 """
 struct MessageMapping{F, T, N, M, A, X, R, E, G, B, S}
     target::T

@@ -13,16 +13,29 @@ import MessagePassingRulesBase
 import MessagePassingRulesBase: Stochastic, Deterministic, NodeSpec, nodespec, default_algorithm
 
 """
-    isdeterministic(node)
+    isdeterministic(::Deterministic) -> Bool
+    isdeterministic(::Stochastic) -> Bool
 
-Whether a node, its node type or its [`sdtype`](@ref) is deterministic.
+Whether a node kind, as [`sdtype`](@ref) returns it, is
+[`Deterministic`](@extref MessagePassingRulesBase.Deterministic); the types themselves are accepted
+too. A node or a node type is asked through its kind, `isdeterministic(sdtype(node))`.
+
+# Examples
+
+```jldoctest
+julia> isdeterministic(Deterministic()), isdeterministic(Stochastic)
+(true, false)
+```
 """
 function isdeterministic end
 
 """
-    isstochastic(node)
+    isstochastic(::Stochastic) -> Bool
+    isstochastic(::Deterministic) -> Bool
 
-Whether a node, its node type or its [`sdtype`](@ref) is stochastic.
+Whether a node kind, as [`sdtype`](@ref) returns it, is
+[`Stochastic`](@extref MessagePassingRulesBase.Stochastic); the types themselves are accepted too.
+A node or a node type is asked through its kind, `isstochastic(sdtype(node))`.
 """
 function isstochastic end
 
@@ -37,9 +50,17 @@ isstochastic(::Deterministic) = false
 isstochastic(::Type{Deterministic}) = false
 
 """
-    sdtype(node)
+    sdtype(fform) -> Union{Stochastic, Deterministic}
+    sdtype(factornode::FactorNode) -> Union{Stochastic, Deterministic}
 
-`Stochastic()` or `Deterministic()`, as the node's declaration says.
+The kind of a node type, or of a factor node, as its
+[`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node) declaration says:
+[`Stochastic`](@extref MessagePassingRulesBase.Stochastic)`()` for a distribution,
+[`Deterministic`](@extref MessagePassingRulesBase.Deterministic)`()` for a function of the inputs.
+A deterministic node's clusters are its output and the joint over its inputs, and its
+contribution to the free energy has no average energy.
+
+See also [`isdeterministic`](@ref), [`isstochastic`](@ref).
 """
 sdtype(fform) = MessagePassingRulesBase.sdtype(fform)
 
@@ -52,10 +73,16 @@ abstract type AbstractFactorNode end
 """
     FactorNode
 
-A factor node in the graph: its node type `fform`, its interfaces in declaration order (a
-group's members as [`ReactiveMP.IndexedNodeInterface`](@ref)s, by their index), its local
-clusters, and the function it computes when it has one (see [`ReactiveMP.StaticFold`](@ref)).
-A node type is anything declared with `MessagePassingRulesBase.@define_factor_node`.
+A factor node of the graph: its node type, its interfaces in declaration order, its local
+clusters, and the function it computes, when it was given one. Create one with
+[`factornode`](@ref), and wire it with [`ReactiveMP.activate!`](@ref).
+
+A node type is anything declared with
+[`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node): a type, such as
+`NormalMeanVariance`, or a function, such as `+`. A group's members are
+[`ReactiveMP.IndexedNodeInterface`](@ref)s, by their index.
+
+See also [`functionalform`](@ref), [`getinterfaces`](@ref).
 """
 struct FactorNode{F, I, C, N} <: AbstractFactorNode
     fform::F
@@ -70,29 +97,59 @@ struct FactorNode{F, I, C, N} <: AbstractFactorNode
 end
 
 """
-    factornode(fform, interfaces, factorisation = nothing; nodefn = nothing)
+    factornode(fform, interfaces, factorisation = nothing; nodefn = nothing) -> FactorNode
 
-Create a factor node of type `fform` connected to variables.
+Create a factor node of type `fform` connected to the variables in `interfaces`. Each connection
+allocates the variable's stream for the node's messages; nothing is computed until the node is
+activated with [`ReactiveMP.activate!`](@ref).
 
-- `interfaces` pairs each interface with its variable, as `(name, variable)` for a single
-  interface and `((name, k), variable)` for member `k` of a group. The names may be aliases.
-  Every declared interface must be given, and a group's members as `1:n`.
-- `factorisation` lists the clusters as tuples of interface keys, `((:out, :μ), (:v,))`, a
-  group member being `(:m, k)`. `nothing` means one cluster over every interface. A
-  deterministic node ignores it: its clusters are `out` alone and the joint over its inputs.
-- `nodefn` is the function the node computes, which a rule reaches with
-  `MessagePassingRulesBase.getnodefn(ctx.node, Target(:out))`.
+# Arguments
 
-What the node's declaration requires of the graph is checked here: its `matched_groups` must
-have as many members as each other, every group at least `min_group_length`, and a node
-declared `factorisation = :meanfield` accepts only clusters of one interface each.
+- `fform`: the node type, declared with
+  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node);
+- `interfaces`: a collection of `(key, variable)` pairs, `key` being the interface's name,
+  `:out`, or `(:m, k)` for member `k` of a group `m`; a name may be an alias. Every declared
+  interface is given, a group's members as `1:n`, in any order;
+- `factorisation`: the clusters of the node's local marginals, a tuple of tuples of keys,
+  `((:out, :μ), (:v,))`. `nothing` means one cluster over every interface. Every interface is in
+  exactly one cluster. A deterministic node ignores it: its clusters are its output alone and the
+  joint over its inputs.
 
-A node declared with `static_inputs = :fold` must be given `nodefn`. The members of its group
-connected to a constant or to data are folded into it: they get no interface, the others are
-numbered `1:n` in their order, and every update waits for the folded values.
+# Keywords
 
-The interfaces are kept in declaration order, so a cluster, a dependency and an emission
-never depend on the order the caller listed them in.
+- `nodefn`: the function the node computes, which a rule reaches with
+  [`getnodefn`](@extref MessagePassingRulesBase.getnodefn)`(ctx.node, Target(:out))`. Default
+  `nothing`, none. A node declared with `static_inputs = :fold` needs it: the members of its
+  group connected to a constant or to data are folded into it (see
+  [`ReactiveMP.StaticFold`](@ref)), and the others are numbered `1:n` in their order.
+
+The interfaces and the clusters are kept in declaration order, whatever order they are given
+in, so a cluster, a dependency and an emission never depend on it.
+
+# Returns
+
+The [`FactorNode`](@ref).
+
+# Throws
+
+`ArgumentError`, naming the node, when:
+
+- `fform` is not a declared node;
+- an interface is missing, unknown, given twice, or a group's members are not `1:n`;
+- the node's declaration is not met: its `matched_groups` must have as many members as each
+  other, each group at least `min_group_length`, and a node declared
+  `factorisation = :meanfield` accepts only clusters of one interface each;
+- the factorisation names an unknown interface, puts one in two clusters, or leaves one out;
+- a node that folds its static inputs has no `nodefn`, or every member of its group is static.
+
+# Examples
+
+```julia
+using ReactiveMP, StandardMessagePassingRules
+
+x, y = randomvar(), datavar()
+node = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, constvar(1.0))], ((:out,), (:μ,), (:v,)))
+```
 """
 function factornode(fform::F, interfaces, factorisation = nothing; nodefn = nothing) where {F}
     spec = node_specification(fform)
@@ -117,15 +174,18 @@ end
 """
     functionalform(factornode::FactorNode)
 
-The functional form a factor node was created with: the node type or function its
-`@define_factor_node` declaration names, such as `NormalMeanVariance` or `+`.
+The node type `factornode` was created with: the type or function its
+[`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node) declaration names,
+such as `NormalMeanVariance` or `+`.
 """
 functionalform(factornode::FactorNode) = factornode.fform
 
 """
-    getinterfaces(factornode::FactorNode)
+    getinterfaces(factornode::FactorNode) -> Vector
 
-A factor node's interfaces, in declaration order, a group's members in member order.
+The interfaces of `factornode`, [`ReactiveMP.NodeInterface`](@ref)s and, for a group's members,
+[`ReactiveMP.IndexedNodeInterface`](@ref)s, in declaration order, a group's members in member
+order.
 """
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
@@ -261,32 +321,41 @@ function collect_factorisation(fform, spec::NodeSpec, interfaces, factorisation)
 end
 
 """
-    ReactiveMP.FactorNodeActivationOptions(; algorithm, postprocessor, annotations, callbacks, diagnostics, context, rulefallback, logscales)
+    ReactiveMP.FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing, logscales = false)
+    ReactiveMP.FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks)
 
-Everything needed to activate a [`FactorNode`](@ref):
+What activating a [`FactorNode`](@ref) needs. The positional form gives the first four options,
+the others taking their defaults.
 
-- `algorithm` — the algorithm the node's rules run under; `nothing` means its default
-  (`MessagePassingRulesBase.default_algorithm`), `DefaultAlgorithm()` for almost every node;
-- `postprocessor` — an optional stream postprocessor applied to every stream created (see
-  [`ReactiveMP.AbstractStreamPostprocessor`](@ref));
-- `annotations` — optional annotation processors (see [`ReactiveMP.AbstractAnnotations`](@ref));
-- `callbacks` — optional callbacks invoked around every rule call (see
-  [`ReactiveMP.invoke_callback`](@ref));
-- `diagnostics` — the audits the node's rules run under, all off by default (see
-  [`ReactiveMP.EngineDiagnostics`](@ref));
-- `context` — services for the node's rules, a `NamedTuple` such as `(rng = …, matrix_correction =
-  …)`, merged over the engine's (see [`ReactiveMP.node_context`](@ref)): any name a rule declares
-  is allowed, and a name the engine supplies is overridden. A rule declaring a service that no
-  one supplies is an error when it is resolved, naming the rule and the service;
-- `rulefallback` — the message where no rule matches, such as
-  `MessagePassingRulesBase.NodeFunctionRuleFallback()`; `nothing`, the default, makes that a
-  `RuleNotFoundError`. It is consulted only when no rule is found, so it never replaces a rule.
-- `logscales` — whether the node's messages carry log scales (see [`getlogscale`](@ref)): each
-  rule's declared one, read by the rules that need their inputs' (`reads_logscale = true`);
-  `false`, the default, tracks none.
+# Keywords
 
-Every option is a keyword with these defaults; `FactorNodeActivationOptions(algorithm,
-postprocessor, annotations, callbacks)` gives the first four positionally.
+- `algorithm`: the algorithm the node's rules run under. Default `nothing`, the node's own
+  ([`default_algorithm`](@extref MessagePassingRulesBase.default_algorithm)), which is
+  [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm)`()` for most nodes;
+- `postprocessor`: the stream postprocessor applied to the node's outbound message streams and
+  its joint marginal streams (see [`ReactiveMP.AbstractStreamPostprocessor`](@ref)). Default
+  `nothing`, none;
+- `annotations`: the annotation processors run before and after each rule, a collection of
+  [`ReactiveMP.AbstractAnnotations`](@ref). Default `nothing`, none;
+- `callbacks`: the handler of the rule events, [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
+  and [`ReactiveMP.AfterMessageRuleCallEvent`](@ref) (see [`ReactiveMP.invoke_callback`](@ref)).
+  Default `nothing`, none;
+- `diagnostics`: the audits of the node's rules, an [`ReactiveMP.EngineDiagnostics`](@ref).
+  Default all off;
+- `context`: services for the node's rules, a `NamedTuple` such as `(rng = …,)`, merged over the
+  engine's (see [`ReactiveMP.node_context`](@ref)): it adds any service a rule declares and
+  overrides the engine's. `nothing` is `NamedTuple()`, the default. A rule declaring a service
+  nobody supplies is an error when it is resolved, naming the rule and the service;
+- `rulefallback`: what gives a message where no rule matches, such as
+  [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()`,
+  called as `rulefallback(fform, target, args)`. Default `nothing`, which makes that a
+  [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError). It never replaces a
+  rule that matches, and an error inside a rule propagates;
+- `logscales`: whether the node's messages carry log scales (see [`getlogscale`](@ref)): each
+  rule's declared one, with its inputs' ones given to the rules that read them. Default
+  `false`, none, and a rule that reads its inputs' log scales is then an error.
+
+See [Activation options](@ref lib-activation-options) for each in use.
 """
 struct FactorNodeActivationOptions{A, P, N, E, C <: NamedTuple, B}
     algorithm::A
@@ -316,7 +385,8 @@ getlogscales(options::FactorNodeActivationOptions) = options.logscales
 """
     ReactiveMP.getalgorithm(fform, options::FactorNodeActivationOptions)
 
-The algorithm a node of type `fform` runs under: the one in `options`, or the node's default.
+The algorithm a node of type `fform` runs under: the one in `options`, or the node's default,
+[`default_algorithm`](@extref MessagePassingRulesBase.default_algorithm)`(fform)`.
 """
 getalgorithm(fform, options::FactorNodeActivationOptions) = something(options.algorithm, default_algorithm(fform))
 
@@ -325,29 +395,32 @@ include("static_inputs.jl")
 """
     ReactiveMP.activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
 
-Wires the node's message and marginal streams into the graph.
+Wire the message and marginal streams of a factor node, after its variables are activated.
 
-1. **Clusters** — each cluster of the factorisation gets a
-   [`ReactiveMP.FactorNodeLocalMarginal`](@ref). A cluster keyed by a single name shares the
-   variable's own marginal stream; a joint, keyed by a tuple (a whole group's included, even
-   of one member), is computed with the node's marginal rule.
-2. **Outbound messages** — for every interface connected to a random or data variable, the
-   inbound messages and local marginals the rule needs are combined with `combineLatest`, and
-   each update is turned into a [`ReactiveMP.DeferredMessage`](@ref) by a
-   [`ReactiveMP.MessageMapping`](@ref), which resolves and runs the rule.
+1. **Clusters**: each cluster of the factorisation gets a
+   [`ReactiveMP.FactorNodeLocalMarginal`](@ref). A cluster of one interface shares the variable's
+   own marginal stream; a joint, keyed by a tuple, is computed by the node's marginal rule
+   ([`ReactiveMP.MarginalMapping`](@ref)).
+2. **Initial messages**: a node that declares `initial_messages` has them set on its inbound
+   messages, on each interface where nothing was set before.
+3. **Outbound messages**: for every interface connected to a random or a data variable, the
+   inputs its rule needs are combined, and each update gives a [`DeferredMessage`](@ref) computed
+   by a [`ReactiveMP.MessageMapping`](@ref), which resolves and runs the rule. An interface on a
+   constant sends no message.
 
 What a rule needs is what the node's algorithm declares
-(`MessagePassingRulesBase.dependencies_spec`), or else the engine's default scheme, driven by
-the factorisation: the messages inside its own cluster, and the marginals of the other
-clusters. A group reaches a rule as one tuple in member order, with `nothing` for the members
-it does not depend on. Interfaces connected to constants are skipped: their message is fixed.
+([`dependencies_spec`](@extref MessagePassingRulesBase.dependencies_spec)), or else the engine's
+default scheme (see [`ReactiveMP.default_dependencies`](@ref)). Its inputs are subscribed to in
+the order they are declared, which in variational message passing is the update schedule. A
+group reaches a rule as one tuple in member order, with `nothing` for the members it does not
+depend on.
 
-An algorithm that declares a free-energy partition requires the factorisation to be that
-partition. A joint cluster may hold a whole group, `(:in,)`, or some of its members, keyed with
-them, `(:out, (:in, 1))`.
+# Throws
 
-A node that declares `initial_messages` has them set on its inbound messages here, on each
-interface where nothing was set before.
+- `ArgumentError` when the algorithm declares a free-energy partition the factorisation is not,
+  or declares no dependencies for a target, or names a cluster the factorisation does not have.
+
+See also [`ReactiveMP.FactorNodeActivationOptions`](@ref).
 """
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     fform = functionalform(factornode)

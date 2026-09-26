@@ -1,60 +1,67 @@
-# [Marginal implementation](@id lib-marginal)
+# [Marginals](@id lib-marginal)
 
-## Marginal type
+A marginal is a belief: about one variable, the normalised product of the messages arriving at
+it, or about a cluster of a factor node's variables, the node's local joint marginal. Marginals
+are what inference is run for, what variational rules read, and what the free energy is computed
+from.
 
-All marginals are encoded with the type `Marginal`. 
+## [The marginal type](@id lib-marginal-type)
 
-```@docs
-Marginal
-```
-
-From an implementation point a view the `Marginal` structure does nothing but hold some `data` object and redirects most of the statistical related functions to that `data` object. However, this object is used extensively in Julia's multiple dispatch. 
-
-```@docs
-ReactiveMP.getdata(marginal::Marginal)
-ReactiveMP.is_clamped(marginal::Marginal)
-ReactiveMP.is_initial(marginal::Marginal)
-ReactiveMP.getannotations(marginal::Marginal)
-ReactiveMP.as_marginal
-```
-
-A marginal is formed from the product of a variable's messages in its public type: a rule may
-compute in an efficient working type, such as `WishartFast`, which
-`MessagePassingRulesBase.public_equivalent` turns into the type users expect, `Wishart`, before the
-marginal leaves the product.
+Every marginal is a [`Marginal`](@ref). Like a [`Message`](@ref), it holds its data and forwards
+the statistics to it, and records whether it is clamped and whether it is initial.
 
 ```@example marginal
 using ReactiveMP, BayesBase, ExponentialFamily
 
-distribution  = ExponentialFamily.NormalMeanPrecision(0.0, 1.0)
-marginal      = Marginal(distribution, false, true)
+marginal = Marginal(NormalMeanPrecision(0.0, 1.0), false, true)
+mean(marginal), precision(marginal), is_initial(marginal)
 ```
-
-```@example marginal
-mean(marginal), precision(marginal)
-```
-
-```@example marginal
-logpdf(marginal, 1.0)
-```
-
-```@example marginal
-is_clamped(marginal), is_initial(marginal)
-```
-
-## Marginal observable
-
-Within the reactive message passing framework, marginals are not computed once and stored as values — instead they live as *streams* that continuously emit updated beliefs as new messages arrive. `MarginalObservable` is the container for such a stream.
 
 ```@docs
-ReactiveMP.MarginalObservable
+Marginal
+getdata(::Marginal)
+is_clamped(::Marginal)
+is_initial(::Marginal)
+getannotations(::Marginal)
+getlogscale(::Marginal)
+as_marginal
+```
+
+## [A variable's marginal](@id lib-marginal-variable)
+
+A random variable's marginal is the product of its inbound messages, formed with
+[`as_marginal`](@ref) in its public type: a rule may compute in an efficient working type, such
+as `WishartFast`, which
+[`public_equivalent`](@extref MessagePassingRulesBase.public_equivalent) turns into the type users
+expect, `Wishart`, before the marginal leaves the product. It keeps the product's annotations and,
+when log scales are tracked, its log scale: in a tree-shaped model inferred exactly by belief
+propagation, the log evidence of the data. A data variable's marginal is its latest observation,
+and a constant's the constant, both with log scale zero.
+
+## [Joint marginals](@id lib-marginal-joint)
+
+A cluster of more than one interface of a factor node has a joint marginal, computed by the node's
+marginal rule from the messages on the cluster's interfaces and the marginals of the other
+clusters, by a [`ReactiveMP.MarginalMapping`](@ref). A structured variational rule reads it as
+`q[:out, :μ]`, and the free energy uses it. A joint whose parts are independent, such as a
+cluster with an observed member, may be a
+[`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster) of blocks, which the rules
+read block by block. A joint marginal carries no annotations and no log scale.
+
+```@docs
 ReactiveMP.MarginalMapping
 ```
 
-Every [`ReactiveMP.AbstractVariable`](@ref) holds one `MarginalObservable`, accessed via [`ReactiveMP.get_stream_of_marginals`](@ref). The observable starts *unconnected*: its internal `LazyObservable` has no upstream source until the factor graph is activated. During activation, `ReactiveMP.connect!` wires the lazy stream to a computed source (e.g. `collectLatest` over inbound messages for a [`ReactiveMP.RandomVariable`](@ref), or the observation channel for a [`ReactiveMP.DataVariable`](@ref)). After that point, every message update propagates through the graph and the `MarginalObservable` emits a fresh `Marginal`.
+## [Marginal streams](@id lib-marginal-observable)
 
-The internal `RecentSubject` ensures that:
-- any subscriber that joins after the first emission immediately receives the current belief via `Rocket.getrecent`
-- [`ReactiveMP.set_initial_marginal!`](@ref) can seed an initial value *before* activation, so that rules which depend on a marginal at iteration zero have something to read
+Like messages, marginals live as streams, [`ReactiveMP.MarginalObservable`](@ref)s, which emit a
+new belief whenever the messages or marginals it is computed from change. Every variable holds
+one, read with [`ReactiveMP.get_stream_of_marginals`](@ref); a factor node holds one per joint
+cluster. The stream is lazy until activation connects it; before that,
+[`ReactiveMP.set_initial_marginal!`](@ref) can seed it, so that a rule that depends on the marginal
+at the start has something to read. The latest marginal is kept: a subscriber that joins late
+receives it at once.
 
-All downstream subscriptions go through the `LazyObservable`, not the subject directly, so they see the full computed stream rather than only manually pushed values.
+```@docs
+ReactiveMP.MarginalObservable
+```

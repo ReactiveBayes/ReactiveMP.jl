@@ -1,4 +1,3 @@
-
 using Rocket
 
 import ReactiveMP: AbstractMessage

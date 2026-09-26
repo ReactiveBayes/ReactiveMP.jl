@@ -1,4 +1,4 @@
-# [Score functions](@id lib-score)
+# [Free energy](@id lib-score)
 
 ReactiveMP.jl computes the **Bethe free energy** as its variational objective during inference. The free energy decomposes into local contributions from each factor node and each variable node, which are accumulated reactively as messages update.
 
@@ -19,7 +19,9 @@ ReactiveMP.jl computes each term reactively: whenever a marginal changes, the lo
 ## [Computing the free energy](@id lib-score-bethe-stream)
 
 [`bethe_free_energy`](@ref) returns the free energy of an activated graph as a stream, which
-emits once every component has a value and again whenever one of them updates:
+emits once every component has a value and again whenever one of them updates. It takes every
+node and every variable of the graph, the data and the constants included, whose point entropies
+cancel those of the nodes' terms:
 
 ```julia
 energies = Float64[]
@@ -28,7 +30,11 @@ subscribe!(bethe_free_energy(Float64, nodes, variables; algorithm = (node) -> no
 
 `algorithm(node)` is the algorithm each node runs under, as given at activation, so the
 energy each node contributes is the one its rules are consistent with; `nothing` is the node's
-default.
+default. [Getting started](@ref getting-started) computes it for a model whose free energy is
+minus its log evidence.
+
+The average energies run with the engine's context, [`ReactiveMP.node_context`](@ref)`(node)`,
+without the services of the activation option `context` and without the diagnostics.
 
 ```@docs
 bethe_free_energy
@@ -37,9 +43,9 @@ bethe_free_energy
 ## [Score types](@id lib-score-types)
 
 A factor node's average energy, the `⟨-log f⟩_q` term, is its rule package's: it is declared
-with `@define_average_energy` next to the node's rules (see
-[Defining nodes and rules](@ref rules-defining)) and found by the engine through the base
-package. The engine combines it with the entropies into these contributions:
+with [`@define_average_energy`](@extref MessagePassingRulesBase.@define_average_energy) next to
+the node's rules, and found by the engine with
+[`find_average_energy`](@extref MessagePassingRulesBase.find_average_energy). The engine combines it with the entropies into these contributions:
 
 | Type | Represents | Where used |
 |------|-----------|-----------|

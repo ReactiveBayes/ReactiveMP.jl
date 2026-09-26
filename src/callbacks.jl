@@ -1,85 +1,100 @@
 using UUIDs
 
 """
-    Event{E}
+    ReactiveMP.Event{E}
 
-Abstract supertype for all callback events in the reactive message passing procedure.
-`E` is a `Symbol` that identifies the event, e.g. `Event{:before_message_rule_call}`.
+The supertype of the events the engine reports to callbacks. `E` is the event's name, a
+`Symbol` such as `:before_message_rule_call`, and the event for the name `:event_name` is the
+struct `EventNameEvent`. An event carries what happened in its fields.
 
-Concrete event types should subtype `Event{:event_name}` and carry the relevant data as fields.
-The naming convention is that for an event `:event_name`, the corresponding struct is called `EventNameEvent`.
-
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.handle_event`](@ref)
+See also [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.handle_event`](@ref).
 """
 abstract type Event{E} end
 
 """
-    event_name(::Type{<:Event{E}}) where {E}
-    event_name(event::Event)
+    ReactiveMP.event_name(::Type{<:Event{E}}) -> Symbol
+    ReactiveMP.event_name(event::Event) -> Symbol
 
-Returns the event name symbol `E` from an `Event{E}` type, subtype, or instance.
+The name `E` of an event type or of an event.
+
+# Examples
+
+```jldoctest
+julia> ReactiveMP.event_name(ReactiveMP.BeforeProductOfTwoMessagesEvent)
+:before_product_of_two_messages
+```
 """
 event_name(::Type{<:Event{E}}) where {E} = E
 event_name(event::Event) = event_name(typeof(event))
 
 """
-    handle_event(handler, event::Event)
+    ReactiveMP.handle_event(handler, event::Event)
 
-Custom callback handlers should implement `handle_event` to listen to events
-during the reactive message passing procedure.
-Each event is a subtype of [`ReactiveMP.Event{E}`](@ref) that carries the relevant data as fields.
-The return value of `handle_event` is ignored. To communicate state changes, use mutable event fields.
+What a callback handler of a custom type does with `event`: a handler adds a method for each
+event it reacts to, and [`ReactiveMP.invoke_callback`](@ref) calls it. Its return value is
+ignored.
+
+# Throws
+
+- `MethodError` for an event the handler has no method for; the error's hint says how to add
+  one, and that a `NamedTuple` of callbacks needs its trailing comma.
+
+# Examples
 
 ```jldoctest
 julia> struct MyEvent <: ReactiveMP.Event{:my_event}
            value::Int
        end;
 
-julia> struct MyCustomCallbackHandler end;
+julia> struct MyHandler end;
 
-julia> ReactiveMP.handle_event(::MyCustomCallbackHandler, event::MyEvent) = print("Event value: \$(event.value)");
+julia> ReactiveMP.handle_event(::MyHandler, event::MyEvent) = println("value: ", event.value);
+
+julia> ReactiveMP.invoke_callback(MyHandler(), MyEvent(1));
+value: 1
 ```
 
-See also: [`ReactiveMP.Event`](@ref), [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.merge_callbacks`](@ref)
+See also [`ReactiveMP.Event`](@ref), [`ReactiveMP.merge_callbacks`](@ref).
 """
 function handle_event end
 
 """
-    invoke_callback(callbacks, event::Event)
+    ReactiveMP.invoke_callback(callbacks, event::Event) -> Event
 
-Invokes the callback handler(s) for the given event and returns the `event` itself.
-Internally dispatches to [`ReactiveMP.handle_event`](@ref) for each handler.
-Does nothing and returns the event if `callbacks` is `nothing`.
+Report `event` to `callbacks`, and return the event. The engine calls it at every event, with
+the callbacks given at activation; `callbacks` is one of:
 
-See also: [`ReactiveMP.handle_event`](@ref), [`ReactiveMP.Event`](@ref), [`ReactiveMP.merge_callbacks`](@ref)
-"""
-function invoke_callback(callbacks::Nothing, event::Event)
-    return event
-end
+- `nothing`: no callbacks, and nothing happens;
+- a `NamedTuple` or a `Dict{Symbol}` keyed by event names, whose entry for the event's name, if
+  any, is called with the event: `(before_message_rule_call = (event) -> …,)`;
+- a [`ReactiveMP.merge_callbacks`](@ref) of several handlers, each invoked in order;
+- any other handler, for which [`ReactiveMP.handle_event`](@ref) is called.
 
-"""
-    invoke_callback(callbacks::NamedTuple, event::Event{E})
+The return value of a callback is ignored.
 
-The `callbacks` can also be a `NamedTuple` with fields corresponding to event names.
-Each callback function receives the event object itself. The return value of the callback is ignored.
+# Examples
 
 ```jldoctest
 julia> mutable struct CountEvent <: ReactiveMP.Event{:count_event}
            count::Int
        end;
 
-julia> callbacks = (count_event = (event) -> event.count += 1,);
-
 julia> event = CountEvent(0);
 
-julia> ReactiveMP.invoke_callback(callbacks, event);
+julia> ReactiveMP.invoke_callback((count_event = (event) -> event.count += 1,), event);
+
+julia> ReactiveMP.invoke_callback(Dict{Symbol, Any}(:count_event => (event) -> event.count += 1), event);
 
 julia> event.count
-1
+2
 ```
 
-If the `NamedTuple` does not have a field corresponding to the event name, the event will be ignored.
+See also [`ReactiveMP.Event`](@ref), [`ReactiveMP.handle_event`](@ref).
 """
+function invoke_callback(callbacks::Nothing, event::Event)
+    return event
+end
+
 function invoke_callback(callbacks::NamedTuple{K}, event::Event{E}) where {K, E}
     if E in K
         callbacks[E](event)
@@ -87,15 +102,6 @@ function invoke_callback(callbacks::NamedTuple{K}, event::Event{E}) where {K, E}
     return event
 end
 
-"""
-    invoke_callback(callbacks::Dict{Symbol}, event::Event{E})
-
-The `callbacks` can also be a `Dict{Symbol, Any}` with keys corresponding to event names.
-Works the same as the `NamedTuple` variant, but allows dynamic construction of callback handlers at runtime.
-Each callback function receives the event object itself. The return value of the callback is ignored.
-
-If the `Dict` does not have a key corresponding to the event name, the event will be ignored.
-"""
 function invoke_callback(callbacks::Dict{Symbol}, event::Event{E}) where {E}
     if haskey(callbacks, E)
         callbacks[E](event)
@@ -103,60 +109,49 @@ function invoke_callback(callbacks::Dict{Symbol}, event::Event{E}) where {E}
     return event
 end
 
-"""
-    invoke_callback(handler, event::Event)
-
-Fallback for custom callback handlers. Delegates to [`ReactiveMP.handle_event`](@ref) and returns the `event`.
-Custom handlers should implement `handle_event(handler, event)` rather than `invoke_callback`.
-"""
 function invoke_callback(handler, event::Event)
     handle_event(handler, event)
     return event
 end
 
 """
-    MergedCallbacks{C}(callbacks)
+    ReactiveMP.MergedCallbacks(callbacks::Tuple)
 
-The result of the [`ReactiveMP.merge_callbacks`](@ref) procedure.
+Several callback handlers as one, which [`ReactiveMP.merge_callbacks`](@ref) returns;
+[`ReactiveMP.invoke_callback`](@ref) invokes each in order.
 """
 struct MergedCallbacks{C}
     callbacks::C
 end
 
 """
-    merge_callbacks(callbacks_handlers...)
+    ReactiveMP.merge_callbacks(callback_handlers...) -> MergedCallbacks
 
-This function accepts an arbitrary amount of callback handlers and merges them together.
-Some callback handlers may or may not react on certain types of events.
+Several callback handlers as one: each is invoked in turn, and each reacts to the events it
+handles. A handler is any value [`ReactiveMP.invoke_callback`](@ref) takes.
+
+# Examples
 
 ```jldoctest
 julia> struct PrintEvent <: ReactiveMP.Event{:print_event}
            label::String
        end;
 
-julia> handler1 = (print_event = (event) -> println("Handler 1: ", event.label),);
+julia> handler1 = (print_event = (event) -> println("first: ", event.label),);
 
-julia> handler2 = (print_event = (event) -> println("Handler 2: ", event.label),);
+julia> handler2 = (print_event = (event) -> println("second: ", event.label),);
 
-julia> merged_handler = ReactiveMP.merge_callbacks(handler1, handler2);
-
-julia> ReactiveMP.invoke_callback(merged_handler, PrintEvent("hello"));
-Handler 1: hello
-Handler 2: hello
+julia> ReactiveMP.invoke_callback(ReactiveMP.merge_callbacks(handler1, handler2), PrintEvent("hello"));
+first: hello
+second: hello
 ```
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.handle_event`](@ref)
+See also [`ReactiveMP.handle_event`](@ref).
 """
 function merge_callbacks(callback_handlers...)
     return MergedCallbacks(callback_handlers)
 end
 
-"""
-    invoke_callback(merged::MergedCallbacks, event::Event)
-
-A specialized version of [`ReactiveMP.invoke_callback`](@ref) for [`ReactiveMP.MergedCallbacks`](@ref).
-Calls the provided callbacks in order. Returns the event after all handlers have been invoked.
-"""
 function invoke_callback(merged::MergedCallbacks, event::Event)
     for callback in merged.callbacks
         invoke_callback(callback, event)
@@ -165,11 +160,13 @@ function invoke_callback(merged::MergedCallbacks, event::Event)
 end
 
 """
-    generate_span_id(callbacks)
+    ReactiveMP.generate_span_id(callbacks)
 
-Generates a unique identifier used for "before" and "after" events (see for example [`BeforeMessageRuleCallEvent`](@ref) and [`AfterMessageRuleCallEvent]`](@ref)). If callbacks are not set (e.g. `callbacks` is `nothing`), returns `nothing`.
-
-The current implementation uses `UUIDs.uuid4` to generate span IDs, but that may change in the future.
+The identifier shared by a "before" event and its "after" event, such as
+[`ReactiveMP.BeforeMessageRuleCallEvent`](@ref) and [`ReactiveMP.AfterMessageRuleCallEvent`](@ref):
+a `UUIDs.uuid4()`, or `nothing` when `callbacks` is `nothing`. A handler of a custom type may add a
+method returning `nothing` to skip generating them; a [`ReactiveMP.MergedCallbacks`](@ref) always
+generates them.
 """
 function generate_span_id end
 
@@ -207,17 +204,18 @@ end
 # All defined events go here, so its easier to document them all in one place
 
 """
-    BeforeMessageRuleCallEvent{M, Ms, Mr} <: Event{:before_message_rule_call}
+    ReactiveMP.BeforeMessageRuleCallEvent{M, Ms, Mr, S} <: Event{:before_message_rule_call}
 
-This event fires right before computing the message and calling the corresponding rule.
+The event right before a message rule runs, at each call of a [`ReactiveMP.MessageMapping`](@ref).
 
 # Fields
-- `mapping`: of type [`ReactiveMP.MessageMapping`](@ref), contains information about the node type, etc
-- `messages`: typically of type `Tuple` if present, `nothing` otherwise
-- `marginals`: typically of type `Tuple` if present, `nothing` otherwise
-- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterMessageRuleCallEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `mapping`: the [`ReactiveMP.MessageMapping`](@ref), which holds the node, the target and the
+  algorithm;
+- `messages`: the inbound messages the rule reads, a tuple, or `nothing` for none;
+- `marginals`: the marginals the rule reads, a tuple, or `nothing` for none;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterMessageRuleCallEvent`](@ref) (see
+  [`ReactiveMP.generate_span_id`](@ref)).
 """
 struct BeforeMessageRuleCallEvent{M, Ms, Mr, S} <:
     Event{:before_message_rule_call}
@@ -228,20 +226,22 @@ struct BeforeMessageRuleCallEvent{M, Ms, Mr, S} <:
 end
 
 """
-    AfterMessageRuleCallEvent{M, Ms, Mr, R, A} <: Event{:after_message_rule_call}
+    ReactiveMP.AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, S} <: Event{:after_message_rule_call}
 
-This event fires right after computing the message and calling the corresponding rule.
+The event right after a message rule ran, or its fallback, or after a `missing` input gave a
+`missing` message.
 
 # Fields
-- `mapping`: of type [`ReactiveMP.MessageMapping`](@ref), contains information about the node type, etc
-- `messages`: typically of type `Tuple` if present, `nothing` otherwise
-- `marginals`: typically of type `Tuple` if present, `nothing` otherwise
-- `result`: the result of the rule invocation (or `rulefallback`), can be any type
-- `annotations`: the annotations attached to the result, of type [`ReactiveMP.AnnotationDict`](@ref)
-- `logscale`: the log scale of the result, as the message carries it (see [`getlogscale`](@ref)); `nothing` where log scales are not tracked
-- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `mapping`: the [`ReactiveMP.MessageMapping`](@ref), which holds the node, the target and the
+  algorithm;
+- `messages`: the inbound messages the rule read, a tuple, or `nothing` for none;
+- `marginals`: the marginals the rule read, a tuple, or `nothing` for none;
+- `result`: the message's data, what the rule or the fallback returned, or `missing`;
+- `annotations`: the message's [`ReactiveMP.AnnotationDict`](@ref);
+- `logscale`: the message's log scale (see [`getlogscale`](@ref)), or `nothing` where log scales
+  are not tracked;
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref).
 """
 struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, S} <:
     Event{:after_message_rule_call}
@@ -255,18 +255,17 @@ struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, S} <:
 end
 
 """
-    BeforeProductOfTwoMessagesEvent{V, C, L, R} <: Event{:before_product_of_two_messages}
+    ReactiveMP.BeforeProductOfTwoMessagesEvent{V, C, L, R, S} <: Event{:before_product_of_two_messages}
 
-This event fires right before computing the product of two messages.
+The event right before [`ReactiveMP.compute_product_of_two_messages`](@ref) multiplies two
+messages.
 
 # Fields
-- `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `left`: of type [`ReactiveMP.Message`](@ref), the left-hand side message in the product
-- `right`: of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
-- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`AbstractVariable`](@ref) the product is for;
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref);
+- `left`, `right`: the two [`Message`](@ref)s;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref).
 """
 struct BeforeProductOfTwoMessagesEvent{V, C, L, R, S} <:
     Event{:before_product_of_two_messages}
@@ -278,20 +277,19 @@ struct BeforeProductOfTwoMessagesEvent{V, C, L, R, S} <:
 end
 
 """
-    AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A} <: Event{:after_product_of_two_messages}
+    ReactiveMP.AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A, S} <: Event{:after_product_of_two_messages}
 
-This event fires right after computing the product of two messages.
+The event right after [`ReactiveMP.compute_product_of_two_messages`](@ref) multiplied two
+messages.
 
 # Fields
-- `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `left`: of type [`ReactiveMP.Message`](@ref), the left-hand side message in the product
-- `right`: of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
-- `result`: of type [`ReactiveMP.Message`](@ref), the resulting message from the product
-- `annotations`: the annotations attached to the result, of type [`ReactiveMP.AnnotationDict`](@ref)
-- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`AbstractVariable`](@ref) the product is for;
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref);
+- `left`, `right`: the two [`Message`](@ref)s;
+- `result`: the product, a [`Message`](@ref);
+- `annotations`: the product's [`ReactiveMP.AnnotationDict`](@ref);
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref).
 """
 struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A, S} <:
     Event{:after_product_of_two_messages}
@@ -305,18 +303,17 @@ struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A, S} <:
 end
 
 """
-    BeforeProductOfMessagesEvent{V, C, Ms} <: Event{:before_product_of_messages}
+    ReactiveMP.BeforeProductOfMessagesEvent{V, C, Ms, S} <: Event{:before_product_of_messages}
 
-This event fires right before computing the product of a collection of messages
-(i.e. at the beginning of [`ReactiveMP.compute_product_of_messages`](@ref)).
+The event at the start of [`ReactiveMP.compute_product_of_messages`](@ref), before a collection of
+messages is multiplied.
 
 # Fields
-- `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `messages`: the collection of messages to be multiplied
-- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterProductOfMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`AbstractVariable`](@ref) the product is for;
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref);
+- `messages`: the messages to multiply;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterProductOfMessagesEvent`](@ref).
 """
 struct BeforeProductOfMessagesEvent{V, C, Ms, S} <:
     Event{:before_product_of_messages}
@@ -327,19 +324,18 @@ struct BeforeProductOfMessagesEvent{V, C, Ms, S} <:
 end
 
 """
-    AfterProductOfMessagesEvent{V, C, Ms, R} <: Event{:after_product_of_messages}
+    ReactiveMP.AfterProductOfMessagesEvent{V, C, Ms, R, S} <: Event{:after_product_of_messages}
 
-This event fires right after computing the product of a collection of messages
-(i.e. at the end of [`ReactiveMP.compute_product_of_messages`](@ref)).
+The event at the end of [`ReactiveMP.compute_product_of_messages`](@ref), after the fold and the
+form constraint.
 
 # Fields
-- `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `messages`: the original collection of messages that were multiplied
-- `result`: of type [`ReactiveMP.Message`](@ref), the final result after folding and form constraint application
-- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`AbstractVariable`](@ref) the product is for;
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref);
+- `messages`: the messages that were multiplied;
+- `result`: the product, a [`Message`](@ref);
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref).
 """
 struct AfterProductOfMessagesEvent{V, C, Ms, R, S} <:
     Event{:after_product_of_messages}
@@ -351,19 +347,18 @@ struct AfterProductOfMessagesEvent{V, C, Ms, R, S} <:
 end
 
 """
-    BeforeFormConstraintAppliedEvent{V, C, S, D} <: Event{:before_form_constraint_applied}
+    ReactiveMP.BeforeFormConstraintAppliedEvent{V, C, S, D, I} <: Event{:before_form_constraint_applied}
 
-This event fires right before applying the form constraint via [`ReactiveMP.constrain_form`](@ref).
-Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.FormConstraintCheckLast`](@ref) strategies.
+The event right before a product's form constraint applies, with [`constrain_form`](@ref), under
+either strategy, [`FormConstraintCheckEach`](@ref) or [`FormConstraintCheckLast`](@ref).
 
 # Fields
-- `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `strategy`: the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
-- `distribution`: the distribution about to be constrained
-- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`AbstractVariable`](@ref) the product is for;
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref);
+- `strategy`: the check strategy, `FormConstraintCheckEach()` or `FormConstraintCheckLast()`;
+- `distribution`: the distribution about to be constrained;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref).
 """
 struct BeforeFormConstraintAppliedEvent{V, C, S, D, I} <:
     Event{:before_form_constraint_applied}
@@ -375,20 +370,19 @@ struct BeforeFormConstraintAppliedEvent{V, C, S, D, I} <:
 end
 
 """
-    AfterFormConstraintAppliedEvent{V, C, S, D, R} <: Event{:after_form_constraint_applied}
+    ReactiveMP.AfterFormConstraintAppliedEvent{V, C, S, D, R, I} <: Event{:after_form_constraint_applied}
 
-This event fires right after applying the form constraint via [`ReactiveMP.constrain_form`](@ref).
-Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.FormConstraintCheckLast`](@ref) strategies.
+The event right after a product's form constraint applied, with [`constrain_form`](@ref), under
+either strategy, [`FormConstraintCheckEach`](@ref) or [`FormConstraintCheckLast`](@ref).
 
 # Fields
-- `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `strategy`: the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
-- `distribution`: the distribution before the constraint was applied
-- `result`: the distribution after the constraint was applied
-- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`AbstractVariable`](@ref) the product is for;
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref);
+- `strategy`: the check strategy, `FormConstraintCheckEach()` or `FormConstraintCheckLast()`;
+- `distribution`: the distribution before the constraint;
+- `result`: the distribution after it;
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref).
 """
 struct AfterFormConstraintAppliedEvent{V, C, S, D, R, I} <:
     Event{:after_form_constraint_applied}
@@ -401,17 +395,18 @@ struct AfterFormConstraintAppliedEvent{V, C, S, D, R, I} <:
 end
 
 """
-    BeforeMarginalComputationEvent{V, C, Ms} <: Event{:before_marginal_computation}
+    ReactiveMP.BeforeMarginalComputationEvent{V, C, Ms, S} <: Event{:before_marginal_computation}
 
-This event fires right before computing the marginal for a [`ReactiveMP.RandomVariable`](@ref) from its incoming messages.
+The event right before a [`RandomVariable`](@ref) computes its marginal from its inbound
+messages. Its callbacks are those of the variable's
+`prod_context_for_marginal_computation` (see [`RandomVariableActivationOptions`](@ref)).
 
 # Fields
-- `variable`: of type [`ReactiveMP.RandomVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `messages`: the collection of incoming messages used to compute the marginal
-- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterMarginalComputationEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMarginalComputationEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`RandomVariable`](@ref);
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref) of the marginal;
+- `messages`: the inbound messages;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterMarginalComputationEvent`](@ref).
 """
 struct BeforeMarginalComputationEvent{V, C, Ms, S} <:
     Event{:before_marginal_computation}
@@ -422,18 +417,18 @@ struct BeforeMarginalComputationEvent{V, C, Ms, S} <:
 end
 
 """
-    AfterMarginalComputationEvent{V, C, Ms, R} <: Event{:after_marginal_computation}
+    ReactiveMP.AfterMarginalComputationEvent{V, C, Ms, R, S} <: Event{:after_marginal_computation}
 
-This event fires right after computing the marginal for a [`ReactiveMP.RandomVariable`](@ref) from its incoming messages.
+The event right after a [`RandomVariable`](@ref) computed its marginal from its inbound
+messages. Its callbacks are those of the variable's `prod_context_for_marginal_computation`.
 
 # Fields
-- `variable`: of type [`ReactiveMP.RandomVariable`](@ref)
-- `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
-- `messages`: the collection of incoming messages used to compute the marginal
-- `result`: the computed marginal
-- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMarginalComputationEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
+- `variable`: the [`RandomVariable`](@ref);
+- `context`: the [`ReactiveMP.MessageProductContext`](@ref) of the marginal;
+- `messages`: the inbound messages;
+- `result`: the marginal, a [`Marginal`](@ref);
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeMarginalComputationEvent`](@ref).
 """
 struct AfterMarginalComputationEvent{V, C, Ms, R, S} <:
     Event{:after_marginal_computation}

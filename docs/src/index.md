@@ -1,103 +1,47 @@
-ReactiveMP.jl
-=============
+# ReactiveMP.jl
 
-*Julia package for reactive message passing Bayesian inference engine on a factor graph.*
+*A reactive message passing engine for Bayesian inference on factor graphs.*
+
+ReactiveMP.jl runs message passing on a factor graph: exact belief propagation, variational
+message passing under a factorisation, and the approximations between them, with the Bethe free
+energy as the objective. It builds no schedule in advance. Messages and marginals are streams,
+and each new observation propagates through the graph, recomputing only what depends on it; this
+suits streaming and online inference as well as batch inference.
+
+The engine is the computational core of the [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl)
+ecosystem, and is not usually used directly: RxInfer's `@model` and `infer` build the graph and run
+it on this engine. Use ReactiveMP.jl directly to build graphs by hand, to write your own
+inference loop, or to work on the engine itself. The nodes and their update rules are not part of
+the engine: they come from rule packages (see [The ecosystem](@ref ecosystem)).
 
 ```@docs
 ReactiveMP
 ```
 
-`ReactiveMP.jl` is a low-level inference engine that implements variational message passing on factor graphs. It is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. For most use cases, the [RxInfer.jl](https://github.com/reactivebayes/RxInfer.jl) package provides a convenient model specification layer on top of ReactiveMP.jl.
+## [Ideas and principles](@id index-ideas)
 
-The engine is one of a family of packages:
+Reactive message passing does not create a message passing schedule in advance, but reacts to
+changes in the data (hence *reactive*). The ideas behind it are explained in the PhD
+dissertation of Dmitry Bagaev,
+[*Reactive Probabilistic Programming for Scalable Bayesian Inference*](https://pure.tue.nl/ws/portalfiles/portal/313860204/20231219_Bagaev_hf.pdf)
+([also here](https://research.tue.nl/nl/publications/reactive-probabilistic-programming-for-scalable-bayesian-inferenc),
+and [its sources](https://github.com/bvdmitri/phdthesis)). Tutorials and examples of models are in
+the [RxInfer documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
 
-| Package | Contents |
-|---|---|
-| `ReactiveMP` | the engine: variables, factor nodes, messages, marginals, the free energy |
-| `MessagePassingRulesBase` | the macros that define nodes, rules and average energies, the algorithms, and rule lookup |
-| `StandardMessagePassingRules` | the rules of the standard nodes: distributions, arithmetic, logic and mixtures |
-| `MessagePassingRulesApproximations` | numerics for propagating moments through functions: the unscented transform, smoothing |
-| `DeltaMessagePassingRules` | the Delta node, for deterministic functions |
-| `GaussianCouplingMessagePassingRules` | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
-| `ProbitMessagePassingRules` | the Probit node, a binary output through the normal CDF, by expectation propagation |
-| `GCVMessagePassingRules` | the GCV node, a normal whose log-variance is linear in its inputs |
-| `SoftDotMessagePassingRules` | the SoftDot node, a dot product with Gaussian noise |
-| `AutoregressiveMessagePassingRules` | the autoregressive nodes, AR and ConjugateAR |
-| `ContinuousTransitionMessagePassingRules` | the ContinuousTransition node, a transition through a matrix built from a vector |
-| `PolyaMessagePassingRules` | the Pólya-Gamma augmented nodes, BinomialPolya and MultinomialPolya; GPL-3 |
-| `BIFMMessagePassingRules` | BIFM, a linear state-space time slice for backward-information-filter forward-marginal smoothing, and BIFMHelper |
-| `FlowMessagePassingRules` | Flow, an invertible transformation, with its flow models, layers and PermutationMatrix |
-| `DiscreteTransitionMessagePassingRules` | DiscreteTransition, a categorical transition through a tensor with any number of conditioning categoricals |
-| `MessagePassingRulesTestUtils` | tools to test rules: tables, verification, comparisons, engine trajectories |
+## [The site](@id index-map)
 
-!!! note
-    This package exports only an inference engine. For the full ecosystem with convenient model and constraints specification, see [`RxInfer.jl`](https://github.com/reactivebayes/RxInfer.jl) and its [documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
-
-## [Start here](@id index-start-here)
-
-If you are new to ReactiveMP.jl, read the Concepts section first. It explains the key ideas without assuming prior familiarity with the codebase:
-
-1. **[Factor graphs](@ref concepts-factor-graphs)** — what factor graphs are and how ReactiveMP.jl represents them.
-2. **[Message passing](@ref concepts-message-passing)** — how belief propagation and variational message passing work, and the reactive computation model.
-3. **[Reactive programming](@ref concepts-reactive-programming)** — the streams messages and marginals are, built on Rocket.jl.
-4. **[Inference lifecycle](@ref concepts-inference-lifecycle)** — the three phases every inference run goes through: construction, activation, and observation.
-
-After reading the Concepts section, *Nodes and rules* explains how nodes and their rules are defined and tested, and *The engine* and *Rule packages* are the API reference.
-
-## [Ideas and principles behind `ReactiveMP.jl`](@id index-ideas)
-
-`ReactiveMP.jl` is a particular implementation of message passing on factor graphs, which does not create any specific message passing schedule in advance, but rather _reacts_ on changes in the data source (hence _reactive_ in the name of the package). The detailed explanation of the ideas and principles behind the _Reactive Message Passing_ can be found in PhD dissertation of _Dmitry Bagaev_ titled [__Reactive Probabilistic Programming for Scalable Bayesian Inference__](https://pure.tue.nl/ws/portalfiles/portal/313860204/20231219_Bagaev_hf.pdf) ([link2](https://research.tue.nl/nl/publications/reactive-probabilistic-programming-for-scalable-bayesian-inferenc), [link3](https://github.com/bvdmitri/phdthesis)).
-
-## [Examples and tutorials](@id index-examples)
-
-The `ReactiveMP.jl` package is intended for advanced users with a deep understanding of message passing principles. 
-Accessible tutorials and examples are available in the [RxInfer documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
-
-## Table of Contents
-
-```@contents
-Pages = [
-  "concepts/factor-graphs.md",
-  "concepts/message-passing.md",
-  "concepts/reactive-programming.md",
-  "concepts/inference-lifecycle.md",
-  "rules/defining-nodes-and-rules.md",
-  "rules/algorithms-and-dependencies.md",
-  "rules/testing-rules.md",
-  "lib/nodes.md",
-  "lib/variables.md",
-  "lib/message.md",
-  "lib/marginal.md",
-  "lib/callbacks.md",
-  "lib/stream-postprocessors.md",
-  "lib/score.md",
-  "custom/custom-functional-form.md",
-  "lib/helpers.md",
-  "lib/logscale.md",
-  "lib/annotations.md",
-  "lib/annotations/input_arguments.md",
-  "packages/standard.md",
-  "packages/approximations.md",
-  "packages/delta.md",
-  "packages/gaussian-coupling.md",
-  "packages/probit.md",
-  "packages/gcv.md",
-  "packages/softdot.md",
-  "packages/autoregressive.md",
-  "packages/continuous-transition.md",
-  "packages/polya.md",
-  "packages/bifm.md",
-  "packages/flow.md",
-  "packages/discrete-transition.md",
-  "migration-guides/v6-to-v7.md",
-  "migration-guides/v5-to-v6.md",
-  "extra/contributing.md",
-  "extra/methods.md",
-]
-Depth = 2
-```
-
-## Index
-
-```@index
-```
+- [Getting started](@ref getting-started) builds and runs a small model by hand, from the
+  variables to the free energy.
+- **Concepts**: [factor graphs](@ref concepts-factor-graphs),
+  [message passing](@ref concepts-message-passing), and the
+  [inference lifecycle](@ref concepts-inference-lifecycle) every run goes through.
+- **The engine**, in the order a graph is built: [variables](@ref lib-variables),
+  [factor nodes](@ref lib-node), [activation options](@ref lib-activation-options),
+  [messages](@ref lib-message), [marginals](@ref lib-marginal), [log scales](@ref lib-logscale),
+  [form constraints](@ref custom-functional-form) and the [free energy](@ref lib-score).
+- **Extension points**: [callbacks](@ref lib-callbacks), which observe the engine,
+  [stream postprocessors](@ref lib-stream-postprocessors), which transform its streams, and
+  [annotations](@ref lib-annotations), which carry metadata on messages.
+- [The ecosystem](@ref ecosystem) lists the rule packages, each with a site of its own.
+- The [migration guides](@ref migration-v6-to-v7), [contributing](@ref contributing), and the
+  [internals](@ref internals) a contributor needs.

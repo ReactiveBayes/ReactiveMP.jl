@@ -59,47 +59,22 @@ accumulates here rather than in the rules.
 
 The normalised distribution a rule returns does not reveal its log scale: `Beta(2, 1)` looks the
 same whether or not a constant was divided out to get it. So a rule states it, with the
-`logscale` keyword of [`@define_message_update_rule`](@ref), in one of four forms.
-
-- **A constant**, when the rule's constant does not depend on its inputs:
-
-  ```julia
-  @define_message_update_rule(
-      node = NormalMeanVariance, target = :out,
-      args = (m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
-      logscale = 0,
-      body = (args) -> NormalMeanVariance(mean(args.m[:μ]), var(args.m[:μ]) + mean(args.m[:v])),
-  )
-  ```
-
-  Zero is the common case: the convolution of Gaussians integrates to one, and a stochastic
-  node's message towards `out` from point-mass inputs is its own normalised density. It is a
-  fact about the rule, not a safe default. A Bernoulli node with its output observed at 1 sends
-  ``p \mapsto p`` towards `p`, which integrates to ``\tfrac{1}{2}`` over ``[0, 1]``: the rule
-  returns `Beta(2, 1)` and declares `logscale = loghalf`. An `Irrational` constant, or an
-  integer, takes the precision of whatever it is added to, so a `Float32` model stays `Float32`.
-
-- **A function of the inputs**, over the same slots as the body (`algo`, `ctx`, `args`):
-
-  ```julia
-  logscale = (args) -> -length(mean(args.m[:out])) * log(abs(mean(args.m[:A]))),
-  ```
-
-- **From the body**, `logscale = from_body`, when the constant shares its work with the result:
-  the body returns [`with_logscale`](@ref)`(result, logscale)`, and whoever runs the rule unwraps
-  it.
-
-- **Nothing**, when the rule omits the keyword: its message's log scale is an
-  [`UndefinedLogScale`](@ref) naming the rule. Every variational rule is such a rule.
-
-A rule that needs the log scales its inputs arrived with declares `reads_logscale = true` and
-reads them as `args.logscale.m[:out]`, keyed like `args.m`. `require_logscale` turns an undefined
-one into an error that says why; the `Mixture` rules do this.
+`logscale` keyword of
+[`@define_message_update_rule`](@extref MessagePassingRulesBase.@define_message_update_rule): a
+constant, such as `logscale = 0` for a convolution of Gaussians; a function of the inputs; or
+[`from_body`](@extref MessagePassingRulesBase.from_body), the body returning
+[`with_logscale`](@extref MessagePassingRulesBase.with_logscale)`(result, logscale)`. A rule that
+omits it has an [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) naming the
+rule: every variational rule is such a rule. A rule that needs the log scales its inputs arrived
+with declares `reads_logscale = true` and reads them as `args.logscale.m[:out]`;
+[`require_logscale`](@extref MessagePassingRulesBase.require_logscale) turns an undefined one into
+an error that says why, as the `Mixture` rules do. How rules declare and test their log scales is
+the base package's subject, and the test tools'.
 
 ## What the engine does
 
 Log scales are tracked when nodes are activated with `logscales = true`
-(`FactorNodeActivationOptions`; RxInfer's `infer(...; logscales = true)`). Then:
+([`ReactiveMP.FactorNodeActivationOptions`](@ref); RxInfer's `infer(...; logscales = true)`). Then:
 
 - every message carries the log scale its rule declares, and a message a rule fallback computed
   carries an undefined one;
@@ -108,8 +83,10 @@ Log scales are tracked when nodes are activated with `logscales = true`
 - a product combines the log scales as above. An undefined side propagates, keeping its reason;
   a pair of distributions with no `compute_logscale` gives an undefined log scale; so does a
   form constraint that changes the product, rather than returning it as it is. A `missing` side leaves the other side's;
-- a variable's marginal carries the log scale of the product it was formed from, read with
-  [`getlogscale`](@ref).
+- a random variable's marginal carries the log scale of the product it was formed from, read
+  with [`getlogscale`](@ref getlogscale(::Marginal));
+- an initial marginal, set with [`ReactiveMP.set_initial_marginal!`](@ref), and a factor node's
+  joint marginal carry none: reading theirs is an error, as where log scales are not tracked.
 
 Nothing errors because a log scale is undefined, except a rule or a user that asks for its value.
 Without `logscales = true`, messages carry `nothing`, nothing is computed, and a rule declared
@@ -118,27 +95,13 @@ with `reads_logscale = true` is an error that names the option.
 In a graph with loops, or where variational and belief-propagation messages meet, the log scale
 of a marginal is no longer the evidence, even where it is defined.
 
-## Testing a rule's log scale
-
-A table case states the expected log scale with `ExpectedWithLogScale(value, logscale)`, and the
-log scales its inputs arrived with as `logscale = (...)` among its inputs. The table also checks
-that a computed log scale follows the inputs' precision. `@verify_message_update_rule` checks the
-declared log scale against the node's definition, ``\log \int f \prod_i \mu_i``, by quadrature.
-
 ## API
 
-```@docs
-ReactiveMP.getlogscale
-MessagePassingRulesBase.UndefinedLogScale
-MessagePassingRulesBase.UndefinedLogScaleError
-MessagePassingRulesBase.require_logscale
-MessagePassingRulesBase.isdefined_logscale
-MessagePassingRulesBase.with_logscale
-MessagePassingRulesBase.WithLogScale
-MessagePassingRulesBase.from_body
-MessagePassingRulesBase.FromBody
-MessagePassingRulesBase.RuleLogScales
-```
+A message's log scale is read with [`getlogscale`](@ref getlogscale(::Message)), and a marginal's
+with [`getlogscale`](@ref getlogscale(::Marginal)); both throw where log scales are not tracked.
+An undefined log scale is an
+[`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale), and
+[`isdefined_logscale`](@extref MessagePassingRulesBase.isdefined_logscale) tells the two apart.
 
 ## References
 

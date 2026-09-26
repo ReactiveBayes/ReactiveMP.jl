@@ -1,125 +1,79 @@
 """
-    AbstractStreamPostprocessor
+    ReactiveMP.AbstractStreamPostprocessor
 
-Abstract supertype for **stream postprocessors** — composable transformations
-applied to the reactive observables produced during graph activation.
+The supertype of stream postprocessors: transformations of the streams the engine builds, each
+a Rocket.jl observable returned with the same element type, applied without changing what the
+streams compute. A postprocessor implements one method per kind of stream it applies to:
 
-A stream postprocessor wraps a Rocket.jl observable and returns a new observable
-of the same element type. The same postprocessor can be applied to three
-different kinds of streams produced by the inference engine, each with its own
-entry point:
+- [`ReactiveMP.postprocess_stream_of_outbound_messages`](@ref), for a factor node's outbound
+  messages and the streams of a random variable's [`ReactiveMP.EqualityChain`](@ref);
+- [`ReactiveMP.postprocess_stream_of_marginals`](@ref), for a random variable's marginal and a
+  factor node's joint marginals;
+- [`ReactiveMP.postprocess_stream_of_scores`](@ref), for the free-energy contributions a caller of
+  [`score`](@ref) asks for.
 
-- [`ReactiveMP.postprocess_stream_of_outbound_messages`](@ref) — the stream of
-  outbound [`Message`](@ref)s leaving a factor node interface (or a leg of an
-  [`ReactiveMP.EqualityChain`](@ref)).
-- [`ReactiveMP.postprocess_stream_of_marginals`](@ref) — the stream of
-  [`Marginal`](@ref)s emitted by a [`RandomVariable`](@ref) or by the local
-  cluster of a factor node.
-- [`ReactiveMP.postprocess_stream_of_scores`](@ref) — the stream of free-energy
-  contributions.
+A postprocessor is given at activation, as the `postprocessor` of
+[`ReactiveMP.FactorNodeActivationOptions`](@ref) and the `stream_postprocessor` of
+[`RandomVariableActivationOptions`](@ref), and to [`score`](@ref) directly;
+[`bethe_free_energy`](@ref) applies none. `nothing` is no postprocessor.
 
-Stream postprocessors are attached to an inference run via
-[`ReactiveMP.FactorNodeActivationOptions`](@ref) and
-[`ReactiveMP.RandomVariableActivationOptions`](@ref). Multiple postprocessors
-can be chained with [`ReactiveMP.CompositeStreamPostprocessor`](@ref).
-
-# Built-in implementations
-
-- [`ReactiveMP.ScheduleOnStreamPostprocessor`](@ref) — redirects the
-  computation onto a custom Rocket.jl scheduler (e.g. `PendingScheduler`,
-  `AsyncScheduler`).
-- [`ReactiveMP.CompositeStreamPostprocessor`](@ref) — applies a sequence of
-  postprocessors in order.
-
-See also: [`ReactiveMP.postprocess_stream_of_outbound_messages`](@ref),
-[`ReactiveMP.postprocess_stream_of_marginals`](@ref),
-[`ReactiveMP.postprocess_stream_of_scores`](@ref).
+The postprocessors defined here are [`ReactiveMP.ScheduleOnStreamPostprocessor`](@ref) and
+[`ReactiveMP.CompositeStreamPostprocessor`](@ref).
 """
 abstract type AbstractStreamPostprocessor end
 
 """
-    postprocess_stream_of_outbound_messages(postprocessor, stream)
+    ReactiveMP.postprocess_stream_of_outbound_messages(postprocessor, stream)
 
-Apply `postprocessor` to a stream of outbound [`Message`](@ref)s and return the
-transformed stream. Called by [`ReactiveMP.activate!`](@ref) on every outbound
-message stream produced by a factor node interface.
-
-The default fallback for `::Nothing` returns `stream` unchanged. Subtypes of
-[`ReactiveMP.AbstractStreamPostprocessor`](@ref) may override this method to
-e.g. redirect emissions to a Rocket.jl scheduler.
+Apply `postprocessor` to a stream of outbound messages and return the new stream. Activation
+calls it on every outbound message stream of a factor node, and on the streams of a random
+variable's [`ReactiveMP.EqualityChain`](@ref). For `nothing` it returns `stream` as it is.
 """
 function postprocess_stream_of_outbound_messages end
 
 """
-    postprocess_stream_of_marginals(postprocessor, stream)
+    ReactiveMP.postprocess_stream_of_marginals(postprocessor, stream)
 
-Apply `postprocessor` to a stream of [`Marginal`](@ref)s and return the
-transformed stream. Called by [`ReactiveMP.activate!`](@ref) on every marginal
-stream produced for a [`RandomVariable`](@ref) or for a local cluster of a
-factor node.
-
-The default fallback for `::Nothing` returns `stream` unchanged. Subtypes of
-[`ReactiveMP.AbstractStreamPostprocessor`](@ref) may override this method.
+Apply `postprocessor` to a stream of [`Marginal`](@ref)s and return the new stream. Activation
+calls it on the marginal stream of a random variable and on every joint marginal stream of a
+factor node. For `nothing` it returns `stream` as it is.
 """
 function postprocess_stream_of_marginals end
 
 """
-    postprocess_stream_of_scores(postprocessor, stream)
+    ReactiveMP.postprocess_stream_of_scores(postprocessor, stream)
 
-Apply `postprocessor` to a stream of free-energy score contributions and return
-the transformed stream. 
-
-The default fallback for `::Nothing` returns `stream` unchanged. Subtypes of
-[`ReactiveMP.AbstractStreamPostprocessor`](@ref) may override this method.
+Apply `postprocessor` to a stream of free-energy contributions and return the new stream.
+[`score`](@ref) calls it on the stream it builds, with the postprocessor it is given. For
+`nothing` it returns `stream` as it is.
 """
 function postprocess_stream_of_scores end
 
-"""
-    postprocess_stream_of_outbound_messages(::Nothing, stream) = stream
-
-Pass-through fallback: when no stream postprocessor is configured, outbound
-message streams are returned unchanged.
-"""
 postprocess_stream_of_outbound_messages(::Nothing, stream) = stream
 
-"""
-    postprocess_stream_of_marginals(::Nothing, stream) = stream
-
-Pass-through fallback: when no stream postprocessor is configured, marginal
-streams are returned unchanged.
-"""
 postprocess_stream_of_marginals(::Nothing, stream) = stream
 
-"""
-    postprocess_stream_of_scores(::Nothing, stream) = stream
-
-Pass-through fallback: when no stream postprocessor is configured, score
-streams are returned unchanged.
-"""
 postprocess_stream_of_scores(::Nothing, stream) = stream
 
 """
-    CompositeStreamPostprocessor{T} <: AbstractStreamPostprocessor
+    ReactiveMP.CompositeStreamPostprocessor(stages)
 
-A [`ReactiveMP.AbstractStreamPostprocessor`](@ref) that applies a sequence of
-inner postprocessors in order. The output of stage `i` is fed as the input of
-stage `i + 1`, for each of the three stream kinds independently.
+A stream postprocessor that applies several in order, the output of each stage the input of the
+next, for each kind of stream. Every stage implements the kinds of stream the composite is
+applied to.
 
 # Fields
-- `stages::T` — a tuple (or any iterable) of postprocessors to apply in order.
 
-# Example
+- `stages`: the postprocessors, a tuple or any other iterable.
+
+# Examples
 
 ```julia
-composite = CompositeStreamPostprocessor((
-    ScheduleOnStreamPostprocessor(PendingScheduler()),
-    MyCustomPostprocessor(),
+postprocessor = ReactiveMP.CompositeStreamPostprocessor((
+    ReactiveMP.ScheduleOnStreamPostprocessor(PendingScheduler()),
+    MyStreamPostprocessor(),
 ))
 ```
-
-See also: [`ReactiveMP.postprocess_stream_of_outbound_messages`](@ref),
-[`ReactiveMP.postprocess_stream_of_marginals`](@ref),
-[`ReactiveMP.postprocess_stream_of_scores`](@ref).
 """
 struct CompositeStreamPostprocessor{T} <: AbstractStreamPostprocessor
     stages::T

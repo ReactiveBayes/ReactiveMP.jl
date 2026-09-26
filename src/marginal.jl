@@ -10,66 +10,43 @@ import Base: ==, ndims, precision, length, size, iterate
 # immutable one through the equality chain, and lighter everywhere
 # (`scripts/benchmark_message_representation.jl`).
 """
-    Marginal(data, is_clamped, is_initial[, annotations[, logscale]])
+    Marginal(data, is_clamped::Bool, is_initial::Bool)
+    Marginal(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict)
+    Marginal(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict, logscale)
 
-An implementation of a marginal in variational message passing framework.
+A marginal, the belief about a variable or a cluster of a factor node's variables: its data,
+usually a distribution, with the flags and the metadata the engine tracks for it.
 
 # Arguments
-- `data::D`: marginal always holds some data object associated with it, which is usually a probability distribution
-- `is_clamped::Bool`, specifies if this marginal was the result of constant computations (e.g. clamped constants)
-- `is_initial::Bool`, specifies if this marginal was used for initialization
-- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. input arguments). Defaults to an empty `AnnotationDict()`.
-- `logscale`: the log scale of the product of messages the marginal was formed from (see
-  [`getlogscale`](@ref)), or `nothing` where log scales are not tracked, the default.
 
-# Example
+- `data`: the marginal itself, usually a distribution; the joint of a cluster may be a
+  [`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster), and a marginal with a
+  `missing` input is `missing`;
+- `is_clamped`: whether the marginal comes from constants and observations alone. $(DOC_CLAMPED)
+- `is_initial`: whether the marginal was set before inference or computed from initial values
+  only. $(DOC_INITIAL)
+- `annotations`: the [`ReactiveMP.AnnotationDict`](@ref) of optional metadata, empty by default;
+- `logscale`: the log scale of the product of messages the marginal was formed from (see
+  [`getlogscale`](@ref)), or `nothing`, the default.
+
+$(DOC_STATISTICS)
+
+$(DOC_EQUALITY)
+
+# Examples
 
 ```jldoctest
-julia> distribution = Gamma(10.0, 2.0)
-Distributions.Gamma{Float64}(α=10.0, θ=2.0)
-
-julia> message = Marginal(distribution, false, true)
+julia> marginal = Marginal(Gamma(10.0, 2.0), false, true)
 Marginal(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
 
-julia> mean(message)
+julia> mean(marginal)
 20.0
 
-julia> getdata(message)
-Distributions.Gamma{Float64}(α=10.0, θ=2.0)
-
-julia> is_clamped(message)
-false
-
-julia> is_initial(message)
-true
+julia> is_clamped(marginal), is_initial(marginal)
+(false, true)
 ```
 
-# Equality
-
-`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations` or the log scale
-— matching [`Message`](@ref). Two marginals carrying the same distribution are equal even when
-their annotations differ:
-
-```jldoctest
-julia> using ReactiveMP, BayesBase, ExponentialFamily
-
-julia> a = Marginal(NormalMeanVariance(0.0, 1.0), false, false);
-
-julia> b = Marginal(NormalMeanVariance(0.0, 1.0), false, false);
-
-julia> ReactiveMP.annotate!(ReactiveMP.getannotations(b), :input_count, 2);
-
-julia> a == b
-true
-
-julia> ReactiveMP.getannotations(a) == ReactiveMP.getannotations(b)
-false
-
-```
-
-This is intentional: annotations are out-of-band metadata about *how* a marginal was computed,
-not part of the belief it represents. Compare `getannotations` explicitly when you need
-annotation-sensitive equality.
+See also [`Message`](@ref), [`as_marginal`](@ref).
 """
 mutable struct Marginal{D, L}
     const data::D
@@ -102,44 +79,49 @@ function Base.:(==)(left::Marginal, right::Marginal)
 end
 
 """
-    getdata(marginal::Marginal)    
+    getdata(marginal::Marginal)
 
-Returns `data` associated with the `marginal`.
+The data of `marginal`, usually a distribution, or `missing`.
 """
 getdata(marginal::Marginal) = marginal.data
 
 """
-    is_clamped(marginal::Marginal)
+    is_clamped(marginal::Marginal) -> Bool
 
-Checks if `marginal` is clamped or not.
-
-See also: [`is_initial`](@ref)
+Whether `marginal` comes from constants and observations alone. $(DOC_CLAMPED)
 """
 is_clamped(marginal::Marginal) = marginal.is_clamped
 
 """
-    is_initial(marginal::Marginal)
+    is_initial(marginal::Marginal) -> Bool
 
-Checks if `marginal` is initial or not.
-
-See also: [`is_clamped`](@ref)
+Whether `marginal` was set before inference or computed from initial values only. $(DOC_INITIAL)
 """
 is_initial(marginal::Marginal) = marginal.is_initial
 
 """
-    getannotations(marginal::Marginal)
+    getannotations(marginal::Marginal) -> AnnotationDict
 
-Returns the [`AnnotationDict`](@ref) associated with the `marginal`.
+The [`ReactiveMP.AnnotationDict`](@ref) of `marginal`: a variable's marginal keeps the annotations
+of the product it was formed from; the joint marginal of a cluster has none.
 """
 getannotations(marginal::Marginal) = marginal.annotations
 
 """
     getlogscale(marginal::Marginal)
 
-The log scale of `marginal`: that of the product of messages it was formed from. For a
-variable's posterior in a tree-shaped model inferred exactly by belief propagation, it is the
-log evidence of the data. A number or a `MessagePassingRulesBase.UndefinedLogScale` saying why
-it is not known; this throws where log scales are not tracked (`logscales = true`).
+The log scale of `marginal`: that of the product of the messages a random variable formed it
+from, a number or an [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale)
+saying why it is not known. For a variable's marginal in a tree-shaped model inferred exactly by
+belief propagation, it is the log evidence of the data.
+
+A data variable's marginal, an observation, has log scale zero, and so does a constant's.
+
+# Throws
+
+- `ArgumentError` where the marginal carries no log scale: when log scales are not tracked, and
+  always for an initial marginal set with [`ReactiveMP.set_initial_marginal!`](@ref) and for the
+  joint marginal of a factor node's cluster, which carry none even with `logscales = true`.
 """
 getlogscale(marginal::Marginal) = tracked_logscale(marginal.logscale)
 
@@ -195,11 +177,13 @@ Distributions.mean(fn::Function, marginal::Marginal) =
     mean(fn, getdata(marginal))
 
 """
-    as_marginal(any)
+    as_marginal(message::Message) -> Marginal
+    as_marginal(marginal::Marginal) -> Marginal
 
-A function that converts an instance of `Message` to an instance of `Marginal`.
-For `Marginal` itself it returns the input unchanged.
-This is an internal function and is not supposed to be used outside of ReactiveMP package.
+A message as a [`Marginal`](@ref), with its flags, annotations and log scale, its data in its public
+type: an efficient working type such as `WishartFast` becomes the type users expect
+([`public_equivalent`](@extref MessagePassingRulesBase.public_equivalent)). A marginal is returned
+as it is. A variable forms its marginal from the product of its messages with it.
 """
 function as_marginal end
 
@@ -210,17 +194,17 @@ skip_initial() = filter(v -> !is_initial(v))
 ## Marginal observable
 
 """
-    ReactiveMP.MarginalObservable
+    MarginalObservable()
 
-A lazy, connectable reactive stream for [`Marginal`](@ref) values, used as the marginal stream of every variable in the factor graph.
+The stream of a variable's marginals, or of a factor node's joint marginal of a cluster. Every
+subscriber shares one upstream subscription, and the latest marginal is kept, so
+`Rocket.getrecent` returns it and a late subscriber receives it at once.
 
-Internally combines two Rocket.jl primitives:
-- a `RecentSubject{Marginal}` that caches the most recently emitted value, so `Rocket.getrecent` always returns the latest belief and late subscribers receive it immediately
-- a `LazyObservable{Marginal}` that is the actual subscription target — initially unconnected, and wired to an upstream source during graph activation via `ReactiveMP.connect!`
+The stream is lazy: activation connects it to its source. Before that,
+[`ReactiveMP.set_initial_marginal!`](@ref) can seed it with an initial marginal, which is what a
+rule reads before any marginal has been computed.
 
-`connect!(observable, source)` sets the lazy stream to `source |> multicast(subject) |> ref_count()`: all subscribers share one upstream subscription, and every emission is forwarded through the cached subject. Before the upstream is connected, [`ReactiveMP.set_initial_marginal!`](@ref) can push an initial belief directly into the subject to seed the graph before inference begins.
-
-See also: [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref), [`ReactiveMP.set_initial_marginal!`](@ref)
+See also [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref).
 """
 struct MarginalObservable <: Subscribable{Marginal}
     subject::Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
@@ -264,8 +248,21 @@ end
 """
     MarginalMapping
 
-A callable structure computing the joint marginal of a cluster of a factor node: it resolves
-the node's marginal rule for the cluster with `find_marginal_rule` and runs it.
+What computes the joint marginal of one cluster of a factor node, called with the latest
+messages and marginals the node's marginal rule depends on. A node builds one for each joint
+cluster at activation.
+
+A call returns a `missing` marginal, and runs no rule, when an input is `missing`. Otherwise it
+resolves the marginal rule with
+[`find_marginal_rule`](@extref MessagePassingRulesBase.find_marginal_rule) under the node's
+algorithm, checks it against the [`ReactiveMP.EngineDiagnostics`](@ref) and the services the node's
+context supplies ([`check_services`](@extref MessagePassingRulesBase.check_services)), and runs it.
+Where no rule matches, it throws a
+[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError): a rule fallback does
+not apply to a marginal.
+
+The marginal is clamped when every input is, and initial when it is not clamped and every input
+is clamped or initial. It carries no annotations and no log scale, and no callback is invoked.
 """
 struct MarginalMapping{F, T, N, M, A, R, G}
     target::T

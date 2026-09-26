@@ -5,10 +5,11 @@ export randomvar, RandomVariable, RandomVariableActivationOptions
 """
     RandomVariable <: AbstractVariable
 
-Represents a latent (unobserved) variable in the factor graph. Random variables collect incoming and outgoing messages
-from connected factor nodes and maintain a marginal belief. Use [`randomvar`](@ref) to create an instance.
+A latent variable, the quantity inference computes a posterior for. It has a stream of inbound
+messages per connected factor node, as many outbound ones once it is activated, and the stream of
+its marginal, the product of its inbound messages. Create one with [`randomvar`](@ref).
 
-See also: [`ReactiveMP.ConstVariable`](@ref), [`ReactiveMP.DataVariable`](@ref)
+See also [`ConstVariable`](@ref), [`DataVariable`](@ref).
 """
 mutable struct RandomVariable <: AbstractVariable
     input_messages::Vector{MessageObservable{AbstractMessage}}
@@ -18,9 +19,19 @@ mutable struct RandomVariable <: AbstractVariable
 end
 
 """
-    randomvar(; label = nothing)
+    randomvar(; label = nothing) -> RandomVariable
 
-Creates a new [`ReactiveMP.RandomVariable`](@ref) with an optional `label` for identification.
+Create a [`RandomVariable`](@ref), with no connections yet. `label` names it in the callback
+events and in error messages, and is any value.
+
+# Examples
+
+```jldoctest
+julia> x = randomvar(label = :x);
+
+julia> ReactiveMP.israndom(x), ReactiveMP.degree(x)
+(true, 0)
+```
 """
 function randomvar(; label = nothing)
     return RandomVariable(
@@ -31,12 +42,6 @@ function randomvar(; label = nothing)
     )
 end
 
-"""
-    ReactiveMP.degree(randomvar::RandomVariable)
-
-Returns the number of factor nodes connected to `randomvar`, equal to the length of its inbound message streams collection.
-See also [`ReactiveMP.degree`](@ref).
-"""
 degree(randomvar::RandomVariable) = length(randomvar.input_messages)
 
 israndom(::RandomVariable) = true
@@ -70,14 +75,24 @@ function get_stream_of_outbound_messages(randomvar::RandomVariable, index::Int)
 end
 
 """
-    RandomVariableActivationOptions
+    RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation::MessageProductContext, prod_context_for_marginal_computation::MessageProductContext)
+    RandomVariableActivationOptions()
 
-Collects all configuration needed to activate a [`ReactiveMP.RandomVariable`](@ref). Passed to [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref).
+What activating a [`RandomVariable`](@ref) needs, given positionally. With no arguments, no
+postprocessor and two default [`ReactiveMP.MessageProductContext`](@ref)s.
 
-Fields:
-- `stream_postprocessor` — optional stream postprocessor applied to every created stream (see [`ReactiveMP.AbstractStreamPostprocessor`](@ref))
-- `prod_context_for_message_computation` — a [`ReactiveMP.MessageProductContext`](@ref) used when computing outbound messages (product of all-but-one inbound messages in the `EqualityChain`)
-- `prod_context_for_marginal_computation` — a [`ReactiveMP.MessageProductContext`](@ref) used when computing the marginal (product of all inbound messages)
+# Fields
+
+- `stream_postprocessor`: the stream postprocessor applied to the streams of the variable's
+  [`ReactiveMP.EqualityChain`](@ref) and to its marginal stream, or `nothing` (see
+  [`ReactiveMP.AbstractStreamPostprocessor`](@ref));
+- `prod_context_for_message_computation`: how an outbound message, the product of every inbound
+  message but the one on its own connection, is computed;
+- `prod_context_for_marginal_computation`: how the marginal, the product of every inbound message,
+  is computed. Its callbacks also receive [`ReactiveMP.BeforeMarginalComputationEvent`](@ref) and
+  [`ReactiveMP.AfterMarginalComputationEvent`](@ref).
+
+See also [`ReactiveMP.activate!`](@ref).
 """
 struct RandomVariableActivationOptions{
         S, F <: MessageProductContext, M <: MessageProductContext,
@@ -94,15 +109,23 @@ RandomVariableActivationOptions() = RandomVariableActivationOptions(
 """
     ReactiveMP.activate!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
 
-Wires all reactive streams of a [`ReactiveMP.RandomVariable`](@ref) into the factor graph.
+Wire the streams of a random variable, after every factor node it connects to has been created.
 
-Activation proceeds in two steps:
+1. **Outbound messages**: one stream per connection. With more than one connection, the
+   message to connection `i` is the product of the inbound messages on every other connection,
+   computed along a [`ReactiveMP.EqualityChain`](@ref), which reuses the partial products. With one
+   connection, the outbound message never emits: there is nothing to multiply.
+2. **Marginal**: the product of all inbound messages, formed with [`as_marginal`](@ref). It is
+   computed once every inbound message has a value, and again whenever each has updated since.
 
-1. **Outbound messages** — resizes `output_messages` to match the number of connected nodes (the [`ReactiveMP.degree`](@ref)). If degree > 1, an `EqualityChain` is constructed: for each edge i the outbound message stream emits the product of all inbound messages *except* the one arriving on edge i, implementing the standard sum-product or variational update. If degree == 1 (a leaf variable), the single outbound stream is connected to `never()` because there are no other messages to multiply.
+A product that is initial does not consume its inputs, so the next update of any of them
+computes it again.
 
-2. **Marginal** — `collectLatest` is called over all inbound [`ReactiveMP.MessageObservable`](@ref)s. It waits for all inbound messages to have emitted at least once, then emits the product as a new [`Marginal`](@ref) via [`ReactiveMP.set_stream_of_marginals!`](@ref), and re-emits only once all inbound messages have each updated again.
+# Throws
 
-See also: [`ReactiveMP.RandomVariableActivationOptions`](@ref), [`ReactiveMP.activate!(::DataVariable, ::DataVariableActivationOptions)`](@ref)
+- `ArgumentError` for a variable with no connections.
+
+See also [`RandomVariableActivationOptions`](@ref).
 """
 function activate!(
         randomvar::RandomVariable, options::RandomVariableActivationOptions

@@ -1,49 +1,80 @@
 """
     AbstractVariable
 
-An abstract supertype for all variable types in the factor graph.
-Concrete subtypes include:
-- [`ReactiveMP.RandomVariable`](@ref)
-- [`ReactiveMP.ConstVariable`](@ref)
-- [`ReactiveMP.DataVariable`](@ref).
+The supertype of the variables of a factor graph: [`RandomVariable`](@ref), a latent quantity;
+[`DataVariable`](@ref), an observed one; and [`ConstVariable`](@ref), a constant.
+
+A subtype implements:
+
+- [`ReactiveMP.degree`](@ref), the number of connections to factor nodes;
+- [`ReactiveMP.israndom`](@ref), [`ReactiveMP.isdata`](@ref) and [`ReactiveMP.isconst`](@ref);
+- [`ReactiveMP.create_new_stream_of_inbound_messages!`](@ref), which a node's interface calls
+  once per connection;
+- `ReactiveMP.get_stream_of_inbound_messages(variable, index)`, the stream of the messages the
+  node on connection `index` sends to the variable, and
+  `ReactiveMP.get_stream_of_outbound_messages(variable, index)`, that of the messages the variable
+  sends to it;
+- [`ReactiveMP.get_stream_of_marginals`](@ref) and [`ReactiveMP.set_stream_of_marginals!`](@ref),
+  [`ReactiveMP.get_stream_of_predictions`](@ref) and
+  [`ReactiveMP.set_stream_of_predictions!`](@ref);
+- `ReactiveMP.activate!(variable, options)`, when it has streams to wire.
+
+A variable has a `label` field, which the callback events show.
 """
 abstract type AbstractVariable end
 
 Base.broadcastable(v::AbstractVariable) = Ref(v)
 
+"""
+    ReactiveMP.activate!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
+    ReactiveMP.activate!(datavar::DataVariable, options::DataVariableActivationOptions)
+    ReactiveMP.activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
+
+Wire the lazy streams of a built graph into a live one. A graph is activated in order, once every
+node is created: its random and data variables first, then the initial marginals and messages,
+then its factor nodes, whose rules read the variables' streams. A constant needs no activation.
+After it, each new observation propagates through the graph.
+
+See each method: [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref),
+[`ReactiveMP.activate!(::DataVariable, ::DataVariableActivationOptions)`](@ref),
+[`ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)`](@ref).
+"""
+function activate! end
+
 # Helper functions
 
 """
-    ReactiveMP.degree(variable)
+    ReactiveMP.degree(variable::AbstractVariable) -> Int
 
-Returns the number of factor nodes connected to `variable`, i.e. the number of message streams.
+The number of factor node connections of `variable`: for a random or a data variable the number
+of its inbound message streams, for a constant the number of nodes connected to it.
 """
 function degree end
 
 """
-    ReactiveMP.israndom(variable)
-    ReactiveMP.israndom(variables::AbstractArray)
+    ReactiveMP.israndom(variable::AbstractVariable) -> Bool
+    ReactiveMP.israndom(variables::AbstractArray{<:AbstractVariable}) -> Bool
 
-Returns `true` if `variable` is a [`ReactiveMP.RandomVariable`](@ref).
-For an array, returns `true` only if all elements are random variables.
+Whether `variable` is a [`RandomVariable`](@ref); for an array, whether every element is. A
+node interface answers for its variable.
 """
 function israndom end
 
 """
-    ReactiveMP.isdata(variable)
-    ReactiveMP.isdata(variables::AbstractArray)
+    ReactiveMP.isdata(variable::AbstractVariable) -> Bool
+    ReactiveMP.isdata(variables::AbstractArray{<:AbstractVariable}) -> Bool
 
-Returns `true` if `variable` is a [`DataVariable`](@ref).
-For an array, returns `true` only if all elements are data variables.
+Whether `variable` is a [`DataVariable`](@ref); for an array, whether every element is. A node
+interface answers for its variable.
 """
 function isdata end
 
 """
-    ReactiveMP.isconst(variable)
-    ReactiveMP.isconst(variables::AbstractArray)
+    ReactiveMP.isconst(variable::AbstractVariable) -> Bool
+    ReactiveMP.isconst(variables::AbstractArray{<:AbstractVariable}) -> Bool
 
-Returns `true` if `variable` is a [`ReactiveMP.ConstVariable`](@ref).
-For an array, returns `true` only if all elements are const variables.
+Whether `variable` is a [`ConstVariable`](@ref); for an array, whether every element is. A node
+interface answers for its variable.
 """
 function isconst end
 
@@ -52,58 +83,91 @@ isdata(v::AbstractArray{<:AbstractVariable}) = all(isdata, v)
 isconst(v::AbstractArray{<:AbstractVariable}) = all(isconst, v)
 
 """
-    ReactiveMP.create_new_stream_of_inbound_messages!(variable)
+    ReactiveMP.create_new_stream_of_inbound_messages!(variable::AbstractVariable) -> (observable, index)
 
-Allocates a new per-connection [`ReactiveMP.MessageObservable`](@ref) for `variable` and registers it as an additional inbound message slot.
-Returns a tuple `(observable, index)` where `observable` is the newly created stream and `index` is its position in the variable's internal `input_messages` collection.
+Allocate the stream of the messages a new factor node connection sends to `variable`, and return
+it with the connection's index. A [`ReactiveMP.NodeInterface`](@ref) calls it when it is created,
+and keeps the stream as its outbound message stream: the node's outbound message is the
+variable's inbound one. The stream is a lazy [`ReactiveMP.MessageObservable`](@ref) until the node
+is activated.
 
-Called once per factor node connection at graph construction time. The returned `observable` is stored as the *outbound* message stream of the corresponding [`ReactiveMP.NodeInterface`](@ref) — it is the outbound message from the node's perspective and the inbound message from the variable's perspective. All streams are unconnected (lazy) until [`ReactiveMP.activate!`](@ref) is called.
-
-For [`ReactiveMP.ConstVariable`](@ref) the same shared observable is returned for every connection; no per-connection slot is allocated.
-
-See also: [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.NodeInterface`](@ref)
+A random and a data variable allocate a new stream per connection, numbered from 1. A constant
+counts the connection and returns its one shared stream, of the constant's message, with index
+`1` every time.
 """
 function create_new_stream_of_inbound_messages! end
 
 """
-    ReactiveMP.get_stream_of_predictions(variable)
+    ReactiveMP.get_stream_of_predictions(variable::AbstractVariable)
 
-Returns the prediction observable stream for `variable`.
-For [`DataVariable`](@ref), the prediction is the product of all inbound messages.
+The stream of the predictions of `variable`, a [`ReactiveMP.MarginalObservable`](@ref):
+
+- for a [`DataVariable`](@ref), the product of the messages the nodes send to it, what the
+  model predicts for the observation without it; built only when the variable is activated with
+  `prediction = true` (see [`DataVariableActivationOptions`](@ref)), and never emitting otherwise;
+- for a [`RandomVariable`](@ref) and a [`ConstVariable`](@ref), its marginal stream.
+
 See also [`ReactiveMP.set_stream_of_predictions!`](@ref).
 """
 function get_stream_of_predictions end
 
 """
-    ReactiveMP.set_stream_of_predictions!(variable, stream)
+    ReactiveMP.set_stream_of_predictions!(variable::DataVariable, stream)
 
-Connects `stream` as the prediction observable for `variable`.
+Connect the prediction stream of a data variable to `stream`, which activation does.
+
+# Throws
+
+- `ErrorException` for a [`RandomVariable`](@ref) and a [`ConstVariable`](@ref), whose
+  predictions are their marginals.
+
 See also [`ReactiveMP.get_stream_of_predictions`](@ref).
 """
 function set_stream_of_predictions! end
 
 """
-    ReactiveMP.get_stream_of_marginals(variable)
+    ReactiveMP.get_stream_of_marginals(variable::AbstractVariable) -> MarginalObservable
 
-Returns the marginal observable stream for `variable`.
-See also [`ReactiveMP.set_stream_of_marginals!`](@ref), [`ReactiveMP.set_initial_marginal!`](@ref).
+The stream of the marginals of `variable`, a [`ReactiveMP.MarginalObservable`](@ref): the
+posterior of a random variable, the latest observation of a data variable, the constant of a
+constant. Subscribe to it to receive every update:
+
+```julia
+subscribe!(ReactiveMP.get_stream_of_marginals(x), (q) -> println(mean(q)))
+```
+
+See also [`ReactiveMP.set_initial_marginal!`](@ref), [`ReactiveMP.set_stream_of_marginals!`](@ref).
 """
 function get_stream_of_marginals end
 
 """
-    ReactiveMP.set_stream_of_marginals!(variable, stream)
+    ReactiveMP.set_stream_of_marginals!(variable::AbstractVariable, stream)
 
-Connects `stream` as the marginal observable for `variable`.
+Connect the marginal stream of `variable` to `stream`, which activation does.
+
+# Throws
+
+- `ErrorException` for a [`ConstVariable`](@ref), whose marginal is fixed.
+
 See also [`ReactiveMP.get_stream_of_marginals`](@ref).
 """
 function set_stream_of_marginals! end
 
 """
-    ReactiveMP.set_initial_marginal!(variable, marginal)
-    ReactiveMP.set_initial_marginal!(variables::AbstractArray, marginals)
+    ReactiveMP.set_initial_marginal!(variable::AbstractVariable, marginal)
+    ReactiveMP.set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginals)
 
-Sets the initial marginal belief for `variable` by pushing `marginal` as an initial (non-clamped) value
-into [`ReactiveMP.get_stream_of_marginals`](@ref). For arrays, applies element-wise.
+Seed the marginal stream of `variable` with `marginal`, a distribution, as an initial
+[`Marginal`](@ref): what a rule that depends on it reads before inference computes one. For an
+array, a single `PointMass` or `Distribution` seeds every variable, and a collection seeds each
+variable with its element.
+
+The initial marginal carries no log scale, even where log scales are tracked.
+
+# Throws
+
+- `AssertionError` when an array of variables and a collection of marginals differ in length.
+
 See also [`ReactiveMP.set_initial_message!`](@ref).
 """
 function set_initial_marginal!(variable::AbstractVariable, marginal)
@@ -124,11 +188,25 @@ function _set_initial_marginal!(
 end
 
 """
-    ReactiveMP.set_initial_message!(variable, message)
-    ReactiveMP.set_initial_message!(variables::AbstractArray, messages)
+    ReactiveMP.set_initial_message!(variable::RandomVariable, message)
+    ReactiveMP.set_initial_message!(variables::AbstractArray{<:AbstractVariable}, messages)
 
-Sets the initial message for all interfaces of `variable` by pushing `message` into each outbound message stream.
-For arrays, applies element-wise. See also [`ReactiveMP.set_initial_marginal!`](@ref).
+Seed every message `variable` sends to its nodes with `message`, a distribution, as an initial
+[`Message`](@ref): what a rule that depends on it reads before inference computes one. For an
+array, a single `PointMass` or `Distribution` seeds every variable, and a collection seeds each
+variable with its element.
+
+A random variable's outbound message streams exist once it is activated, so this is called
+after [`ReactiveMP.activate!`](@ref) of the variable and before that of its nodes. The initial
+message's log scale is undefined.
+
+# Throws
+
+- `BoundsError` for a random variable not activated yet;
+- `MethodError` for a [`DataVariable`](@ref), whose outbound stream holds its observations;
+- `AssertionError` when an array of variables and a collection of messages differ in length.
+
+See also [`ReactiveMP.set_initial_marginal!`](@ref).
 """
 function set_initial_message!(variable::AbstractVariable, message)
     for i in 1:degree(variable)

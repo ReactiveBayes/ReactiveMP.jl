@@ -1,6 +1,6 @@
-# Contribution guidelines
+# [Contributing](@id contributing)
 
-We welcome all possible contributors. This page details the some of the guidelines that should be followed when contributing to this package.
+We welcome all contributors. This page gives the guidelines to follow when contributing to this package.
 
 ## Reporting bugs
 
@@ -10,7 +10,7 @@ We track bugs using [GitHub issues](https://github.com/reactivebayes/ReactiveMP.
 
 We welcome new feature proposals. However, before submitting a feature request, consider a few things:
 
-- Does the feature require changes in the core ReactiveMP.jl code? If it doesn't (for example, you would like to add a factor node for a particular application), you can add local extensions in your script/notebook or consider making a separate repository for your extensions.
+- Does the feature require changes in the engine? A new factor node and its rules do not: they live in a rule package, in your script or notebook, or in a repository of your own (see [The ecosystem](@ref ecosystem)).
 - If you would like to add an implementation of a feature that changes a lot in the core ReactiveMP.jl code, please open an issue on GitHub and describe your proposal first. This will allow us to discuss your proposal with you before you invest your time in implementing something that may be difficult to merge later on.
 
 ## Contributing code
@@ -28,7 +28,7 @@ The `dev` command clones ReactiveMP.jl to `~/.julia/dev/ReactiveMP`. All local
 changes to ReactiveMP code will be reflected in imported code.
 
 !!! note
-    It is also might be useful to install [Revise.jl](https://github.com/timholy/Revise.jl) package as it allows you to modify code and use the changes without restarting Julia.
+    [Revise.jl](https://github.com/timholy/Revise.jl) lets you modify the code and use the changes without restarting Julia.
 
 ### Committing code
 
@@ -46,8 +46,8 @@ describing your change (CI enforces all three).
 We use default [Julia style guide](https://docs.julialang.org/en/v1/manual/style-guide/index.html). We list here a few important points and our modifications to the Julia style guide:
 
 - Use 4 spaces for indentation
-- Type names use `UpperCamelCase`. For example: `AbstractFactorNode`, `RandomVariable`, etc..
-- Function names are `lowercase` with underscores, when necessary. For example: `activate!`, `randomvar`, etc..
+- Type names use `UpperCamelCase`, such as `AbstractFactorNode` and `RandomVariable`.
+- Function names are `lowercase`, as the Julia style guide has them: words run together where the name stays readable, `getdata`, `randomvar`, `factornode`, and are separated with underscores where it would not, `compute_product_of_messages`.
 - Variable names and function arguments use `snake_case`
 - The name of a method that modifies its argument(s) must end in `!`
 
@@ -108,9 +108,7 @@ make test
 
 ### Fixes to external libraries 
 
-If a bug has been discovered in an external dependencies of the `ReactiveMP.jl` it is the best to open an issue 
-directly in the dependency's github repository. You use can use the `fixes.jl` file for hot-fixes before 
-a new release of the broken dependency is available.
+A bug in a dependency of ReactiveMP.jl is best reported in the dependency's own repository. `src/fixes.jl` holds hot-fixes until a release of the dependency fixes it.
 
 ### Makefile
 

@@ -13,15 +13,15 @@ import LinearAlgebra: UniformScaling
 import Rocket: similar_typeof
 
 """
-    SkipIndexIterator
+    ReactiveMP.SkipIndexIterator{T, I} <: AbstractVector{T}
 
-A special type of iterator that simply iterates over internal `iterator`, but skips index `skip`.
+A view of a vector without the element at index `skip`, allocating nothing; create one with
+[`skipindex`](@ref).
 
-# Arguments
-- `iterator`: internal iterator
-- `skip`: index to skip (integer)
+# Fields
 
-See also: [`skipindex`](@ref)
+- `iterator`: the wrapped vector;
+- `skip`: the index left out.
 """
 struct SkipIndexIterator{T, I} <: AbstractVector{T}
     iterator::I
@@ -31,23 +31,27 @@ end
 skip(iter::SkipIndexIterator) = iter.skip
 
 """
-    skipindex(iterator, skip)
+    skipindex(iterator, skip::Int)
+    skipindex(iterator::NTuple, skip::Int) -> NTuple
 
-Creation operator for `SkipIndexIterator`.
+`iterator` without its element at index `skip`: a [`ReactiveMP.SkipIndexIterator`](@ref) view of a
+vector, or a new tuple for a tuple.
+
+# Throws
+
+- `BoundsError` when `skip` is not an index of `iterator`.
+
+# Examples
 
 ```jldoctest
-julia> s = ReactiveMP.skipindex(1:3, 2)
-2-element ReactiveMP.SkipIndexIterator{Int64, UnitRange{Int64}}:
- 1
- 3
-
-julia> collect(s)
+julia> collect(skipindex(1:3, 2))
 2-element Vector{Int64}:
  1
  3
-```
 
-See also: [`SkipIndexIterator`](@ref)
+julia> skipindex((:a, :b, :c), 1)
+(:b, :c)
+```
 """
 function skipindex(iterator::I, skip::Int) where {I}
     Base.checkbounds(Bool, iterator, skip) || throw(BoundsError(iterator, skip))

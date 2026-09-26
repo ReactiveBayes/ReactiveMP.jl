@@ -3,13 +3,30 @@ export getannotations
 import MessagePassingRulesBase: annotate!
 
 """
-    AnnotationDict()
-    AnnotationDict(other::AnnotationDict)
+    ReactiveMP.AnnotationDict()
+    ReactiveMP.AnnotationDict(other::AnnotationDict)
 
-A mutable dictionary that associates `Symbol` keys with arbitrary annotation values.
-Supports lazy initialization — no memory is allocated until the first write.
+The annotations of a message or a marginal: values keyed by `Symbol`, metadata about how it was
+computed. It allocates nothing until the first write. The second form is a shallow copy of
+`other`.
 
-The copy constructor creates an independent shallow copy of `other`.
+A rule reads and writes it through the base package's functions,
+[`getannotation`](@extref MessagePassingRulesBase.getannotation),
+[`hasannotation`](@extref MessagePassingRulesBase.hasannotation) and
+[`annotate!`](@extref MessagePassingRulesBase.annotate!); the engine's own are
+[`ReactiveMP.get_annotation`](@ref), [`ReactiveMP.has_annotation`](@ref) and
+[`ReactiveMP.annotate!`](@ref ReactiveMP.annotate!(::ReactiveMP.AnnotationDict, ::Symbol, ::Any)).
+
+# Examples
+
+```jldoctest
+julia> ann = ReactiveMP.AnnotationDict();
+
+julia> ReactiveMP.annotate!(ann, :count, 1);
+
+julia> ReactiveMP.has_annotation(ann, :count), ReactiveMP.get_annotation(ann, :count)
+(true, 1)
+```
 """
 mutable struct AnnotationDict
     data::Union{Nothing, Dict{Symbol, Any}}
@@ -56,18 +73,18 @@ function Base.:(==)(left::AnnotationDict, right::AnnotationDict)
 end
 
 """
-    has_annotation(ann::AnnotationDict, key::Symbol) -> Bool
+    ReactiveMP.has_annotation(ann::AnnotationDict, key::Symbol) -> Bool
 
-Return `true` if `ann` contains an entry for `key`, `false` otherwise.
+Whether `ann` holds a value under `key`.
 """
 function has_annotation(ann::AnnotationDict, key::Symbol)
     return !isnothing(ann.data) && haskey(ann.data::Dict{Symbol, Any}, key)
 end
 
 """
-    annotate!(ann::AnnotationDict, key::Symbol, value)
+    ReactiveMP.annotate!(ann::AnnotationDict, key::Symbol, value) -> Nothing
 
-Store `value` under `key` in `ann`. Always returns `nothing`.
+Store `value` under `key` in `ann`, replacing any value already there.
 """
 function annotate!(ann::AnnotationDict, key::Symbol, value)
     if isnothing(ann.data)
@@ -80,9 +97,14 @@ function annotate!(ann::AnnotationDict, key::Symbol, value)
 end
 
 """
-    get_annotation(ann::AnnotationDict, key::Symbol)
+    ReactiveMP.get_annotation(ann::AnnotationDict, key::Symbol)
+    ReactiveMP.get_annotation(ann::AnnotationDict, ::Type{T}, key::Symbol) -> T
 
-Return the value stored under `key`. Throws `KeyError` if `key` is absent.
+The value stored under `key` in `ann`; with a type `T`, converted to `T`.
+
+# Throws
+
+- `KeyError` when `ann` holds nothing under `key`.
 """
 function get_annotation(ann::AnnotationDict, key::Symbol)
     if isnothing(ann.data)
@@ -91,12 +113,6 @@ function get_annotation(ann::AnnotationDict, key::Symbol)
     return (ann.data::Dict{Symbol, Any})[key]
 end
 
-"""
-    get_annotation(ann::AnnotationDict, ::Type{T}, key::Symbol) where {T}
-
-Return the value stored under `key`, converted to type `T`. Throws `KeyError` if
-`key` is absent.
-"""
 function get_annotation(ann::AnnotationDict, ::Type{T}, key::Symbol) where {T}
     return convert(T, get_annotation(ann, key))::T
 end
@@ -108,50 +124,60 @@ MessagePassingRulesBase.getannotation(ann::AnnotationDict, key::Symbol, default)
     has_annotation(ann, key) ? get_annotation(ann, key) : default
 
 """
-    AbstractAnnotations
+    ReactiveMP.AbstractAnnotations
 
-Abstract base type for annotation processors. Subtypes define how annotations
-are written into messages after rule execution and merged during message products.
+The supertype of annotation processors, which write annotations on messages. A processor
+implements three hooks:
 
-See also: [`post_product_annotations!`](@ref), [`post_rule_annotations!`](@ref)
+- [`ReactiveMP.pre_rule_annotations!`](@ref), before a message rule runs;
+- [`ReactiveMP.post_rule_annotations!`](@ref), after it ran;
+- [`ReactiveMP.post_product_annotations!`](@ref), when two messages are multiplied, to merge their
+  annotations into the product's.
+
+Processors reach the rules through the activation option `annotations` of
+[`ReactiveMP.FactorNodeActivationOptions`](@ref), and the products through the `annotations` of a
+variable's [`ReactiveMP.MessageProductContext`](@ref): a processor is given to both. The built-in
+processor is [`InputArgumentsAnnotations`](@ref).
 """
 abstract type AbstractAnnotations end
 
 """
-    post_product_annotations!(processor::AbstractAnnotations, merged::AnnotationDict, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist)
+    ReactiveMP.post_product_annotations!(processor::AbstractAnnotations, merged::AnnotationDict, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist)
 
-Write annotations into `merged` based on `left_ann`, `right_ann`, and the distributions
-involved in the message product. Called once per processor inside
-[`compute_product_of_two_messages`](@ref).
+The hook of `processor` at a product of two messages: write into `merged`, the product's empty
+annotations, from the two messages' annotations and their distributions. Its return value is
+ignored.
 """
 function post_product_annotations! end
 
 """
-    pre_rule_annotations!(processor::AbstractAnnotations, ann::AnnotationDict, mapping, messages, marginals)
+    ReactiveMP.pre_rule_annotations!(processor::AbstractAnnotations, ann::AnnotationDict, mapping, messages, marginals)
 
-Write annotations into `ann` before a rule has executed. Called once per processor
-inside the `MessageMapping` callable, before the rule returns its result distribution.
+The hook of `processor` before a message rule runs: write into `ann`, the new message's
+annotations, from the [`ReactiveMP.MessageMapping`](@ref) and the rule's inbound messages and
+marginals. It runs for a `missing` message too. Its return value is ignored.
 """
 function pre_rule_annotations! end
 
 """
-    post_rule_annotations!(processor::AbstractAnnotations, ann::AnnotationDict, mapping, messages, marginals, result)
+    ReactiveMP.post_rule_annotations!(processor::AbstractAnnotations, ann::AnnotationDict, mapping, messages, marginals, result)
 
-Write annotations into `ann` after a rule has executed. Called once per processor
-inside the `MessageMapping` callable, after the rule returns its result distribution.
+The hook of `processor` after a message rule ran: write into `ann`, the new message's
+annotations, from the [`ReactiveMP.MessageMapping`](@ref), the rule's inputs and `result`, the
+message's data. It is skipped for a `missing` message, when no rule ran. Its return value is
+ignored.
 """
 function post_rule_annotations! end
 
 """
-    post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist) -> AnnotationDict
+    ReactiveMP.post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist) -> AnnotationDict
 
-Produce a merged `AnnotationDict` from the annotations of two messages being multiplied.
-Called inside [`compute_product_of_two_messages`](@ref).
-
-If `left_dist` is `missing` the right annotations are copied through unchanged, and vice versa.
-If both are `missing`, or if `processors` is `nothing`, an empty `AnnotationDict` is returned.
-Otherwise each processor in `processors` is called via the per-processor `post_product_annotations!`
-to populate the result.
+The annotations of the product of two messages, which
+[`ReactiveMP.compute_product_of_two_messages`](@ref) computes: a new
+[`ReactiveMP.AnnotationDict`](@ref) that each processor writes into with its own
+`post_product_annotations!`. When one side's distribution is `missing`, the product is the other
+side, and its annotations are that side's, copied, whatever the processors; when both are
+`missing`, or `processors` is `nothing`, they are empty.
 """
 function post_product_annotations!(
         processors,

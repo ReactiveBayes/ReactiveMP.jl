@@ -6,9 +6,16 @@ export InputArgumentsAnnotations,
 """
     RuleInputArgumentsRecord
 
-Stores the inputs and result of a single message update rule execution: the
-`MessageMapping`, the incoming messages tuple, the incoming marginals tuple, and
-the computed result distribution.
+What one message rule call received and returned, which [`InputArgumentsAnnotations`](@ref)
+records on its message.
+
+# Fields
+
+- `mapping`: the [`ReactiveMP.MessageMapping`](@ref), which holds the node, the target and the
+  algorithm;
+- `messages`: the inbound messages the rule read, a tuple, or `nothing`;
+- `marginals`: the marginals the rule read, a tuple, or `nothing`;
+- `result`: the message's data.
 """
 struct RuleInputArgumentsRecord
     mapping
@@ -20,34 +27,43 @@ end
 """
     ProductInputArgumentsRecord
 
-Stores the collection of [`RuleInputArgumentsRecord`](@ref) objects that were
-combined during one or more message products. Each element corresponds to one
-rule execution that contributed to the product.
+The [`RuleInputArgumentsRecord`](@ref)s of the messages a product was formed from, as a flat
+list, however deeply the products nest.
+
+# Fields
+
+- `mappings`: the records, a `Vector{RuleInputArgumentsRecord}`, in the order of the product.
 """
 struct ProductInputArgumentsRecord
     mappings::Vector{RuleInputArgumentsRecord}
 end
 
 """
-    InputArgumentsAnnotations <: AbstractAnnotations
+    InputArgumentsAnnotations()
 
-Annotation processor that records the input arguments and result of each
-message update rule execution and propagates them through message products.
+The annotation processor that records what each message rule call received and returned, and
+carries the record through the products of messages: a message's provenance, for debugging and
+for callbacks. After a rule runs, it stores a [`RuleInputArgumentsRecord`](@ref) under the key
+`:rule_input_arguments`; a product merges the two sides' records into a
+[`ProductInputArgumentsRecord`](@ref), or keeps the one side's that has one. Read the record with
+[`get_rule_input_arguments`](@ref).
 
-After a rule executes, stores a [`RuleInputArgumentsRecord`](@ref) under the
-`:rule_input_arguments` key of the annotation dict. During message products,
-merges the records from the two sides into a [`ProductInputArgumentsRecord`](@ref).
+It is given to the node's activation, `FactorNodeActivationOptions(; annotations =
+(InputArgumentsAnnotations(),))`, and to the variables' `MessageProductContext(; annotations =
+(InputArgumentsAnnotations(),))`, so that products carry the records on.
 """
 struct InputArgumentsAnnotations <: AbstractAnnotations end
 
 """
     get_rule_input_arguments(ann::AnnotationDict)
 
-Return the rule input arguments stored in `ann`. The value is a
-[`RuleInputArgumentsRecord`](@ref) when the message came directly from a single
-rule execution, or a [`ProductInputArgumentsRecord`](@ref) when it is the result
-of one or more message products. Throws `KeyError` if the annotation has not been
-set.
+The record [`InputArgumentsAnnotations`](@ref) stored in `ann`: a [`RuleInputArgumentsRecord`](@ref)
+for a message a rule computed, or a [`ProductInputArgumentsRecord`](@ref) for a product of such
+messages.
+
+# Throws
+
+- `KeyError` when `ann` holds no record.
 """
 get_rule_input_arguments(ann::AnnotationDict) =
     get_annotation(ann, :rule_input_arguments)

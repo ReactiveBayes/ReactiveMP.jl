@@ -1,27 +1,20 @@
 # [Factor nodes](@id lib-node)
 
-A factor node represents one local function of a factorised generative model. The engine
-creates a [`FactorNode`](@ref) for each factor of a model, connects it to its variables through
-interfaces, and, when the graph is activated, wires every outbound message to the update rule
-that computes it.
+A factor node is one local function of a factorised model. The engine creates a
+[`FactorNode`](@ref) for each factor, connects it to its variables through interfaces, and, when
+the graph is activated, wires every outbound message to the update rule that computes it.
 
-The engine does not define any node itself. A node is declared with `@define_factor_node` from
-`MessagePassingRulesBase`, and its rules with that package's rule macros; see
-[Defining nodes and rules](@ref rules-defining). The standard nodes are declared in
-`StandardMessagePassingRules` ([Standard rules](@ref packages-standard)).
+The engine defines no node. A node is declared with
+[`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node), and its rules with
+the rule macros of [`MessagePassingRulesBase`](https://reactivebayes.github.io/MessagePassingRulesBase.jl/dev/);
+the standard nodes are those of
+[`StandardMessagePassingRules`](https://reactivebayes.github.io/StandardMessagePassingRules.jl/dev/),
+and the others have packages of their own ([The ecosystem](@ref ecosystem)).
 
-```@docs
-FactorNode
-factornode
-functionalform
-getinterfaces
-ReactiveMP.FactorNodeLocalClusters
-ReactiveMP.FactorNodeLocalMarginal
-ReactiveMP.clusterkey
-```
+## [Creating a node](@id lib-node-create)
 
-A node is created from its functional form, the variables it connects, and a factorisation.
-The interfaces are `(name, variable)` pairs, or `((group, k), variable)` for the members of an
+A node is created from its node type, the variables it connects and a factorisation. The
+interfaces are `(name, variable)` pairs, or `((group, k), variable)` for the members of an
 interface group, and the factorisation is a tuple of clusters, each a tuple of those keys:
 
 ```julia
@@ -30,99 +23,80 @@ node = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, v)], ((:out, :�
 ```
 
 The engine puts interfaces and clusters in declaration order, whatever order they are given in.
-A joint cluster's local marginal is keyed by its member tuple, `(:out, :μ)`. A cluster may hold
-a whole group, keyed by its name, `(:in,)`, or some of its members, each keyed with its index,
-`(:out, (:in, 1))`.
+A joint cluster's local marginal is keyed by its member tuple, `(:out, :μ)`. A cluster may hold a
+whole group, keyed by its name, `(:in,)`, or some of its members, each keyed with its index,
+`(:out, (:in, 1))`. Without a factorisation, a node has one cluster over every interface, and its
+rules are those of belief propagation; with one cluster per interface, `((:out,), (:μ,), (:v,))`,
+those of mean-field variational message passing.
+
+```@docs
+FactorNode
+factornode
+functionalform
+getinterfaces
+ReactiveMP.FactorNodeLocalMarginal
+```
 
 ## [Interfaces](@id lib-node-interfaces)
 
 Every edge of a factor node, a connection to one variable, is a [`ReactiveMP.NodeInterface`](@ref).
-Creating it allocates a slot for the node's message in the variable's inbound messages: the
-interface's outbound message is the variable's inbound one. All streams are lazy until the graph
-is activated. The members of an interface group, such as the components of a mixture, are
-[`ReactiveMP.IndexedNodeInterface`](@ref)s, which add the member's index.
+Creating it allocates a slot for the node's messages in the variable's inbound messages: the
+interface's outbound message is the variable's inbound one, and the interface's inbound message
+the variable's outbound one. The members of an interface group, such as the components of a
+mixture, are [`ReactiveMP.IndexedNodeInterface`](@ref)s, which add the member's index.
 
 ```@docs
 ReactiveMP.NodeInterface
 ReactiveMP.IndexedNodeInterface
-ReactiveMP.get_stream_of_inbound_messages
-ReactiveMP.get_stream_of_outbound_messages
-ReactiveMP.set_stream_of_outbound_messages!
-ReactiveMP.tag
 ReactiveMP.name
 ReactiveMP.getvariable
+ReactiveMP.get_stream_of_outbound_messages
+ReactiveMP.get_stream_of_inbound_messages
+ReactiveMP.set_stream_of_outbound_messages!
+ReactiveMP.tag
 ```
 
 ## [Activation](@id lib-node-activation)
 
-Activation connects the lazy message and marginal streams into a live reactive network. For a
-factor node it is [`ReactiveMP.activate!`](@ref) with a [`ReactiveMP.FactorNodeActivationOptions`](@ref),
-which carries the algorithm the node's rules run under, a stream postprocessor, annotation
-processors and callbacks. For each interface, the engine finds the inputs its rule needs, from
-the node's declared dependencies or from the default scheme, and subscribes to them in
-declaration order, which is the update schedule. See
-[Algorithms and dependencies](@ref rules-algorithms) for how a node chooses its inputs.
+Activation connects the lazy message and marginal streams into a live network, after the
+node's variables are activated. For each interface on a random or a data variable, the engine
+finds the inputs its rule needs, from the dependencies the node's algorithm declares or from the
+default scheme, and subscribes to them in declaration order, which in variational message
+passing is the update schedule. What it runs with, the algorithm, callbacks, annotations,
+diagnostics, services, a rule fallback and log scales, is the node's
+[`ReactiveMP.FactorNodeActivationOptions`](@ref), described on
+[Activation options](@ref lib-activation-options).
 
 ```@docs
-ReactiveMP.FactorNodeActivationOptions
-ReactiveMP.node_context
-ReactiveMP.getalgorithm
 ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)
-ReactiveMP.default_dependencies
-ReactiveMP.declared_dependencies
-ReactiveMP.extended_default_dependencies
-ReactiveMP.rule_target
-ReactiveMP.input_label
-ReactiveMP.GroupMember
-ReactiveMP.GroupInputs
-ReactiveMP.input_names
 ```
 
-## [Diagnostics](@id lib-node-diagnostics)
-
-Three audits of the rules a node runs, all off by default, set with the activation option
-`diagnostics`: `check_everything_pure` stops at an impure rule, `check_everything_inplace` reports
-each rule with no in-place form once, and `checked_buffers` poisons the memory the engine recycles
-before each reuse, so a rule reading its scratch before writing it shows `NaN`. Each names the
-rule it objects to, by node, target, algorithm and the place it is defined. Purity is declared,
-not proved: the audit reads what the rule and its algorithm declare (see
-[`MessagePassingRulesBase.ispure`](@ref)).
-
-```julia
-activate!(node, FactorNodeActivationOptions(; diagnostics = EngineDiagnostics(check_everything_pure = true)))
-```
-
-```@docs
-ReactiveMP.EngineDiagnostics
-ReactiveMP.ImpureRuleError
-ReactiveMP.poison!
-```
+How a node's inputs are chosen and labelled is on the [Internals](@ref internals-dependencies)
+page.
 
 ## [Static inputs](@id lib-node-static-inputs)
 
 A deterministic node declared with `static_inputs = :fold`, such as the Delta node, folds the
-inputs whose values are known (constants and data) into its node function, so its rules only
-see the random ones. Such a node needs its function at creation, `factornode(f, …; nodefn = f)`.
+inputs whose values are known, constants and data, into its node function, so that its rules see
+only the random ones. Such a node needs its function at creation,
+`factornode(f, …; nodefn = f)`, and its rules reach it with
+[`getnodefn`](@extref MessagePassingRulesBase.getnodefn). See
+[`ReactiveMP.StaticFold`](@ref) on the [Internals](@ref internals-static-inputs) page.
+
+## [Node kinds](@id lib-node-types)
+
+Each factor node is either deterministic or stochastic. The kind decides how the node enters the
+free energy: a deterministic node has no average energy, and its clusters are always its output
+and the joint over its inputs.
 
 ```@docs
-ReactiveMP.StaticFold
-ReactiveMP.with_statics
-```
-
-## [Node types](@id lib-node-types)
-
-Each factor node is either deterministic or stochastic. The distinction decides how a node's
-contribution to the free energy is computed: a deterministic node's clusters are always its
-output and the joint over its inputs.
-
-```@docs
+sdtype
 isdeterministic
 isstochastic
-sdtype
 ```
 
 ```@setup lib-node-types
-using ReactiveMP, StandardMessagePassingRules, BayesBase, Distributions, ExponentialFamily
+using ReactiveMP, StandardMessagePassingRules, Distributions
 ```
 
 The `+` node is deterministic, and the `Bernoulli` node stochastic:
@@ -130,11 +104,3 @@ The `+` node is deterministic, and the `Bernoulli` node stochastic:
 ```@example lib-node-types
 isdeterministic(sdtype(+)), isstochastic(sdtype(Bernoulli))
 ```
-
-## [Stream postprocessors](@id lib-node-stream-postprocessors)
-
-Stream postprocessors are composable transformations of the streams activation creates:
-outbound messages, marginals and scores. They are given to a node through
-[`ReactiveMP.FactorNodeActivationOptions`](@ref) and to a random variable through
-[`ReactiveMP.RandomVariableActivationOptions`](@ref); see
-[Stream postprocessors](@ref lib-stream-postprocessors).

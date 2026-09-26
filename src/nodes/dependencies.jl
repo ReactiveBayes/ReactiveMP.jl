@@ -34,7 +34,7 @@ end
 """
     ReactiveMP.input_label(factornode, interface)
 
-What a rule knows an input of `interface` by: its name, or a [`ReactiveMP.GroupMember`](@ref)
+What a rule knows an input on `interface` by: its name, or a [`ReactiveMP.GroupMember`](@ref)
 for a member of a group.
 """
 input_label(factornode, interface::NodeInterface) = name(interface)
@@ -52,13 +52,16 @@ function cluster_label(factornode, clusters, cindex)
 end
 
 """
-    ReactiveMP.default_dependencies(factornode, iindex)
+    ReactiveMP.default_dependencies(factornode, iindex::Int) -> ((labels, interfaces), (labels, sources))
 
 The engine's default scheme, a regular variational message passing scheme driven by the
-factorisation: the message out of interface `iindex` is computed from the inbound messages of
-the other interfaces in its cluster, and the marginals of every other cluster. For a
-deterministic node it is the inbound messages of every other interface. Returns the labelled
-message and marginal dependencies, `(labels, sources)` each.
+factorisation: the message out of interface `iindex` is computed from the inbound messages on
+the other interfaces of its cluster, and the marginals of every other cluster. For a
+deterministic node it is the inbound messages on every other interface, and no marginal.
+
+Returns the labelled message dependencies and marginal dependencies, each as
+`(labels, sources)`: labels from [`ReactiveMP.input_label`](@ref), or a cluster's key, and the
+interfaces or local marginals they come from.
 """
 function default_dependencies(factornode, iindex)
     # A deterministic node's clusters only say what free energy counts; belief propagation
@@ -79,13 +82,19 @@ function default_dependencies(factornode, iindex)
 end
 
 """
-    ReactiveMP.declared_dependencies(factornode, spec, interface)
+    ReactiveMP.declared_dependencies(factornode, spec::DependenciesSpec, interface) -> ((labels, interfaces), (labels, sources))
 
 What the message out of `interface` is computed from under a declared
-`MessagePassingRulesBase.DependenciesSpec`, in the order the declaration lists them: a message
-is an interface's inbound message, and a marginal an interface's variable marginal or, for a
-tuple key, the local marginal of that cluster. A group dependency selects members relative to
-the target's own index. Returns `(labels, sources)` for the messages and for the marginals.
+[`DependenciesSpec`](@extref MessagePassingRulesBase.DependenciesSpec), in the order the
+declaration lists them: `m[:x]` is an interface's inbound message, `q[:x]` its variable's
+marginal, and `q[:a, :b]` the local marginal of that cluster. A group dependency selects members
+relative to the target's own index. A target declared with `default` is
+[`ReactiveMP.extended_default_dependencies`](@ref).
+
+# Throws
+
+- `ArgumentError` when the declaration has no dependencies for the target, asks for the message
+  of a cluster, or names a cluster the factorisation does not have.
 """
 function declared_dependencies(factornode, spec::MessagePassingRulesBase.DependenciesSpec, interface)
     target = rule_target(interface)
@@ -118,9 +127,10 @@ end
 """
     ReactiveMP.extended_default_dependencies(factornode, interface, inputs)
 
-A target declared with `default`: the default scheme's inputs, and each of `inputs`, a single
-interface's message or marginal, placed in interface order. A marginal is the variable's own and is never
-scored; an input the default scheme has already is not added twice.
+The dependencies of a target declared with `default`, `:a => (default, q[:a])`: the default
+scheme's inputs, and each of `inputs`, a single interface's message or marginal, placed in
+interface order. A marginal added this way is the variable's own, and an input the default
+scheme has already is not added twice.
 """
 function extended_default_dependencies(factornode, interface, inputs)
     iindex = findfirst(i -> i === interface, getinterfaces(factornode))
@@ -206,8 +216,10 @@ end
 """
     ReactiveMP.rule_target(interface)
 
-The target a message rule computes for `interface`: `Target{:out}()`, or
-`IndexedTarget{:m}(k)` for member `k` of a group.
+The target a message rule computes for `interface`:
+[`Target`](@extref MessagePassingRulesBase.Target)`{:out}()`, or
+[`IndexedTarget`](@extref MessagePassingRulesBase.IndexedTarget)`{:m}(k)` for member `k` of the
+group `m`.
 """
 rule_target(interface::NodeInterface) = MessagePassingRulesBase.Target{name(interface)}()
 rule_target(interface::IndexedNodeInterface) = MessagePassingRulesBase.IndexedTarget{name(interface)}(index(interface))

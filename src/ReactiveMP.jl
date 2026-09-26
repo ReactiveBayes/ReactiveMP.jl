@@ -1,11 +1,44 @@
 """
     ReactiveMP
 
-A reactive message passing engine for Bayesian inference on factor graphs. Messages and
-marginals are streams: a factor node computes each outbound message with the update rule that
-`MessagePassingRulesBase` finds for it, from the latest messages and marginals it depends on,
-and a variable combines its inbound messages into its marginal. Rules come from the rule
-packages, which depend on the base package only, never on the engine.
+A reactive message passing engine for Bayesian inference on factor graphs. A graph is built from
+variables ([`randomvar`](@ref), [`datavar`](@ref), [`constvar`](@ref)) and factor nodes
+([`factornode`](@ref)), and activated: messages and marginals are then streams, and each new
+observation ([`new_observation!`](@ref)) propagates through them. A factor node computes each
+outbound message with the update rule
+[`MessagePassingRulesBase`](https://reactivebayes.github.io/MessagePassingRulesBase.jl/dev/) finds for it,
+from the latest messages and marginals it depends on; a variable multiplies its inbound messages
+into its marginal; [`bethe_free_energy`](@ref) is the stream of the variational objective.
+
+The engine defines no node and no rule: they come from the rule packages, such as
+[`StandardMessagePassingRules`](https://reactivebayes.github.io/StandardMessagePassingRules.jl/dev/),
+which depend on the base package only. Most models are written with RxInfer, which builds and
+runs the graph on this engine.
+
+# Examples
+
+A normal prior on `x` and one observation `y ~ N(x, 1)`:
+
+```jldoctest; setup = :(using StandardMessagePassingRules, Rocket)
+julia> import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals
+
+julia> x, y = randomvar(), datavar();
+
+julia> prior = factornode(NormalMeanVariance, [(:out, x), (:μ, constvar(0.0)), (:v, constvar(10.0))]);
+
+julia> likelihood = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, constvar(1.0))]);
+
+julia> activate!(x, RandomVariableActivationOptions()); activate!(y, DataVariableActivationOptions());
+
+julia> foreach(node -> activate!(node, FactorNodeActivationOptions()), (prior, likelihood));
+
+julia> posterior = Ref{Any}(); subscribe!(get_stream_of_marginals(x), (q) -> posterior[] = q);
+
+julia> new_observation!(y, 2.0)
+
+julia> mean(posterior[]) ≈ 20 / 11 && var(posterior[]) ≈ 10 / 11
+true
+```
 """
 module ReactiveMP
 
@@ -13,12 +46,33 @@ module ReactiveMP
 using TinyHugeNumbers, LinearAlgebra
 using BayesBase
 using UUIDs
+using Compat: @compat
 
 import MessagePassingRulesBase
 
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
+
+# The engine's interface that RxInfer and extensions build on, which the documentation tells
+# them to use: public, not exported. `@compat` makes the declaration parse on Julia 1.10.
+@compat public activate!, FactorNodeActivationOptions, MessageProductContext, EngineDiagnostics,
+    node_context, set_initial_marginal!, set_initial_message!, get_stream_of_marginals,
+    get_stream_of_predictions, Event, event_name, invoke_callback, handle_event,
+    merge_callbacks, generate_span_id, AnnotationDict, annotate!, get_annotation,
+    has_annotation, AbstractAnnotations, pre_rule_annotations!, post_rule_annotations!,
+    post_product_annotations!, AbstractVariable, degree, israndom, isdata, isconst,
+    preprocess_form_constraints, WrappedFormConstraint, prepare_context, MessageMapping,
+    MarginalMapping, rule_arguments, compute_product_of_messages,
+    compute_product_of_two_messages, MessageObservable, MarginalObservable,
+    get_stream_of_inbound_messages, get_stream_of_outbound_messages, getvariable, getinterface,
+    name, getlocalclusters, AbstractStreamPostprocessor,
+    postprocess_stream_of_outbound_messages, postprocess_stream_of_marginals,
+    postprocess_stream_of_scores, ScheduleOnStreamPostprocessor,
+    AfterFormConstraintAppliedEvent, AfterMarginalComputationEvent, AfterMessageRuleCallEvent,
+    AfterProductOfMessagesEvent, AfterProductOfTwoMessagesEvent,
+    BeforeFormConstraintAppliedEvent, BeforeMarginalComputationEvent,
+    BeforeMessageRuleCallEvent, BeforeProductOfMessagesEvent, BeforeProductOfTwoMessagesEvent
 
 include("fixes.jl")
 include("helpers/macrohelpers.jl")

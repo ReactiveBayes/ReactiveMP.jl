@@ -4,10 +4,11 @@
 # rule and is never shared with another.
 
 """
-    ReactiveMP.ScratchSlot
+    ReactiveMP.ScratchSlot()
 
-Where a [`ReactiveMP.MessageMapping`](@ref) or `MarginalMapping` keeps the scratch of the rule it
-runs: the rule it was built for, and the scratch itself.
+Where a [`ReactiveMP.MessageMapping`](@ref) or a [`ReactiveMP.MarginalMapping`](@ref) keeps the
+scratch of the rule it runs: the rule it was built for, and the scratch itself, both `nothing`
+until the first call. See [`ReactiveMP.scratch_for!`](@ref).
 """
 mutable struct ScratchSlot
     spec::Any
@@ -16,11 +17,14 @@ mutable struct ScratchSlot
 end
 
 """
-    ReactiveMP.scratch_for!(slot, spec, algorithm, ctx, args, target, checked = false)
+    ReactiveMP.scratch_for!(slot::ScratchSlot, spec, algorithm, ctx, args, target, checked::Bool = false)
 
-The scratch to run `spec` with: the slot's, if it was built for this rule, or a new one, which
-the slot keeps. `nothing` for a rule that declares none. `checked`, the `checked_buffers`
-diagnostic, poisons a reused scratch first (see [`ReactiveMP.poison!`](@ref)).
+The scratch to run the rule `spec` with: the one `slot` holds, if it was built for this rule, or a
+new one from [`rule_scratch`](@extref MessagePassingRulesBase.rule_scratch), which `slot` then
+keeps. `nothing` for a rule that declares no scratch.
+
+With `checked`, the `checked_buffers` diagnostic, a reused scratch is poisoned first (see
+[`ReactiveMP.poison!`](@ref)), so a rule that reads its scratch before writing it computes `NaN`.
 """
 function scratch_for!(slot::ScratchSlot, spec, algorithm, ctx, args, target, checked::Bool = false)
     spec.scratch === nothing && return nothing

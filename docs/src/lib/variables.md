@@ -1,7 +1,7 @@
 
 # [Variables](@id lib-variables)
 
-Variables are fundamental building blocks of a [factor graph](@ref concepts-factor-graphs). Each variable represents either a latent quantity to be inferred, an observed data point, or a fixed constant. All variable types are subtypes of [`ReactiveMP.AbstractVariable`](@ref).
+Variables are fundamental building blocks of a [factor graph](@ref concepts-factor-graphs). Each variable represents either a latent quantity to be inferred, an observed data point, or a fixed constant. All variable types are subtypes of [`AbstractVariable`](@ref ReactiveMP.AbstractVariable).
 
 ## [Choosing the right variable type](@id lib-variables-choosing)
 
@@ -9,9 +9,9 @@ There are three kinds of variables, each with a distinct role:
 
 | Type | Constructor | Role | Can be updated? |
 |------|-------------|------|----------------|
-| [`ReactiveMP.RandomVariable`](@ref) | [`ReactiveMP.randomvar`](@ref) | Latent quantity to be inferred | No — inference updates its marginal |
-| [`ReactiveMP.DataVariable`](@ref) | [`ReactiveMP.datavar`](@ref) | Observed quantity that receives data | Yes — via [`new_observation!`](@ref) |
-| [`ReactiveMP.ConstVariable`](@ref) | [`ReactiveMP.constvar`](@ref) | Fixed constant, never changes | No — wired at construction time |
+| [`RandomVariable`](@ref) | [`randomvar`](@ref) | Latent quantity to be inferred | No — inference updates its marginal |
+| [`DataVariable`](@ref) | [`datavar`](@ref) | Observed quantity that receives data | Yes — via [`new_observation!`](@ref) |
+| [`ConstVariable`](@ref) | [`constvar`](@ref) | Fixed constant, never changes | No — wired at construction time |
 
 The choice of variable type affects how the engine allocates streams and handles messages:
 
@@ -32,6 +32,7 @@ See [Inference lifecycle](@ref concepts-inference-lifecycle) for an overview of 
 
 ```@docs
 ReactiveMP.AbstractVariable
+ReactiveMP.activate!
 ```
 
 ## [Common variable API](@id lib-variables-common)
@@ -79,23 +80,23 @@ Random variables represent latent (unobserved) quantities in the model. During i
 
 ```@docs
 ReactiveMP.RandomVariable
-ReactiveMP.EqualityChain
-ReactiveMP.EqualityNode
 ReactiveMP.randomvar
 ```
 
-### Stream creation
-
-A `RandomVariable` starts empty: its `input_messages` and `output_messages` collections are empty vectors. Each time a factor node connects to the variable, `ReactiveMP.create_new_stream_of_inbound_messages!` is called, which allocates a new `MessageObservable{AbstractMessage}`, appends it to `input_messages`, and returns it together with its index. The returned stream becomes the *outbound* message stream from the factor node's perspective (the message the node will send toward the variable). At this point, the degree equals the number of connected nodes. All streams are unconnected (lazy) until activation.
-
-### Activation
+A variable with more than one connection computes its outbound messages along an equality chain,
+which shares the partial products of its inbound messages between them (see
+[Internals](@ref internals-equality)).
 
 ```@docs
 ReactiveMP.RandomVariableActivationOptions
 ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)
 ```
 
-The prediction stream for a `RandomVariable` is identical to its marginal stream, since there is no dedicated prediction channel for latent variables.
+### Stream creation
+
+A `RandomVariable` starts empty: its `input_messages` and `output_messages` collections are empty vectors. Each time a factor node connects to the variable, `ReactiveMP.create_new_stream_of_inbound_messages!` is called, which allocates a new `MessageObservable{AbstractMessage}`, appends it to `input_messages`, and returns it together with its index. The returned stream becomes the *outbound* message stream from the factor node's perspective (the message the node will send toward the variable). At this point, the degree equals the number of connected nodes. All streams are unconnected (lazy) until activation.
+
+The prediction stream of a `RandomVariable` is its marginal stream.
 
 ## [Data variables](@id lib-variables-data)
 
@@ -116,7 +117,7 @@ There are two ways into a data variable, and they behave differently:
 | `new_observation!(y, value)` | Yes | `value` is checked, then wrapped in `PointMass(value)` |
 | `new_observation!(y, PointMass(value))` | No | the `PointMass` is pushed as-is |
 
-The generic method accepts a real number, an array of real numbers or a `UniformScaling`, and rejects anything else with an error naming the offending type. These are exactly the payloads for which `PointMass` defines a [`BayesBase.variate_form`](https://github.com/ReactiveBayes/BayesBase.jl) — wrapping anything else builds a `PointMass` that constructs fine, but whose `mean` recurses between `Statistics.mean(itr)` and `BayesBase.mean(fn, ::PointMass)` until the stack overflows, tens of thousands of frames away from the actual mistake.
+The generic method accepts a real number, an array of real numbers or a `UniformScaling`, and rejects anything else with an error naming the offending type. These are exactly the payloads for which `PointMass` defines a [`variate_form`](https://github.com/ReactiveBayes/BayesBase.jl): wrapping anything else builds a `PointMass` that constructs fine, but whose `mean` recurses between `Statistics.mean(itr)` and `BayesBase.mean(fn, ::PointMass)` until the stack overflows, tens of thousands of frames away from the actual mistake.
 
 Most of the time that error is catching a genuine slip — a distribution passed where a sample was meant, or a placeholder where `missing` was meant. But not always: a **custom node** may be defined over data that is not numeric at all, such as text, symbols, or a struct describing a measurement. For those cases, wrap the value yourself:
 
@@ -151,13 +152,13 @@ A data variable holding a non-numeric `PointMass` comes with real constraints:
 - It cannot feed the built-in numeric nodes, whose rules compute with the moments of their inbound messages. Only nodes written for the payload can be connected to it.
 - Bethe free energy is not meaningful for such an edge, since it is defined through log-densities the payload does not have.
 
-See [Defining nodes and rules](@ref rules-defining) for defining the node and its rules.
+See [`@define_message_update_rule`](@extref MessagePassingRulesBase.@define_message_update_rule) for defining the node's rules.
 
 ### Stream creation
 
 A `DataVariable` has two distinct directions of information flow:
 
-- **Outbound (observation) stream** — a `RecentSubject{Message}` stored in `messageout`. Calling [`new_observation!`](@ref) pushes a new `Message(PointMass(value), false, false)` into this subject. Every factor node connected to the variable receives the same shared `messageout` stream as its inbound message source; `ReactiveMP.get_stream_of_outbound_messages` always returns `messageout` regardless of the connection index.
+- **Outbound (observation) stream** — a `RecentSubject{Message}` stored in `messageout`. Calling [`new_observation!`](@ref) pushes a new `Message(PointMass(value), false, false)`, with log scale zero, into this subject. Every factor node connected to the variable receives the same shared `messageout` stream as its inbound message source; `ReactiveMP.get_stream_of_outbound_messages` always returns `messageout` regardless of the connection index.
 - **Inbound (backward) messages** — each connecting factor node gets its own `MessageObservable{AbstractMessage}` allocated in `input_messages` via `ReactiveMP.create_new_stream_of_inbound_messages!`, the same way as for `RandomVariable`. These carry messages flowing *back* from the graph toward the data edge.
 
 All streams are unconnected (lazy) until activation.
@@ -182,7 +183,7 @@ ReactiveMP.constvar
 
 Unlike `RandomVariable` and `DataVariable`, a `ConstVariable` wires up its streams at *construction* time, not during graph activation. The constructor immediately connects:
 
-- `messageout` to `of(Message(PointMass(constant), true, false))` — a single-element observable that emits one clamped message and completes.
-- `marginal` to `of(Marginal(PointMass(constant), true, false))` — similarly fixed and clamped.
+- `messageout` to a single-element observable that emits one clamped `Message(PointMass(constant))`, with log scale zero, and completes;
+- `marginal` to the same, as a clamped `Marginal`.
 
 When a factor node connects to a `ConstVariable`, `ReactiveMP.create_new_stream_of_inbound_messages!` increments the `nconnected` counter (which defines [`ReactiveMP.degree`](@ref)) and returns the *same shared* `messageout` stream for every connection. There are no per-connection inbound streams: `ReactiveMP.get_stream_of_inbound_messages` raises an error because a `ConstVariable` never receives messages from nodes. Calling [`ReactiveMP.set_stream_of_marginals!`](@ref) or [`ReactiveMP.set_stream_of_predictions!`](@ref) also raises an error, since the streams are fixed and cannot be rewired. Constant variables require no activation step.

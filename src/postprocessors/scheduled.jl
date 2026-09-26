@@ -1,31 +1,19 @@
 import Rocket: release!
 
 """
-    ScheduleOnStreamPostprocessor{S} <: AbstractStreamPostprocessor
+    ReactiveMP.ScheduleOnStreamPostprocessor(scheduler)
 
-A [`ReactiveMP.AbstractStreamPostprocessor`](@ref) that redirects every emission
-of the wrapped stream onto a Rocket.jl scheduler via the `schedule_on(scheduler)`
-operator. This is the standard way to control *when* downstream subscribers
-observe updates — for example, to batch a wave of inbound observations into a
-single propagation step using a `PendingScheduler`, or to move work onto a
-worker thread using an `AsyncScheduler`.
-
-The same scheduler is applied to all three stream kinds (outbound messages,
-marginals, scores).
+A stream postprocessor that delivers every emission on a Rocket.jl scheduler, with
+`schedule_on(scheduler)`, for every kind of stream: it controls when subscribers see updates. A
+`PendingScheduler` holds them until they are released, so a wave of observations propagates as
+one step; an `AsyncScheduler` moves the work to another task.
 
 # Fields
-- `scheduler::S` — a Rocket.jl scheduler. Must be compatible with
-  `Rocket.schedule_on`.
 
-# Releasing scheduled updates
+- `scheduler`: a Rocket.jl scheduler that `Rocket.schedule_on` accepts.
 
-If the wrapped scheduler buffers updates (e.g. `PendingScheduler`), call
-`Rocket.release!` on the postprocessor to flush them. `release!` is also
-defined for tuples and arrays of `ScheduleOnStreamPostprocessor`s for
-convenience.
-
-See also: [`ReactiveMP.AbstractStreamPostprocessor`](@ref),
-[`ReactiveMP.CompositeStreamPostprocessor`](@ref).
+`Rocket.release!(postprocessor)` releases the updates a buffering scheduler holds; it also takes
+a tuple or an array of `ScheduleOnStreamPostprocessor`s.
 """
 struct ScheduleOnStreamPostprocessor{S} <: AbstractStreamPostprocessor
     scheduler::S

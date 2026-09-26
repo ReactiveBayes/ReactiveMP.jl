@@ -1,4 +1,3 @@
-
 import Base: length, map
 import Base: @propagate_inbounds
 import Rocket: tap
@@ -12,24 +11,27 @@ struct EqualityLeftOutbound <: EqualityNodeOutboundType end
 struct EqualityRightOutbound <: EqualityNodeOutboundType end
 
 """
-    EqualityNode
- 
-Generic idea of an equality node is to keep track of intermediate `left` and `right` messages 
-in a convenient manner so they can be reused during `prod` for random variables with large `degree`.
+    ReactiveMP.EqualityNode()
 
+One link of an [`ReactiveMP.EqualityChain`](@ref), for one connection of a random variable: the
+partial products of the inbound messages on either side of it, kept so that they are reused.
+
+```
  <- left    -------     right ->
      ----- |   =   | ------
             -------
                |
                | outbound
+```
 
-# Attributes:
-- `left`: An observable that indicates that `left` message can be computed, always sends `missing` since we are not interested in actual value. Can be treated as notification.
-- `right`: An observable that indicates that `right` message can be computed, always sends `missing` since we are not interested in actual value. Can be treated as notification.
-- `cache_left`: Keeps cached value for left outbound message, node itself does not track if cache is valid or not. Cache integrity is tracked by `EqualityChain`.
-- `cache_right`: Keeps cached value for right outbound message, node itself does not track if cache is valid or not. Cache integrity is tracked by `EqualityChain`.
+# Fields
 
-See also: [`EqualityChain`](@ref)
+- `left`: the stream that says the product of this and every later inbound message can be
+  computed; it emits `missing`, a notification only;
+- `right`: the stream that says the product of this and every earlier inbound message can be
+  computed; it emits `missing` too;
+- `cache_left`: the cached product towards the left; the chain tracks whether it is valid;
+- `cache_right`: the cached product towards the right; the chain tracks whether it is valid.
 """
 mutable struct EqualityNode
     left::LazyObservable{Missing}
@@ -60,7 +62,22 @@ setcache!(::EqualityRightOutbound, node::EqualityNode, cache::Message) = node.ca
 # Equality chain
 
 """
-    EqualityChain
+    ReactiveMP.EqualityChain(inputmsgs::Vector{MessageObservable{AbstractMessage}}, postprocessor, prod_fn)
+
+How a random variable with more than one connection computes its outbound messages. The message
+to connection `i` is the product of the inbound messages on every other connection, which the
+chain computes from two partial products, of the messages before `i` and of those after it. The
+partial products are cached in the [`ReactiveMP.EqualityNode`](@ref)s and shared by the outbound
+messages, which matters for a variable of high degree; a new inbound message on connection `i`
+invalidates only the partial products that contain it.
+
+# Arguments
+
+- `inputmsgs`: the variable's inbound message streams, one per connection;
+- `postprocessor`: the stream postprocessor applied to the chain's streams, or `nothing`;
+- `prod_fn`: the product of a pair of messages, called with a tuple `(left, right)`; a random
+  variable gives [`ReactiveMP.compute_product_of_messages`](@ref) under its
+  `prod_context_for_message_computation`.
 """
 struct EqualityChain{P, F}
     length::Int

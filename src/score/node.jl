@@ -5,20 +5,18 @@ import Base: tail
 """
     FactorBoundFreeEnergy()
 
-Selects a factor node's contribution to the Bethe free energy in [`score`](@ref): its average
-energy over each of its clusters, less the entropies of the clusters it scores.
+Selects a factor node's contribution to the Bethe free energy in [`score`](@ref). A stochastic
+node's is its average energy under its local marginals, less the sum of their entropies; a
+deterministic node's is minus the entropy of the joint over its inputs, its second cluster.
+
+The average energy is the one the node's rule package declares for its clusters under the
+node's algorithm, found with
+[`find_average_energy`](@extref MessagePassingRulesBase.find_average_energy). It runs with the
+engine's context, [`ReactiveMP.node_context`](@ref)`(node)`, not with the services of the
+activation option `context`, and without the activation's diagnostics.
 """
 struct FactorBoundFreeEnergy end
 
-"""
-    score(::Type{T}, ::FactorBoundFreeEnergy, node, algorithm, stream_postprocessors)
-
-The stream of a factor node's contribution to the Bethe free energy, one value of type `T`
-per update. `algorithm` is the one the node runs under; `nothing` means its default.
-
-A stochastic node contributes its average energy minus the entropies of its local marginals;
-a deterministic node minus the entropy of the joint over its inputs, its second cluster.
-"""
 function score(
         ::Type{T},
         ::FactorBoundFreeEnergy,

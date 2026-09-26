@@ -1,12 +1,15 @@
 # [Stream postprocessors](@id lib-stream-postprocessors)
 
-A **stream postprocessor** is a composable transformation applied to one of the reactive observables produced during graph [Activation](@ref lib-node-activation). It wraps a Rocket.jl observable and returns a new observable of the same element type, leaving the message passing logic itself untouched.
+A **stream postprocessor** is a composable transformation of the reactive streams the engine
+builds. It wraps a Rocket.jl observable and returns a new one of the same element type, leaving
+what the stream computes untouched.
 
-The same postprocessor can be applied to three different kinds of streams produced by the inference engine:
+The same postprocessor can apply to three kinds of stream:
 
-- streams of **outbound messages** leaving a factor node interface or a leg of a variable's equality chain;
-- streams of **marginals** emitted by a [`RandomVariable`](@ref) or by the local cluster of a factor node;
-- streams of **scores** (free-energy contributions) used to assemble Bethe Free Energy.
+- **outbound messages**, of a factor node's interfaces and of a random variable's equality chain;
+- **marginals**, of a random variable and of a factor node's joint clusters;
+- **scores**, the free-energy contributions [`score`](@ref) builds when it is given a
+  postprocessor. Activation builds no score stream, and [`bethe_free_energy`](@ref) applies none.
 
 Stream postprocessors are useful for:
 
@@ -20,7 +23,7 @@ Stream postprocessors are useful for:
 
 | Postprocessor | Purpose |
 |---------------|---------|
-| `nothing` | No-op; the implicit default when no postprocessor is attached. The three `postprocess_stream_of_*` methods all have a `::Nothing` fallback that returns the stream unchanged. |
+| `nothing` | None, the default: each `postprocess_stream_of_*` returns the stream unchanged. |
 | [`ReactiveMP.ScheduleOnStreamPostprocessor`](@ref) | Redirects every emission to a Rocket.jl scheduler via the `schedule_on(scheduler)` operator. |
 | [`ReactiveMP.CompositeStreamPostprocessor`](@ref) | Applies a sequence of postprocessors in order. |
 
@@ -39,34 +42,28 @@ The output of stage `i` is fed as the input of stage `i + 1`, independently for 
 
 ## [Attaching a stream postprocessor](@id lib-stream-postprocessors-attach)
 
-Stream postprocessors are provided when activating a factor node via [`ReactiveMP.FactorNodeActivationOptions`](@ref) and a random variable via [`ReactiveMP.RandomVariableActivationOptions`](@ref). In practice this is done through the model specification layer (e.g. [RxInfer.jl](https://github.com/ReactiveBayes/RxInfer.jl)'s `@model` macro), but at the low level it looks like:
+A postprocessor is given when a factor node is activated, as the option `postprocessor` of
+[`ReactiveMP.FactorNodeActivationOptions`](@ref), and when a random variable is, as the first
+field of [`RandomVariableActivationOptions`](@ref). RxInfer does this for a model; with the
+engine alone:
 
 ```julia
-postprocessor = ScheduleOnStreamPostprocessor(PendingScheduler())
+postprocessor = ReactiveMP.ScheduleOnStreamPostprocessor(PendingScheduler())
 
-# For a factor node
-options = ReactiveMP.FactorNodeActivationOptions(
-    metadata,
-    dependencies,
-    postprocessor,   # <-- attached to all streams produced for this node
-    annotations,
-    rulefallback,
-    callbacks,
-)
-ReactiveMP.activate!(node, options)
+# every outbound message stream and joint marginal stream of the node
+ReactiveMP.activate!(node, ReactiveMP.FactorNodeActivationOptions(; postprocessor))
 
-# For a random variable
-ReactiveMP.activate!(
-    var,
-    ReactiveMP.RandomVariableActivationOptions(
-        postprocessor,
-        ReactiveMP.MessageProductContext(),
-        ReactiveMP.MessageProductContext(),
-    ),
-)
+# the variable's equality chain and its marginal stream
+ReactiveMP.activate!(x, RandomVariableActivationOptions(postprocessor, ReactiveMP.MessageProductContext(), ReactiveMP.MessageProductContext()))
+
+# the updates held by the scheduler are delivered when it is released
+Rocket.release!(postprocessor)
 ```
 
-The same postprocessor instance is applied to every outbound message stream, every marginal stream, and every score stream produced by these activations. A subtype of [`ReactiveMP.AbstractStreamPostprocessor`](@ref) must therefore implement every `postprocess_stream_of_*` method that the kinds of streams it is attached to will go through; to opt out for a particular kind of stream, just forward the stream unchanged.
+The same instance applies to every stream of these activations. A subtype of
+[`ReactiveMP.AbstractStreamPostprocessor`](@ref) therefore implements every
+`postprocess_stream_of_*` method of the kinds of stream it is attached to; to leave a kind
+unchanged, it returns the stream as it is.
 
 ## [Custom stream postprocessors](@id lib-stream-postprocessors-custom)
 
@@ -88,7 +85,7 @@ ReactiveMP.postprocess_stream_of_marginals(::MyStreamPostprocessor, stream) = st
 ReactiveMP.postprocess_stream_of_scores(::MyStreamPostprocessor, stream)    = stream
 ```
 
-If a postprocessor is attached to a stream whose corresponding `postprocess_stream_of_*` method is not implemented for it, a `MethodError` is raised at activation time. To pass a kind of stream through unchanged, simply return the input stream as shown above.
+A postprocessor attached to a kind of stream it has no method for is a `MethodError` at activation. To pass a kind of stream through unchanged, return it, as above.
 
 ## API reference
 

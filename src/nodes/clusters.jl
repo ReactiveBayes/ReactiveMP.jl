@@ -1,11 +1,11 @@
-
 """
-    FactorNodeLocalMarginal
+    ReactiveMP.FactorNodeLocalMarginal(key)
 
-The marginal of one cluster of a factor node's factorisation. Its `key` is what a rule reads
-it by: the interface name for a single-interface cluster, `:μ`, and the tuple of member names
-for a joint, `(:out, :μ)`. A single-interface cluster shares the stream of the variable's own
-marginal.
+The marginal of one cluster of a factor node's factorisation, and the stream it arrives on once
+the node is activated. Its `key` is what a rule reads it by: the interface name for a cluster of
+one interface, `:μ`, and the tuple of member names for a joint, `(:out, :μ)` (see
+[`ReactiveMP.clusterkey`](@ref)). A cluster of one interface shares the stream of its variable's
+marginal; a joint's stream is computed by the node's marginal rule.
 """
 mutable struct FactorNodeLocalMarginal{K}
     const key::K
@@ -39,10 +39,11 @@ Base.show(io::IO, marginal::FactorNodeLocalMarginal) =
 ## FactorNodeLocalClusters
 
 """
-    FactorNodeLocalClusters
+    ReactiveMP.FactorNodeLocalClusters(interfaces, factorization::Tuple)
 
-The clusters of a factor node: the factorisation, as tuples of interface positions, and one
-[`ReactiveMP.FactorNodeLocalMarginal`](@ref) per cluster.
+The clusters of a factor node: the factorisation, as tuples of positions into `interfaces`, and
+one [`ReactiveMP.FactorNodeLocalMarginal`](@ref) per cluster, keyed with
+[`ReactiveMP.clusterkey`](@ref).
 """
 struct FactorNodeLocalClusters{M, F}
     marginals::M
@@ -68,13 +69,16 @@ clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) =
 
 
 """
-    ReactiveMP.clusterkey(cluster, interfaces)
+    ReactiveMP.clusterkey(cluster::Tuple{Vararg{Int}}, interfaces)
 
-The key a cluster of interface positions is read by: the name of its only interface, or the
-tuple of its members' names, in which a group whose members are all in the cluster appears
-once, by its name: `(:in,)` is the joint over the group `in`, even of one member. A joint that
-holds only some of a group's members names each, `(group, index)`: `(:out, (:T, 1))`. A cluster
-with a key that is a name shares its variable's marginal; one with a tuple is a joint.
+The key a cluster of interface positions is read by:
+
+- the name of its only interface, `:μ`, for a cluster of one interface, which shares its
+  variable's marginal;
+- otherwise the tuple of its members' names, a joint, in which a group whose members are all in
+  the cluster appears once, by its name: `(:in,)` is the joint over the group `in`, even of one
+  member. A joint holding only some of a group's members names each as `(group, index)`,
+  `(:out, (:T, 1))`.
 """
 function clusterkey(cluster::Tuple{Vararg{Int}}, interfaces)
     members = map(i -> interfaces[i], cluster)
