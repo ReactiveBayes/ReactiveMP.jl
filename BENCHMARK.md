@@ -31,8 +31,19 @@ The machine: Julia 1.13.0, an M-series Mac, 10 cores.
 
 ## 1. Verdict
 
-> **Corrected by round 2 (2026-09-28, in progress; `investigations/performance-pass/round2/`).**
-> The tables below are transcribed correctly, but this verdict overstates them:
+> **Superseded by round 2 (2026-09-28; `investigations/performance-pass/round2/README.md`).**
+> Round 2's recommended set, **F**, is faster than v6 on every model, measured on an idle
+> machine, 5 paired rounds, all 17 models:
+> - 0.53–0.92× end to end, every paired round below 1; setup and per iteration both below v6.
+> - Posteriors and free energies bitwise those of round 1's set, and v6's to within 3·10⁻¹².
+> - What remains v7's cost is first inference, 1.03–1.35× v6 without a precompile workload.
+>
+> F is round 1's engine set with P4 reduced to its typing and without Rocket's P9, plus round
+> 2's prototypes in ReactiveMP and RxInfer:
+> - P4 as written makes one of RxInfer's tests fail; round 1 never ran RxInfer's suite with it.
+> - P9 costs 1–8% of setup, and v7 handles 1.7× v6's chain length without it.
+>
+> This record's own tables are transcribed correctly, but its verdict overstates them:
 > - **"Faster than v6 on six of seven"** holds only for the marginal cost of one more iteration.
 >   The n = 10⁴ figure is an artefact of where a GC pause fell: GC-free on both sides, FULLT is
 >   1.29× *slower*.

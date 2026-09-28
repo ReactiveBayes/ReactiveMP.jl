@@ -14,6 +14,12 @@
 #   the one-minute load average. A sample whose `calib` is more than 10% above the process's best
 #   is retried, up to three times, and kept with its record either way.
 # No callbacks are set: v6 draws a `uuid4()` span id for every rule call whenever any callback is.
+#
+# With GC_OFF=true, GC_OFF_SAMPLES more samples per iteration count (default 5) run with the
+# collector disabled (`GC.enable(false)`, after a full collection, re-enabled and followed by a
+# full collection each time), into `<outfile without .tsv>_gcoff.tsv`: the time of the work alone,
+# with no collection in it. A model whose largest sample allocated more than GC_OFF_MAX_GB
+# (default 6) is skipped, so that the heap growing without collections stays well within memory.
 
 const NO_MAIN = true
 include(joinpath(@__DIR__, "..", "bench_models.jl"))
@@ -41,8 +47,20 @@ const CALIB_N = 2_000_000
 calibrate() = (t = time_ns(); calibration_kernel(CALIB_N); (time_ns() - t) / 1.0e9)
 const BEST_CALIB = Ref(Inf)
 
-function one_sample(f)
-    GC.gc()
+function one_sample_without_gc(f)
+    GC.gc(true)
+    previous = GC.enable(false)
+    r = try
+        one_sample(f; collect = false)
+    finally
+        GC.enable(previous)
+        GC.gc(true)
+    end
+    return r
+end
+
+function one_sample(f; collect = true)
+    collect && GC.gc()
     calib = calibrate()
     for _ in 1:3
         calib <= 1.1 * BEST_CALIB[] && break
@@ -89,7 +107,9 @@ function main2()
     row(0, 0, first)
     result = first[1]
     if !isempty(PDIR)
-        post = Dict(k => fullsummary(v) for (k, v) in pairs(posteriors_of(result)))
+        # A streaming result's `posteriors` are its streams; what it inferred is in its `history`.
+        inferred = hasproperty(result, :history) ? result.history : posteriors_of(result)
+        post = Dict(k => fullsummary(v) for (k, v) in pairs(inferred))
         serialize(joinpath(PDIR, "$(VARIANT)_$(MODELARG)_$(TAG).jls"), (post, free_energy_of(result)))
     end
     nsamples = parse(Int, get(ENV, "BENCH_SAMPLES", "11"))
@@ -98,6 +118,15 @@ function main2()
         iters > 0 && row(2iters, k, one_sample(() -> run(2iters)))
     end
     foreach(println, rows)
-    return open(io -> foreach(l -> println(io, l), rows), OUT, "a")
+    open(io -> foreach(l -> println(io, l), rows), OUT, "a")
+    get(ENV, "GC_OFF", "false") == "true" || return nothing
+    largest = maximum(r -> parse(Float64, split(r, '\t')[9]), rows[3:end]; init = 0.0)
+    largest <= parse(Float64, get(ENV, "GC_OFF_MAX_GB", "6")) * 1.0e9 || return nothing
+    offrows = String[]
+    for k in 1:parse(Int, get(ENV, "GC_OFF_SAMPLES", "5"))
+        push!(offrows, join((VARIANT, TAG, MODELARG, it1, k, one_sample_without_gc(() -> run(it1))[2:end]...), '\t'))
+        iters > 0 && push!(offrows, join((VARIANT, TAG, MODELARG, 2iters, k, one_sample_without_gc(() -> run(2iters))[2:end]...), '\t'))
+    end
+    return open(io -> foreach(l -> println(io, l), offrows), replace(OUT, r"\.tsv$" => "") * "_gcoff.tsv", "a")
 end
 main2()

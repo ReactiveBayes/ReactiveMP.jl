@@ -1,0 +1,71 @@
+diff --git a/src/helpers/stackguard.jl b/src/helpers/stackguard.jl
+index 4dfd61bf..2058d630 100644
+--- a/src/helpers/stackguard.jl
++++ b/src/helpers/stackguard.jl
+@@ -25,27 +25,29 @@ function set_stack_guard_limit!(limit::Int)
+ end
+ 
+ """
+-    stackguarded(f)
++    stackguarded(f, args...)
+ 
+-Calls `f()` and returns its result; when more than the limit of such calls are already nested
+-(see [`set_stack_guard_limit!`](@ref)), on a fresh task, which the caller waits for.
++Calls `f(args...)` and returns its result; when more than the limit of such calls are already
++nested (see [`set_stack_guard_limit!`](@ref)), on a fresh task, which the caller waits for.
++Passing the arguments rather than a closure over them spares building a closure, whose type
++depends on theirs, on every call.
+ """
+-@inline function stackguarded(f::F) where {F}
++@inline function stackguarded(f::F, args::Vararg{Any, N}) where {F, N}
+     guard = STACK_GUARD
+-    guard.depth >= guard.limit && return _stackguarded_on_task(f)
++    guard.depth >= guard.limit && return _stackguarded_on_task(f, args)
+     guard.depth += 1
+     try
+-        return f()
++        return f(args...)
+     finally
+         guard.depth -= 1
+     end
+ end
+ 
+-@noinline function _stackguarded_on_task(f::F) where {F}
++@noinline function _stackguarded_on_task(f::F, args::Tuple) where {F}
+     guard = STACK_GUARD
+     saved = guard.depth
+     guard.depth = 0
+-    task = Task(f)
++    task = Task(() -> f(args...))
+     schedule(task)
+     try
+         wait(task)
+diff --git a/src/observable/lazy.jl b/src/observable/lazy.jl
+index d99b5be2..3c61a956 100644
+--- a/src/observable/lazy.jl
++++ b/src/observable/lazy.jl
+@@ -51,7 +51,7 @@ setstream!(lazy::LazyObservable, stream) = lazy.stream = stream
+     setstream!(lazy, observable)
+ 
+     foreach(lazy.pending) do (subscription, actor)
+-        subscription.subscription_or_lazy = stackguarded(() -> subscribe!(observable, actor))
++        subscription.subscription_or_lazy = stackguarded(subscribe!, observable, actor)
+     end
+ 
+     empty!(lazy.pending)
+@@ -63,7 +63,7 @@ end
+ function on_subscribe!(observable::LazyObservable{D}, actor) where {D}
+     stream = getstream(observable)
+     if stream !== nothing
+-        return LazySubscription(stackguarded(() -> subscribe!(stream, actor)))
++        return LazySubscription(stackguarded(subscribe!, stream, actor))
+     else
+         subscription = LazySubscription(observable)
+         pushpending!(observable, subscription, actor)
+@@ -85,5 +85,5 @@ function unsubscribe_lazy!(subscription::LazySubscription, observable::LazyObser
+ end
+ 
+ function unsubscribe_lazy!(subscription::LazySubscription, teardown::Teardown)
+-    return stackguarded(() -> unsubscribe!(teardown))
++    return stackguarded(unsubscribe!, teardown)
+ end

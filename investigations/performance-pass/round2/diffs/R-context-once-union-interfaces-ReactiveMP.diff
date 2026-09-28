@@ -1,0 +1,387 @@
+diff --git a/src/marginal.jl b/src/marginal.jl
+index f71904db0..d5bfb11ba 100644
+--- a/src/marginal.jl
++++ b/src/marginal.jl
+@@ -286,11 +286,14 @@ end
+ marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
+ marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
+ 
+-MarginalMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing) where {F, T, N, M, A, R} =
+-    (c = node_context(factornode, context); MarginalMapping{F, T, N, M, A, R, typeof(c)}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, c, ScratchSlot()))
+-
+-MarginalMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing) where {F <: Function, T, N, M, A, R} =
+-    (c = node_context(factornode, context); MarginalMapping{F, T, N, M, A, R, typeof(c)}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, c, ScratchSlot()))
++MarginalMapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing) =
++    marginal_mapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics, node_context(factornode, context))
++
++# A mapping with its rule context already built, as `message_mapping`.
++marginal_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G) where {F, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext} =
++    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, ScratchSlot())
++marginal_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G) where {F <: Function, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext} =
++    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, ScratchSlot())
+ 
+ function (mapping::MarginalMapping)(dependencies)
+     messages = getrecent(dependencies[1])
+diff --git a/src/message.jl b/src/message.jl
+index 448995381..ed5e0701a 100644
+--- a/src/message.jl
++++ b/src/message.jl
+@@ -728,11 +728,15 @@ end
+ # `context` holds the services the rules run with, merged over the engine's (`node_context`);
+ # `rulefallback` gives the message where no rule matches, `nothing` for none; `logscales` tracks
+ # log scales.
+-MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing, logscales::Bool = false) where {F, T, N, M, A, X, R, E, B} =
+-    (c = node_context(factornode, context); s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot(), s))
+-
+-MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing, logscales::Bool = false) where {F <: Function, T, N, M, A, X, R, E, B} =
+-    (c = node_context(factornode, context); s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot(), s))
++MessageMapping(fform, target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback = nothing, logscales::Bool = false) =
++    message_mapping(fform, target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, node_context(factornode, context), rulefallback, logscales)
++
++# A mapping with its rule context already built: activation builds one per node and gives it to
++# every mapping of the node.
++message_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
++    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, ScratchSlot(), s))
++message_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F <: Function, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
++    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, ScratchSlot(), s))
+ 
+ tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
+ 
+diff --git a/src/nodes/clusters.jl b/src/nodes/clusters.jl
+index c0fd8b200..a3b1e9c86 100644
+--- a/src/nodes/clusters.jl
++++ b/src/nodes/clusters.jl
+@@ -103,13 +103,17 @@ whole_group(member::IndexedNodeInterface, members, interfaces) =
+ 
+ isjoint(localmarginal::FactorNodeLocalMarginal) = name(localmarginal) isa Tuple
+ 
+-function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options)
++initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options) =
++    initialize_clusters!(clusters, factornode, options, node_context(factornode, getcontext(options)))
++
++# `ctx` is the node's rule context, built once by activation for every mapping of the node.
++function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options, ctx)
+     # Every stream exists before any is wired, since a joint's rule may read any other cluster
+     for i in eachindex(get_node_local_marginals(clusters))
+         initialize_cluster!(clusters, i, factornode)
+     end
+     for i in eachindex(get_node_local_marginals(clusters))
+-        activate_cluster!(clusters, i, factornode, options)
++        activate_cluster!(clusters, i, factornode, options, ctx)
+     end
+     return
+ end
+@@ -128,7 +132,7 @@ end
+ # its members and the marginals of the other clusters. In a deterministic node, whose output is
+ # a function of its inputs, the joint over the inputs reads the messages on every interface, the
+ # output's included.
+-function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
++function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options, ctx)
+     marginal = get_node_local_marginals(clusters)[index]
+     isjoint(marginal) || return nothing
+ 
+@@ -143,7 +147,7 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
+     messages, marginals = with_statics(factornode, messages), with_statics(factornode, marginals)
+ 
+     fform = functionalform(factornode)
+-    mapping = MarginalMapping(
++    mapping = marginal_mapping(
+         fform,
+         MessagePassingRulesBase.ClusterTarget(name(marginal)),
+         messagesnames,
+@@ -151,7 +155,7 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
+         getalgorithm(fform, options),
+         factornode,
+         getdiagnostics(options),
+-        getcontext(options),
++        ctx,
+     )
+     marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
+     marginalout = postprocess_stream_of_marginals(getpostprocessor(options), marginalout)
+diff --git a/src/nodes/dependencies.jl b/src/nodes/dependencies.jl
+index 00198ce99..d881f8b40 100644
+--- a/src/nodes/dependencies.jl
++++ b/src/nodes/dependencies.jl
+@@ -180,7 +180,9 @@ function cluster_marginal(factornode, key::Tuple)
+     return marginals[position]
+ end
+ 
+-function activate_messages!(factornode, options)
++activate_messages!(factornode, options) = activate_messages!(factornode, options, node_context(factornode, getcontext(options)))
++
++function activate_messages!(factornode, options, ctx)
+     fform = functionalform(factornode)
+     algorithm = getalgorithm(fform, options)
+     annotations = getannotations(options)
+@@ -197,9 +199,9 @@ function activate_messages!(factornode, options)
+ 
+             stream_of_outbound_messages = with_statics(factornode, combineLatest((messages, marginals), PushNew()))
+ 
+-            mapping = let messagemap = MessageMapping(
++            mapping = let messagemap = message_mapping(
+                     fform, rule_target(interface), messagesnames, marginalsnames,
+-                    algorithm, annotations, factornode, callbacks, getdiagnostics(options), getcontext(options), getrulefallback(options), getlogscales(options),
++                    algorithm, annotations, factornode, callbacks, getdiagnostics(options), ctx, getrulefallback(options), getlogscales(options),
+                 )
+                 (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
+             end
+diff --git a/src/nodes/equality.jl b/src/nodes/equality.jl
+index 3dbafb650..807bce278 100644
+--- a/src/nodes/equality.jl
++++ b/src/nodes/equality.jl
+@@ -79,7 +79,7 @@ invalidates only the partial products that contain it.
+   variable gives [`ReactiveMP.compute_product_of_messages`](@ref) under its
+   `prod_context_for_message_computation`.
+ """
+-struct EqualityChain{P, F, S}
++struct EqualityChain{P, F}
+     length::Int
+     nodes::Vector{EqualityNode}
+     inputmsgs::Vector{MessageObservable{AbstractMessage}}
+@@ -87,21 +87,16 @@ struct EqualityChain{P, F, S}
+     cacheright::Vector{Bool}
+     postprocessor::P
+     prod_fn::F
+-    step_fn::S
+ 
+-    # `step_fn(left, right)` multiplies two messages inside the chain, into a partial product;
+-    # `prod_fn((left, right))` gives an outbound message, from the two partial products. They
+-    # differ where the product's form constraint or fold applies to the whole product only.
+     function EqualityChain(
+             inputmsgs::Vector{MessageObservable{AbstractMessage}},
+             postprocessor::P,
+             prod_fn::F,
+-            step_fn::S = (left, right) -> prod_fn((left, right)),
+-        ) where {P, F, S}
++        ) where {P, F}
+         n = length(inputmsgs)
+         nodes = map(_ -> EqualityNode(), 1:n)
+-        return new{P, F, S}(
+-            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn, step_fn
++        return new{P, F}(
++            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn
+         )
+     end
+ end
+@@ -109,7 +104,6 @@ end
+ Base.length(chain::EqualityChain) = chain.length
+ 
+ prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
+-chain_step(chain::EqualityChain, left, right) = chain.step_fn(left, right)
+ 
+ getpostprocessor(chain::EqualityChain) = chain.postprocessor
+ 
+@@ -163,7 +157,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
+             for index in range
+                 arg1 = as_message(getrecent(getinbound(chain, index)))
+                 arg2 = as_message(getcache(type, chain, nextindex(type, index)))
+-                result = chain_step(chain, arg1, arg2)
++                result = prod(chain, arg1, arg2)
+                 setcache!(type, getnode(chain, index), result)
+             end
+             setcache!(type, chain, range)
+diff --git a/src/nodes/nodes.jl b/src/nodes/nodes.jl
+index ee72761ba..1efa28811 100644
+--- a/src/nodes/nodes.jl
++++ b/src/nodes/nodes.jl
+@@ -74,6 +74,23 @@ include("dependencies.jl")
+ 
+ abstract type AbstractFactorNode end
+ 
++# What creating a node from the same declaration, interface keys and factorisation always gives,
++# since it depends on nothing else: where each processed interface comes from among the given ones,
++# the element type of their vector, the clusters and their keys, and, filled in by activation, the
++# dependencies each target resolves to under each dependency declaration
++# (`ReactiveMP.planned_dependencies`). A graph creates the same few shapes of node many times, so
++# each shape is resolved and checked once. A node that folds its static inputs depends on its
++# variables' kinds as well, and has no plan.
++struct CreationPlan{T, C, K}
++    spec::NodeSpec
++    order::Vector{Tuple{Int, Symbol, Int}}
++    clusters::C
++    keys::K
++    dependencies::Dict{Tuple{UInt, Int}, Any}
++    CreationPlan{T}(spec::NodeSpec, order, clusters::C, keys::K) where {T, C, K} =
++        new{T, C, K}(spec, order, clusters, keys, Dict{Tuple{UInt, Int}, Any}())
++end
++
+ """
+     FactorNode
+ 
+@@ -94,7 +111,7 @@ struct FactorNode{F, I, C, N} <: AbstractFactorNode
+     localclusters::C
+     nodefn::N
+     # the node's `CreationPlan`, shared by every node of its shape, or `nothing`
+-    plan::Any
++    plan::Union{Nothing, CreationPlan}
+ 
+     FactorNode(fform::Type{F}, interfaces::I, localclusters::C, nodefn::N = nothing, plan = nothing) where {F, I, C, N} =
+         new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn, plan)
+@@ -158,13 +175,13 @@ node = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, constvar(1.0))]
+ ```
+ """
+ function factornode(fform::F, interfaces, factorisation = nothing; nodefn = nothing) where {F}
+-    plan = cached_creation_plan(fform, interfaces, factorisation)
++    spec = node_specification(fform)
++    plan = cached_creation_plan(fform, spec, interfaces, factorisation)
+     plan === nothing || return factornode_from_plan(fform, plan, interfaces, nodefn)
+-    return create_factornode(fform, interfaces, factorisation, nodefn)
++    return create_factornode(fform, spec, interfaces, factorisation, nodefn)
+ end
+ 
+-function create_factornode(fform, interfaces, factorisation, nodefn)
+-    spec = node_specification(fform)
++function create_factornode(fform, spec::NodeSpec, interfaces, factorisation, nodefn)
+     given = resolve_interfaces(fform, interfaces)
+     given, statics = fold_static_inputs(fform, spec, given)
+     processed = prepare_interfaces(fform, spec, given)
+@@ -172,25 +189,10 @@ function create_factornode(fform, interfaces, factorisation, nodefn)
+     clusters = collect_factorisation(fform, spec, processed, factorisation)
+     check_factorisation(fform, spec, clusters)
+     localclusters = FactorNodeLocalClusters(processed, clusters)
+-    plan = spec.static_inputs === :fold ? nothing : record_creation_plan!(fform, interfaces, factorisation, processed, localclusters)
++    plan = spec.static_inputs === :fold ? nothing : record_creation_plan!(fform, spec, interfaces, factorisation, processed, localclusters)
+     return FactorNode(fform, processed, localclusters, node_function(fform, spec, nodefn, statics), plan)
+ end
+ 
+-# What creating a node of one type from the same interface keys and factorisation always gives,
+-# since it depends on nothing else (a node that folds its static inputs depends on its
+-# variables' kinds, and is never planned): where each processed interface comes from in the
+-# given ones, the vector's element type, the clusters and their keys. A graph creates the same
+-# few shapes of node many times, so each is resolved and checked once.
+-# A plan also keeps the dependencies each target resolved to, under each dependency declaration
+-# (`ReactiveMP.planned_dependencies`).
+-struct CreationPlan{T, C, K}
+-    order::Vector{Tuple{Int, Symbol, Int}}
+-    clusters::C
+-    keys::K
+-    dependencies::Dict{Tuple{UInt, Int}, Any}
+-    CreationPlan{T}(order, clusters::C, keys::K) where {T, C, K} = new{T, C, K}(order, clusters, keys, Dict{Tuple{UInt, Int}, Any}())
+-end
+-
+ creation_plan(factornode::FactorNode) = factornode.plan
+ creation_plan(factornode) = nothing
+ 
+@@ -201,20 +203,22 @@ creation_plan_key(fform, interfaces::Union{AbstractVector, Tuple}, factorisation
+     (fform, Tuple(first(interface) for interface in interfaces), factorisation)
+ creation_plan_key(fform, interfaces, factorisation) = nothing
+ 
+-function cached_creation_plan(fform, interfaces, factorisation)
++# A plan made under another declaration of the node, before it was redefined, is not used.
++function cached_creation_plan(fform, spec::NodeSpec, interfaces, factorisation)
+     key = creation_plan_key(fform, interfaces, factorisation)
+     key === nothing && return nothing
+-    return @lock CREATION_PLANS_LOCK get(CREATION_PLANS, key, nothing)
++    plan = @lock CREATION_PLANS_LOCK get(CREATION_PLANS, key, nothing)
++    return (plan === nothing || plan.spec !== spec) ? nothing : plan
+ end
+ 
+-function record_creation_plan!(fform, interfaces, factorisation, processed, clusters::FactorNodeLocalClusters)
++function record_creation_plan!(fform, spec::NodeSpec, interfaces, factorisation, processed, clusters::FactorNodeLocalClusters)
+     key = creation_plan_key(fform, interfaces, factorisation)
+     key === nothing && return nothing
+     resolved = map(interface -> given_key(fform, first(interface)), Tuple(interfaces))
+     order = map(processed) do interface
+         (findfirst(==(interface_key(interface)), resolved), name(interface), interface isa IndexedNodeInterface ? index(interface) : 0)
+     end
+-    plan = CreationPlan{eltype(processed)}(order, getfactorization(clusters), map(name, get_node_local_marginals(clusters)))
++    plan = CreationPlan{eltype(processed)}(spec, order, getfactorization(clusters), map(name, get_node_local_marginals(clusters)))
+     @lock CREATION_PLANS_LOCK CREATION_PLANS[key] = plan
+     return plan
+ end
+@@ -356,7 +360,16 @@ function prepare_interfaces(fform, spec::NodeSpec, given::AbstractDict)
+         end
+     end
+     isempty(given) || throw(ArgumentError("`$(fform)` has no interfaces $(join(repr.(collect(keys(given))), ", ")); its interfaces are $(MessagePassingRulesBase.interfaces(fform))"))
+-    return [processed...]
++    return interface_vector(processed)
++end
++
++# The interfaces in a vector of one concrete type, or, for a node with groups, of the union of the
++# two kinds: a small union, which the compiler splits at each call on an element, where the
++# `Vector{Any}` that concatenating them gives would dispatch at run time.
++function interface_vector(processed)
++    all(interface -> interface isa NodeInterface, processed) && return convert(Vector{NodeInterface}, processed)
++    all(interface -> interface isa IndexedNodeInterface, processed) && return convert(Vector{IndexedNodeInterface}, processed)
++    return convert(Vector{Union{NodeInterface, IndexedNodeInterface}}, processed)
+ end
+ 
+ # What the declaration requires of the groups: at least `min_group_length` members each, and
+@@ -516,9 +529,10 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
+     algorithm = getalgorithm(fform, options)
+     spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
+     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
+-    initialize_clusters!(getlocalclusters(factornode), factornode, options)
++    ctx = node_context(factornode, getcontext(options))
++    initialize_clusters!(getlocalclusters(factornode), factornode, options, ctx)
+     seed_initial_messages!(factornode)
+-    return activate_messages!(factornode, options)
++    return activate_messages!(factornode, options, ctx)
+ end
+ 
+ # The messages the node declares for its interfaces, set on the inbound message of each where
+diff --git a/src/variables/random.jl b/src/variables/random.jl
+index 479ab1214..444f30a5f 100644
+--- a/src/variables/random.jl
++++ b/src/variables/random.jl
+@@ -148,14 +148,11 @@ function activate!(
+ 
+     if length(randomvar.input_messages) > 1
+         context = options.prod_context_for_message_computation
+-        prod_fn = (messages) -> compute_product_of_messages(randomvar, context, messages)
+-        # Under a built-in fold the product of two messages is `compute_product_of_two_messages`;
+-        # the form constraint checked last applies to an outbound message, not to each partial product.
+-        chain = if context.fold_strategy isa Union{MessagesProductFromLeftToRight, MessagesProductFromRightToLeft}
+-            EqualityChain(randomvar.input_messages, options.stream_postprocessor, prod_fn, (left, right) -> compute_product_of_two_messages(randomvar, context, left, right))
+-        else
+-            EqualityChain(randomvar.input_messages, options.stream_postprocessor, prod_fn)
+-        end
++        chain = EqualityChain(
++            randomvar.input_messages,
++            options.stream_postprocessor,
++            (messages) -> compute_product_of_messages(randomvar, context, messages),
++        )
+         initialize!(chain, outputmsgs)
+     elseif length(randomvar.input_messages) == 1
+         # If the number of input message is equal to `1`,
+diff --git a/test/nodes/nodes_tests.jl b/test/nodes/nodes_tests.jl
+index e53153717..99e5aa5ad 100644
+--- a/test/nodes/nodes_tests.jl
++++ b/test/nodes/nodes_tests.jl
+@@ -89,6 +89,36 @@ end
+     @test name.(getinterfaces(empty)) == [:out, :in]
+ end
+ 
++@testitem "a node of a shape created before is built from its plan, the same as the first" tags = [:nodes] setup = [EngineNodes] begin
++    import ReactiveMP: getinterfaces, getvariable, getlocalclusters, get_node_local_marginals, getfactorization, name, index, degree
++    N = EngineNodes
++
++    make() = (out = randomvar(); switch = randomvar(); m1 = randomvar(); m2 = randomvar();
++        (factornode(N.Mixture, [((:m, 2), m2), (:out, out), (:switch, switch), ((:m, 1), m1)], ((:out, :switch), ((:m, 1),), ((:m, 2),))), [out, switch, m1, m2]))
++    first_node, first_variables = make()
++    second_node, second_variables = make()
++
++    @test typeof(second_node) === typeof(first_node)
++    @test name.(getinterfaces(second_node)) == name.(getinterfaces(first_node)) == [:out, :switch, :m, :m]
++    @test index.(getinterfaces(second_node)[3:4]) == [1, 2]
++    @test getvariable.(getinterfaces(second_node)) == second_variables
++    @test getfactorization(getlocalclusters(second_node)) == getfactorization(getlocalclusters(first_node)) == ((1, 2), (3,), (4,))
++    @test name.(get_node_local_marginals(getlocalclusters(second_node))) == ((:out, :switch), :m, :m)
++    # each node has its own local marginals and its own connection to each variable
++    @test all(get_node_local_marginals(getlocalclusters(second_node)) .!== get_node_local_marginals(getlocalclusters(first_node)))
++    @test all(v -> degree(v) == 1, second_variables)
++end
++
++@testitem "a node with groups keeps its interfaces in a vector of their two kinds" tags = [:nodes] setup = [EngineNodes] begin
++    import ReactiveMP: getinterfaces, NodeInterface, IndexedNodeInterface
++    N = EngineNodes
++
++    grouped = factornode(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar())])
++    @test getinterfaces(grouped) isa Vector{Union{NodeInterface, IndexedNodeInterface}}
++    plain = factornode(N.Gaussian, [(:out, randomvar()), (:μ, randomvar()), (:v, constvar(1.0))])
++    @test getinterfaces(plain) isa Vector{NodeInterface}
++end
++
+ @testitem "factornode checks what a node declares of its groups and factorisation" tags = [:nodes] setup = [EngineNodes] begin
+     N = EngineNodes
+     paired(n_m, n_p) = [(:out, randomvar()), (:switch, randomvar()), [((:m, k), randomvar()) for k in 1:n_m]..., [((:p, k), randomvar()) for k in 1:n_p]...]

@@ -6,15 +6,31 @@ and find what else brings v7 up to v6 on the models still behind. Nothing here i
 or `lib/`; every change is a diff in `diffs/`, on top of round 1's `ENGINE-T-ReactiveMP.diff`
 (`src/` and `lib/` are unchanged since the revision round 1 measured, `d50fac9c`).
 
-**Status (2026-09-28): in progress.** Done: the audit (§1), the method (§2), the v6/FULLT baseline
-(§3) and the prototypes (§4), each through the root suite. Running: the paired v6/Q benchmark of
-every model. Left: its results and the posterior gate on them, RxInfer's suite and `make test-all`
-on Q, hmm's remaining bytes, and one confirmation run on an idle machine.
+**Status (2026-09-28): measured and confirmed on an idle machine.** The recommended set is **F**:
+round 1's engine changes (typed `RuleSpec`, P1, P2, P5a, P5b; P4 reduced to its typing, §4), the
+round-2 prototypes (Q1, Q3, Q3b, Q4, Q5, the audit cold path, the span ids, the context once per
+node, the typed interface vector), RxInfer's P6 and round 2's plugin changes, and Rocket's P7
+*without* P9. **F is faster than v6 on every model**: 0.53–0.92× end to end, every paired
+round below 1 (§6). Its posteriors and free energies are bitwise those of round 1's set on every
+model, and v6's to within 3·10⁻¹² (§6). The root suite (with Aqua, 10 new items) and RxInfer's
+suite (14 713) pass on it.
 
-The machine was in use by the user throughout, so every timing here is **indicative**; the method
-below is built for that, and the figures to publish come from one confirmation run on an idle
-machine. Allocation counts, bytes, GC counts, JET reports and the correctness gate do not depend
+Until §6 the machine was in use by the user, so those timings are **indicative**; the method
+below is built for that. §6 is the confirmation run, on the idle machine. Allocation counts, bytes, GC counts, JET reports and the correctness gate do not depend
 on load.
+
+## F, the recommended set, from the diffs
+
+| package | on top of | diffs, in order |
+|---|---|---|
+| ReactiveMP | `d50fac9c` (= `src/` and `lib/` at HEAD) | `diffs/ALL-round1-and-round2-ReactiveMP.diff`, all of it in one; or `../diffs/ENGINE-T-ReactiveMP.diff`, `diffs/Q-ReactiveMP.diff`, `diffs/R-context-once-union-interfaces-ReactiveMP.diff` |
+| RxInfer | `4ca9eb88` | `../diffs/P6-RxInfer.diff`, `../diffs/P6bug-RxInfer.diff`, `diffs/R-plugin-RxInfer.diff` |
+| Rocket | 1.10.0 (`eba18dfc`) | `../diffs/P7-Rocket.diff` only (not P9; §4) |
+| GraphPPL | 4.8.0 (`4cc7c6c`) | `../diffs/P8rel-GraphPPL.diff` |
+
+`diffs/P9args-Rocket.diff` is P9 in the argument form, on top of P7 and P9, if an automatic stack
+limit is wanted after all. Variants are built with `mkvariant2.sh` (or `mkv6.jl` for v6) and
+measured with `driver2.sh`, `summarise2.py` and `compare_variants2.jl`.
 
 ## 1. The audit of round 1
 
@@ -181,25 +197,103 @@ of 15 samples).
 | `Q-audit-cold-path` | `audit_rule`'s error and warning behind `@noinline` calls, its checks still inlined | was ≈ 2% of iid's samples on its own lines |
 | `Q-span-ids` | span ids from the counter spread by an odd multiplier and a per-session salt drawn in `__init__` | unique in a session, distinct in their first digits (the compact display), apart across sessions; no draw per call |
 
+| `R-context-once-union-interfaces` | activation builds the node's rule context once and gives it to every mapping, as `node_context`'s docstring already said (`message_mapping`, `marginal_mapping`); a node with groups keeps its interfaces in a `Vector{Union{NodeInterface, IndexedNodeInterface}}`, a small union the compiler splits, instead of a `Vector{Any}`; the creation plan records the node's declaration and is not used after a redefinition (Revise); `FactorNode.plan` is typed | activation 4.8 → 4.45 µs per NMV node, 11.4 → 10.6 µs per NormalMixture node; 10 new test items |
+| `R-plugin-RxInfer` | RxInfer's per-node plugin: whether the node is declared (`applicable`) and its groups hoisted out of the per-edge loop, the interfaces collected into a vector of a declared element type rather than widened by `map` at run time, and the activation options built by a function of the node's algorithm and postprocessor through the positional constructor, not by a keyword call on `Any`-typed values | `set_rmp_factornode!` 3.6 → 1.7 ms on ssm1 (v6 2.5 ms): the per-edge `map` cost v6 as much as it cost v7 |
+| (the equality chain) | **round 1's P4 reverted to HEAD's semantics**, keeping only its typed `ChainOutboundMapping{C}`: every partial product goes through `compute_product_of_messages` again, the form constraint checked on each. P4's two-message step let an unsupported `ProductOf` reach the chain's `missing` boundary, where `prod(::GenericProd, ::ProductOf, ::Missing)` is a BayesBase ambiguity, so RxInfer's "undefined functional form" hint turned into a `MethodError`: 1 of RxInfer's 14 713 tests failed on round 1's set (FULLT), which round 1 never ran RxInfer's suite on. With P1 and Q1 the full product of a pair costs little more than the two-message one | RxInfer's suite passes again |
+
 **Rejected**: a function barrier per interface in `activate_messages!` (5.7 against 4.9 µs per
 node). JET shows why: `NodeInterface.variable::AbstractVariable` makes the inbound stream types
 `Any`, so everything inside the barrier stays dynamic and the barrier adds a dispatch.
 
-## 5. Where it stands
+### The stack guard (round 1's P9), measured
 
-- **Per iteration, v7 is at or ahead of v6** on every model but iid at n ≤ 10³ (1.09×, CPU work in
-  the products and materialisation, not GC or allocation), and the prototypes do not change that
-  much; with Q5 v7 allocates less than v6 on gmm and 9% more on iid.
-- **Setup is where v7 loses, and the prototypes take most of it back**: in the profiled `infer`,
-  before Q5, v7 against v6 went from 1.28× to 1.12× on ssm1, 1.33× to 1.10× on gmm, 1.35× to 1.22×
-  on iid, and 1.04× on hmm and nl. The first model of the paired run gives Q 1.11× v6 on ssm1
-  (FULLT 1.33× in the baseline).
-- **What remains** is mostly the reactive wiring built for every node, dynamic because the
-  variables are held abstractly (`NodeInterface.variable::AbstractVariable`), which v6 pays too,
-  and RxInfer's own per-node work.
-- **Not prototyped, recommended**: P9's counter per thread or task; a test of P4 with a
-  form-constrained variable of degree ≥ 3; a degree-2 fast path in the equality chain (beats v6 on
-  state-space models; changes the product events callbacks see); a lazily allocated
-  `AnnotationDict`; precompile workloads per rule package and one with `free_energy = true` and the
-  session in RxInfer's; log scale `nothing` for data and constants when untracked.
+Round 1 adopted P9 because an intermediate engine variant overflowed the stack on a 1 000-link
+chain without it. Measured here with round 1's `stack_depth.jl` (8 MiB task stack, no
+`limit_stack_depth`), and paired on the setup-bound models (`results/p9_*`):
+
+| | longest ssm1 chain | ssm1 | betabern | gmm |
+|---|---|---|---|---|
+| v6 | 1 344 | | | |
+| v7 without the guard (Rocket with P7 only) | 2 304 | 1 | 1 | 1 |
+| v7 with P9 as round 1 wrote it (a closure per lazy subscription) | 3 776 | 1.077 | 1.023 | 1.017 |
+| v7 with P9 taking the function and its arguments, no closure | 3 776 | 1.063 | 1.013 | 1.000 |
+
+- v7 without the guard already takes 1.7× v6's chains: the typed `RuleSpec` and round 2's
+  changes made each link's frames shallower than the variant round 1 measured.
+- The guard's remaining cost is the `try`/`finally` around every lazy subscription; round 1's
+  own `rocket_stack.tsv` shows it (+7.5% on ssm1 with `limit_stack_depth = 100`), though round 1
+  timed it only without that option.
+- **Recommendation: leave P9 out.** v7 handles longer chains than v6 without it, and
+  `limit_stack_depth`, which v6 users already know, covers the rest. If an automatic limit is
+  wanted after all, take the argument form and make its counter per task.
+
+## 5. Where it stands, and what the design costs
+
+- **v7 is faster than v6** with F: 0.53–0.92× on every model, in steady state and in setup (§6).
+- **The design's checks cost nothing measurable any more.** The name-based, validated node API is
+  resolved once per node shape (the creation plan) instead of once per node, and the rule call's
+  checks (`check_services`, the diagnostics, the log-scale declaration) fold into a 27–40 ns call.
+  What made v7 slower was not the design but a handful of mechanical costs, each fixed with an
+  ordinary Julia practice:
+  - work repeated per node that depends only on the node's shape: cache it per shape;
+  - containers whose element type Julia must work out at run time (`[x...]`, `map` over
+    `Any`-typed values): declare the element type, a small `Union` where two kinds mix;
+  - values built from run-time types in hot or per-node code (`Val(b)`, keyword calls with
+    `Any`-typed values, closures over run-time-typed captures): branch to static values, call
+    positional constructors behind a function barrier, pass arguments instead of capturing them;
+  - immutable structs holding large immutable structs, copied into every object that holds them:
+    make the shared one mutable with `const` fields;
+  - per-object work done per use (the rule context per mapping): hoist it to where it is shared.
+- **What remains v7's price** is compilation: first inference 1.03–1.35× v6 without a workload.
+- **Not prototyped, recommended**:
+  - a precompile workload in RxInfer (round 1's P11, extended with `free_energy = true` and the
+    session) and in the rule packages with many nodes (DiscreteTransition, Delta);
+  - a degree-2 fast path in the equality chain (every state-space model's chain variables; it
+    changes the product events callbacks see);
+  - a lazily allocated `AnnotationDict`;
+  - log scale `nothing` for data and constants when log scales are not tracked;
+  - hmm's remaining allocation (80 against 72 MB), to profile;
+  - the BayesBase ambiguity `prod(::GenericProd, ::ProductOf, ::Missing)`, upstream.
+
+## 6. The confirmation run (idle machine)
+
+`driver2.sh` with v6, FULLT (round 1's set) and F, all 17 models, 5 paired rounds, 11 samples per
+iteration count (5 for iid@10⁵ and betabern@5·10⁴), and GC-off samples besides
+(`results/final/`: `models.tsv`, `models_gcoff.tsv`, `tables.md`, `tables_gcoff.md`). The ratio is
+the variant's minimum over v6's in each round; min, median and max over the five rounds:
+
+| model | v6 T(I) | FULLT / v6 | F / v6 | F: per iteration / setup (no GC) |
+|---|---|---|---|---|
+| ssm1 (Kalman smoother, BP) | 40.8 ms | 1.31, 1.32, 1.37 | **0.84, 0.87, 0.90** | one pass |
+| ssm2 (2-D Kalman) | 76.2 ms | 1.24, 1.25, 1.26 | **0.85, 0.85, 0.86** | one pass |
+| betabern | 49.5 ms | 1.41, 1.42, 1.44 | **0.80, 0.81, 0.81** | one pass |
+| iid, I = 20 | 22.1 ms | 1.25, 1.29, 1.37 | **0.86, 0.89, 0.91** | 0.49 / 10.0 ms (v6 0.52 / 11.6) |
+| nl (Delta), I = 10 | 44.3 ms | 0.93, 0.96, 0.97 | **0.71, 0.72, 0.74** | 1.49 / 17.4 ms (v6 2.96 / 14.7) |
+| hmm, I = 20 | 55.1 ms | 1.03, 1.06, 1.07 | **0.88, 0.90, 0.92** | 1.99 / 9.5 ms (v6 2.29 / 9.4) |
+| gmm, I = 20 | 59.3 ms | 1.21, 1.21, 1.24 | **0.82, 0.83, 0.85** | 1.63 / 17.1 ms (v6 2.19 / 15.5) |
+| streaming filter | 6.2 ms | 0.62, 0.65, 0.71 | **0.45, 0.53, 0.56** | |
+| ssm1 + defaults | 41.6 ms | 1.31, 1.33, 1.35 | **0.86, 0.88, 0.88** | |
+| iid + defaults | 22.4 ms | 1.30, 1.32, 1.35 | **0.89, 0.92, 0.93** | |
+| ssm1@100 | 4.3 ms | 1.27, 1.28, 1.30 | **0.85, 0.86, 0.88** | |
+| ssm1@10⁴ | 494 ms | 1.46, 1.47, 1.50 | **0.88, 0.88, 0.89** | |
+| iid@100 | 2.8 ms | 1.19, 1.24, 1.26 | **0.86, 0.88, 0.89** | |
+| iid@10⁴ | 266 ms | 1.21, 1.49, 1.50 | **0.85, 0.86, 0.87** | 6.19 / 104 ms (v6 7.03 / 126) |
+| iid@10⁵ | 7.14 s | 0.92, 0.92, 0.93 | **0.73, 0.73, 0.74** | 111 ms / 1.04 s (v6 164 ms / 1.88 s) |
+| betabern@5·10⁴ | 560 ms | 1.27, 1.28, 1.68 | **0.61, 0.66, 0.86** | one pass |
+| linreg (v6 fails) | — | 189 ms | 145 ms | 5.20 / 41.3 ms (FULLT 6.04 / 67.9) |
+
+- **Allocation**: F allocates less than v6 on ssm1, ssm2, betabern, gmm and at scale, and about as
+  much on iid; more on hmm (80 against 72 MB at I = 20).
+- **GC-off** samples (the work alone) give the same ratios within 1–2 points: the gains are the
+  engine's, not the collector's.
+- **First inference** is where v7 still loses, with no precompile workload on either side:
+  1.03–1.35× v6 (hmm 12.4 against 9.9 s, filter 6.5 against 4.8 s), F within a few percent of
+  FULLT. The typed design compiles more specialisations; a precompile workload (round 1's P11) is
+  the remedy, and v6 has none.
+- **Correctness** (`results/final/posteriors_check.txt`, `compare_variants2.jl`, full parameters):
+  F against FULLT, 80 of 85 dumps bitwise identical; the 5 others are the streaming filter, whose
+  dump was its streams' description, not its values (round 1's dump had the same flaw). The
+  filter's history compared separately (`results/final/post/*_filter_check.jls`) is bitwise
+  identical for F, FULLT and v6. F against v6: bitwise identical on every model except gmm
+  (9·10⁻¹³) and hmm (3·10⁻¹²).
 

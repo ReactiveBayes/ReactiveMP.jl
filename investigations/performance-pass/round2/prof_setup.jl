@@ -73,6 +73,9 @@ println("wrote ", POUT, " (", total, " samples, infer ", round(1.0e3t; digits = 
 
 # FOCUS=<C function>: the innermost Julia frames that call it, by share of the samples it is in.
 const FOCUS = get(ENV, "FOCUS", "")
+# FOCUS_SKIP_BASE=true: the innermost caller outside Base and Core, where the call starts
+const SKIP_BASE = get(ENV, "FOCUS_SKIP_BASE", "false") == "true"
+is_base_frame(sf) = (f = String(sf.file); startswith(f, "./") || occursin("/share/julia/", f) || sf.func in (:getproperty, :collect, :map, :_collect))
 function focus_callers(data, lidict, focus)
     callers = Dict{String, Int}(); n = 0; i = 1
     while i <= length(data)
@@ -85,7 +88,7 @@ function focus_callers(data, lidict, focus)
         for ip in frames, sf in get(lidict, ip, Base.StackTraces.StackFrame[])
             if !hit
                 hit = sf.from_c && String(sf.func) == focus
-            elseif !sf.from_c
+            elseif !sf.from_c && !(SKIP_BASE && is_base_frame(sf))
                 k = string(sf.func, " @ ", replace(String(sf.file), r"^.*/(src|lib)/" => s"\1/"), ":", sf.line)
                 callers[k] = get(callers, k, 0) + 1; n += 1
                 break
@@ -99,3 +102,32 @@ function focus_callers(data, lidict, focus)
     return
 end
 isempty(FOCUS) || focus_callers(data, lidict, FOCUS)
+
+# FOCUS_LINES=<function>[,<function>...]: for each, how its samples split over its own lines
+# (the line of the function's frame in each sample that has it on its stack).
+function focus_lines(data, lidict, fname)
+    lines = Dict{String, Int}(); n = 0; i = 1
+    while i <= length(data)
+        j = i
+        while j <= length(data) && data[j] != 0
+            j += 1
+        end
+        frames = data[i:(j - 1)]; i = j + 1
+        for ip in frames, sf in get(lidict, ip, Base.StackTraces.StackFrame[])
+            if !sf.from_c && String(sf.func) == fname
+                k = string(replace(String(sf.file), r"^.*/(src|lib)/" => s"\1/"), ":", sf.line)
+                lines[k] = get(lines, k, 0) + 1; n += 1
+                @goto next
+            end
+        end
+        @label next
+    end
+    println("lines of ", fname, " (", n, " samples, ", round(1.0e3 * t * n / total; digits = 2), " ms per infer):")
+    for (k, v) in first(sort(collect(lines); by = last, rev = true), 12)
+        println(lpad(v, 7), "  ", lpad(round(1.0e3 * t * v / total; digits = 3), 7), " ms  ", k)
+    end
+    return
+end
+for f in split(get(ENV, "FOCUS_LINES", ""), ',', keepempty = false)
+    focus_lines(data, lidict, f)
+end
