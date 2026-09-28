@@ -147,14 +147,11 @@ function activate!(
     end
 
     if length(randomvar.input_messages) > 1
+        context = options.prod_context_for_message_computation
         chain = EqualityChain(
             randomvar.input_messages,
             options.stream_postprocessor,
-            (messages) -> compute_product_of_messages(
-                randomvar,
-                options.prod_context_for_message_computation,
-                messages,
-            ),
+            (messages) -> compute_product_of_messages(randomvar, context, messages),
         )
         initialize!(chain, outputmsgs)
     elseif length(randomvar.input_messages) == 1
@@ -193,18 +190,14 @@ function _compute_marginal_from_messages(
     )
     context = options.prod_context_for_marginal_computation
     span_id = generate_span_id(context.callbacks)
-    invoke_callback(
-        context.callbacks,
-        BeforeMarginalComputationEvent(randomvar, context, messages, span_id),
-    )
+    @invoke_callback(context.callbacks, BeforeMarginalComputationEvent(randomvar, context, messages, span_id))
     result = as_marginal(
         compute_product_of_messages(randomvar, context, messages)
     )
-    invoke_callback(
-        context.callbacks,
-        AfterMarginalComputationEvent(
+    @invoke_callback(
+        context.callbacks, AfterMarginalComputationEvent(
             randomvar, context, messages, result, span_id
-        ),
+        )
     )
     return result
 end

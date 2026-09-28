@@ -164,7 +164,8 @@ end
 
 The identifier shared by a "before" event and its "after" event, such as
 [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref) and [`ReactiveMP.AfterMessageRuleCallEvent`](@ref):
-a `UUIDs.uuid4()`, or `nothing` when `callbacks` is `nothing`. A handler of a custom type may add a
+a `UUID` unique within the session and random-looking across sessions, or `nothing` when
+`callbacks` is `nothing`. A handler of a custom type may add a
 method returning `nothing` to skip generating them; a [`ReactiveMP.MergedCallbacks`](@ref) always
 generates them.
 """
@@ -174,8 +175,52 @@ function generate_span_id(::Nothing)
     return nothing
 end
 
+# A process-wide counter rather than `uuid4()`: `uuid4()` reads the operating system's entropy
+# source on every call, and drawing from the task's RNG would shift the rules' random streams.
+# The counter is spread by an odd multiplier, a bijection, so the identifiers stay unique and
+# differ in their first digits, which the compact display shows; the salt, drawn once per session
+# in `__init__`, keeps traces of different sessions apart.
+const SPAN_COUNTER = Threads.Atomic{UInt64}(0)
+const SPAN_SALT = Ref{UInt128}(0)
+const SPAN_SPREAD = 0x9e3779b97f4a7c15f39cc0605cedc835
+
 function generate_span_id(callbacks)
-    return uuid4()
+    n = UInt128(Threads.atomic_add!(SPAN_COUNTER, UInt64(1)) + 1)
+    return UUID((n * SPAN_SPREAD) ⊻ SPAN_SALT[])
+end
+
+"""
+    ReactiveMP.listens(callbacks, ::Type{<:Event}) -> Bool
+
+Whether `callbacks` may react to events of the given type. [`ReactiveMP.@invoke_callback`](@ref)
+builds an event only when it returns `true`: `false` for `nothing`, by key for a `NamedTuple`
+(decided at compile time) or a `Dict`, `true` for any other handler.
+"""
+listens(::Nothing, ::Type) = false
+listens(::NamedTuple{K}, ::Type{T}) where {K, T <: Event} = event_name(T) in K
+listens(callbacks::Dict{Symbol}, ::Type{T}) where {T <: Event} = haskey(callbacks, event_name(T))
+listens(merged::MergedCallbacks, ::Type{T}) where {T <: Event} = any(c -> listens(c, T), merged.callbacks)
+listens(_, ::Type) = true
+
+"""
+    ReactiveMP.@invoke_callback(callbacks, EventType(args...))
+
+`invoke_callback(callbacks, EventType(args...))`, with the event built only when
+[`ReactiveMP.listens`](@ref)`(callbacks, EventType)`: an event nobody listens to costs nothing.
+"""
+macro invoke_callback(callbacks, event)
+    (event isa Expr && event.head === :call) || error("`@invoke_callback` expects an event constructor call")
+    T = event.args[1]
+    return esc(
+        quote
+            let cb = $callbacks
+                if $listens(cb, $T)
+                    $invoke_callback(cb, $event)
+                end
+                nothing
+            end
+        end
+    )
 end
 
 # Internal helper used by the `Base.show` methods of the event types defined in

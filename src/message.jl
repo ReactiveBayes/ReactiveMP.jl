@@ -102,6 +102,12 @@ Message(data, is_clamped::Bool, is_initial::Bool) =
 Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
     Message(data, is_clamped, is_initial, annotations, nothing)
 
+# A barrier for a message built from a value inferred abstractly, such as a rule's result: the
+# call dispatches on the value's type, where an inlined constructor would compute `D` and `L`
+# at run time (`Core._compute_sparams`), several times slower.
+@noinline new_message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict, logscale) =
+    Message(data, is_clamped, is_initial, annotations, logscale)
+
 """
     as_message(message::AbstractMessage) -> Message
     as_message(marginal::Marginal) -> Message
@@ -276,11 +282,10 @@ function compute_product_of_two_messages(
         right::Message,
     )
     span_id = generate_span_id(context.callbacks)
-    invoke_callback(
-        context.callbacks,
-        BeforeProductOfTwoMessagesEvent(
+    @invoke_callback(
+        context.callbacks, BeforeProductOfTwoMessagesEvent(
             variable, context, left, right, span_id
-        ),
+        )
     )
 
     # We propagate clamped message, in case if both are clamped
@@ -299,29 +304,27 @@ function compute_product_of_two_messages(
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
         form_span_id = generate_span_id(context.callbacks)
-        invoke_callback(
-            context.callbacks,
-            BeforeFormConstraintAppliedEvent(
+        @invoke_callback(
+            context.callbacks, BeforeFormConstraintAppliedEvent(
                 variable,
                 context,
                 FormConstraintCheckEach(),
                 new_dist,
                 form_span_id,
-            ),
+            )
         )
         unconstrained_dist = new_dist
         new_dist = constrain_form(context.form_constraint, new_dist)
         new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale)
-        invoke_callback(
-            context.callbacks,
-            AfterFormConstraintAppliedEvent(
+        @invoke_callback(
+            context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
                 context,
                 FormConstraintCheckEach(),
                 unconstrained_dist,
                 new_dist,
                 form_span_id,
-            ),
+            )
         )
     end
 
@@ -331,11 +334,10 @@ function compute_product_of_two_messages(
     new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
     result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann, new_logscale)
 
-    invoke_callback(
-        context.callbacks,
-        AfterProductOfTwoMessagesEvent(
+    @invoke_callback(
+        context.callbacks, AfterProductOfTwoMessagesEvent(
             variable, context, left, right, result, new_ann, span_id
-        ),
+        )
     )
 
     return result
@@ -380,10 +382,7 @@ function compute_product_of_messages(
         variable::AbstractVariable, context::MessageProductContext, messages
     )
     span_id = generate_span_id(context.callbacks)
-    invoke_callback(
-        context.callbacks,
-        BeforeProductOfMessagesEvent(variable, context, messages, span_id),
-    )
+    @invoke_callback(context.callbacks, BeforeProductOfMessagesEvent(variable, context, messages, span_id))
 
     result = as_message(
         compute_product_of_messages(
@@ -391,41 +390,47 @@ function compute_product_of_messages(
         ),
     )
 
+    return finish_product_of_messages(variable, context, messages, result, span_id)
+end
+
+# A barrier: the fold's result is inferred abstractly, since the messages come from abstractly
+# typed streams, so the form constraint and the events run behind a call that dispatches on its
+# concrete type. A constraint that returns its input keeps the product as it is.
+@noinline function finish_product_of_messages(variable::AbstractVariable, context::MessageProductContext, messages, result::Message, span_id)
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
         dist = getdata(result)
         form_span_id = generate_span_id(context.callbacks)
-        invoke_callback(
-            context.callbacks,
-            BeforeFormConstraintAppliedEvent(
+        @invoke_callback(
+            context.callbacks, BeforeFormConstraintAppliedEvent(
                 variable, context, FormConstraintCheckLast(), dist, form_span_id
-            ),
+            )
         )
         constrained_dist = constrain_form(context.form_constraint, dist)
-        invoke_callback(
-            context.callbacks,
-            AfterFormConstraintAppliedEvent(
+        @invoke_callback(
+            context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
                 context,
                 FormConstraintCheckLast(),
                 dist,
                 constrained_dist,
                 form_span_id,
-            ),
+            )
         )
-        result = Message(
-            constrained_dist,
-            is_clamped(result),
-            is_initial(result),
-            getannotations(result),
-            constrained_logscale(dist, constrained_dist, result.logscale),
-        )
+        if constrained_dist !== dist
+            result = Message(
+                constrained_dist,
+                is_clamped(result),
+                is_initial(result),
+                getannotations(result),
+                constrained_logscale(dist, constrained_dist, result.logscale),
+            )
+        end
     end
 
-    invoke_callback(
-        context.callbacks,
-        AfterProductOfMessagesEvent(
+    @invoke_callback(
+        context.callbacks, AfterProductOfMessagesEvent(
             variable, context, messages, result, span_id
-        ),
+        )
     )
 
     return result
@@ -695,19 +700,21 @@ message.
 
 See also [`Message`](@ref), [`ReactiveMP.rule_arguments`](@ref).
 """
-struct MessageMapping{F, T, N, M, A, X, R, E, G, B, S}
-    target::T
-    msgs_names::N
-    marginals_names::M
-    algorithm::A
-    annotations::X
-    factornode::R
-    callbacks::E
-    diagnostics::EngineDiagnostics
-    context::G
-    rulefallback::B
-    scratch::ScratchSlot
-    logscales::S
+mutable struct MessageMapping{F, T, N, M, A, X, R, E, G, B, S}
+    # Mutable, its fields constant: every `DeferredMessage` an outbound stream emits holds its
+    # mapping, and an immutable mapping, the factor node inside it, would be copied into each.
+    const target::T
+    const msgs_names::N
+    const marginals_names::M
+    const algorithm::A
+    const annotations::X
+    const factornode::R
+    const callbacks::E
+    const diagnostics::EngineDiagnostics
+    const context::G
+    const rulefallback::B
+    const scratch::ScratchSlot
+    const logscales::S
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -730,14 +737,20 @@ function Base.show(io::IO, mapping::MessageMapping)
     return nothing
 end
 
+# `logscales` becomes `Val(true)` or `Val(false)` by a branch, so the mapping's type is known where
+# it is built rather than computed at run time from the value.
 # `context` holds the services the rules run with, merged over the engine's (`node_context`);
 # `rulefallback` gives the message where no rule matches, `nothing` for none; `logscales` tracks
 # log scales.
-MessageMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing, logscales::Bool = false) where {F, T, N, M, A, X, R, E, B} =
-    (c = node_context(factornode, context); s = Val(logscales); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot(), s))
+MessageMapping(fform, target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback = nothing, logscales::Bool = false) =
+    message_mapping(fform, target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, node_context(factornode, context), rulefallback, logscales)
 
-MessageMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback::B = nothing, logscales::Bool = false) where {F <: Function, T, N, M, A, X, R, E, B} =
-    (c = node_context(factornode, context); s = Val(logscales); MessageMapping{F, T, N, M, A, X, R, E, typeof(c), B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, c, rulefallback, ScratchSlot(), s))
+# A mapping with its rule context already built: activation builds one per node and gives it to
+# every mapping of the node.
+message_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
+    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, ScratchSlot(), s))
+message_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F <: Function, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
+    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, ScratchSlot(), s))
 
 tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
 
@@ -761,10 +774,7 @@ function (mapping::MessageMapping)(messages, marginals)
     )
 
     span_id = generate_span_id(mapping.callbacks)
-    invoke_callback(
-        mapping.callbacks,
-        BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id),
-    )
+    @invoke_callback(mapping.callbacks, BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id))
 
     annotations = AnnotationDict()
 
@@ -809,12 +819,11 @@ function (mapping::MessageMapping)(messages, marginals)
         end
     end
 
-    invoke_callback(
-        mapping.callbacks,
-        AfterMessageRuleCallEvent(
+    @invoke_callback(
+        mapping.callbacks, AfterMessageRuleCallEvent(
             mapping, messages, marginals, result, annotations, logscale, span_id
-        ),
+        )
     )
 
-    return Message(result, is_message_clamped, is_message_initial, annotations, logscale)
+    return new_message(result, is_message_clamped, is_message_initial, annotations, logscale)
 end

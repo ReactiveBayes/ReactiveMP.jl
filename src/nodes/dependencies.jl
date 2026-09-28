@@ -180,7 +180,9 @@ function cluster_marginal(factornode, key::Tuple)
     return marginals[position]
 end
 
-function activate_messages!(factornode, options)
+activate_messages!(factornode, options) = activate_messages!(factornode, options, node_context(factornode, getcontext(options)))
+
+function activate_messages!(factornode, options, ctx)
     fform = functionalform(factornode)
     algorithm = getalgorithm(fform, options)
     annotations = getannotations(options)
@@ -191,15 +193,15 @@ function activate_messages!(factornode, options)
     return foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
             (messagelabels, message_dependencies), (marginallabels, marginal_dependencies) =
-                spec === nothing ? default_dependencies(factornode, iindex) : declared_dependencies(factornode, spec, interface)
+                planned_dependencies(factornode, spec, iindex, interface)
             messagesnames, messages = collect_latest_messages(messagelabels, message_dependencies)
             marginalsnames, marginals = collect_latest_marginals(marginallabels, marginal_dependencies)
 
             stream_of_outbound_messages = with_statics(factornode, combineLatest((messages, marginals), PushNew()))
 
-            mapping = let messagemap = MessageMapping(
+            mapping = let messagemap = message_mapping(
                     fform, rule_target(interface), messagesnames, marginalsnames,
-                    algorithm, annotations, factornode, callbacks, getdiagnostics(options), getcontext(options), getrulefallback(options), getlogscales(options),
+                    algorithm, annotations, factornode, callbacks, getdiagnostics(options), ctx, getrulefallback(options), getlogscales(options),
                 )
                 (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
             end
@@ -211,6 +213,53 @@ function activate_messages!(factornode, options)
             set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
         end
     end
+end
+
+# The dependencies of the message out of interface `iindex`. They depend only on the node's shape
+# and the declaration, so a node with a creation plan resolves them once per shape: the plan keeps
+# them as positions, of interfaces for the messages and of clusters or interfaces for the
+# marginals, and each node reads its own objects at those positions.
+function planned_dependencies(factornode, spec, iindex, interface)
+    plan = creation_plan(factornode)
+    plan === nothing && return resolve_dependencies(factornode, spec, iindex, interface)
+    key = (spec === nothing ? zero(UInt) : objectid(spec), iindex)
+    cached = @lock CREATION_PLANS_LOCK get(plan.dependencies, key, nothing)
+    if cached === nothing
+        resolved = resolve_dependencies(factornode, spec, iindex, interface)
+        encoded = encode_dependencies(factornode, resolved)
+        @lock CREATION_PLANS_LOCK plan.dependencies[key] = something(encoded, :unplanned)
+        return resolved
+    end
+    cached === :unplanned && return resolve_dependencies(factornode, spec, iindex, interface)
+    return decode_dependencies(factornode, cached)
+end
+
+resolve_dependencies(factornode, spec, iindex, interface) =
+    spec === nothing ? default_dependencies(factornode, iindex) : declared_dependencies(factornode, spec, interface)
+
+# Positions of the dependencies in the node, or `nothing` where a source cannot be told apart by
+# position (one variable on two interfaces).
+function encode_dependencies(factornode, ((messagelabels, messages), (marginallabels, marginals)))
+    interfaces = getinterfaces(factornode)
+    locals = get_node_local_marginals(getlocalclusters(factornode))
+    mpositions = map(m -> findfirst(i -> i === m, interfaces), messages)
+    any(isnothing, mpositions) && return nothing
+    qpositions = map(marginals) do q
+        c = findfirst(l -> l === q, locals)
+        c === nothing || return (true, c)
+        matching = findall(i -> getvariable(i) === q, interfaces)
+        return length(matching) == 1 ? (false, only(matching)) : nothing
+    end
+    any(isnothing, qpositions) && return nothing
+    return ((messagelabels, mpositions), (marginallabels, qpositions))
+end
+
+function decode_dependencies(factornode, ((messagelabels, mpositions), (marginallabels, qpositions)))
+    interfaces = getinterfaces(factornode)
+    locals = get_node_local_marginals(getlocalclusters(factornode))
+    messages = map(i -> interfaces[i], mpositions)
+    marginals = map(((iscluster, i),) -> iscluster ? locals[i] : getvariable(interfaces[i]), qpositions)
+    return ((messagelabels, messages), (marginallabels, marginals))
 end
 
 """

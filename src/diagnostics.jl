@@ -72,16 +72,22 @@ Base.showerror(io::IO, err::ImpureRuleError) = print(
 const REPORTED_NOT_INPLACE = Set{Tuple{Symbol, Int, Any}}()
 const REPORTED_LOCK = ReentrantLock()
 
-function audit_rule(diagnostics::EngineDiagnostics, spec)
-    diagnostics.check_everything_pure && !spec.pure && throw(ImpureRuleError(spec))
-    if diagnostics.check_everything_inplace && !spec.inplace
-        first_time = lock(REPORTED_LOCK) do
-            key = (spec.file, spec.line, spec.target)
-            key in REPORTED_NOT_INPLACE ? false : (push!(REPORTED_NOT_INPLACE, key); true)
-        end
-        first_time && @warn "`check_everything_inplace`: $(rule_description(spec)) has no in-place form"
-    end
+# The checks are inlined into every rule call; what they report is not.
+@inline function audit_rule(diagnostics::EngineDiagnostics, spec)
+    diagnostics.check_everything_pure && !spec.pure && throw_impure_rule(spec)
+    diagnostics.check_everything_inplace && !spec.inplace && report_not_inplace(spec)
     return spec
+end
+
+@noinline throw_impure_rule(spec) = throw(ImpureRuleError(spec))
+
+@noinline function report_not_inplace(spec)
+    first_time = lock(REPORTED_LOCK) do
+        key = (spec.file, spec.line, spec.target)
+        key in REPORTED_NOT_INPLACE ? false : (push!(REPORTED_NOT_INPLACE, key); true)
+    end
+    first_time && @warn "`check_everything_inplace`: $(rule_description(spec)) has no in-place form"
+    return nothing
 end
 
 """

@@ -74,6 +74,23 @@ include("dependencies.jl")
 
 abstract type AbstractFactorNode end
 
+# What creating a node from the same declaration, interface keys and factorisation always gives,
+# since it depends on nothing else: where each processed interface comes from among the given ones,
+# the element type of their vector, the clusters and their keys, and, filled in by activation, the
+# dependencies each target resolves to under each dependency declaration
+# (`ReactiveMP.planned_dependencies`). A graph creates the same few shapes of node many times, so
+# each shape is resolved and checked once. A node that folds its static inputs depends on its
+# variables' kinds as well, and has no plan.
+struct CreationPlan{T, C, K}
+    spec::NodeSpec
+    order::Vector{Tuple{Int, Symbol, Int}}
+    clusters::C
+    keys::K
+    dependencies::Dict{Tuple{UInt, Int}, Any}
+    CreationPlan{T}(spec::NodeSpec, order, clusters::C, keys::K) where {T, C, K} =
+        new{T, C, K}(spec, order, clusters, keys, Dict{Tuple{UInt, Int}, Any}())
+end
+
 """
     FactorNode
 
@@ -93,11 +110,13 @@ struct FactorNode{F, I, C, N} <: AbstractFactorNode
     interfaces::I
     localclusters::C
     nodefn::N
+    # the node's `CreationPlan`, shared by every node of its shape, or `nothing`
+    plan::Union{Nothing, CreationPlan}
 
-    FactorNode(fform::Type{F}, interfaces::I, localclusters::C, nodefn::N = nothing) where {F, I, C, N} =
-        new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn)
-    FactorNode(fform::F, interfaces::I, localclusters::C, nodefn::N = nothing) where {F <: Function, I, C, N} =
-        new{F, I, C, N}(fform, interfaces, localclusters, nodefn)
+    FactorNode(fform::Type{F}, interfaces::I, localclusters::C, nodefn::N = nothing, plan = nothing) where {F, I, C, N} =
+        new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn, plan)
+    FactorNode(fform::F, interfaces::I, localclusters::C, nodefn::N = nothing, plan = nothing) where {F <: Function, I, C, N} =
+        new{F, I, C, N}(fform, interfaces, localclusters, nodefn, plan)
 end
 
 """
@@ -157,17 +176,73 @@ node = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, constvar(1.0))]
 """
 function factornode(fform::F, interfaces, factorisation = nothing; nodefn = nothing) where {F}
     spec = node_specification(fform)
+    plan = cached_creation_plan(fform, spec, interfaces, factorisation)
+    plan === nothing || return factornode_from_plan(fform, plan, interfaces, nodefn)
+    return create_factornode(fform, spec, interfaces, factorisation, nodefn)
+end
+
+function create_factornode(fform, spec::NodeSpec, interfaces, factorisation, nodefn)
     given = resolve_interfaces(fform, interfaces)
     given, statics = fold_static_inputs(fform, spec, given)
     processed = prepare_interfaces(fform, spec, given)
     check_group_lengths(fform, spec, processed)
     clusters = collect_factorisation(fform, spec, processed, factorisation)
     check_factorisation(fform, spec, clusters)
-    return FactorNode(fform, processed, FactorNodeLocalClusters(processed, clusters), node_function(fform, spec, nodefn, statics))
+    localclusters = FactorNodeLocalClusters(processed, clusters)
+    plan = spec.static_inputs === :fold ? nothing : record_creation_plan!(fform, spec, interfaces, factorisation, processed, localclusters)
+    return FactorNode(fform, processed, localclusters, node_function(fform, spec, nodefn, statics), plan)
+end
+
+creation_plan(factornode::FactorNode) = factornode.plan
+creation_plan(factornode) = nothing
+
+const CREATION_PLANS = Dict{Any, CreationPlan}()
+const CREATION_PLANS_LOCK = ReentrantLock()
+
+creation_plan_key(fform, interfaces::Union{AbstractVector, Tuple}, factorisation) =
+    (fform, Tuple(first(interface) for interface in interfaces), factorisation)
+creation_plan_key(fform, interfaces, factorisation) = nothing
+
+# A plan made under another declaration of the node, before it was redefined, is not used.
+function cached_creation_plan(fform, spec::NodeSpec, interfaces, factorisation)
+    key = creation_plan_key(fform, interfaces, factorisation)
+    key === nothing && return nothing
+    plan = @lock CREATION_PLANS_LOCK get(CREATION_PLANS, key, nothing)
+    return (plan === nothing || plan.spec !== spec) ? nothing : plan
+end
+
+function record_creation_plan!(fform, spec::NodeSpec, interfaces, factorisation, processed, clusters::FactorNodeLocalClusters)
+    key = creation_plan_key(fform, interfaces, factorisation)
+    key === nothing && return nothing
+    resolved = map(interface -> given_key(fform, first(interface)), Tuple(interfaces))
+    order = map(processed) do interface
+        (findfirst(==(interface_key(interface)), resolved), name(interface), interface isa IndexedNodeInterface ? index(interface) : 0)
+    end
+    plan = CreationPlan{eltype(processed)}(spec, order, getfactorization(clusters), map(name, get_node_local_marginals(clusters)))
+    @lock CREATION_PLANS_LOCK CREATION_PLANS[key] = plan
+    return plan
+end
+
+function factornode_from_plan(fform, plan::CreationPlan{T}, interfaces, nodefn) where {T}
+    processed = Vector{T}(undef, length(plan.order))
+    for (j, (i, iname, k)) in enumerate(plan.order)
+        variable = last(interfaces[i])
+        processed[j] = k == 0 ? NodeInterface(iname, variable) : IndexedNodeInterface(k, NodeInterface(iname, variable))
+    end
+    marginals = map(FactorNodeLocalMarginal, plan.keys)
+    localclusters = FactorNodeLocalClusters{typeof(marginals), typeof(plan.clusters)}(marginals, plan.clusters)
+    return FactorNode(fform, processed, localclusters, nodefn, plan)
 end
 
 function node_specification(fform)
-    applicable(nodespec, fform) || throw(
+    spec = try
+        nodespec(fform)
+    catch err
+        (err isa MethodError && err.f === nodespec) || rethrow()
+        nothing
+    end
+    spec === nothing || return spec
+    throw(
         ArgumentError(
             "`$(fform)` is not a factor node: declare it with `@define_factor_node` (from `MessagePassingRulesBase`) before creating it",
         ),
@@ -202,8 +277,22 @@ interfaceindex(factornode::FactorNode, iname::Symbol) = findfirst(interface -> n
 interface_key(interface::NodeInterface) = name(interface)
 interface_key(interface::IndexedNodeInterface) = (name(interface), index(interface))
 
-given_key(fform, name::Symbol) = MessagePassingRulesBase.alias_interface(fform, name)
-given_key(fform, (name, k)::Tuple{Symbol, Integer}) = (MessagePassingRulesBase.alias_interface(fform, name), Int(k))
+# `alias_interface` scans the node's declaration; a graph asks for the same few names of the
+# same few node types many times, so the answers are cached.
+const ALIAS_CACHE = Dict{Tuple{Any, Symbol}, Symbol}()
+const ALIAS_LOCK = ReentrantLock()
+
+function cached_alias_interface(fform, name::Symbol)
+    key = (fform, name)
+    cached = @lock ALIAS_LOCK get(ALIAS_CACHE, key, nothing)
+    cached === nothing || return cached
+    resolved = MessagePassingRulesBase.alias_interface(fform, name)
+    @lock ALIAS_LOCK ALIAS_CACHE[key] = resolved
+    return resolved
+end
+
+given_key(fform, name::Symbol) = cached_alias_interface(fform, name)
+given_key(fform, (name, k)::Tuple{Symbol, Integer}) = (cached_alias_interface(fform, name), Int(k))
 given_key(fform, key) = throw(ArgumentError("an interface of `$(fform)` is `:name` or `(:group, k)`, got `$(repr(key))`"))
 
 # The given interfaces by their resolved keys, `:out` or `(:m, k)`.
@@ -271,7 +360,16 @@ function prepare_interfaces(fform, spec::NodeSpec, given::AbstractDict)
         end
     end
     isempty(given) || throw(ArgumentError("`$(fform)` has no interfaces $(join(repr.(collect(keys(given))), ", ")); its interfaces are $(MessagePassingRulesBase.interfaces(fform))"))
-    return [processed...]
+    return interface_vector(processed)
+end
+
+# The interfaces in a vector of one concrete type, or, for a node with groups, of the union of the
+# two kinds: a small union, which the compiler splits at each call on an element, where the
+# `Vector{Any}` that concatenating them gives would dispatch at run time.
+function interface_vector(processed)
+    all(interface -> interface isa NodeInterface, processed) && return convert(Vector{NodeInterface}, processed)
+    all(interface -> interface isa IndexedNodeInterface, processed) && return convert(Vector{IndexedNodeInterface}, processed)
+    return convert(Vector{Union{NodeInterface, IndexedNodeInterface}}, processed)
 end
 
 # What the declaration requires of the groups: at least `min_group_length` members each, and
@@ -431,9 +529,10 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     algorithm = getalgorithm(fform, options)
     spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
-    initialize_clusters!(getlocalclusters(factornode), factornode, options)
+    ctx = node_context(factornode, getcontext(options))
+    initialize_clusters!(getlocalclusters(factornode), factornode, options, ctx)
     seed_initial_messages!(factornode)
-    return activate_messages!(factornode, options)
+    return activate_messages!(factornode, options, ctx)
 end
 
 # The messages the node declares for its interfaces, set on the inbound message of each where

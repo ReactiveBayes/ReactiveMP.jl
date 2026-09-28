@@ -283,11 +283,17 @@ end
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
 marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
-MarginalMapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing) where {F, T, N, M, A, R} =
-    (c = node_context(factornode, context); MarginalMapping{F, T, N, M, A, R, typeof(c)}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, c, ScratchSlot()))
+MarginalMapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing) =
+    marginal_mapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics, node_context(factornode, context))
 
-MarginalMapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing) where {F <: Function, T, N, M, A, R} =
-    (c = node_context(factornode, context); MarginalMapping{F, T, N, M, A, R, typeof(c)}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, c, ScratchSlot()))
+# A mapping with its rule context already built, as `message_mapping`.
+marginal_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G) where {F, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext} =
+    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, ScratchSlot())
+marginal_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G) where {F <: Function, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext} =
+    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, ScratchSlot())
+
+# As `new_message`: a barrier for a marginal built from a value inferred abstractly.
+@noinline new_marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(data, is_clamped, is_initial)
 
 function (mapping::MarginalMapping)(dependencies)
     messages = getrecent(dependencies[1])
@@ -310,7 +316,7 @@ function (mapping::MarginalMapping)(dependencies)
         compute_marginal(mapping, messages, marginals)
     end
 
-    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
+    return new_marginal(marginal, is_marginal_clamped, is_marginal_initial)
 end
 
 function compute_marginal(mapping::MarginalMapping, messages, marginals)

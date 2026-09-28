@@ -200,9 +200,9 @@ end
 
 ##
 
-struct ChainOutboundMapping
+struct ChainOutboundMapping{C <: EqualityChain}
     index::Int
-    chain::EqualityChain
+    chain::C
 end
 
 function (mapping::ChainOutboundMapping)(_)
@@ -211,8 +211,8 @@ function (mapping::ChainOutboundMapping)(_)
     return as_message(prod(mapping.chain, from_left, from_right))
 end
 
-Base.map(::Type{Message}, mapping::ChainOutboundMapping) =
-    Rocket.MapOperator{Message, ChainOutboundMapping}(mapping)
+Base.map(::Type{Message}, mapping::M) where {M <: ChainOutboundMapping} =
+    Rocket.MapOperator{Message, M}(mapping)
 
 function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
     n = length(chain)

@@ -89,6 +89,38 @@ end
     @test name.(getinterfaces(empty)) == [:out, :in]
 end
 
+@testitem "a node of a shape created before is built from its plan, the same as the first" tags = [:nodes] setup = [EngineNodes] begin
+    import ReactiveMP: getinterfaces, getvariable, getlocalclusters, get_node_local_marginals, getfactorization, name, index, degree
+    N = EngineNodes
+
+    make() = (
+        out = randomvar(); switch = randomvar(); m1 = randomvar(); m2 = randomvar();
+        (factornode(N.Mixture, [((:m, 2), m2), (:out, out), (:switch, switch), ((:m, 1), m1)], ((:out, :switch), ((:m, 1),), ((:m, 2),))), [out, switch, m1, m2])
+    )
+    first_node, first_variables = make()
+    second_node, second_variables = make()
+
+    @test typeof(second_node) === typeof(first_node)
+    @test name.(getinterfaces(second_node)) == name.(getinterfaces(first_node)) == [:out, :switch, :m, :m]
+    @test index.(getinterfaces(second_node)[3:4]) == [1, 2]
+    @test getvariable.(getinterfaces(second_node)) == second_variables
+    @test getfactorization(getlocalclusters(second_node)) == getfactorization(getlocalclusters(first_node)) == ((1, 2), (3,), (4,))
+    @test name.(get_node_local_marginals(getlocalclusters(second_node))) == ((:out, :switch), :m, :m)
+    # each node has its own local marginals and its own connection to each variable
+    @test all(get_node_local_marginals(getlocalclusters(second_node)) .!== get_node_local_marginals(getlocalclusters(first_node)))
+    @test all(v -> degree(v) == 1, second_variables)
+end
+
+@testitem "a node with groups keeps its interfaces in a vector of their two kinds" tags = [:nodes] setup = [EngineNodes] begin
+    import ReactiveMP: getinterfaces, NodeInterface, IndexedNodeInterface
+    N = EngineNodes
+
+    grouped = factornode(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar())])
+    @test getinterfaces(grouped) isa Vector{Union{NodeInterface, IndexedNodeInterface}}
+    plain = factornode(N.Gaussian, [(:out, randomvar()), (:μ, randomvar()), (:v, constvar(1.0))])
+    @test getinterfaces(plain) isa Vector{NodeInterface}
+end
+
 @testitem "factornode checks what a node declares of its groups and factorisation" tags = [:nodes] setup = [EngineNodes] begin
     N = EngineNodes
     paired(n_m, n_p) = [(:out, randomvar()), (:switch, randomvar()), [((:m, k), randomvar()) for k in 1:n_m]..., [((:p, k), randomvar()) for k in 1:n_p]...]

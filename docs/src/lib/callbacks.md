@@ -46,12 +46,16 @@ unsubscribe!(subscription)
 ```
 
 A handler of a type of its own implements [`ReactiveMP.handle_event`](@ref) for each event it
-reacts to, and [`ReactiveMP.merge_callbacks`](@ref) combines several handlers into one.
+reacts to, and [`ReactiveMP.merge_callbacks`](@ref) combines several handlers into one. The engine
+builds an event only for a handler that [`ReactiveMP.listens`](@ref) to its type, so a handler
+that reacts to a few events declares which, and the others cost it nothing.
 
 ```@docs
 ReactiveMP.Event
 ReactiveMP.event_name
 ReactiveMP.invoke_callback
+ReactiveMP.@invoke_callback
+ReactiveMP.listens
 ReactiveMP.handle_event
 ReactiveMP.merge_callbacks
 ```

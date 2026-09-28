@@ -20,10 +20,10 @@ result and its log scale, the rule that ran and the other rules for the same tar
 two-argument `show` is compact, `RuleResult(2.0, logscale = 0)`. An engine runs rules through
 [`execute_rule`](@ref) without building one.
 """
-struct RuleResult{R, L, A, C, S, G, N, T}
+struct RuleResult{R, L, A, C, S, G, N, T, P <: RuleSpec}
     result::R
     logscale::L
-    rule::RuleSpec
+    rule::P
     algorithm::A
     context::C
     scratch::S

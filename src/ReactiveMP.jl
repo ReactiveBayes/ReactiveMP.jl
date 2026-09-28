@@ -59,7 +59,7 @@ export tiny, huge
 @compat public activate!, FactorNodeActivationOptions, MessageProductContext, EngineDiagnostics,
     node_context, set_initial_marginal!, set_initial_message!, get_stream_of_marginals,
     get_stream_of_predictions, Event, event_name, invoke_callback, handle_event,
-    merge_callbacks, generate_span_id, AnnotationDict, annotate!, get_annotation,
+    merge_callbacks, generate_span_id, listens, AnnotationDict, annotate!, get_annotation,
     has_annotation, AbstractAnnotations, pre_rule_annotations!, post_rule_annotations!,
     post_product_annotations!, AbstractVariable, degree, israndom, isdata, isconst,
     preprocess_form_constraints, WrappedFormConstraint, prepare_context, MessageMapping,
@@ -125,6 +125,7 @@ include("score/node.jl")
 include("score/bethe.jl")
 
 function __init__()
+    SPAN_SALT[] = UInt128(uuid4())
     Base.Experimental.register_error_hint(
         MethodError
     ) do io, exc, argtypes, kwargs

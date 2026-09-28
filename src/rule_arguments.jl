@@ -36,6 +36,10 @@ struct EmptyGroup
     length::Int
 end
 
+# Activation asks for the same few label tuples once per node and interface: the answer is cached.
+const INPUT_NAMES_CACHE = Dict{Any, Any}()
+const INPUT_NAMES_LOCK = ReentrantLock()
+
 """
     ReactiveMP.input_names(labels) -> Val
 
@@ -49,6 +53,14 @@ the consecutive members of a group become one [`ReactiveMP.GroupInputs`](@ref).
   than once, such as a group whose members are not consecutive.
 """
 function input_names(labels)
+    cached = @lock INPUT_NAMES_LOCK get(INPUT_NAMES_CACHE, labels, nothing)
+    cached === nothing || return cached
+    names = compute_input_names(labels)
+    @lock INPUT_NAMES_LOCK INPUT_NAMES_CACHE[labels] = names
+    return names
+end
+
+function compute_input_names(labels)
     names = Any[]
     for label in labels
         if label isa GroupMember && !isempty(names) && last(names) isa Vector{GroupMember} && first(last(names)).group === label.group

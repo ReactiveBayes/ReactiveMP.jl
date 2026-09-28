@@ -103,13 +103,17 @@ whole_group(member::IndexedNodeInterface, members, interfaces) =
 
 isjoint(localmarginal::FactorNodeLocalMarginal) = name(localmarginal) isa Tuple
 
-function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options)
+initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options) =
+    initialize_clusters!(clusters, factornode, options, node_context(factornode, getcontext(options)))
+
+# `ctx` is the node's rule context, built once by activation for every mapping of the node.
+function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options, ctx)
     # Every stream exists before any is wired, since a joint's rule may read any other cluster
     for i in eachindex(get_node_local_marginals(clusters))
         initialize_cluster!(clusters, i, factornode)
     end
     for i in eachindex(get_node_local_marginals(clusters))
-        activate_cluster!(clusters, i, factornode, options)
+        activate_cluster!(clusters, i, factornode, options, ctx)
     end
     return
 end
@@ -128,7 +132,7 @@ end
 # its members and the marginals of the other clusters. In a deterministic node, whose output is
 # a function of its inputs, the joint over the inputs reads the messages on every interface, the
 # output's included.
-function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
+function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options, ctx)
     marginal = get_node_local_marginals(clusters)[index]
     isjoint(marginal) || return nothing
 
@@ -143,7 +147,7 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
     messages, marginals = with_statics(factornode, messages), with_statics(factornode, marginals)
 
     fform = functionalform(factornode)
-    mapping = MarginalMapping(
+    mapping = marginal_mapping(
         fform,
         MessagePassingRulesBase.ClusterTarget(name(marginal)),
         messagesnames,
@@ -151,7 +155,7 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
         getalgorithm(fform, options),
         factornode,
         getdiagnostics(options),
-        getcontext(options),
+        ctx,
     )
     marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
     marginalout = postprocess_stream_of_marginals(getpostprocessor(options), marginalout)

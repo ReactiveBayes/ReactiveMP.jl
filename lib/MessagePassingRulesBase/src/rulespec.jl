@@ -21,8 +21,10 @@ end
 
 A rule as data, and the thing that runs: what a definition macro builds, what resolution
 ([`find_message_rule`](@ref) and its siblings) returns, and what [`execute_rule`](@ref) runs.
-It has no type parameters, so resolution returns one concrete type wherever it can be
-inferred. It shows itself at the REPL with its inputs, flags, source, file and line.
+Its body, preallocation, scratch and log-scale functions and its algorithm type are type
+parameters, `RuleSpec{B, P, S, L, A}`: where resolution is inferred, as at an engine's call site,
+which reaches one rule, it returns one concrete spec, and the body call is static. It shows itself
+at the REPL with its inputs, flags, source, file and line.
 
 What it declares, read as fields:
 
@@ -45,21 +47,21 @@ body over `(output, scratch, algo, ctx, args, ann, target)` and the others over
 `(algo, ctx, args, target)`. Run a rule through [`execute_rule`](@ref) or a call, never by
 calling them.
 """
-struct RuleSpec
+struct RuleSpec{B, P, S, L, A}
     kind::Symbol
     node::Any
     target::Any
-    algorithm::Type
+    algorithm::Type{A}
     signature::Type
     inputs::Tuple{Vararg{InputSpec}}
-    body::Function
-    prealloc::Union{Nothing, Function}
-    scratch::Union{Nothing, Function}
+    body::B
+    prealloc::P
+    scratch::S
     default::Bool
     inplace::Bool
     pure::Bool
     services::Tuple{Vararg{Symbol}}
-    logscale::Any
+    logscale::L
     reads_logscale::Bool
     source::String
     file::Symbol
