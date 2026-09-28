@@ -18,12 +18,19 @@
 
             @testset "differing annotations do not break equality" begin
                 plain = Wrapper(distribution, false, false)
-                annotated = Wrapper(distribution, false, false)
+                annotated = Wrapper(distribution, false, false, ReactiveMP.AnnotationDict())
                 annotate!(getannotations(annotated), :input_count, 2)
 
                 @test plain == annotated
                 # ... while the annotation dicts themselves are clearly different.
                 @test getannotations(plain) != getannotations(annotated)
+            end
+
+            @testset "one built without annotations carries the shared empty ones, frozen" begin
+                message = Wrapper(distribution, false, false)
+                @test isempty(getannotations(message))
+                @test getannotations(message) === getannotations(Wrapper(distribution, true, true))
+                @test_throws "nothing is meant to write to" annotate!(getannotations(message), :input_count, 2)
             end
 
             @testset "differing log scales do not break equality either" begin
@@ -386,6 +393,22 @@ end
         scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
         body = (scratch, args) -> (scratch.work .= args.m[:out] .- args.m[:in]; sum(scratch.work)),
     )
+
+    # The same rule with its scratch's type declared, and one declaring the wrong type.
+    struct TypedScratched end
+    @define_factor_node(node = TypedScratched, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(
+        node = TypedScratched, target = :out, args = (m[:in]::Vector{Float64},),
+        scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
+        scratch_type = (args) -> @NamedTuple{work::Vector{Float64}},
+        body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
+    )
+    @define_message_update_rule(
+        node = TypedScratched, target = :in, args = (m[:out]::Vector{Float64},),
+        scratch = (args) -> (work = similar(args.m[:out]),),
+        scratch_type = (args) -> @NamedTuple{work::Vector{Int}},
+        body = (scratch, args) -> sum(args.m[:out]),
+    )
 end
 
 @testitem "MessageMapping resolves and runs the rule" tags = [:engine] setup = [MessageMappingNodes] begin
@@ -428,6 +451,27 @@ end
         @test ReactiveMP.compute_marginal(joint, (Message([3.0, 1.0], false, false), Message([1.0, 1.0], false, false)), nothing) == 2.0
     end
     @test N.SCRATCH_BUILT[] == 1
+end
+
+@testitem "a mapping keeps a declared scratch type, and refuses a wrong one" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    N.SCRATCH_BUILT[] = 0
+    typed = MessageMapping(N.TypedScratched, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.TypedScratched(), nothing)
+    for x in ([1.0, 2.0], [3.0, 4.0], [0.5, 0.5])
+        @test getdata(typed((Message(x, false, false),), nothing)) == 2 * sum(x)
+    end
+    @test N.SCRATCH_BUILT[] == 1
+    @test typed.scratch !== nothing
+    # a mapping whose rule declares no scratch keeps no slot
+    plain = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Increment(), nothing)
+    plain((Message(1, false, false),), nothing)
+    @test plain.scratch === nothing
+
+    wrong = MessageMapping(N.TypedScratched, Target{:in}(), Val((:out,)), nothing, DefaultAlgorithm(), nothing, N.TypedScratched(), nothing)
+    @test_throws "declares `scratch_type`" wrong((Message([1.0], false, false),), nothing)
 end
 
 @testitem "MessageMapping gives a rule the default random number generator" tags = [:engine] setup = [MessageMappingNodes] begin

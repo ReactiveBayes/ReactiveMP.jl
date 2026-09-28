@@ -102,7 +102,8 @@ takes 4 ns.
 
 A rule's scratch is kept between calls in an untyped slot, since its type depends on the input
 types. That costs about 40 ns and 3 allocations per call, 5–7% of BIFM's rules, the only ones
-with scratch. A declared `scratch_type` makes it typed (`PLAN.md` § Scratch).
+with scratch. A declared `scratch_type` makes it typed (`PLAN.md` § Scratch), and BIFM's rules
+declare it.
 
 ### 4.3 The garbage collector and latency
 
@@ -138,8 +139,13 @@ at 1–8% of setup; it is not applied.
 
 - **A precompile workload** for first inference (1.1–1.4× v6): RxInfer's, with `free_energy =
   true` and the session, and one per rule package with many nodes.
-- **`scratch_type`, lazily allocated annotations, a `ScratchSlot` only where a rule has scratch,
-  log scale `nothing` for data and constants when untracked:** agreed with the user, next.
+- **Log scale `nothing` for data and constants when log scales are not tracked.** Neither knows
+  whether they are, so the flag would thread through `constvar` and the data variable's
+  activation, and a caller tracking log scales that forgot it would lose them silently; the gain
+  is 8 bytes per observation and the specialisations where observed and computed point masses
+  meet. Not done; for the user to decide.
+- **Scratch in more rules**: the Delta rules' sigma points and Jacobians, `*` with a matrix, AR and
+  ContinuousTransition, now that a typed scratch costs nothing.
 - **A product workspace per variable**, for the temporaries of multivariate products in
   BayesBase; to be profiled first.
 - **A fast path for variables of degree 2 in the equality chain.** Every state-space model's chain

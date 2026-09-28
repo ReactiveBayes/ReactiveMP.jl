@@ -46,6 +46,18 @@ mutable struct AnnotationDict
     end
 end
 
+# The annotations of a message or marginal nobody annotates: one shared value, so that one that
+# carries none allocates none. It is frozen: `annotate!` refuses to write to it, and the engine
+# gives a fresh `AnnotationDict` wherever something may write.
+const EMPTY_ANNOTATIONS = AnnotationDict()
+
+# A copy of `ann`, or the shared empty annotations when it has none.
+copy_annotations(ann::AnnotationDict) = isempty(ann) ? EMPTY_ANNOTATIONS : AnnotationDict(ann)
+
+@noinline throw_frozen_annotations(key) = throw(
+    ArgumentError("cannot annotate `$(key)` on annotations nothing is meant to write to: the engine's shared empty `AnnotationDict`"),
+)
+
 # `MessagePassingRulesBase`'s, overloaded later for `::Message` and `::Marginal` in their respective files
 import MessagePassingRulesBase: getannotations
 
@@ -87,6 +99,7 @@ end
 Store `value` under `key` in `ann`, replacing any value already there.
 """
 function annotate!(ann::AnnotationDict, key::Symbol, value)
+    ann === EMPTY_ANNOTATIONS && throw_frozen_annotations(key)
     if isnothing(ann.data)
         data = Dict{Symbol, Any}(key => value)
         ann.data = data
@@ -177,7 +190,8 @@ The annotations of the product of two messages, which
 [`ReactiveMP.AnnotationDict`](@ref) that each processor writes into with its own
 `post_product_annotations!`. When one side's distribution is `missing`, the product is the other
 side, and its annotations are that side's, copied, whatever the processors; when both are
-`missing`, or `processors` is `nothing`, they are empty.
+`missing`, or `processors` is `nothing`, they are empty: the engine's shared empty annotations,
+which nothing writes to.
 """
 function post_product_annotations!(
         processors,
@@ -187,10 +201,8 @@ function post_product_annotations!(
         left_dist,
         right_dist,
     )
+    isnothing(processors) && return EMPTY_ANNOTATIONS
     merged = AnnotationDict()
-    if isnothing(processors)
-        return merged
-    end
     for p in processors
         post_product_annotations!(
             p, merged, left_ann, right_ann, new_dist, left_dist, right_dist
@@ -206,7 +218,7 @@ post_product_annotations!(
     new_dist,
     ::Missing,
     ::Missing,
-) = AnnotationDict()
+) = EMPTY_ANNOTATIONS
 
 post_product_annotations!(
     processors,
@@ -215,7 +227,7 @@ post_product_annotations!(
     new_dist,
     ::Missing,
     right_dist,
-) = AnnotationDict(right_ann)
+) = copy_annotations(right_ann)
 
 post_product_annotations!(
     processors,
@@ -224,4 +236,4 @@ post_product_annotations!(
     new_dist,
     left_dist,
     ::Missing,
-) = AnnotationDict(left_ann)
+) = copy_annotations(left_ann)

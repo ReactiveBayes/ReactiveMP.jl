@@ -25,7 +25,9 @@ usually a distribution, with the flags and the metadata the engine tracks for it
 - `is_clamped`: whether the marginal comes from constants and observations alone. $(DOC_CLAMPED)
 - `is_initial`: whether the marginal was set before inference or computed from initial values
   only. $(DOC_INITIAL)
-- `annotations`: the [`ReactiveMP.AnnotationDict`](@ref) of optional metadata, empty by default;
+- `annotations`: the [`ReactiveMP.AnnotationDict`](@ref) of optional metadata. By default the
+  engine's shared empty annotations, which nothing may write to: a marginal meant to be annotated
+  is given its own `AnnotationDict()`;
 - `logscale`: the log scale of the product of messages the marginal was formed from (see
   [`getlogscale`](@ref)), or `nothing`, the default.
 
@@ -57,7 +59,7 @@ mutable struct Marginal{D, L}
 end
 
 Marginal(data, is_clamped::Bool, is_initial::Bool) =
-    Marginal(data, is_clamped, is_initial, AnnotationDict(), nothing)
+    Marginal(data, is_clamped, is_initial, EMPTY_ANNOTATIONS, nothing)
 Marginal(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
     Marginal(data, is_clamped, is_initial, annotations, nothing)
 
@@ -269,15 +271,16 @@ not apply to a marginal.
 The marginal is clamped when every input is, and initial when it is not clamped and every input
 is clamped or initial. It carries no annotations and no log scale, and no callback is invoked.
 """
-struct MarginalMapping{F, T, N, M, A, R, G}
-    target::T
-    msgs_names::N
-    marginals_names::M
-    algorithm::A
-    factornode::R
-    diagnostics::EngineDiagnostics
-    context::G
-    scratch::ScratchSlot
+mutable struct MarginalMapping{F, T, N, M, A, R, G}
+    # Mutable, its fields but the scratch slot constant, as `MessageMapping` is.
+    const target::T
+    const msgs_names::N
+    const marginals_names::M
+    const algorithm::A
+    const factornode::R
+    const diagnostics::EngineDiagnostics
+    const context::G
+    scratch::Union{Nothing, ScratchSlot}
 end
 
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
@@ -288,9 +291,9 @@ MarginalMapping(fform, target, msgs_names, marginals_names, algorithm, factornod
 
 # A mapping with its rule context already built, as `message_mapping`.
 marginal_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G) where {F, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext} =
-    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, ScratchSlot())
+    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, nothing)
 marginal_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G) where {F <: Function, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext} =
-    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, ScratchSlot())
+    MarginalMapping{F, T, N, M, A, R, G}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, nothing)
 
 # As `new_message`: a barrier for a marginal built from a value inferred abstractly.
 @noinline new_marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(data, is_clamped, is_initial)
@@ -327,7 +330,7 @@ function compute_marginal(mapping::MarginalMapping, messages, marginals)
     MessagePassingRulesBase.check_services(spec, ctx)
     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
-    scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+    scratch = mapping_scratch(mapping, spec, algorithm, ctx, args)
     return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
 end
 

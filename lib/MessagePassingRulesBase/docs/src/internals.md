@@ -16,6 +16,7 @@ author never calls them.
 MessagePassingRulesBase.execute_rule
 MessagePassingRulesBase.execute_rule_with_logscale
 MessagePassingRulesBase.rule_scratch
+MessagePassingRulesBase.rule_scratch_type
 MessagePassingRulesBase.check_reads_logscale
 ```
 

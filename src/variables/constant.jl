@@ -21,9 +21,9 @@ end
 function ConstVariable(constant; label = nothing)
     marginal = MarginalObservable()
     # A point mass observed: its log scale is zero.
-    connect!(marginal, of(Marginal(PointMass(constant), true, false, AnnotationDict(), 0)))
+    connect!(marginal, of(Marginal(PointMass(constant), true, false, EMPTY_ANNOTATIONS, 0)))
     messageout = MessageObservable(AbstractMessage)
-    connect!(messageout, of(Message(PointMass(constant), true, false, AnnotationDict(), 0)))
+    connect!(messageout, of(Message(PointMass(constant), true, false, EMPTY_ANNOTATIONS, 0)))
     return ConstVariable(marginal, messageout, constant, 0, label)
 end
 

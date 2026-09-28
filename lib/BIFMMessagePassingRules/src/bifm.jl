@@ -163,6 +163,14 @@ function bifm_scratch(algo::BIFMSmoother, messages...)
     )
 end
 
+# The type `bifm_scratch` returns for these inputs, from their types alone: what the rules declare
+# as `scratch_type`, so the engine keeps the scratch concretely typed between calls.
+function bifm_scratch_type(algo::BIFMSmoother, messages...)
+    T = promote_type(eltype(algo.A), promote_samplefloattype(messages...))
+    V, M = Vector{T}, Matrix{T}
+    return NamedTuple{(:ξz, :Λz, :BHBt, :ξ̃z, :Λ̃z, :CtΛ, :BH, :z, :zz), Tuple{V, M, M, V, M, M, M, V, M}}
+end
+
 # The backward quantities, computed from the messages on `out`, `in` and `znext` into
 # `scratch`, in this order of operations:
 #
@@ -201,6 +209,7 @@ end
     node = BIFM, target = :zprev, algorithm = BIFMSmoother,
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:in]::MultivariateNormalDistributionsFamily, m[:znext]::MultivariateNormalDistributionsFamily),
     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
+    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
     body = (scratch, algo, args) -> begin
         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
         A = algo.A
@@ -218,6 +227,7 @@ end
         m[:zprev]::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m[:znext]::MultivariateNormalDistributionsFamily,
     ),
     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
+    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
     body = (scratch, algo, args) -> begin
         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
         A, B = algo.A, algo.B
@@ -251,6 +261,7 @@ end
         m[:zprev]::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m[:znext]::MultivariateNormalDistributionsFamily,
     ),
     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
+    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
     body = (scratch, algo, args) -> begin
         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
         μ_znext, Σ_znext = bifm_forward(s, algo, args.m[:in], args.m[:zprev])
@@ -267,6 +278,7 @@ end
         m[:zprev]::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m[:znext]::MultivariateNormalDistributionsFamily,
     ),
     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
+    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
     body = (scratch, algo, args) -> begin
         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
         μ_znext, Σ_znext = bifm_forward(s, algo, args.m[:in], args.m[:zprev])

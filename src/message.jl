@@ -56,8 +56,10 @@ and the metadata the engine tracks for it.
 - `is_clamped`: whether the message comes from constants and observations alone. $(DOC_CLAMPED)
 - `is_initial`: whether the message was set before inference or computed from initial values
   only. $(DOC_INITIAL)
-- `annotations`: the [`ReactiveMP.AnnotationDict`](@ref) of optional metadata, empty by default
-  (see [`ReactiveMP.AbstractAnnotations`](@ref));
+- `annotations`: the [`ReactiveMP.AnnotationDict`](@ref) of optional metadata (see
+  [`ReactiveMP.AbstractAnnotations`](@ref)). By default the engine's shared empty annotations,
+  which nothing may write to: a message meant to be annotated is given its own
+  `AnnotationDict()`;
 - `logscale`: the log of the constant the normalised `data` leaves out (see
   [`getlogscale`](@ref)): a number, an
   [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) with its reason, or
@@ -98,7 +100,7 @@ mutable struct Message{D, L} <: AbstractMessage
 end
 
 Message(data, is_clamped::Bool, is_initial::Bool) =
-    Message(data, is_clamped, is_initial, AnnotationDict(), nothing)
+    Message(data, is_clamped, is_initial, EMPTY_ANNOTATIONS, nothing)
 Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
     Message(data, is_clamped, is_initial, annotations, nothing)
 
@@ -656,7 +658,7 @@ function connect!(message::MessageObservable, source)
 end
 
 function set_initial_message!(message::MessageObservable, value)
-    next!(message.subject, Message(value, false, true, AnnotationDict(), INITIAL_LOGSCALE))
+    next!(message.subject, Message(value, false, true, EMPTY_ANNOTATIONS, INITIAL_LOGSCALE))
     return nothing
 end
 
@@ -701,8 +703,9 @@ message.
 See also [`Message`](@ref), [`ReactiveMP.rule_arguments`](@ref).
 """
 mutable struct MessageMapping{F, T, N, M, A, X, R, E, G, B, S}
-    # Mutable, its fields constant: every `DeferredMessage` an outbound stream emits holds its
-    # mapping, and an immutable mapping, the factor node inside it, would be copied into each.
+    # Mutable, its fields but the scratch slot constant: every `DeferredMessage` an outbound stream
+    # emits holds its mapping, and an immutable mapping, the factor node inside it, would be copied
+    # into each.
     const target::T
     const msgs_names::N
     const marginals_names::M
@@ -713,7 +716,7 @@ mutable struct MessageMapping{F, T, N, M, A, X, R, E, G, B, S}
     const diagnostics::EngineDiagnostics
     const context::G
     const rulefallback::B
-    const scratch::ScratchSlot
+    scratch::Union{Nothing, ScratchSlot}
     const logscales::S
 end
 
@@ -748,9 +751,9 @@ MessageMapping(fform, target, msgs_names, marginals_names, algorithm, annotation
 # A mapping with its rule context already built: activation builds one per node and gives it to
 # every mapping of the node.
 message_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
-    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, ScratchSlot(), s))
+    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, nothing, s))
 message_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F <: Function, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
-    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, ScratchSlot(), s))
+    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, nothing, s))
 
 tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
 
@@ -776,7 +779,9 @@ function (mapping::MessageMapping)(messages, marginals)
     span_id = generate_span_id(mapping.callbacks)
     @invoke_callback(mapping.callbacks, BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id))
 
-    annotations = AnnotationDict()
+    # Fresh annotations only where something may write them: the processors, or below a rule that
+    # takes the `ann` slot.
+    annotations = isnothing(mapping.annotations) ? EMPTY_ANNOTATIONS : AnnotationDict()
 
     # Run annotation processors before the rule has been executed
     if !isnothing(mapping.annotations)
@@ -798,9 +803,12 @@ function (mapping::MessageMapping)(messages, marginals)
             MessagePassingRulesBase.check_reads_logscale(spec, args)
             ctx = mapping.context
             MessagePassingRulesBase.check_services(spec, ctx)
+            if spec.annotates && annotations === EMPTY_ANNOTATIONS
+                annotations = AnnotationDict()
+            end
             ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
             algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
-            scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+            scratch = mapping_scratch(mapping, spec, algorithm, ctx, args)
             if tracks_logscales(mapping)
                 MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
             else

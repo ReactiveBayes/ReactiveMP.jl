@@ -229,8 +229,7 @@ one per outbound stream and reuses it. It is write-before-read, carries nothing 
 and is never shared between a node's rules, so a rule using it stays pure. It is separate from
 `inplace`, and the two combine.
 
-**A rule may declare its scratch's type** *(designed and measured, not applied: only BIFM keeps a
-scratch, and gains 5–7%)* with `scratch_type`, over the same slots, returning a
+**A rule may declare its scratch's type** with `scratch_type`, over the same slots, returning a
 type from the inputs' types: `scratch_type = (args) -> @NamedTuple{acc::Vector{Float64}}`, or
 computed from `eltype`s. The declaration folds to a constant. The engine asserts the kept
 scratch to it after an `isa` guard (other input types rebuild it), so the rule runs on a
@@ -404,17 +403,18 @@ apart. It can also carry **the body's source text, file and line**, which is wha
 `@which_message_update_rule` able to *show you the rule* rather than merely name it — directly serving the
 educational and introspection goals above.
 
-**`RuleSpec` is typed: `RuleSpec{B, P, S, L, A}`** (the performance pass, `BENCHMARK.md`;
-applied). The body, preallocation, scratch and log-scale functions and the algorithm type are its
-parameters; `RuleResult` carries the spec's type. With `scratch_type` it would gain `ST`. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has `kind`,
+**`RuleSpec` is typed: `RuleSpec{B, P, S, L, A, ST}`** (the performance pass, `BENCHMARK.md`;
+applied). The body, preallocation, scratch, scratch-type and log-scale functions and the algorithm
+type are its parameters; `RuleResult` carries the spec's type. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has `kind`,
 `inputs`, `default`, `services` and `reads_logscale`:
 
 ```julia
-struct RuleSpec{B, P, S, L, A}
+struct RuleSpec{B, P, S, L, A, ST}
     algorithm::Type{A}
     body::B                # the lambda from `body = ...`
     prealloc::P            # from `preallocate = ...`, or `nothing`
     scratch::S             # from `scratch = ...`, or `nothing`
+    scratch_type::ST       # from `scratch_type = ...`, or `nothing`
     logscale::L
     inplace::Bool
     pure::Bool
@@ -477,7 +477,9 @@ checked by the packages' suites and bit-identical posteriors, and the set is app
 - **GraphPPL** (pull request, onto `4.9.0`): the two quadratic paths (`apply_meta!`,
   `flattened_index`) and three small fixes.
 
-Not applied: `scratch_type`, the equality chain's two-message partial products (they changed what
+Applied after it: `scratch_type`, annotations allocated only where something writes them, and a
+scratch slot only for rules that declare scratch. Not applied: the equality chain's two-message
+partial products (they changed what
 "check last" means and broke one of RxInfer's tests), and a precompile workload, which is what
 first inference still needs.
 

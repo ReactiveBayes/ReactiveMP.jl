@@ -3,8 +3,8 @@ const PREALLOCATE_SLOTS = (:algo, :ctx, :args)
 const SCRATCH_SLOTS = PREALLOCATE_SLOTS
 const LOGSCALE_SLOTS = PREALLOCATE_SLOTS
 
-const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx, :logscale, :reads_logscale)
-const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx)
+const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :scratch_type, :pure, :ctx, :logscale, :reads_logscale)
+const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :scratch_type, :pure, :ctx)
 const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
 
 # Parts of the definition macros' docstrings that several share, written once and interpolated.
@@ -96,6 +96,13 @@ const DOC_RULE_SCRATCH = rstrip(
       the engine may keep, drop or rebuild it whenever it likes. It never leaves the rule, is never
       shared with another rule, keeps the rule pure, and combines with `inplace`. The body takes
       `scratch` exactly when this is given. Default: none.
+    - `scratch_type`: the type `scratch` builds, a function of the same slots returning it from
+      the inputs' types alone, `scratch_type = (args) -> @NamedTuple{work::Vector{Float64}}`, or
+      computed from their element types. It folds to a constant, so an engine keeping the scratch
+      between calls runs the rule on a concretely typed one; without it the kept scratch is
+      untyped, which costs a dynamic call and a few allocations per call. A `scratch` that builds
+      another type is an `ArgumentError` naming the rule. Allowed only with `scratch`. Default:
+      none.
     """
 )
 
@@ -112,7 +119,7 @@ const DOC_RULE_PURE = rstrip(
     @define_message_update_rule(
         node = ..., target = ..., args = (...), body = (...) -> ...,
         algorithm = ..., logscale = ..., reads_logscale = ..., ctx = (...),
-        inplace = ..., preallocate = ..., scratch = ..., pure = ...,
+        inplace = ..., preallocate = ..., scratch = ..., scratch_type = ..., pure = ...,
     )
 
 Define the rule for the message a node sends towards one of its interfaces. The macro takes
@@ -130,7 +137,7 @@ $(DOC_RULE_NODE)
 - `target`: the interface the message goes to:
   - `:out`, a single interface;
   - `(:m, k)`, any member of the group `m`. The name `k` is bound to the member's index, an
-    `Int`, in `body` and in the `preallocate`, `scratch` and `logscale` functions, without being
+    `Int`, in `body` and in the `preallocate`, `scratch`, `scratch_type` and `logscale` functions, without being
     listed among their parameters; `args` can select by it.
 
 $(DOC_RULE_ARGS)
@@ -199,7 +206,8 @@ end
 """
     @define_marginal_update_rule(
         node = ..., target = (:y, :x), args = (...), body = (...) -> ...,
-        algorithm = ..., ctx = (...), inplace = ..., preallocate = ..., scratch = ..., pure = ...,
+        algorithm = ..., ctx = (...), inplace = ..., preallocate = ..., scratch = ..., scratch_type = ...,
+        pure = ...,
     )
 
 Define the rule for the joint marginal of a structural cluster: the marginal of, say,
@@ -220,7 +228,7 @@ $(DOC_RULE_NODE)
   - `(:y, :x)`, a cluster of interfaces;
   - `(:out, (:T, 1))`, with a member of a group written with a literal index;
   - a bare name, `target = members`: any cluster of the node, the name bound to the cluster's
-    key in `body` and in the `preallocate` and `scratch` functions, without being listed among
+    key in `body` and in the `preallocate`, `scratch` and `scratch_type` functions, without being listed among
     their parameters. Used with `default` in `args`, for one rule over every factorisation.
 
 $(DOC_RULE_ARGS)
@@ -270,7 +278,7 @@ or repeated keyword is an error at definition time, naming the valid ones.
 
 The energy becomes a method of [`find_average_energy`](@ref), found for its node, algorithm and
 input types, from any module. It has no target, returns a number and has no log scale, so
-`target`, `inplace`, `preallocate`, `scratch`, `logscale` and `reads_logscale` are not accepted.
+`target`, `inplace`, `preallocate`, `scratch`, `scratch_type`, `logscale` and `reads_logscale` are not accepted.
 
 # Required keywords
 
@@ -359,6 +367,7 @@ function define_rule_expr(kind, source, macroargs)
     has_scratch = haskey(keywords, :scratch)
     :scratch in slots && !has_scratch && error("@$name: the `scratch` slot requires a `scratch` keyword, `scratch = (args) -> memory`")
     has_scratch && !(:scratch in slots) && error("@$name: the rule declares `scratch` but its body does not take it; name `scratch` among its slots")
+    haskey(keywords, :scratch_type) && !has_scratch && error("@$name: `scratch_type` requires `scratch`")
 
     base = MessagePassingRulesBase
     user_body = gensym(:body)
@@ -393,6 +402,18 @@ function define_rule_expr(kind, source, macroargs)
         sc_index = index_name === nothing ? () : (:($index_fn($sc_target)),)
         push!(scratch_defs, :(const $user_sc = $(append_parameter(sc, index_name))))
         scratch_fn = :(($(sc_args...), $sc_target) -> $user_sc($(sc_passed...), $(sc_index...)))
+    end
+    scratch_type_fn = nothing
+    if haskey(keywords, :scratch_type)
+        st = keywords[:scratch_type]
+        st_slots = parse_slots(name, st, SCRATCH_SLOTS; what = "scratch_type")
+        user_st = gensym(:scratch_type)
+        st_args = [gensym(slot) for slot in SCRATCH_SLOTS]
+        st_passed = [st_args[findfirst(==(slot), SCRATCH_SLOTS)] for slot in st_slots]
+        st_target = gensym(:target)
+        st_index = index_name === nothing ? () : (:($index_fn($st_target)),)
+        push!(scratch_defs, :(const $user_st = $(append_parameter(st, index_name))))
+        scratch_type_fn = :(($(st_args...), $st_target) -> $user_st($(st_passed...), $(st_index...)))
     end
 
     logscale_defs = []
@@ -464,9 +485,11 @@ function define_rule_expr(kind, source, macroargs)
             body = ($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...)),
             prealloc = $prealloc,
             scratch = $scratch_fn,
+            scratch_type = $scratch_type_fn,
             default = $has_default,
             inplace = $inplace,
             pure = $pure,
+            annotates = $(:ann in slots),
             services = $services,
             logscale = $logscale_fn,
             reads_logscale = $reads_logscale,

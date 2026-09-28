@@ -1,5 +1,5 @@
-# A rule's working memory, one per outbound stream: each message and marginal mapping keeps a
-# slot, built at the stream's first call and reused while the same rule runs on it. A rule
+# A rule's working memory, one per outbound stream: each message and marginal mapping whose rule
+# declares scratch keeps a slot, built at that rule's first call and reused while it runs there. A rule
 # writes its scratch before reading it, so rebuilding it is always safe; it never leaves the
 # rule and is never shared with another.
 
@@ -8,7 +8,8 @@
 
 Where a [`ReactiveMP.MessageMapping`](@ref) or a [`ReactiveMP.MarginalMapping`](@ref) keeps the
 scratch of the rule it runs: the rule it was built for, and the scratch itself, both `nothing`
-until the first call. See [`ReactiveMP.scratch_for!`](@ref).
+until the first call. A mapping creates its slot only when its rule declares scratch. See
+[`ReactiveMP.scratch_for!`](@ref).
 """
 mutable struct ScratchSlot
     spec::Any
@@ -28,8 +29,34 @@ With `checked`, the `checked_buffers` diagnostic, a reused scratch is poisoned f
 """
 function scratch_for!(slot::ScratchSlot, spec, algorithm, ctx, args, target, checked::Bool = false)
     spec.scratch === nothing && return nothing
-    slot.spec === spec && return checked ? poison!(slot.scratch) : slot.scratch
-    slot.scratch = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, target)
+    # The declared type (`Any` when the rule declares none): the slot's value is asserted to it, so
+    # the rule runs on a concretely typed scratch; one of another type (other input types) is rebuilt.
+    T = MessagePassingRulesBase.rule_scratch_type(spec, algorithm, ctx, args, target)
+    current = slot.scratch
+    if slot.spec === spec && current isa T
+        return (checked ? poison!(current) : current)::T
+    end
+    fresh = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, target)
+    fresh isa T || throw_scratch_type(spec, T, fresh)
+    slot.scratch = fresh
     slot.spec = spec
-    return slot.scratch
+    return fresh::T
 end
+
+# The scratch a mapping runs `spec` with, its slot created at the first call of a rule that declares
+# scratch: `nothing`, and no slot, for one that does not.
+@inline mapping_scratch(mapping, spec, algorithm, ctx, args) =
+    spec.scratch === nothing ? nothing :
+    scratch_for!(scratch_slot!(mapping), spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+
+function scratch_slot!(mapping)
+    slot = mapping.scratch
+    slot === nothing || return slot
+    fresh = ScratchSlot()
+    mapping.scratch = fresh
+    return fresh
+end
+
+@noinline throw_scratch_type(spec, T, fresh) = throw(
+    ArgumentError("$(MessagePassingRulesBase.rule_heading(spec)) declares `scratch_type` $(T), but its `scratch` built a $(typeof(fresh))"),
+)
