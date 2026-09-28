@@ -1,0 +1,167 @@
+diff --git a/src/nodes/dependencies.jl b/src/nodes/dependencies.jl
+index 4f18ba8f8..00198ce99 100644
+--- a/src/nodes/dependencies.jl
++++ b/src/nodes/dependencies.jl
+@@ -191,7 +191,7 @@ function activate_messages!(factornode, options)
+     return foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
+         if israndom(interface) || isdata(interface)
+             (messagelabels, message_dependencies), (marginallabels, marginal_dependencies) =
+-                spec === nothing ? default_dependencies(factornode, iindex) : declared_dependencies(factornode, spec, interface)
++                planned_dependencies(factornode, spec, iindex, interface)
+             messagesnames, messages = collect_latest_messages(messagelabels, message_dependencies)
+             marginalsnames, marginals = collect_latest_marginals(marginallabels, marginal_dependencies)
+ 
+@@ -213,6 +213,53 @@ function activate_messages!(factornode, options)
+     end
+ end
+ 
++# The dependencies of the message out of interface `iindex`. They depend only on the node's shape
++# and the declaration, so a node with a creation plan resolves them once per shape: the plan keeps
++# them as positions, of interfaces for the messages and of clusters or interfaces for the
++# marginals, and each node reads its own objects at those positions.
++function planned_dependencies(factornode, spec, iindex, interface)
++    plan = creation_plan(factornode)
++    plan === nothing && return resolve_dependencies(factornode, spec, iindex, interface)
++    key = (spec === nothing ? zero(UInt) : objectid(spec), iindex)
++    cached = @lock CREATION_PLANS_LOCK get(plan.dependencies, key, nothing)
++    if cached === nothing
++        resolved = resolve_dependencies(factornode, spec, iindex, interface)
++        encoded = encode_dependencies(factornode, resolved)
++        @lock CREATION_PLANS_LOCK plan.dependencies[key] = something(encoded, :unplanned)
++        return resolved
++    end
++    cached === :unplanned && return resolve_dependencies(factornode, spec, iindex, interface)
++    return decode_dependencies(factornode, cached)
++end
++
++resolve_dependencies(factornode, spec, iindex, interface) =
++    spec === nothing ? default_dependencies(factornode, iindex) : declared_dependencies(factornode, spec, interface)
++
++# Positions of the dependencies in the node, or `nothing` where a source cannot be told apart by
++# position (one variable on two interfaces).
++function encode_dependencies(factornode, ((messagelabels, messages), (marginallabels, marginals)))
++    interfaces = getinterfaces(factornode)
++    locals = get_node_local_marginals(getlocalclusters(factornode))
++    mpositions = map(m -> findfirst(i -> i === m, interfaces), messages)
++    any(isnothing, mpositions) && return nothing
++    qpositions = map(marginals) do q
++        c = findfirst(l -> l === q, locals)
++        c === nothing || return (true, c)
++        matching = findall(i -> getvariable(i) === q, interfaces)
++        return length(matching) == 1 ? (false, only(matching)) : nothing
++    end
++    any(isnothing, qpositions) && return nothing
++    return ((messagelabels, mpositions), (marginallabels, qpositions))
++end
++
++function decode_dependencies(factornode, ((messagelabels, mpositions), (marginallabels, qpositions)))
++    interfaces = getinterfaces(factornode)
++    locals = get_node_local_marginals(getlocalclusters(factornode))
++    messages = map(i -> interfaces[i], mpositions)
++    marginals = map(((iscluster, i),) -> iscluster ? locals[i] : getvariable(interfaces[i]), qpositions)
++    return ((messagelabels, messages), (marginallabels, marginals))
++end
++
+ """
+     ReactiveMP.rule_target(interface)
+ 
+diff --git a/src/nodes/nodes.jl b/src/nodes/nodes.jl
+index 4dd2f90ba..ee72761ba 100644
+--- a/src/nodes/nodes.jl
++++ b/src/nodes/nodes.jl
+@@ -93,11 +93,13 @@ struct FactorNode{F, I, C, N} <: AbstractFactorNode
+     interfaces::I
+     localclusters::C
+     nodefn::N
++    # the node's `CreationPlan`, shared by every node of its shape, or `nothing`
++    plan::Any
+ 
+-    FactorNode(fform::Type{F}, interfaces::I, localclusters::C, nodefn::N = nothing) where {F, I, C, N} =
+-        new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn)
+-    FactorNode(fform::F, interfaces::I, localclusters::C, nodefn::N = nothing) where {F <: Function, I, C, N} =
+-        new{F, I, C, N}(fform, interfaces, localclusters, nodefn)
++    FactorNode(fform::Type{F}, interfaces::I, localclusters::C, nodefn::N = nothing, plan = nothing) where {F, I, C, N} =
++        new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn, plan)
++    FactorNode(fform::F, interfaces::I, localclusters::C, nodefn::N = nothing, plan = nothing) where {F <: Function, I, C, N} =
++        new{F, I, C, N}(fform, interfaces, localclusters, nodefn, plan)
+ end
+ 
+ """
+@@ -156,6 +158,12 @@ node = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, constvar(1.0))]
+ ```
+ """
+ function factornode(fform::F, interfaces, factorisation = nothing; nodefn = nothing) where {F}
++    plan = cached_creation_plan(fform, interfaces, factorisation)
++    plan === nothing || return factornode_from_plan(fform, plan, interfaces, nodefn)
++    return create_factornode(fform, interfaces, factorisation, nodefn)
++end
++
++function create_factornode(fform, interfaces, factorisation, nodefn)
+     spec = node_specification(fform)
+     given = resolve_interfaces(fform, interfaces)
+     given, statics = fold_static_inputs(fform, spec, given)
+@@ -163,7 +171,63 @@ function factornode(fform::F, interfaces, factorisation = nothing; nodefn = noth
+     check_group_lengths(fform, spec, processed)
+     clusters = collect_factorisation(fform, spec, processed, factorisation)
+     check_factorisation(fform, spec, clusters)
+-    return FactorNode(fform, processed, FactorNodeLocalClusters(processed, clusters), node_function(fform, spec, nodefn, statics))
++    localclusters = FactorNodeLocalClusters(processed, clusters)
++    plan = spec.static_inputs === :fold ? nothing : record_creation_plan!(fform, interfaces, factorisation, processed, localclusters)
++    return FactorNode(fform, processed, localclusters, node_function(fform, spec, nodefn, statics), plan)
++end
++
++# What creating a node of one type from the same interface keys and factorisation always gives,
++# since it depends on nothing else (a node that folds its static inputs depends on its
++# variables' kinds, and is never planned): where each processed interface comes from in the
++# given ones, the vector's element type, the clusters and their keys. A graph creates the same
++# few shapes of node many times, so each is resolved and checked once.
++# A plan also keeps the dependencies each target resolved to, under each dependency declaration
++# (`ReactiveMP.planned_dependencies`).
++struct CreationPlan{T, C, K}
++    order::Vector{Tuple{Int, Symbol, Int}}
++    clusters::C
++    keys::K
++    dependencies::Dict{Tuple{UInt, Int}, Any}
++    CreationPlan{T}(order, clusters::C, keys::K) where {T, C, K} = new{T, C, K}(order, clusters, keys, Dict{Tuple{UInt, Int}, Any}())
++end
++
++creation_plan(factornode::FactorNode) = factornode.plan
++creation_plan(factornode) = nothing
++
++const CREATION_PLANS = Dict{Any, CreationPlan}()
++const CREATION_PLANS_LOCK = ReentrantLock()
++
++creation_plan_key(fform, interfaces::Union{AbstractVector, Tuple}, factorisation) =
++    (fform, Tuple(first(interface) for interface in interfaces), factorisation)
++creation_plan_key(fform, interfaces, factorisation) = nothing
++
++function cached_creation_plan(fform, interfaces, factorisation)
++    key = creation_plan_key(fform, interfaces, factorisation)
++    key === nothing && return nothing
++    return @lock CREATION_PLANS_LOCK get(CREATION_PLANS, key, nothing)
++end
++
++function record_creation_plan!(fform, interfaces, factorisation, processed, clusters::FactorNodeLocalClusters)
++    key = creation_plan_key(fform, interfaces, factorisation)
++    key === nothing && return nothing
++    resolved = map(interface -> given_key(fform, first(interface)), Tuple(interfaces))
++    order = map(processed) do interface
++        (findfirst(==(interface_key(interface)), resolved), name(interface), interface isa IndexedNodeInterface ? index(interface) : 0)
++    end
++    plan = CreationPlan{eltype(processed)}(order, getfactorization(clusters), map(name, get_node_local_marginals(clusters)))
++    @lock CREATION_PLANS_LOCK CREATION_PLANS[key] = plan
++    return plan
++end
++
++function factornode_from_plan(fform, plan::CreationPlan{T}, interfaces, nodefn) where {T}
++    processed = Vector{T}(undef, length(plan.order))
++    for (j, (i, iname, k)) in enumerate(plan.order)
++        variable = last(interfaces[i])
++        processed[j] = k == 0 ? NodeInterface(iname, variable) : IndexedNodeInterface(k, NodeInterface(iname, variable))
++    end
++    marginals = map(FactorNodeLocalMarginal, plan.keys)
++    localclusters = FactorNodeLocalClusters{typeof(marginals), typeof(plan.clusters)}(marginals, plan.clusters)
++    return FactorNode(fform, processed, localclusters, nodefn, plan)
+ end
+ 
+ function node_specification(fform)

@@ -31,6 +31,24 @@ The machine: Julia 1.13.0, an M-series Mac, 10 cores.
 
 ## 1. Verdict
 
+> **Corrected by round 2 (2026-09-28, in progress; `investigations/performance-pass/round2/`).**
+> The tables below are transcribed correctly, but this verdict overstates them:
+> - **"Faster than v6 on six of seven"** holds only for the marginal cost of one more iteration.
+>   The n = 10⁴ figure is an artefact of where a GC pause fell: GC-free on both sides, FULLT is
+>   1.29× *slower*.
+>   - Two slower benchmarks are left out of the count: iid@100 and iid with RxInfer's defaults.
+>   - End to end, at the iteration counts benchmarked, FULLT is slower than v6 on every model
+>     except the streaming filter and nl: 1.06–1.61× in round 2's paired baseline. Setup is the
+>     gap, at 1.4–2.0× v6.
+> - **"Under 1 s"** holds for iid and Beta–Bernoulli only; ssm1 goes 13.6 → 6.6 s.
+>   - Without a workload on either side, v7 is 1.13–1.30× v6 to first inference. v6 has no
+>     workload and would gain from one too.
+>   - The steady-state gain from a workload is most likely Julia 1.13's GC no longer marking
+>     package-image objects (JuliaLang/julia#61474).
+>   - The precompile times given have no data behind them.
+> - **"Bit-identical"** compared `(type name, mean, cov)` summaries, not distributions, and run
+>   2's reference is not recorded.
+
 - **Where HEAD stood.** v7 was 1.5–4.6× slower than v6 in steady state, 2.2–3.2× in setup, and
   15–30% slower to first inference, on the same Rocket and GraphPPL. So every difference comes
   from the engine.
