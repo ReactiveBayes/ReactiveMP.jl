@@ -1,0 +1,8 @@
+P12	model[label] per node (hashed)	30.17853809746017	0
+P12	Vector{NodeData} per node	2.1581894540363975	0
+P12	factor_nodes(callback) per node	61.66255582961136	19491
+P12	hasextra+getextra(typed key) per factor node	28.8953069795347	0
+G1	model[label] per node (hashed)	19.41467235517632	0
+G1	Vector{NodeData} per node	2.8282781147923473	0
+G1	factor_nodes(callback) per node	42.83396106926205	19491
+G1	hasextra+getextra(typed key) per factor node	7.30507966135591	0

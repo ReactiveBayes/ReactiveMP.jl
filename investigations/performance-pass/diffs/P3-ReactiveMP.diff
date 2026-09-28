@@ -1,0 +1,163 @@
+diff --git a/lib/MessagePassingRulesBase/src/rulespec.jl b/lib/MessagePassingRulesBase/src/rulespec.jl
+index bf838d70..d0aa4001 100644
+--- a/lib/MessagePassingRulesBase/src/rulespec.jl
++++ b/lib/MessagePassingRulesBase/src/rulespec.jl
+@@ -269,6 +269,27 @@ reads them; [`check_reads_logscale`](@ref) does.
+     return result, rule_logscale(spec, spec.logscale, raw, algorithm, ctx, args, target)
+ end
+ 
++"""
++    execute_rule(then, spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target)
++
++`then(execute_rule(spec, output, scratch, algorithm, ctx, args, ann, target))`, with the body and
++`then` called behind one function barrier specialised on the body's type: the body's result is
++inferred there, so `then` runs on a concretely typed value. An engine passes what it does with
++the result as `then`, rather than receiving a value inferred `Any`.
++"""
++@inline execute_rule(then::F, spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target) where {F} =
++    execute_rule_then(spec.body, then, spec, output, scratch, algorithm, ctx, args, ann, target)
++
++@noinline function execute_rule_then(body::B, then::F, spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target) where {B, F}
++    if spec.inplace && output === nothing
++        output = spec.prealloc(algorithm, ctx, args, target)
++    end
++    if scratch === nothing
++        scratch = rule_scratch(spec, algorithm, ctx, args, target)
++    end
++    return then(unwrap_result(spec, body(output, scratch, algorithm, ctx, args, ann, target)))
++end
++
+ # The body's raw return, a `WithLogScale` for a rule declared `from_body`, and the scratch it ran with.
+ @inline function execute_rule_body(spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target)
+     if spec.inplace && output === nothing
+diff --git a/src/marginal.jl b/src/marginal.jl
+index f71904db..b628b57a 100644
+--- a/src/marginal.jl
++++ b/src/marginal.jl
+@@ -307,16 +307,22 @@ function (mapping::MarginalMapping)(dependencies)
+             __check_all(is_clamped_or_initial, marginals)
+     )
+ 
+-    marginal = if has_missing_inputs(messages) || has_missing_inputs(marginals)
+-        missing
+-    else
+-        compute_marginal(mapping, messages, marginals)
++    if has_missing_inputs(messages) || has_missing_inputs(marginals)
++        return Marginal(missing, is_marginal_clamped, is_marginal_initial)
+     end
++    return compute_marginal(MarginalTail(is_marginal_clamped, is_marginal_initial), mapping, messages, marginals)::Marginal
++end
+ 
+-    return new_marginal(marginal, is_marginal_clamped, is_marginal_initial)
++struct MarginalTail
++    is_clamped::Bool
++    is_initial::Bool
+ end
+ 
+-function compute_marginal(mapping::MarginalMapping, messages, marginals)
++(tail::MarginalTail)(result) = Marginal(result, tail.is_clamped, tail.is_initial)
++
++compute_marginal(mapping::MarginalMapping, messages, marginals) = compute_marginal(identity, mapping, messages, marginals)
++
++function compute_marginal(then, mapping::MarginalMapping, messages, marginals)
+     fform = marginal_mapping_fform(mapping)
+     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
+     spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)))
+@@ -325,7 +331,7 @@ function compute_marginal(mapping::MarginalMapping, messages, marginals)
+     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
+     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+     scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+-    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
++    return MessagePassingRulesBase.execute_rule(then, spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+ end
+ 
+ Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =
+diff --git a/src/message.jl b/src/message.jl
+index cddf23ce..6a575ef7 100644
+--- a/src/message.jl
++++ b/src/message.jl
+@@ -754,43 +754,54 @@ function (mapping::MessageMapping)(messages, marginals)
+         end
+     end
+ 
+-    result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals)
+-        missing, nothing
+-    else
+-        fform = message_mapping_fform(mapping)
+-        args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
+-        found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
+-        if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
+-            fallback_message(mapping.rulefallback, found, fform, mapping.target, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
+-        else
+-            spec = audit_rule(mapping.diagnostics, resolve_rule(found))
+-            MessagePassingRulesBase.check_reads_logscale(spec, args)
+-            ctx = mapping.context
+-            MessagePassingRulesBase.check_services(spec, ctx)
+-            ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
+-            algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+-            scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+-            if tracks_logscales(mapping)
+-                MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+-            else
+-                MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing
+-            end
+-        end
++    if has_missing_inputs(messages) || has_missing_inputs(marginals)
++        return finish_message(mapping, messages, marginals, missing, annotations, nothing, span_id, is_message_clamped, is_message_initial)
++    end
++    fform = message_mapping_fform(mapping)
++    args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
++    found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
++    if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
++        result = fallback_message(mapping.rulefallback, found, fform, mapping.target, args)
++        return finish_message(mapping, messages, marginals, result, annotations, (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing), span_id, is_message_clamped, is_message_initial)
+     end
++    spec = audit_rule(mapping.diagnostics, resolve_rule(found))
++    MessagePassingRulesBase.check_reads_logscale(spec, args)
++    ctx = mapping.context
++    MessagePassingRulesBase.check_services(spec, ctx)
++    ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
++    algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
++    scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
++    if tracks_logscales(mapping)
++        result, logscale = MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
++        return finish_message(mapping, messages, marginals, result, annotations, logscale, span_id, is_message_clamped, is_message_initial)
++    end
++    then = MessageTail(mapping, messages, marginals, annotations, span_id, is_message_clamped, is_message_initial)
++    return MessagePassingRulesBase.execute_rule(then, spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)::Message
++end
+ 
++# What a message mapping does with the rule's result: the annotation processors after the rule,
++# the callback event, the message. `MessageTail` carries it into the rule's function barrier, so
++# it runs on a concretely typed result.
++struct MessageTail{M, Ms, Mr, S}
++    mapping::M
++    messages::Ms
++    marginals::Mr
++    annotations::AnnotationDict
++    span_id::S
++    is_clamped::Bool
++    is_initial::Bool
++end
++
++(tail::MessageTail)(result) = finish_message(tail.mapping, tail.messages, tail.marginals, result, tail.annotations, nothing, tail.span_id, tail.is_clamped, tail.is_initial)
++
++function finish_message(mapping::MessageMapping, messages, marginals, result, annotations, logscale, span_id, is_message_clamped, is_message_initial)
+     # Run annotation processors after the rule has been executed. Skip them entirely when the
+     # rule was short-circuited to `missing`: no rule ran, so there is nothing to annotate.
+     if !isnothing(mapping.annotations) && result !== missing
+         for p in mapping.annotations
+-            post_rule_annotations!(
+-                p, annotations, mapping, messages, marginals, result
+-            )
++            post_rule_annotations!(p, annotations, mapping, messages, marginals, result)
+         end
+     end
+-
+-    @invoke_callback(mapping.callbacks, AfterMessageRuleCallEvent(
+-            mapping, messages, marginals, result, annotations, logscale, span_id
+-        ))
+-
++    @invoke_callback(mapping.callbacks, AfterMessageRuleCallEvent(mapping, messages, marginals, result, annotations, logscale, span_id))
+     return new_message(result, is_message_clamped, is_message_initial, annotations, logscale)
+ end

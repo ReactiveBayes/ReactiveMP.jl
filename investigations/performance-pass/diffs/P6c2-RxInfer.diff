@@ -1,0 +1,21 @@
+diff --git a/src/model/plugins/reactivemp_inference.jl b/src/model/plugins/reactivemp_inference.jl
+index 914f7ee1..90af5718 100644
+--- a/src/model/plugins/reactivemp_inference.jl
++++ b/src/model/plugins/reactivemp_inference.jl
+@@ -609,7 +609,15 @@ end
+ function gettoplevelvardict(model::GraphPPL.Model)
+     context = GraphPPL.getcontext(model)
+     variables = merge(GraphPPL.individual_variables(context), GraphPPL.vector_variables(context), GraphPPL.tensor_variables(context))
+-    return map(v -> getvarref(model, v), variables)
++    return map_any(v -> getvarref(model, v), variables)
++end
++
++# `map` over a dictionary into one with `Any` values and the same keys, in the same order:
++# Dictionaries' `map` asks the compiler for the result type (`return_type`) on every call.
++function map_any(f::F, dictionary) where {F}
++    result = similar(dictionary, Any)
++    map!(f, result, dictionary)
++    return result
+ end
+ 
+ function getvardict(model::GraphPPL.Model)

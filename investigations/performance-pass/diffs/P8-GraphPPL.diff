@@ -1,0 +1,402 @@
+diff --git a/src/graph_engine.jl b/src/graph_engine.jl
+index 35ed5a9..94057ca 100644
+--- a/src/graph_engine.jl
++++ b/src/graph_engine.jl
+@@ -266,7 +266,8 @@ to_symbol(label::NodeLabel) = to_symbol(label.name, label.global_counter)
+ to_symbol(name::Any, index::Int) = Symbol(string(name, "_", index))
+ 
+ Base.show(io::IO, label::NodeLabel) = print(io, label.name, "_", label.global_counter)
+-Base.:(==)(label1::NodeLabel, label2::NodeLabel) = label1.name == label2.name && label1.global_counter == label2.global_counter
++# The counter first: it is unique per node and an `Int`, where `name` is untyped and compared by a dynamic call.
++Base.:(==)(label1::NodeLabel, label2::NodeLabel) = label1.global_counter == label2.global_counter && label1.name == label2.name
+ Base.hash(label::NodeLabel, h::UInt) = hash(label.global_counter, h)
+ 
+ """
+@@ -777,6 +778,56 @@ function Base.show(io::IO, properties::FactorNodeProperties)
+     print(io, "fform = ", properties.fform, ", neighbors = ", properties.neighbors)
+ end
+ 
++"""
++    NodeExtras()
++
++The extra properties of a node, keyed by `Symbol`. A node carries a handful of them, so they are
++kept as pairs in one vector and found by a linear scan: one small allocation per node where a
++hash table allocates several, and a scan over a few keys is faster than hashing. It supports
++`haskey`, `getindex`, `get`, `insert!` (which throws if the key is present), `isempty`, `length`,
++`keys`, `values`, `pairs` and iteration over the values, as a `Dictionaries.AbstractDictionary`.
++"""
++struct NodeExtras
++    entries::Vector{Pair{Symbol, Any}}
++end
++
++NodeExtras() = NodeExtras(Pair{Symbol, Any}[])
++
++function extras_slot(extras::NodeExtras, key::Symbol)
++    entries = extras.entries
++    @inbounds for i in eachindex(entries)
++        first(entries[i]) === key && return i
++    end
++    return 0
++end
++
++Base.haskey(extras::NodeExtras, key::Symbol) = extras_slot(extras, key) !== 0
++function Base.getindex(extras::NodeExtras, key::Symbol)
++    i = extras_slot(extras, key)
++    i === 0 && throw(IndexError("NodeExtras has no key :$key"))
++    return last(@inbounds extras.entries[i])
++end
++function Base.get(extras::NodeExtras, key::Symbol, default)
++    i = extras_slot(extras, key)
++    return i === 0 ? default : last(@inbounds extras.entries[i])
++end
++function Base.insert!(extras::NodeExtras, key::Symbol, value)
++    extras_slot(extras, key) === 0 || throw(IndexError("NodeExtras already contains the key :$key"))
++    push!(extras.entries, key => value)
++    return extras
++end
++Base.isempty(extras::NodeExtras) = isempty(extras.entries)
++Base.length(extras::NodeExtras) = length(extras.entries)
++Base.keys(extras::NodeExtras) = map(first, extras.entries)
++Base.values(extras::NodeExtras) = map(last, extras.entries)
++Base.pairs(extras::NodeExtras) = extras.entries
++Base.iterate(extras::NodeExtras, state...) = iterate(Iterators.map(last, extras.entries), state...)
++function Base.show(io::IO, extras::NodeExtras)
++    print(io, "NodeExtras(")
++    join(io, (string(k, " = ", repr(v)) for (k, v) in extras.entries), ", ")
++    print(io, ")")
++end
++
+ """
+     NodeData(context, properties, plugins)
+ 
+@@ -788,10 +839,10 @@ The `plugins` field stores additional properties of the node depending on which
+ mutable struct NodeData
+     const context    :: Context
+     const properties :: Union{VariableNodeProperties, FactorNodeProperties{NodeData}}
+-    const extra      :: UnorderedDictionary{Symbol, Any}
++    const extra      :: NodeExtras
+ end
+ 
+-NodeData(context, properties) = NodeData(context, properties, UnorderedDictionary{Symbol, Any}())
++NodeData(context, properties) = NodeData(context, properties, NodeExtras())
+ 
+ function Base.show(io::IO, nodedata::NodeData)
+     context = getcontext(nodedata)
+diff --git a/src/model_macro.jl b/src/model_macro.jl
+index 5a1388f..d138579 100644
+--- a/src/model_macro.jl
++++ b/src/model_macro.jl
+@@ -174,22 +174,22 @@ Save the expression found in the tilde syntax in the `created_by` field of the e
+ function save_expression_in_tilde(e::Expr)
+     if @capture(e, (local lhs_ ~ rhs_ where {options__}) | (local lhs_ ~ rhs_))
+         options = options === nothing ? [] : options
+-        return :(local $lhs ~ $rhs where {$(options...), created_by = () -> $(Expr(:quote, prettify(e)))})
++        return :(local $lhs ~ $rhs where {$(options...), created_by = $(QuoteNode(prettify(e)))})
+     elseif @capture(e, (local lhs_ .~ rhs_ where {options__}) | (local lhs_ .~ rhs_))
+         options = options === nothing ? [] : options
+-        return :(local $lhs .~ $rhs where {$(options...), created_by = () -> $(Expr(:quote, prettify(e)))})
++        return :(local $lhs .~ $rhs where {$(options...), created_by = $(QuoteNode(prettify(e)))})
+     elseif @capture(e, (local lhs_ := rhs_ where {options__}) | (local lhs_ := rhs_))
+         options = options === nothing ? [] : options
+-        return :(local $lhs := $rhs where {$(options...), created_by = () -> $(Expr(:quote, prettify(e)))})
++        return :(local $lhs := $rhs where {$(options...), created_by = $(QuoteNode(prettify(e)))})
+     elseif @capture(e, (lhs_ ~ rhs_ where {options__}) | (lhs_ ~ rhs_))
+         options = options === nothing ? [] : options
+-        return :($lhs ~ $rhs where {$(options...), created_by = () -> $(Expr(:quote, prettify(e)))})
++        return :($lhs ~ $rhs where {$(options...), created_by = $(QuoteNode(prettify(e)))})
+     elseif @capture(e, (lhs_ .~ rhs_ where {options__}) | (lhs_ .~ rhs_))
+         options = options === nothing ? [] : options
+-        return :($lhs .~ $rhs where {$(options...), created_by = () -> $(Expr(:quote, prettify(e)))})
++        return :($lhs .~ $rhs where {$(options...), created_by = $(QuoteNode(prettify(e)))})
+     elseif @capture(e, (lhs_ := rhs_ where {options__}) | (lhs_ := rhs_))
+         options = options === nothing ? [] : options
+-        return :($lhs := $rhs where {$(options...), created_by = () -> $(Expr(:quote, prettify(e)))})
++        return :($lhs := $rhs where {$(options...), created_by = $(QuoteNode(prettify(e)))})
+     else
+         return e
+     end
+diff --git a/src/plugins/meta/meta_engine.jl b/src/plugins/meta/meta_engine.jl
+index f6b3a87..fa2fe60 100644
+--- a/src/plugins/meta/meta_engine.jl
++++ b/src/plugins/meta/meta_engine.jl
+@@ -149,10 +149,13 @@ function apply_meta!(
+     end
+ end
+ 
++# The context's own factor nodes, those the descriptor's function names: a pass over the context,
++# not over every node of the model.
++context_factor_nodes(model::Model, context::Context, predicate) =
++    Iterators.filter(node -> apply(predicate, model, node), values(factor_nodes(context)))
++
+ function apply_meta!(model::Model, context::Context, meta::MetaObject{S, T} where {S <: FactorMetaDescriptor{<:Tuple}, T})
+-    applicable_nodes = Iterators.filter(
+-        node -> node ∈ values(factor_nodes(context)), filter(as_node(fform(getnodedescriptor(meta))), model)
+-    )
++    applicable_nodes = context_factor_nodes(model, context, as_node(fform(getnodedescriptor(meta))))
+     for node in applicable_nodes
+         neighborhood = neighbors(model, node)
+         save = true
+@@ -168,9 +171,7 @@ function apply_meta!(model::Model, context::Context, meta::MetaObject{S, T} wher
+ end
+ 
+ function apply_meta!(model::Model, context::Context, meta::MetaObject{S, T} where {S <: FactorMetaDescriptor{Nothing}, T})
+-    applicable_nodes = Iterators.filter(
+-        node -> node ∈ values(factor_nodes(context)), filter(as_node(fform(getnodedescriptor(meta))), model)
+-    )
++    applicable_nodes = context_factor_nodes(model, context, as_node(fform(getnodedescriptor(meta))))
+     for node in applicable_nodes
+         save_meta!(model, node, meta)
+     end
+diff --git a/src/plugins/variational_constraints/variational_constraints.jl b/src/plugins/variational_constraints/variational_constraints.jl
+index 94d4824..abd4235 100644
+--- a/src/plugins/variational_constraints/variational_constraints.jl
++++ b/src/plugins/variational_constraints/variational_constraints.jl
+@@ -81,7 +81,7 @@ function postprocess_plugin(plugin::VariationalConstraintsPlugin{NoConstraints},
+         nodedata = model[flabel]
+         nodeproperties = getproperties(nodedata)
+         number_of_neighbours = length(neighbors(nodeproperties))
+-        setextra!(nodedata, VariationalConstraintsFactorizationBitSetKey, BoundedBitSetTuple(number_of_neighbours))
++        setextra!(nodedata, VariationalConstraintsFactorizationBitSetKey, BoundedBitSetTuple(trues(number_of_neighbours, number_of_neighbours)))
+     end
+ 
+     apply_constraints!(
+@@ -97,8 +97,10 @@ function postprocess_plugin(plugin::VariationalConstraintsPlugin, model::Model)
+         nodedata = model[flabel]
+         nodeproperties = getproperties(nodedata)
+         number_of_neighbours = length(neighbors(nodeproperties))
+-        setextra!(nodedata, VariationalConstraintsFactorizationBitSetKey, BoundedBitSetTuple(number_of_neighbours))
++        setextra!(nodedata, VariationalConstraintsFactorizationBitSetKey, BoundedBitSetTuple(trues(number_of_neighbours, number_of_neighbours)))
++    end
++    with_flattened_index_cache() do
++        apply_constraints!(model, GraphPPL.get_principal_submodel(model), plugin.constraints)
+     end
+-    apply_constraints!(model, GraphPPL.get_principal_submodel(model), plugin.constraints)
+     materialize_constraints!(model)
+ end
+diff --git a/src/plugins/variational_constraints/variational_constraints_engine.jl b/src/plugins/variational_constraints/variational_constraints_engine.jl
+index 1187839..9e6eb98 100644
+--- a/src/plugins/variational_constraints/variational_constraints_engine.jl
++++ b/src/plugins/variational_constraints/variational_constraints_engine.jl
+@@ -457,7 +457,7 @@ Base.in(
+     i::NTuple{M, Int} where {M}
+ ) =
+     (getname(properties) == getname(var)) &&
+-    (flattened_index(getcontext(var)[getname(var)], i) ∈ index(var)) &&
++    (cached_flattened_index(getcontext(var)[getname(var)], i) ∈ index(var)) &&
+     (getcontext(var) == getcontext(nodedata))
+ 
+ Base.in(nodedata::NodeData, properties::VariableNodeProperties, var::ResolvedIndexedVariable{T} where {T <: Nothing}) =
+@@ -474,7 +474,7 @@ Base.in(
+     i::NTuple{N, Int} where {N}
+ ) =
+     (getname(properties) == getname(var)) &&
+-    (flattened_index(getcontext(var)[getname(var)], i) ∈ index(var)) &&
++    (cached_flattened_index(getcontext(var)[getname(var)], i) ∈ index(var)) &&
+     (getcontext(var) == getcontext(nodedata))
+ 
+ Base.in(
+@@ -632,6 +632,12 @@ function materialize_constraints!(model::Model, node_label::NodeLabel, node_data
+     # Factorize out `neighbors` for which `is_factorized` is `true`
+     materialize_is_factorized_neighbors!(constraint_bitset, neighbor_data(properties))
+ 
++    # No factorisation at all, the common case: one cluster of every interface.
++    if all(contents(constraint_bitset))
++        setextra!(node_data, VariationalConstraintsFactorizationIndicesKey, (collect(1:size(contents(constraint_bitset), 1)),))
++        return nothing
++    end
++
+     constraint_set = unique(eachcol(contents(constraint_bitset)))
+ 
+     if !is_valid_partition(constraint_set)
+diff --git a/src/resizable_array.jl b/src/resizable_array.jl
+index 76e7517..766861c 100644
+--- a/src/resizable_array.jl
++++ b/src/resizable_array.jl
+@@ -226,6 +226,25 @@ function __flattened_index(::Val{N}, array::Vector{V}, findex, index...) where {
+     end
+ end
+ 
++# `flattened_index` sums the lengths of every slice before `index`, so resolving the index of each
++# element of an array is quadratic in its size. While constraints are applied the model is complete,
++# so the plugin binds a cache of those prefix sums per array (see `with_flattened_index_cache`).
++const FLATTENED_INDEX_CACHE_KEY = :graphppl_flattened_index_cache
++
++with_flattened_index_cache(f) = task_local_storage(f, FLATTENED_INDEX_CACHE_KEY, IdDict{Any, Vector{Int}}())
++
++function cached_flattened_index(array::ResizableArray{T, V, N}, index::NTuple{N, Int}) where {T, V, N}
++    cache = get(task_local_storage(), FLATTENED_INDEX_CACHE_KEY, nothing)
++    cache === nothing && return flattened_index(array, index)
++    prefix = get!(cache::IdDict{Any, Vector{Int}}, array) do
++        counts = map(slice -> __recursive_length(Val(N - 1), slice), array.data)
++        return pushfirst!(cumsum(counts), 0)
++    end
++    findex = first(index)
++    return prefix[findex] + __flattened_index(Val(N - 1), array.data[findex], Base.tail(index)...)
++end
++cached_flattened_index(array::ResizableArray{T, V, 1}, index::NTuple{1, Int}) where {T, V} = flattened_index(array, first(index))
++
+ function Base.first(array::ResizableArray{T, V, N}) where {T, V, N}
+     for index in CartesianIndices(size(array)) #TODO improve performance of this function since it uses splatting
+         if isassigned(array, index.I...)::Bool
+diff --git a/test/model_macro_tests.jl b/test/model_macro_tests.jl
+index 30d53bd..0e9715d 100644
+--- a/test/model_macro_tests.jl
++++ b/test/model_macro_tests.jl
+@@ -224,7 +224,7 @@ end
+ 
+     # Test 1: save expression in tilde
+     input = :(x ~ Normal(0, 1))
+-    output = :(x ~ Normal(0, 1) where {created_by = () -> :(x ~ Normal(0, 1))})
++    output = :(x ~ Normal(0, 1) where {created_by = $(QuoteNode(:(x ~ Normal(0, 1))))})
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+     # Test 2: save expression in tilde with multiple expressions
+@@ -233,14 +233,14 @@ end
+         y ~ Normal(0, 1)
+     end
+     output = quote
+-        x ~ Normal(0, 1) where {created_by = () -> :(x ~ Normal(0, 1))}
+-        y ~ Normal(0, 1) where {created_by = () -> :(y ~ Normal(0, 1))}
++        x ~ Normal(0, 1) where {created_by = $(QuoteNode(:(x ~ Normal(0, 1))))}
++        y ~ Normal(0, 1) where {created_by = $(QuoteNode(:(y ~ Normal(0, 1))))}
+     end
+     @test_expression_generating apply_pipeline(input, save_expression_in_tilde) output
+ 
+     # Test 3: save expression in tilde with broadcasted operation
+     input = :(x .~ Normal(0, 1))
+-    output = :(x .~ Normal(0, 1) where {created_by = () -> :(x .~ Normal(0, 1))})
++    output = :(x .~ Normal(0, 1) where {created_by = $(QuoteNode(:(x .~ Normal(0, 1))))})
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+     # Test 4: save expression in tilde with multiple broadcast expressions
+@@ -250,15 +250,15 @@ end
+     end
+ 
+     output = quote
+-        x .~ Normal(0, 1) where {created_by = () -> :(x .~ Normal(0, 1))}
+-        y .~ Normal(0, 1) where {created_by = () -> :(y .~ Normal(0, 1))}
++        x .~ Normal(0, 1) where {created_by = $(QuoteNode(:(x .~ Normal(0, 1))))}
++        y .~ Normal(0, 1) where {created_by = $(QuoteNode(:(y .~ Normal(0, 1))))}
+     end
+ 
+     @test_expression_generating apply_pipeline(input, save_expression_in_tilde) output
+ 
+     # Test 5: save expression in tilde with deterministic operation
+     input = :(x := Normal(0, 1))
+-    output = :(x := Normal(0, 1) where {created_by = () -> :(x := Normal(0, 1))})
++    output = :(x := Normal(0, 1) where {created_by = $(QuoteNode(:(x := Normal(0, 1))))})
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+     # Test 6: save expression in tilde with multiple deterministic expressions
+@@ -268,8 +268,8 @@ end
+     end
+ 
+     output = quote
+-        x := Normal(0, 1) where {created_by = () -> :(x := Normal(0, 1))}
+-        y := Normal(0, 1) where {created_by = () -> :(y := Normal(0, 1))}
++        x := Normal(0, 1) where {created_by = $(QuoteNode(:(x := Normal(0, 1))))}
++        y := Normal(0, 1) where {created_by = $(QuoteNode(:(y := Normal(0, 1))))}
+     end
+ 
+     @test_expression_generating apply_pipeline(input, save_expression_in_tilde) output
+@@ -280,29 +280,29 @@ end
+         y ~ Normal(0, 1) where {q = MeanField()}
+     end
+     output = quote
+-        x ~ Normal(0, 1) where {q = MeanField(), created_by = () -> :(x ~ Normal(0, 1) where {q = MeanField()})}
+-        y ~ Normal(0, 1) where {q = MeanField(), created_by = () -> :(y ~ Normal(0, 1) where {q = MeanField()})}
++        x ~ Normal(0, 1) where {q = MeanField(), created_by = $(QuoteNode(:(x ~ Normal(0, 1) where {q = MeanField()})))}
++        y ~ Normal(0, 1) where {q = MeanField(), created_by = $(QuoteNode(:(y ~ Normal(0, 1) where {q = MeanField()})))}
+     end
+     @test_expression_generating apply_pipeline(input, save_expression_in_tilde) output
+ 
+     # Test 8: with different variable names
+     input = :(y ~ Normal(0, 1))
+-    output = :(y ~ Normal(0, 1) where {created_by = () -> :(y ~ Normal(0, 1))})
++    output = :(y ~ Normal(0, 1) where {created_by = $(QuoteNode(:(y ~ Normal(0, 1))))})
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+     # Test 9: with different parameter options
+     input = :(x ~ Normal(0, 1) where {mu = 2.0, sigma = 0.5})
+-    output = :(x ~ Normal(0, 1) where {mu = 2.0, sigma = 0.5, created_by = () -> :(x ~ Normal(0, 1) where {mu = 2.0, sigma = 0.5})})
++    output = :(x ~ Normal(0, 1) where {mu = 2.0, sigma = 0.5, created_by = $(QuoteNode(:(x ~ Normal(0, 1) where {mu = 2.0, sigma = 0.5})))})
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+     # Test 10: with different parameter options
+     input = :(y ~ Normal(0, 1) where {mu = 1.0})
+-    output = :(y ~ Normal(0, 1) where {mu = 1.0, created_by = () -> :(y ~ Normal(0, 1) where {mu = 1.0})})
++    output = :(y ~ Normal(0, 1) where {mu = 1.0, created_by = $(QuoteNode(:(y ~ Normal(0, 1) where {mu = 1.0})))})
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+     # Test 11: with no parameter options
+     input = :(x ~ Normal(0, 1) where {})
+-    output = :(x ~ Normal(0, 1) where {created_by = () -> :(x ~ Normal(0, 1) where {})})
++    output = :(x ~ Normal(0, 1) where {created_by = $(QuoteNode(:(x ~ Normal(0, 1) where {})))})
+ 
+     # Test 12: check unmatching pattern
+     input = quote
+@@ -322,7 +322,7 @@ end
+     end
+     output = quote
+         for i in 1:10
+-            x[i] ~ Normal(0, 1) where {created_by = () -> :(x[i] ~ Normal(0, 1))}
++            x[i] ~ Normal(0, 1) where {created_by = $(QuoteNode(:(x[i] ~ Normal(0, 1))))}
+         end
+     end
+     @test_expression_generating save_expression_in_tilde(input) input
+@@ -334,8 +334,8 @@ end
+     end
+ 
+     output = quote
+-        local x ~ (Normal(0, 1)) where {created_by = () -> :(local x ~ Normal(0, 1))}
+-        local y ~ (Normal(0, 1)) where {created_by = () -> :(local y ~ Normal(0, 1))}
++        local x ~ (Normal(0, 1)) where {created_by = $(QuoteNode(:(local x ~ Normal(0, 1))))}
++        local y ~ (Normal(0, 1)) where {created_by = $(QuoteNode(:(local y ~ Normal(0, 1))))}
+     end
+ 
+     @test_expression_generating save_expression_in_tilde(input) input
+@@ -345,7 +345,7 @@ end
+         x := a + b
+     end
+     output = quote
+-        x := (a + b) where {created_by = () -> :(x := a + b)}
++        x := (a + b) where {created_by = $(QuoteNode(:(x := a + b)))}
+     end
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+@@ -354,7 +354,7 @@ end
+         local x := a + b
+     end
+     output = quote
+-        local x := (a + b) where {created_by = () -> :(local x := a + b)}
++        local x := (a + b) where {created_by = $(QuoteNode(:(local x := a + b)))}
+     end
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+@@ -363,7 +363,7 @@ end
+         local x := (a + b) where {q = q(x)q(a)q(b)}
+     end
+     output = quote
+-        local x := (a + b) where {q = q(x)q(a)q(b), created_by = () -> :(local x := (a + b) where {q = q(x)q(a)q(b)})}
++        local x := (a + b) where {q = q(x)q(a)q(b), created_by = $(QuoteNode(:(local x := (a + b) where {q = q(x)q(a)q(b)})))}
+     end
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+@@ -372,7 +372,7 @@ end
+         local x .~ Normal(μ, σ)
+     end
+     output = quote
+-        local x .~ Normal(μ, σ) where {created_by = () -> :(local x .~ Normal(μ, σ))}
++        local x .~ Normal(μ, σ) where {created_by = $(QuoteNode(:(local x .~ Normal(μ, σ))))}
+     end
+     @test_expression_generating save_expression_in_tilde(input) output
+ 
+@@ -381,7 +381,7 @@ end
+         local x .~ Normal(μ, σ) where {q = q(x)q(μ)q(σ)}
+     end
+     output = quote
+-        local x .~ Normal(μ, σ) where {q = q(x)q(μ)q(σ), created_by = () -> :(local x .~ Normal(μ, σ) where {q = q(x)q(μ)q(σ)})}
++        local x .~ Normal(μ, σ) where {q = q(x)q(μ)q(σ), created_by = $(QuoteNode(:(local x .~ Normal(μ, σ) where {q = q(x)q(μ)q(σ)})))}
+     end
+     @test_expression_generating save_expression_in_tilde(input) output
+ end

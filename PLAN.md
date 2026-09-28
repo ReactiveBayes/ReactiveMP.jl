@@ -229,6 +229,15 @@ one per outbound stream and reuses it. It is write-before-read, carries nothing 
 and is never shared between a node's rules, so a rule using it stays pure. It is separate from
 `inplace`, and the two combine.
 
+**A rule may declare its scratch's type** with `scratch_type`, over the same slots, returning a
+type from the inputs' types: `scratch_type = (args) -> @NamedTuple{acc::Vector{Float64}}`, or
+computed from `eltype`s. The declaration folds to a constant. The engine asserts the kept
+scratch to it after an `isa` guard (other input types rebuild it), so the rule runs on a
+concretely typed scratch. A scratch not of the declared type is an `ArgumentError` naming the
+rule. Without the declaration the kept scratch is untyped, which costs ≈ 40 ns and 3 allocations
+per call (`BENCHMARK.md` § 4.2). An in-place rule's output needs no such declaration: its
+`preallocate` function is a typed field of the spec.
+
 The macro reads the names written in the lambda and fills the rest. Order is enforced, so
 every rule reads the same way down a file; relaxing that later is easy, tightening it would
 be breaking. An unrecognised name is an error naming the valid set. `output` appears exactly
@@ -394,40 +403,43 @@ apart. It can also carry **the body's source text, file and line**, which is wha
 `@which_message_update_rule` able to *show you the rule* rather than merely name it — directly serving the
 educational and introspection goals above.
 
-**`RuleSpec` carries no type parameters.** It is a plain immutable struct, every field
-ordinary. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has
-`kind`, `inputs`, `scratch`, `default`, `services`, `logscale` and `reads_logscale`:
+**`RuleSpec` is typed: `RuleSpec{B, P, S, L, A, ST}`** (adopted after the performance pass,
+`BENCHMARK.md` § 4.1; implementation pending). The body, preallocation, scratch, scratch-type and
+log-scale functions and the algorithm type are its parameters; `RuleResult` carries the spec's
+type. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has `kind`,
+`inputs`, `default`, `services` and `reads_logscale`:
 
 ```julia
-struct RuleSpec
-    body::Function         # the lambda from `body = ...`
-    prealloc::Function     # the lambda from `preallocate = ...`, or `nothing`
+struct RuleSpec{B, P, S, L, A, ST}
+    algorithm::Type{A}
+    body::B                # the lambda from `body = ...`
+    prealloc::P            # from `preallocate = ...`, or `nothing`
+    scratch::S             # from `scratch = ...`, or `nothing`
+    scratch_type::ST       # from `scratch_type = ...`, or `nothing`
+    logscale::L
     inplace::Bool
     pure::Bool
     source::String         # body text, for `@which_message_update_rule`
     file::Symbol
     line::Int
-    # + node, target, algorithm, signature, required services, …
+    # + kind, node, target, signature, inputs, required services, …
 end
 ```
 
-**The decision is deliberate, and its point is `find_rule`.** A spec parameterised on its
-body and allocator types would make every rule a distinct `RuleSpec{B, P}`, so a lookup that
-cannot statically pin down which rule fires returns a *union* of spec types rather than one
-type. Julia union-splits small unions and gives up past a handful of arms, and the failure is
-silent. With no parameters there is exactly one `RuleSpec` type, `find_rule` is type-stable by
-construction, and nothing downstream has to predict a `Bool` or a closure type in order to
-name the type it is holding. Flags in signatures are a well-known source of downstream
-instability, and the same objection applies to hoisting the body's type.
+**Why typed, reversing the first decision.** The spec was first kept untyped (`DISCUSSION.md`
+§3.14): a call site that cannot pin down which rule fires would get a union of spec types. That
+was measured on a toy call site reaching two rules. The engine's call sites resolve from the
+concrete types of the inputs a mapping carries and reach one rule, so `find_message_rule`
+returns one concrete spec there. The body call is then static and inlines, and `rule_algorithm`'s
+`isa` folds. Measured on real rules:
 
-The cost is one indirect call per invocation where the compiler cannot see which body is in
-the field. **Accepted for now, to be revisited with real rules rather than a toy**: the
-alternatives — parameterising on the body, or emitting a separate generated method for
-execution and keeping the spec as pure data — are both recorded in `DISCUSSION.md` §3.14 with
-their measurements, and either can be adopted later without changing the macro surface, which
-is what actually matters. Phase 0 measures the parameter-free representation under the real
-spec and reports what it costs; that is a number to act on, not a reason to pre-optimise the
-design now.
+- a rule call takes 873 → 27 ns and 15 → 2 allocations (with the performance pass's other
+  changes);
+- 0.83–0.92× the untyped spec behind a function barrier per iteration, 0.62–0.66× at n ≥ 10⁴;
+- no cost to time to first inference, every suite passing.
+
+Where resolution is genuinely uninferable, the call is dynamic in either design. `inplace` stays
+a `Bool` field (Correction 17): the body's type already makes every spec type distinct.
 
 **What stays true regardless of the representation:** resolution must not go through a
 runtime container. A spec fetched from a `Dict` keyed on runtime values infers as `Any`
@@ -443,7 +455,36 @@ ever reach one rule measures the best case and hides the indirect call entirely.
 0's devirtualization gate must test through the spec**, not merely through dispatch, and must
 report the figure for a call site that can reach more than one rule as well as one that
 cannot. Record both numbers rather than a verdict. `DISCUSSION.md` §3.14 carries the runnable
-comparison across representations.
+comparison across representations; `BENCHMARK.md` has the measurement on real rules that
+decided it.
+
+### The performance pass
+
+Measured in `BENCHMARK.md` (2026-09-26 to 2026-09-28); each change is a diff in
+`investigations/performance-pass/diffs/`, checked by the packages' suites and bit-identical
+posteriors. For the release, **the plan is the set `BENCHMARK.md` § 6 marks "release"**:
+
+- **ReactiveMP and MessagePassingRulesBase:**
+  - lazy callback events and counter span ids;
+  - the constructor barrier;
+  - the typed `RuleSpec` and `scratch_type` (above);
+  - the equality chain's two-message partial products, with the form constraint once per outbound
+    message;
+  - the activation caches.
+- **RxInfer:**
+  - a PrecompileTools workload;
+  - the benchmark callbacks that listen only to what they record;
+  - the hygiene fixes;
+  - the `iterate(::InferenceResult)` fix.
+- **Rocket 1.11:**
+  - pending counters in `collectLatest`;
+  - mutable wrappers;
+  - `stackguarded`, with its counter made per task first.
+- **GraphPPL 4.9:** the two quadratic paths (`apply_meta!`, `flattened_index`) and three small
+  fixes.
+
+Rocket and GraphPPL need no breaking release for performance. What the pass leaves open (setup
+at 1.4–2.2× v6, the remaining allocations, workloads per rule package) is `BENCHMARK.md` § 8.
 
 ### Dependencies as a language
 

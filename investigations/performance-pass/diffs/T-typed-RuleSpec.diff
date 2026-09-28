@@ -1,0 +1,49 @@
+diff --git a/lib/MessagePassingRulesBase/src/result.jl b/lib/MessagePassingRulesBase/src/result.jl
+index 3be369b6..a78b097d 100644
+--- a/lib/MessagePassingRulesBase/src/result.jl
++++ b/lib/MessagePassingRulesBase/src/result.jl
+@@ -20,10 +20,10 @@ result and its log scale, the rule that ran and the other rules for the same tar
+ two-argument `show` is compact, `RuleResult(2.0, logscale = 0)`. An engine runs rules through
+ [`execute_rule`](@ref) without building one.
+ """
+-struct RuleResult{R, L, A, C, S, G, N, T}
++struct RuleResult{R, L, A, C, S, G, N, T, P <: RuleSpec}
+     result::R
+     logscale::L
+-    rule::RuleSpec
++    rule::P
+     algorithm::A
+     context::C
+     scratch::S
+diff --git a/lib/MessagePassingRulesBase/src/rulespec.jl b/lib/MessagePassingRulesBase/src/rulespec.jl
+index bf838d70..a37c68a6 100644
+--- a/lib/MessagePassingRulesBase/src/rulespec.jl
++++ b/lib/MessagePassingRulesBase/src/rulespec.jl
+@@ -45,21 +45,21 @@ body over `(output, scratch, algo, ctx, args, ann, target)` and the others over
+ `(algo, ctx, args, target)`. Run a rule through [`execute_rule`](@ref) or a call, never by
+ calling them.
+ """
+-struct RuleSpec
++struct RuleSpec{B, P, S, L, A}
+     kind::Symbol
+     node::Any
+     target::Any
+-    algorithm::Type
++    algorithm::Type{A}
+     signature::Type
+     inputs::Tuple{Vararg{InputSpec}}
+-    body::Function
+-    prealloc::Union{Nothing, Function}
+-    scratch::Union{Nothing, Function}
++    body::B
++    prealloc::P
++    scratch::S
+     default::Bool
+     inplace::Bool
+     pure::Bool
+     services::Tuple{Vararg{Symbol}}
+-    logscale::Any
++    logscale::L
+     reads_logscale::Bool
+     source::String
+     file::Symbol

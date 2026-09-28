@@ -1,0 +1,26 @@
+P12	opts	iid base (session=nothing, fe=Float64)	0.054498708	0.052970667	51916832
+P12	opts	iid session=default	0.055430709	0.054401292	51925520
+P12	opts	iid free_energy=true	0.054793583	0.054129542	52718704
+P12	opts	iid free_energy=false	0.046267708	0.046181792	47853776
+P12	opts	iid benchmark=true	0.06493225	0.064742417	81741648
+P12	opts	iid trace=true	0.068647417	0.066865125	81397616
+P12	opts	iid returnvars=KeepEach	0.0554015	0.053221333	51916832
+P12	opts	iid returnvars=(μ=KeepLast,)	0.054696708	0.053414583	51910816
+P12	opts	iid all defaults (session, fe=true)	0.054706584	0.053829292	52727328
+P12	opts	ssm1 base	0.121864375	0.120931542	84105072
+P12	opts	ssm1 no FE	0.104074334	0.103173333	70788880
+P12	opts	ssm1 all defaults (session, fe=true)	0.123612208	0.123356917	84756592
+P12	opts	ssm1 session=default fe=Float64	0.123091167	0.121889	84108304
+X1	opts	iid base (session=nothing, fe=Float64)	0.073943875	0.062187083	51723984
+X1	opts	iid session=default	0.072386041	0.069805917	51732672
+X1	opts	iid free_energy=true	0.060507333	0.057286583	52526000
+X1	opts	iid free_energy=false	0.067933042	0.0498415	47912352
+X1	opts	iid benchmark=true	0.0733215	0.058599584	59745824
+X1	opts	iid trace=true	0.079554167	0.071134333	81204704
+X1	opts	iid returnvars=KeepEach	0.072431959	0.05586725	51723984
+X1	opts	iid returnvars=(μ=KeepLast,)	0.058123917	0.05765525	51718112
+X1	opts	iid all defaults (session, fe=true)	0.071018208	0.059288667	52534624
+X1	opts	ssm1 base	0.175453625	0.12695625	83086480
+X1	opts	ssm1 no FE	0.134298416	0.110494291	70749088
+X1	opts	ssm1 all defaults (session, fe=true)	0.150322084	0.137785458	83738144
+X1	opts	ssm1 session=default fe=Float64	0.1546595	0.141883583	83089696

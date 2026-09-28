@@ -1,0 +1,47 @@
+diff --git a/src/marginal.jl b/src/marginal.jl
+index d9a289f3..f71904db 100644
+--- a/src/marginal.jl
++++ b/src/marginal.jl
+@@ -211,6 +211,9 @@ rule reads before any marginal has been computed.
+ 
+ See also [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref).
+ """
++# As `new_message`: a barrier for a marginal built from a value inferred abstractly.
++@noinline new_marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(data, is_clamped, is_initial)
++
+ struct MarginalObservable <: Subscribable{Marginal}
+     subject::Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
+     stream::LazyObservable{Marginal}
+@@ -310,7 +313,7 @@ function (mapping::MarginalMapping)(dependencies)
+         compute_marginal(mapping, messages, marginals)
+     end
+ 
+-    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
++    return new_marginal(marginal, is_marginal_clamped, is_marginal_initial)
+ end
+ 
+ function compute_marginal(mapping::MarginalMapping, messages, marginals)
+diff --git a/src/message.jl b/src/message.jl
+index 5d48e6a2..cddf23ce 100644
+--- a/src/message.jl
++++ b/src/message.jl
+@@ -102,6 +102,12 @@ Message(data, is_clamped::Bool, is_initial::Bool) =
+ Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
+     Message(data, is_clamped, is_initial, annotations, nothing)
+ 
++# A barrier for a message built from a value inferred abstractly, such as a rule's result: the
++# call dispatches on the value's type, where an inlined constructor would compute `D` and `L`
++# at run time (`Core._compute_sparams`), several times slower.
++@noinline new_message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict, logscale) =
++    Message(data, is_clamped, is_initial, annotations, logscale)
++
+ """
+     as_message(message::AbstractMessage) -> Message
+     as_message(marginal::Marginal) -> Message
+@@ -786,5 +792,5 @@ function (mapping::MessageMapping)(messages, marginals)
+             mapping, messages, marginals, result, annotations, logscale, span_id
+         ))
+ 
+-    return Message(result, is_message_clamped, is_message_initial, annotations, logscale)
++    return new_message(result, is_message_clamped, is_message_initial, annotations, logscale)
+ end

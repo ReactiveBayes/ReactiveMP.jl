@@ -1,0 +1,623 @@
+diff --git a/lib/MessagePassingRulesBase/src/rulespec.jl b/lib/MessagePassingRulesBase/src/rulespec.jl
+index bf838d70..109ff2b4 100644
+--- a/lib/MessagePassingRulesBase/src/rulespec.jl
++++ b/lib/MessagePassingRulesBase/src/rulespec.jl
+@@ -269,6 +269,38 @@ reads them; [`check_reads_logscale`](@ref) does.
+     return result, rule_logscale(spec, spec.logscale, raw, algorithm, ctx, args, target)
+ end
+ 
++"""
++    execute_rule(then, spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target)
++
++`then(execute_rule(spec, output, scratch, algorithm, ctx, args, ann, target))`, with the body and
++`then` called behind one function barrier specialised on the body's type: the body's result is
++inferred there, so `then` runs on a concretely typed value. An engine passes what it does with
++the result as `then`, rather than receiving a value inferred `Any`.
++"""
++@inline execute_rule(then::F, spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target) where {F} =
++    execute_rule_then(
++        spec.body, then, spec.inplace ? spec.prealloc : nothing, scratch === nothing ? spec.scratch : nothing,
++        spec.logscale isa FromBody, output, scratch, algorithm, ctx, args, ann, target,
++    )
++
++# The barrier takes the few fields it needs rather than the `RuleSpec`: an immutable struct of
++# eighteen fields passed to a call dispatched at run time is copied into a fresh box every time.
++@noinline function execute_rule_then(body::B, then::F, prealloc, scratchfn, from_body::Bool, output, scratch, algorithm, ctx, args, ann, target) where {B, F}
++    if prealloc !== nothing && output === nothing
++        output = prealloc(algorithm, ctx, args, target)
++    end
++    if scratchfn !== nothing
++        scratch = scratchfn(algorithm, ctx, args, target)
++    end
++    raw = body(output, scratch, algorithm, ctx, args, ann, target)
++    return then(unwrap_body_result(from_body, raw))
++end
++
++@inline unwrap_body_result(from_body::Bool, raw::WithLogScale) =
++    from_body ? raw.result : throw(ArgumentError("a rule returned `with_logscale(...)` but does not declare `logscale = from_body`"))
++@inline unwrap_body_result(from_body::Bool, raw) =
++    from_body ? throw(ArgumentError("a rule declares `logscale = from_body` but its body did not return `with_logscale(result, logscale)`")) : raw
++
+ # The body's raw return, a `WithLogScale` for a rule declared `from_body`, and the scratch it ran with.
+ @inline function execute_rule_body(spec::RuleSpec, output, scratch, algorithm, ctx, args, ann, target)
+     if spec.inplace && output === nothing
+diff --git a/src/callbacks.jl b/src/callbacks.jl
+index d33bf494..c065f324 100644
+--- a/src/callbacks.jl
++++ b/src/callbacks.jl
+@@ -174,8 +174,46 @@ function generate_span_id(::Nothing)
+     return nothing
+ end
+ 
++# A process-wide counter rather than `uuid4()`: `uuid4()` reads the operating system's entropy
++# source on every call, and drawing from the task's RNG would shift the rules' random streams.
++const SPAN_COUNTER = Threads.Atomic{UInt64}(0)
++
+ function generate_span_id(callbacks)
+-    return uuid4()
++    return UUID(UInt128(Threads.atomic_add!(SPAN_COUNTER, UInt64(1)) + 1))
++end
++
++"""
++    ReactiveMP.listens(callbacks, ::Type{<:Event}) -> Bool
++
++Whether `callbacks` may react to events of the given type. [`ReactiveMP.@invoke_callback`](@ref)
++builds an event only when it returns `true`: `false` for `nothing`, by key for a `NamedTuple`
++(decided at compile time) or a `Dict`, `true` for any other handler.
++"""
++listens(::Nothing, ::Type) = false
++listens(::NamedTuple{K}, ::Type{T}) where {K, T <: Event} = event_name(T) in K
++listens(callbacks::Dict{Symbol}, ::Type{T}) where {T <: Event} = haskey(callbacks, event_name(T))
++listens(merged::MergedCallbacks, ::Type{T}) where {T <: Event} = any(c -> listens(c, T), merged.callbacks)
++listens(_, ::Type) = true
++
++"""
++    ReactiveMP.@invoke_callback(callbacks, EventType(args...))
++
++`invoke_callback(callbacks, EventType(args...))`, with the event built only when
++[`ReactiveMP.listens`](@ref)`(callbacks, EventType)`: an event nobody listens to costs nothing.
++"""
++macro invoke_callback(callbacks, event)
++    (event isa Expr && event.head === :call) || error("`@invoke_callback` expects an event constructor call")
++    T = event.args[1]
++    return esc(
++        quote
++            let cb = $callbacks
++                if $listens(cb, $T)
++                    $invoke_callback(cb, $event)
++                end
++                nothing
++            end
++        end
++    )
+ end
+ 
+ # Internal helper used by the `Base.show` methods of the event types defined in
+diff --git a/src/marginal.jl b/src/marginal.jl
+index d9a289f3..b628b57a 100644
+--- a/src/marginal.jl
++++ b/src/marginal.jl
+@@ -211,6 +211,9 @@ rule reads before any marginal has been computed.
+ 
+ See also [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref).
+ """
++# As `new_message`: a barrier for a marginal built from a value inferred abstractly.
++@noinline new_marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(data, is_clamped, is_initial)
++
+ struct MarginalObservable <: Subscribable{Marginal}
+     subject::Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
+     stream::LazyObservable{Marginal}
+@@ -304,16 +307,22 @@ function (mapping::MarginalMapping)(dependencies)
+             __check_all(is_clamped_or_initial, marginals)
+     )
+ 
+-    marginal = if has_missing_inputs(messages) || has_missing_inputs(marginals)
+-        missing
+-    else
+-        compute_marginal(mapping, messages, marginals)
++    if has_missing_inputs(messages) || has_missing_inputs(marginals)
++        return Marginal(missing, is_marginal_clamped, is_marginal_initial)
+     end
++    return compute_marginal(MarginalTail(is_marginal_clamped, is_marginal_initial), mapping, messages, marginals)::Marginal
++end
+ 
+-    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
++struct MarginalTail
++    is_clamped::Bool
++    is_initial::Bool
+ end
+ 
+-function compute_marginal(mapping::MarginalMapping, messages, marginals)
++(tail::MarginalTail)(result) = Marginal(result, tail.is_clamped, tail.is_initial)
++
++compute_marginal(mapping::MarginalMapping, messages, marginals) = compute_marginal(identity, mapping, messages, marginals)
++
++function compute_marginal(then, mapping::MarginalMapping, messages, marginals)
+     fform = marginal_mapping_fform(mapping)
+     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
+     spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)))
+@@ -322,7 +331,7 @@ function compute_marginal(mapping::MarginalMapping, messages, marginals)
+     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
+     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+     scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+-    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
++    return MessagePassingRulesBase.execute_rule(then, spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+ end
+ 
+ Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =
+diff --git a/src/message.jl b/src/message.jl
+index 1daa71b6..6a575ef7 100644
+--- a/src/message.jl
++++ b/src/message.jl
+@@ -102,6 +102,12 @@ Message(data, is_clamped::Bool, is_initial::Bool) =
+ Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
+     Message(data, is_clamped, is_initial, annotations, nothing)
+ 
++# A barrier for a message built from a value inferred abstractly, such as a rule's result: the
++# call dispatches on the value's type, where an inlined constructor would compute `D` and `L`
++# at run time (`Core._compute_sparams`), several times slower.
++@noinline new_message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict, logscale) =
++    Message(data, is_clamped, is_initial, annotations, logscale)
++
+ """
+     as_message(message::AbstractMessage) -> Message
+     as_message(marginal::Marginal) -> Message
+@@ -276,12 +282,9 @@ function compute_product_of_two_messages(
+         right::Message,
+     )
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
+-        context.callbacks,
+-        BeforeProductOfTwoMessagesEvent(
++    @invoke_callback(context.callbacks, BeforeProductOfTwoMessagesEvent(
+             variable, context, left, right, span_id
+-        ),
+-    )
++        ))
+ 
+     # We propagate clamped message, in case if both are clamped
+     is_prod_clamped = is_clamped(left) && is_clamped(right)
+@@ -299,30 +302,24 @@ function compute_product_of_two_messages(
+ 
+     if context.form_constraint_check_strategy === FormConstraintCheckEach()
+         form_span_id = generate_span_id(context.callbacks)
+-        invoke_callback(
+-            context.callbacks,
+-            BeforeFormConstraintAppliedEvent(
++        @invoke_callback(context.callbacks, BeforeFormConstraintAppliedEvent(
+                 variable,
+                 context,
+                 FormConstraintCheckEach(),
+                 new_dist,
+                 form_span_id,
+-            ),
+-        )
++            ))
+         unconstrained_dist = new_dist
+         new_dist = constrain_form(context.form_constraint, new_dist)
+         new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale)
+-        invoke_callback(
+-            context.callbacks,
+-            AfterFormConstraintAppliedEvent(
++        @invoke_callback(context.callbacks, AfterFormConstraintAppliedEvent(
+                 variable,
+                 context,
+                 FormConstraintCheckEach(),
+                 unconstrained_dist,
+                 new_dist,
+                 form_span_id,
+-            ),
+-        )
++            ))
+     end
+ 
+     # process annotations
+@@ -331,12 +328,9 @@ function compute_product_of_two_messages(
+     new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+     result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann, new_logscale)
+ 
+-    invoke_callback(
+-        context.callbacks,
+-        AfterProductOfTwoMessagesEvent(
++    @invoke_callback(context.callbacks, AfterProductOfTwoMessagesEvent(
+             variable, context, left, right, result, new_ann, span_id
+-        ),
+-    )
++        ))
+ 
+     return result
+ end
+@@ -380,10 +374,7 @@ function compute_product_of_messages(
+         variable::AbstractVariable, context::MessageProductContext, messages
+     )
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
+-        context.callbacks,
+-        BeforeProductOfMessagesEvent(variable, context, messages, span_id),
+-    )
++    @invoke_callback(context.callbacks, BeforeProductOfMessagesEvent(variable, context, messages, span_id))
+ 
+     result = as_message(
+         compute_product_of_messages(
+@@ -394,24 +385,18 @@ function compute_product_of_messages(
+     if context.form_constraint_check_strategy === FormConstraintCheckLast()
+         dist = getdata(result)
+         form_span_id = generate_span_id(context.callbacks)
+-        invoke_callback(
+-            context.callbacks,
+-            BeforeFormConstraintAppliedEvent(
++        @invoke_callback(context.callbacks, BeforeFormConstraintAppliedEvent(
+                 variable, context, FormConstraintCheckLast(), dist, form_span_id
+-            ),
+-        )
++            ))
+         constrained_dist = constrain_form(context.form_constraint, dist)
+-        invoke_callback(
+-            context.callbacks,
+-            AfterFormConstraintAppliedEvent(
++        @invoke_callback(context.callbacks, AfterFormConstraintAppliedEvent(
+                 variable,
+                 context,
+                 FormConstraintCheckLast(),
+                 dist,
+                 constrained_dist,
+                 form_span_id,
+-            ),
+-        )
++            ))
+         result = Message(
+             constrained_dist,
+             is_clamped(result),
+@@ -421,12 +406,9 @@ function compute_product_of_messages(
+         )
+     end
+ 
+-    invoke_callback(
+-        context.callbacks,
+-        AfterProductOfMessagesEvent(
++    @invoke_callback(context.callbacks, AfterProductOfMessagesEvent(
+             variable, context, messages, result, span_id
+-        ),
+-    )
++        ))
+ 
+     return result
+ end
+@@ -761,10 +743,7 @@ function (mapping::MessageMapping)(messages, marginals)
+     )
+ 
+     span_id = generate_span_id(mapping.callbacks)
+-    invoke_callback(
+-        mapping.callbacks,
+-        BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id),
+-    )
++    @invoke_callback(mapping.callbacks, BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id))
+ 
+     annotations = AnnotationDict()
+ 
+@@ -775,46 +754,54 @@ function (mapping::MessageMapping)(messages, marginals)
+         end
+     end
+ 
+-    result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals)
+-        missing, nothing
+-    else
+-        fform = message_mapping_fform(mapping)
+-        args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
+-        found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
+-        if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
+-            fallback_message(mapping.rulefallback, found, fform, mapping.target, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
+-        else
+-            spec = audit_rule(mapping.diagnostics, resolve_rule(found))
+-            MessagePassingRulesBase.check_reads_logscale(spec, args)
+-            ctx = mapping.context
+-            MessagePassingRulesBase.check_services(spec, ctx)
+-            ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
+-            algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+-            scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
+-            if tracks_logscales(mapping)
+-                MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+-            else
+-                MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing
+-            end
+-        end
++    if has_missing_inputs(messages) || has_missing_inputs(marginals)
++        return finish_message(mapping, messages, marginals, missing, annotations, nothing, span_id, is_message_clamped, is_message_initial)
++    end
++    fform = message_mapping_fform(mapping)
++    args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
++    found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
++    if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
++        result = fallback_message(mapping.rulefallback, found, fform, mapping.target, args)
++        return finish_message(mapping, messages, marginals, result, annotations, (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing), span_id, is_message_clamped, is_message_initial)
+     end
++    spec = audit_rule(mapping.diagnostics, resolve_rule(found))
++    MessagePassingRulesBase.check_reads_logscale(spec, args)
++    ctx = mapping.context
++    MessagePassingRulesBase.check_services(spec, ctx)
++    ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
++    algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
++    scratch = scratch_for!(mapping.scratch, spec, algorithm, ctx, args, mapping.target, mapping.diagnostics.checked_buffers)
++    if tracks_logscales(mapping)
++        result, logscale = MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
++        return finish_message(mapping, messages, marginals, result, annotations, logscale, span_id, is_message_clamped, is_message_initial)
++    end
++    then = MessageTail(mapping, messages, marginals, annotations, span_id, is_message_clamped, is_message_initial)
++    return MessagePassingRulesBase.execute_rule(then, spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)::Message
++end
++
++# What a message mapping does with the rule's result: the annotation processors after the rule,
++# the callback event, the message. `MessageTail` carries it into the rule's function barrier, so
++# it runs on a concretely typed result.
++struct MessageTail{M, Ms, Mr, S}
++    mapping::M
++    messages::Ms
++    marginals::Mr
++    annotations::AnnotationDict
++    span_id::S
++    is_clamped::Bool
++    is_initial::Bool
++end
++
++(tail::MessageTail)(result) = finish_message(tail.mapping, tail.messages, tail.marginals, result, tail.annotations, nothing, tail.span_id, tail.is_clamped, tail.is_initial)
+ 
++function finish_message(mapping::MessageMapping, messages, marginals, result, annotations, logscale, span_id, is_message_clamped, is_message_initial)
+     # Run annotation processors after the rule has been executed. Skip them entirely when the
+     # rule was short-circuited to `missing`: no rule ran, so there is nothing to annotate.
+     if !isnothing(mapping.annotations) && result !== missing
+         for p in mapping.annotations
+-            post_rule_annotations!(
+-                p, annotations, mapping, messages, marginals, result
+-            )
++            post_rule_annotations!(p, annotations, mapping, messages, marginals, result)
+         end
+     end
+-
+-    invoke_callback(
+-        mapping.callbacks,
+-        AfterMessageRuleCallEvent(
+-            mapping, messages, marginals, result, annotations, logscale, span_id
+-        ),
+-    )
+-
+-    return Message(result, is_message_clamped, is_message_initial, annotations, logscale)
++    @invoke_callback(mapping.callbacks, AfterMessageRuleCallEvent(mapping, messages, marginals, result, annotations, logscale, span_id))
++    return new_message(result, is_message_clamped, is_message_initial, annotations, logscale)
+ end
+diff --git a/src/nodes/equality.jl b/src/nodes/equality.jl
+index 4b0a81a2..3dbafb65 100644
+--- a/src/nodes/equality.jl
++++ b/src/nodes/equality.jl
+@@ -79,7 +79,7 @@ invalidates only the partial products that contain it.
+   variable gives [`ReactiveMP.compute_product_of_messages`](@ref) under its
+   `prod_context_for_message_computation`.
+ """
+-struct EqualityChain{P, F}
++struct EqualityChain{P, F, S}
+     length::Int
+     nodes::Vector{EqualityNode}
+     inputmsgs::Vector{MessageObservable{AbstractMessage}}
+@@ -87,16 +87,21 @@ struct EqualityChain{P, F}
+     cacheright::Vector{Bool}
+     postprocessor::P
+     prod_fn::F
++    step_fn::S
+ 
++    # `step_fn(left, right)` multiplies two messages inside the chain, into a partial product;
++    # `prod_fn((left, right))` gives an outbound message, from the two partial products. They
++    # differ where the product's form constraint or fold applies to the whole product only.
+     function EqualityChain(
+             inputmsgs::Vector{MessageObservable{AbstractMessage}},
+             postprocessor::P,
+             prod_fn::F,
+-        ) where {P, F}
++            step_fn::S = (left, right) -> prod_fn((left, right)),
++        ) where {P, F, S}
+         n = length(inputmsgs)
+         nodes = map(_ -> EqualityNode(), 1:n)
+-        return new{P, F}(
+-            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn
++        return new{P, F, S}(
++            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn, step_fn
+         )
+     end
+ end
+@@ -104,6 +109,7 @@ end
+ Base.length(chain::EqualityChain) = chain.length
+ 
+ prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
++chain_step(chain::EqualityChain, left, right) = chain.step_fn(left, right)
+ 
+ getpostprocessor(chain::EqualityChain) = chain.postprocessor
+ 
+@@ -157,7 +163,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
+             for index in range
+                 arg1 = as_message(getrecent(getinbound(chain, index)))
+                 arg2 = as_message(getcache(type, chain, nextindex(type, index)))
+-                result = prod(chain, arg1, arg2)
++                result = chain_step(chain, arg1, arg2)
+                 setcache!(type, getnode(chain, index), result)
+             end
+             setcache!(type, chain, range)
+@@ -200,9 +206,9 @@ end
+ 
+ ##
+ 
+-struct ChainOutboundMapping
++struct ChainOutboundMapping{C <: EqualityChain}
+     index::Int
+-    chain::EqualityChain
++    chain::C
+ end
+ 
+ function (mapping::ChainOutboundMapping)(_)
+@@ -211,8 +217,8 @@ function (mapping::ChainOutboundMapping)(_)
+     return as_message(prod(mapping.chain, from_left, from_right))
+ end
+ 
+-Base.map(::Type{Message}, mapping::ChainOutboundMapping) =
+-    Rocket.MapOperator{Message, ChainOutboundMapping}(mapping)
++Base.map(::Type{Message}, mapping::M) where {M <: ChainOutboundMapping} =
++    Rocket.MapOperator{Message, M}(mapping)
+ 
+ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
+     n = length(chain)
+diff --git a/src/nodes/nodes.jl b/src/nodes/nodes.jl
+index 1be154e9..4dd2f90b 100644
+--- a/src/nodes/nodes.jl
++++ b/src/nodes/nodes.jl
+@@ -167,7 +167,14 @@ function factornode(fform::F, interfaces, factorisation = nothing; nodefn = noth
+ end
+ 
+ function node_specification(fform)
+-    applicable(nodespec, fform) || throw(
++    spec = try
++        nodespec(fform)
++    catch err
++        (err isa MethodError && err.f === nodespec) || rethrow()
++        nothing
++    end
++    spec === nothing || return spec
++    throw(
+         ArgumentError(
+             "`$(fform)` is not a factor node: declare it with `@define_factor_node` (from `MessagePassingRulesBase`) before creating it",
+         ),
+@@ -202,8 +209,22 @@ interfaceindex(factornode::FactorNode, iname::Symbol) = findfirst(interface -> n
+ interface_key(interface::NodeInterface) = name(interface)
+ interface_key(interface::IndexedNodeInterface) = (name(interface), index(interface))
+ 
+-given_key(fform, name::Symbol) = MessagePassingRulesBase.alias_interface(fform, name)
+-given_key(fform, (name, k)::Tuple{Symbol, Integer}) = (MessagePassingRulesBase.alias_interface(fform, name), Int(k))
++# `alias_interface` scans the node's declaration; a graph asks for the same few names of the
++# same few node types many times, so the answers are cached.
++const ALIAS_CACHE = Dict{Tuple{Any, Symbol}, Symbol}()
++const ALIAS_LOCK = ReentrantLock()
++
++function cached_alias_interface(fform, name::Symbol)
++    key = (fform, name)
++    cached = @lock ALIAS_LOCK get(ALIAS_CACHE, key, nothing)
++    cached === nothing || return cached
++    resolved = MessagePassingRulesBase.alias_interface(fform, name)
++    @lock ALIAS_LOCK ALIAS_CACHE[key] = resolved
++    return resolved
++end
++
++given_key(fform, name::Symbol) = cached_alias_interface(fform, name)
++given_key(fform, (name, k)::Tuple{Symbol, Integer}) = (cached_alias_interface(fform, name), Int(k))
+ given_key(fform, key) = throw(ArgumentError("an interface of `$(fform)` is `:name` or `(:group, k)`, got `$(repr(key))`"))
+ 
+ # The given interfaces by their resolved keys, `:out` or `(:m, k)`.
+diff --git a/src/rule_arguments.jl b/src/rule_arguments.jl
+index 04ec734e..34a681e9 100644
+--- a/src/rule_arguments.jl
++++ b/src/rule_arguments.jl
+@@ -48,7 +48,19 @@ the consecutive members of a group become one [`ReactiveMP.GroupInputs`](@ref).
+ - `ArgumentError` when a group's members are not in member order, or when a name appears more
+   than once, such as a group whose members are not consecutive.
+ """
++# Activation asks for the same few label tuples once per node and interface: the answer is cached.
++const INPUT_NAMES_CACHE = Dict{Any, Any}()
++const INPUT_NAMES_LOCK = ReentrantLock()
++
+ function input_names(labels)
++    cached = @lock INPUT_NAMES_LOCK get(INPUT_NAMES_CACHE, labels, nothing)
++    cached === nothing || return cached
++    names = compute_input_names(labels)
++    @lock INPUT_NAMES_LOCK INPUT_NAMES_CACHE[labels] = names
++    return names
++end
++
++function compute_input_names(labels)
+     names = Any[]
+     for label in labels
+         if label isa GroupMember && !isempty(names) && last(names) isa Vector{GroupMember} && first(last(names)).group === label.group
+diff --git a/src/score/node.jl b/src/score/node.jl
+index 893adc02..8ce7e65a 100644
+--- a/src/score/node.jl
++++ b/src/score/node.jl
+@@ -54,6 +54,17 @@ end
+ 
+ ## Stochastic mapping
+ 
++# The node's score from its average energy, minus the entropies of its clusters: run inside the
++# rule's function barrier, on a concretely typed average energy.
++struct EnergyTail{T, M}
++    marginals::M
++end
++
++function (tail::EnergyTail{T})(average_energy) where {T}
++    clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, tail.marginals)
++    return convert(T, average_energy - clusters_entropy)
++end
++
+ function score(
+         ::Type{T},
+         ::FactorBoundFreeEnergy,
+@@ -78,11 +89,10 @@ function score(
+             spec = resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args))
+             MessagePassingRulesBase.check_services(spec, ctx)
+             ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
+-            average_energy = MessagePassingRulesBase.execute_rule(
+-                spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing
+-            )
+-            clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
+-            return convert(T, average_energy - clusters_entropy)
++            then = EnergyTail{T, typeof(marginals)}(marginals)
++            return MessagePassingRulesBase.execute_rule(
++                then, spec, nothing, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing
++            )::T
+         end
+     end
+ 
+diff --git a/src/variables/random.jl b/src/variables/random.jl
+index 20d79cc6..479ab121 100644
+--- a/src/variables/random.jl
++++ b/src/variables/random.jl
+@@ -147,15 +147,15 @@ function activate!(
+     end
+ 
+     if length(randomvar.input_messages) > 1
+-        chain = EqualityChain(
+-            randomvar.input_messages,
+-            options.stream_postprocessor,
+-            (messages) -> compute_product_of_messages(
+-                randomvar,
+-                options.prod_context_for_message_computation,
+-                messages,
+-            ),
+-        )
++        context = options.prod_context_for_message_computation
++        prod_fn = (messages) -> compute_product_of_messages(randomvar, context, messages)
++        # Under a built-in fold the product of two messages is `compute_product_of_two_messages`;
++        # the form constraint checked last applies to an outbound message, not to each partial product.
++        chain = if context.fold_strategy isa Union{MessagesProductFromLeftToRight, MessagesProductFromRightToLeft}
++            EqualityChain(randomvar.input_messages, options.stream_postprocessor, prod_fn, (left, right) -> compute_product_of_two_messages(randomvar, context, left, right))
++        else
++            EqualityChain(randomvar.input_messages, options.stream_postprocessor, prod_fn)
++        end
+         initialize!(chain, outputmsgs)
+     elseif length(randomvar.input_messages) == 1
+         # If the number of input message is equal to `1`,
+@@ -193,19 +193,13 @@ function _compute_marginal_from_messages(
+     )
+     context = options.prod_context_for_marginal_computation
+     span_id = generate_span_id(context.callbacks)
+-    invoke_callback(
+-        context.callbacks,
+-        BeforeMarginalComputationEvent(randomvar, context, messages, span_id),
+-    )
++    @invoke_callback(context.callbacks, BeforeMarginalComputationEvent(randomvar, context, messages, span_id))
+     result = as_marginal(
+         compute_product_of_messages(randomvar, context, messages)
+     )
+-    invoke_callback(
+-        context.callbacks,
+-        AfterMarginalComputationEvent(
++    @invoke_callback(context.callbacks, AfterMarginalComputationEvent(
+             randomvar, context, messages, result, span_id
+-        ),
+-    )
++        ))
+     return result
+ end
+ 

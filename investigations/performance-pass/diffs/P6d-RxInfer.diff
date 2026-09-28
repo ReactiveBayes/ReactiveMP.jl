@@ -1,0 +1,56 @@
+diff --git a/src/callbacks/benchmark.jl b/src/callbacks/benchmark.jl
+index d099e919..75b1282f 100644
+--- a/src/callbacks/benchmark.jl
++++ b/src/callbacks/benchmark.jl
+@@ -59,15 +59,17 @@ using PrettyTables
+ PrettyTables.pretty_table(callbacks)
+ ```
+ """
+-struct RxInferBenchmarkCallbacks
+-    before_model_creation_ts::CircularBuffer{UInt64}
+-    after_model_creation_ts::CircularBuffer{UInt64}
+-    before_inference_ts::CircularBuffer{UInt64}
+-    after_inference_ts::CircularBuffer{UInt64}
+-    before_iteration_ts::CircularBuffer{Vector{UInt64}}
+-    after_iteration_ts::CircularBuffer{Vector{UInt64}}
+-    before_autostart_ts::CircularBuffer{UInt64}
+-    after_autostart_ts::CircularBuffer{UInt64}
++# A `mutable struct` so that the engine, which stores its callbacks in every message mapping and
++# product context, holds one reference rather than a copy of eight
++mutable struct RxInferBenchmarkCallbacks
++    const before_model_creation_ts::CircularBuffer{UInt64}
++    const after_model_creation_ts::CircularBuffer{UInt64}
++    const before_inference_ts::CircularBuffer{UInt64}
++    const after_inference_ts::CircularBuffer{UInt64}
++    const before_iteration_ts::CircularBuffer{Vector{UInt64}}
++    const after_iteration_ts::CircularBuffer{Vector{UInt64}}
++    const before_autostart_ts::CircularBuffer{UInt64}
++    const after_autostart_ts::CircularBuffer{UInt64}
+ end
+ 
+ function RxInferBenchmarkCallbacks(;
+@@ -220,3 +222,11 @@ function Base.show(io::IO, callbacks::RxInferBenchmarkCallbacks)
+         )
+     end
+ end
++
++# The events the benchmark callbacks record: the engine builds no other event for them
++# (`ReactiveMP.listens`), so `benchmark = true` does not slow down every rule call.
++ReactiveMP.listens(::RxInferBenchmarkCallbacks, ::Type{T}) where {T} =
++    T <: Union{
++    BeforeModelCreationEvent, AfterModelCreationEvent, BeforeInferenceEvent, AfterInferenceEvent,
++    BeforeIterationEvent, AfterIterationEvent, BeforeAutostartEvent, AfterAutostartEvent,
++}
+diff --git a/src/callbacks/trace.jl b/src/callbacks/trace.jl
+index 50a410b7..2dadcd2f 100644
+--- a/src/callbacks/trace.jl
++++ b/src/callbacks/trace.jl
+@@ -228,3 +228,8 @@ function convert_to_tensorboard(args...)
+         "`convert_to_tensorboard` method with the specified arguments were not found. Did you load the `TensorBoardLogger.jl` in the current session? Otherwise consult the documentation.",
+     )
+ end
++
++# The events the trace records: with an `include` filter the engine builds no other event for it
++# (`ReactiveMP.listens`); `AfterModelCreationEvent` always, since it saves the trace to the model.
++ReactiveMP.listens(callbacks::RxInferTraceCallbacks, ::Type{T}) where {T} =
++    T <: AfterModelCreationEvent || is_trace_event_included(callbacks, event_name(T))

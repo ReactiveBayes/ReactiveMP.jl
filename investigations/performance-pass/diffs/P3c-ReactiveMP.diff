@@ -1,0 +1,38 @@
+diff --git a/src/score/node.jl b/src/score/node.jl
+index 893adc02..8ce7e65a 100644
+--- a/src/score/node.jl
++++ b/src/score/node.jl
+@@ -54,6 +54,17 @@ end
+ 
+ ## Stochastic mapping
+ 
++# The node's score from its average energy, minus the entropies of its clusters: run inside the
++# rule's function barrier, on a concretely typed average energy.
++struct EnergyTail{T, M}
++    marginals::M
++end
++
++function (tail::EnergyTail{T})(average_energy) where {T}
++    clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, tail.marginals)
++    return convert(T, average_energy - clusters_entropy)
++end
++
+ function score(
+         ::Type{T},
+         ::FactorBoundFreeEnergy,
+@@ -78,11 +89,10 @@ function score(
+             spec = resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args))
+             MessagePassingRulesBase.check_services(spec, ctx)
+             ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
+-            average_energy = MessagePassingRulesBase.execute_rule(
+-                spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing
+-            )
+-            clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
+-            return convert(T, average_energy - clusters_entropy)
++            then = EnergyTail{T, typeof(marginals)}(marginals)
++            return MessagePassingRulesBase.execute_rule(
++                then, spec, nothing, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing
++            )::T
+         end
+     end
+ 

@@ -627,6 +627,12 @@ benefit is preserved by a better mechanism: the ordinary typed lambda parameter
 
 #### The `RuleSpec` is the execution vehicle, and carries no type parameters
 
+*(Reversed by the performance pass, 2026-09-27: `RuleSpec` is typed, `RuleSpec{B, P, S, L, A, ST}`.
+The toy below measured a call site that can reach two rules; the engine's call sites reach one,
+and on real rules the typed spec is 2.5× faster per rule call than the untyped one behind a
+barrier, at no compile cost. §5, *The end-of-refactor performance pass*; `BENCHMARK.md` § 4.1;
+Correction 28. The reasoning below is kept as the record of the first decision.)*
+
 The user's design: dispatch resolves to a `RuleSpec` which **stores the body and the
 `preallocate` lambda** and knows how to call itself, so the engine never branches on
 `inplace`. The same object the registry holds for `@which_rule`, the coverage matrix and
@@ -2039,6 +2045,13 @@ Claims the assistant made that were **wrong** and should not be revived:
     density caught it; both are corrected and declared (ReactiveMP.jl#672). A v6 expected value
     is evidence of what v6 does, not of what is right: hand-derive, or verify against the node
     definition, where the tooling allows.
+28. **"A typed `RuleSpec` makes resolution return a union of spec types."** Not at the engine's
+    call sites. A `MessageMapping` resolves from the concrete types of the inputs it carries, so
+    it reaches one rule, and `find_message_rule` returns one concrete `RuleSpec{…}`; the body
+    call is then static and inlines. §3.14's toy measured a call site that could reach two
+    rules, which the engine never builds; where resolution is genuinely uninferable, the call is
+    dynamic in either design. Measured on real rules (`BENCHMARK.md` § 4.1): 27 ns per rule call
+    typed, against 69 ns untyped behind a function barrier and 873 ns untyped without one.
 
 ---
 
@@ -2139,6 +2152,37 @@ variant bit-identical to HEAD.
 - Typed streams are not needed for these gains. Next suspects (inferred): the abstract `RuleSpec`
   behind `execute_rule`, and the `Any` tuple a product returns. Input to the end-of-refactor
   performance pass.
+
+**The end-of-refactor performance pass (2026-09-26 to 2026-09-28; user; nothing applied yet).**
+Full record: `BENCHMARK.md` (method, results, every option with its call);
+`investigations/performance-pass/` holds the scripts, diffs, notes per package and the raw data.
+- **Where v7 stood:** 1.5–4.6× v6 in steady state, 2.2–3.2× in setup, 15–30% longer to first
+  inference, on the same Rocket and GraphPPL. The rule body is 49 ns of an 873 ns call; the rest is
+  the untyped result (`RuleSpec.body::Function`): an event built for nobody (≈ 300 ns), a
+  `Message{D, L}` from `Any` (≈ 380 ns), `uuid4()` span ids when callbacks are set (≈ 760 ns), and
+  the 18-field `RuleSpec` boxed at each dynamic call.
+- **The measured fix reverses §3.14 (user's follow-up):** a typed `RuleSpec{B, P, S, L, A}` (the
+  body, preallocation, scratch and log-scale functions and the algorithm type as parameters;
+  `RuleResult` carries the spec's type). At the engine's call site resolution runs on concrete
+  input types and reaches one rule, so it returns one concrete spec and the body call is static and
+  inlines: a rule call 873 → 27 ns and 15 → 2 allocations, 0.83–0.92× the barrier alternative per
+  iteration (0.62–0.66× at n ≥ 10⁴, less GC), no measurable compile cost, every suite passing.
+  §3.14's toy call site could reach two rules and got a union of spec types; engine call sites do
+  not have that shape. The barrier alternative that kept the spec untyped (`execute_rule(then,
+  spec, …)`, 69 ns) was measured first and is superseded (Correction 28).
+- **The scratch is typed too (user's follow-up):** an optional `scratch_type`, a function of the
+  inputs' types folded to a constant, lets the engine assert the scratch it keeps between calls.
+  An untyped scratch cost ≈ 40 ns and 3 allocations per call; typed, a scratch rule costs what
+  any rule does (BIFM, the only user, 5–7%). An in-place rule's output needs no declaration, since
+  `preallocate` is a typed field; reusing its buffer is an ownership question (PLAN #10), not a
+  typing one.
+- **Custom dispatch (the user's experiment) has no target:** resolution is static, 26 ns, and
+  ~1% of compile time.
+- **Rocket and GraphPPL need no breaking release** for performance; typed listeners and a
+  GraphPPL storage redesign were measured and rejected. Rocket's hand-written fast paths are
+  neither wrong nor faster than the simple alternatives.
+- **Left for later:** setup (1.4–2.2× v6), allocation volume (1.3× v6 per iteration with the typed
+  spec), workloads per rule package.
 
 
 ---

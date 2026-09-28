@@ -1,0 +1,236 @@
+diff --git a/src/inference/batch.jl b/src/inference/batch.jl
+index 687f1920..d4fa6bed 100644
+--- a/src/inference/batch.jl
++++ b/src/inference/batch.jl
+@@ -164,12 +164,13 @@ function batch_inference(;
+ 
+     # Determine the default postprocessing strategy: the `Marginal` wrapper is kept when it carries
+     # annotations or log scales
+-    if isnothing(postprocess)
+-        postprocess = if isnothing(getannotations(_options)) && !getlogscales(_options)
+-            UnpackMarginalPostprocess()
+-        else
+-            NoopPostprocess()
+-        end
++    # A single assignment: `postprocess` is captured below, and a reassigned captured variable is boxed
++    _postprocess = if !isnothing(postprocess)
++        postprocess
++    elseif isnothing(getannotations(_options)) && !getlogscales(_options)
++        UnpackMarginalPostprocess()
++    else
++        NoopPostprocess()
+     end
+ 
+     # Set ReactiveMP event handler if `callbacks` are set
+@@ -211,9 +212,9 @@ function batch_inference(;
+     # If `predictvars` is specified implicitly as `KeepEach` or `KeepLast`, we replace it with the same value for each data variable
+     if (predictvars === KeepEach() || predictvars === KeepLast())
+         if !isnothing(data)
+-            predictoption = predictvars
++            keepoption = predictvars
+             predictvars = Dict(
+-                variable => predictoption for (variable, value) in pairs(data)
++                variable => keepoption for (variable, value) in pairs(data)
+             )
+         else # else we throw an error
+             error(
+@@ -228,9 +229,9 @@ function batch_inference(;
+         # If `predictvars` is not specified, but `data` is, we initialize the `predictvars` with `KeepLast` or `KeepEach` depending on the `iterations` value
+         # But only if the data has missing values in it
+     elseif isnothing(predictvars) && !isnothing(data)
+-        predictoption = iterations isa Number ? KeepEach() : KeepLast()
++        defaultoption = iterations isa Number ? KeepEach() : KeepLast()
+         predictvars = Dict(
+-            variable => predictoption for (variable, value) in pairs(data) if
++            variable => defaultoption for (variable, value) in pairs(data) if
+             inference_check_dataismissing(get_data(value))
+         )
+         # If both `predictvars` and `data` are specified we double check if there are some entries in the `predictvars`
+@@ -271,8 +272,7 @@ function batch_inference(;
+     invoke_callback(
+         callbacks, AfterModelCreationEvent(fmodel, model_creation_span_id)
+     )
+-    vardict = getvardict(fmodel)
+-    vardict = GraphPPL.variables(vardict) # TODO bvdmitri, should work recursively as well
++    vardict = GraphPPL.variables(getvardict(fmodel)) # TODO bvdmitri, should work recursively as well
+ 
+     # First what we do - we check if `returnvars` is nothing or one of the two possible values: `KeepEach` and `KeepLast`. 
+     # If so, we replace it with either `KeepEach` or `KeepLast` for each random and not-proxied variable in a model
+@@ -373,13 +373,8 @@ function batch_inference(;
+                 "Data is empty. Make sure you used `data` keyword argument with correct value.",
+             )
+         else
+-            foreach(
+-                filter(
+-                    pair -> isdata(last(pair)) && !isanonymous(last(pair)),
+-                    pairs(vardict),
+-                ),
+-            ) do pair
+-                varname = first(pair)
++            for (varname, ref) in pairs(vardict)
++                (isdata(ref) && !isanonymous(ref)) || continue
+                 haskey(data, varname) || error(
+                     "Data entry `$(varname)` is missing in `data` or `predictvars` arguments. Double check `data = ($(varname) = ???, )` or `predictvars = ($(varname) = ???, )`",
+                 )
+@@ -493,8 +488,8 @@ function batch_inference(;
+         isnothing(values) ? missing : inference_postprocess(postprocess, values)
+     end
+ 
+-    posterior_values = Dict(variable => inference_postprocess_or_missing(postprocess, actor) for (variable, actor) in pairs(actors_rv))
+-    predicted_values = Dict(variable => inference_postprocess_or_missing(postprocess, actor) for (variable, actor) in pairs(actors_pr))
++    posterior_values = Dict(variable => inference_postprocess_or_missing(_postprocess, actor) for (variable, actor) in pairs(actors_rv))
++    predicted_values = Dict(variable => inference_postprocess_or_missing(_postprocess, actor) for (variable, actor) in pairs(actors_pr))
+     fe_values        = !isnothing(fe_actor) ? score_snapshot_iterations(fe_actor, executed_iterations) : nothing
+ 
+     return InferenceResult(
+diff --git a/src/inference/inference.jl b/src/inference/inference.jl
+index c69b67b6..f841c1db 100644
+--- a/src/inference/inference.jl
++++ b/src/inference/inference.jl
+@@ -495,6 +495,18 @@ include("batch.jl")
+ include("autoupdates.jl")
+ include("streaming.jl")
+ 
++# The callbacks `infer` runs with: the user's, merged with the benchmark and trace callbacks when
++# those are enabled.
++function infer_callbacks(callbacks, benchmark, trace)
++    if benchmark
++        callbacks = merge_callbacks(callbacks, RxInferBenchmarkCallbacks())
++    end
++    if trace !== false
++        callbacks = merge_callbacks(callbacks, trace === true ? RxInferTraceCallbacks() : RxInferTraceCallbacks(trace))
++    end
++    return callbacks
++end
++
+ """
+     infer(
+         model; 
+@@ -643,18 +655,8 @@ function infer(;
+ 
+     infer_check_dicttype(:data, data)
+ 
+-    if benchmark
+-        callbacks = merge_callbacks(callbacks, RxInferBenchmarkCallbacks())
+-    end
+-
+-    if trace !== false
+-        trace_callbacks = if trace === true
+-            RxInferTraceCallbacks()
+-        else
+-            RxInferTraceCallbacks(trace)
+-        end
+-        callbacks = merge_callbacks(callbacks, trace_callbacks)
+-    end
++    # A single assignment: the callbacks are captured below, and a reassigned captured variable is boxed
++    _callbacks = infer_callbacks(callbacks, benchmark, trace)
+ 
+     return with_session(session, :inference) do invoke
+         append_invoke_context(invoke) do ctx
+@@ -681,14 +683,14 @@ function infer(;
+             ctx[:showprogress] = showprogress
+             ctx[:catch_exception] = catch_exception
+ 
+-            ctx[:callbacks] = log_dictnt_entries(callbacks)
++            ctx[:callbacks] = log_dictnt_entries(_callbacks)
+             ctx[:annotations] = log_dictnt_entries(annotations)
+             ctx[:options] = log_dictnt_entries(options)
+         end
+ 
+         if isnothing(autoupdates)
+             check_available_callbacks(
+-                warn, callbacks, available_callbacks(batch_inference)
++                warn, _callbacks, available_callbacks(batch_inference)
+             )
+             check_available_events(
+                 warn, events, available_events(batch_inference)
+@@ -707,7 +709,7 @@ function infer(;
+                 free_energy_diagnostics = free_energy_diagnostics,
+                 allow_node_contraction = allow_node_contraction,
+                 showprogress = showprogress,
+-                callbacks = callbacks,
++                callbacks = _callbacks,
+                 annotations = annotations,
+                 logscales = logscales,
+                 postprocess = postprocess,
+@@ -717,7 +719,7 @@ function infer(;
+             )
+         else
+             check_available_callbacks(
+-                warn, callbacks, available_callbacks(streaming_inference)
++                warn, _callbacks, available_callbacks(streaming_inference)
+             )
+             check_available_events(
+                 warn, events, available_events(streaming_inference)
+@@ -739,7 +741,7 @@ function infer(;
+                 free_energy_diagnostics = free_energy_diagnostics,
+                 allow_node_contraction = allow_node_contraction,
+                 autostart = autostart,
+-                callbacks = callbacks,
++                callbacks = _callbacks,
+                 annotations = annotations,
+                 logscales = logscales,
+                 postprocess = postprocess,
+diff --git a/src/inference/streaming.jl b/src/inference/streaming.jl
+index 162cd932..2235e2ee 100644
+--- a/src/inference/streaming.jl
++++ b/src/inference/streaming.jl
+@@ -611,12 +611,13 @@ function streaming_inference(;
+ 
+     # Determine the default postprocessing strategy: the `Marginal` wrapper is kept when it carries
+     # annotations or log scales
+-    if isnothing(postprocess)
+-        postprocess = if isnothing(getannotations(_options)) && !getlogscales(_options)
+-            UnpackMarginalPostprocess()
+-        else
+-            NoopPostprocess()
+-        end
++    # A single assignment: `postprocess` is captured below, and a reassigned captured variable is boxed
++    _postprocess = if !isnothing(postprocess)
++        postprocess
++    elseif isnothing(getannotations(_options)) && !getlogscales(_options)
++        UnpackMarginalPostprocess()
++    else
++        NoopPostprocess()
+     end
+ 
+     # Set ReactiveMP event handler if `callbacks` are set
+@@ -678,8 +679,7 @@ function streaming_inference(;
+         callbacks, AfterModelCreationEvent(fmodel, model_creation_span_id)
+     )
+ 
+-    vardict = getvardict(fmodel)
+-    vardict = GraphPPL.variables(vardict) # TODO: Should work recursively as well
++    vardict = GraphPPL.variables(getvardict(fmodel)) # TODO: Should work recursively as well
+ 
+     _autoupdates = prepare_autoupdates_for_model(_autoupdates, fmodel)
+ 
+@@ -763,8 +763,9 @@ function streaming_inference(;
+         elseif historyvars === KeepEach() || historyvars === KeepLast()
+             # Second we check if it is one of the two possible global values: `KeepEach` and `KeepLast`. 
+             # If so, we replace it with either `KeepEach` or `KeepLast` for each random and not-proxied variable in a model
++            keepoption = historyvars
+             historyvars = Dict(
+-                variable => historyvars for
++                variable => keepoption for
+                 (variable, value) in pairs(vardict) if
+                 (israndom(value) && !isanonymous(value))
+             )
+@@ -804,7 +805,7 @@ function streaming_inference(;
+         variable =>
+             obtain_marginal(vardict[variable]) |>
+             schedule_on(tickscheduler) |>
+-            map(Any, (data) -> inference_postprocess(postprocess, data)) for
++            map(Any, (data) -> inference_postprocess(_postprocess, data)) for
+         variable in returnvars
+     )
+ 
+@@ -840,7 +841,7 @@ function streaming_inference(;
+         _autoupdates,
+         fe_actor,
+         fe_source,
+-        postprocess,
++        _postprocess,
+         _iterations,
+         fmodel,
+         vardict,

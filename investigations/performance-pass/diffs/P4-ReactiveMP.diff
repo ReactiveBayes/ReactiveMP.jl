@@ -1,0 +1,107 @@
+diff --git a/src/nodes/equality.jl b/src/nodes/equality.jl
+index 4b0a81a2..3dbafb65 100644
+--- a/src/nodes/equality.jl
++++ b/src/nodes/equality.jl
+@@ -79,7 +79,7 @@ invalidates only the partial products that contain it.
+   variable gives [`ReactiveMP.compute_product_of_messages`](@ref) under its
+   `prod_context_for_message_computation`.
+ """
+-struct EqualityChain{P, F}
++struct EqualityChain{P, F, S}
+     length::Int
+     nodes::Vector{EqualityNode}
+     inputmsgs::Vector{MessageObservable{AbstractMessage}}
+@@ -87,16 +87,21 @@ struct EqualityChain{P, F}
+     cacheright::Vector{Bool}
+     postprocessor::P
+     prod_fn::F
++    step_fn::S
+ 
++    # `step_fn(left, right)` multiplies two messages inside the chain, into a partial product;
++    # `prod_fn((left, right))` gives an outbound message, from the two partial products. They
++    # differ where the product's form constraint or fold applies to the whole product only.
+     function EqualityChain(
+             inputmsgs::Vector{MessageObservable{AbstractMessage}},
+             postprocessor::P,
+             prod_fn::F,
+-        ) where {P, F}
++            step_fn::S = (left, right) -> prod_fn((left, right)),
++        ) where {P, F, S}
+         n = length(inputmsgs)
+         nodes = map(_ -> EqualityNode(), 1:n)
+-        return new{P, F}(
+-            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn
++        return new{P, F, S}(
++            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn, step_fn
+         )
+     end
+ end
+@@ -104,6 +109,7 @@ end
+ Base.length(chain::EqualityChain) = chain.length
+ 
+ prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
++chain_step(chain::EqualityChain, left, right) = chain.step_fn(left, right)
+ 
+ getpostprocessor(chain::EqualityChain) = chain.postprocessor
+ 
+@@ -157,7 +163,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
+             for index in range
+                 arg1 = as_message(getrecent(getinbound(chain, index)))
+                 arg2 = as_message(getcache(type, chain, nextindex(type, index)))
+-                result = prod(chain, arg1, arg2)
++                result = chain_step(chain, arg1, arg2)
+                 setcache!(type, getnode(chain, index), result)
+             end
+             setcache!(type, chain, range)
+@@ -200,9 +206,9 @@ end
+ 
+ ##
+ 
+-struct ChainOutboundMapping
++struct ChainOutboundMapping{C <: EqualityChain}
+     index::Int
+-    chain::EqualityChain
++    chain::C
+ end
+ 
+ function (mapping::ChainOutboundMapping)(_)
+@@ -211,8 +217,8 @@ function (mapping::ChainOutboundMapping)(_)
+     return as_message(prod(mapping.chain, from_left, from_right))
+ end
+ 
+-Base.map(::Type{Message}, mapping::ChainOutboundMapping) =
+-    Rocket.MapOperator{Message, ChainOutboundMapping}(mapping)
++Base.map(::Type{Message}, mapping::M) where {M <: ChainOutboundMapping} =
++    Rocket.MapOperator{Message, M}(mapping)
+ 
+ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
+     n = length(chain)
+diff --git a/src/variables/random.jl b/src/variables/random.jl
+index bc1a87e0..479ab121 100644
+--- a/src/variables/random.jl
++++ b/src/variables/random.jl
+@@ -147,15 +147,15 @@ function activate!(
+     end
+ 
+     if length(randomvar.input_messages) > 1
+-        chain = EqualityChain(
+-            randomvar.input_messages,
+-            options.stream_postprocessor,
+-            (messages) -> compute_product_of_messages(
+-                randomvar,
+-                options.prod_context_for_message_computation,
+-                messages,
+-            ),
+-        )
++        context = options.prod_context_for_message_computation
++        prod_fn = (messages) -> compute_product_of_messages(randomvar, context, messages)
++        # Under a built-in fold the product of two messages is `compute_product_of_two_messages`;
++        # the form constraint checked last applies to an outbound message, not to each partial product.
++        chain = if context.fold_strategy isa Union{MessagesProductFromLeftToRight, MessagesProductFromRightToLeft}
++            EqualityChain(randomvar.input_messages, options.stream_postprocessor, prod_fn, (left, right) -> compute_product_of_two_messages(randomvar, context, left, right))
++        else
++            EqualityChain(randomvar.input_messages, options.stream_postprocessor, prod_fn)
++        end
+         initialize!(chain, outputmsgs)
+     elseif length(randomvar.input_messages) == 1
+         # If the number of input message is equal to `1`,

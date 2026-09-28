@@ -1,0 +1,186 @@
+diff --git a/lib/BIFMMessagePassingRules/src/bifm.jl b/lib/BIFMMessagePassingRules/src/bifm.jl
+index 704199b5..dc289d02 100644
+--- a/lib/BIFMMessagePassingRules/src/bifm.jl
++++ b/lib/BIFMMessagePassingRules/src/bifm.jl
+@@ -163,6 +163,14 @@ function bifm_scratch(algo::BIFMSmoother, messages...)
+     )
+ end
+ 
++# The type `bifm_scratch` returns for these inputs, from their types alone: what the rules declare
++# as `scratch_type`, so the engine keeps the scratch concretely typed between calls.
++function bifm_scratch_type(algo::BIFMSmoother, messages...)
++    T = promote_type(eltype(algo.A), promote_samplefloattype(messages...))
++    V, M = Vector{T}, Matrix{T}
++    return NamedTuple{(:ξz, :Λz, :BHBt, :ξ̃z, :Λ̃z, :CtΛ, :BH, :z, :zz), Tuple{V, M, M, V, M, M, M, V, M}}
++end
++
+ # The backward quantities, computed from the messages on `out`, `in` and `znext` into
+ # `scratch`, in this order of operations:
+ #
+@@ -201,6 +209,7 @@ end
+     node = BIFM, target = :zprev, algorithm = BIFMSmoother,
+     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:in]::MultivariateNormalDistributionsFamily, m[:znext]::MultivariateNormalDistributionsFamily),
+     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
++    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
+     body = (scratch, algo, args) -> begin
+         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
+         A = algo.A
+@@ -218,6 +227,7 @@ end
+         m[:zprev]::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m[:znext]::MultivariateNormalDistributionsFamily,
+     ),
+     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
++    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
+     body = (scratch, algo, args) -> begin
+         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
+         A, B = algo.A, algo.B
+@@ -251,6 +261,7 @@ end
+         m[:zprev]::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m[:znext]::MultivariateNormalDistributionsFamily,
+     ),
+     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
++    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
+     body = (scratch, algo, args) -> begin
+         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
+         μ_znext, Σ_znext = bifm_forward(s, algo, args.m[:in], args.m[:zprev])
+@@ -267,6 +278,7 @@ end
+         m[:zprev]::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m[:znext]::MultivariateNormalDistributionsFamily,
+     ),
+     scratch = (algo, args) -> bifm_scratch(algo, args.m[:out], args.m[:in], args.m[:znext]),
++    scratch_type = (algo, args) -> bifm_scratch_type(algo, args.m[:out], args.m[:in], args.m[:znext]),
+     body = (scratch, algo, args) -> begin
+         s = bifm_backward!(scratch, algo, args.m[:out], args.m[:in], args.m[:znext])
+         μ_znext, Σ_znext = bifm_forward(s, algo, args.m[:in], args.m[:zprev])
+diff --git a/lib/MessagePassingRulesBase/src/rule_macro.jl b/lib/MessagePassingRulesBase/src/rule_macro.jl
+index 39157f6b..2108a857 100644
+--- a/lib/MessagePassingRulesBase/src/rule_macro.jl
++++ b/lib/MessagePassingRulesBase/src/rule_macro.jl
+@@ -3,8 +3,8 @@ const PREALLOCATE_SLOTS = (:algo, :ctx, :args)
+ const SCRATCH_SLOTS = PREALLOCATE_SLOTS
+ const LOGSCALE_SLOTS = PREALLOCATE_SLOTS
+ 
+-const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx, :logscale, :reads_logscale)
+-const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx)
++const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :scratch_type, :pure, :ctx, :logscale, :reads_logscale)
++const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :scratch_type, :pure, :ctx)
+ const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
+ 
+ # Parts of the definition macros' docstrings that several share, written once and interpolated.
+@@ -359,6 +359,7 @@ function define_rule_expr(kind, source, macroargs)
+     has_scratch = haskey(keywords, :scratch)
+     :scratch in slots && !has_scratch && error("@$name: the `scratch` slot requires a `scratch` keyword, `scratch = (args) -> memory`")
+     has_scratch && !(:scratch in slots) && error("@$name: the rule declares `scratch` but its body does not take it; name `scratch` among its slots")
++    haskey(keywords, :scratch_type) && !has_scratch && error("@$name: `scratch_type` requires `scratch`")
+ 
+     base = MessagePassingRulesBase
+     user_body = gensym(:body)
+@@ -394,6 +395,18 @@ function define_rule_expr(kind, source, macroargs)
+         push!(scratch_defs, :(const $user_sc = $(append_parameter(sc, index_name))))
+         scratch_fn = :(($(sc_args...), $sc_target) -> $user_sc($(sc_passed...), $(sc_index...)))
+     end
++    scratch_type_fn = nothing
++    if haskey(keywords, :scratch_type)
++        st = keywords[:scratch_type]
++        st_slots = parse_slots(name, st, SCRATCH_SLOTS; what = "scratch_type")
++        user_st = gensym(:scratch_type)
++        st_args = [gensym(slot) for slot in SCRATCH_SLOTS]
++        st_passed = [st_args[findfirst(==(slot), SCRATCH_SLOTS)] for slot in st_slots]
++        st_target = gensym(:target)
++        st_index = index_name === nothing ? () : (:($index_fn($st_target)),)
++        push!(scratch_defs, :(const $user_st = $(append_parameter(st, index_name))))
++        scratch_type_fn = :(($(st_args...), $st_target) -> $user_st($(st_passed...), $(st_index...)))
++    end
+ 
+     logscale_defs = []
+     logscale_fn = nothing
+@@ -464,6 +477,7 @@ function define_rule_expr(kind, source, macroargs)
+             body = ($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...)),
+             prealloc = $prealloc,
+             scratch = $scratch_fn,
++            scratch_type = $scratch_type_fn,
+             default = $has_default,
+             inplace = $inplace,
+             pure = $pure,
+diff --git a/lib/MessagePassingRulesBase/src/rulespec.jl b/lib/MessagePassingRulesBase/src/rulespec.jl
+index a37c68a6..074c9ded 100644
+--- a/lib/MessagePassingRulesBase/src/rulespec.jl
++++ b/lib/MessagePassingRulesBase/src/rulespec.jl
+@@ -45,7 +45,7 @@ body over `(output, scratch, algo, ctx, args, ann, target)` and the others over
+ `(algo, ctx, args, target)`. Run a rule through [`execute_rule`](@ref) or a call, never by
+ calling them.
+ """
+-struct RuleSpec{B, P, S, L, A}
++struct RuleSpec{B, P, S, L, A, ST}
+     kind::Symbol
+     node::Any
+     target::Any
+@@ -55,6 +55,7 @@ struct RuleSpec{B, P, S, L, A}
+     body::B
+     prealloc::P
+     scratch::S
++    scratch_type::ST
+     default::Bool
+     inplace::Bool
+     pure::Bool
+@@ -69,7 +70,7 @@ end
+ function RuleSpec(;
+         kind::Symbol, node, target, algorithm::Type, signature::Type, body::Function,
+         inputs::Tuple{Vararg{InputSpec}} = (),
+-        prealloc = nothing, scratch = nothing, default::Bool = false, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
++        prealloc = nothing, scratch = nothing, scratch_type = nothing, default::Bool = false, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
+         services::Tuple{Vararg{Symbol}} = (), logscale = nothing, reads_logscale::Bool = false, source::AbstractString = "",
+         file::Symbol = :none, line::Integer = 0,
+     )
+@@ -83,7 +84,7 @@ function RuleSpec(;
+         throw(ArgumentError("only a message rule has a log scale; `logscale` and `reads_logscale` are for message rules"))
+     effective = something(pure, algorithm <: AbstractAlgorithm ? ispure(algorithm) : true)
+     return RuleSpec(
+-        kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, default, inplace, effective,
++        kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, scratch_type, default, inplace, effective,
+         services, logscale, reads_logscale, String(source), file, Int(line),
+     )
+ end
+@@ -291,6 +292,17 @@ rebuild it whenever it likes.
+ @inline rule_scratch(spec::RuleSpec, algorithm, ctx, args, target) =
+     spec.scratch === nothing ? nothing : spec.scratch(algorithm, ctx, args, target)
+ 
++"""
++    rule_scratch_type(spec::RuleSpec, algorithm, ctx, args, target) -> Type
++
++The type of the working memory [`rule_scratch`](@ref) builds for these inputs, as the rule
++declares it with `scratch_type`, or `Any` for a rule that declares none. It depends only on the
++inputs' types, so it folds to a constant where the call is inferred, and an engine keeping the
++scratch between calls can assert it.
++"""
++@inline rule_scratch_type(spec::RuleSpec, algorithm, ctx, args, target) =
++    spec.scratch_type === nothing ? Any : spec.scratch_type(algorithm, ctx, args, target)
++
+ @inline function throw_if_not_found(spec)
+     spec isa RuleNotFound && throw(RuleNotFoundError(spec))
+     return spec
+diff --git a/src/scratch.jl b/src/scratch.jl
+index fc8567c0..d1eca175 100644
+--- a/src/scratch.jl
++++ b/src/scratch.jl
+@@ -28,8 +28,20 @@ With `checked`, the `checked_buffers` diagnostic, a reused scratch is poisoned f
+ """
+ function scratch_for!(slot::ScratchSlot, spec, algorithm, ctx, args, target, checked::Bool = false)
+     spec.scratch === nothing && return nothing
+-    slot.spec === spec && return checked ? poison!(slot.scratch) : slot.scratch
+-    slot.scratch = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, target)
++    # The declared type (`Any` when the rule declares none): the slot's value is asserted to it, so
++    # the rule runs on a concretely typed scratch; one of another type (other input types) is rebuilt.
++    T = MessagePassingRulesBase.rule_scratch_type(spec, algorithm, ctx, args, target)
++    current = slot.scratch
++    if slot.spec === spec && current isa T
++        return (checked ? poison!(current) : current)::T
++    end
++    fresh = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, target)
++    fresh isa T || throw_scratch_type(spec, T, fresh)
++    slot.scratch = fresh
+     slot.spec = spec
+-    return slot.scratch
++    return fresh::T
+ end
++
++@noinline throw_scratch_type(spec, T, fresh) = throw(
++    ArgumentError("$(MessagePassingRulesBase.rule_heading(spec)) declares `scratch_type` $(T), but its `scratch` built a $(typeof(fresh))"),
++)

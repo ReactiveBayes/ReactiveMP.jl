@@ -1,0 +1,10 @@
+== P12
+tiny session=nothing      144.500 μs  median 159.500 μs  2156 allocs 111680 B
+tiny session=default      158.208 μs  median 311.521 μs  2200 allocs 114768 B
+tiny fe=true              183.291 μs  median 199.417 μs  2590 allocs 131488 B
+tiny fe=Float64           192.791 μs  median 212.917 μs  2544 allocs 129808 B
+== X1
+tiny session=nothing      138.791 μs  median 145.083 μs  2089 allocs 107680 B
+tiny session=default      148.041 μs  median 163.730 μs  2133 allocs 110768 B
+tiny fe=true              175.834 μs  median 281.584 μs  2471 allocs 125344 B
+tiny fe=Float64           185.000 μs  median 254.438 μs  2422 allocs 123552 B

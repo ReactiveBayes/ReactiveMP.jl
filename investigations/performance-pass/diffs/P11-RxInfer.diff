@@ -1,0 +1,77 @@
+diff --git a/Project.toml b/Project.toml
+index a2389550..23a2be48 100644
+--- a/Project.toml
++++ b/Project.toml
+@@ -23,6 +23,7 @@ MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
+ MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
+ Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+ Preferences = "21216c6a-2e73-6563-6e65-726566657250"
++PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+ ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+ ReactiveMP = "a194aa59-28ba-4574-a09c-4a745416d6e3"
+@@ -95,6 +96,7 @@ MessagePassingRulesApproximations = "0.1"
+ MessagePassingRulesBase = "0.1"
+ Optim = "1.0.0, 2"
+ Preferences = "1.4.3"
++PrecompileTools = "1.2"
+ PrettyTables = "2"
+ ProgressMeter = "1.0.0"
+ Random = "1.9"
+diff --git a/src/RxInfer.jl b/src/RxInfer.jl
+index fa7a47de..53e2b21d 100644
+--- a/src/RxInfer.jl
++++ b/src/RxInfer.jl
+@@ -36,6 +36,7 @@ include("callbacks/stop_early.jl")
+ 
+ include("inference/postprocess.jl")
+ include("inference/inference.jl")
++include("precompile.jl")
+ 
+ _isprecompiling() = ccall(:jl_generating_output, Cint, ()) == 1
+ 
+diff --git a/src/precompile.jl b/src/precompile.jl
+new file mode 100644
+index 00000000..5637ba06
+--- /dev/null
++++ b/src/precompile.jl
+@@ -0,0 +1,39 @@
++using PrecompileTools: @setup_workload, @compile_workload
++
++# A few small models of the kinds most users start with, so that their first inference reuses
++# native code cached at precompile time instead of compiling the engine's generic machinery.
++@model function __precompile_ssm(y)
++    x_prev ~ Normal(mean = 0.0, variance = 100.0)
++    for i in eachindex(y)
++        x[i] ~ Normal(mean = x_prev, variance = 1.0)
++        y[i] ~ Normal(mean = x[i], variance = 1.0)
++        x_prev = x[i]
++    end
++end
++@model function __precompile_iid(y)
++    μ ~ Normal(mean = 0.0, variance = 100.0)
++    τ ~ Gamma(shape = 1.0, rate = 1.0)
++    for i in eachindex(y)
++        y[i] ~ Normal(mean = μ, precision = τ)
++    end
++end
++@model function __precompile_betabern(y)
++    θ ~ Beta(1.0, 1.0)
++    for i in eachindex(y)
++        y[i] ~ Bernoulli(θ)
++    end
++end
++
++@setup_workload begin
++    y = [0.1, -0.2, 0.3, 0.05, -0.1]
++    @compile_workload begin
++        for fe in (false, Float64)
++            infer(model = __precompile_ssm(), data = (y = y,), free_energy = fe, session = nothing)
++            infer(
++                model = __precompile_iid(), data = (y = y,), constraints = MeanField(), iterations = 2,
++                initialization = @initialization(q(τ) = GammaShapeRate(1.0, 1.0)), free_energy = fe, session = nothing,
++            )
++            infer(model = __precompile_betabern(), data = (y = [1.0, 0.0, 1.0],), free_energy = fe, session = nothing)
++        end
++    end
++end

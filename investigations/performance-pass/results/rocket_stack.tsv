@@ -1,0 +1,24 @@
+P12	engine chain: longest n (stack 8 MiB)	1024	8192.0
+P12	RxInfer ssm1, no limit_stack_depth: longest n	1024	8192.0
+P12	engine chain n=200 activate+1 pass (s)	0.014413	0.014628416
+P12	RxInfer ssm1 n=200 infer (s)	0.019617542	0.020289292
+P12	RxInfer ssm1 n=200 infer limit_stack_depth=100 (s)	0.023677042	0.031031584
+P12	engine chain n=1000 activate+1 pass (s)	0.084089542	0.093315208
+P12	RxInfer ssm1 n=1000 infer (s)	0.1004595	0.106087791
+P12	RxInfer ssm1 n=1000 infer limit_stack_depth=100 (s)	0.105744333	0.108702458
+R9	engine chain: longest n (stack 8 MiB)	4096	2048.0
+R9	RxInfer ssm1, no limit_stack_depth: longest n	4096	2048.0
+R9	engine chain n=200 activate+1 pass (s)	0.014742042	0.015505542
+R9	RxInfer ssm1 n=200 infer (s)	0.020176917	0.020628667
+R9	RxInfer ssm1 n=200 infer limit_stack_depth=100 (s)	0.021784833	0.022068042
+R9	engine chain n=1000 activate+1 pass (s)	0.074541375	0.075081041
+R9	RxInfer ssm1 n=1000 infer (s)	0.100477958	0.105640792
+R9	RxInfer ssm1 n=1000 infer limit_stack_depth=100 (s)	0.11364975	0.122150042
+R10	engine chain: longest n (stack 8 MiB)	4096	2048.0
+R10	RxInfer ssm1, no limit_stack_depth: longest n	4096	2048.0
+R10	engine chain n=200 activate+1 pass (s)	0.014385667	0.014641125
+R10	RxInfer ssm1 n=200 infer (s)	0.019229208	0.019282292
+R10	RxInfer ssm1 n=200 infer limit_stack_depth=100 (s)	0.020280209	0.020574
+R10	engine chain n=1000 activate+1 pass (s)	0.071421667	0.075519083
+R10	RxInfer ssm1 n=1000 infer (s)	0.096263542	0.096983333
+R10	RxInfer ssm1 n=1000 infer limit_stack_depth=100 (s)	0.102385333	0.10339425

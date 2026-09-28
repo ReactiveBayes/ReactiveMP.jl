@@ -1,0 +1,44 @@
+diff --git a/src/nodes/nodes.jl b/src/nodes/nodes.jl
+index 1be154e9..0f82a684 100644
+--- a/src/nodes/nodes.jl
++++ b/src/nodes/nodes.jl
+@@ -167,7 +167,14 @@ function factornode(fform::F, interfaces, factorisation = nothing; nodefn = noth
+ end
+ 
+ function node_specification(fform)
+-    applicable(nodespec, fform) || throw(
++    spec = try
++        nodespec(fform)
++    catch err
++        (err isa MethodError && err.f === nodespec) || rethrow()
++        nothing
++    end
++    spec === nothing || return spec
++    throw(
+         ArgumentError(
+             "`$(fform)` is not a factor node: declare it with `@define_factor_node` (from `MessagePassingRulesBase`) before creating it",
+         ),
+diff --git a/src/rule_arguments.jl b/src/rule_arguments.jl
+index 04ec734e..34a681e9 100644
+--- a/src/rule_arguments.jl
++++ b/src/rule_arguments.jl
+@@ -48,7 +48,19 @@ the consecutive members of a group become one [`ReactiveMP.GroupInputs`](@ref).
+ - `ArgumentError` when a group's members are not in member order, or when a name appears more
+   than once, such as a group whose members are not consecutive.
+ """
++# Activation asks for the same few label tuples once per node and interface: the answer is cached.
++const INPUT_NAMES_CACHE = Dict{Any, Any}()
++const INPUT_NAMES_LOCK = ReentrantLock()
++
+ function input_names(labels)
++    cached = @lock INPUT_NAMES_LOCK get(INPUT_NAMES_CACHE, labels, nothing)
++    cached === nothing || return cached
++    names = compute_input_names(labels)
++    @lock INPUT_NAMES_LOCK INPUT_NAMES_CACHE[labels] = names
++    return names
++end
++
++function compute_input_names(labels)
+     names = Any[]
+     for label in labels
+         if label isa GroupMember && !isempty(names) && last(names) isa Vector{GroupMember} && first(last(names)).group === label.group

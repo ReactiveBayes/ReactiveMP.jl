@@ -1,0 +1,159 @@
+diff --git a/src/inference/batch.jl b/src/inference/batch.jl
+index d4fa6bed..a619c90b 100644
+--- a/src/inference/batch.jl
++++ b/src/inference/batch.jl
+@@ -272,7 +272,7 @@ function batch_inference(;
+     invoke_callback(
+         callbacks, AfterModelCreationEvent(fmodel, model_creation_span_id)
+     )
+-    vardict = GraphPPL.variables(getvardict(fmodel)) # TODO bvdmitri, should work recursively as well
++    vardict = gettoplevelvardict(fmodel) # TODO bvdmitri, should work recursively as well
+ 
+     # First what we do - we check if `returnvars` is nothing or one of the two possible values: `KeepEach` and `KeepLast`. 
+     # If so, we replace it with either `KeepEach` or `KeepLast` for each random and not-proxied variable in a model
+diff --git a/src/inference/streaming.jl b/src/inference/streaming.jl
+index 2235e2ee..6ceae7b4 100644
+--- a/src/inference/streaming.jl
++++ b/src/inference/streaming.jl
+@@ -679,7 +679,7 @@ function streaming_inference(;
+         callbacks, AfterModelCreationEvent(fmodel, model_creation_span_id)
+     )
+ 
+-    vardict = GraphPPL.variables(getvardict(fmodel)) # TODO: Should work recursively as well
++    vardict = gettoplevelvardict(fmodel) # TODO: Should work recursively as well
+ 
+     _autoupdates = prepare_autoupdates_for_model(_autoupdates, fmodel)
+ 
+diff --git a/src/model/model.jl b/src/model/model.jl
+index 48b55802..7d6e95d8 100644
+--- a/src/model/model.jl
++++ b/src/model/model.jl
+@@ -56,6 +56,8 @@ getreturnval(model::ProbabilisticModel) = getreturnval(getmodel(model))
+ 
+ "Returns the (nested) dictionary of random variables from the model specification."
+ getvardict(model::ProbabilisticModel) = getvardict(getmodel(model))
++gettoplevelvardict(model::ProbabilisticModel) = gettoplevelvardict(getmodel(model))
++nodes_by_kind(model::ProbabilisticModel) = nodes_by_kind(getmodel(model))
+ 
+ "Returns the random variables from the model specification."
+ getrandomvars(model::ProbabilisticModel) = getrandomvars(getmodel(model))
+diff --git a/src/model/plugins/reactivemp_free_energy.jl b/src/model/plugins/reactivemp_free_energy.jl
+index 1ec2d669..f239fed8 100644
+--- a/src/model/plugins/reactivemp_free_energy.jl
++++ b/src/model/plugins/reactivemp_free_energy.jl
+@@ -84,13 +84,14 @@ end
+ function score(
+     model::ProbabilisticModel, ::BetheFreeEnergy{T}, diagnostic_checks
+ ) where {T}
+-    node_bound_free_energies = map(getfactornodes(model)) do nodedata
++    nodes = nodes_by_kind(model)
++    node_bound_free_energies = map(nodes.factors) do nodedata
+         nodeproperties = getproperties(nodedata)::GraphPPL.FactorNodeProperties
+         stream = getextra(nodedata, ReactiveMPExtraBetheFreeEnergyStreamKey)
+         return apply_diagnostic_check(diagnostic_checks, nodeproperties, stream)
+     end
+ 
+-    variable_bound_entropies = map(getrandomvars(model)) do nodedata
++    variable_bound_entropies = map(nodes.randoms) do nodedata
+         nodeproperties = getproperties(
+             nodedata
+         )::GraphPPL.VariableNodeProperties
+@@ -109,12 +110,12 @@ function score(
+ 
+     degree_fn =
+         (nodedata::GraphPPL.NodeData) ->
+-            ReactiveMP.degree(getextra(nodedata, :rmp_variable))
++            ReactiveMP.degree(getextra(nodedata, ReactiveMPExtraVariableKey))
+ 
+-    data_point_entropies_n     = mapreduce(degree_fn, +, getdatavars(model); init = 0)
+-    constant_point_entropies_n = mapreduce(degree_fn, +, getconstantvars(model); init = 0)
++    data_point_entropies_n     = mapreduce(degree_fn, +, nodes.datas; init = 0)
++    constant_point_entropies_n = mapreduce(degree_fn, +, nodes.constants; init = 0)
+     hidden_point_entropies_n = mapreduce(
+-        nodedata -> getextra(nodedata, ReactiveMPExtraHiddenConstantsKey, 0), +, getfactornodes(model); init = 0
++        nodedata -> getextra(nodedata, ReactiveMPExtraHiddenConstantsKey, 0), +, nodes.factors; init = 0
+     )
+ 
+     point_entropies = CountingReal(
+diff --git a/src/model/plugins/reactivemp_inference.jl b/src/model/plugins/reactivemp_inference.jl
+index b7a0a4ec..51d90d71 100644
+--- a/src/model/plugins/reactivemp_inference.jl
++++ b/src/model/plugins/reactivemp_inference.jl
+@@ -604,6 +604,14 @@ function getreturnval(model::GraphPPL.Model)
+     return GraphPPL.returnval(GraphPPL.getcontext(model))
+ end
+ 
++# The references to the variables of the model's top-level context only, what `infer` reads:
++# `getvardict` builds them for every submodel as well.
++function gettoplevelvardict(model::GraphPPL.Model)
++    context = GraphPPL.getcontext(model)
++    variables = merge(GraphPPL.individual_variables(context), GraphPPL.vector_variables(context), GraphPPL.tensor_variables(context))
++    return map(v -> getvarref(model, v), variables)
++end
++
+ function getvardict(model::GraphPPL.Model)
+     return map(
+         v -> getvarref(model, v), GraphPPL.VarDict(GraphPPL.getcontext(model))
+@@ -676,34 +684,41 @@ function new_observation_indexed!(
+     return nothing
+ end
+ 
+-function getrandomvars(model::GraphPPL.Model)
+-    # TODO improve performance here
+-    randomlabels = filter(collect(variable_nodes(model))) do label
+-        is_random(getproperties(model[label])::GraphPPL.VariableNodeProperties)
++# The node data of the model's variables of one kind, in one pass over the graph.
++function variables_of_kind(predicate::P, model::GraphPPL.Model) where {P}
++    result = GraphPPL.NodeData[]
++    variable_nodes(model) do _, nodedata
++        predicate(getproperties(nodedata)::GraphPPL.VariableNodeProperties) && push!(result, nodedata)
+     end
+-    return map(label -> model[label]::GraphPPL.NodeData, randomlabels)
++    return result
+ end
+ 
+-function getdatavars(model::GraphPPL.Model)
+-    # TODO improve performance here
+-    datalabels = filter(collect(variable_nodes(model))) do label
+-        is_data(getproperties(model[label])::GraphPPL.VariableNodeProperties)
+-    end
+-    return map(label -> model[label]::GraphPPL.NodeData, datalabels)
+-end
++getrandomvars(model::GraphPPL.Model) = variables_of_kind(is_random, model)
++getdatavars(model::GraphPPL.Model) = variables_of_kind(is_data, model)
++getconstantvars(model::GraphPPL.Model) = variables_of_kind(is_constant, model)
+ 
+-function getconstantvars(model::GraphPPL.Model)
+-    # TODO improve performance here
+-    constantlabels = filter(collect(variable_nodes(model))) do label
+-        is_constant(
+-            getproperties(model[label])::GraphPPL.VariableNodeProperties
+-        )
++function getfactornodes(model::GraphPPL.Model)
++    result = GraphPPL.NodeData[]
++    factor_nodes(model) do _, nodedata
++        push!(result, nodedata)
+     end
+-    return map(label -> model[label]::GraphPPL.NodeData, constantlabels)
++    return result
+ end
+ 
+-function getfactornodes(model::GraphPPL.Model)
+-    return map(label -> model[label]::GraphPPL.NodeData, factor_nodes(model))
++# The node data of the factor nodes and of the random, data and constant variables, in two passes.
++function nodes_by_kind(model::GraphPPL.Model)
++    randoms, datas, constants = GraphPPL.NodeData[], GraphPPL.NodeData[], GraphPPL.NodeData[]
++    variable_nodes(model) do _, nodedata
++        properties = getproperties(nodedata)::GraphPPL.VariableNodeProperties
++        if is_random(properties)
++            push!(randoms, nodedata)
++        elseif is_data(properties)
++            push!(datas, nodedata)
++        elseif is_constant(properties)
++            push!(constants, nodedata)
++        end
++    end
++    return (factors = getfactornodes(model), randoms = randoms, datas = datas, constants = constants)
+ end
+ 
+ obtain_prediction(ref::GraphVariableRef) =

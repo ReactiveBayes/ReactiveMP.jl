@@ -1,0 +1,3 @@
+FAILED v6 linreg 1
+FAILED v6 linreg 2
+FAILED v6 linreg 3

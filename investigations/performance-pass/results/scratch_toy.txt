@@ -1,0 +1,2 @@
+scratch, no scratch_type    73.8 ns  5 allocs  160 B
+scratch with scratch_type   33.5 ns  2 allocs  64 B

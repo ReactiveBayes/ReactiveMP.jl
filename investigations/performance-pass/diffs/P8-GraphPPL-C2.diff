@@ -1,0 +1,14 @@
+diff --git a/src/graph_engine.jl b/src/graph_engine.jl
+index 35ed5a9..79b7eb5 100644
+--- a/src/graph_engine.jl
++++ b/src/graph_engine.jl
+@@ -266,7 +266,8 @@ to_symbol(label::NodeLabel) = to_symbol(label.name, label.global_counter)
+ to_symbol(name::Any, index::Int) = Symbol(string(name, "_", index))
+ 
+ Base.show(io::IO, label::NodeLabel) = print(io, label.name, "_", label.global_counter)
+-Base.:(==)(label1::NodeLabel, label2::NodeLabel) = label1.name == label2.name && label1.global_counter == label2.global_counter
++# The counter first: it is unique per node and an `Int`, where `name` is untyped and compared by a dynamic call.
++Base.:(==)(label1::NodeLabel, label2::NodeLabel) = label1.global_counter == label2.global_counter && label1.name == label2.name
+ Base.hash(label::NodeLabel, h::UInt) = hash(label.global_counter, h)
+ 
+ """

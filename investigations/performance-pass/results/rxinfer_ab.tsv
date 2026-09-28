@@ -1,0 +1,156 @@
+P12	round1	iid base (session=nothing, fe=Float64)	0.051531416	0.051531416	51916832
+P12	round1	iid session=default	0.053331083	0.053331083	51925520
+P12	round1	iid free_energy=true	0.053103959	0.053103959	52718704
+P12	round1	iid free_energy=false	0.045146	0.045146	47853776
+P12	round1	iid benchmark=true	0.063591833	0.063591833	81741648
+P12	round1	iid trace=true	0.065991958	0.065991958	81397616
+P12	round1	iid returnvars=KeepEach	0.052559	0.052559	51916832
+P12	round1	iid returnvars=(μ=KeepLast,)	0.052532083	0.052532083	51910816
+P12	round1	iid all defaults (session, fe=true)	0.052935583	0.052935583	52727328
+P12	round1	ssm1 base	0.118911791	0.118911791	84105072
+P12	round1	ssm1 no FE	0.100914875	0.100914875	70788880
+P12	round1	ssm1 all defaults (session, fe=true)	0.122893625	0.122893625	84756592
+P12	round1	ssm1 session=default fe=Float64	0.122613417	0.122613417	84108304
+X1	round1	iid base (session=nothing, fe=Float64)	0.051510459	0.051510459	51658016
+X1	round1	iid session=default	0.0527895	0.0527895	51666704
+X1	round1	iid free_energy=true	0.052659542	0.052659542	52460032
+X1	round1	iid free_energy=false	0.04510375	0.04510375	47846384
+X1	round1	iid benchmark=true	0.053134625	0.053134625	52824704
+X1	round1	iid trace=true	0.066008583	0.066008583	81138640
+X1	round1	iid returnvars=KeepEach	0.053479834	0.053479834	51658016
+X1	round1	iid returnvars=(μ=KeepLast,)	0.052445542	0.052445542	51652208
+X1	round1	iid all defaults (session, fe=true)	0.053614416	0.053614416	52468656
+X1	round1	ssm1 base	0.119409875	0.119409875	82927872
+X1	round1	ssm1 no FE	0.101154625	0.101154625	70590480
+X1	round1	ssm1 all defaults (session, fe=true)	0.120036334	0.120036334	83579536
+X1	round1	ssm1 session=default fe=Float64	0.1186845	0.1186845	82931088
+X1	round2	iid base (session=nothing, fe=Float64)	0.051479125	0.051479125	51658016
+X1	round2	iid session=default	0.052808791	0.052808791	51666704
+X1	round2	iid free_energy=true	0.053151583	0.053151583	52460032
+X1	round2	iid free_energy=false	0.045446583	0.045446583	47846384
+X1	round2	iid benchmark=true	0.0531915	0.0531915	52824704
+X1	round2	iid trace=true	0.066010625	0.066010625	81138640
+X1	round2	iid returnvars=KeepEach	0.052761875	0.052761875	51658016
+X1	round2	iid returnvars=(μ=KeepLast,)	0.053422042	0.053422042	51652208
+X1	round2	iid all defaults (session, fe=true)	0.053005458	0.053005458	52468656
+X1	round2	ssm1 base	0.119549125	0.119549125	82927872
+X1	round2	ssm1 no FE	0.100324458	0.100324458	70590480
+X1	round2	ssm1 all defaults (session, fe=true)	0.120687208	0.120687208	83579536
+X1	round2	ssm1 session=default fe=Float64	0.119238417	0.119238417	82931088
+P12	round2	iid base (session=nothing, fe=Float64)	0.052005417	0.052005417	51916832
+P12	round2	iid session=default	0.05309675	0.05309675	51925520
+P12	round2	iid free_energy=true	0.0537135	0.0537135	52718704
+P12	round2	iid free_energy=false	0.045644167	0.045644167	47853776
+P12	round2	iid benchmark=true	0.0640975	0.0640975	81741648
+P12	round2	iid trace=true	0.066744125	0.066744125	81397616
+P12	round2	iid returnvars=KeepEach	0.0533475	0.0533475	51916832
+P12	round2	iid returnvars=(μ=KeepLast,)	0.053634334	0.053634334	51910816
+P12	round2	iid all defaults (session, fe=true)	0.054519167	0.054519167	52727328
+P12	round2	ssm1 base	0.120548167	0.120548167	84105072
+P12	round2	ssm1 no FE	0.103015959	0.103015959	70788880
+P12	round2	ssm1 all defaults (session, fe=true)	0.123519708	0.123519708	84756592
+P12	round2	ssm1 session=default fe=Float64	0.123126792	0.123126792	84108304
+P12	round3	iid base (session=nothing, fe=Float64)	0.052079291	0.052079291	51916832
+P12	round3	iid session=default	0.054087375	0.054087375	51925520
+P12	round3	iid free_energy=true	0.054056125	0.054056125	52718704
+P12	round3	iid free_energy=false	0.046055792	0.046055792	47853776
+P12	round3	iid benchmark=true	0.064164583	0.064164583	81741648
+P12	round3	iid trace=true	0.066415208	0.066415208	81397616
+P12	round3	iid returnvars=KeepEach	0.053330375	0.053330375	51916832
+P12	round3	iid returnvars=(μ=KeepLast,)	0.053630667	0.053630667	51910816
+P12	round3	iid all defaults (session, fe=true)	0.05452025	0.05452025	52727328
+P12	round3	ssm1 base	0.118242333	0.118242333	84105072
+P12	round3	ssm1 no FE	0.101010833	0.101010833	70788880
+P12	round3	ssm1 all defaults (session, fe=true)	0.122243417	0.122243417	84756592
+P12	round3	ssm1 session=default fe=Float64	0.120944792	0.120944792	84108304
+X1	round3	iid base (session=nothing, fe=Float64)	0.051997625	0.051997625	51658016
+X1	round3	iid session=default	0.053033875	0.053033875	51666704
+X1	round3	iid free_energy=true	0.0532795	0.0532795	52460032
+X1	round3	iid free_energy=false	0.045656542	0.045656542	47846384
+X1	round3	iid benchmark=true	0.053482084	0.053482084	52824704
+X1	round3	iid trace=true	0.066824583	0.066824583	81138640
+X1	round3	iid returnvars=KeepEach	0.05272075	0.05272075	51658016
+X1	round3	iid returnvars=(μ=KeepLast,)	0.05333375	0.05333375	51652208
+X1	round3	iid all defaults (session, fe=true)	0.054133792	0.054133792	52468656
+X1	round3	ssm1 base	0.119447708	0.119447708	82927872
+X1	round3	ssm1 no FE	0.101073083	0.101073083	70590480
+X1	round3	ssm1 all defaults (session, fe=true)	0.120620625	0.120620625	83579536
+X1	round3	ssm1 session=default fe=Float64	0.118430459	0.118430459	82931088
+X1	round4	iid base (session=nothing, fe=Float64)	0.051324417	0.051324417	51658016
+X1	round4	iid session=default	0.052530459	0.052530459	51666704
+X1	round4	iid free_energy=true	0.052047208	0.052047208	52460032
+X1	round4	iid free_energy=false	0.044806792	0.044806792	47846384
+X1	round4	iid benchmark=true	0.052564333	0.052564333	52824704
+X1	round4	iid trace=true	0.06615475	0.06615475	81138640
+X1	round4	iid returnvars=KeepEach	0.052608625	0.052608625	51658016
+X1	round4	iid returnvars=(μ=KeepLast,)	0.052983375	0.052983375	51652208
+X1	round4	iid all defaults (session, fe=true)	0.053324458	0.053324458	52468656
+X1	round4	ssm1 base	0.120529833	0.120529833	82927872
+X1	round4	ssm1 no FE	0.100995958	0.100995958	70590480
+X1	round4	ssm1 all defaults (session, fe=true)	0.120014833	0.120014833	83579536
+X1	round4	ssm1 session=default fe=Float64	0.119155917	0.119155917	82931088
+P12	round4	iid base (session=nothing, fe=Float64)	0.051319792	0.051319792	51916832
+P12	round4	iid session=default	0.052973625	0.052973625	51925520
+P12	round4	iid free_energy=true	0.053102792	0.053102792	52718704
+P12	round4	iid free_energy=false	0.04529175	0.04529175	47853776
+P12	round4	iid benchmark=true	0.063234625	0.063234625	81741648
+P12	round4	iid trace=true	0.064971333	0.064971333	81397616
+P12	round4	iid returnvars=KeepEach	0.052756458	0.052756458	51916832
+P12	round4	iid returnvars=(μ=KeepLast,)	0.052808209	0.052808209	51910816
+P12	round4	iid all defaults (session, fe=true)	0.0532095	0.0532095	52727328
+P12	round4	ssm1 base	0.119411958	0.119411958	84105072
+P12	round4	ssm1 no FE	0.100479791	0.100479791	70788880
+P12	round4	ssm1 all defaults (session, fe=true)	0.120598	0.120598	84756592
+P12	round4	ssm1 session=default fe=Float64	0.120083333	0.120083333	84108304
+P12	round5	iid base (session=nothing, fe=Float64)	0.051995667	0.051995667	51916832
+P12	round5	iid session=default	0.053353583	0.053353583	51925520
+P12	round5	iid free_energy=true	0.053036416	0.053036416	52718704
+P12	round5	iid free_energy=false	0.045690458	0.045690458	47853776
+P12	round5	iid benchmark=true	0.064480875	0.064480875	81741648
+P12	round5	iid trace=true	0.066342792	0.066342792	81397616
+P12	round5	iid returnvars=KeepEach	0.053548417	0.053548417	51916832
+P12	round5	iid returnvars=(μ=KeepLast,)	0.054090709	0.054090709	51910816
+P12	round5	iid all defaults (session, fe=true)	0.05454875	0.05454875	52727328
+P12	round5	ssm1 base	0.1185385	0.1185385	84105072
+P12	round5	ssm1 no FE	0.100505625	0.100505625	70788880
+P12	round5	ssm1 all defaults (session, fe=true)	0.120059583	0.120059583	84756592
+P12	round5	ssm1 session=default fe=Float64	0.119379125	0.119379125	84108304
+X1	round5	iid base (session=nothing, fe=Float64)	0.051170125	0.051170125	51658016
+X1	round5	iid session=default	0.053158416	0.053158416	51666704
+X1	round5	iid free_energy=true	0.053159333	0.053159333	52460032
+X1	round5	iid free_energy=false	0.045666541	0.045666541	47846384
+X1	round5	iid benchmark=true	0.054044666	0.054044666	52824704
+X1	round5	iid trace=true	0.065814958	0.065814958	81138640
+X1	round5	iid returnvars=KeepEach	0.052626791	0.052626791	51658016
+X1	round5	iid returnvars=(μ=KeepLast,)	0.052726333	0.052726333	51652208
+X1	round5	iid all defaults (session, fe=true)	0.053281875	0.053281875	52468656
+X1	round5	ssm1 base	0.120208708	0.120208708	82927872
+X1	round5	ssm1 no FE	0.101676583	0.101676583	70590480
+X1	round5	ssm1 all defaults (session, fe=true)	0.119312917	0.119312917	83579536
+X1	round5	ssm1 session=default fe=Float64	0.120337209	0.120337209	82931088
+X1	round6	iid base (session=nothing, fe=Float64)	0.050971584	0.050971584	51658016
+X1	round6	iid session=default	0.051784166	0.051784166	51666704
+X1	round6	iid free_energy=true	0.051576459	0.051576459	52460032
+X1	round6	iid free_energy=false	0.0445565	0.0445565	47846384
+X1	round6	iid benchmark=true	0.052006666	0.052006666	52824704
+X1	round6	iid trace=true	0.064619709	0.064619709	81138640
+X1	round6	iid returnvars=KeepEach	0.05179775	0.05179775	51658016
+X1	round6	iid returnvars=(μ=KeepLast,)	0.052961916	0.052961916	51652208
+X1	round6	iid all defaults (session, fe=true)	0.053424333	0.053424333	52468656
+X1	round6	ssm1 base	0.118531167	0.118531167	82927872
+X1	round6	ssm1 no FE	0.098674459	0.098674459	70590480
+X1	round6	ssm1 all defaults (session, fe=true)	0.119476792	0.119476792	83579536
+X1	round6	ssm1 session=default fe=Float64	0.118824333	0.118824333	82931088
+P12	round6	iid base (session=nothing, fe=Float64)	0.0518585	0.0518585	51916832
+P12	round6	iid session=default	0.053846208	0.053846208	51925520
+P12	round6	iid free_energy=true	0.053925125	0.053925125	52718704
+P12	round6	iid free_energy=false	0.045738791	0.045738791	47853776
+P12	round6	iid benchmark=true	0.063610541	0.063610541	81741648
+P12	round6	iid trace=true	0.066742291	0.066742291	81397616
+P12	round6	iid returnvars=KeepEach	0.053181958	0.053181958	51916832
+P12	round6	iid returnvars=(μ=KeepLast,)	0.054113541	0.054113541	51910816
+P12	round6	iid all defaults (session, fe=true)	0.05376875	0.05376875	52727328
+P12	round6	ssm1 base	0.118953375	0.118953375	84105072
+P12	round6	ssm1 no FE	0.100527625	0.100527625	70788880
+P12	round6	ssm1 all defaults (session, fe=true)	0.119101417	0.119101417	84756592
+P12	round6	ssm1 session=default fe=Float64	0.120531917	0.120531917	84108304

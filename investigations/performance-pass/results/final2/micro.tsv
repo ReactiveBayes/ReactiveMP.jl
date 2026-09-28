@@ -1,0 +1,657 @@
+FULL	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	67.0	71.0	5	192
+FULL	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	96.7	106.2	6	224
+FULL	run1	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	71.6	74.7	5	224
+FULL	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	25.2	26.7	2	160
+FULL	run1	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	48.9	52.4	4	240
+FULL	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	103.8	112.0	6	224
+FULL	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	68.5	71.7	5	192
+FULL	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	99.1	107.9	6	224
+FULL	run1	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	69.6	72.7	5	224
+FULL	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.1	27.0	2	160
+FULL	run1	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	49.8	53.4	4	240
+FULL	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	109.8	114.9	6	224
+FULL	run1	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	69.7	73.1	5	192
+FULL	run1	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	99.0	104.4	6	224
+FULL	run1	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	70.6	73.9	5	224
+FULL	run1	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	26.6	27.4	2	160
+FULL	run1	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	49.5	53.2	4	240
+FULL	run1	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	101.6	111.6	6	224
+FULL	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	97.0	103.5	7	336
+FULL	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	117.5	126.7	8	368
+FULL	run1	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	95.7	104.7	7	368
+FULL	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	25.9	26.7	2	160
+FULL	run1	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	70.3	75.5	6	384
+FULL	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	134.7	144.3	8	368
+FULL	run1	map/direct  Bernoulli->out m[p]::Beta	67.9	70.5	5	176
+FULL	run1	map/barrier Bernoulli->out m[p]::Beta	96.0	101.3	6	208
+FULL	run1	map/callbacks=(;) Bernoulli->out m[p]::Beta	71.2	74.6	5	208
+FULL	run1	resolve/barrier Bernoulli->out m[p]::Beta	26.2	27.2	2	160
+FULL	run1	exec/execute_rule Bernoulli->out m[p]::Beta	48.8	52.5	4	224
+FULL	run1	deferred/barrier Bernoulli->out m[p]::Beta	99.5	105.6	6	208
+FULL	run1	map/direct  Categorical->p q[out]::Categorical	165.2	176.6	7	272
+FULL	run1	map/barrier Categorical->p q[out]::Categorical	184.9	195.4	8	304
+FULL	run1	map/callbacks=(;) Categorical->p q[out]::Categorical	172.3	184.0	7	304
+FULL	run1	resolve/barrier Categorical->p q[out]::Categorical	26.3	27.3	2	160
+FULL	run1	exec/execute_rule Categorical->p q[out]::Categorical	130.9	142.6	6	320
+FULL	run1	deferred/barrier Categorical->p q[out]::Categorical	197.4	211.2	8	304
+FULL	run1	joint-marginal/barrier NMV (out,μ)	149.2	160.0	9	352
+FULL	run1	product/NMV x2	524.2	549.5	6	192
+FULL	run1	product/NMV x5	601.3	622.2	15	432
+FULL	run1	product/NMV x10	710.6	743.2	30	832
+FULL	run1	product/NMV x100	2726.8	2805.6	300	8032
+FULL	run1	product/deferred NMV x10	927.9	945.9	30	832
+FULL	run1	product/MvNMC(3) x3	1329.1	1416.6	31	1536
+FULL	run1	product/Gamma x10	720.6	752.1	30	832
+FULL	run1	marginal-at-variable/NMV x3	606.5	630.8	10	320
+FULL	run1	rocket/subject fan-out k=1	15.6	16.1	0	0
+FULL	run1	rocket/subject fan-out k=10	106.6	110.4	0	0
+FULL	run1	rocket/subject fan-out k=100	927.8	959.7	0	0
+FULL	run1	rocket/combineLatest PushNew k=2 round	67.6	69.9	0	0
+FULL	run1	rocket/combineLatest PushNew k=5 round	158.4	163.5	0	0
+FULL	run1	rocket/combineLatest PushNew k=10 round	338.6	355.6	0	0
+FULL	run1	rocket/combineLatest PushNew k=20 round	676.9	700.2	0	0
+FULL	run1	rocket/collectLatest N=100 round	1875.0	1917.0	100	1600
+FULL	run1	rocket/collectLatest N=1000 round	19916.0	20167.0	1000	16000
+FULL	run1	rocket/collectLatest N=10000 round	198875.0	200833.5	10000	160000
+FULL	run1	event/AfterMessageRuleCallEvent, result::Any	294.6	299.3	3	144
+FULL	run1	event/generate_span_id((;))	3.6	3.7	0	0
+FULL	run1	ctor/Message from Any	387.0	412.1	2	80
+FULL	run1	ctor/AnnotationDict()	4.0	4.2	1	16
+FULL	run1	graph/iid n=100 per-iteration	46883.3	48412.5	-1	70668
+FULL	run1	graph/iid n=100 build+activate	1.331917e6	1.347125e6	-1	1343104
+FULL	run1	graph/iid n=1000 per-iteration	452141.7	453750.0	-1	704268
+FULL	run1	graph/iid n=1000 build+activate	1.2401e7	1.2554875e7	-1	13251200
+FULL	run1	graph/iid n=10000 per-iteration	5.7010875e6	5.800425e6	-1	7040268
+FULL	run1	graph/iid n=10000 build+activate	1.3038025e8	1.32891e8	-1	132738880
+FULL	run1	graph/iid n=1000 no-FE per-iteration	341500.0	345745.8	-1	624188
+FULL	run1	graph/iid n=1000 no-FE build+activate	1.1232625e7	1.1290625e7	-1	11705920
+FULL	run1	graph/chain n=300 per-iteration	1.0670209e6	1.1094042e6	-1	1086812
+FULL	run1	graph/chain n=300 build+activate	1.1540958e7	1.1758208e7	-1	11028176
+FULL	run1	graph/chain n=1000 per-iteration	4.0498333e6	4.1869625e6	-1	3629212
+FULL	run1	graph/chain n=1000 build+activate	3.998325e7	4.1162e7	-1	36753584
+FULL	run1	graph/chain n=1000 no-FE per-iteration	3.1026334e6	3.1362708e6	-1	2654028
+FULL	run1	graph/chain n=1000 no-FE build+activate	3.5581542e7	3.5787916e7	-1	32287104
+FULLT	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	27.4	28.3	2	64
+FULLT	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	38.5	40.6	3	96
+FULLT	run1	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	28.6	29.1	2	64
+FULLT	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	23.6	24.9	2	128
+FULLT	run1	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	15.4	16.3	0	0
+FULLT	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	41.2	42.3	3	96
+FULLT	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.4	27.9	2	64
+FULLT	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	39.5	40.4	3	96
+FULLT	run1	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	28.2	28.9	2	64
+FULLT	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	23.9	24.8	2	128
+FULLT	run1	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	18.2	18.3	0	0
+FULLT	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	39.9	42.2	3	96
+FULLT	run1	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	27.4	27.9	2	64
+FULLT	run1	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	38.9	41.0	3	96
+FULLT	run1	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	28.4	28.8	2	64
+FULLT	run1	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	23.5	25.0	2	128
+FULLT	run1	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	4.2	4.3	0	0
+FULLT	run1	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	42.2	43.5	3	96
+FULLT	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	40.4	42.8	4	208
+FULLT	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	58.4	62.0	5	240
+FULLT	run1	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	40.7	42.8	4	208
+FULLT	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	24.2	25.2	2	128
+FULLT	run1	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	21.3	22.0	2	144
+FULLT	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	83.8	91.4	5	240
+FULLT	run1	map/direct  Bernoulli->out m[p]::Beta	27.4	27.8	2	48
+FULLT	run1	map/barrier Bernoulli->out m[p]::Beta	39.1	40.7	3	80
+FULLT	run1	map/callbacks=(;) Bernoulli->out m[p]::Beta	27.9	28.9	2	48
+FULLT	run1	resolve/barrier Bernoulli->out m[p]::Beta	23.9	25.5	2	128
+FULLT	run1	exec/execute_rule Bernoulli->out m[p]::Beta	3.8	4.0	0	0
+FULLT	run1	deferred/barrier Bernoulli->out m[p]::Beta	42.0	43.1	3	80
+FULLT	run1	map/direct  Categorical->p q[out]::Categorical	126.0	136.5	4	144
+FULLT	run1	map/barrier Categorical->p q[out]::Categorical	130.8	143.0	5	176
+FULLT	run1	map/callbacks=(;) Categorical->p q[out]::Categorical	124.9	135.0	4	144
+FULLT	run1	resolve/barrier Categorical->p q[out]::Categorical	23.4	25.1	2	128
+FULLT	run1	exec/execute_rule Categorical->p q[out]::Categorical	55.0	63.7	2	80
+FULLT	run1	deferred/barrier Categorical->p q[out]::Categorical	151.1	161.1	5	176
+FULLT	run1	joint-marginal/barrier NMV (out,μ)	95.6	103.0	7	272
+FULLT	run1	product/NMV x2	530.6	556.4	6	192
+FULLT	run1	product/NMV x5	600.7	627.8	15	432
+FULLT	run1	product/NMV x10	707.5	745.4	30	832
+FULLT	run1	product/NMV x100	2638.9	2791.7	300	8032
+FULLT	run1	product/deferred NMV x10	910.3	947.7	30	832
+FULLT	run1	product/MvNMC(3) x3	1370.8	1412.5	31	1536
+FULLT	run1	product/Gamma x10	725.1	757.3	30	832
+FULLT	run1	marginal-at-variable/NMV x3	601.6	632.0	10	320
+FULLT	run1	rocket/subject fan-out k=1	15.8	16.5	0	0
+FULLT	run1	rocket/subject fan-out k=10	105.7	109.8	0	0
+FULLT	run1	rocket/subject fan-out k=100	925.7	956.5	0	0
+FULLT	run1	rocket/combineLatest PushNew k=2 round	67.3	69.4	0	0
+FULLT	run1	rocket/combineLatest PushNew k=5 round	163.0	168.0	0	0
+FULLT	run1	rocket/combineLatest PushNew k=10 round	341.1	352.8	0	0
+FULLT	run1	rocket/combineLatest PushNew k=20 round	681.4	703.4	0	0
+FULLT	run1	rocket/collectLatest N=100 round	1875.0	1875.0	100	1600
+FULLT	run1	rocket/collectLatest N=1000 round	19166.0	19416.5	1000	16000
+FULLT	run1	rocket/collectLatest N=10000 round	193833.0	198521.0	10000	160000
+FULLT	run1	event/AfterMessageRuleCallEvent, result::Any	294.3	297.8	3	144
+FULLT	run1	event/generate_span_id((;))	3.6	3.7	0	0
+FULLT	run1	ctor/Message from Any	381.4	405.4	2	80
+FULLT	run1	ctor/AnnotationDict()	4.0	4.2	1	16
+FULLT	run1	graph/iid n=100 per-iteration	39141.7	41541.7	-1	51449
+FULLT	run1	graph/iid n=100 build+activate	1.370209e6	1.438708e6	-1	1343104
+FULLT	run1	graph/iid n=1000 per-iteration	373770.9	378612.5	-1	512249
+FULLT	run1	graph/iid n=1000 build+activate	1.2497416e7	1.2633125e7	-1	13251200
+FULLT	run1	graph/iid n=10000 per-iteration	4.6286417e6	4.7047584e6	-1	5120249
+FULLT	run1	graph/iid n=10000 build+activate	1.30754667e8	1.31761584e8	-1	132738880
+FULLT	run1	graph/iid n=1000 no-FE per-iteration	263537.5	269154.2	-1	432169
+FULLT	run1	graph/iid n=1000 no-FE build+activate	1.1292667e7	1.1305375e7	-1	11705920
+FULLT	run1	graph/chain n=300 per-iteration	994004.2	1.0185792e6	-1	890457
+FULLT	run1	graph/chain n=300 build+activate	1.0793042e7	1.106625e7	-1	11028176
+FULLT	run1	graph/chain n=1000 per-iteration	3.8124708e6	3.8333375e6	-1	2973657
+FULLT	run1	graph/chain n=1000 build+activate	3.8376541e7	3.9304875e7	-1	36753584
+FULLT	run1	graph/chain n=1000 no-FE per-iteration	2.7338375e6	2.7518625e6	-1	2078393
+FULLT	run1	graph/chain n=1000 no-FE build+activate	3.4078917e7	3.4337666e7	-1	32287104
+FULLTPC	run1	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	27.7	28.8	2	64
+FULLTPC	run1	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	38.9	41.1	3	96
+FULLTPC	run1	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	28.3	29.4	2	64
+FULLTPC	run1	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	24.1	24.6	2	128
+FULLTPC	run1	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	3.8	3.9	0	0
+FULLTPC	run1	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	40.8	42.9	3	96
+FULLTPC	run1	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.7	28.0	2	64
+FULLTPC	run1	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	38.8	41.1	3	96
+FULLTPC	run1	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	28.4	29.0	2	64
+FULLTPC	run1	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	23.9	24.8	2	128
+FULLTPC	run1	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	3.9	4.0	0	0
+FULLTPC	run1	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	41.7	43.6	3	96
+FULLTPC	run1	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	27.0	28.3	2	64
+FULLTPC	run1	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	40.8	42.3	3	96
+FULLTPC	run1	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	28.7	29.2	2	64
+FULLTPC	run1	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	24.1	24.9	2	128
+FULLTPC	run1	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	4.0	4.2	0	0
+FULLTPC	run1	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	42.1	44.2	3	96
+FULLTPC	run1	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	40.6	42.8	4	208
+FULLTPC	run1	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	58.5	62.1	5	240
+FULLTPC	run1	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	41.2	43.3	4	208
+FULLTPC	run1	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	24.1	24.9	2	128
+FULLTPC	run1	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	21.5	22.1	2	144
+FULLTPC	run1	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	82.5	92.1	5	240
+FULLTPC	run1	map/direct  Bernoulli->out m[p]::Beta	26.8	28.1	2	48
+FULLTPC	run1	map/barrier Bernoulli->out m[p]::Beta	40.0	41.0	3	80
+FULLTPC	run1	map/callbacks=(;) Bernoulli->out m[p]::Beta	27.3	28.6	2	48
+FULLTPC	run1	resolve/barrier Bernoulli->out m[p]::Beta	24.5	25.4	2	128
+FULLTPC	run1	exec/execute_rule Bernoulli->out m[p]::Beta	3.9	4.0	0	0
+FULLTPC	run1	deferred/barrier Bernoulli->out m[p]::Beta	41.3	43.3	3	80
+FULLTPC	run1	map/direct  Categorical->p q[out]::Categorical	125.6	135.7	4	144
+FULLTPC	run1	map/barrier Categorical->p q[out]::Categorical	136.3	146.3	5	176
+FULLTPC	run1	map/callbacks=(;) Categorical->p q[out]::Categorical	125.5	135.8	4	144
+FULLTPC	run1	resolve/barrier Categorical->p q[out]::Categorical	23.9	25.0	2	128
+FULLTPC	run1	exec/execute_rule Categorical->p q[out]::Categorical	56.6	57.4	2	80
+FULLTPC	run1	deferred/barrier Categorical->p q[out]::Categorical	154.7	167.3	5	176
+FULLTPC	run1	joint-marginal/barrier NMV (out,μ)	94.7	101.9	7	272
+FULLTPC	run1	product/NMV x2	526.8	550.4	6	192
+FULLTPC	run1	product/NMV x5	599.5	627.6	15	432
+FULLTPC	run1	product/NMV x10	712.6	748.9	30	832
+FULLTPC	run1	product/NMV x100	2648.1	2796.3	300	8032
+FULLTPC	run1	product/deferred NMV x10	930.2	949.3	30	832
+FULLTPC	run1	product/MvNMC(3) x3	1379.1	1420.8	31	1536
+FULLTPC	run1	product/Gamma x10	723.3	756.3	30	832
+FULLTPC	run1	marginal-at-variable/NMV x3	605.0	631.5	10	320
+FULLTPC	run1	rocket/subject fan-out k=1	16.1	17.4	0	0
+FULLTPC	run1	rocket/subject fan-out k=10	103.5	107.5	0	0
+FULLTPC	run1	rocket/subject fan-out k=100	900.4	930.9	0	0
+FULLTPC	run1	rocket/combineLatest PushNew k=2 round	67.3	69.3	0	0
+FULLTPC	run1	rocket/combineLatest PushNew k=5 round	161.6	166.7	0	0
+FULLTPC	run1	rocket/combineLatest PushNew k=10 round	343.1	354.1	0	0
+FULLTPC	run1	rocket/combineLatest PushNew k=20 round	672.5	694.3	0	0
+FULLTPC	run1	rocket/collectLatest N=100 round	1833.0	1875.0	100	1600
+FULLTPC	run1	rocket/collectLatest N=1000 round	19416.0	19542.0	1000	16000
+FULLTPC	run1	rocket/collectLatest N=10000 round	195583.0	199604.0	10000	160000
+FULLTPC	run1	event/AfterMessageRuleCallEvent, result::Any	303.4	307.0	3	144
+FULLTPC	run1	event/generate_span_id((;))	3.6	3.7	0	0
+FULLTPC	run1	ctor/Message from Any	388.8	409.2	2	80
+FULLTPC	run1	ctor/AnnotationDict()	4.0	4.2	1	16
+FULLTPC	run1	graph/iid n=100 per-iteration	41625.0	42370.9	-1	51449
+FULLTPC	run1	graph/iid n=100 build+activate	1.345542e6	1.37675e6	-1	1343104
+FULLTPC	run1	graph/iid n=1000 per-iteration	392195.8	396470.8	-1	512249
+FULLTPC	run1	graph/iid n=1000 build+activate	1.2476416e7	1.2564834e7	-1	13251200
+FULLTPC	run1	graph/iid n=10000 per-iteration	4.749375e6	4.81675e6	-1	5120249
+FULLTPC	run1	graph/iid n=10000 build+activate	1.28730333e8	1.30991208e8	-1	132738880
+FULLTPC	run1	graph/iid n=1000 no-FE per-iteration	286833.3	291495.8	-1	432169
+FULLTPC	run1	graph/iid n=1000 no-FE build+activate	1.1251292e7	1.1334084e7	-1	11705920
+FULLTPC	run1	graph/chain n=300 per-iteration	972887.5	992620.8	-1	890457
+FULLTPC	run1	graph/chain n=300 build+activate	1.0723584e7	1.0940291e7	-1	11028176
+FULLTPC	run1	graph/chain n=1000 per-iteration	3.7011125e6	3.7679417e6	-1	2973657
+FULLTPC	run1	graph/chain n=1000 build+activate	3.8319167e7	3.9509208e7	-1	36753584
+FULLTPC	run1	graph/chain n=1000 no-FE per-iteration	2.7306542e6	2.7409667e6	-1	2078393
+FULLTPC	run1	graph/chain n=1000 no-FE build+activate	3.3718e7	3.384825e7	-1	32287104
+FULLT	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	27.6	28.8	2	64
+FULLT	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	40.1	41.0	3	96
+FULLT	run2	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	29.1	29.4	2	64
+FULLT	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	23.6	24.8	2	128
+FULLT	run2	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	3.8	4.0	0	0
+FULLT	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	40.5	42.9	3	96
+FULLT	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.3	27.6	2	64
+FULLT	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	38.3	40.1	3	96
+FULLT	run2	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	28.1	29.0	2	64
+FULLT	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	23.8	24.8	2	128
+FULLT	run2	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	3.8	3.8	0	0
+FULLT	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	41.5	42.8	3	96
+FULLT	run2	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	27.4	27.9	2	64
+FULLT	run2	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	39.7	41.0	3	96
+FULLT	run2	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	27.7	28.9	2	64
+FULLT	run2	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	24.2	25.0	2	128
+FULLT	run2	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	4.0	4.2	0	0
+FULLT	run2	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	40.9	43.3	3	96
+FULLT	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	41.8	42.8	4	208
+FULLT	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	58.9	62.9	5	240
+FULLT	run2	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	42.5	44.1	4	208
+FULLT	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	24.1	25.0	2	128
+FULLT	run2	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	20.9	22.0	2	144
+FULLT	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	85.8	95.8	5	240
+FULLT	run2	map/direct  Bernoulli->out m[p]::Beta	27.4	28.0	2	48
+FULLT	run2	map/barrier Bernoulli->out m[p]::Beta	38.7	40.8	3	80
+FULLT	run2	map/callbacks=(;) Bernoulli->out m[p]::Beta	27.9	29.0	2	48
+FULLT	run2	resolve/barrier Bernoulli->out m[p]::Beta	24.5	25.5	2	128
+FULLT	run2	exec/execute_rule Bernoulli->out m[p]::Beta	3.8	3.9	0	0
+FULLT	run2	deferred/barrier Bernoulli->out m[p]::Beta	42.4	44.0	3	80
+FULLT	run2	map/direct  Categorical->p q[out]::Categorical	129.9	138.6	4	144
+FULLT	run2	map/barrier Categorical->p q[out]::Categorical	136.2	149.2	5	176
+FULLT	run2	map/callbacks=(;) Categorical->p q[out]::Categorical	127.5	138.5	4	144
+FULLT	run2	resolve/barrier Categorical->p q[out]::Categorical	24.1	25.2	2	128
+FULLT	run2	exec/execute_rule Categorical->p q[out]::Categorical	55.0	61.6	2	80
+FULLT	run2	deferred/barrier Categorical->p q[out]::Categorical	165.7	178.6	5	176
+FULLT	run2	joint-marginal/barrier NMV (out,μ)	97.6	103.0	7	272
+FULLT	run2	product/NMV x2	524.3	551.4	6	192
+FULLT	run2	product/NMV x5	588.4	621.3	15	432
+FULLT	run2	product/NMV x10	701.8	741.7	30	832
+FULLT	run2	product/NMV x100	2680.6	2787.1	300	8032
+FULLT	run2	product/deferred NMV x10	908.3	945.4	30	832
+FULLT	run2	product/MvNMC(3) x3	1325.0	1383.3	31	1536
+FULLT	run2	product/Gamma x10	720.4	752.4	30	832
+FULLT	run2	marginal-at-variable/NMV x3	599.0	630.1	10	320
+FULLT	run2	rocket/subject fan-out k=1	15.6	16.2	0	0
+FULLT	run2	rocket/subject fan-out k=10	105.9	106.9	0	0
+FULLT	run2	rocket/subject fan-out k=100	926.8	936.8	0	0
+FULLT	run2	rocket/combineLatest PushNew k=2 round	39.1	39.7	0	0
+FULLT	run2	rocket/combineLatest PushNew k=5 round	91.3	92.5	0	0
+FULLT	run2	rocket/combineLatest PushNew k=10 round	182.8	190.9	0	0
+FULLT	run2	rocket/combineLatest PushNew k=20 round	397.1	405.2	0	0
+FULLT	run2	rocket/collectLatest N=100 round	1833.0	1875.0	100	1600
+FULLT	run2	rocket/collectLatest N=1000 round	19208.0	19375.0	1000	16000
+FULLT	run2	rocket/collectLatest N=10000 round	193917.0	197250.0	10000	160000
+FULLT	run2	event/AfterMessageRuleCallEvent, result::Any	294.1	296.9	3	144
+FULLT	run2	event/generate_span_id((;))	3.6	3.7	0	0
+FULLT	run2	ctor/Message from Any	383.0	399.6	2	80
+FULLT	run2	ctor/AnnotationDict()	4.0	4.2	1	16
+FULLT	run2	graph/iid n=100 per-iteration	40562.5	41054.2	-1	51449
+FULLT	run2	graph/iid n=100 build+activate	1.362125e6	1.382167e6	-1	1343104
+FULLT	run2	graph/iid n=1000 per-iteration	371858.3	376725.0	-1	512249
+FULLT	run2	graph/iid n=1000 build+activate	1.2506667e7	1.2711875e7	-1	13251200
+FULLT	run2	graph/iid n=10000 per-iteration	4.6380875e6	4.7223958e6	-1	5120249
+FULLT	run2	graph/iid n=10000 build+activate	1.30880917e8	1.32695292e8	-1	132738880
+FULLT	run2	graph/iid n=1000 no-FE per-iteration	268141.7	272216.7	-1	432169
+FULLT	run2	graph/iid n=1000 no-FE build+activate	1.1446417e7	1.15605e7	-1	11705920
+FULLT	run2	graph/chain n=300 per-iteration	992641.7	1.0146666e6	-1	890457
+FULLT	run2	graph/chain n=300 build+activate	1.0888625e7	1.1186917e7	-1	11028176
+FULLT	run2	graph/chain n=1000 per-iteration	3.7679125e6	3.823575e6	-1	2973657
+FULLT	run2	graph/chain n=1000 build+activate	3.9041958e7	3.9917e7	-1	36753584
+FULLT	run2	graph/chain n=1000 no-FE per-iteration	2.7150708e6	2.7670625e6	-1	2078393
+FULLT	run2	graph/chain n=1000 no-FE build+activate	3.4234667e7	3.4476292e7	-1	32287104
+FULLTPC	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	27.8	28.9	2	64
+FULLTPC	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	38.5	39.2	3	96
+FULLTPC	run2	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	29.1	29.5	2	64
+FULLTPC	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	21.0	21.6	2	128
+FULLTPC	run2	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	4.0	4.0	0	0
+FULLTPC	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	39.8	40.4	3	96
+FULLTPC	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	27.6	28.1	2	64
+FULLTPC	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	37.6	38.2	3	96
+FULLTPC	run2	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	27.8	28.6	2	64
+FULLTPC	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	20.8	21.5	2	128
+FULLTPC	run2	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	3.9	4.0	0	0
+FULLTPC	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	39.0	39.7	3	96
+FULLTPC	run2	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	27.4	28.0	2	64
+FULLTPC	run2	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	37.5	38.3	3	96
+FULLTPC	run2	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	28.7	29.0	2	64
+FULLTPC	run2	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	20.6	21.6	2	128
+FULLTPC	run2	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	4.0	4.2	0	0
+FULLTPC	run2	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	38.8	39.4	3	96
+FULLTPC	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	41.7	42.5	4	208
+FULLTPC	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	54.9	56.0	5	240
+FULLTPC	run2	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	42.2	43.1	4	208
+FULLTPC	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	21.0	21.6	2	128
+FULLTPC	run2	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	20.8	22.1	2	144
+FULLTPC	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	76.7	83.6	5	240
+FULLTPC	run2	map/direct  Bernoulli->out m[p]::Beta	26.8	27.9	2	48
+FULLTPC	run2	map/barrier Bernoulli->out m[p]::Beta	36.5	38.1	3	80
+FULLTPC	run2	map/callbacks=(;) Bernoulli->out m[p]::Beta	28.9	29.3	2	48
+FULLTPC	run2	resolve/barrier Bernoulli->out m[p]::Beta	21.6	22.1	2	128
+FULLTPC	run2	exec/execute_rule Bernoulli->out m[p]::Beta	3.8	3.9	0	0
+FULLTPC	run2	deferred/barrier Bernoulli->out m[p]::Beta	39.1	39.7	3	80
+FULLTPC	run2	map/direct  Categorical->p q[out]::Categorical	127.0	138.5	4	144
+FULLTPC	run2	map/barrier Categorical->p q[out]::Categorical	132.7	148.1	5	176
+FULLTPC	run2	map/callbacks=(;) Categorical->p q[out]::Categorical	126.3	133.9	4	144
+FULLTPC	run2	resolve/barrier Categorical->p q[out]::Categorical	21.3	22.0	2	128
+FULLTPC	run2	exec/execute_rule Categorical->p q[out]::Categorical	55.0	57.3	2	80
+FULLTPC	run2	deferred/barrier Categorical->p q[out]::Categorical	155.4	165.3	5	176
+FULLTPC	run2	joint-marginal/barrier NMV (out,μ)	87.2	93.7	7	272
+FULLTPC	run2	product/NMV x2	498.1	524.7	6	192
+FULLTPC	run2	product/NMV x5	566.2	594.4	15	432
+FULLTPC	run2	product/NMV x10	672.5	689.9	30	832
+FULLTPC	run2	product/NMV x100	2240.7	2324.1	300	8032
+FULLTPC	run2	product/deferred NMV x10	817.8	839.3	30	832
+FULLTPC	run2	product/MvNMC(3) x3	1333.3	1379.1	31	1536
+FULLTPC	run2	product/Gamma x10	673.3	700.2	30	832
+FULLTPC	run2	marginal-at-variable/NMV x3	584.0	599.0	10	320
+FULLTPC	run2	rocket/subject fan-out k=1	15.5	16.5	0	0
+FULLTPC	run2	rocket/subject fan-out k=10	102.4	105.8	0	0
+FULLTPC	run2	rocket/subject fan-out k=100	956.8	969.1	0	0
+FULLTPC	run2	rocket/combineLatest PushNew k=2 round	38.8	39.4	0	0
+FULLTPC	run2	rocket/combineLatest PushNew k=5 round	90.3	91.5	0	0
+FULLTPC	run2	rocket/combineLatest PushNew k=10 round	184.5	192.7	0	0
+FULLTPC	run2	rocket/combineLatest PushNew k=20 round	371.2	376.8	0	0
+FULLTPC	run2	rocket/collectLatest N=100 round	1875.0	1916.0	100	1600
+FULLTPC	run2	rocket/collectLatest N=1000 round	19375.0	19625.0	1000	16000
+FULLTPC	run2	rocket/collectLatest N=10000 round	196750.0	200833.0	10000	160000
+FULLTPC	run2	event/AfterMessageRuleCallEvent, result::Any	302.5	305.4	3	144
+FULLTPC	run2	event/generate_span_id((;))	3.6	3.7	0	0
+FULLTPC	run2	ctor/Message from Any	381.3	400.9	2	80
+FULLTPC	run2	ctor/AnnotationDict()	4.0	4.2	1	16
+FULLTPC	run2	graph/iid n=100 per-iteration	37633.3	38204.2	-1	51449
+FULLTPC	run2	graph/iid n=100 build+activate	1.365792e6	1.387e6	-1	1343104
+FULLTPC	run2	graph/iid n=1000 per-iteration	350645.8	356554.2	-1	512249
+FULLTPC	run2	graph/iid n=1000 build+activate	1.2417958e7	1.2625042e7	-1	13251200
+FULLTPC	run2	graph/iid n=10000 per-iteration	4.4957916e6	4.6371875e6	-1	5120249
+FULLTPC	run2	graph/iid n=10000 build+activate	1.28832083e8	1.3412375e8	-1	132738880
+FULLTPC	run2	graph/iid n=1000 no-FE per-iteration	252112.5	257054.1	-1	432169
+FULLTPC	run2	graph/iid n=1000 no-FE build+activate	1.1181125e7	1.1392333e7	-1	11705920
+FULLTPC	run2	graph/chain n=300 per-iteration	993412.5	1.0163875e6	-1	890457
+FULLTPC	run2	graph/chain n=300 build+activate	1.0755667e7	1.114075e7	-1	11028176
+FULLTPC	run2	graph/chain n=1000 per-iteration	3.7266416e6	3.8369e6	-1	2973657
+FULLTPC	run2	graph/chain n=1000 build+activate	3.81835e7	3.9855208e7	-1	36753584
+FULLTPC	run2	graph/chain n=1000 no-FE per-iteration	2.7145334e6	2.7274917e6	-1	2078393
+FULLTPC	run2	graph/chain n=1000 no-FE build+activate	3.3458083e7	3.3960042e7	-1	32287104
+FULL	run2	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	68.5	72.0	5	192
+FULL	run2	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	99.3	107.4	6	224
+FULL	run2	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	70.7	73.9	5	224
+FULL	run2	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	25.9	26.5	2	160
+FULL	run2	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	48.1	51.5	4	240
+FULL	run2	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	103.7	116.7	6	224
+FULL	run2	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	70.0	73.5	5	192
+FULL	run2	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	98.7	106.8	6	224
+FULL	run2	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	69.6	73.3	5	224
+FULL	run2	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.1	27.0	2	160
+FULL	run2	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	48.7	52.5	4	240
+FULL	run2	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	106.0	114.2	6	224
+FULL	run2	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	71.3	72.7	5	192
+FULL	run2	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	99.6	102.4	6	224
+FULL	run2	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	70.1	73.4	5	224
+FULL	run2	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	26.4	27.3	2	160
+FULL	run2	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	49.5	53.3	4	240
+FULL	run2	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	105.2	109.5	6	224
+FULL	run2	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	95.5	102.0	7	336
+FULL	run2	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	117.9	126.0	8	368
+FULL	run2	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	94.7	104.5	7	368
+FULL	run2	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	25.3	27.0	2	160
+FULL	run2	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	72.3	75.6	6	384
+FULL	run2	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	134.0	141.6	8	368
+FULL	run2	map/direct  Bernoulli->out m[p]::Beta	68.6	70.8	5	176
+FULL	run2	map/barrier Bernoulli->out m[p]::Beta	94.9	101.9	6	208
+FULL	run2	map/callbacks=(;) Bernoulli->out m[p]::Beta	75.4	77.3	5	208
+FULL	run2	resolve/barrier Bernoulli->out m[p]::Beta	26.3	27.4	2	160
+FULL	run2	exec/execute_rule Bernoulli->out m[p]::Beta	50.4	52.8	4	224
+FULL	run2	deferred/barrier Bernoulli->out m[p]::Beta	101.1	110.3	6	208
+FULL	run2	map/direct  Categorical->p q[out]::Categorical	165.3	177.2	7	272
+FULL	run2	map/barrier Categorical->p q[out]::Categorical	180.7	197.1	8	304
+FULL	run2	map/callbacks=(;) Categorical->p q[out]::Categorical	168.0	177.7	7	304
+FULL	run2	resolve/barrier Categorical->p q[out]::Categorical	26.5	27.7	2	160
+FULL	run2	exec/execute_rule Categorical->p q[out]::Categorical	135.4	144.0	6	320
+FULL	run2	deferred/barrier Categorical->p q[out]::Categorical	196.4	220.4	8	304
+FULL	run2	joint-marginal/barrier NMV (out,μ)	146.6	157.5	9	352
+FULL	run2	product/NMV x2	528.8	555.0	6	192
+FULL	run2	product/NMV x5	602.2	626.4	15	432
+FULL	run2	product/NMV x10	728.4	744.5	30	832
+FULL	run2	product/NMV x100	2685.1	2791.7	300	8032
+FULL	run2	product/deferred NMV x10	938.3	978.4	30	832
+FULL	run2	product/MvNMC(3) x3	1350.0	1408.4	31	1536
+FULL	run2	product/Gamma x10	717.9	747.3	30	832
+FULL	run2	marginal-at-variable/NMV x3	612.0	625.9	10	320
+FULL	run2	rocket/subject fan-out k=1	15.6	16.5	0	0
+FULL	run2	rocket/subject fan-out k=10	103.9	108.5	0	0
+FULL	run2	rocket/subject fan-out k=100	925.5	934.3	0	0
+FULL	run2	rocket/combineLatest PushNew k=2 round	66.9	69.0	0	0
+FULL	run2	rocket/combineLatest PushNew k=5 round	160.4	165.4	0	0
+FULL	run2	rocket/combineLatest PushNew k=10 round	342.5	354.6	0	0
+FULL	run2	rocket/combineLatest PushNew k=20 round	682.8	707.7	0	0
+FULL	run2	rocket/collectLatest N=100 round	1833.0	1916.5	100	1600
+FULL	run2	rocket/collectLatest N=1000 round	19708.0	19958.5	1000	16000
+FULL	run2	rocket/collectLatest N=10000 round	197500.0	198792.0	10000	160000
+FULL	run2	event/AfterMessageRuleCallEvent, result::Any	295.3	298.7	3	144
+FULL	run2	event/generate_span_id((;))	3.6	3.7	0	0
+FULL	run2	ctor/Message from Any	393.6	402.6	2	80
+FULL	run2	ctor/AnnotationDict()	4.0	4.2	1	16
+FULL	run2	graph/iid n=100 per-iteration	44700.0	45833.3	-1	70668
+FULL	run2	graph/iid n=100 build+activate	1.354042e6	1.383584e6	-1	1343104
+FULL	run2	graph/iid n=1000 per-iteration	425912.5	429616.7	-1	704268
+FULL	run2	graph/iid n=1000 build+activate	1.2599375e7	1.2723959e7	-1	13251200
+FULL	run2	graph/iid n=10000 per-iteration	5.4104125e6	5.5297167e6	-1	7040268
+FULL	run2	graph/iid n=10000 build+activate	1.31505125e8	1.33239875e8	-1	132738880
+FULL	run2	graph/iid n=1000 no-FE per-iteration	317120.8	326966.7	-1	624188
+FULL	run2	graph/iid n=1000 no-FE build+activate	1.1341e7	1.1472667e7	-1	11705920
+FULL	run2	graph/chain n=300 per-iteration	1.1207e6	1.1408958e6	-1	1086812
+FULL	run2	graph/chain n=300 build+activate	1.1567791e7	1.1735708e7	-1	11028176
+FULL	run2	graph/chain n=1000 per-iteration	4.2929042e6	4.3440125e6	-1	3629212
+FULL	run2	graph/chain n=1000 build+activate	4.0724041e7	4.1560875e7	-1	36753584
+FULL	run2	graph/chain n=1000 no-FE per-iteration	3.2128375e6	3.2212875e6	-1	2654028
+FULL	run2	graph/chain n=1000 no-FE build+activate	3.5819042e7	3.6169291e7	-1	32287104
+FULLTPC	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	27.3	28.3	2	64
+FULLTPC	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	39.6	40.6	3	96
+FULLTPC	run3	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	29.2	29.5	2	64
+FULLTPC	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	24.1	24.6	2	128
+FULLTPC	run3	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	3.8	4.0	0	0
+FULLTPC	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	41.2	42.3	3	96
+FULLTPC	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	27.5	27.9	2	64
+FULLTPC	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	39.8	40.7	3	96
+FULLTPC	run3	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	28.9	29.2	2	64
+FULLTPC	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	23.8	24.7	2	128
+FULLTPC	run3	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	3.8	4.0	0	0
+FULLTPC	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	40.2	42.3	3	96
+FULLTPC	run3	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	27.7	28.2	2	64
+FULLTPC	run3	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	39.6	40.6	3	96
+FULLTPC	run3	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	28.6	29.0	2	64
+FULLTPC	run3	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	24.1	25.0	2	128
+FULLTPC	run3	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	4.2	4.3	0	0
+FULLTPC	run3	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	41.9	42.9	3	96
+FULLTPC	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	40.7	42.9	4	208
+FULLTPC	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	58.5	62.3	5	240
+FULLTPC	run3	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	41.7	44.0	4	208
+FULLTPC	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	24.1	25.0	2	128
+FULLTPC	run3	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	21.3	22.1	2	144
+FULLTPC	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	82.2	92.0	5	240
+FULLTPC	run3	map/direct  Bernoulli->out m[p]::Beta	27.8	28.3	2	48
+FULLTPC	run3	map/barrier Bernoulli->out m[p]::Beta	39.0	41.0	3	80
+FULLTPC	run3	map/callbacks=(;) Bernoulli->out m[p]::Beta	27.2	28.5	2	48
+FULLTPC	run3	resolve/barrier Bernoulli->out m[p]::Beta	24.4	25.5	2	128
+FULLTPC	run3	exec/execute_rule Bernoulli->out m[p]::Beta	3.8	3.9	0	0
+FULLTPC	run3	deferred/barrier Bernoulli->out m[p]::Beta	42.0	43.0	3	80
+FULLTPC	run3	map/direct  Categorical->p q[out]::Categorical	123.4	133.4	4	144
+FULLTPC	run3	map/barrier Categorical->p q[out]::Categorical	129.2	139.1	5	176
+FULLTPC	run3	map/callbacks=(;) Categorical->p q[out]::Categorical	125.4	133.6	4	144
+FULLTPC	run3	resolve/barrier Categorical->p q[out]::Categorical	23.6	25.1	2	128
+FULLTPC	run3	exec/execute_rule Categorical->p q[out]::Categorical	55.0	60.3	2	80
+FULLTPC	run3	deferred/barrier Categorical->p q[out]::Categorical	152.4	160.0	5	176
+FULLTPC	run3	joint-marginal/barrier NMV (out,μ)	95.6	103.2	7	272
+FULLTPC	run3	product/NMV x2	530.5	555.2	6	192
+FULLTPC	run3	product/NMV x5	601.9	629.4	15	432
+FULLTPC	run3	product/NMV x10	718.2	748.8	30	832
+FULLTPC	run3	product/NMV x100	2703.7	2819.4	300	8032
+FULLTPC	run3	product/deferred NMV x10	912.4	946.6	30	832
+FULLTPC	run3	product/MvNMC(3) x3	1341.7	1387.5	31	1536
+FULLTPC	run3	product/Gamma x10	742.5	757.5	30	832
+FULLTPC	run3	marginal-at-variable/NMV x3	603.4	626.9	10	320
+FULLTPC	run3	rocket/subject fan-out k=1	16.0	17.0	0	0
+FULLTPC	run3	rocket/subject fan-out k=10	107.9	111.6	0	0
+FULLTPC	run3	rocket/subject fan-out k=100	950.0	960.0	0	0
+FULLTPC	run3	rocket/combineLatest PushNew k=2 round	38.0	39.4	0	0
+FULLTPC	run3	rocket/combineLatest PushNew k=5 round	89.2	90.6	0	0
+FULLTPC	run3	rocket/combineLatest PushNew k=10 round	197.6	204.6	0	0
+FULLTPC	run3	rocket/combineLatest PushNew k=20 round	387.6	401.2	0	0
+FULLTPC	run3	rocket/collectLatest N=100 round	1833.0	1875.0	100	1600
+FULLTPC	run3	rocket/collectLatest N=1000 round	19416.0	19687.5	1000	16000
+FULLTPC	run3	rocket/collectLatest N=10000 round	208166.0	213541.5	10000	160000
+FULLTPC	run3	event/AfterMessageRuleCallEvent, result::Any	302.5	305.8	3	144
+FULLTPC	run3	event/generate_span_id((;))	3.6	3.7	0	0
+FULLTPC	run3	ctor/Message from Any	385.9	401.5	2	80
+FULLTPC	run3	ctor/AnnotationDict()	4.0	4.2	1	16
+FULLTPC	run3	graph/iid n=100 per-iteration	39362.5	39933.4	-1	51449
+FULLTPC	run3	graph/iid n=100 build+activate	1.354334e6	1.357708e6	-1	1343104
+FULLTPC	run3	graph/iid n=1000 per-iteration	371233.4	381279.2	-1	512249
+FULLTPC	run3	graph/iid n=1000 build+activate	1.2425542e7	1.2747833e7	-1	13251200
+FULLTPC	run3	graph/iid n=10000 per-iteration	4.6633333e6	4.719225e6	-1	5120249
+FULLTPC	run3	graph/iid n=10000 build+activate	1.32257083e8	1.3362475e8	-1	132738880
+FULLTPC	run3	graph/iid n=1000 no-FE per-iteration	259325.0	272029.1	-1	432169
+FULLTPC	run3	graph/iid n=1000 no-FE build+activate	1.1325291e7	1.1553333e7	-1	11705920
+FULLTPC	run3	graph/chain n=300 per-iteration	1.01985e6	1.0254167e6	-1	890457
+FULLTPC	run3	graph/chain n=300 build+activate	1.1004167e7	1.1190375e7	-1	11028176
+FULLTPC	run3	graph/chain n=1000 per-iteration	3.7698042e6	3.8216541e6	-1	2973657
+FULLTPC	run3	graph/chain n=1000 build+activate	3.8816458e7	3.9566709e7	-1	36753584
+FULLTPC	run3	graph/chain n=1000 no-FE per-iteration	2.7445583e6	2.7881625e6	-1	2078393
+FULLTPC	run3	graph/chain n=1000 no-FE build+activate	3.3948375e7	3.4468916e7	-1	32287104
+FULL	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	62.5	65.3	5	192
+FULL	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	89.5	101.2	6	224
+FULL	run3	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	63.9	66.6	5	224
+FULL	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	22.9	24.2	2	160
+FULL	run3	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	41.7	43.8	4	240
+FULL	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	99.2	105.0	6	224
+FULL	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	63.3	67.3	5	192
+FULL	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	89.7	98.0	6	224
+FULL	run3	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	64.2	67.0	5	224
+FULL	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	23.2	24.6	2	160
+FULL	run3	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	43.1	44.3	4	240
+FULL	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	97.8	104.5	6	224
+FULL	run3	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	66.6	68.0	5	192
+FULL	run3	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	87.6	95.1	6	224
+FULL	run3	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	67.0	70.1	5	224
+FULL	run3	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	23.8	24.7	2	160
+FULL	run3	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	43.7	45.2	4	240
+FULL	run3	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	94.4	103.0	6	224
+FULL	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	89.0	98.7	7	336
+FULL	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	110.3	118.4	8	368
+FULL	run3	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	94.6	101.4	7	368
+FULL	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	23.4	24.1	2	160
+FULL	run3	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	61.2	64.1	6	384
+FULL	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	122.8	131.8	8	368
+FULL	run3	map/direct  Bernoulli->out m[p]::Beta	62.0	64.8	5	176
+FULL	run3	map/barrier Bernoulli->out m[p]::Beta	89.1	95.1	6	208
+FULL	run3	map/callbacks=(;) Bernoulli->out m[p]::Beta	65.8	67.0	5	208
+FULL	run3	resolve/barrier Bernoulli->out m[p]::Beta	23.8	24.8	2	160
+FULL	run3	exec/execute_rule Bernoulli->out m[p]::Beta	42.9	44.9	4	224
+FULL	run3	deferred/barrier Bernoulli->out m[p]::Beta	99.0	104.2	6	208
+FULL	run3	map/direct  Categorical->p q[out]::Categorical	162.7	174.6	7	272
+FULL	run3	map/barrier Categorical->p q[out]::Categorical	176.9	193.5	8	304
+FULL	run3	map/callbacks=(;) Categorical->p q[out]::Categorical	165.2	176.4	7	304
+FULL	run3	resolve/barrier Categorical->p q[out]::Categorical	23.9	24.8	2	160
+FULL	run3	exec/execute_rule Categorical->p q[out]::Categorical	127.4	136.3	6	320
+FULL	run3	deferred/barrier Categorical->p q[out]::Categorical	187.4	198.3	8	304
+FULL	run3	joint-marginal/barrier NMV (out,μ)	134.6	145.3	9	352
+FULL	run3	product/NMV x2	500.2	526.2	6	192
+FULL	run3	product/NMV x5	577.6	599.4	15	432
+FULL	run3	product/NMV x10	663.3	691.9	30	832
+FULL	run3	product/NMV x100	2240.7	2328.8	300	8032
+FULL	run3	product/deferred NMV x10	802.6	835.6	30	832
+FULL	run3	product/MvNMC(3) x3	1341.7	1391.7	31	1536
+FULL	run3	product/Gamma x10	683.7	699.3	30	832
+FULL	run3	marginal-at-variable/NMV x3	593.9	607.5	10	320
+FULL	run3	rocket/subject fan-out k=1	12.8	12.9	0	0
+FULL	run3	rocket/subject fan-out k=10	96.4	99.5	0	0
+FULL	run3	rocket/subject fan-out k=100	899.0	930.5	0	0
+FULL	run3	rocket/combineLatest PushNew k=2 round	68.5	69.0	0	0
+FULL	run3	rocket/combineLatest PushNew k=5 round	164.4	165.4	0	0
+FULL	run3	rocket/combineLatest PushNew k=10 round	340.7	351.2	0	0
+FULL	run3	rocket/combineLatest PushNew k=20 round	675.2	698.0	0	0
+FULL	run3	rocket/collectLatest N=100 round	1875.0	1917.0	100	1600
+FULL	run3	rocket/collectLatest N=1000 round	19542.0	19708.0	1000	16000
+FULL	run3	rocket/collectLatest N=10000 round	197209.0	203646.0	10000	160000
+FULL	run3	event/AfterMessageRuleCallEvent, result::Any	295.9	299.1	3	144
+FULL	run3	event/generate_span_id((;))	3.6	3.7	0	0
+FULL	run3	ctor/Message from Any	388.5	409.2	2	80
+FULL	run3	ctor/AnnotationDict()	4.0	4.2	1	16
+FULL	run3	graph/iid n=100 per-iteration	47841.7	48566.7	-1	70668
+FULL	run3	graph/iid n=100 build+activate	1.355292e6	1.410042e6	-1	1343104
+FULL	run3	graph/iid n=1000 per-iteration	457408.4	461141.7	-1	704268
+FULL	run3	graph/iid n=1000 build+activate	1.2637959e7	1.2778208e7	-1	13251200
+FULL	run3	graph/iid n=10000 per-iteration	5.6939708e6	5.7866583e6	-1	7040268
+FULL	run3	graph/iid n=10000 build+activate	1.31018875e8	1.33672083e8	-1	132738880
+FULL	run3	graph/iid n=1000 no-FE per-iteration	333687.5	343345.9	-1	624188
+FULL	run3	graph/iid n=1000 no-FE build+activate	1.1293916e7	1.1554334e7	-1	11705920
+FULL	run3	graph/chain n=300 per-iteration	1.0624e6	1.0866708e6	-1	1086812
+FULL	run3	graph/chain n=300 build+activate	1.1356375e7	1.1642709e7	-1	11028176
+FULL	run3	graph/chain n=1000 per-iteration	4.0779375e6	4.2424875e6	-1	3629212
+FULL	run3	graph/chain n=1000 build+activate	3.9910959e7	4.1545708e7	-1	36753584
+FULL	run3	graph/chain n=1000 no-FE per-iteration	3.082975e6	3.1231917e6	-1	2654028
+FULL	run3	graph/chain n=1000 no-FE build+activate	3.562725e7	3.6101875e7	-1	32287104
+FULLT	run3	map/direct  NMV->out m[μ]::NMV m[v]::PM (BP)	27.3	28.4	2	64
+FULLT	run3	map/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	39.5	40.7	3	96
+FULLT	run3	map/callbacks=(;) NMV->out m[μ]::NMV m[v]::PM (BP)	28.9	29.3	2	64
+FULLT	run3	resolve/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	24.2	24.9	2	128
+FULLT	run3	exec/execute_rule NMV->out m[μ]::NMV m[v]::PM (BP)	3.8	3.9	0	0
+FULLT	run3	deferred/barrier NMV->out m[μ]::NMV m[v]::PM (BP)	40.5	42.7	3	96
+FULLT	run3	map/direct  NMP->μ q[out]::PM q[τ]::Gamma (VMP)	26.5	27.7	2	64
+FULLT	run3	map/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	39.1	40.0	3	96
+FULLT	run3	map/callbacks=(;) NMP->μ q[out]::PM q[τ]::Gamma (VMP)	28.1	28.5	2	64
+FULLT	run3	resolve/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	23.9	24.8	2	128
+FULLT	run3	exec/execute_rule NMP->μ q[out]::PM q[τ]::Gamma (VMP)	3.8	4.0	0	0
+FULLT	run3	deferred/barrier NMP->μ q[out]::PM q[τ]::Gamma (VMP)	40.8	42.0	3	96
+FULLT	run3	map/direct  NMP->τ q[out]::PM q[μ]::NMV (VMP)	27.6	28.2	2	64
+FULLT	run3	map/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	39.0	41.1	3	96
+FULLT	run3	map/callbacks=(;) NMP->τ q[out]::PM q[μ]::NMV (VMP)	28.7	29.2	2	64
+FULLT	run3	resolve/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	24.1	25.0	2	128
+FULLT	run3	exec/execute_rule NMP->τ q[out]::PM q[μ]::NMV (VMP)	4.1	4.2	0	0
+FULLT	run3	deferred/barrier NMP->τ q[out]::PM q[μ]::NMV (VMP)	41.9	43.8	3	96
+FULLT	run3	map/direct  MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	41.1	43.0	4	208
+FULLT	run3	map/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	61.2	63.1	5	240
+FULLT	run3	map/callbacks=(;) MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	41.9	43.0	4	208
+FULLT	run3	resolve/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	24.1	25.0	2	128
+FULLT	run3	exec/execute_rule MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	21.3	21.9	2	144
+FULLT	run3	deferred/barrier MvNMC->out m[μ]::MvNMC(3) m[Σ]::PM (BP)	83.1	92.2	5	240
+FULLT	run3	map/direct  Bernoulli->out m[p]::Beta	27.5	28.0	2	48
+FULLT	run3	map/barrier Bernoulli->out m[p]::Beta	39.5	40.4	3	80
+FULLT	run3	map/callbacks=(;) Bernoulli->out m[p]::Beta	28.4	29.1	2	48
+FULLT	run3	resolve/barrier Bernoulli->out m[p]::Beta	24.5	25.4	2	128
+FULLT	run3	exec/execute_rule Bernoulli->out m[p]::Beta	3.8	3.9	0	0
+FULLT	run3	deferred/barrier Bernoulli->out m[p]::Beta	41.3	42.9	3	80
+FULLT	run3	map/direct  Categorical->p q[out]::Categorical	126.4	136.6	4	144
+FULLT	run3	map/barrier Categorical->p q[out]::Categorical	137.9	149.2	5	176
+FULLT	run3	map/callbacks=(;) Categorical->p q[out]::Categorical	128.9	143.0	4	144
+FULLT	run3	resolve/barrier Categorical->p q[out]::Categorical	24.0	25.2	2	128
+FULLT	run3	exec/execute_rule Categorical->p q[out]::Categorical	55.0	58.2	2	80
+FULLT	run3	deferred/barrier Categorical->p q[out]::Categorical	167.5	178.8	5	176
+FULLT	run3	joint-marginal/barrier NMV (out,μ)	96.7	104.6	7	272
+FULLT	run3	product/NMV x2	528.9	556.4	6	192
+FULLT	run3	product/NMV x5	599.6	628.0	15	432
+FULLT	run3	product/NMV x10	714.1	746.2	30	832
+FULLT	run3	product/NMV x100	2712.9	2796.3	300	8032
+FULLT	run3	product/deferred NMV x10	907.7	946.4	30	832
+FULLT	run3	product/MvNMC(3) x3	1366.6	1408.4	31	1536
+FULLT	run3	product/Gamma x10	739.5	755.7	30	832
+FULLT	run3	marginal-at-variable/NMV x3	598.3	618.9	10	320
+FULLT	run3	rocket/subject fan-out k=1	15.8	16.8	0	0
+FULLT	run3	rocket/subject fan-out k=10	106.1	110.3	0	0
+FULLT	run3	rocket/subject fan-out k=100	949.3	956.5	0	0
+FULLT	run3	rocket/combineLatest PushNew k=2 round	38.5	40.0	0	0
+FULLT	run3	rocket/combineLatest PushNew k=5 round	87.9	89.7	0	0
+FULLT	run3	rocket/combineLatest PushNew k=10 round	200.1	206.6	0	0
+FULLT	run3	rocket/combineLatest PushNew k=20 round	392.2	405.6	0	0
+FULLT	run3	rocket/collectLatest N=100 round	1875.0	1917.0	100	1600
+FULLT	run3	rocket/collectLatest N=1000 round	19500.0	19708.0	1000	16000
+FULLT	run3	rocket/collectLatest N=10000 round	196916.0	200166.5	10000	160000
+FULLT	run3	event/AfterMessageRuleCallEvent, result::Any	300.3	303.6	3	144
+FULLT	run3	event/generate_span_id((;))	3.6	3.7	0	0
+FULLT	run3	ctor/Message from Any	385.3	407.4	2	80
+FULLT	run3	ctor/AnnotationDict()	4.0	4.2	1	16
+FULLT	run3	graph/iid n=100 per-iteration	41000.0	42012.5	-1	51449
+FULLT	run3	graph/iid n=100 build+activate	1.342416e6	1.381125e6	-1	1343104
+FULLT	run3	graph/iid n=1000 per-iteration	390841.7	398491.7	-1	512249
+FULLT	run3	graph/iid n=1000 build+activate	1.25085e7	1.2678667e7	-1	13251200
+FULLT	run3	graph/iid n=10000 per-iteration	4.7749625e6	4.8847583e6	-1	5120249
+FULLT	run3	graph/iid n=10000 build+activate	1.28422208e8	1.325745e8	-1	132738880
+FULLT	run3	graph/iid n=1000 no-FE per-iteration	260445.8	267304.2	-1	432169
+FULLT	run3	graph/iid n=1000 no-FE build+activate	1.1256542e7	1.1408666e7	-1	11705920
+FULLT	run3	graph/chain n=300 per-iteration	998854.2	1.0240541e6	-1	890457
+FULLT	run3	graph/chain n=300 build+activate	1.0922041e7	1.1087916e7	-1	11028176
+FULLT	run3	graph/chain n=1000 per-iteration	3.8151833e6	3.8782666e6	-1	2973657
+FULLT	run3	graph/chain n=1000 build+activate	3.9177333e7	3.9481792e7	-1	36753584
+FULLT	run3	graph/chain n=1000 no-FE per-iteration	2.7800625e6	2.8053125e6	-1	2078393
+FULLT	run3	graph/chain n=1000 no-FE build+activate	3.4196625e7	3.4540875e7	-1	32287104
