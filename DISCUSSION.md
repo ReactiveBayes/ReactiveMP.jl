@@ -2135,7 +2135,7 @@ explicitly accepts `MethodError`s at activation time.
 
 **`Message{D}`'s type parameter, and what actually costs time (2026-09-25, Phase 7; the user's
 question, nothing decided).** Full record, variants, scripts and raw results:
-`investigations/message-type-parameter/`. Measured at `851559a4`, through RxInfer's v7 branch; every
+the history up to `b46046c83` (`investigations/message-type-parameter/`). Measured at `851559a4`, through RxInfer's v7 branch; every
 variant bit-identical to HEAD.
 - **Dropping the parameter (`data::Any`) is slower everywhere:** per `infer` 1.13–1.65×, per VMP
   iteration 1.9–3.2×. Rule resolution becomes a runtime dispatch over every rule package (27 ns →
@@ -2153,9 +2153,9 @@ variant bit-identical to HEAD.
   behind `execute_rule`, and the `Any` tuple a product returns. Input to the end-of-refactor
   performance pass.
 
-**The end-of-refactor performance pass (2026-09-26 to 2026-09-28; user; nothing applied yet).**
+**The end-of-refactor performance pass (2026-09-26 to 2026-09-28; user; applied 2026-09-28).**
 Full record: `BENCHMARK.md` (method, results, every option with its call);
-`investigations/performance-pass/` holds the scripts, diffs, notes per package and the raw data.
+its scripts, diffs, notes and raw data are in the history up to `b46046c83`.
 - **Where v7 stood:** 1.5–4.6× v6 in steady state, 2.2–3.2× in setup, 15–30% longer to first
   inference, on the same Rocket and GraphPPL. The rule body is 49 ns of an 873 ns call; the rest is
   the untyped result (`RuleSpec.body::Function`): an event built for nobody (≈ 300 ns), a
@@ -2183,6 +2183,16 @@ Full record: `BENCHMARK.md` (method, results, every option with its call);
   neither wrong nor faster than the simple alternatives.
 - **Left for later:** setup (1.4–2.2× v6), allocation volume (1.3× v6 per iteration with the typed
   spec), workloads per rule package.
+- **Round 2 (the user's audit) corrected and completed it.**
+  - Round 1's figures were right, but its verdict was not: end to end its set was still 1.06–1.61×
+    v6, setup being the gap, and its n = 10⁴ "faster" was where a GC pause fell.
+  - Setup was not the design's validation but its repetition for every node. A creation plan per
+    node shape, dependencies resolved once per shape, the rule context once per node, typed
+    containers and a mutable `MessageMapping` (a `DeferredMessage` had copied it) took it below v6.
+  - Round 1's P4 broke one of RxInfer's tests and was reduced to its typing. Rocket's stack guard
+    (P9) was left out: 1–8% of setup, and v7 takes 1.7× v6's chains without it.
+  - Applied, every model runs at 0.51–0.95× v6, posteriors unchanged; first inference is still
+    1.03–1.35× v6 without a precompile workload (`BENCHMARK.md`).
 
 
 ---

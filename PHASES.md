@@ -39,7 +39,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | the free energy runs each average energy with the engine's default context, `node_context(node)`, not the node's `context` option, since `score` and `bethe_free_energy` take no activation options (as for the diagnostics, § Phase 7); an average energy declaring a service of its own is therefore refused there even when the node was given it. No average energy declares one today | before the release, with RxInfer's free energy | § Phase C, *Progress* |
 | log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
 | two rule discrepancies the engine tests found, `@test_broken` in `test/engine/variational_tests.jl`: AR's mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]` | for the user to decide | § Phase C, *Progress* |
-| the end-of-refactor performance pass: **applied** (2026-09-28, user): round 2's set, in ReactiveMP and on RxInfer's branch `refactor/reactivemp-v7`; every benchmarked model runs at 0.53–0.92× v6, posteriors unchanged; Rocket's and GraphPPL's non-breaking fixes are pull requests of their own. First inference is still 1.03–1.35× v6 without a precompile workload | done; workloads after the release | `BENCHMARK.md`; `PLAN.md` § The performance pass; `DISCUSSION.md` §5 |
+| the end-of-refactor performance pass: **applied** (2026-09-28, user): round 2's set, in ReactiveMP and on RxInfer's branch `refactor/reactivemp-v7`; every benchmarked model runs at 0.51–0.95× v6, posteriors unchanged (ReactiveBayes/Rocket.jl#91 and ReactiveBayes/GraphPPL.jl#333 are the rest); Rocket's and GraphPPL's non-breaking fixes are pull requests of their own. First inference is still 1.03–1.35× v6 without a precompile workload | done; workloads after the release | `BENCHMARK.md`; `PLAN.md` § The performance pass; `DISCUSSION.md` §5 |
 | typed annotations (`Message{D, A}`), if at all: since §3.50 the log scale is not an annotation, so this is only a performance question for the remaining side channel, the mutable `AnnotationDict` | after the release | `DISCUSSION.md` §3.48, §3.50 |
 | `InputArgumentsAnnotations` records references to the inputs, not copies; sound only while every rule output is freshly allocated, so it is revisited when output buffers are reused (#10) | with output buffer reuse, after the release | `PLAN.md` § Open items #10 |
 | the mutation detector, a debug mode catching a rule that mutates its inputs (`PLAN.md` § Purity): not built; the purity and in-place audits and the poisoned scratch are what exists | after the release, with the diagnostics (user, 2026-09-26) | `PLAN.md` § Purity |
@@ -3626,7 +3626,7 @@ generator as an activation option and `*`'s samples (3), the engine fixtures for
 (4), the workflows (5), RxInfer on its branch (6), and the log-scale milestone, closed with no
 change past the release (7, §3.48, *superseded in Phase C by §3.50*); the small engine fixes (1) switched Aqua's ambiguity check on
 and removed the `EqualityChain` race. Left for later, each recorded: RxInfer's documentation (with
-the release work), the performance pass before the release (`investigations/message-type-parameter/`),
+the release work), the performance pass before the release (`BENCHMARK.md`),
 log scales after it *(made first-class in Phase C instead, §3.50)*, and each package's `LICENSE` with registration (Phase 8).
 
 ### Item 7 brief — log scales fixed
@@ -3702,7 +3702,7 @@ Each is recorded in *Progress* below.
 
 **Progress** (plan of 2026-09-25: rule fallbacks; dead code and wrong docs; the engine tests
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
-`compat/`, `investigations/`, the CHANGELOG's release notes and TestUtils' comparison machinery
+`compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one

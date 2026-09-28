@@ -229,7 +229,8 @@ one per outbound stream and reuses it. It is write-before-read, carries nothing 
 and is never shared between a node's rules, so a rule using it stays pure. It is separate from
 `inplace`, and the two combine.
 
-**A rule may declare its scratch's type** with `scratch_type`, over the same slots, returning a
+**A rule may declare its scratch's type** *(designed and measured, not applied: only BIFM keeps a
+scratch, and gains 5–7%)* with `scratch_type`, over the same slots, returning a
 type from the inputs' types: `scratch_type = (args) -> @NamedTuple{acc::Vector{Float64}}`, or
 computed from `eltype`s. The declaration folds to a constant. The engine asserts the kept
 scratch to it after an `isa` guard (other input types rebuild it), so the rule runs on a
@@ -403,19 +404,17 @@ apart. It can also carry **the body's source text, file and line**, which is wha
 `@which_message_update_rule` able to *show you the rule* rather than merely name it — directly serving the
 educational and introspection goals above.
 
-**`RuleSpec` is typed: `RuleSpec{B, P, S, L, A, ST}`** (adopted after the performance pass,
-`BENCHMARK.md` § 4.1; implementation pending). The body, preallocation, scratch, scratch-type and
-log-scale functions and the algorithm type are its parameters; `RuleResult` carries the spec's
-type. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has `kind`,
+**`RuleSpec` is typed: `RuleSpec{B, P, S, L, A}`** (the performance pass, `BENCHMARK.md`;
+applied). The body, preallocation, scratch and log-scale functions and the algorithm type are its
+parameters; `RuleResult` carries the spec's type. With `scratch_type` it would gain `ST`. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has `kind`,
 `inputs`, `default`, `services` and `reads_logscale`:
 
 ```julia
-struct RuleSpec{B, P, S, L, A, ST}
+struct RuleSpec{B, P, S, L, A}
     algorithm::Type{A}
     body::B                # the lambda from `body = ...`
     prealloc::P            # from `preallocate = ...`, or `nothing`
     scratch::S             # from `scratch = ...`, or `nothing`
-    scratch_type::ST       # from `scratch_type = ...`, or `nothing`
     logscale::L
     inplace::Bool
     pure::Bool
@@ -460,31 +459,27 @@ decided it.
 
 ### The performance pass
 
-Measured in `BENCHMARK.md` (2026-09-26 to 2026-09-28); each change is a diff in
-`investigations/performance-pass/diffs/`, checked by the packages' suites and bit-identical
-posteriors. For the release, **the plan is the set `BENCHMARK.md` § 6 marks "release"**:
+Measured in `BENCHMARK.md` (2026-09-26 to 2026-09-28); each change was
+checked by the packages' suites and bit-identical posteriors, and the set is applied (2026-09-28). What is applied (`BENCHMARK.md`):
 
 - **ReactiveMP and MessagePassingRulesBase:**
-  - lazy callback events and counter span ids;
-  - the constructor barrier;
-  - the typed `RuleSpec` and `scratch_type` (above);
-  - the equality chain's two-message partial products, with the form constraint once per outbound
-    message;
-  - the activation caches.
-- **RxInfer:**
-  - a PrecompileTools workload;
-  - the benchmark callbacks that listen only to what they record;
-  - the hygiene fixes;
-  - the `iterate(::InferenceResult)` fix.
-- **Rocket 1.11:**
-  - pending counters in `collectLatest`;
-  - mutable wrappers;
-  - `stackguarded`, with its counter made per task first.
-- **GraphPPL 4.9:** the two quadratic paths (`apply_meta!`, `flattened_index`) and three small
-  fixes.
+  - the typed `RuleSpec` (above);
+  - callback events built only for handlers that listen, salted counter span ids;
+  - a creation plan per node shape, with its dependencies; the rule context once per node; a
+    small-union interface vector for nodes with groups;
+  - a mutable `MessageMapping`; a barrier after the product's fold; constructor barriers for
+    values of unknown type; the input-names and alias caches.
+- **RxInfer** (branch `refactor/reactivemp-v7`): the plugin's per-node work, the benchmark
+  callbacks that listen only to what they record, the hygiene fixes, the
+  `iterate(::InferenceResult)` fix.
+- **Rocket** (pull request): O(1) status checks in `collectLatest` and `combineLatest`, and mutable
+  wrappers. Not the stack guard: v7 takes 1.7× v6's chains without it.
+- **GraphPPL** (pull request, onto `4.9.0`): the two quadratic paths (`apply_meta!`,
+  `flattened_index`) and three small fixes.
 
-Rocket and GraphPPL need no breaking release for performance. What the pass leaves open (setup
-at 1.4–2.2× v6, the remaining allocations, workloads per rule package) is `BENCHMARK.md` § 8.
+Not applied: `scratch_type`, the equality chain's two-message partial products (they changed what
+"check last" means and broke one of RxInfer's tests), and a precompile workload, which is what
+first inference still needs.
 
 ### Dependencies as a language
 
@@ -796,7 +791,6 @@ ReactiveMP.jl/
   compat/v6-comparison/     # ReactiveMP@6.5.0, RxInfer 5.5.2 and the new packages: the v6
                             # oracle, the comparisons and the recorded engine fixtures
   compat/rxinfer-examples/  # five RxInferExamples models, on v6 and on RxInfer's v7 branch
-  investigations/           # performance investigations for the performance pass; never loaded
 ```
 
 `legacy/v6/`, the unported v6 code from Phase 4.5 step 4, was deleted in Phase 6 step 10.
