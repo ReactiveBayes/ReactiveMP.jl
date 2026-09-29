@@ -93,14 +93,17 @@ make test-polya                            # lib/PolyaMessagePassingRules (GPL-3
 make test-bifm                             # lib/BIFMMessagePassingRules
 make test-flow                             # lib/FlowMessagePassingRules
 make test-discrete-transition              # lib/DiscreteTransitionMessagePassingRules
-# the v6 oracle environment: comparisons and engine fixtures
+# the v6 oracle environment, local only, never on CI: comparisons, engine fixtures, inventory
 for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow compare_discrete_transition; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
+julia --project=compat/v6-comparison scripts/inventory.jl --check
 ```
 
-Work targets **Julia 1.13**, and **no CI runs** until a PR is opened: every check above is run
-locally. The workflows under `.github/` run these same checks, on 1.13 (the format check on
-1.10, where Runic's output is byte-identical).
+Work targets **Julia 1.13**, and every check above is run locally. The workflows under
+`.github/` run the root suite, the docs and the package suites on 1.13 (the format check on
+1.10, where Runic's output is byte-identical). The v6 comparisons, the engine fixtures and the
+inventory are **not** CI: they are the migration tool that verified the rewrite, run locally,
+and go at the release.
 
 `test_args` takes three kinds of entry, and they compose:
 
@@ -110,14 +113,14 @@ locally. The workflows under `.github/` run these same checks, on 1.13 (the form
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (177 of them across 26 files), each self-contained and
+Tests are `@testitem` blocks (176 of them across 25 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
 **Every test item carries a tag.** The taxonomy is `:nodes` (31) and `:engine` (144 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
-assert allocation counts and `:quality` on the inventory gate and the engine's doctests. Rules
+assert allocation counts and `:quality` on the engine's doctests. Rules
 are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
 measured as slow, so nothing claims to be.
 The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
@@ -127,9 +130,8 @@ and stay in `make test-all`.
 
 The fast default must never become a coverage reduction — the CI workflows set `TEST_ALL=true`,
 so a `:slow` tag changes what *you* run locally, never what CI runs. `ci.yml` runs the root
-suite and the docs, `LibTests.yml` a job per `make test-<package>` target and one for the v6
-comparison, the fixtures and the inventory; until the first PR "CI" means these checks run
-locally.
+suite and the docs, `LibTests.yml` a job per `make test-<package>` target, on PRs and on pushes to
+`main` and this branch.
 
 Rule tests live with the rules, in the lib packages, and are table-driven via
 `MessagePassingRulesTestUtils` (`@test_message_update_rule`). The engine's own tests declare
@@ -236,8 +238,8 @@ discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT
   `RuleResult`; `getresult` is the value, `getlogscale` its log scale. The engine uses
   `execute_rule`/`execute_rule_with_logscale` and never builds one; inlined,
   `getresult(message_passing_rule(...))` still allocates nothing (the routing gates).
-- The v6 code is only in the 6.5.0 release and in git. The inventory gate runs in
-  `compat/v6-comparison`, since only v6.5.0 still has everything it enumerates.
+- The v6 code is only in the 6.5.0 release and in git. The inventory check runs in
+  `compat/v6-comparison`, locally, since only v6.5.0 still has everything it enumerates.
 - `visualize_spec` is a deliberate entry point for visualisation backends (extensions), none
   written yet: comprehensive visualisations of nodes, dependencies and rules, rendered in the
   documentation. Not dead code.

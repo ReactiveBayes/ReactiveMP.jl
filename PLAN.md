@@ -761,8 +761,8 @@ explicit decision (`ContinuousTransition`).
 
 **The full assignment lives in `INVENTORY.md`**, not here: 231 entities — 49 nodes, 165
 exported symbols, 8 engine-hook families, 2 extensions and 7 rule-level exceptions — each
-with a destination, generated and checked by `scripts/inventory.jl` and gated by the root suite's `:quality`
-item. This
+with a destination, generated and checked by `scripts/inventory.jl --check`, run locally in `compat/v6-comparison`
+(never on CI). This
 section states the policy; the inventory states the 231 decisions, and is the thing to
 consult when moving code.
 
@@ -1261,9 +1261,10 @@ The dispatch result, ownership contracts and early engine integration are separa
     ones that cannot are listed individually. All 18 exported deletions (21 deletion rows at the time; 22 since `NormalMixtureNode` joined them in Phase 4.5) carry a
     migration note, including where the answer is "no replacement".
 
-    Generated and validated by `scripts/inventory.jl`, gated by the root suite's
-    `test/inventory_tests.jl` (tag `:quality`), so a node added upstream without a
-    destination fails the suite rather than being silently missed at split time.
+    Generated and validated by `scripts/inventory.jl --check`, run locally in the v6
+    environment (it was the root suite's `:quality` item until the v6 comparison came off CI,
+    2026-09-29), so a node without a destination fails the check rather than being silently
+    missed at split time.
 
     Two findings came out of building it, both recorded in the inventory notes:
     `CompanionMatrix`/`CompanionMatrixTransposed` have **no reference in `src/` or

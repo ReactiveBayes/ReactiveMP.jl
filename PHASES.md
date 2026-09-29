@@ -3719,6 +3719,13 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
+- *The audit of 2026-09-29 — in progress* (user): the engine, the packages and the working
+  documents reviewed against each other and the code. Decided (user): ManyPlus, main's node from
+  #666 (6.6.0), is added after this effort; the package boundaries are one effort after the
+  cleanup (both in the not-done table); the session links in the pushed history stay. Done so
+  far: the v6 comparison off CI, a local migration tool only (user): `LibTests.yml`'s
+  `v6-comparison` job and its `compat/` trigger removed, and the root suite's inventory item,
+  which ran in the uninstantiated v6 environment and would have failed `ci.yml` on the first PR.
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one
   documentation site and README per package, built by `make docs-all` in dependency order and
@@ -3797,8 +3804,8 @@ wait for the release):
   PHASES\.md|DISCUSSION\.md|INVENTORY\.md|legacy|ported|the port\b|as in v6' src lib test
   scripts docs/src .github Makefile README.md`, less the migration guides and manifests: no hit
   in `src/` or `lib/*/{src,test}`. What remains waits for the release or is not history: the
-  inventory (`scripts/inventory.jl`, `test/inventory_tests.jl`), `compat/`'s CI job in
-  `LibTests.yml` and its mentions in `test/runtests.jl` and `lib/README.md`; the guides' file
+  inventory (`scripts/inventory.jl`), `compat/`'s mentions in `test/runtests.jl` and
+  `lib/README.md` (its CI job and the root suite's inventory item are gone since 2026-09-29); the guides' file
   names in `docs/src/index.md`; the inference lifecycle's "Phase 1–3"; two arithmetic "Step 1/2"
   comments in `test/message_tests.jl`; `codecov-action@v5`.
 
@@ -3813,7 +3820,7 @@ wait for the release):
       release notes and the v6 → v7 guide (`docs/src/migration-guides/v6-to-v7.md`), not in
       code (ReactiveMP.jl#669 is such a case)
 - [ ] the working documents go: `PLAN.md`, `PHASES.md`, `DISCUSSION.md` and `INVENTORY.md`
-      (with `scripts/inventory.jl` and its `:quality` test item), and `CLAUDE.md` loses its
+      (with `scripts/inventory.jl`), and `CLAUDE.md` loses its
       § Ongoing work. What they decided that users need is already in the docs and
       v6 → v7 guide; the rest is in git
 - [ ] `compat/v6-comparison` and its fixtures are removed, or kept as a named, documented

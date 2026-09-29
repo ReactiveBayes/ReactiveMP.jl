@@ -6,7 +6,6 @@ on:
     types: [review_requested, reopened, synchronize]
     paths:
       - 'lib/**'
-      - 'compat/**'
       - 'src/**'
       - 'Makefile'
       - '.github/workflows/LibTests.yml'
@@ -16,7 +15,6 @@ on:
       - 'refactor/rule-node-system-rewrite'
     paths:
       - 'lib/**'
-      - 'compat/**'
       - 'src/**'
       - 'Makefile'
       - '.github/workflows/LibTests.yml'
@@ -64,27 +62,3 @@ jobs:
           TEST_ALL: true
           JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC: 1
         run: make test-${{ matrix.package }}
-
-  v6-comparison:
-    name: v6 comparison - Julia 1.13
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: '1.13'
-      - uses: julia-actions/cache@v2
-      - name: Instantiate the pinned v6 environment
-        run: julia --startup-file=no --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'
-      - name: Verify the v6 rules and compare every port with v6
-        run: |
-          for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow compare_discrete_transition; do
-            echo "::group::$s"
-            julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/$s.jl
-            echo "::endgroup::"
-          done
-      - name: Re-record the v6 engine fixtures and compare with the committed ones
-        run: julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
-      - name: Every v6 entity has a destination
-        run: julia --startup-file=no --project=compat/v6-comparison scripts/inventory.jl --check

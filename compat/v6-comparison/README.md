@@ -6,8 +6,7 @@ this checkout, which becomes v7 and would collide by name.
 ## What it is for
 
 Phase 4's migration checker runs a v6 rule and a v7 rule on identical inputs and asserts
-they agree. `MIGRATION.md`'s before/after doctests will execute here too, once Phase 5 writes it. Both work in a single
-process because the new rule packages are differently named and do not depend on
+they agree. That works in a single process because the new rule packages are differently named and do not depend on
 ReactiveMP, so v6 and they coexist.
 
 What does **not** work here is ReactiveMP v7 against v6 — same package name, same UUID, and
@@ -70,8 +69,7 @@ the final posteriors, and every message-rule call in the order v6 made it, which
 materialisation order, with its result and log scale. They are **TOML, not `Serialization`**,
 so ReactiveMP's tests can read them on a Julia minor other than the one that recorded them
 (recorded on 1.10.12, read on 1.13). `--check` re-records the fixtures and compares them with
-the committed files; it is run locally, since the `v6-comparison` CI job still targets 1.10
-and is stale until the workflows are updated (`PHASES.md` § Phase 7). The header's
+the committed files. Like everything here it runs locally only, never on CI. The header's
 `notes` say what the recording could not capture: log scales are recorded only where v6
 produces them, which is `bp_iid` alone. See `PHASES.md` § Phase 4.5, Step 0.
 
@@ -118,9 +116,9 @@ How the checker works:
 
 The disposition inventory runs here too, `julia --project=compat/v6-comparison
 scripts/inventory.jl --check`: it records where everything in ReactiveMP 6.5.0 goes, and since
-Phase 4.5 step 4 only v6.5.0 still has all of it. The root suite's `:quality` item runs it.
-The engine fixtures in `fixtures/engine/` are what `test/engine/` in the root suite compares
-the new engine with.
+Phase 4.5 step 4 only v6.5.0 still has all of it. It runs locally, as everything in this
+environment does: none of it is CI, and the environment goes at the release. The root suite's
+engine tests check the new engine against closed forms, not against these fixtures.
 
 The four `lib/` packages the comparisons load are dev'd into this environment by relative path and recorded in the
 committed manifest, resolved on 1.13.
