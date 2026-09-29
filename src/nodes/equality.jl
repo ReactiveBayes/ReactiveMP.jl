@@ -137,8 +137,11 @@ end
 nextindex(::EqualityLeftOutbound, node_index) = node_index + 1
 nextindex(::EqualityRightOutbound, node_index) = node_index - 1
 
-@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int = something(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain) - (node_index - 1)) + (node_index - 1)
-@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = something(findlast(view(chain.cacheright, 1:node_index)), 1)
+# The node the partial product starts from: the one next to the nearest cached product, which is
+# still valid, since a new inbound message invalidates every product that contains it; with
+# nothing cached, the end of the chain.
+@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int = something(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain) - node_index + 2) + node_index - 2
+@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = something(findlast(view(chain.cacheright, 1:node_index)), 0) + 1
 
 @propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):-1:node_index
 @propagate_inbounds precompute_range(type::EqualityRightOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):node_index
