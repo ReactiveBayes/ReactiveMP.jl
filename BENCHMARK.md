@@ -139,11 +139,11 @@ at 1–8% of setup; it is not applied.
 
 - **A precompile workload** for first inference (1.1–1.4× v6): RxInfer's, with `free_energy =
   true` and the session, and one per rule package with many nodes.
-- **Log scale `nothing` for data and constants when log scales are not tracked.** Neither knows
+- **Log scale `nothing` for data and constants when log scales are not tracked (not done).** Neither knows
   whether they are, so the flag would thread through `constvar` and the data variable's
   activation, and a caller tracking log scales that forgot it would lose them silently; the gain
   is 8 bytes per observation and the specialisations where observed and computed point masses
-  meet. Not done; for the user to decide.
+  meet. Decided against (user).
 - **Scratch in more rules**: the Delta rules' sigma points and Jacobians, `*` with a matrix, AR and
   ContinuousTransition, now that a typed scratch costs nothing.
 - **A product workspace per variable**, for the temporaries of multivariate products in
