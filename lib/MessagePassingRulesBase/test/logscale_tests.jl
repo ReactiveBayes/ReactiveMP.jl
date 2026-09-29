@@ -82,6 +82,7 @@ end
     @test contains(sprint(showerror, UndefinedLogScaleError(UndefinedLogScale(:no_compute_logscale, (Int, Float64)))), "Int64 and Float64")
     @test repr(undefined) == "UndefinedLogScale(:initial)"
     @test contains(repr(MIME"text/plain"(), UndefinedLogScale(:form_constraint)), "form constraint")
+    @test contains(sprint(showerror, UndefinedLogScaleError(UndefinedLogScale(:missing_input))), "the message is missing")
     @test with_logscale(1, 2) === with_logscale(result = 1, logscale = 2)
 end
 

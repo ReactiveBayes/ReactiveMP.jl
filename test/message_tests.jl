@@ -593,6 +593,22 @@ end
     @test processor.log == [:pre, :pre, :post]
 end
 
+@testitem "MessageMapping gives a missing message an undefined log scale when it tracks them" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, EngineDiagnostics, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm, UndefinedLogScale, UndefinedLogScaleError, require_logscale
+    N = MessageMappingNodes
+
+    tracked(logscales) = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Increment(), nothing, EngineDiagnostics(), nothing, nothing, logscales)
+
+    result = tracked(true)((Message(missing, false, false),), nothing)
+    @test getdata(result) === missing
+    @test getlogscale(result) isa UndefinedLogScale
+    @test occursin("missing", sprint(showerror, UndefinedLogScaleError(getlogscale(result))))
+
+    # Untracked, a missing message carries no log scale, as every other one.
+    @test_throws ArgumentError getlogscale(tracked(false)((Message(missing, false, false),), nothing))
+end
+
 @testitem "MessageMapping should call provided callbacks handler" tags = [:engine] setup = [MessageMappingNodes] begin
     import ReactiveMP: MessageMapping, getdata, AnnotationDict
     import MessagePassingRulesBase: Target, DefaultAlgorithm

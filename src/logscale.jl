@@ -12,6 +12,8 @@ const INITIAL_LOGSCALE = UndefinedLogScale(:initial)
 const FALLBACK_LOGSCALE = UndefinedLogScale(:fallback)
 # The log scale of a product a form constraint changed.
 const FORM_CONSTRAINT_LOGSCALE = UndefinedLogScale(:form_constraint)
+# The log scale of a message not computed because an input is missing.
+const MISSING_INPUT_LOGSCALE = UndefinedLogScale(:missing_input)
 
 tracked_logscale(logscale) = logscale
 tracked_logscale(::Nothing) = throw(

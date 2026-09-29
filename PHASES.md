@@ -3734,7 +3734,9 @@ wait for the release):
   BayesBase's ambiguous `prod(::GenericProd, ::ProductOf, ::Missing)`, which an unconstrained
   partial product with no closed form reached (RxInfer's suite: 14 717 of 14 718 before, the
   one failure this, which passes with it); a linked data variable reads a non-numeric
-  observation's payload and links an array of variables, both failing before.
+  observation's payload and links an array of variables, both failing before; under tracked log
+  scales a message missing for a missing input has an undefined log scale, `:missing_input`,
+  not `nothing`.
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one
   documentation site and README per package, built by `make docs-all` in dependency order and

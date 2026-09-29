@@ -73,9 +73,9 @@ end
     import ReactiveMP: MessageProductContext, compute_product_of_two_messages, randomvar
     U = EngineLogScaleUtils
 
-    # No rule runs on a missing input, so no log scale is invented.
+    # No rule runs on a missing input: the log scale is undefined, and says why.
     deferred = U.mapping(:out, (:in,))((U.message(missing),), nothing)
-    @test getdata(deferred) === missing && deferred.logscale === nothing
+    @test getdata(deferred) === missing && getlogscale(deferred).cause === :missing_input
     # A product with it is the other side, with its log scale, on either side.
     concrete = U.message(NormalMeanVariance(1.0, 2.0), 4.0)
     context = MessageProductContext()

@@ -816,7 +816,7 @@ function (mapping::MessageMapping)(messages, marginals)
     end
 
     result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals)
-        missing, nothing
+        missing, (tracks_logscales(mapping) ? MISSING_INPUT_LOGSCALE : nothing)
     else
         fform = message_mapping_fform(mapping)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
