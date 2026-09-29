@@ -95,7 +95,7 @@ function ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)
     Exx = add_outer(Vx, mx)
     Eyx = gaussian_cross_moment(Vyx, my, mx)
     S = add_outer(Vy, my) - Eyx * mA' - mA * Eyx' + mA * Exx * mA'
-    return S + [tr(Fs[i]' * Exx * Fs[j] * Va) for i in eachindex(Fs), j in eachindex(Fs)]
+    return S + [trace_product(Fs[i]' * Exx * Fs[j], Va) for i in eachindex(Fs), j in eachindex(Fs)]
 end
 
 # Towards `W`: a Wishart with dy + 2 degrees of freedom and the inverse scale
@@ -145,7 +145,7 @@ end
 # ⟨-log N(y; A x, W⁻¹)⟩ = dy/2 log 2π - ⟨log det W⟩/2 + tr(⟨W⟩ E[(y - A x)(y - A x)ᵀ])/2.
 # The dimension is that of `y`, and the uncertainty of `a` meets E[x xᵀ] = Vx + mx mxᵀ.
 ct_energy(algo, my, Vy, mx, Vx, Vyx, q_a, q_W) =
-    gaussian_average_energy(length(my), tr(mean(q_W) * ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)) - mean(logdet, q_W))
+    gaussian_average_energy(length(my), trace_product(mean(q_W), ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)) - mean(logdet, q_W))
 
 @define_average_energy(
     node = ContinuousTransition, algorithm = CTVMP,

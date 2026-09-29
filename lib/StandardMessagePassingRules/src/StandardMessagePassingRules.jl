@@ -54,7 +54,7 @@ using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: matrix_correction
 using MessagePassingRulesBase: add_outer, trace_product, negate!!, scale!!, scaled_outer, diageye, promote_cluster
 using MessagePassingRulesBase: gaussian_average_energy, gaussian_variational_variance, gaussian_variational_covariance
-using MessagePassingRulesBase: gaussian_coupled_precision, gaussian_difference_moment, gaussian_series_precision
+using MessagePassingRulesBase: gaussian_coupled_precision, gaussian_difference_moment, gaussian_series_precision, gaussian_second_moment
 using StatsFuns: log2π, logπ, loghalf
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma, besselk
 using Base.Broadcast: BroadcastFunction

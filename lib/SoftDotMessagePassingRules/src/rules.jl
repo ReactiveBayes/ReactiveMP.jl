@@ -25,7 +25,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
         my = mean(args.q[:y])
         mx, Vx = mean_cov(args.q[:x])
         mγ = mean(args.q[:γ])
-        weighted_mean_precision(mγ * mx * my, mγ * (Vx + mx * mx'))
+        weighted_mean_precision(mγ * mx * my, mγ * add_outer(Vx, mx))
     end,
 )
 
@@ -35,7 +35,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
     body = (args) -> begin
         my, _, mx, Vx, Vxy = split_y_x(args.q[:y, :x])
         mγ = mean(args.q[:γ])
-        weighted_mean_precision((Vxy + mx * my') * mγ, mγ * (Vx + mx * mx'))
+        weighted_mean_precision((Vxy + mx * my') * mγ, mγ * add_outer(Vx, mx))
     end,
 )
 
@@ -71,7 +71,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
         mθ, Vθ = mean_cov(args.q[:θ])
         mx, Vx = mean_cov(args.q[:x])
         T = promote_paramfloattype(args.q[:y], args.q[:θ], args.q[:x])
-        β = (Vy + my * my') / 2
+        β = add_outer(Vy, my) / 2
         β -= my * mθ' * mx
         β += (trace_product(Vx, Vθ) + mθ'Vx * mθ + mx'Vθ * mx + mθ'mx * mx'mθ) / 2
         GammaShapeRate(convert(T, 3 / 2), β)

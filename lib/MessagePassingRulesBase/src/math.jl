@@ -246,13 +246,13 @@ gaussian_series_precision(Λ, Λ_f) = Λ - Λ * (fastcholesky(Λ + Λ_f) \ Λ)
     gaussian_second_moment(q)
 
 `E[x xᵀ] = Cov[x] + E[x] E[x]ᵀ` of a multivariate `q`, and `E[x²] = Var[x] + E[x]²` of a
-univariate one, from `mean_cov(q)`: any distribution or marginal that defines it.
+univariate one: from `mean` and `cov`, or `var` when the mean is a number.
 
 See also [`add_outer`](@ref), [`gaussian_cross_moment`](@ref).
 """
 function gaussian_second_moment(q)
-    m, V = BayesBase.mean_cov(q)
-    return add_outer(V, m)
+    m = BayesBase.mean(q)
+    return m isa Real ? add_outer(BayesBase.var(q), m) : add_outer(BayesBase.cov(q), m)
 end
 
 """

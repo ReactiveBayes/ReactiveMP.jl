@@ -35,7 +35,6 @@ struct HalfNormal end
     node = HalfNormal,
     args = (q[:out]::Any, q[:v]::Any),
     body = (args) -> begin
-        out_mean, out_var = mean_var(args.q[:out])
-        (log(π / 2) + mean(log, args.q[:v]) + mean(inv, args.q[:v]) * (out_mean^2 + out_var)) / 2
+        (log(π / 2) + mean(log, args.q[:v]) + mean(inv, args.q[:v]) * gaussian_second_moment(args.q[:out])) / 2
     end,
 )

@@ -19,6 +19,6 @@ end
     body = (args) -> begin
         μ, V = mean_cov(args.q[:μ])
         Λ = mean(args.q[:Λ])
-        promoted_mv_normal_gamma(μ, Λ, mean(args.q[:α]), mean(args.q[:β]) + tr(Λ * V) / 2)
+        promoted_mv_normal_gamma(μ, Λ, mean(args.q[:α]), mean(args.q[:β]) + trace_product(Λ, V) / 2)
     end,
 )

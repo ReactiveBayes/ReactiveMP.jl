@@ -369,7 +369,7 @@ end
         c = ar_unit(promote_paramfloattype(q_y, q_x, q_γ), F, order)
 
         ξ = mx * c' * pinv(mV) * my
-        W = mγ * (Vx + mx * mx')
+        W = mγ * add_outer(Vx, mx)
 
         convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ, W)
     end,
@@ -410,7 +410,7 @@ end
         mx, Vx = mean_cov(args.q[:x])
         mθ, Vθ = mean_cov(args.q[:θ])
 
-        B = first(Vy) + first(my)^2 - 2 * first(my) * mθ' * mx + mx' * Vθ * mx + mθ' * (Vx + mx * mx') * mθ
+        B = first(Vy) + first(my)^2 - 2 * first(my) * mθ' * mx + mx' * Vθ * mx + mθ' * add_outer(Vx, mx) * mθ
 
         GammaShapeRate(convert(eltype(B), 3 // 2), B / 2)
     end,

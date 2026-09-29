@@ -64,6 +64,9 @@ end
         V::V
     end
     BayesBase.mean_cov(q::Moments) = (q.m, q.V)
+    BayesBase.mean(q::Moments) = q.m
+    BayesBase.cov(q::Moments) = q.V
+    BayesBase.var(q::Moments{<:Real}) = q.V
 
     m, V = [1.0, 2.0], [2.0 0.5; 0.5 1.0]
     @test B.gaussian_second_moment(Moments(m, V)) ≈ V + m * m'

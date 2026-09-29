@@ -47,7 +47,7 @@ softdot_energy(q_γ, expected_square) = (-mean(log, q_γ) + log2π + mean(q_γ) 
         m_y, V_y = mean_cov(args.q[:y])
         m_θ, V_θ = mean_cov(args.q[:θ])
         m_x, V_x = mean_cov(args.q[:x])
-        expected_square = V_y + m_y^2 - 2 * m_y * dot(m_θ, m_x) + trace_product(V_θ, V_x) + dot(m_x, V_θ, m_x) + dot(m_θ, V_x + m_x * m_x', m_θ)
+        expected_square = add_outer(V_y, m_y) - 2 * m_y * dot(m_θ, m_x) + trace_product(V_θ, V_x) + dot(m_x, V_θ, m_x) + dot(m_θ, add_outer(V_x, m_x), m_θ)
         softdot_energy(args.q[:γ], expected_square)
     end,
 )
@@ -57,7 +57,7 @@ softdot_energy(q_γ, expected_square) = (-mean(log, q_γ) + log2π + mean(q_γ) 
     body = (args) -> begin
         m_θ, V_θ = mean_cov(args.q[:θ])
         m_y, V_y, m_x, V_x, V_xy = split_y_x(args.q[:y, :x])
-        expected_square = V_y + m_y^2 - 2 * dot(m_θ, V_xy + m_x * m_y) + trace_product(V_θ, V_x) + dot(m_x, V_θ, m_x) + dot(m_θ, V_x, m_θ) + abs2(dot(m_θ, m_x))
+        expected_square = add_outer(V_y, m_y) - 2 * dot(m_θ, V_xy + m_x * m_y) + trace_product(V_θ, V_x) + dot(m_x, V_θ, m_x) + dot(m_θ, V_x, m_θ) + abs2(dot(m_θ, m_x))
         softdot_energy(args.q[:γ], expected_square)
     end,
 )

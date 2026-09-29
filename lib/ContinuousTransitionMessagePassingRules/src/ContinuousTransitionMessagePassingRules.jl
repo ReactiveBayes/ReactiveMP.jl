@@ -31,7 +31,7 @@ using ExponentialFamily: WishartFast
 using FastCholesky: cholinv
 using LinearAlgebra: tr, logdet
 import ForwardDiff
-using MessagePassingRulesBase: add_outer, negate!!, gaussian_cross_moment, gaussian_average_energy
+using MessagePassingRulesBase: add_outer, trace_product, negate!!, gaussian_cross_moment, gaussian_average_energy
 
 export ContinuousTransition, CTransition, CTVMP
 

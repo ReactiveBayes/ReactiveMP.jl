@@ -1,5 +1,5 @@
 # A Gamma likelihood of γ: shape d/2 + 1, rate tr(E[G] E[(out - μ)(out - μ)ᵀ]) / 2.
-scale_matrix_precision_likelihood(d, G, S) = (β = tr(G * S) / 2; GammaShapeRate(convert(typeof(β), d / 2 + 1), β))
+scale_matrix_precision_likelihood(d, G, S) = (β = trace_product(G, S) / 2; GammaShapeRate(convert(typeof(β), d / 2 + 1), β))
 
 @define_message_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = :γ,
