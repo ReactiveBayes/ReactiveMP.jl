@@ -1040,6 +1040,22 @@ end
     end
 end
 
+@testitem "A missing side of a product of two messages leaves the other side as it is" tags = [:engine] begin
+    import ReactiveMP: MessageProductContext, compute_product_of_two_messages, getdata
+    using BayesBase, Distributions, ExponentialFamily
+
+    # A product with no closed form, such as a partial product of an equality chain, meets the
+    # `missing` of a message not computed yet: BayesBase's `prod(::GenericProd, ::ProductOf,
+    # ::Missing)` is ambiguous, so the engine does not call it.
+    unsupported = prod(GenericProd(), Beta(2.0, 3.0), NormalMeanVariance(0.0, 1.0))
+    @test unsupported isa ProductOf
+    context = MessageProductContext()
+    x = randomvar()
+    @test getdata(compute_product_of_two_messages(x, context, Message(unsupported, false, false), Message(missing, false, false))) === unsupported
+    @test getdata(compute_product_of_two_messages(x, context, Message(missing, false, false), Message(unsupported, false, false))) === unsupported
+    @test getdata(compute_product_of_two_messages(x, context, Message(missing, false, false), Message(missing, false, false))) === missing
+end
+
 @testitem "FormConstraintCheckPickDefault is the form constraint's own check strategy" tags = [:engine] begin
     import ReactiveMP:
         MessageProductContext,

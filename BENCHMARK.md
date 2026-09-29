@@ -165,7 +165,10 @@ each figure the minimum of fresh processes:
 - **Two-message partial products in the equality chain.** They applied the form
   constraint once per outbound message instead of per partial product, which let an unsupported
   `ProductOf` reach a `missing` boundary and broke one of RxInfer's tests. Only its typed
-  `ChainOutboundMapping{C}` is applied.
+  `ChainOutboundMapping{C}` was applied then. The audit of 2026-09-29 made the change for its
+  semantics (user: `FormConstraintCheckLast` once per message, as documented), with the engine
+  taking `missing` as the product's identity so that the ambiguity is never reached; RxInfer's
+  test passes.
 - **Rocket's stack guard** (§4.4).
 - **A function barrier per interface at activation.** It was slower: `NodeInterface.variable` is
   an `AbstractVariable`, so the stream types stay `Any` behind the barrier as well.
@@ -192,6 +195,8 @@ each figure the minimum of fresh processes:
   BayesBase; to be profiled first.
 - **A fast path for variables of degree 2 in the equality chain.** Every state-space model's chain
   variables have that degree, but the path changes the product events callbacks see.
-- **The BayesBase ambiguity `prod(::GenericProd, ::ProductOf, ::Missing)`**, upstream.
+- **The BayesBase ambiguity `prod(::GenericProd, ::ProductOf, ::Missing)`**, upstream; the
+  engine no longer reaches it, since its product of two messages returns the other side of a
+  `missing` one.
 - **The HMM allocates 1.12× v6's bytes per iteration** (§1), though it runs at 0.89–0.92× v6's
   time; not profiled yet.

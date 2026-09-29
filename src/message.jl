@@ -318,7 +318,7 @@ function compute_product_of_two_messages(
     # process distributions
     left_dist = getdata(left)
     right_dist = getdata(right)
-    new_dist = prod(context.prod_constraint, left_dist, right_dist)
+    new_dist = product_of_data(context.prod_constraint, left_dist, right_dist)
     new_logscale = product_logscale(new_dist, left_dist, right_dist, left.logscale, right.logscale)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
@@ -361,6 +361,14 @@ function compute_product_of_two_messages(
 
     return result
 end
+
+# `missing`, a message not computed yet, is the product's identity, whatever the product
+# strategy; BayesBase's `prod(::GenericProd, ::ProductOf, ::Missing)` is ambiguous, and a
+# product with no closed form meets `missing` in an equality chain's partial products.
+product_of_data(strategy, left, right) = prod(strategy, left, right)
+product_of_data(strategy, ::Missing, right) = right
+product_of_data(strategy, left, ::Missing) = left
+product_of_data(strategy, ::Missing, ::Missing) = missing
 
 # Sometimes we call the product on the `DeferredMessage` that need to be casted to a `Message`
 function compute_product_of_two_messages(

@@ -44,7 +44,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | Rocket's and GraphPPL's fixes, pull requests of their own: ReactiveBayes/Rocket.jl#91 (pending counters, mutable wrappers) is merged, for Rocket 1.10.1, still to be tagged; ReactiveBayes/GraphPPL.jl#333 (the two quadratic passes of model creation) awaits review. No compat bump is needed: both change performance only | upstream | `BENCHMARK.md` §3, §6 |
 | precompile workloads in the rule packages with many nodes (the multivariate Gaussians, Delta, DiscreteTransition), as extensions on ReactiveMP; RxInfer's leaves out `free_energy = true`, whose code depends on the model | after the release | `BENCHMARK.md` §4.5, §6 |
 | scratch in more rules (Delta's sigma points and Jacobians, `*` with a matrix, AR, ContinuousTransition); a product workspace per variable for BayesBase's multivariate temporaries, profiled first; a fast path for variables of degree 2 in the equality chain, which changes the product events callbacks see | after the release | `BENCHMARK.md` §6 |
-| the BayesBase ambiguity `prod(::GenericProd, ::ProductOf, ::Missing)`, which the equality chain's two-message partial products ran into | upstream | `BENCHMARK.md` §5, §6 |
+| the BayesBase ambiguity `prod(::GenericProd, ::ProductOf, ::Missing)`, which the equality chain's two-message partial products ran into; the engine avoids it since the audit (its product of two messages returns the other side of a `missing` one), so this is BayesBase's own fix | upstream | `BENCHMARK.md` §5, §6 |
 | the HMM allocates 1.12× v6's bytes per iteration, though it runs faster than v6; the only benchmarked model above v6 in bytes, not profiled | after the release | `BENCHMARK.md` §1, §6 |
 | where benchmarking lives from now on: Phase P meant it for RxInferBenchmarks.jl, and the end-of-refactor pass was measured here, its scripts in the history up to `b46046c83` | undecided (user) | `DISCUSSION.md` (Phase P, the baseline), `BENCHMARK.md` |
 | typed annotations (a type parameter for them beside `Message{D, L}`'s), if at all: since §3.50 the log scale is not an annotation, so this is only a performance question for the remaining side channel, the mutable `AnnotationDict`, which the engine now allocates only where something writes it | after the release | `DISCUSSION.md` §3.48, §3.50 |
@@ -3730,7 +3730,10 @@ wait for the release):
   computes a cached partial product again; `FormConstraintCheckLast` applies once per outbound
   message, not to each partial product (user); `MessageProductContext` resolves
   `FormConstraintCheckPickDefault` to the constraint's own strategy (user), where it applied no
-  constraint at all.
+  constraint at all; a product of two messages takes `missing` as its identity, never calling
+  BayesBase's ambiguous `prod(::GenericProd, ::ProductOf, ::Missing)`, which an unconstrained
+  partial product with no closed form reached (RxInfer's suite: 14 717 of 14 718 before, the
+  one failure this, which passes with it).
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one
   documentation site and README per package, built by `make docs-all` in dependency order and
