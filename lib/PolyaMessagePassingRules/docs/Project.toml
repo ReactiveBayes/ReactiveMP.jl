@@ -9,6 +9,6 @@ MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 PolyaMessagePassingRules = "2d94fc58-1726-4ac3-9db6-3d18f146cabb"
 
 [sources]
-MessagePassingRulesApproximations = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/MessagePassingRulesApproximations"}
-MessagePassingRulesBase = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/MessagePassingRulesBase"}
-PolyaMessagePassingRules = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/PolyaMessagePassingRules"}
+MessagePassingRulesApproximations = {path = "../../MessagePassingRulesApproximations"}
+MessagePassingRulesBase = {path = "../../MessagePassingRulesBase"}
+PolyaMessagePassingRules = {path = ".."}

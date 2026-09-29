@@ -73,8 +73,7 @@ end
     body = (algo, args) -> begin
         dy = size(mean(args.q[:W]), 1)
         my, _, mx, Vx, Vyx = split_y_x(args.q[:y, :x], dy)
-        R = StandardMessagePassingRules
-        ct_towards_a(algo, R.rank1update(Vyx', mx, my), R.rank1update(Vx, mx), args.q[:a], args.q[:W])
+        ct_towards_a(algo, gaussian_cross_moment(Vyx', mx, my), add_outer(Vx, mx), args.q[:a], args.q[:W])
     end,
 )
 
@@ -83,7 +82,7 @@ end
     args = (q[:y]::Any, q[:x]::Any, q[:a]::Any, q[:W]::Any),
     body = (algo, args) -> begin
         mx, Vx = mean_cov(args.q[:x])
-        ct_towards_a(algo, mx * mean(args.q[:y])', StandardMessagePassingRules.rank1update(Vx, mx), args.q[:a], args.q[:W])
+        ct_towards_a(algo, mx * mean(args.q[:y])', add_outer(Vx, mx), args.q[:a], args.q[:W])
     end,
 )
 
@@ -93,9 +92,9 @@ function ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)
     ma, Va = mean_cov(q_a)
     Fs = jacobians(algo, ma)
     mA = ct_matrix(algo, q_a)
-    Exx = StandardMessagePassingRules.rank1update(Vx, mx)
-    Eyx = StandardMessagePassingRules.rank1update(Vyx, my, mx)
-    S = StandardMessagePassingRules.rank1update(Vy, my) - Eyx * mA' - mA * Eyx' + mA * Exx * mA'
+    Exx = add_outer(Vx, mx)
+    Eyx = gaussian_cross_moment(Vyx, my, mx)
+    S = add_outer(Vy, my) - Eyx * mA' - mA * Eyx' + mA * Exx * mA'
     return S + [tr(Fs[i]' * Exx * Fs[j] * Va) for i in eachindex(Fs), j in eachindex(Fs)]
 end
 
@@ -138,8 +137,7 @@ end
         for i in eachindex(Fs)
             Ξ += H[i] * Va * Fs[i]'
         end
-        R = StandardMessagePassingRules
-        W = [Wy + mW R.negate_inplace!(mW * mA); R.negate_inplace!(mA' * mW) Ξ + mA' * mW * mA]
+        W = [Wy + mW negate!!(mW * mA); negate!!(mA' * mW) Ξ + mA' * mW * mA]
         MvNormalWeightedMeanPrecision([ξy; ξx], W)
     end,
 )
@@ -147,7 +145,7 @@ end
 # ⟨-log N(y; A x, W⁻¹)⟩ = dy/2 log 2π - ⟨log det W⟩/2 + tr(⟨W⟩ E[(y - A x)(y - A x)ᵀ])/2.
 # The dimension is that of `y`, and the uncertainty of `a` meets E[x xᵀ] = Vx + mx mxᵀ.
 ct_energy(algo, my, Vy, mx, Vx, Vyx, q_a, q_W) =
-    StandardMessagePassingRules.gaussian_energy(length(my), tr(mean(q_W) * ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)) - mean(logdet, q_W))
+    gaussian_average_energy(length(my), tr(mean(q_W) * ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)) - mean(logdet, q_W))
 
 @define_average_energy(
     node = ContinuousTransition, algorithm = CTVMP,

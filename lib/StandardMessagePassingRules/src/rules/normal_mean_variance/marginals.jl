@@ -15,10 +15,10 @@
 @define_marginal_update_rule(
     node = NormalMeanVariance, target = (:out, :μ),
     args = (m[:out]::PointMass, m[:μ]::UnivariateNormalDistributionsFamily, q[:v]::Any),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => args.m[:out],
-            (:μ,) => prod(ClosedProd(), NormalMeanVariance(mean(args.m[:out]), variational_variance(args.q[:v])), args.m[:μ]),
+            (:μ,) => prod(ClosedProd(), NormalMeanVariance(mean(args.m[:out]), gaussian_variational_variance(args.q[:v])), args.m[:μ]),
         ),
         args.m[:out], args.m[:μ], args.q[:v],
     ),
@@ -27,9 +27,9 @@
 @define_marginal_update_rule(
     node = NormalMeanVariance, target = (:out, :μ),
     args = (m[:out]::UnivariateNormalDistributionsFamily, m[:μ]::PointMass, q[:v]::Any),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
-            (:out,) => prod(ClosedProd(), NormalMeanVariance(mean(args.m[:μ]), variational_variance(args.q[:v])), args.m[:out]),
+            (:out,) => prod(ClosedProd(), NormalMeanVariance(mean(args.m[:μ]), gaussian_variational_variance(args.q[:v])), args.m[:out]),
             (:μ,) => args.m[:μ],
         ),
         args.m[:out], args.m[:μ], args.q[:v],
@@ -41,7 +41,7 @@
 @define_marginal_update_rule(
     node = NormalMeanVariance, target = (:out, :μ, :v),
     args = (m[:out]::NormalDistributionsFamily, m[:μ]::PointMass, m[:v]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => prod(ClosedProd(), NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])), args.m[:out]),
             (:μ,) => args.m[:μ],
@@ -54,7 +54,7 @@
 @define_marginal_update_rule(
     node = NormalMeanVariance, target = (:out, :μ, :v),
     args = (m[:out]::PointMass, m[:μ]::NormalDistributionsFamily, m[:v]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => args.m[:out],
             (:μ,) => prod(ClosedProd(), args.m[:μ], NormalMeanVariance(mean(args.m[:out]), mean(args.m[:v]))),
@@ -72,6 +72,6 @@
         xi_μ, W_μ = weightedmean_precision(args.m[:μ])
         W_bar = inv(mean(args.m[:v]))
         joint = MvNormalWeightedMeanPrecision([xi_out; xi_μ], [W_out + W_bar -W_bar; -W_bar W_μ + W_bar])
-        promoted_cluster(FactorizedCluster((:out, :μ) => joint, (:v,) => args.m[:v]), args.m[:out], args.m[:μ], args.m[:v])
+        promote_cluster(FactorizedCluster((:out, :μ) => joint, (:v,) => args.m[:v]), args.m[:out], args.m[:μ], args.m[:v])
     end,
 )

@@ -8,7 +8,7 @@ function mixture_precision_likelihood(::Type{Univariate}, q_out, q_m, z)
 end
 
 mixture_precision_likelihood(::Type{Multivariate}, q_out, q_m, z) =
-    WishartFast(one(z) + z + ndims(q_out), z * difference_moment(q_out, q_m))
+    WishartFast(one(z) + z + ndims(q_out), z * gaussian_difference_moment(q_out, q_m))
 
 @define_message_update_rule(
     node = NormalMixture, target = (:p, k),

@@ -17,7 +17,7 @@ end
         append!(frontier, values(info.dependencies))
     end
     @test "MessagePassingRulesBase" in closure
-    @test "StandardMessagePassingRules" in closure
+    @test !("StandardMessagePassingRules" in closure)
     @test !("ReactiveMP" in closure)
     # The energy builds its index vector without LazyArrays.
     @test !("LazyArrays" in closure)

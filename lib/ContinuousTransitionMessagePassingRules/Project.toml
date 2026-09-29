@@ -13,12 +13,10 @@ FastCholesky = "2d5283b6-8564-42b6-bb00-83ed8e915756"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
-StandardMessagePassingRules = "d166223a-7879-43b1-add3-64af0a178e9e"
 
 [sources]
 MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
-StandardMessagePassingRules = {path = "../StandardMessagePassingRules"}
 
 [compat]
 Aqua = "0.8"
@@ -35,7 +33,6 @@ Pkg = "1.11"
 Random = "1.11"
 SpecialFunctions = "2"
 StableRNGs = "1"
-StandardMessagePassingRules = "0.1"
 Test = "1.11"
 TestItemRunner = "1"
 julia = "1.11"

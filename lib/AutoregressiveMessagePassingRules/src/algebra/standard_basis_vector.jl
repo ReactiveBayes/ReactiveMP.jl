@@ -55,11 +55,11 @@ end
 # A e: the column of A at the index, scaled.
 function Base.:*(A::Matrix{<:Real}, e::StandardBasisVector)
     size(A, 2) == length(e) || throw(DimensionMismatch("cannot multiply a matrix of size $(size(A)) by a vector of length $(length(e))"))
-    return StandardMessagePassingRules.mul_inplace!(e.scale, A[:, e.index])
+    return scale!!(e.scale, A[:, e.index])
 end
 
 # e a eᵀ, the precision `dot`'s rules build from it: a diagonal with its one entry.
-function StandardMessagePassingRules.v_a_vT(e::StandardBasisVector, a::Real)
+function MessagePassingRulesBase.scaled_outer(e::StandardBasisVector, a::Real)
     T = promote_type(eltype(e), typeof(a))
     diagonal = zeros(T, length(e))
     diagonal[e.index] = e.scale * a * e.scale

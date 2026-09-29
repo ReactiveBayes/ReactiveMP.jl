@@ -6,11 +6,11 @@ scale_matrix_likelihood(d, γ, S) = (V = Matrix(Hermitian(cholinv(γ * S))); Wis
 @define_message_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = :G,
     args = (q[:out]::Any, q[:μ]::Any, q[:γ]::Any),
-    body = (args) -> scale_matrix_likelihood(ndims(args.q[:μ]), mean(args.q[:γ]), difference_moment(args.q[:out], args.q[:μ])),
+    body = (args) -> scale_matrix_likelihood(ndims(args.q[:μ]), mean(args.q[:γ]), gaussian_difference_moment(args.q[:out], args.q[:μ])),
 )
 
 @define_message_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = :G,
     args = (q[:out, :μ]::Any, q[:γ]::Any),
-    body = (args) -> scale_matrix_likelihood(div(ndims(args.q[:out, :μ]), 2), mean(args.q[:γ]), difference_moment(args.q[:out, :μ])),
+    body = (args) -> scale_matrix_likelihood(div(ndims(args.q[:out, :μ]), 2), mean(args.q[:γ]), gaussian_difference_moment(args.q[:out, :μ])),
 )

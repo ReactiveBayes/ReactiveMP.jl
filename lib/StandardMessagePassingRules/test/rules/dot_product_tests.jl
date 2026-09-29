@@ -172,5 +172,5 @@ end
     m = getresult(call_message_update_rule(dot, :in2; m = (out = NormalMeanVariance(0.3, 0.9), in1 = PointMass(a)), ctx = RuleContext(matrix_correction = NoCorrection())))
     W = precision(m)
     @test W == a * a' * (1 / 0.9) && issymmetric(W)
-    @test StandardMessagePassingRules.v_a_vT(a, 2.0) == a * a' * 2.0
+    @test MessagePassingRulesBase.scaled_outer(a, 2.0) == a * a' * 2.0
 end

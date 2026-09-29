@@ -73,7 +73,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
         T = promote_paramfloattype(args.q[:y], args.q[:θ], args.q[:x])
         β = (Vy + my * my') / 2
         β -= my * mθ' * mx
-        β += (StandardMessagePassingRules.mul_trace(Vx, Vθ) + mθ'Vx * mθ + mx'Vθ * mx + mθ'mx * mx'mθ) / 2
+        β += (trace_product(Vx, Vθ) + mθ'Vx * mθ + mx'Vθ * mx + mθ'mx * mx'mθ) / 2
         GammaShapeRate(convert(T, 3 / 2), β)
     end,
 )
@@ -84,8 +84,8 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
     body = (args) -> begin
         my, Vy, mx, Vx, Vxy = split_y_x(args.q[:y, :x])
         mθ, Vθ = mean_cov(args.q[:θ])
-        C = StandardMessagePassingRules.rank1update(Vx, mx)
-        B = StandardMessagePassingRules.rank1update(Vy, my) - 2 * dot(mθ, Vxy + mx * my) + dot(mθ, C, mθ) + StandardMessagePassingRules.mul_trace(Vθ, C)
+        C = add_outer(Vx, mx)
+        B = add_outer(Vy, my) - 2 * dot(mθ, Vxy + mx * my) + dot(mθ, C, mθ) + trace_product(Vθ, C)
         GammaShapeRate(convert(typeof(B), 3 // 2), B / 2)
     end,
 )

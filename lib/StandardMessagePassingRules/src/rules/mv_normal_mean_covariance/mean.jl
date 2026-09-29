@@ -29,13 +29,13 @@
 @define_message_update_rule(
     node = MvNormalMeanCovariance, target = :μ,
     args = (q[:out]::Any, q[:Σ]::Any),
-    body = (args) -> MvNormalMeanCovariance(mean(args.q[:out]), variational_covariance(args.q[:Σ])),
+    body = (args) -> MvNormalMeanCovariance(mean(args.q[:out]), gaussian_variational_covariance(args.q[:Σ])),
 )
 
 @define_message_update_rule(
     node = MvNormalMeanCovariance, target = :μ,
     args = (m[:out]::PointMass, q[:Σ]::Any),
-    body = (args) -> MvNormalMeanCovariance(mean(args.m[:out]), variational_covariance(args.q[:Σ])),
+    body = (args) -> MvNormalMeanCovariance(mean(args.m[:out]), gaussian_variational_covariance(args.q[:Σ])),
 )
 
 @define_message_update_rule(
@@ -43,6 +43,6 @@
     args = (m[:out]::MultivariateNormalDistributionsFamily, q[:Σ]::Any),
     body = (args) -> begin
         μ, V = mean_cov(args.m[:out])
-        MvNormalMeanCovariance(μ, V + variational_covariance(args.q[:Σ]))
+        MvNormalMeanCovariance(μ, V + gaussian_variational_covariance(args.q[:Σ]))
     end,
 )

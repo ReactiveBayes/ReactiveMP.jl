@@ -33,7 +33,7 @@ module SoftDotMessagePassingRules
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using LinearAlgebra: dot
 using StatsFuns: log2π
-import StandardMessagePassingRules
+using MessagePassingRulesBase: add_outer, trace_product
 
 export SoftDot, softdot
 

@@ -20,7 +20,7 @@ function matrix_normal_wishart_energy(q_out, M, U, V, ν)
     D = Mq - M
     rest = p * logdet(U) + ν * p * log2 + ν * logdet(V) + 2 * logΓp - (n + ν - p - 1) * L +
         dot(invU', D * EY * D') + p * dot(invU', Uq) + dot(cholinv(V)', EY)
-    return gaussian_energy(n * p, rest)
+    return gaussian_average_energy(n * p, rest)
 end
 
 @define_average_energy(

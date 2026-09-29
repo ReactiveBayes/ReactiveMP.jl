@@ -17,7 +17,7 @@ end
         append!(frontier, values(info.dependencies))
     end
     @test "MessagePassingRulesBase" in closure
-    @test "StandardMessagePassingRules" in closure
+    @test !("StandardMessagePassingRules" in closure)
     @test !("ReactiveMP" in closure)
     # The test tooling is for tests only, never a dependency of the rules.
     @test !("MessagePassingRulesTestUtils" in closure)

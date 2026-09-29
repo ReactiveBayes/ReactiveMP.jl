@@ -8,5 +8,5 @@ ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 
 [sources]
-DiscreteTransitionMessagePassingRules = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/DiscreteTransitionMessagePassingRules"}
-MessagePassingRulesBase = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/MessagePassingRulesBase"}
+DiscreteTransitionMessagePassingRules = {path = ".."}
+MessagePassingRulesBase = {path = "../../MessagePassingRulesBase"}

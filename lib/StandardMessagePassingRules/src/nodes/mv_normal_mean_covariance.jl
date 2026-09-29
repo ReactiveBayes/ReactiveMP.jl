@@ -1,16 +1,16 @@
 @define_factor_node(node = MvNormalMeanCovariance, type = Stochastic, interfaces = [:out, (:μ, aliases = [:mean]), (:Σ, aliases = [:cov])])
 
 # (d log 2π + E[log |Σ|] + tr(E[Σ⁻¹] E[(out - μ)(out - μ)ᵀ])) / 2
-mv_normal_mean_covariance_energy(d, q_Σ, S) = gaussian_energy(d, mean(logdet, q_Σ) + tr(mean(cholinv, q_Σ) * S))
+mv_normal_mean_covariance_energy(d, q_Σ, S) = gaussian_average_energy(d, mean(logdet, q_Σ) + tr(mean(cholinv, q_Σ) * S))
 
 @define_average_energy(
     node = MvNormalMeanCovariance,
     args = (q[:out]::Any, q[:μ]::Any, q[:Σ]::Any),
-    body = (args) -> mv_normal_mean_covariance_energy(ndims(args.q[:out]), args.q[:Σ], difference_moment(args.q[:out], args.q[:μ])),
+    body = (args) -> mv_normal_mean_covariance_energy(ndims(args.q[:out]), args.q[:Σ], gaussian_difference_moment(args.q[:out], args.q[:μ])),
 )
 
 @define_average_energy(
     node = MvNormalMeanCovariance,
     args = (q[:out, :μ]::Any, q[:Σ]::Any),
-    body = (args) -> mv_normal_mean_covariance_energy(div(ndims(args.q[:out, :μ]), 2), args.q[:Σ], difference_moment(args.q[:out, :μ])),
+    body = (args) -> mv_normal_mean_covariance_energy(div(ndims(args.q[:out, :μ]), 2), args.q[:Σ], gaussian_difference_moment(args.q[:out, :μ])),
 )

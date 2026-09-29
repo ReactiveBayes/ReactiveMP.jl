@@ -318,6 +318,8 @@ schedule in variational message passing.
 | `getnodefn(node)`, `getnode()` in a rule | [`getnodefn`](@extref MessagePassingRulesBase.getnodefn)`(ctx.node, target)`, `ctx.node` |
 | `nodefunction(node, meta, Val(:out))`; a known inverse as `nodefunction(node, meta, (Val(:in), k))` | `getnodefn(ctx.node, Target(:out))`; an inverse is the algorithm's, read from `algo` |
 | `@test_rules` | [`@test_message_update_rule`](@extref MessagePassingRulesTestUtils.@test_message_update_rule) |
+| `ReactiveMP.rank1update`, `mul_trace`, `negate_inplace!`, `mul_inplace!`, `v_a_vT` | MessagePassingRulesBase's [math helpers](@extref MessagePassingRulesBase math-helpers): [`add_outer`](@extref MessagePassingRulesBase.add_outer), [`trace_product`](@extref MessagePassingRulesBase.trace_product), [`negate!!`](@extref MessagePassingRulesBase.negate!!), [`scale!!`](@extref MessagePassingRulesBase.scale!!), [`scaled_outer`](@extref MessagePassingRulesBase.scaled_outer); public, not exported |
+| `diageye` | the same, [`MessagePassingRulesBase.diageye`](@extref), exported by StandardMessagePassingRules |
 | [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()` as the engine's `rulefallback` | the same, from `MessagePassingRulesBase`, as the activation option `rulefallback` ([Rule fallbacks](@ref lib-activation-options-rulefallback)); its message is a [`NodeFunctionLogPdf`](@extref MessagePassingRulesBase.NodeFunctionLogPdf) |
 
 ## [What cannot be translated mechanically](@id migration-v6-to-v7-manual)

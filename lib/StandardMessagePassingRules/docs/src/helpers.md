@@ -55,6 +55,6 @@ GammaShapeLikelihood
 
 ## diageye
 
-```@docs
-diageye
-```
+`diageye(n)`, the `n`×`n` identity as a dense matrix, is MessagePassingRulesBase's
+[`diageye`](@extref MessagePassingRulesBase.diageye), which this package exports for models to
+write covariances and precisions with.

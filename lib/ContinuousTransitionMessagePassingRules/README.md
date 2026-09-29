@@ -20,6 +20,6 @@ getresult(result)   # MvNormalMeanPrecision([6.0], [1.0;;])
   `docs/build`; it will be published at
   <https://reactivebayes.github.io/ContinuousTransitionMessagePassingRules.jl/dev/>.
 - Tests: `make test-continuous-transition`.
-- Depends on MessagePassingRulesBase, StandardMessagePassingRules, BayesBase, ExponentialFamily,
+- Depends on MessagePassingRulesBase, BayesBase, ExponentialFamily,
   Distributions, FastCholesky and ForwardDiff.
 - MIT licence.

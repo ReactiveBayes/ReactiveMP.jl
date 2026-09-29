@@ -220,8 +220,8 @@ function ar_joint(::ARsafe, algo::ARVMP, m_y, m_x, q_θ, q_γ)
     D = inv_f_Vx + mγ * Vθ
 
     W_11 = add_precision(inv_b_Vy, mW)
-    W_12 = StandardMessagePassingRules.negate_inplace!(mW * mA)   # -(mW * mA)
-    W_21 = StandardMessagePassingRules.negate_inplace!(mA' * mW)  # -(mA' * mW)
+    W_12 = negate!!(mW * mA)   # -(mW * mA)
+    W_21 = negate!!(mA' * mW)  # -(mA' * mW)
     W_22 = D + mA' * mW * mA
 
     W = [W_11 W_12; W_21 W_22]
@@ -285,7 +285,7 @@ function ar_energy(algo::ARVMP, q_y_x, q_θ, q_γ)
             log2π +
             mγ * (
             Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) +
-                StandardMessagePassingRules.mul_trace(Vθ, Vx) +
+                trace_product(Vθ, Vx) +
                 dot(mx, Vθ, mx) +
                 dot(mθ, Vx, mθ) +
                 abs2(dot(mθ, mx))
@@ -343,12 +343,12 @@ end
         mγ = mean(q_γ)
 
         # W = mγ * (Vx + mx * mx')
-        W = StandardMessagePassingRules.mul_inplace!(mγ, StandardMessagePassingRules.rank1update(Vx, mx))
+        W = scale!!(mγ, add_outer(Vx, mx))
 
         c = ar_unit(promote_paramfloattype(q_y_x, q_γ), F, order)
 
         # ξ = (Vxy + mx * my') * c * mγ
-        ξ = StandardMessagePassingRules.mul_inplace!(mγ, StandardMessagePassingRules.rank1update(Vxy, mx, my) * c)
+        ξ = scale!!(mγ, gaussian_cross_moment(Vxy, mx, my) * c)
 
         convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ, W)
     end,
@@ -392,11 +392,11 @@ end
         mx, Vx = ar_slice(F, y_x_mean, (order + 1):(2order)), ar_slice(F, y_x_cov, (order + 1):(2order), (order + 1):(2order))
         Vxy = ar_slice(F, y_x_cov, (order + 1):(2order), 1:order)
 
-        C = StandardMessagePassingRules.rank1update(Vx, mx)
-        R = StandardMessagePassingRules.rank1update(Vy, my)
-        L = StandardMessagePassingRules.rank1update(Vxy, mx, my)
+        C = add_outer(Vx, mx)
+        R = add_outer(Vy, my)
+        L = gaussian_cross_moment(Vxy, mx, my)
 
-        B = first(R) - 2 * first(mA * L) + first(mA * C * mA') + StandardMessagePassingRules.mul_trace(Vθ, C)
+        B = first(R) - 2 * first(mA * L) + first(mA * C * mA') + trace_product(Vθ, C)
 
         GammaShapeRate(convert(eltype(B), 3 // 2), B / 2)
     end,
@@ -445,7 +445,7 @@ end
         AE = -0.5mean(log, q_γ) + 0.5log2π +
             0.5 * mγ * (
             Vy1 + my1^2 - 2 * mθ' * mx * my1 +
-                StandardMessagePassingRules.mul_trace(Vθ, Vx) +
+                trace_product(Vθ, Vx) +
                 dot(mx, Vθ, mx) +
                 dot(mθ, Vx, mθ) +
                 abs2(dot(mθ, mx))

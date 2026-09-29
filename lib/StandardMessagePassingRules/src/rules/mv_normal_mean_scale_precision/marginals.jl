@@ -10,7 +10,7 @@ scale_precision(γ, d, ::Type{T}) where {T} = γ * diageye(T, d)
 @define_marginal_update_rule(
     node = MvNormalMeanScalePrecision, target = (:out, :μ),
     args = (m[:out]::PointMass, m[:μ]::MultivariateNormalDistributionsFamily, q[:γ]::Any),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => args.m[:out],
             (:μ,) => prod(
@@ -24,7 +24,7 @@ scale_precision(γ, d, ::Type{T}) where {T} = γ * diageye(T, d)
 @define_marginal_update_rule(
     node = MvNormalMeanScalePrecision, target = (:out, :μ),
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:μ]::PointMass, q[:γ]::Any),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => prod(
                 ClosedProd(), MvNormalMeanPrecision(mean(args.m[:μ]), scale_precision(mean(args.q[:γ]), ndims(args.m[:out]), eltype(mean(args.m[:out])))), args.m[:out],
@@ -38,7 +38,7 @@ scale_precision(γ, d, ::Type{T}) where {T} = γ * diageye(T, d)
 @define_marginal_update_rule(
     node = MvNormalMeanScalePrecision, target = (:out, :μ, :γ),
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:μ]::PointMass, m[:γ]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => prod(
                 ClosedProd(), MvNormalMeanPrecision(mean(args.m[:μ]), scale_precision(mean(args.m[:γ]), ndims(args.m[:out]), eltype(mean(args.m[:out])))), args.m[:out],
@@ -53,7 +53,7 @@ scale_precision(γ, d, ::Type{T}) where {T} = γ * diageye(T, d)
 @define_marginal_update_rule(
     node = MvNormalMeanScalePrecision, target = (:out, :μ, :γ),
     args = (m[:out]::PointMass, m[:μ]::MultivariateNormalDistributionsFamily, m[:γ]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => args.m[:out],
             (:μ,) => prod(
@@ -68,7 +68,7 @@ scale_precision(γ, d, ::Type{T}) where {T} = γ * diageye(T, d)
 @define_marginal_update_rule(
     node = MvNormalMeanScalePrecision, target = (:out, :μ, :γ),
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:μ]::MultivariateNormalDistributionsFamily, m[:γ]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out, :μ) => mv_coupled(args.m[:out], args.m[:μ], scale_precision(mean(args.m[:γ]), ndims(args.m[:out]), eltype(mean(args.m[:out])))),
             (:γ,) => args.m[:γ],

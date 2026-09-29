@@ -3,7 +3,7 @@
 @define_marginal_update_rule(
     node = *, target = (:A, :in), ctx = (:matrix_correction,),
     args = (m[:out]::NormalDistributionsFamily, m[:A]::PointMass, m[:in]::NormalDistributionsFamily),
-    body = (ctx, args) -> promoted_cluster(
+    body = (ctx, args) -> promote_cluster(
         FactorizedCluster((:A,) => args.m[:A], (:in,) => prod(ClosedProd(), unscaled(ctx, args.m[:out], mean(args.m[:A])), args.m[:in])),
         args.m[:out], args.m[:A], args.m[:in],
     ),
@@ -14,7 +14,7 @@
 @define_marginal_update_rule(
     node = *, target = (:A, :in), ctx = (:matrix_correction,),
     args = (m[:out]::NormalDistributionsFamily, m[:A]::UnivariateNormalDistributionsFamily, m[:in]::PointMass{<:Union{Real, AbstractVector}}),
-    body = (ctx, args) -> promoted_cluster(
+    body = (ctx, args) -> promote_cluster(
         FactorizedCluster((:A,) => prod(ClosedProd(), args.m[:A], unscaled(ctx, args.m[:out], mean(args.m[:in]))), (:in,) => args.m[:in]),
         args.m[:out], args.m[:A], args.m[:in],
     ),

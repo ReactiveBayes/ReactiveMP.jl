@@ -12,7 +12,7 @@ moments_normal(m::ExponentialLinearQuadratic) = NormalMeanVariance(mean_var(m)..
 
 @define_message_update_rule(
     node = NormalMeanVariance, target = :μ, args = (m[:out]::ExponentialLinearQuadratic, q[:v]::Any),
-    body = (args) -> ((m, v) = mean_var(args.m[:out]); NormalMeanVariance(m, v + StandardMessagePassingRules.variational_variance(args.q[:v]))),
+    body = (args) -> ((m, v) = mean_var(args.m[:out]); NormalMeanVariance(m, v + gaussian_variational_variance(args.q[:v]))),
 )
 
 @define_message_update_rule(
@@ -29,13 +29,13 @@ moments_normal(m::ExponentialLinearQuadratic) = NormalMeanVariance(mean_var(m)..
 function coupled_joint(m_out, m_μ, W_bar)
     xi_out, W_out = weightedmean_precision(moments_normal(m_out))
     xi_μ, W_μ = weightedmean_precision(m_μ)
-    return MvNormalWeightedMeanPrecision([xi_out; xi_μ], StandardMessagePassingRules.coupled_precision(W_out, W_μ, W_bar))
+    return MvNormalWeightedMeanPrecision([xi_out; xi_μ], gaussian_coupled_precision(W_out, W_μ, W_bar))
 end
 
 @define_marginal_update_rule(
     node = NormalMeanVariance, target = (:out, :μ, :v),
     args = (m[:out]::ExponentialLinearQuadratic, m[:μ]::UnivariateNormalDistributionsFamily, m[:v]::PointMass),
-    body = (args) -> StandardMessagePassingRules.promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster((:out, :μ) => coupled_joint(args.m[:out], args.m[:μ], inv(mean(args.m[:v]))), (:v,) => args.m[:v]),
         args.m[:μ], args.m[:v],
     ),
@@ -50,7 +50,7 @@ end
 @define_marginal_update_rule(
     node = NormalMeanPrecision, target = (:out, :μ, :τ),
     args = (m[:out]::ExponentialLinearQuadratic, m[:μ]::UnivariateNormalDistributionsFamily, m[:τ]::PointMass),
-    body = (args) -> StandardMessagePassingRules.promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster((:out, :μ) => coupled_joint(args.m[:out], args.m[:μ], mean(args.m[:τ])), (:τ,) => args.m[:τ]),
         args.m[:μ], args.m[:τ],
     ),

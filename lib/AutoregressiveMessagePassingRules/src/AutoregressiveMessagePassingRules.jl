@@ -41,7 +41,7 @@ using FastCholesky: cholinv
 using StatsFuns: log2π
 import LinearAlgebra
 using LinearAlgebra: dot, pinv
-import StandardMessagePassingRules
+using MessagePassingRulesBase: add_outer, trace_product, negate!!, scale!!, gaussian_cross_moment
 
 export AR, Autoregressive, ConjugateAR, ARVMP, ARsafe, ARunsafe
 

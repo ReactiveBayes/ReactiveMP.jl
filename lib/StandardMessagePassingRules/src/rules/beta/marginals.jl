@@ -1,7 +1,7 @@
 @define_marginal_update_rule(
     node = Beta, target = (:out, :a, :b),
     args = (m[:out]::Beta, m[:a]::PointMass, m[:b]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => prod(ClosedProd(), Beta(mean(args.m[:a]), mean(args.m[:b])), args.m[:out]),
             (:a,) => args.m[:a],

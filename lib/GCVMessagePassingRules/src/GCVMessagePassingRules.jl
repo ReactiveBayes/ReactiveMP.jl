@@ -44,6 +44,8 @@ using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: AbstractAlgorithm
 using MessagePassingRulesApproximations: AbstractApproximationMethod, GaussHermiteCubature, approximate_meancov
 using StatsFuns: log2π
+using MessagePassingRulesBase: promote_cluster, gaussian_variational_variance, gaussian_coupled_precision
+# The node declarations of the normals this package adds rules to.
 import StandardMessagePassingRules
 
 export GCV, GCVApproximation, ExponentialLinearQuadratic

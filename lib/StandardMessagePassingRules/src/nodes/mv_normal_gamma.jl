@@ -10,7 +10,7 @@ function mv_normal_gamma_energy(q_out, μ0, Λ0, α0, β0)
     E_quad = tr(Λ0 * cholinv(Λ)) + E_γ * dot(Δ, Λ0, Δ)
     # (2α₀ + d - 2)/2 is α₀ + d/2 - 1 in α₀'s float type.
     rest = -2 * (α0 * log(β0) + logdet(Λ0) / 2 - loggamma(α0) + (2α0 + d - 2) / 2 * E_logγ - β0 * E_γ - E_quad / 2)
-    return gaussian_energy(d, rest)
+    return gaussian_average_energy(d, rest)
 end
 
 @define_average_energy(

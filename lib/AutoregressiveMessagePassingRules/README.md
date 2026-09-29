@@ -25,6 +25,6 @@ getresult(result)   # NormalMeanVariance(0.5, 1.5)
 - Documentation: `make docs-autoregressive` from the repository root builds it into
   `docs/build`; it will be published at <https://reactivebayes.github.io/AutoregressiveMessagePassingRules.jl/dev/>.
 - Tests: `make test-autoregressive`.
-- Depends on MessagePassingRulesBase and StandardMessagePassingRules, on BayesBase,
+- Depends on MessagePassingRulesBase, on BayesBase,
   ExponentialFamily and Distributions for the distributions, and on FastCholesky, LinearAlgebra
   and StatsFuns. Julia 1.11 or later. MIT licence.

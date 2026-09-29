@@ -9,7 +9,7 @@
 @define_marginal_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = (:out, :μ),
     args = (m[:out]::PointMass, m[:μ]::MultivariateNormalDistributionsFamily, q[:γ]::Any, q[:G]::Any),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => args.m[:out],
             (:μ,) => prod(
@@ -23,7 +23,7 @@
 @define_marginal_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = (:out, :μ),
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:μ]::PointMass, q[:γ]::Any, q[:G]::Any),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => prod(
                 ClosedProd(), MvNormalMeanPrecision(mean(args.m[:μ]), mean(args.q[:γ]) * mean(args.q[:G])), args.m[:out],
@@ -37,7 +37,7 @@
 @define_marginal_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = (:out, :μ, :γ, :G),
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:μ]::PointMass, m[:γ]::PointMass, m[:G]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => prod(
                 ClosedProd(), MvNormalMeanPrecision(mean(args.m[:μ]), mean(args.m[:γ]) * mean(args.m[:G])), args.m[:out],
@@ -53,7 +53,7 @@
 @define_marginal_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = (:out, :μ, :γ, :G),
     args = (m[:out]::PointMass, m[:μ]::MultivariateNormalDistributionsFamily, m[:γ]::PointMass, m[:G]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out,) => args.m[:out],
             (:μ,) => prod(
@@ -69,7 +69,7 @@
 @define_marginal_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = (:out, :μ, :γ, :G),
     args = (m[:out]::MultivariateNormalDistributionsFamily, m[:μ]::MultivariateNormalDistributionsFamily, m[:γ]::PointMass, m[:G]::PointMass),
-    body = (args) -> promoted_cluster(
+    body = (args) -> promote_cluster(
         FactorizedCluster(
             (:out, :μ) => mv_coupled(args.m[:out], args.m[:μ], mean(args.m[:γ]) * mean(args.m[:G])),
             (:γ,) => args.m[:γ],

@@ -12,7 +12,6 @@ sibling(name) = (
 
 links = InterLinks(
     "MessagePassingRulesBase" => sibling("MessagePassingRulesBase"),
-    "StandardMessagePassingRules" => sibling("StandardMessagePassingRules"),
 )
 
 # The doctests call rules on distributions, so they load the rule interface and the distributions.

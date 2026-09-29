@@ -17,7 +17,7 @@ end
         append!(frontier, values(info.dependencies))
     end
     @test "MessagePassingRulesBase" in closure
-    @test "StandardMessagePassingRules" in closure
+    @test !("StandardMessagePassingRules" in closure)
     # Independent of the autoregressive package: what SoftDot took from AR is written out here.
     @test !("AutoregressiveMessagePassingRules" in closure)
     @test !("ReactiveMP" in closure)

@@ -132,7 +132,7 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
 
 [[deps.AutoregressiveMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase", "StatsFuns"]
 path = "../../lib/AutoregressiveMessagePassingRules"
 uuid = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
 version = "0.1.0-DEV"
@@ -292,7 +292,7 @@ weakdeps = ["IntervalSets", "LinearAlgebra", "StaticArrays"]
     ConstructionBaseStaticArraysExt = "StaticArrays"
 
 [[deps.ContinuousTransitionMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "ForwardDiff", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules"]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "ForwardDiff", "LinearAlgebra", "MessagePassingRulesBase"]
 path = "../../lib/ContinuousTransitionMessagePassingRules"
 uuid = "be169b08-8551-4d4c-a46b-881478acc6d9"
 version = "0.1.0-DEV"
@@ -892,7 +892,7 @@ uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 version = "0.1.0-DEV"
 
 [[deps.MessagePassingRulesBase]]
-deps = ["BayesBase", "Compat", "MacroTools"]
+deps = ["BayesBase", "Compat", "FastCholesky", "IrrationalConstants", "LinearAlgebra", "MacroTools"]
 path = "../../lib/MessagePassingRulesBase"
 uuid = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 version = "0.1.0-DEV"
@@ -1249,7 +1249,7 @@ uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 version = "1.11.0"
 
 [[deps.SoftDotMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
+deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "MessagePassingRulesBase", "StatsFuns"]
 path = "../../lib/SoftDotMessagePassingRules"
 uuid = "fdfab25d-afbd-4817-865a-cd280c067f5e"
 version = "0.1.0-DEV"

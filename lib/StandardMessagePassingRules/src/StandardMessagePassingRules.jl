@@ -12,7 +12,8 @@ The message passing rules of the standard nodes, written with MessagePassingRule
   variables;
 - **mixtures**: [`NormalMixture`](@ref), [`GammaMixture`](@ref) and [`Mixture`](@ref);
 - **helpers**: [`StandaloneDistribution`](@ref), a node for a fixed distribution,
-  [`Uninformative`](@ref), a factor of one, and [`diageye`](@ref).
+  [`Uninformative`](@ref), a factor of one, and
+  [`diageye`](@extref MessagePassingRulesBase.diageye), re-exported from MessagePassingRulesBase.
 
 Most nodes are types other packages own, ExponentialFamily's and Distributions' distributions
 and Base's functions; the package exports only the node types it defines. Loading it is enough:
@@ -51,6 +52,9 @@ module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: matrix_correction
+using MessagePassingRulesBase: add_outer, trace_product, negate!!, scale!!, scaled_outer, diageye, promote_cluster
+using MessagePassingRulesBase: gaussian_average_energy, gaussian_variational_variance, gaussian_variational_covariance
+using MessagePassingRulesBase: gaussian_coupled_precision, gaussian_difference_moment, gaussian_series_precision
 using StatsFuns: log2π, logπ, loghalf
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma, besselk
 using Base.Broadcast: BroadcastFunction
@@ -66,8 +70,8 @@ import DomainSets
 
 export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, Mixture, MixtureBP, GammaShapeLikelihood, HalfNormal, Uninformative, StandaloneDistribution
 export AND, OR, NOT, IMPLY, MultiplicationSampling
-# `dot`, LinearAlgebra's, is the node `out = dot(A, in)`, and `diageye` builds the identity
-# matrices models write.
+# `dot`, LinearAlgebra's, is the node `out = dot(A, in)`, and `diageye`, MessagePassingRulesBase's,
+# builds the identity matrices models write.
 export dot, diageye
 
 include("helpers.jl")

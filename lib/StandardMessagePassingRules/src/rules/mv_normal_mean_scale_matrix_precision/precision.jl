@@ -4,11 +4,11 @@ scale_matrix_precision_likelihood(d, G, S) = (β = tr(G * S) / 2; GammaShapeRate
 @define_message_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = :γ,
     args = (q[:out]::Any, q[:μ]::Any, q[:G]::Any),
-    body = (args) -> scale_matrix_precision_likelihood(ndims(args.q[:μ]), mean(args.q[:G]), difference_moment(args.q[:out], args.q[:μ])),
+    body = (args) -> scale_matrix_precision_likelihood(ndims(args.q[:μ]), mean(args.q[:G]), gaussian_difference_moment(args.q[:out], args.q[:μ])),
 )
 
 @define_message_update_rule(
     node = MvNormalMeanScaleMatrixPrecision, target = :γ,
     args = (q[:out, :μ]::Any, q[:G]::Any),
-    body = (args) -> scale_matrix_precision_likelihood(div(ndims(args.q[:out, :μ]), 2), mean(args.q[:G]), difference_moment(args.q[:out, :μ])),
+    body = (args) -> scale_matrix_precision_likelihood(div(ndims(args.q[:out, :μ]), 2), mean(args.q[:G]), gaussian_difference_moment(args.q[:out, :μ])),
 )

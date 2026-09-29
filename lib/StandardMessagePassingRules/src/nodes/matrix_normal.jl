@@ -26,6 +26,6 @@ column_moment(q::MatrixNormal, A, Ψ) = ((U, V) = covmats(q); Ψ + dot(A', U) * 
     body = (args) -> begin
         n, p = size(mean(args.q[:out]))
         Ψ = row_scatter(args.q[:out], args.q[:M], mean(cholinv, args.q[:V]))
-        gaussian_energy(n * p, p * mean(logdet, args.q[:U]) + n * mean(logdet, args.q[:V]) + dot(mean(cholinv, args.q[:U])', Ψ))
+        gaussian_average_energy(n * p, p * mean(logdet, args.q[:U]) + n * mean(logdet, args.q[:V]) + dot(mean(cholinv, args.q[:U])', Ψ))
     end,
 )

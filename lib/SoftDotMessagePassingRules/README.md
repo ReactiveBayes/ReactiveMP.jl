@@ -17,6 +17,6 @@ getresult(@call_message_update_rule(node = SoftDot, target = :γ, q = q))   # Ga
 - Documentation: `make docs-softdot` from the repository root builds it into `docs/build`; it
   will be published at <https://reactivebayes.github.io/SoftDotMessagePassingRules.jl/dev/>.
 - Tests: `make test-softdot`.
-- Depends on MessagePassingRulesBase, StandardMessagePassingRules, BayesBase, ExponentialFamily,
+- Depends on MessagePassingRulesBase, BayesBase, ExponentialFamily,
   Distributions and StatsFuns; not on the autoregressive package. Julia 1.11 or later. MIT
   licence.

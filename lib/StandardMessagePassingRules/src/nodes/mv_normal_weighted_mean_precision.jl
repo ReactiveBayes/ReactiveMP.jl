@@ -12,7 +12,7 @@
     body = (args) -> begin
         m_ξ, V_ξ = mean_cov(args.q[:ξ])
         m_out, V_out = mean_cov(args.q[:out])
-        gaussian_energy(
+        gaussian_average_energy(
             ndims(args.q[:out]),
             tr(mean(args.q[:Λ]) * (m_out * m_out' + V_out)) - 2 * dot(m_out, m_ξ) + tr(mean(cholinv, args.q[:Λ]) * (m_ξ * m_ξ' + V_ξ)) - mean(logdet, args.q[:Λ]),
         )

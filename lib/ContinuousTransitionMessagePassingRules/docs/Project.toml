@@ -6,9 +6,7 @@ DocumenterInterLinks = "d12716ef-a0f6-4df4-a9f1-a5a34e75c656"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
-StandardMessagePassingRules = "d166223a-7879-43b1-add3-64af0a178e9e"
 
 [sources]
-ContinuousTransitionMessagePassingRules = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/ContinuousTransitionMessagePassingRules"}
-MessagePassingRulesBase = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/MessagePassingRulesBase"}
-StandardMessagePassingRules = {path = "/Users/bvdmitri/Projects/Julia/ReactiveMP.jl/lib/StandardMessagePassingRules"}
+ContinuousTransitionMessagePassingRules = {path = ".."}
+MessagePassingRulesBase = {path = "../../MessagePassingRulesBase"}

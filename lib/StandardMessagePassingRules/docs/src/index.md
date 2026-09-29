@@ -99,5 +99,5 @@ them all.
 | [Arithmetic](@ref) | `+`, `-`, `*`, `dot` and [`MultiplicationSampling`](@ref) |
 | [Logic](@ref) | [`AND`](@ref), [`OR`](@ref), [`NOT`](@ref), [`IMPLY`](@ref) |
 | [Mixtures](@ref) | [`NormalMixture`](@ref), [`GammaMixture`](@ref), [`Mixture`](@ref) and their algorithms |
-| [Helper nodes and message types](@ref) | [`StandaloneDistribution`](@ref), [`Uninformative`](@ref), [`GammaShapeLikelihood`](@ref), [`diageye`](@ref) |
+| [Helper nodes and message types](@ref) | [`StandaloneDistribution`](@ref), [`Uninformative`](@ref), [`GammaShapeLikelihood`](@ref), [`diageye`](@extref MessagePassingRulesBase.diageye) |
 | [Internals](@ref) | the helpers the rules and the node packages share |

@@ -99,7 +99,7 @@ struct NormalMixtureVMP <: AbstractAlgorithm end
 mixture_component_energy(q_out, q_m, q_p) = mixture_component_energy(variate_form(typeof(q_out)), q_out, q_m, q_p)
 mixture_component_energy(::Type{Univariate}, q_out, q_m, q_p) = normal_mean_precision_energy(q_out, q_m, q_p)
 mixture_component_energy(::Type{Multivariate}, q_out, q_m, q_p) =
-    mv_normal_mean_precision_energy(ndims(q_out), q_p, difference_moment(q_out, q_m))
+    mv_normal_mean_precision_energy(ndims(q_out), q_p, gaussian_difference_moment(q_out, q_m))
 
 @define_average_energy(
     node = NormalMixture,

@@ -12,7 +12,6 @@ sibling(name) = (
 
 links = InterLinks(
     "MessagePassingRulesBase" => sibling("MessagePassingRulesBase"),
-    "StandardMessagePassingRules" => sibling("StandardMessagePassingRules"),
 )
 
 DocMeta.setdocmeta!(SoftDotMessagePassingRules, :DocTestSetup, :(using SoftDotMessagePassingRules); recursive = true)
