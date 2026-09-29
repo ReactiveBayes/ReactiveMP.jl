@@ -3727,7 +3727,8 @@ wait for the release):
   `v6-comparison` job and its `compat/` trigger removed, and the root suite's inventory item,
   which ran in the uninstantiated v6 environment and would have failed `ci.yml` on the first PR;
   the engine's dead code, unused imports and stale comments out; the equality chain no longer
-  computes a cached partial product again.
+  computes a cached partial product again; `FormConstraintCheckLast` applies once per outbound
+  message, not to each partial product (user).
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one
   documentation site and README per package, built by `make docs-all` in dependency order and

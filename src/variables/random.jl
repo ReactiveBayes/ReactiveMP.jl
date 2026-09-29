@@ -147,11 +147,11 @@ function activate!(
     end
 
     if length(randomvar.input_messages) > 1
-        context = options.prod_context_for_message_computation
         chain = EqualityChain(
             randomvar.input_messages,
             options.stream_postprocessor,
-            (messages) -> compute_product_of_messages(randomvar, context, messages),
+            randomvar,
+            options.prod_context_for_message_computation,
         )
         initialize!(chain, outputmsgs)
     elseif length(randomvar.input_messages) == 1

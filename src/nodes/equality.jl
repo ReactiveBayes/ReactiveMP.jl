@@ -61,7 +61,7 @@ setcache!(::EqualityRightOutbound, node::EqualityNode, cache::Message) = node.ca
 # Equality chain
 
 """
-    ReactiveMP.EqualityChain(inputmsgs::Vector{MessageObservable{AbstractMessage}}, postprocessor, prod_fn)
+    ReactiveMP.EqualityChain(inputmsgs::Vector{MessageObservable{AbstractMessage}}, postprocessor, variable::AbstractVariable, context::MessageProductContext)
 
 How a random variable with more than one connection computes its outbound messages. The message
 to connection `i` is the product of the inbound messages on every other connection, which the
@@ -70,39 +70,51 @@ partial products are cached in the [`ReactiveMP.EqualityNode`](@ref)s and shared
 messages, which matters for a variable of high degree; a new inbound message on connection `i`
 invalidates only the partial products that contain it.
 
+A partial product is a part of a message, not a message: it is multiplied by `context`'s fold
+strategy alone, pairwise with [`ReactiveMP.compute_product_of_two_messages`](@ref), which applies
+the form constraint under [`FormConstraintCheckEach`](@ref). The product of the two parts is the
+message, and is computed with [`ReactiveMP.compute_product_of_messages`](@ref): under
+[`FormConstraintCheckLast`](@ref) the form constraint applies to it once, and the callbacks see
+one whole product per outbound message.
+
 # Arguments
 
 - `inputmsgs`: the variable's inbound message streams, one per connection;
 - `postprocessor`: the stream postprocessor applied to the chain's streams, or `nothing`;
-- `prod_fn`: the product of a pair of messages, called with a tuple `(left, right)`; a random
-  variable gives [`ReactiveMP.compute_product_of_messages`](@ref) under its
+- `variable`: the variable the products are for, which the callbacks receive;
+- `context`: how the messages are multiplied; a random variable gives its
   `prod_context_for_message_computation`.
 """
-struct EqualityChain{P, F}
+struct EqualityChain{P, V, C}
     length::Int
     nodes::Vector{EqualityNode}
     inputmsgs::Vector{MessageObservable{AbstractMessage}}
     cacheleft::Vector{Bool}
     cacheright::Vector{Bool}
     postprocessor::P
-    prod_fn::F
+    variable::V
+    context::C
 
     function EqualityChain(
             inputmsgs::Vector{MessageObservable{AbstractMessage}},
             postprocessor::P,
-            prod_fn::F,
-        ) where {P, F}
+            variable::V,
+            context::C,
+        ) where {P, V <: AbstractVariable, C <: MessageProductContext}
         n = length(inputmsgs)
         nodes = map(_ -> EqualityNode(), 1:n)
-        return new{P, F}(
-            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, prod_fn
+        return new{P, V, C}(
+            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, variable, context
         )
     end
 end
 
 Base.length(chain::EqualityChain) = chain.length
 
-prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
+partial_product(chain::EqualityChain, left, right) =
+    as_message(compute_product_of_messages(chain.context.fold_strategy, chain.variable, chain.context, (left, right)))
+outbound_product(chain::EqualityChain, left, right) =
+    compute_product_of_messages(chain.variable, chain.context, (left, right))
 
 getpostprocessor(chain::EqualityChain) = chain.postprocessor
 
@@ -159,7 +171,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
             for index in range
                 arg1 = as_message(getrecent(getinbound(chain, index)))
                 arg2 = as_message(getcache(type, chain, nextindex(type, index)))
-                result = prod(chain, arg1, arg2)
+                result = partial_product(chain, arg1, arg2)
                 setcache!(type, getnode(chain, index), result)
             end
             setcache!(type, chain, range)
@@ -210,7 +222,7 @@ end
 function (mapping::ChainOutboundMapping)(_)
     from_left = materialize!(EqualityRightOutbound(), mapping.chain, nextindex(EqualityRightOutbound(), mapping.index))
     from_right = materialize!(EqualityLeftOutbound(), mapping.chain, nextindex(EqualityLeftOutbound(), mapping.index))
-    return as_message(prod(mapping.chain, from_left, from_right))
+    return outbound_product(mapping.chain, from_left, from_right)
 end
 
 Base.map(::Type{Message}, mapping::M) where {M <: ChainOutboundMapping} =

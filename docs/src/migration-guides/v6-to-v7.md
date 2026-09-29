@@ -471,6 +471,19 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   all: its results differ from v6's, and on a posterior with several modes it settles on one
   where v6's alternated.
 
+A random variable's outbound messages change under a form constraint on messages:
+
+- **[`FormConstraintCheckLast`](@ref) applies once to each outbound message**, as documented,
+  where v6 applied it to every partial product the variable's equality chain caches as well: for
+  inbound messages `μ₁ … μ₄`, the message to the second connection is `f(μ₁ μ₃ μ₄)`, where v6's
+  was `f(f(μ₁) f(μ₃ f(μ₄)))`. A constraint that changes the distribution, such as
+  `μ(x) :: PointMassFormConstraint()` in RxInfer, gives a different result; one that only
+  checks it, such as RxInfer's check that the form is supported, runs once per message. The
+  callbacks see one [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref) and one
+  [`ReactiveMP.AfterProductOfMessagesEvent`](@ref) per outbound message, and one pair of
+  two-message product events fewer per recomputation, since a cached partial product is no
+  longer computed again. [`FormConstraintCheckEach`](@ref) is unchanged.
+
 Two changes in the engine concern code that reads annotations or traces rule calls:
 
 - **A message or marginal that nothing may annotate shares one frozen, empty
