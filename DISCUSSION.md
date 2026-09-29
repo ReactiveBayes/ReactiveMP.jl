@@ -2322,7 +2322,8 @@ Then base package → test utils with a bounded numerical oracle → **Phase 4.5
 design session and the engine's first cut, refactored in place, as a clean cut** (§3.18–3.25; closed) →
 bulk standard-rule
 migration into it → approximations and node packages → completing the engine → the cleanup
-of historical remarks (Phase C) → the performance pass → coordinated release (Phase 8). Start strict downstream CI as soon as
+of historical remarks (Phase C), which also carried the performance pass (done) → coordinated
+release (Phase 8). Start strict downstream CI as soon as
 compatible development revisions exist, rather than waiting until release.
 
 Rule kernels and test utilities can be developed independently of the engine, but that

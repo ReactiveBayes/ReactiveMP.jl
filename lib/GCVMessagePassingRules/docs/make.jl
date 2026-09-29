@@ -1,4 +1,4 @@
-# The documentation site of GCVMessagePassingRules. Build it with `make docs-<package>` from the repository
+# The documentation site of GCVMessagePassingRules. Build it with `make docs-gcv` from the repository
 # root, which builds the sites it links to first, or `julia --project=docs docs/make.jl` here.
 using Documenter, DocumenterInterLinks
 using GCVMessagePassingRules

@@ -53,6 +53,8 @@ lib/                   the new packages: the rule system, its test tooling, rule
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
 compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants
+docs/                  the engine's documentation site; each package's is lib/<Pkg>/docs/
+scripts/               the formatter (Runic, pinned), the inventory generator, a message-representation benchmark
 ```
 
 Include order in `src/ReactiveMP.jl` is load-bearing: `nodes/equality.jl` must precede
@@ -125,7 +127,9 @@ are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothi
 measured as slow, so nothing claims to be.
 The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
 `:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`
-(`TEST_ALL=true make test-base`). When items are tagged `:slow` they disappear from `make test`
+(`TEST_ALL=true make test-base`). Delta's CVIProjection item (`cvi_projection_tests.jl`) is
+`:slow` too, and a filtered run skips the rule-coverage gate, so a plain `make test-delta` never
+runs Delta's gate: use `TEST_ALL=true make test-delta`. When items are tagged `:slow` they disappear from `make test`
 and stay in `make test-all`.
 
 The fast default must never become a coverage reduction — the CI workflows set `TEST_ALL=true`,

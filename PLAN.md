@@ -462,7 +462,7 @@ decided it.
 
 ### The performance pass
 
-Measured in `BENCHMARK.md` (2026-09-26 to 2026-09-28); each change was
+Measured in `BENCHMARK.md` (2026-09-26 to 2026-09-29); each change was
 checked by the packages' suites and bit-identical posteriors, and the set is applied (2026-09-28). What is applied (`BENCHMARK.md`):
 
 - **ReactiveMP and MessagePassingRulesBase:**
@@ -480,7 +480,7 @@ checked by the packages' suites and bit-identical posteriors, and the set is app
 - **GraphPPL** (pull request, onto `4.9.0`; measured on 4.8.0): the two quadratic paths (`apply_meta!`,
   `flattened_index`) and three small fixes.
 
-Applied after it (`83b77d179`): the kept scratch typed by inference from the inputs' types, annotations allocated only where something
+Applied after it (`83b77d179`, and `adf4023b6` for the inference): the kept scratch typed by inference from the inputs' types, annotations allocated only where something
 writes them (a message or marginal carrying none shares one frozen, empty `AnnotationDict`), a
 scratch slot only for rules that declare scratch, created at their first call, and
 `MarginalMapping` mutable as `MessageMapping` is. RxInfer's branch precompiles a workload

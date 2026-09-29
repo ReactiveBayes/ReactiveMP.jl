@@ -1,10 +1,11 @@
 # Benchmark — the performance pass
 
-The record of the end-of-refactor performance pass (2026-09-26 to 2026-09-28, user): ReactiveMP v7
+The record of the end-of-refactor performance pass (2026-09-26 to 2026-09-29, user): ReactiveMP v7
 with RxInfer's branch `refactor/reactivemp-v7`, measured against v6, RxInfer 5.5.2 over ReactiveMP
 6.5.0. It was done in two rounds. The second audited the first, whose verdict was too optimistic,
 and completed it. The changes are applied: ReactiveMP `b46046c83`, then `83b77d179` (typed scratch,
-annotations only where written, scratch slots on demand), and RxInfer `1a6bb502`, then `af1f082f`
+annotations only where written, scratch slots on demand) and `adf4023b6` (the scratch's type
+inferred instead of declared), and RxInfer `1a6bb502`, then `af1f082f`
 (the precompile workload). The Rocket and GraphPPL fixes are pull requests of their own:
 ReactiveBayes/Rocket.jl#91 is merged, for Rocket 1.10.1, and ReactiveBayes/GraphPPL.jl#333 is open.
 The scripts, diffs, profiles and raw data are in the history, up to `b46046c83` (`investigations/`).
@@ -110,7 +111,7 @@ takes 4 ns.
 A rule's scratch is kept between calls in a slot the mapping creates before the input types are
 known, since its type depends on them. Kept untyped, it costs about 40 ns and 3 allocations per
 call, 5–7% of BIFM's rules, the only ones with scratch. The engine now infers the type from the
-inputs' types at the call and asserts the kept scratch to it (`PLAN.md` § Scratch): a toy rule's
+inputs' types at the call and asserts the kept scratch to it (`PLAN.md` § Rule surface): a toy rule's
 call takes 8 ns and allocates nothing, against 26 ns and 32 bytes untyped, and BIFM's rules, whose
 builders infer, run as fast as with the type declared by hand (a `scratch_type` keyword, tried
 and dropped, user).

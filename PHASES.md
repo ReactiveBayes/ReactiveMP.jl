@@ -19,9 +19,10 @@ them again, so re-check before relying on one.
 ## Next action
 
 **Phase C, in progress** (§ Phase C, *Progress*). Next, for the user to choose, what the
-not-done table lists before the release: the remaining 27 log scales and the free energy's
-context (with the diagnostics, which do not reach average energies either); the rest of Phase C's
-exit criteria wait for the release itself.
+not-done table lists before the release: the package boundaries (the audit's, one effort), then
+ManyPlus; the remaining 27 log scales and the free energy's context (with the diagnostics, which
+do not reach average energies either); the rest of Phase C's exit criteria wait for the release
+itself.
 
 Done in Phase C so far: rule fallbacks and the open rule context (§3.49); log scales first-class,
 part of the message, and `RuleResult` (§3.50, superseding §3.48), with 28 more of Standard's
@@ -38,7 +39,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | What | Where it lands | Recorded in |
 |---|---|---|
 | the free energy runs each average energy with the engine's default context, `node_context(node)`, not the node's `context` option, since `score` and `bethe_free_energy` take no activation options (as for the diagnostics, § Phase 7); an average energy declaring a service of its own is therefore refused there even when the node was given it. No average energy declares one today. For the same reason the diagnostics (`EngineDiagnostics`) audit no average energy, which item 2 of Phase 7 had left to RxInfer's adaptation | before the release, with RxInfer's free energy | § Phase C, *Progress* |
-| log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
+| log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space) and towards `out` from two normals (a rule that only raises an error), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
 | two rule discrepancies the engine tests found, `@test_broken` in `test/engine/variational_tests.jl`: AR's mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]` | for the user to decide | § Phase C, *Progress* |
 | the end-of-refactor performance pass: **applied** (user), in ReactiveMP and on RxInfer's branch `refactor/reactivemp-v7`: every benchmarked model runs at 0.51–0.95× v6 (iid at n = 10⁴ level, 0.99, without Rocket#91), posteriors unchanged; first inference without a workload on either side is 1.1–1.4× v6, and RxInfer's branch precompiles one, which takes the common paths from 6.7–7.4 s to 0.27–0.44 s at 12 s of RxInfer's precompile | done; what it leaves is in the rows below | `BENCHMARK.md`; `PLAN.md` § The performance pass; `DISCUSSION.md` §5 |
 | Rocket's and GraphPPL's fixes, pull requests of their own: ReactiveBayes/Rocket.jl#91 (pending counters, mutable wrappers) is merged, for Rocket 1.10.1, still to be tagged; ReactiveBayes/GraphPPL.jl#333 (the two quadratic passes of model creation) awaits review. No compat bump is needed: both change performance only | upstream | `BENCHMARK.md` §3, §6 |
@@ -61,6 +62,8 @@ models agreeing with v6. Phases 0–6 are closed too.
 | Gamma's variational rule towards `out` uses `E[θ]` where naive VMP gives `1/E[1/θ]`, which its own average energy uses; exact for a point-mass `θ`, and the node has no rule towards `θ` | left as v6 has it (user, 2026-09-26) | § Phase C, *Progress* |
 | Beta's average energy takes `log B(E[a], E[b])` for `E[log B(a, b)]`, exact for point-mass `a`, `b` only; the node has no rule towards them | left for now (user, 2026-09-26) | § Phase C, *Progress* |
 | found by the documentation pass, documented as they are: ConjugateAR under `ARVMP(Univariate, …)` is a `MethodError`; `AdditiveCouplingLayer` with `partition_dim > 1` builds and then fails in `forward`; BinomialPolya's and Probit's `DefaultAlgorithm` energies use a fixed 32 cubature points; `test_rule_derivatives` throws where the tables record a failure; the engine and migration fixture headers store `julia` as different types; `Dependency.key` cannot name a group member `(:T, 1)` | to discuss | the packages' docs, *Limitations* |
+| ManyPlus, the node main added in #666 and released in 6.6.0 after this branch forked: not on the branch, so v7 would drop it; the v6 oracle (6.5.0) has no ManyPlus either | after the audit's cleanup, a node of its own (user) | § Phase C, *Progress* (the audit) |
+| the package boundaries, one coherent effort (user): Standard's helpers used by other packages without being public (`negate_inplace!`, `mul_trace`, `mul_inplace!`, `rank1update`, `gaussian_energy`, `variational_variance`, `coupled_precision`, `promoted_cluster`, by AR, ContinuousTransition, GCV and SoftDot; AR adds a method to Standard's `v_a_vT`); Approximations' `getL`, `getλ`, `getWm`, `getWc` used by Flow; Base's `as_target`, `as_cluster`, `interactive_args`, `INTERACTIVE_SELECTION_OBSERVERS` used by TestUtils; the engine's documented names neither exported nor public (`ImpureRuleError`, `MessagesProductFromLeftToRight`/`RightToLeft`, which RxInfer passes, `NodeInterface`, `IndexedNodeInterface`, `FactorNodeLocalMarginal`, `set_stream_of_*`, `create_new_stream_of_inbound_messages!`, `CompositeStreamPostprocessor`), and `getinterface`/`getlocalclusters`, public without docstrings; BIFM's `BIFMFreeEnergyError` on its public page; Flow's bare `public` against `Compat.@compat public`; TestUtils' unused JET extra, and Aqua's `check_extras` in three packages only | after the audit's cleanup (user) | § Phase C, *Progress* (the audit) |
 | the package sites published with the repository split: each `InterLinks` sibling then lists the online `objects.inv` first, so a link follows the deployed pages' URL form | Phase 8 | `docs/make.jl`, `lib/*/docs/make.jl` |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -3719,7 +3722,7 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
-- *The audit of 2026-09-29 — in progress* (user): the engine, the packages and the working
+- *The audit of 2026-09-29 — done* (user): the engine, the packages and the working
   documents reviewed against each other and the code. Decided (user): ManyPlus, main's node from
   #666 (6.6.0), is added after this effort; the package boundaries are one effort after the
   cleanup (both in the not-done table); the session links in the pushed history stay. Done so
@@ -3737,7 +3740,13 @@ wait for the release):
   observation's payload and links an array of variables, both failing before; under tracked log
   scales a message missing for a missing input has an undefined log scale, `:missing_input`,
   not `nothing`; the alias cache keeps the declaration each alias was resolved under, so a
-  redefined node does not answer with its old aliases.
+  redefined node does not answer with its old aliases. Then the documents: the inferred scratch
+  type credited to `adf4023b6`, the performance pass's dates and a dead pointer in
+  `BENCHMARK.md`, the 27 log scales' list, DISCUSSION's recommended order, CHANGELOG's two
+  `### Changed` sections merged, `CLAUDE.md`'s layout and Delta's `:slow` gate, five packages'
+  `docs/make.jl` headers, TestUtils' reference page. Dropped after checking: a missing
+  `check_reads_logscale` for marginal rules (only message rules may read log scales), and the
+  global caches' thread safety (no claim that the engine runs on several threads).
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one
   documentation site and README per package, built by `make docs-all` in dependency order and
@@ -3762,8 +3771,9 @@ wait for the release):
   applied in `b46046c83` (the typed `RuleSpec`, callback events only for handlers that listen,
   span ids from a salted counter, a creation plan per node shape, a mutable `MessageMapping`, a
   barrier after the product's fold) and on RxInfer's branch (`1a6bb502`, the plugin's per-node
-  work); then `83b77d179`: the kept scratch typed (first by a declared `scratch_type`, then, the user
-  rejecting the declaration, inferred from the inputs' types, DISCUSSION Correction 29), annotations only where something writes them (a message or marginal carrying none
+  work); then `83b77d179`: the kept scratch typed by a declared `scratch_type` (then, the user
+  rejecting the declaration, inferred from the inputs' types in `adf4023b6`, DISCUSSION
+  Correction 29), annotations only where something writes them (a message or marginal carrying none
   shares one frozen empty `AnnotationDict`; `RuleSpec.annotates`), a scratch slot created at the
   first call of a rule with scratch, `MarginalMapping` mutable; then RxInfer's precompile
   workload (`af1f082f`, §4.5). Every benchmarked model runs at 0.51–0.95× v6, posteriors

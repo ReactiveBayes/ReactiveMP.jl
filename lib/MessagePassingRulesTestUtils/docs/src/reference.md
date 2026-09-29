@@ -1,7 +1,7 @@
 # Comparing with a reference
 
-A rule that reimplements another implementation, such as a rule ported from an earlier release,
-is compared with it on the same inputs. [`compare_with_reference`](@ref) makes the comparison a
+A rule that reimplements another implementation, such as a rule from an earlier release of a
+package, is compared with it on the same inputs. [`compare_with_reference`](@ref) makes the comparison a
 test: it passes when the two agree, results and log scales, and fails otherwise, unless the
 difference was investigated and declared.
 
