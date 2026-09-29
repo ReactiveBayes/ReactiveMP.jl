@@ -499,7 +499,9 @@ workflow ran it, and its output paths were gitignored so no result was ever reta
 The user's call, and the right one: this is not a baseline, it is the appearance of one.
 Performance verification moves to **RxInferBenchmarks.jl** at implementation time, where
 there is a new engine to measure against. Phase P therefore captures no performance
-baseline, which is an honest gap rather than a hidden one.
+baseline, which is an honest gap rather than a hidden one. *(The end-of-refactor pass was
+measured in this repository instead, §5 and `BENCHMARK.md`; where benchmarking lives from now on
+is for the user to decide, `PHASES.md`.)*
 
 #### Standard versus models
 
@@ -1911,7 +1913,8 @@ ownerless) and §3.48 (log scales as v6 has them past the release).
   product itself, under the strategy on its algorithm, `MixtureBP(; prod = GenericProd())`.
 - **The engine** tracks them with `logscales = true` (an activation option; RxInfer's `infer`
   keyword and option). Otherwise messages carry `nothing`, which absorbs in products, so there is
-  no cost. Observations and constants carry zero; initial messages, fallback messages and form-
+  no cost. Observations and constants carry zero (8 bytes per observation; `nothing` for them too
+  was decided against, user, `BENCHMARK.md` §5); initial messages, fallback messages and form-
   constrained products are undefined.
 - **Rejected**: keeping `product` as the variables' `MessageProductContext` (an engine type in
   rules, still one user); a custom service Mixture declares (the engine still has to supply it);
@@ -1996,7 +1999,8 @@ Claims the assistant made that were **wrong** and should not be revived:
     settle this were contaminated by constant folding: a spec constructed inline inside an
     inlinable `resolve` folds away entirely and reports zero allocations for *every*
     representation, including the one the table called bad. See §3.14 for the corrected
-    three-way comparison and the adopted design (no type parameters).
+    three-way comparison and the first decision (no type parameters), since reversed: the spec is
+    typed (§3.14's banner, Correction 28).
 17. **"`inplace` should be a type parameter."** No. Measured indistinguishable from a plain
     `Bool` field — zero allocations either way, including with the split body shapes where an
     allocating body takes `(args)` and an in-place body takes `(output, args)`. It adds no
@@ -2134,17 +2138,17 @@ to the generic method, whose first statement is `getlocalclusters(factornode)` �
 explicitly accepts `MethodError`s at activation time.
 
 **`Message{D}`'s type parameter, and what actually costs time (2026-09-25, Phase 7; the user's
-question, nothing decided).** Full record, variants, scripts and raw results:
+question; decided by the performance pass: `Message{D}` is kept, `BENCHMARK.md` §5).** Full record, variants, scripts and raw results:
 the history up to `b46046c83` (`investigations/message-type-parameter/`). Measured at `851559a4`, through RxInfer's v7 branch; every
-variant bit-identical to HEAD.
+variant bit-identical to `851559a4`.
 - **Dropping the parameter (`data::Any`) is slower everywhere:** per `infer` 1.13–1.65×, per VMP
   iteration 1.9–3.2×. Rule resolution becomes a runtime dispatch over every rule package (27 ns →
   0.7–1 µs), and every pairwise product a runtime `prod`; the streams, already abstract and
   allocation-free, gain nothing.
 - **Function barriers recover most of it** (untyped + one-method kernels): per `infer` 0.96–1.12×
-  of HEAD, but the graph loops stay 1.3× slower, each barrier's dispatch and allocation falling on
+  of `851559a4`, but the graph loops stay 1.3× slower, each barrier's dispatch and allocation falling on
   every call and product.
-- **Two costs in HEAD are the real target.** Building `Message{D}`/`Marginal{D}` from an
+- **Two costs in `851559a4` are the real target.** Building `Message{D}`/`Marginal{D}` from an
   `Any`-typed value costs 510 ns (`Core._compute_sparams`), on every rule output; building callback
   events nobody listens to costs about 270 ns per rule call. Fixing both while keeping `Message{D}`
   (a `@noinline` constructor at 4 sites, lazy `@invoke_callback` at 12) gives per `infer`
@@ -2161,8 +2165,8 @@ its scripts, diffs, notes and raw data are in the history up to `b46046c83`.
   the untyped result (`RuleSpec.body::Function`): an event built for nobody (≈ 300 ns), a
   `Message{D, L}` from `Any` (≈ 380 ns), `uuid4()` span ids when callbacks are set (≈ 760 ns), and
   the 18-field `RuleSpec` boxed at each dynamic call.
-- **The measured fix reverses §3.14 (user's follow-up):** a typed `RuleSpec{B, P, S, L, A}` (the
-  body, preallocation, scratch and log-scale functions and the algorithm type as parameters;
+- **The measured fix reverses §3.14 (user's follow-up):** a typed `RuleSpec{B, P, S, L, A, ST}` (the
+  body, preallocation, scratch, scratch-type and log-scale functions and the algorithm type as parameters;
   `RuleResult` carries the spec's type). At the engine's call site resolution runs on concrete
   input types and reaches one rule, so it returns one concrete spec and the body call is static and
   inlines: a rule call 873 → 27 ns and 15 → 2 allocations, 0.83–0.92× the barrier alternative per
@@ -2181,18 +2185,23 @@ its scripts, diffs, notes and raw data are in the history up to `b46046c83`.
 - **Rocket and GraphPPL need no breaking release** for performance; typed listeners and a
   GraphPPL storage redesign were measured and rejected. Rocket's hand-written fast paths are
   neither wrong nor faster than the simple alternatives.
-- **Left for later:** setup (1.4–2.2× v6), allocation volume (1.3× v6 per iteration with the typed
-  spec), workloads per rule package.
+- **Left after the first round:** setup (1.4–2.2× v6), allocation volume (1.3× v6 per iteration
+  with the typed spec), workloads per rule package. The second round (below) took setup below v6;
+  allocation per iteration is now 0.54–0.98× v6's but for the HMM, 1.12× (`BENCHMARK.md` §1, §6);
+  RxInfer's workload is done (§4.5), the rule packages' are left for after the release.
 - **Round 2 (the user's audit) corrected and completed it.**
   - Round 1's figures were right, but its verdict was not: end to end its set was still 1.06–1.61×
     v6, setup being the gap, and its n = 10⁴ "faster" was where a GC pause fell.
   - Setup was not the design's validation but its repetition for every node. A creation plan per
     node shape, dependencies resolved once per shape, the rule context once per node, typed
     containers and a mutable `MessageMapping` (a `DeferredMessage` had copied it) took it below v6.
-  - Round 1's P4 broke one of RxInfer's tests and was reduced to its typing. Rocket's stack guard
-    (P9) was left out: 1–8% of setup, and v7 takes 1.7× v6's chains without it.
-  - Applied, every model runs at 0.51–0.95× v6, posteriors unchanged; first inference is still
-    1.03–1.35× v6 without a precompile workload (`BENCHMARK.md`).
+  - The first round's two-message partial products in the equality chain broke one of RxInfer's
+    tests and were reduced to their typing. Rocket's stack guard was left out: 1–8% of setup, and
+    v7 takes 1.7× v6's chains without it.
+  - Applied, every model runs at 0.51–0.95× v6 (iid at n = 10⁴ level, 0.99, without Rocket#91),
+    posteriors unchanged; first inference without a precompile workload on either side is
+    1.1–1.4× v6, and RxInfer's workload takes the common paths from about 7 s to under half a
+    second (`BENCHMARK.md` §1, §4.5).
 
 
 ---
@@ -2273,7 +2282,8 @@ Open as of Phase C (2026-09-26; `PHASES.md`'s not-done table is the full list):
   user to decide.
 - **`visualize_spec`'s backend** — the entry point is kept (user), the extension not written
   (§3.12, §3.51).
-- **The performance pass** — before the release (§5, the `Message{D}` investigation).
+- ~~**The performance pass** — before the release~~ — done (§5, `BENCHMARK.md`); what it leaves
+  open is `BENCHMARK.md` §6.
 - **The mutation detector** (`PLAN.md` § Purity) — not built; after the release.
 
 Review added #9–#13 (all but #13 settled at the Phase 3 sign-off, §3.16): belief/entropy separation, buffer ownership, capability metadata,

@@ -105,7 +105,8 @@ is_initial(marginal::Marginal) = marginal.is_initial
     getannotations(marginal::Marginal) -> AnnotationDict
 
 The [`ReactiveMP.AnnotationDict`](@ref) of `marginal`: a variable's marginal keeps the annotations
-of the product it was formed from; the joint marginal of a cluster has none.
+of the product it was formed from; the joint marginal of a cluster has none. Where nothing may
+write to it, it is the shared, frozen empty value, which cannot be annotated afterwards.
 """
 getannotations(marginal::Marginal) = marginal.annotations
 

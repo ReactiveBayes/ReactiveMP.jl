@@ -10,6 +10,11 @@ The annotations of a message or a marginal: values keyed by `Symbol`, metadata a
 computed. It allocates nothing until the first write. The second form is a shallow copy of
 `other`.
 
+A message or marginal that nothing may annotate shares one frozen, empty `AnnotationDict` with
+every other such one, which [`ReactiveMP.annotate!`](@ref ReactiveMP.annotate!(::ReactiveMP.AnnotationDict, ::Symbol, ::Any))
+refuses to write to. The engine hands a fresh one to whatever may write: the annotation processors
+of a mapping or a product, and a rule whose body takes the `ann` slot.
+
 A rule reads and writes it through the base package's functions,
 [`getannotation`](@extref MessagePassingRulesBase.getannotation),
 [`hasannotation`](@extref MessagePassingRulesBase.hasannotation) and
@@ -97,6 +102,10 @@ end
     ReactiveMP.annotate!(ann::AnnotationDict, key::Symbol, value) -> Nothing
 
 Store `value` under `key` in `ann`, replacing any value already there.
+
+# Throws
+- `ArgumentError` when `ann` is the shared empty annotations of a message or marginal that
+  nothing may annotate (see [`ReactiveMP.AnnotationDict`](@ref)).
 """
 function annotate!(ann::AnnotationDict, key::Symbol, value)
     ann === EMPTY_ANNOTATIONS && throw_frozen_annotations(key)

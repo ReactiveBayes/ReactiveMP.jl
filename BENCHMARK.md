@@ -3,17 +3,18 @@
 The record of the end-of-refactor performance pass (2026-09-26 to 2026-09-28, user): ReactiveMP v7
 with RxInfer's branch `refactor/reactivemp-v7`, measured against v6, RxInfer 5.5.2 over ReactiveMP
 6.5.0. It was done in two rounds. The second audited the first, whose verdict was too optimistic,
-and completed it. The changes are applied: ReactiveMP `b46046c83` and RxInfer `1a6bb502`. The
-Rocket and GraphPPL fixes are pull requests of their own (ReactiveBayes/Rocket.jl#91 and
-ReactiveBayes/GraphPPL.jl#333). The scripts, diffs, profiles and raw data are in the history, up
-to `b46046c83` (`investigations/`).
+and completed it. The changes are applied: ReactiveMP `b46046c83`, then `83b77d179` (typed scratch,
+annotations only where written, scratch slots on demand), and RxInfer `1a6bb502`, then `af1f082f`
+(the precompile workload). The Rocket and GraphPPL fixes are pull requests of their own:
+ReactiveBayes/Rocket.jl#91 is merged, for Rocket 1.10.1, and ReactiveBayes/GraphPPL.jl#333 is open.
+The scripts, diffs, profiles and raw data are in the history, up to `b46046c83` (`investigations/`).
 
 ## 1. Result
 
 **v7 runs faster than v6 on every benchmarked model.** The final sweep ran on an idle machine
 (Julia 1.13.0, M-series Mac, 14 cores). It compares the commit before the change,
-the commit after it, and the commit after it with the Rocket and GraphPPL pull requests, all on
-the same Rocket 1.10.0 and GraphPPL 4.8.0 unless noted, over 17 models and 5 paired rounds. Each
+the commit after it (`b46046c83`), and that commit with the Rocket and GraphPPL pull requests'
+changes applied, all on Rocket 1.10.0 and GraphPPL 4.8.0, over 17 models and 5 paired rounds. Each
 figure is the median over rounds of the variant's minimum time over v6's minimum in the same
 round:
 
@@ -41,12 +42,16 @@ round:
 - **Setup and per iteration both beat v6.** iid: 10.2 against 11.8 ms setup, 0.50 against 0.51 ms
   per iteration. Gaussian mixture: 1.62 against 2.25 ms per iteration. nl: 1.51 against 2.97 ms
   per iteration.
+- **Allocation** (bytes, exact, measured again at `cad05f6b6`): per iteration iid 0.98×, the
+  mixture 0.73×, nl 0.54× and the HMM 1.12× v6's; a whole belief-propagation inference (ssm1,
+  Beta–Bernoulli) allocates what v6's does, within 1%.
 - **Correctness.** Every posterior parameter and free energy of the two "after" variants is
   bitwise that of "before", on every model and round, 170 comparisons, the streaming filter's
   history included. Against v6 it is bitwise identical except the mixture (9·10⁻¹³) and the HMM
   (3·10⁻¹²).
 - **First inference**: without a precompile workload on either side, v7 is 1.1–1.4× v6, and the
-  change itself adds 1–9%, since the typed design compiles more specialisations. RxInfer's branch
+  pass itself adds 1–9% to it: more of the code is specialised (the typed spec, the creation
+  plans, the barriers), though the typed spec alone measured no compile cost. RxInfer's branch
   now has a workload (§4.5): a first inference on the common paths takes 0.27–0.44 s instead of
   6.7–7.4 s, and RxInfer's own precompile takes 12 s instead of 2.6.
 
@@ -58,8 +63,8 @@ round:
 - **Minima, of one quantity each.** The minimum is the achievable time, and load only adds to it.
   - Per iteration is the difference of the GC-excluded minima at 2I and at I iterations, divided
     by I; setup is the GC-excluded minimum at I, less I per-iteration costs.
-  - Round 1 subtracted minima taken from different samples, so where a GC pause fell decided its
-    n = 10⁴ result.
+  - The first round subtracted minima taken from different samples, so where a GC pause fell
+    decided its n = 10⁴ result; the second took each from one quantity.
 - **What each sample records.** Wall time, the thread's CPU time, GC time, bytes, GC counts, a
   calibration loop and the load average; 11 samples per iteration count, 5 for the largest
   models.
@@ -72,15 +77,16 @@ round:
 
 ## 3. What made v7 slower, and what fixed it
 
-Before the pass, v7 was 1.4–3.5× slower than v6 end to end, on the same Rocket and GraphPPL. The
+Before the pass, v7 was 1.6–3.5× slower than v6 end to end, on the same Rocket and GraphPPL. The
 design's checks were not the cause. Mechanical costs were, each fixed by an ordinary Julia
 practice:
 
 | cost | fix |
 |---|---|
-| `RuleSpec.body::Function` made every rule's result `Any`: an event built for nobody, a `Message` whose type was computed at run time, the spec boxed (873 ns per rule call) | a typed `RuleSpec{B, P, S, L, A}` (§4.1), events built only for handlers that listen, span ids from a salted counter: 27–40 ns |
+| `RuleSpec.body::Function` made every rule's result `Any`: an event built for nobody, a `Message` whose type was computed at run time, the spec boxed (873 ns per rule call) | a typed `RuleSpec{B, P, S, L, A, ST}` (§4.1), events built only for handlers that listen, span ids from a salted counter: 27–40 ns |
 | every node re-resolved its interfaces by name, checked its groups and converted its factorisation, in code that never specialised on the node type: 1.6–5 µs per node, against v6's 0.34 | a creation plan per node declaration, interface keys and factorisation; its dependencies resolved once per shape |
-| every `DeferredMessage` copied its immutable `MessageMapping`, factor node included | `MessageMapping` a mutable struct of constant fields |
+| every `DeferredMessage` copied its immutable `MessageMapping`, factor node included | `MessageMapping` a mutable struct, every field constant but the scratch slot |
+| a fresh `AnnotationDict` for every message and marginal, and a `ScratchSlot` for every mapping, used or not | one frozen, empty dict shared by those that carry none, a fresh one only where something may write; a slot at the first call of a rule with scratch (`83b77d179`): one allocation fewer per rule call |
 | a fixed ≈ 500 ns per product at a variable (also in v6): the product rebuilt from a value of unknown type | a barrier after the fold; the product kept when the form constraint returns it |
 | the rule context built per mapping, `Val` from a run-time `Bool`, a `Vector{Any}` of interfaces for grouped nodes | built once per node, a branch to a static `Val`, a small `Union` vector |
 | RxInfer's plugin: per-edge `applicable` checks, a `map` widened at run time, keyword options from `Any` values | hoisted, typed, positional options behind a function barrier |
@@ -111,14 +117,14 @@ declare it.
 Julia 1.13's GC no longer marks objects loaded from package images (JuliaLang/julia#61474). What
 the JIT compiles lives on the ordinary heap and is marked by every full collection: 55–57 ms per
 full collection after the first inference, against 30 ms right after loading, on v6 and v7
-alike. A precompile workload moves that into the package image. This is why round 1 saw steady
-state 4–20% faster with one, and v6 would gain the same.
+alike. A precompile workload moves that into the package image. This is why the first round saw
+steady state 4–20% faster with a workload, and v6 would gain the same.
 
 ### 4.4 The stack
 
 Subscribing along a chain recurses, about 8 KB of stack per link. Without RxInfer's
 `limit_stack_depth`, v6 overflows an 8 MiB stack beyond 1 344 links of a state-space model, and
-v7 beyond 2 304. A guard in Rocket that hops to a fresh task (round 1's P9) raises that to 3 776,
+v7 beyond 2 304. A guard in Rocket that continues a deep subscription on a fresh task raises that to 3 776,
 at 1–8% of setup; it is not applied.
 
 ### 4.5 RxInfer's precompile workload
@@ -153,7 +159,7 @@ each figure the minimum of fresh processes:
 
 ## 5. Measured and rejected
 
-- **The equality chain's two-message partial products (round 1's P4).** They applied the form
+- **Two-message partial products in the equality chain.** They applied the form
   constraint once per outbound message instead of per partial product, which let an unsupported
   `ProductOf` reach a `missing` boundary and broke one of RxInfer's tests. Only its typed
   `ChainOutboundMapping{C}` is applied.
@@ -165,16 +171,18 @@ each figure the minimum of fresh processes:
   RxInfer** (setup 3× slower), **a GraphPPL storage redesign** (≲ 2%), **a custom rule dispatch**
   (resolution is already static, 26 ns), **`free_energy = Float64` by default** (≤ 2%, and
   breaks automatic differentiation).
+- **Log scale `nothing` for data and constants when log scales are not tracked** (decided against,
+  user). Neither knows whether they are, so the flag would thread through `constvar` and the data
+  variable's activation, and a caller tracking log scales that forgot it would lose them silently;
+  the gain is 8 bytes per observation and the specialisations where observed and computed point
+  masses meet.
 
 ## 6. Left open
 
+- **Rocket 1.10.1 and GraphPPL#333.** Rocket#91 is merged and its release is to be tagged;
+  GraphPPL#333 awaits review. Neither needs a compat bump, since both change performance only.
 - **Precompile workloads in the rule packages** with many nodes (the multivariate Gaussians,
   Delta, DiscreteTransition), as extensions on ReactiveMP; RxInfer's is done (§4.5).
-- **Log scale `nothing` for data and constants when log scales are not tracked (not done).** Neither knows
-  whether they are, so the flag would thread through `constvar` and the data variable's
-  activation, and a caller tracking log scales that forgot it would lose them silently; the gain
-  is 8 bytes per observation and the specialisations where observed and computed point masses
-  meet. Decided against (user).
 - **Scratch in more rules**: the Delta rules' sigma points and Jacobians, `*` with a matrix, AR and
   ContinuousTransition, now that a typed scratch costs nothing.
 - **A product workspace per variable**, for the temporaries of multivariate products in
@@ -182,3 +190,5 @@ each figure the minimum of fresh processes:
 - **A fast path for variables of degree 2 in the equality chain.** Every state-space model's chain
   variables have that degree, but the path changes the product events callbacks see.
 - **The BayesBase ambiguity `prod(::GenericProd, ::ProductOf, ::Missing)`**, upstream.
+- **The HMM allocates 1.12× v6's bytes per iteration** (§1), though it runs at 0.89–0.92× v6's
+  time; not profiled yet.

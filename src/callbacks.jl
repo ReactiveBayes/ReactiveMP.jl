@@ -194,7 +194,9 @@ end
 
 Whether `callbacks` may react to events of the given type. [`ReactiveMP.@invoke_callback`](@ref)
 builds an event only when it returns `true`: `false` for `nothing`, by key for a `NamedTuple`
-(decided at compile time) or a `Dict`, `true` for any other handler.
+(decided at compile time) or a `Dict`, `true` for any other handler. A handler of a custom type
+that reacts to only some events may add methods, `false` for the others, so that the engine does
+not build those; `merged` callbacks listen where any of theirs does.
 """
 listens(::Nothing, ::Type) = false
 listens(::NamedTuple{K}, ::Type{T}) where {K, T <: Event} = event_name(T) in K
@@ -283,7 +285,8 @@ The event right after a message rule ran, or its fallback, or after a `missing` 
 - `messages`: the inbound messages the rule read, a tuple, or `nothing` for none;
 - `marginals`: the marginals the rule read, a tuple, or `nothing` for none;
 - `result`: the message's data, what the rule or the fallback returned, or `missing`;
-- `annotations`: the message's [`ReactiveMP.AnnotationDict`](@ref);
+- `annotations`: the message's [`ReactiveMP.AnnotationDict`](@ref), the shared frozen one where
+  nothing may write to it;
 - `logscale`: the message's log scale (see [`getlogscale`](@ref)), or `nothing` where log scales
   are not tracked;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref).
@@ -333,7 +336,8 @@ messages.
 - `context`: the [`ReactiveMP.MessageProductContext`](@ref);
 - `left`, `right`: the two [`Message`](@ref)s;
 - `result`: the product, a [`Message`](@ref);
-- `annotations`: the product's [`ReactiveMP.AnnotationDict`](@ref);
+- `annotations`: the product's [`ReactiveMP.AnnotationDict`](@ref), the shared frozen one where
+  nothing may write to it;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref).
 """
 struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A, S} <:

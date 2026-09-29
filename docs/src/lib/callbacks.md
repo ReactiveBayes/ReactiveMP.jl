@@ -54,7 +54,6 @@ that reacts to a few events declares which, and the others cost it nothing.
 ReactiveMP.Event
 ReactiveMP.event_name
 ReactiveMP.invoke_callback
-ReactiveMP.@invoke_callback
 ReactiveMP.listens
 ReactiveMP.handle_event
 ReactiveMP.merge_callbacks

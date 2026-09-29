@@ -174,6 +174,22 @@ the rule, so a rule must not return it or a view into it, and it is never shared
 rule, not even one of the same node. It is independent of `inplace`, and a rule may declare both,
 taking `output` and then `scratch`.
 
+The scratch's type depends on the inputs' types, so an engine keeping it between calls cannot
+know it, and an untyped kept scratch costs a dynamic call and a few allocations per call. A rule
+removes that by declaring the type as well, `scratch_type`, a function of the same slots that
+computes it from the inputs' types alone and so folds to a constant:
+
+```julia
+@define_message_update_rule(
+    node = Summing, target = :out, args = (m[:in]::Vector{Float64},),
+    scratch = (args) -> (work = similar(args.m[:in]),),
+    scratch_type = (args) -> @NamedTuple{work::Vector{Float64}},
+    body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
+)
+```
+
+A `scratch` that builds another type than the one declared is an `ArgumentError` naming the rule.
+
 ## Annotations
 
 A rule may record facts about its result beside it, keyed by symbol, with

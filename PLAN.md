@@ -169,7 +169,7 @@ The log scale is part of the message, not an annotation: the scalar with
 statically; one that omits it declares none, and its message's log scale is an
 `UndefinedLogScale` that propagates; only `require_logscale` errors on it, where a number is
 needed. The engine tracks log scales only under the activation option `logscales = true`;
-otherwise messages carry `nothing`. Every public call of a rule returns a `RuleResult`
+otherwise messages carry `nothing`, and data and constants zero. Every public call of a rule returns a `RuleResult`
 (`getresult`, `getlogscale`, `getrule`, …); the engine never builds one.
 
 **Why symbols.** In a real lambda, `args.m[μ]` is an `UndefVarError` — `μ` is not a
@@ -406,7 +406,8 @@ educational and introspection goals above.
 **`RuleSpec` is typed: `RuleSpec{B, P, S, L, A, ST}`** (the performance pass, `BENCHMARK.md`;
 applied). The body, preallocation, scratch, scratch-type and log-scale functions and the algorithm
 type are its parameters; `RuleResult` carries the spec's type. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has `kind`,
-`inputs`, `default`, `services` and `reads_logscale`:
+`inputs`, `default`, `services`, `reads_logscale` and `annotates` (whether the body takes the
+`ann` slot, so that only such a rule is given a fresh annotation store):
 
 ```julia
 struct RuleSpec{B, P, S, L, A, ST}
@@ -418,6 +419,7 @@ struct RuleSpec{B, P, S, L, A, ST}
     logscale::L
     inplace::Bool
     pure::Bool
+    annotates::Bool        # whether the body takes the `ann` slot
     source::String         # body text, for `@which_message_update_rule`
     file::Symbol
     line::Int
@@ -435,7 +437,8 @@ returns one concrete spec there. The body call is then static and inlines, and `
 - a rule call takes 873 → 27 ns and 15 → 2 allocations (with the performance pass's other
   changes);
 - 0.83–0.92× the untyped spec behind a function barrier per iteration, 0.62–0.66× at n ≥ 10⁴;
-- no cost to time to first inference, every suite passing.
+- no measurable cost to time to first inference from the typed spec alone, every suite passing;
+  the whole pass adds 1–9% to it (`BENCHMARK.md` §1).
 
 Where resolution is genuinely uninferable, the call is dynamic in either design. `inplace` stays
 a `Bool` field (Correction 17): the body's type already makes every spec type distinct.
@@ -467,21 +470,23 @@ checked by the packages' suites and bit-identical posteriors, and the set is app
   - callback events built only for handlers that listen, salted counter span ids;
   - a creation plan per node shape, with its dependencies; the rule context once per node; a
     small-union interface vector for nodes with groups;
-  - a mutable `MessageMapping`; a barrier after the product's fold; constructor barriers for
+  - a mutable `MessageMapping`, every field constant but the scratch slot; a barrier after the product's fold; constructor barriers for
     values of unknown type; the input-names and alias caches.
 - **RxInfer** (branch `refactor/reactivemp-v7`): the plugin's per-node work, the benchmark
   callbacks that listen only to what they record, the hygiene fixes, the
   `iterate(::InferenceResult)` fix.
 - **Rocket** (pull request): O(1) status checks in `collectLatest` and `combineLatest`, and mutable
   wrappers. Not the stack guard: v7 takes 1.7× v6's chains without it.
-- **GraphPPL** (pull request, onto `4.9.0`): the two quadratic paths (`apply_meta!`,
+- **GraphPPL** (pull request, onto `4.9.0`; measured on 4.8.0): the two quadratic paths (`apply_meta!`,
   `flattened_index`) and three small fixes.
 
-Applied after it: `scratch_type`, annotations allocated only where something writes them, and a
-scratch slot only for rules that declare scratch. Not applied: the equality chain's two-message
-partial products (they changed what
-"check last" means and broke one of RxInfer's tests), and a precompile workload, which is what
-first inference still needs.
+Applied after it (`83b77d179`): `scratch_type`, annotations allocated only where something
+writes them (a message or marginal carrying none shares one frozen, empty `AnnotationDict`), a
+scratch slot only for rules that declare scratch, created at their first call, and
+`MarginalMapping` mutable as `MessageMapping` is. RxInfer's branch precompiles a workload
+(`af1f082f`, `BENCHMARK.md` §4.5); the rule packages' workloads are left for after the release.
+Not applied: the equality chain's two-message partial products (they changed what "check last"
+means and broke one of RxInfer's tests), and log scale `nothing` for data and constants (user).
 
 ### Dependencies as a language
 

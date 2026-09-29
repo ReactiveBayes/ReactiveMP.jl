@@ -471,6 +471,17 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   all: its results differ from v6's, and on a posterior with several modes it settles on one
   where v6's alternated.
 
+Two changes in the engine concern code that reads annotations or traces rule calls:
+
+- **A message or marginal that nothing may annotate shares one frozen, empty
+  [`ReactiveMP.AnnotationDict`](@ref)**, where v6 gave each its own: one from a mapping without
+  annotation processors whose rule does not take the `ann` slot, say. Writing to it,
+  `annotate!(getannotations(message), …)`, or to the `annotations` of a callback event, is an
+  `ArgumentError`. An annotation processor and a rule taking the `ann` slot get a fresh one, as
+  before.
+- **Span ids** still pair a "before" event with its "after" event, but come from a counter salted
+  once per session, not from `uuid4()`.
+
 ## Removed
 
 These v6 names have no counterpart: `Marginalisation`, `MomentMatching`, the functional

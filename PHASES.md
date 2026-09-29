@@ -19,13 +19,14 @@ them again, so re-check before relying on one.
 ## Next action
 
 **Phase C, in progress** (§ Phase C, *Progress*). Next, for the user to choose, what the
-not-done table lists before the release: the remaining 27 log scales, the free energy's context,
-and the performance pass (user); the rest of Phase C's exit criteria wait for the release
-itself.
+not-done table lists before the release: the remaining 27 log scales and the free energy's
+context (with the diagnostics, which do not reach average energies either); the rest of Phase C's
+exit criteria wait for the release itself.
 
 Done in Phase C so far: rule fallbacks and the open rule context (§3.49); log scales first-class,
 part of the message, and `RuleResult` (§3.50, superseding §3.48), with 28 more of Standard's
-rules declaring one; `RuleResult`'s rich display (§3.51); dead code out; the engine tests
+rules declaring one; `RuleResult`'s rich display (§3.51); the performance pass, every benchmarked
+model faster than v6, and RxInfer's precompile workload (`BENCHMARK.md`); dead code out; the engine tests
 without v6 as reference; history out of `src/` and `lib/`; the docs and READMEs in present
 terms. **Phase 7 is closed** (§ Phase 7, *The close*): the diagnostics, Aqua's ambiguity check
 on, an engine fixture reaching every ported node, the workflows on 1.13, and RxInfer adapted on
@@ -36,11 +37,17 @@ models agreeing with v6. Phases 0–6 are closed too.
 
 | What | Where it lands | Recorded in |
 |---|---|---|
-| the free energy runs each average energy with the engine's default context, `node_context(node)`, not the node's `context` option, since `score` and `bethe_free_energy` take no activation options (as for the diagnostics, § Phase 7); an average energy declaring a service of its own is therefore refused there even when the node was given it. No average energy declares one today | before the release, with RxInfer's free energy | § Phase C, *Progress* |
+| the free energy runs each average energy with the engine's default context, `node_context(node)`, not the node's `context` option, since `score` and `bethe_free_energy` take no activation options (as for the diagnostics, § Phase 7); an average energy declaring a service of its own is therefore refused there even when the node was given it. No average energy declares one today. For the same reason the diagnostics (`EngineDiagnostics`) audit no average energy, which item 2 of Phase 7 had left to RxInfer's adaptation | before the release, with RxInfer's free energy | § Phase C, *Progress* |
 | log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
 | two rule discrepancies the engine tests found, `@test_broken` in `test/engine/variational_tests.jl`: AR's mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]` | for the user to decide | § Phase C, *Progress* |
-| the end-of-refactor performance pass: **applied** (2026-09-28, user): round 2's set, in ReactiveMP and on RxInfer's branch `refactor/reactivemp-v7`; every benchmarked model runs at 0.51–0.95× v6, posteriors unchanged (ReactiveBayes/Rocket.jl#91 and ReactiveBayes/GraphPPL.jl#333 are the rest); Rocket's and GraphPPL's non-breaking fixes are pull requests of their own. First inference is 1.03–1.35× v6 without a precompile workload; RxInfer's branch has one (2026-09-29, user), which takes a first inference on the common paths from 6.7–7.4 s to 0.27–0.44 s at 12 s of RxInfer's precompile | done; the rule packages' workloads after the release | `BENCHMARK.md`; `PLAN.md` § The performance pass; `DISCUSSION.md` §5 |
-| typed annotations (`Message{D, A}`), if at all: since §3.50 the log scale is not an annotation, so this is only a performance question for the remaining side channel, the mutable `AnnotationDict` | after the release | `DISCUSSION.md` §3.48, §3.50 |
+| the end-of-refactor performance pass: **applied** (user), in ReactiveMP and on RxInfer's branch `refactor/reactivemp-v7`: every benchmarked model runs at 0.51–0.95× v6 (iid at n = 10⁴ level, 0.99, without Rocket#91), posteriors unchanged; first inference without a workload on either side is 1.1–1.4× v6, and RxInfer's branch precompiles one, which takes the common paths from 6.7–7.4 s to 0.27–0.44 s at 12 s of RxInfer's precompile | done; what it leaves is in the rows below | `BENCHMARK.md`; `PLAN.md` § The performance pass; `DISCUSSION.md` §5 |
+| Rocket's and GraphPPL's fixes, pull requests of their own: ReactiveBayes/Rocket.jl#91 (pending counters, mutable wrappers) is merged, for Rocket 1.10.1, still to be tagged; ReactiveBayes/GraphPPL.jl#333 (the two quadratic passes of model creation) awaits review. No compat bump is needed: both change performance only | upstream | `BENCHMARK.md` §3, §6 |
+| precompile workloads in the rule packages with many nodes (the multivariate Gaussians, Delta, DiscreteTransition), as extensions on ReactiveMP; RxInfer's leaves out `free_energy = true`, whose code depends on the model | after the release | `BENCHMARK.md` §4.5, §6 |
+| scratch in more rules (Delta's sigma points and Jacobians, `*` with a matrix, AR, ContinuousTransition); a product workspace per variable for BayesBase's multivariate temporaries, profiled first; a fast path for variables of degree 2 in the equality chain, which changes the product events callbacks see | after the release | `BENCHMARK.md` §6 |
+| the BayesBase ambiguity `prod(::GenericProd, ::ProductOf, ::Missing)`, which the equality chain's two-message partial products ran into | upstream | `BENCHMARK.md` §5, §6 |
+| the HMM allocates 1.12× v6's bytes per iteration, though it runs faster than v6; the only benchmarked model above v6 in bytes, not profiled | after the release | `BENCHMARK.md` §1, §6 |
+| where benchmarking lives from now on: Phase P meant it for RxInferBenchmarks.jl, and the end-of-refactor pass was measured here, its scripts in the history up to `b46046c83` | undecided (user) | `DISCUSSION.md` (Phase P, the baseline), `BENCHMARK.md` |
+| typed annotations (a type parameter for them beside `Message{D, L}`'s), if at all: since §3.50 the log scale is not an annotation, so this is only a performance question for the remaining side channel, the mutable `AnnotationDict`, which the engine now allocates only where something writes it | after the release | `DISCUSSION.md` §3.48, §3.50 |
 | `InputArgumentsAnnotations` records references to the inputs, not copies; sound only while every rule output is freshly allocated, so it is revisited when output buffers are reused (#10) | with output buffer reuse, after the release | `PLAN.md` § Open items #10 |
 | the mutation detector, a debug mode catching a rule that mutates its inputs (`PLAN.md` § Purity): not built; the purity and in-place audits and the poisoned scratch are what exists | after the release, with the diagnostics (user, 2026-09-26) | `PLAN.md` § Purity |
 | `visualize_spec`'s backend: the public entry point is kept (user), the backend not written, so every call is a `MethodError` that says so. Decided in §3.12 (Phase P) as an extension on GraphPPL's pattern; the intent (user) is comprehensive visualisations of nodes, dependencies and rules, rendered in the documentation, for teaching as well; §3.51 leaves graph-scale pictures to it | undecided (user) | `DISCUSSION.md` §3.12, §3.51 |
@@ -104,7 +111,7 @@ generic ones, and no comments that only narrate.
 | 5 | `StandardMessagePassingRules` | **done**: steps 1–9, and the post-close review's findings resolved |
 | 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | **closed**: items 1–7; RxInfer's branch pushed, no PR *(item 7's outcome, §3.48, superseded in Phase C by §3.50)* |
-| C | Cleanup: the repository rid of historical remarks, before the release | **in progress**: rule fallbacks and the open context, first-class log scales and `RuleResult` with its display, dead code, the engine tests without v6, history out of `src/` and `lib/`, the docs, declared services checked at resolution (§ Phase C, *Progress*) |
+| C | Cleanup: the repository rid of historical remarks, before the release | **in progress**: rule fallbacks and the open context, first-class log scales and `RuleResult` with its display, dead code, the engine tests without v6, history out of `src/` and `lib/`, the docs, declared services checked at resolution, the performance pass (§ Phase C, *Progress*) |
 | 8 | Release and downstream coordination | not started |
 
 ---
@@ -124,7 +131,8 @@ generic ones, and no comments that only narrate.
       `BenchmarkTools`, no CI workflow ran it, and its output paths were gitignored so no
       result was ever retained. Performance verification belongs to
       **RxInferBenchmarks.jl** at implementation time, where there is a new engine to
-      measure against
+      measure against *(the end-of-refactor pass was measured in this repository instead,
+      `BENCHMARK.md`; where benchmarking lives from now on is in the not-done table)*
 - [x] **current Aqua ambiguity count measured**: **322**, so its cleanup can be budgeted
       separately from the new dispatch design. Breakdown recorded under Phase 2
 - [x] **disposition inventory** (open item #14): every node, rule, extension, exported
@@ -248,7 +256,8 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       throughout (`target = :out`, `m[:μ]`, `interfaces = [:out, ...]`), group members
       `q[:p][k]`, indexed targets `(:m, k)`, body slots
       `(output, algo, ctx, args, ann, node)` in canonical order *(later reduced to five: the
-      node moved into `ctx.node` at the Phase 3 sign-off, #12)*, dispatch carried by the
+      node moved into `ctx.node` at the Phase 3 sign-off, #12; then six with `scratch`, Phase 6
+      step 7)*, dispatch carried by the
       `algorithm` keyword, `@allocate`/`@logscale` deleted. See `PLAN.md` § Rule surface and
       `DISCUSSION.md` §3.14
 - [x] **`RuleSpec` representation decided** (resolved ahead of the spike): **no type
@@ -258,7 +267,8 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       so a lookup that cannot statically pin down which rule fires returns a *union* rather
       than one type, and that degrades silently. The plain struct is type-stable by
       construction. The indirect call this costs is accepted and revisited later with real
-      rules; Phase 0 supplies the number. See `DISCUSSION.md` §3.14
+      rules; Phase 0 supplies the number. See `DISCUSSION.md` §3.14 *(reversed by the
+      performance pass: `RuleSpec{B, P, S, L, A, ST}`, §3.14's banner)*
 - [x] **ten representative rules written by hand** and read side by side —
       `spike/dispatch/02_rules.jl`, each shown as the surface a user writes plus the form the
       macro would emit. Covers the trivial BP case, an annotating rule, the `meta::Any`
@@ -272,7 +282,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       an index. It stays out of the user-facing slot list — writing `k` is how you ask for it
 - [x] **the devirtualization gate must run through the `RuleSpec`**, not only through
       dispatch, and it must **report numbers rather than pass or fail**. `RuleSpec` carries no
-      type parameters (`DISCUSSION.md` §3.14), so the body is reached through a `::Function`
+      type parameters (`DISCUSSION.md` §3.14; *typed since the performance pass*), so the body is reached through a `::Function`
       field and the indirect call is accepted by decision, to be revisited with real rules.
       What Phase 0 owes is the cost, measured under the real spec:
       - a call site that can reach exactly one rule — expected to fold away entirely;
@@ -729,7 +739,8 @@ re-verified against `lib/MessagePassingRulesBase` in the post-Phase-4 audit.
   the annotations that arrived with each input, keyed like the inputs, plus the sink the rule
   writes. v6's `AnnotationDict` and its post-rule processors map onto `out`.
 - **The context carries the node.** `RuleContext(node, product, linalg, rng)`, built per
-  node/edge; `product` replaces the throwaway `randomvar` in v6's `rules/mixture/switch.jl:11`;
+  node/edge *(now a `NamedTuple` of `node`, `rng` and `matrix_correction`, built once per node;
+  `product` and `linalg` are gone, § Phase C)*; `product` replaces the throwaway `randomvar` in v6's `rules/mixture/switch.jl:11`;
   `linalg` stays unstable (#13 parked).
 - **Missing inputs as v6**: no rule call, no post-rule processors, result `missing`
   (`execute_rule` docstring, `rulespec.jl:136-139`).
@@ -1016,7 +1027,7 @@ fixtures. It is a **clean cut** (user, §3.22): no dual path and no transition s
    node and the offending key. A local marginal is keyed `:μ` for one interface and `(:out,
    :μ)` for a joint. `FactorNodeActivationOptions(; algorithm, postprocessor, annotations,
    callbacks)` replaced the six positional fields; `rulefallback`, `metadata` and the
-   dependency policy are gone. **`activate!` refuses a node with a declared
+   dependency policy are gone *(`rulefallback` restored in Phase C, §3.49)*. **`activate!` refuses a node with a declared
    `dependencies_spec` or an interface group**, with an error saying so, rather than wiring
    them wrongly: the default scheme is the only one wired, and declared dependencies and
    groups are case (c)'s work. *(Case (c) lifted both refusals.)*
@@ -1784,7 +1795,7 @@ switch rule builds a throwaway `randomvar` for a product's log scale
 `missing_services`, and does fill `ann.m`; the tables cannot feed incoming annotations.
 
 **Decided (user):**
-- **`ctx.product` returns the product's own log scale** (§3.34): the engine's `rule_context`
+- **`ctx.product` returns the product's own log scale** (§3.34; *the `product` service was removed in Phase C, §3.50: the switch rule computes it under its algorithm's strategy*): the engine's `rule_context`
   passes `product = (l, r) -> (d, compute_logscale(d, l, r))` with `d = prod(GenericProd(), l,
   r)`, and a rule adds the incoming log scales from `ann.m`.
 - **Mixture has no average energy** (§3.35): a free energy of a model with one raises
@@ -2891,7 +2902,8 @@ A commit for the package with its comparison and fixtures, as in steps 3–5, an
   - `execute_rule` takes the store the engine keeps, with `nothing` asking for a fresh one, as
     `output` does now.
 - **The engine:** each `MessageMapping` and `MarginalMapping` keeps a scratch slot, built at the
-  first call and reused while the same rule runs on that stream. An edge keeps its dimensions
+  first call and reused while the same rule runs on that stream *(now created at the first call
+  of a rule that declares scratch, and typed by its `scratch_type`, § Phase C)*. An edge keeps its dimensions
   within a graph; a rule whose shapes can vary checks them itself.
 - **TestUtils checks the contract.** A table case of a rule with scratch runs twice: once with a
   fresh scratch, once with a reused one poisoned with NaN (`poison!` dispatching on arrays, tuples
@@ -2939,7 +2951,7 @@ guide a third.
     calls do.
   - In the engine, `src/scratch.jl` defines `ScratchSlot` and `scratch_for!`, and each
     `MessageMapping` and `MarginalMapping` keeps a slot, rebuilt only when another rule runs on
-    the stream.
+    the stream *(created on demand and typed since the performance pass)*.
   - In TestUtils, a table case of a rule with scratch runs again on a reused scratch, before and
     after `poison!`, into fresh outputs, and must agree.
 
@@ -3415,7 +3427,7 @@ Known scope:
       *(item 2: `EngineDiagnostics`, an activation option, audited as message and marginal
       rules are resolved; checked buffers poison the scratch, the only memory recycled; the
       average energies of `bethe_free_energy`, which takes no activation options, wait for
-      RxInfer's adaptation, item 6, to pass them; running the suite checked is a workflow job,
+      RxInfer's adaptation, item 6, to pass them *(item 6 did not; the not-done table)*; running the suite checked is a workflow job,
       item 5)*
 - [x] RxInfer adapted to the new engine, as its own major release *(item 6: the branch
       `refactor/reactivemp-v7` of RxInfer, 6.0.0-DEV, pushed without a PR; its suite, Aqua and
@@ -3496,7 +3508,8 @@ Known scope:
   the variables; it defines no rule or node. The list above says what changed under it. Its
   `test/models` and RxInferExamples are the integration check.
 - **Rows of the not-done table pointing here:** the RNG as an activation option and `*`'s number
-  of samples; the Delta `LibTests` job (with the workflows); the log-scale rows (the milestone).
+  of samples; the Delta `LibTests` job (with the workflows); the log-scale rows (the milestone)
+  *(all since done)*.
 
 **Proposed order**, one commit per item, test first, open to the user's correction:
 1. **The small engine items:** the ambiguity fixed and `ambiguities` switched on;
@@ -3626,7 +3639,7 @@ generator as an activation option and `*`'s samples (3), the engine fixtures for
 (4), the workflows (5), RxInfer on its branch (6), and the log-scale milestone, closed with no
 change past the release (7, §3.48, *superseded in Phase C by §3.50*); the small engine fixes (1) switched Aqua's ambiguity check on
 and removed the `EqualityChain` race. Left for later, each recorded: RxInfer's documentation (with
-the release work), the performance pass before the release (`BENCHMARK.md`),
+the release work), the performance pass before the release (`BENCHMARK.md`) *(done in Phase C)*,
 log scales after it *(made first-class in Phase C instead, §3.50)*, and each package's `LICENSE` with registration (Phase 8).
 
 ### Item 7 brief — log scales fixed
@@ -3650,7 +3663,8 @@ them, and the key gets an owner in the base package.
   `FactorizedCluster`.
 - **`*`'s sampled messages** are unnormalised sums: their log scale lacks a constant.
 - **Annotations** are a mutable `AnnotationDict` per message; typed annotations,
-  `Message{D, A}`, were deferred to this milestone (§3.23).
+  `Message{D, A}`, were deferred to this milestone (§3.23) *(now: allocated only where something
+  writes them, a message carrying none sharing one frozen empty dict, § Phase C)*.
 
 **Proposed, open to the user's correction:**
 1. **The key's owner:** the base package defines the log scale as a typed annotation and what a
@@ -3697,7 +3711,8 @@ that nothing written in between escapes it.
 
 **Scope as it ran** (user): besides the cleanup, Phase C carried the engine and base changes the
 cleanup's audit raised: rule fallbacks and the open rule context (§3.49), first-class log scales
-and `RuleResult` (§3.50), its rich display (§3.51), and `check_services` at resolution.
+and `RuleResult` (§3.50), its rich display (§3.51), `check_services` at resolution, and the
+end-of-refactor performance pass (`BENCHMARK.md`).
 Each is recorded in *Progress* below.
 
 **Progress** (plan of 2026-09-25: rule fallbacks; dead code and wrong docs; the engine tests
@@ -3724,6 +3739,23 @@ wait for the release):
   the caller's context, empty by default; their docstrings state it as their contract, and a
   test pins it (user). Found: the free energy's average energies never see
   the node's `context` option (not-done table).
+- *The end-of-refactor performance pass — done* (user, 2026-09-26 to 2026-09-29, `BENCHMARK.md`):
+  applied in `b46046c83` (the typed `RuleSpec`, callback events only for handlers that listen,
+  span ids from a salted counter, a creation plan per node shape, a mutable `MessageMapping`, a
+  barrier after the product's fold) and on RxInfer's branch (`1a6bb502`, the plugin's per-node
+  work); then `83b77d179`: `scratch_type` (`RuleSpec{B, P, S, L, A, ST}`, declared by BIFM's
+  rules), annotations only where something writes them (a message or marginal carrying none
+  shares one frozen empty `AnnotationDict`; `RuleSpec.annotates`), a scratch slot created at the
+  first call of a rule with scratch, `MarginalMapping` mutable; then RxInfer's precompile
+  workload (`af1f082f`, §4.5). Every benchmarked model runs at 0.51–0.95× v6, posteriors
+  unchanged. The record was rewritten and `investigations/` removed (`0373456b8`). Decided
+  against (user): log scale `nothing` for data and constants when untracked (`6ea2e7fce`).
+  Rocket's and GraphPPL's fixes are pull requests of their own. Left: `BENCHMARK.md` §6, in the
+  not-done table.
+- *The working documents reconciled after the performance pass — done* (2026-09-29): `PLAN.md`,
+  `DISCUSSION.md`, `BENCHMARK.md`, this file and `CLAUDE.md` audited against each other and the
+  code; the docstrings and pages behind the code (the frozen annotations, `listens`,
+  `scratch_type` on the rules page, the v6 → v7 guide) brought up to date.
 - *The working documents reconciled — done* (2026-09-26): `PLAN.md`, `DISCUSSION.md`, this file,
   `INVENTORY.md` and `CLAUDE.md` audited against each other and the code after §3.49–3.51; stale
   present-tense claims corrected, earlier decisions marked superseded rather than rewritten.

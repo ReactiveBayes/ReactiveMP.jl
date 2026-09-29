@@ -2,9 +2,10 @@
 
 A message or a marginal holds a distribution. Annotations are an optional side channel that
 travels with a message: values keyed by `Symbol`, such as a record of the inputs a message was
-computed from, or debugging information. They are free when unused: nothing is allocated until the
-first write. A message's log scale is not an annotation, but part of the message (see
-[Log scales](@ref lib-logscale)).
+computed from, or debugging information. They are free when unused: a message or marginal that
+nothing may annotate shares one frozen, empty dictionary, and the engine gives a fresh one only
+to what may write, the annotation processors and a rule taking the `ann` slot. A message's log
+scale is not an annotation, but part of the message (see [Log scales](@ref lib-logscale)).
 
 ## [The annotation dictionary](@id lib-annotations-dict)
 

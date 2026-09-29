@@ -146,7 +146,9 @@ is_initial(message::Message) = message.is_initial
 """
     getannotations(message::Message) -> AnnotationDict
 
-The [`ReactiveMP.AnnotationDict`](@ref) of `message`, empty unless annotation processors wrote to it.
+The [`ReactiveMP.AnnotationDict`](@ref) of `message`, empty unless annotation processors or a rule
+taking the `ann` slot wrote to it. Where nothing may write to it, it is the shared, frozen empty
+value, which cannot be annotated afterwards.
 """
 getannotations(message::Message) = message.annotations
 

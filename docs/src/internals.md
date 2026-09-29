@@ -69,6 +69,7 @@ ReactiveMP.EqualityNode
 
 ```@docs
 ReactiveMP.MergedCallbacks
+ReactiveMP.@invoke_callback
 ```
 
 ## [Helpers](@id internals-helpers)
