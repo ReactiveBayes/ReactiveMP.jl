@@ -1,7 +1,5 @@
 export FactorBoundFreeEnergy
 
-import Base: tail
-
 """
     FactorBoundFreeEnergy()
 

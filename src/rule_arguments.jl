@@ -236,8 +236,8 @@ rule_annotations(messages_names, messages, marginals_names, marginals, out) = Ru
 has_missing_inputs(::Nothing) = false
 has_missing_inputs(inputs::Tuple) = any(ismissing, TupleTools.flatten(getdata.(inputs)))
 
-# Re-exported from `MessagePassingRulesBase`: raised when no rule matches a call. Its message
-# lists the near misses.
+# `MessagePassingRulesBase`'s error for a call no rule matches, under the engine's name. Its
+# message lists the near misses.
 const RuleNotFoundError = MessagePassingRulesBase.RuleNotFoundError
 
 function resolve_rule(spec)

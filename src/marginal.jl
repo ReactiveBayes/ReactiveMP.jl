@@ -4,7 +4,6 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, ndims, precision, length, size, iterate
 
 # The representation is a mutable struct with `const` fields: measured faster than an
 # immutable one through the equality chain, and lighter everywhere
@@ -133,8 +132,6 @@ getlogscale(marginal::Marginal) = marginal.logscale === nothing ? throw(
         ),
     ) : marginal.logscale
 
-typeofdata(marginal::Marginal) = typeof(getdata(marginal))
-
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
 getdata(marginals::AbstractArray{<:Marginal}) = map(getdata, marginals)
 
@@ -250,9 +247,7 @@ function set_initial_marginal!(marginal::MarginalObservable, value)
 end
 
 ## Marginal Mapping structure
-## https://github.com/JuliaLang/julia/issues/42559
-## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
-## We create a lambda-like callable structure to improve type inference and make it more stable
+## A callable structure rather than a closure, for the reason `MessageMapping` is one.
 """
     MarginalMapping
 

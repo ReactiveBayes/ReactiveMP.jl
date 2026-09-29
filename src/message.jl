@@ -5,7 +5,6 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, *, +, ndims, precision, length, size, show
 import BayesBase: prod
 
 # Text shared by the docstrings of `Message` and `Marginal` and of their accessors.
@@ -165,8 +164,6 @@ with `logscales = true` (see [`ReactiveMP.FactorNodeActivationOptions`](@ref)).
 - `ArgumentError` when log scales are not tracked, the message carrying `nothing`.
 """
 getlogscale(message::Message) = tracked_logscale(message.logscale)
-
-typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 # No inputs at all, which the `Message` and `Marginal` methods above would both match.

@@ -1,4 +1,3 @@
-import Base: length, map
 import Base: @propagate_inbounds
 import Rocket: tap
 

@@ -7,7 +7,6 @@ export UnspecifiedFormConstraint, CompositeFormConstraint
 using TupleTools
 
 import BayesBase: resolve_prod_strategy
-import Base: +
 
 # Form constraints control the functional form of messages during the product computation.
 # There are two strategies for when to apply the constraint:

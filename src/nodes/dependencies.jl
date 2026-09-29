@@ -180,8 +180,6 @@ function cluster_marginal(factornode, key::Tuple)
     return marginals[position]
 end
 
-activate_messages!(factornode, options) = activate_messages!(factornode, options, node_context(factornode, getcontext(options)))
-
 function activate_messages!(factornode, options, ctx)
     fform = functionalform(factornode)
     algorithm = getalgorithm(fform, options)

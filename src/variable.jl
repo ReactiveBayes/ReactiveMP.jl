@@ -174,13 +174,11 @@ function set_initial_marginal!(variable::AbstractVariable, marginal)
     return set_initial_marginal!(get_stream_of_marginals(variable), marginal)
 end
 
-set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginal::PointMass) = _set_initial_marginal!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
-set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginal::Distribution) = _set_initial_marginal!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
-set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginals) = _set_initial_marginal!(Base.IteratorSize(marginals), variables, marginals)
+set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginal::PointMass) = _set_initial_marginal!(variables, Iterators.repeated(marginal, length(variables)))
+set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginal::Distribution) = _set_initial_marginal!(variables, Iterators.repeated(marginal, length(variables)))
+set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginals) = _set_initial_marginal!(variables, marginals)
 
-function _set_initial_marginal!(
-        ::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, marginals
-    )
+function _set_initial_marginal!(variables::AbstractArray{<:AbstractVariable}, marginals)
     @assert length(variables) == length(marginals) "Variables $(variables) and marginals $(marginals) should have the same length"
     return foreach(zip(variables, marginals)) do (variable, marginal)
         set_initial_marginal!(variable, marginal)
@@ -208,22 +206,13 @@ message's log scale is undefined.
 
 See also [`ReactiveMP.set_initial_marginal!`](@ref).
 """
-function set_initial_message!(variable::AbstractVariable, message)
-    for i in 1:degree(variable)
-        set_initial_message!(
-            get_stream_of_outbound_messages(variable, i), message
-        )
-    end
-    return
-end
+function set_initial_message! end
 
-set_initial_message!(variables::AbstractArray{<:AbstractVariable}, message::PointMass) = _set_initial_message!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
-set_initial_message!(variables::AbstractArray{<:AbstractVariable}, message::Distribution) = _set_initial_message!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
-set_initial_message!(variables::AbstractArray{<:AbstractVariable}, messages) = _set_initial_message!(Base.IteratorSize(messages), variables, messages)
+set_initial_message!(variables::AbstractArray{<:AbstractVariable}, message::PointMass) = _set_initial_message!(variables, Iterators.repeated(message, length(variables)))
+set_initial_message!(variables::AbstractArray{<:AbstractVariable}, message::Distribution) = _set_initial_message!(variables, Iterators.repeated(message, length(variables)))
+set_initial_message!(variables::AbstractArray{<:AbstractVariable}, messages) = _set_initial_message!(variables, messages)
 
-function _set_initial_message!(
-        ::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, messages
-    )
+function _set_initial_message!(variables::AbstractArray{<:AbstractVariable}, messages)
     @assert length(variables) == length(messages) "Variables $(variables) and messages $(messages) should have the same length"
     return foreach(zip(variables, messages)) do (variable, message)
         set_initial_message!(variable, message)

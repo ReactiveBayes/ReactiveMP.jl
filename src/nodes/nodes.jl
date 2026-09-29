@@ -5,10 +5,6 @@ export FactorNode, factornode
 using Rocket
 using TupleTools
 
-import Base:
-    show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
-import Base: getindex, setindex!, firstindex, lastindex
-
 import MessagePassingRulesBase
 import MessagePassingRulesBase: Stochastic, Deterministic, NodeSpec, nodespec, default_algorithm
 
@@ -247,7 +243,6 @@ function node_specification(fform)
             "`$(fform)` is not a factor node: declare it with `@define_factor_node` (from `MessagePassingRulesBase`) before creating it",
         ),
     )
-    return nodespec(fform)
 end
 
 """

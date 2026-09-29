@@ -100,9 +100,8 @@ getdata(::Nothing) = nothing
 getdata(collection::Tuple) = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
 
-# TupleTools.prod is a more efficient version of Base.all for Tuple here
-is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
-is_initial(tuple::Tuple) = TupleTools.prod(map(is_initial, tuple))
+is_clamped(tuple::Tuple) = __check_all(is_clamped, tuple)
+is_initial(tuple::Tuple) = __check_all(is_initial, tuple)
 
 include("rule_arguments.jl")
 include("context.jl")

@@ -1,14 +1,6 @@
 using Rocket
 
-import Base: show, similar
-import Base: IteratorSize, HasLength
-import Base: IteratorEltype, HasEltype
-import Base: eltype, length, size, sum
-import Base: IndexStyle, IndexLinear, getindex
-
-import LinearAlgebra: UniformScaling
-
-import Rocket: similar_typeof
+import Base: show
 
 
 ##
