@@ -499,3 +499,30 @@ end
         end
     end
 end
+
+@testitem "DataVariable: linked to observations of other kinds and to an array of variables" tags = [:engine] begin
+    using BayesBase
+    import ReactiveMP: DataVariableActivationOptions, activate!, get_stream_of_marginals, new_observation!
+
+    include("../testutilities.jl")
+
+    # A non-numeric observation, given as a `PointMass`, is linked by its payload.
+    let word = datavar(), var = datavar()
+        activate!(word, DataVariableActivationOptions(false, false, nothing, nothing))
+        activate!(var, DataVariableActivationOptions(false, true, length, (word,)))
+        marginal = check_stream_updated_once(get_stream_of_marginals(var)) do
+            new_observation!(word, PointMass("text"))
+        end
+        @test getdata(marginal) == PointMass(4)
+    end
+
+    # An array of data variables is linked as the vector of their observations.
+    let xs = [datavar() for _ in 1:3], var = datavar()
+        foreach(x -> activate!(x, DataVariableActivationOptions(false, false, nothing, nothing)), xs)
+        activate!(var, DataVariableActivationOptions(false, true, (v, c) -> sum(v) + c, (xs, 10.0)))
+        marginal = check_stream_updated_once(get_stream_of_marginals(var)) do
+            new_observation!(xs, [1.0, 2.0, 3.0])
+        end
+        @test getdata(marginal) == PointMass(16.0)
+    end
+end

@@ -98,8 +98,10 @@ prediction and no link.
 - `linked`: whether the variable's observations are a function of other variables, rather than
   given with [`new_observation!`](@ref);
 - `transform`: for a linked variable, the function its observation is of;
-- `args`: for a linked variable, the constants and variables `transform` takes, in order. Each
-  must resolve to a `PointMass`: a constant, or a data variable holding an observation.
+- `args`: for a linked variable, the constants, variables and arrays of variables `transform`
+  takes, in order. `transform` is given their point values: a constant, a data variable's
+  observation (the payload of its `PointMass`, numeric or not) or, for an array, the vector of
+  its variables' observations.
 
 See also [`ReactiveMP.activate!`](@ref).
 """
@@ -175,23 +177,29 @@ end
 __link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false, EMPTY_ANNOTATIONS, 0))
 __link_getmarginal(l::AbstractVariable) = get_stream_of_marginals(l)
 __link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
-    collectLatest(map(get_stream_of_marginals, l))
+    collectLatest(map(get_stream_of_marginals, l)) |> share_recent()
 
 __apply_link(f::F, args) where {F} = __apply_link_data(f, getdata.(args))
 
-__apply_link_data(f::F, data::NTuple{N, PointMass}) where {F, N} =
-    f(mean.(data)...)
+# The point value of a linked argument: a `PointMass`'s payload, or the payloads of an array of
+# them, as a linked array of variables gives; `nothing` for anything else.
+__link_point_value(data::PointMass) = BayesBase.getpointmass(data)
+__link_point_value(data::AbstractArray{<:PointMass}) = map(BayesBase.getpointmass, data)
+__link_point_value(data) = nothing
+
+__apply_link_data(f::F, data::Tuple) where {F} =
+    any(d -> isnothing(__link_point_value(d)), data) ? __link_error(f, data) : f(map(__link_point_value, data)...)
 
 # A linked `DataVariable` must be a deterministic function of *point* values: the
 # transformation is applied to plain numbers, not to distributions. Linking to a
 # `RandomVariable` therefore delivers a full posterior here, which has no meaningful
 # point value to substitute; the error says so, where a bare `MethodError` in
 # `__apply_link` would not.
-function __apply_link_data(f::F, data::Tuple) where {F}
+function __link_error(f::F, data::Tuple) where {F}
     offenders = join(
         (
             "  argument $(i) :: $(typeof(d))" for
-                (i, d) in enumerate(data) if !(d isa PointMass)
+                (i, d) in enumerate(data) if isnothing(__link_point_value(d))
         ),
         "\n",
     )
