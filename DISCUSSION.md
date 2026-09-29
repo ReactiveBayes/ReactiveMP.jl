@@ -629,7 +629,7 @@ benefit is preserved by a better mechanism: the ordinary typed lambda parameter
 
 #### The `RuleSpec` is the execution vehicle, and carries no type parameters
 
-*(Reversed by the performance pass, 2026-09-27: `RuleSpec` is typed, `RuleSpec{B, P, S, L, A, ST}`.
+*(Reversed by the performance pass, 2026-09-27: `RuleSpec` is typed, `RuleSpec{B, P, S, L, A}`.
 The toy below measured a call site that can reach two rules; the engine's call sites reach one,
 and on real rules the typed spec is 2.5× faster per rule call than the untyped one behind a
 barrier, at no compile cost. §5, *The end-of-refactor performance pass*; `BENCHMARK.md` § 4.1;
@@ -2056,6 +2056,13 @@ Claims the assistant made that were **wrong** and should not be revived:
     rules, which the engine never builds; where resolution is genuinely uninferable, the call is
     dynamic in either design. Measured on real rules (`BENCHMARK.md` § 4.1): 27 ns per rule call
     typed, against 69 ns untyped behind a function barrier and 873 ns untyped without one.
+29. **"A rule declares its scratch's type (`scratch_type = (args) -> T`)."** No (user). The type
+    depends on the input types, their element types included, not on the rule, so it is no
+    property of the spec; a declared function per rule only restates what inference knows, and
+    is one more surface to support. Tried in `83b77d179` and removed: the engine infers the type
+    from the inputs' types (`rule_scratch_type`, `Base.promote_op` over the builder, concrete or
+    `Any`), measured as fast as the declaration on BIFM's rules. It only ever decides whether a
+    kept scratch is typed, never what a rule computes.
 
 ---
 
@@ -2165,8 +2172,8 @@ its scripts, diffs, notes and raw data are in the history up to `b46046c83`.
   the untyped result (`RuleSpec.body::Function`): an event built for nobody (≈ 300 ns), a
   `Message{D, L}` from `Any` (≈ 380 ns), `uuid4()` span ids when callbacks are set (≈ 760 ns), and
   the 18-field `RuleSpec` boxed at each dynamic call.
-- **The measured fix reverses §3.14 (user's follow-up):** a typed `RuleSpec{B, P, S, L, A, ST}` (the
-  body, preallocation, scratch, scratch-type and log-scale functions and the algorithm type as parameters;
+- **The measured fix reverses §3.14 (user's follow-up):** a typed `RuleSpec{B, P, S, L, A}` (the
+  body, preallocation, scratch and log-scale functions and the algorithm type as parameters;
   `RuleResult` carries the spec's type). At the engine's call site resolution runs on concrete
   input types and reaches one rule, so it returns one concrete spec and the body call is static and
   inlines: a rule call 873 → 27 ns and 15 → 2 allocations, 0.83–0.92× the barrier alternative per
@@ -2174,10 +2181,12 @@ its scripts, diffs, notes and raw data are in the history up to `b46046c83`.
   §3.14's toy call site could reach two rules and got a union of spec types; engine call sites do
   not have that shape. The barrier alternative that kept the spec untyped (`execute_rule(then,
   spec, …)`, 69 ns) was measured first and is superseded (Correction 28).
-- **The scratch is typed too (user's follow-up):** an optional `scratch_type`, a function of the
-  inputs' types folded to a constant, lets the engine assert the scratch it keeps between calls.
-  An untyped scratch cost ≈ 40 ns and 3 allocations per call; typed, a scratch rule costs what
-  any rule does (BIFM, the only user, 5–7%). An in-place rule's output needs no declaration, since
+- **The scratch is typed too (user's follow-up):** the engine infers the type of the scratch it
+  keeps from the inputs' types at the call, `Base.promote_op` over the rule's builder, folded to
+  a constant, and asserts the kept scratch to it; where the builder does not infer, the scratch
+  stays untyped. An untyped scratch cost ≈ 40 ns and 3 allocations per call; typed, a scratch rule
+  costs what any rule does (BIFM, the only user, 5–7%). A declared `scratch_type` was tried first
+  and dropped (Correction 29). An in-place rule's output needs no declaration, since
   `preallocate` is a typed field; reusing its buffer is an ownership question (PLAN #10), not a
   typing one.
 - **Custom dispatch (the user's experiment) has no target:** resolution is static, 26 ns, and

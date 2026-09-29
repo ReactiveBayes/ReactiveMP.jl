@@ -229,13 +229,14 @@ one per outbound stream and reuses it. It is write-before-read, carries nothing 
 and is never shared between a node's rules, so a rule using it stays pure. It is separate from
 `inplace`, and the two combine.
 
-**A rule may declare its scratch's type** with `scratch_type`, over the same slots, returning a
-type from the inputs' types: `scratch_type = (args) -> @NamedTuple{acc::Vector{Float64}}`, or
-computed from `eltype`s. The declaration folds to a constant. The engine asserts the kept
-scratch to it after an `isa` guard (other input types rebuild it), so the rule runs on a
-concretely typed scratch. A scratch not of the declared type is an `ArgumentError` naming the
-rule. Without the declaration the kept scratch is untyped, which costs ≈ 40 ns and 3 allocations
-per call (`BENCHMARK.md` § 4.2). An in-place rule's output needs no such declaration: its
+**The kept scratch's type is inferred, not declared** (user; `DISCUSSION.md` Correction 29). It
+depends on the inputs' types, their element types included, so the engine infers it at the call
+from them, `rule_scratch_type`: `Base.promote_op` over the rule's builder, folded to a constant,
+kept when concrete and `Any` otherwise. The kept scratch is asserted to it after an `isa` guard
+(other input types rebuild it), so the rule runs on a concretely typed scratch. A builder that
+does not infer leaves it untyped, which costs ≈ 40 ns and 3 allocations per call
+(`BENCHMARK.md` § 4.2). The type only decides whether a kept scratch is typed, never what a rule
+computes. An in-place rule's output needs no such declaration: its
 `preallocate` function is a typed field of the spec.
 
 The macro reads the names written in the lambda and fills the rest. Order is enforced, so
@@ -403,19 +404,18 @@ apart. It can also carry **the body's source text, file and line**, which is wha
 `@which_message_update_rule` able to *show you the rule* rather than merely name it — directly serving the
 educational and introspection goals above.
 
-**`RuleSpec` is typed: `RuleSpec{B, P, S, L, A, ST}`** (the performance pass, `BENCHMARK.md`;
-applied). The body, preallocation, scratch, scratch-type and log-scale functions and the algorithm
+**`RuleSpec` is typed: `RuleSpec{B, P, S, L, A}`** (the performance pass, `BENCHMARK.md`;
+applied). The body, preallocation, scratch and log-scale functions and the algorithm
 type are its parameters; `RuleResult` carries the spec's type. A sketch; the definition, `lib/MessagePassingRulesBase/src/rulespec.jl`, also has `kind`,
 `inputs`, `default`, `services`, `reads_logscale` and `annotates` (whether the body takes the
 `ann` slot, so that only such a rule is given a fresh annotation store):
 
 ```julia
-struct RuleSpec{B, P, S, L, A, ST}
+struct RuleSpec{B, P, S, L, A}
     algorithm::Type{A}
     body::B                # the lambda from `body = ...`
     prealloc::P            # from `preallocate = ...`, or `nothing`
     scratch::S             # from `scratch = ...`, or `nothing`
-    scratch_type::ST       # from `scratch_type = ...`, or `nothing`
     logscale::L
     inplace::Bool
     pure::Bool
@@ -480,7 +480,7 @@ checked by the packages' suites and bit-identical posteriors, and the set is app
 - **GraphPPL** (pull request, onto `4.9.0`; measured on 4.8.0): the two quadratic paths (`apply_meta!`,
   `flattened_index`) and three small fixes.
 
-Applied after it (`83b77d179`): `scratch_type`, annotations allocated only where something
+Applied after it (`83b77d179`): the kept scratch typed by inference from the inputs' types, annotations allocated only where something
 writes them (a message or marginal carrying none shares one frozen, empty `AnnotationDict`), a
 scratch slot only for rules that declare scratch, created at their first call, and
 `MarginalMapping` mutable as `MessageMapping` is. RxInfer's branch precompiles a workload

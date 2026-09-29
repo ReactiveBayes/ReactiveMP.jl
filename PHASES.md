@@ -268,7 +268,7 @@ mixed `m[]`/`q[]`, and one with a variadic group.
       than one type, and that degrades silently. The plain struct is type-stable by
       construction. The indirect call this costs is accepted and revisited later with real
       rules; Phase 0 supplies the number. See `DISCUSSION.md` §3.14 *(reversed by the
-      performance pass: `RuleSpec{B, P, S, L, A, ST}`, §3.14's banner)*
+      performance pass: `RuleSpec{B, P, S, L, A}`, §3.14's banner)*
 - [x] **ten representative rules written by hand** and read side by side —
       `spike/dispatch/02_rules.jl`, each shown as the surface a user writes plus the form the
       macro would emit. Covers the trivial BP case, an annotating rule, the `meta::Any`
@@ -2903,7 +2903,7 @@ A commit for the package with its comparison and fixtures, as in steps 3–5, an
     `output` does now.
 - **The engine:** each `MessageMapping` and `MarginalMapping` keeps a scratch slot, built at the
   first call and reused while the same rule runs on that stream *(now created at the first call
-  of a rule that declares scratch, and typed by its `scratch_type`, § Phase C)*. An edge keeps its dimensions
+  of a rule that declares scratch, and typed as inferred from the inputs' types, § Phase C)*. An edge keeps its dimensions
   within a graph; a rule whose shapes can vary checks them itself.
 - **TestUtils checks the contract.** A table case of a rule with scratch runs twice: once with a
   fresh scratch, once with a reused one poisoned with NaN (`poison!` dispatching on arrays, tuples
@@ -3743,8 +3743,8 @@ wait for the release):
   applied in `b46046c83` (the typed `RuleSpec`, callback events only for handlers that listen,
   span ids from a salted counter, a creation plan per node shape, a mutable `MessageMapping`, a
   barrier after the product's fold) and on RxInfer's branch (`1a6bb502`, the plugin's per-node
-  work); then `83b77d179`: `scratch_type` (`RuleSpec{B, P, S, L, A, ST}`, declared by BIFM's
-  rules), annotations only where something writes them (a message or marginal carrying none
+  work); then `83b77d179`: the kept scratch typed (first by a declared `scratch_type`, then, the user
+  rejecting the declaration, inferred from the inputs' types, DISCUSSION Correction 29), annotations only where something writes them (a message or marginal carrying none
   shares one frozen empty `AnnotationDict`; `RuleSpec.annotates`), a scratch slot created at the
   first call of a rule with scratch, `MarginalMapping` mutable; then RxInfer's precompile
   workload (`af1f082f`, §4.5). Every benchmarked model runs at 0.51–0.95× v6, posteriors
@@ -3755,7 +3755,7 @@ wait for the release):
 - *The working documents reconciled after the performance pass — done* (2026-09-29): `PLAN.md`,
   `DISCUSSION.md`, `BENCHMARK.md`, this file and `CLAUDE.md` audited against each other and the
   code; the docstrings and pages behind the code (the frozen annotations, `listens`,
-  `scratch_type` on the rules page, the v6 → v7 guide) brought up to date.
+  how a kept scratch is typed on the rules page, the v6 → v7 guide) brought up to date.
 - *The working documents reconciled — done* (2026-09-26): `PLAN.md`, `DISCUSSION.md`, this file,
   `INVENTORY.md` and `CLAUDE.md` audited against each other and the code after §3.49–3.51; stale
   present-tense claims corrected, earlier decisions marked superseded rather than rewritten.

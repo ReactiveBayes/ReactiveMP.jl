@@ -174,21 +174,12 @@ the rule, so a rule must not return it or a view into it, and it is never shared
 rule, not even one of the same node. It is independent of `inplace`, and a rule may declare both,
 taking `output` and then `scratch`.
 
-The scratch's type depends on the inputs' types, so an engine keeping it between calls cannot
-know it, and an untyped kept scratch costs a dynamic call and a few allocations per call. A rule
-removes that by declaring the type as well, `scratch_type`, a function of the same slots that
-computes it from the inputs' types alone and so folds to a constant:
-
-```julia
-@define_message_update_rule(
-    node = Summing, target = :out, args = (m[:in]::Vector{Float64},),
-    scratch = (args) -> (work = similar(args.m[:in]),),
-    scratch_type = (args) -> @NamedTuple{work::Vector{Float64}},
-    body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
-)
-```
-
-A `scratch` that builds another type than the one declared is an `ArgumentError` naming the rule.
+The scratch's type depends on the inputs' types, their element types included, so an engine
+keeping it between calls infers it from them ([`rule_scratch_type`](@ref)) and asserts the kept
+scratch to it; inputs of other types get a scratch of their own. Nothing is declared for this. A
+builder whose result type infers, as one made of `similar` or `zeros(eltype(...), ...)` over the
+inputs does, runs the rule on a concretely typed scratch; one that does not, say because it
+reads a global, runs it on an untyped one, which costs a dynamic call per call.
 
 ## Annotations
 

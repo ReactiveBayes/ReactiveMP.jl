@@ -21,8 +21,8 @@ end
 
 A rule as data, and the thing that runs: what a definition macro builds, what resolution
 ([`find_message_rule`](@ref) and its siblings) returns, and what [`execute_rule`](@ref) runs.
-Its body, preallocation, scratch, scratch-type and log-scale functions and its algorithm type are
-type parameters, `RuleSpec{B, P, S, L, A, ST}`: where resolution is inferred, as at an engine's call site,
+Its body, preallocation, scratch and log-scale functions and its algorithm type are
+type parameters, `RuleSpec{B, P, S, L, A}`: where resolution is inferred, as at an engine's call site,
 which reaches one rule, it returns one concrete spec, and the body call is static. It shows itself
 at the REPL with its inputs, flags, source, file and line.
 
@@ -44,12 +44,12 @@ What it declares, read as fields:
 - `source`, `file`, `line`: its body's source and where it was defined.
 
 The other fields are internal: `signature`, the [`RuleArgs`](@ref) type it dispatches on;
-`body`, `prealloc`, `scratch` and `scratch_type`, the macro-generated functions over the full slot lists, the
+`body`, `prealloc` and `scratch`, the macro-generated functions over the full slot lists, the
 body over `(output, scratch, algo, ctx, args, ann, target)` and the others over
 `(algo, ctx, args, target)`. Run a rule through [`execute_rule`](@ref) or a call, never by
 calling them.
 """
-struct RuleSpec{B, P, S, L, A, ST}
+struct RuleSpec{B, P, S, L, A}
     kind::Symbol
     node::Any
     target::Any
@@ -59,7 +59,6 @@ struct RuleSpec{B, P, S, L, A, ST}
     body::B
     prealloc::P
     scratch::S
-    scratch_type::ST
     default::Bool
     inplace::Bool
     pure::Bool
@@ -75,7 +74,7 @@ end
 function RuleSpec(;
         kind::Symbol, node, target, algorithm::Type, signature::Type, body::Function,
         inputs::Tuple{Vararg{InputSpec}} = (),
-        prealloc = nothing, scratch = nothing, scratch_type = nothing, default::Bool = false, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
+        prealloc = nothing, scratch = nothing, default::Bool = false, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
         annotates::Bool = true,
         services::Tuple{Vararg{Symbol}} = (), logscale = nothing, reads_logscale::Bool = false, source::AbstractString = "",
         file::Symbol = :none, line::Integer = 0,
@@ -90,7 +89,7 @@ function RuleSpec(;
         throw(ArgumentError("only a message rule has a log scale; `logscale` and `reads_logscale` are for message rules"))
     effective = something(pure, algorithm <: AbstractAlgorithm ? ispure(algorithm) : true)
     return RuleSpec(
-        kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, scratch_type, default, inplace, effective,
+        kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, default, inplace, effective,
         annotates, services, logscale, reads_logscale, String(source), file, Int(line),
     )
 end
@@ -301,13 +300,16 @@ rebuild it whenever it likes.
 """
     rule_scratch_type(spec::RuleSpec, algorithm, ctx, args, target) -> Type
 
-The type of the working memory [`rule_scratch`](@ref) builds for these inputs, as the rule
-declares it with `scratch_type`, or `Any` for a rule that declares none. It depends only on the
-inputs' types, so it folds to a constant where the call is inferred, and an engine keeping the
-scratch between calls can assert it.
+The type of the working memory [`rule_scratch`](@ref) builds for these inputs, inferred from their
+types: concrete where inference pins it down, `Any` where it does not, and `Nothing` for a rule
+that declares no scratch. It depends only on the inputs' types, so it folds to a constant where
+the call is inferred, and an engine keeping the scratch between calls asserts it. It decides only
+whether a kept scratch is typed, never what a rule computes.
 """
-@inline rule_scratch_type(spec::RuleSpec, algorithm, ctx, args, target) =
-    spec.scratch_type === nothing ? Any : spec.scratch_type(algorithm, ctx, args, target)
+@inline function rule_scratch_type(spec::RuleSpec, algorithm, ctx, args, target)
+    T = Base.promote_op(rule_scratch, typeof(spec), typeof(algorithm), typeof(ctx), typeof(args), typeof(target))
+    return isconcretetype(T) ? T : Any
+end
 
 @inline function throw_if_not_found(spec)
     spec isa RuleNotFound && throw(RuleNotFoundError(spec))

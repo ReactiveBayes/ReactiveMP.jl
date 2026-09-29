@@ -394,20 +394,13 @@ end
         body = (scratch, args) -> (scratch.work .= args.m[:out] .- args.m[:in]; sum(scratch.work)),
     )
 
-    # The same rule with its scratch's type declared, and one declaring the wrong type.
+    # A rule whose scratch's type follows its input's element type.
     struct TypedScratched end
     @define_factor_node(node = TypedScratched, type = Stochastic, interfaces = [:out, :in])
     @define_message_update_rule(
-        node = TypedScratched, target = :out, args = (m[:in]::Vector{Float64},),
+        node = TypedScratched, target = :out, args = (m[:in]::Vector{<:Real},),
         scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
-        scratch_type = (args) -> @NamedTuple{work::Vector{Float64}},
         body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
-    )
-    @define_message_update_rule(
-        node = TypedScratched, target = :in, args = (m[:out]::Vector{Float64},),
-        scratch = (args) -> (work = similar(args.m[:out]),),
-        scratch_type = (args) -> @NamedTuple{work::Vector{Int}},
-        body = (scratch, args) -> sum(args.m[:out]),
     )
 end
 
@@ -453,7 +446,7 @@ end
     @test N.SCRATCH_BUILT[] == 1
 end
 
-@testitem "a mapping keeps a declared scratch type, and refuses a wrong one" tags = [:engine] setup = [MessageMappingNodes] begin
+@testitem "a mapping keeps its scratch typed as inferred from the inputs" tags = [:engine] setup = [MessageMappingNodes] begin
     import ReactiveMP: MessageMapping, getdata
     import MessagePassingRulesBase: Target, DefaultAlgorithm
     N = MessageMappingNodes
@@ -464,14 +457,15 @@ end
         @test getdata(typed((Message(x, false, false),), nothing)) == 2 * sum(x)
     end
     @test N.SCRATCH_BUILT[] == 1
-    @test typed.scratch !== nothing
+    @test typed.scratch.scratch isa @NamedTuple{work::Vector{Float64}}
+    # inputs of another element type get a scratch of their own type
+    @test getdata(typed((Message(Float32[1, 2], false, false),), nothing)) === 6.0f0
+    @test N.SCRATCH_BUILT[] == 2
+    @test typed.scratch.scratch isa @NamedTuple{work::Vector{Float32}}
     # a mapping whose rule declares no scratch keeps no slot
     plain = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Increment(), nothing)
     plain((Message(1, false, false),), nothing)
     @test plain.scratch === nothing
-
-    wrong = MessageMapping(N.TypedScratched, Target{:in}(), Val((:out,)), nothing, DefaultAlgorithm(), nothing, N.TypedScratched(), nothing)
-    @test_throws "declares `scratch_type`" wrong((Message([1.0], false, false),), nothing)
 end
 
 @testitem "MessageMapping gives a rule the default random number generator" tags = [:engine] setup = [MessageMappingNodes] begin

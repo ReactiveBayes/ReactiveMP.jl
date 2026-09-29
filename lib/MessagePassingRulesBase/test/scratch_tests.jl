@@ -47,15 +47,24 @@
     # An average energy has no scratch.
     @define_average_energy(node = Summing, args = (q[:in]::Vector{Float64},), body = (args) -> sum(args.q[:in]))
 
-    # The scratch's type declared from the inputs' types.
+    # A scratch whose type follows the inputs' types, and one whose type does not infer.
     struct TypedSumming end
     @define_factor_node(node = TypedSumming, type = Stochastic, interfaces = [:out, :in])
     @define_message_update_rule(
         node = TypedSumming, target = :out, args = (m[:in]::Vector{<:Real},),
         scratch = (args) -> (work = similar(args.m[:in]),),
-        scratch_type = (args) -> @NamedTuple{work::typeof(args.m[:in])},
         body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
     )
+    @define_message_update_rule(
+        node = TypedSumming, target = :in, args = (m[:out]::Vector{Float64},),
+        scratch = (args) -> (rand() > 2 ? 1 : "one"),
+        body = (scratch, args) -> sum(args.m[:out]),
+    )
+
+    # A rule without scratch.
+    struct Plain end
+    @define_factor_node(node = Plain, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Plain, target = :out, args = (m[:in]::Vector{Float64},), body = (args) -> sum(args.m[:in]))
 end
 
 @testitem "scratch:declared and run" tags = [:base] setup = [ScratchNodes] begin
@@ -114,7 +123,7 @@ end
     @test contains(sprint(show, MIME("text/plain"), spec), "scratch: yes")
 end
 
-@testitem "scratch:typed" tags = [:base] setup = [ScratchNodes] begin
+@testitem "scratch:inferred type" tags = [:base] setup = [ScratchNodes] begin
     using MessagePassingRulesBase
     using MessagePassingRulesBase: find_message_rule, execute_rule, rule_scratch, rule_scratch_type,
         Target, DefaultAlgorithm, RuleContext, NoAnnotations, RuleArgs
@@ -124,7 +133,7 @@ end
         args = RuleArgs(m = (in = x,))
         spec = find_message_rule(S.TypedSumming, Target(:out), DefaultAlgorithm(), args)
         T = rule_scratch_type(spec, DefaultAlgorithm(), RuleContext(), args, Target(:out))
-        # the type follows the inputs' types, and is what the scratch builds
+        # the type is inferred from the inputs' types, and is what the scratch builds
         @test T === @NamedTuple{work::typeof(x)}
         @test rule_scratch(spec, DefaultAlgorithm(), RuleContext(), args, Target(:out)) isa T
         @test @inferred(rule_scratch_type(spec, DefaultAlgorithm(), RuleContext(), args, Target(:out))) === T
@@ -132,10 +141,16 @@ end
         @test execute_rule(spec, nothing, scratch, DefaultAlgorithm(), RuleContext(), args, NoAnnotations(), Target(:out)) == 12
     end
 
-    # A rule that declares no type gives `Any`.
-    args = RuleArgs(m = (in = [1.0, 2.0, 3.0],))
-    untyped = find_message_rule(S.Summing, Target(:out), DefaultAlgorithm(), args)
-    @test rule_scratch_type(untyped, DefaultAlgorithm(), RuleContext(), args, Target(:out)) === Any
+    # A scratch whose type does not infer to a concrete one gives `Any`.
+    args = RuleArgs(m = (out = [1.0, 2.0],))
+    untyped = find_message_rule(S.TypedSumming, Target(:in), DefaultAlgorithm(), args)
+    @test rule_scratch_type(untyped, DefaultAlgorithm(), RuleContext(), args, Target(:in)) === Any
+    @test execute_rule(untyped, nothing, "one", DefaultAlgorithm(), RuleContext(), args, NoAnnotations(), Target(:in)) == 3
+
+    # A rule without scratch gives `Nothing`.
+    args = RuleArgs(m = (in = [1.0],))
+    none = find_message_rule(S.Plain, Target(:out), DefaultAlgorithm(), args)
+    @test rule_scratch_type(none, DefaultAlgorithm(), RuleContext(), args, Target(:out)) === Nothing
 end
 
 @testitem "scratch:malformed" tags = [:base] begin
@@ -158,7 +173,6 @@ end
 
     @test failure(rule(:(body = (scratch, args) -> 1))) |> msg -> contains(msg, "the `scratch` slot requires a `scratch` keyword")
     @test failure(rule(:(scratch = (args) -> 1), :(body = (args) -> 1))) |> msg -> contains(msg, "declares `scratch` but its body does not take it")
-    @test failure(rule(:(scratch_type = (args) -> Int), :(body = (args) -> 1))) |> msg -> contains(msg, "`scratch_type` requires `scratch`")
     @test failure(rule(:(inplace = true), :(preallocate = (args) -> [0.0]), :(scratch = (args) -> 1), :(body = (scratch, output, args) -> 1))) |>
         msg -> contains(msg, "canonical order")
     @test failure(

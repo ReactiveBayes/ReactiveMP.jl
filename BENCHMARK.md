@@ -83,7 +83,7 @@ practice:
 
 | cost | fix |
 |---|---|
-| `RuleSpec.body::Function` made every rule's result `Any`: an event built for nobody, a `Message` whose type was computed at run time, the spec boxed (873 ns per rule call) | a typed `RuleSpec{B, P, S, L, A, ST}` (§4.1), events built only for handlers that listen, span ids from a salted counter: 27–40 ns |
+| `RuleSpec.body::Function` made every rule's result `Any`: an event built for nobody, a `Message` whose type was computed at run time, the spec boxed (873 ns per rule call) | a typed `RuleSpec{B, P, S, L, A}` (§4.1), events built only for handlers that listen, span ids from a salted counter: 27–40 ns |
 | every node re-resolved its interfaces by name, checked its groups and converted its factorisation, in code that never specialised on the node type: 1.6–5 µs per node, against v6's 0.34 | a creation plan per node declaration, interface keys and factorisation; its dependencies resolved once per shape |
 | every `DeferredMessage` copied its immutable `MessageMapping`, factor node included | `MessageMapping` a mutable struct, every field constant but the scratch slot |
 | a fresh `AnnotationDict` for every message and marginal, and a `ScratchSlot` for every mapping, used or not | one frozen, empty dict shared by those that carry none, a fresh one only where something may write; a slot at the first call of a rule with scratch (`83b77d179`): one allocation fewer per rule call |
@@ -107,10 +107,13 @@ takes 4 ns.
 
 ### 4.2 Scratch
 
-A rule's scratch is kept between calls in an untyped slot, since its type depends on the input
-types. That costs about 40 ns and 3 allocations per call, 5–7% of BIFM's rules, the only ones
-with scratch. A declared `scratch_type` makes it typed (`PLAN.md` § Scratch), and BIFM's rules
-declare it.
+A rule's scratch is kept between calls in a slot the mapping creates before the input types are
+known, since its type depends on them. Kept untyped, it costs about 40 ns and 3 allocations per
+call, 5–7% of BIFM's rules, the only ones with scratch. The engine now infers the type from the
+inputs' types at the call and asserts the kept scratch to it (`PLAN.md` § Scratch): a toy rule's
+call takes 8 ns and allocates nothing, against 26 ns and 32 bytes untyped, and BIFM's rules, whose
+builders infer, run as fast as with the type declared by hand (a `scratch_type` keyword, tried
+and dropped, user).
 
 ### 4.3 The garbage collector and latency
 

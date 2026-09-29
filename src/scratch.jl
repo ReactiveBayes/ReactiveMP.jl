@@ -29,15 +29,15 @@ With `checked`, the `checked_buffers` diagnostic, a reused scratch is poisoned f
 """
 function scratch_for!(slot::ScratchSlot, spec, algorithm, ctx, args, target, checked::Bool = false)
     spec.scratch === nothing && return nothing
-    # The declared type (`Any` when the rule declares none): the slot's value is asserted to it, so
-    # the rule runs on a concretely typed scratch; one of another type (other input types) is rebuilt.
+    # The type the scratch has for these inputs, inferred from their types (`Any` where inference
+    # cannot pin it down): the slot's value is asserted to it, so the rule runs on a concretely
+    # typed scratch; one of another type, built for other input types, is rebuilt.
     T = MessagePassingRulesBase.rule_scratch_type(spec, algorithm, ctx, args, target)
     current = slot.scratch
     if slot.spec === spec && current isa T
         return (checked ? poison!(current) : current)::T
     end
     fresh = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, target)
-    fresh isa T || throw_scratch_type(spec, T, fresh)
     slot.scratch = fresh
     slot.spec = spec
     return fresh::T
@@ -56,7 +56,3 @@ function scratch_slot!(mapping)
     mapping.scratch = fresh
     return fresh
 end
-
-@noinline throw_scratch_type(spec, T, fresh) = throw(
-    ArgumentError("$(MessagePassingRulesBase.rule_heading(spec)) declares `scratch_type` $(T), but its `scratch` built a $(typeof(fresh))"),
-)
