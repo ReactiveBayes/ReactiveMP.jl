@@ -45,9 +45,10 @@ round:
   bitwise that of "before", on every model and round, 170 comparisons, the streaming filter's
   history included. Against v6 it is bitwise identical except the mixture (9·10⁻¹³) and the HMM
   (3·10⁻¹²).
-- **First inference is still slower than v6**: 1.1–1.4× without a precompile workload on either
-  side, and the change itself adds 1–9%. The typed design compiles more specialisations; a
-  PrecompileTools workload in RxInfer is the remedy.
+- **First inference**: without a precompile workload on either side, v7 is 1.1–1.4× v6, and the
+  change itself adds 1–9%, since the typed design compiles more specialisations. RxInfer's branch
+  now has a workload (§4.5): a first inference on the common paths takes 0.27–0.44 s instead of
+  6.7–7.4 s, and RxInfer's own precompile takes 12 s instead of 2.6.
 
 ## 2. Method
 
@@ -120,6 +121,36 @@ Subscribing along a chain recurses, about 8 KB of stack per link. Without RxInfe
 v7 beyond 2 304. A guard in Rocket that hops to a fresh task (round 1's P9) raises that to 3 776,
 at 1–8% of setup; it is not applied.
 
+### 4.5 RxInfer's precompile workload
+
+A PrecompileTools workload on RxInfer's branch (`af1f082f`) runs four small inferences while RxInfer
+precompiles: a belief-propagation chain, an iid model under mean field, a Beta–Bernoulli pair and
+the chain with `limit_stack_depth`. The limit is 2, so that the short chain reaches it and the
+scheduler's path onto a new task compiles too. Measured on an idle machine, the telemetry off,
+each figure the minimum of fresh processes:
+
+- **The cost.** RxInfer's precompile goes from 2.6 to 12.0 s, once per installation or update;
+  `using RxInfer` from 1.35 to 1.56 s. The user set 12 s as the limit. Each call's share: the
+  chain 6.1 s (it compiles the whole `infer` path), the iid model 1.1, Beta–Bernoulli 0.7,
+  `limit_stack_depth` 1.4.
+- **The common calls** (defaults, n = 10³): the chain, with and without `limit_stack_depth`, the
+  iid model and Beta–Bernoulli take 0.27–0.44 s to their first result, against 6.7–7.4 s without the
+  workload.
+- **Models outside it** still gain, since the engine, GraphPPL and the common rules are cached:
+  the 2-D Kalman smoother 11.6 → 6.3 s, nl 11.5 → 4.7, the HMM 12.3 → 7.3, the mixture 11.2 → 5.6,
+  linreg 9.9 → 4.7, the streaming filter 7.9 → 2.5. (These are with a larger version of the
+  workload that also ran the three models with `free_energy = true`; the benchmark models use
+  `free_energy = Float64`, which neither covers.)
+- **Left out: `free_energy = true`.** What it compiles depends on the model: covering it for the
+  iid model (1 s more) left the chain with it at 2.3 s. With the workload, a first inference with
+  it takes 1.5–2.8 s on these models, and with `free_energy = Float64` about 2 s.
+  `limit_stack_depth` was kept instead, since it helps every model that sets it: 2.2 s saved on
+  the chain, 0.8–2 s on ssm2, nl and the HMM.
+- **Telemetry.** RxInfer's usage ping at `using` compiles HTTP and JSON on a spawned task. In a
+  process with one thread and no interactive one (`-t1`), that task takes the main thread at the
+  first yield, which adds 2–4 s to a first inference with `limit_stack_depth`. A default launch
+  has an interactive thread, and the benchmarks set `LOG_USING_RXINFER=false`.
+
 ## 5. Measured and rejected
 
 - **The equality chain's two-message partial products (round 1's P4).** They applied the form
@@ -137,8 +168,8 @@ at 1–8% of setup; it is not applied.
 
 ## 6. Left open
 
-- **A precompile workload** for first inference (1.1–1.4× v6): RxInfer's, with `free_energy =
-  true` and the session, and one per rule package with many nodes.
+- **Precompile workloads in the rule packages** with many nodes (the multivariate Gaussians,
+  Delta, DiscreteTransition), as extensions on ReactiveMP; RxInfer's is done (§4.5).
 - **Log scale `nothing` for data and constants when log scales are not tracked (not done).** Neither knows
   whether they are, so the flag would thread through `constvar` and the data variable's
   activation, and a caller tracking log scales that forgot it would lose them silently; the gain
