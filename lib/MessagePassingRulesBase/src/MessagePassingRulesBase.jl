@@ -13,9 +13,12 @@ through Julia's dispatch, whichever loaded package defines them.
 - [`@define_dependencies`](@ref) declares what the rules consume under an algorithm of the
   node's own;
 - [`call_message_update_rule`](@ref) and its siblings run a rule by hand, and
-  [`which_message_update_rule`](@ref) and its siblings say which one would run.
+  [`which_message_update_rule`](@ref) and its siblings say which one would run;
+- the math helpers, such as [`add_outer`](@ref) and [`gaussian_second_moment`](@ref), are the
+  linear and Gaussian algebra the rule packages share.
 
-It depends on BayesBase only, not on a distribution package or an engine.
+It depends on BayesBase and small numerical packages, not on a distribution package or an
+engine.
 
 # Examples
 
@@ -37,6 +40,9 @@ module MessagePassingRulesBase
 
 using BayesBase, MacroTools
 using Compat: @compat
+import LinearAlgebra
+using FastCholesky: cholinv, fastcholesky
+using IrrationalConstants: log2π
 
 export message_passing_rule, message_passing_rule!
 export message_passing_marginalrule, message_passing_marginalrule!
@@ -80,8 +86,14 @@ export RuleResult, getresult, getrule, getannotations
 @compat public list_rules, RuleCoverage, rule_coverage, check_rules, RuleIssue, check_rule_ambiguities
 @compat public NodeFunctionLogPdf, visualize_spec
 
+@compat public add_outer, trace_product, negate!!, scale!!, scaled_outer, diageye, promote_cluster
+@compat public gaussian_average_energy, gaussian_variational_variance, gaussian_variational_covariance
+@compat public gaussian_coupled_precision, gaussian_difference_moment, gaussian_series_precision
+@compat public gaussian_second_moment, gaussian_cross_moment
+
 include("targets.jl")
 include("factorized_cluster.jl")
+include("math.jl")
 include("public_equivalent.jl")
 include("containers.jl")
 include("logscale.jl")

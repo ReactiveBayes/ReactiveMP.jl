@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `MessagePassingRulesBase` has **math helpers**, public and documented on their own page, not exported (user): the linear algebra `add_outer`, `trace_product`, `negate!!`, `scale!!`, `scaled_outer`, `diageye` and `promote_cluster`, and the Gaussian algebra `gaussian_second_moment`, `gaussian_cross_moment`, `gaussian_difference_moment`, `gaussian_average_energy`, `gaussian_variational_variance`, `gaussian_variational_covariance`, `gaussian_coupled_precision` and `gaussian_series_precision`. They are the helpers the rule packages shared through Standard's internals, renamed (`rank1update` is `add_outer`, `mul_trace` `trace_product`, `negate_inplace!` `negate!!`, `mul_inplace!` `scale!!`, `v_a_vT` `scaled_outer`, `promoted_cluster` `promote_cluster`), with the two moments new. The package depends on FastCholesky, IrrationalConstants and LinearAlgebra besides BayesBase.
+
 ### Changed
 - The working documents and package docs corrected after the audit of 2026-09-29: who applied what in the performance pass and when, a dead pointer, the list of the 27 rules without a log scale, the repository layout and Delta's `:slow` coverage gate in `CLAUDE.md`, five `docs/make.jl` headers naming their `make` target, and this file's two `### Changed` sections merged into one.
 - `factornode` resolves an interface alias under the node's current declaration: the alias cache keeps the `NodeSpec` each answer was resolved under, as the creation plans do, so a node redefined in a session (with Revise, or in a test) no longer accepts the aliases of its earlier declaration.

@@ -11,8 +11,9 @@ rule by hand at the REPL or in a test, or, as an engine author, to look rules up
 
 A rule is an ordinary Julia function of its inputs, dispatched on the node, the target and the
 types of the incoming messages and marginals. Resolution is Julia's own dispatch, so a rule
-defined in any loaded package is found. The package depends on BayesBase alone: no
-distribution package, no engine.
+defined in any loaded package is found. The package depends on BayesBase and small numerical
+packages (FastCholesky, IrrationalConstants): no distribution package, no engine. It also holds
+the [math helpers](@ref math-helpers) the rule packages share.
 
 ```@docs
 MessagePassingRulesBase

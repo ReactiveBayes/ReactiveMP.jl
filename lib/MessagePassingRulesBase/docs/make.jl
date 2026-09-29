@@ -31,6 +31,7 @@ makedocs(
         "Calling rules" => "calling.md",
         "Inspecting rules" => "inspecting.md",
         "Rule fallbacks" => "fallbacks.md",
+        "Math helpers" => "math.md",
         "Internals" => "internals.md",
     ],
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
