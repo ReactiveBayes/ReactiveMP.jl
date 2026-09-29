@@ -204,7 +204,8 @@ its outbound messages and one for its marginal (see
   Default [`UnspecifiedFormConstraint`](@ref), which leaves it as it is;
 - `form_constraint_check_strategy`: when the form constraint applies, once to the whole product,
   [`FormConstraintCheckLast`](@ref), the default, or after each pairwise product,
-  [`FormConstraintCheckEach`](@ref);
+  [`FormConstraintCheckEach`](@ref); [`FormConstraintCheckPickDefault`](@ref) is resolved here to
+  the constraint's own, [`default_form_check_strategy`](@ref);
 - `fold_strategy`: the order the messages are multiplied in:
   [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), the default,
   [`ReactiveMP.MessagesProductFromRightToLeft`](@ref), or a function `f(variable, context,
@@ -224,14 +225,31 @@ RxInfer builds it from a variable's form constraint, with [`default_prod_constra
 See also [`ReactiveMP.compute_product_of_messages`](@ref),
 [`ReactiveMP.compute_product_of_two_messages`](@ref).
 """
-Base.@kwdef struct MessageProductContext{C, F, S, L, N, A}
-    prod_constraint::C = BayesBase.GenericProd()
-    form_constraint::F = UnspecifiedFormConstraint()
-    form_constraint_check_strategy::S = FormConstraintCheckLast()
-    fold_strategy::L = MessagesProductFromLeftToRight()
-    annotations::N = nothing
-    callbacks::A = nothing
+struct MessageProductContext{C, F, S, L, N, A}
+    prod_constraint::C
+    form_constraint::F
+    form_constraint_check_strategy::S
+    fold_strategy::L
+    annotations::N
+    callbacks::A
+
+    function MessageProductContext(prod_constraint::C, form_constraint::F, form_constraint_check_strategy, fold_strategy::L, annotations::N, callbacks::A) where {C, F, L, N, A}
+        strategy = resolve_form_check_strategy(form_constraint_check_strategy, form_constraint)
+        return new{C, F, typeof(strategy), L, N, A}(prod_constraint, form_constraint, strategy, fold_strategy, annotations, callbacks)
+    end
 end
+
+MessageProductContext(;
+    prod_constraint = BayesBase.GenericProd(),
+    form_constraint = UnspecifiedFormConstraint(),
+    form_constraint_check_strategy = FormConstraintCheckLast(),
+    fold_strategy = MessagesProductFromLeftToRight(),
+    annotations = nothing,
+    callbacks = nothing,
+) = MessageProductContext(prod_constraint, form_constraint, form_constraint_check_strategy, fold_strategy, annotations, callbacks)
+
+resolve_form_check_strategy(strategy, form_constraint) = strategy
+resolve_form_check_strategy(::FormConstraintCheckPickDefault, form_constraint) = default_form_check_strategy(form_constraint)
 
 function Base.show(io::IO, ctx::MessageProductContext)
     print(io, "MessageProductContext(strategy=")

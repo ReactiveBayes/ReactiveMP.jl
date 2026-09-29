@@ -67,11 +67,10 @@ end
 """
     FormConstraintCheckPickDefault()
 
-The choice of the constraint's own check strategy, [`default_form_check_strategy`](@ref), for
-a caller that resolves it, such as RxInfer when it builds a variable's
-[`ReactiveMP.MessageProductContext`](@ref). The engine does not resolve it: the context's
+The choice of the constraint's own check strategy, [`default_form_check_strategy`](@ref).
+[`ReactiveMP.MessageProductContext`](@ref) resolves it when it is built, so a context's
 `form_constraint_check_strategy` is [`FormConstraintCheckEach`](@ref) or
-[`FormConstraintCheckLast`](@ref), and any other value applies no form constraint.
+[`FormConstraintCheckLast`](@ref).
 """
 struct FormConstraintCheckPickDefault end
 

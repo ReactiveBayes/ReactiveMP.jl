@@ -60,7 +60,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 | Gamma's variational rule towards `out` uses `E[θ]` where naive VMP gives `1/E[1/θ]`, which its own average energy uses; exact for a point-mass `θ`, and the node has no rule towards `θ` | left as v6 has it (user, 2026-09-26) | § Phase C, *Progress* |
 | Beta's average energy takes `log B(E[a], E[b])` for `E[log B(a, b)]`, exact for point-mass `a`, `b` only; the node has no rule towards them | left for now (user, 2026-09-26) | § Phase C, *Progress* |
-| found by the documentation pass, documented as they are: ConjugateAR under `ARVMP(Univariate, …)` is a `MethodError`; `AdditiveCouplingLayer` with `partition_dim > 1` builds and then fails in `forward`; BinomialPolya's and Probit's `DefaultAlgorithm` energies use a fixed 32 cubature points; `test_rule_derivatives` throws where the tables record a failure; the engine and migration fixture headers store `julia` as different types; `FormConstraintCheckPickDefault` is resolved by RxInfer, not the engine; `Dependency.key` cannot name a group member `(:T, 1)` | to discuss | the packages' docs, *Limitations* |
+| found by the documentation pass, documented as they are: ConjugateAR under `ARVMP(Univariate, …)` is a `MethodError`; `AdditiveCouplingLayer` with `partition_dim > 1` builds and then fails in `forward`; BinomialPolya's and Probit's `DefaultAlgorithm` energies use a fixed 32 cubature points; `test_rule_derivatives` throws where the tables record a failure; the engine and migration fixture headers store `julia` as different types; `Dependency.key` cannot name a group member `(:T, 1)` | to discuss | the packages' docs, *Limitations* |
 | the package sites published with the repository split: each `InterLinks` sibling then lists the online `objects.inv` first, so a link follows the deployed pages' URL form | Phase 8 | `docs/make.jl`, `lib/*/docs/make.jl` |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
@@ -3728,7 +3728,9 @@ wait for the release):
   which ran in the uninstantiated v6 environment and would have failed `ci.yml` on the first PR;
   the engine's dead code, unused imports and stale comments out; the equality chain no longer
   computes a cached partial product again; `FormConstraintCheckLast` applies once per outbound
-  message, not to each partial product (user).
+  message, not to each partial product (user); `MessageProductContext` resolves
+  `FormConstraintCheckPickDefault` to the constraint's own strategy (user), where it applied no
+  constraint at all.
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one
   documentation site and README per package, built by `make docs-all` in dependency order and

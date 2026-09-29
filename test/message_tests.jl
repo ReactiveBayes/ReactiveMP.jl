@@ -1040,6 +1040,34 @@ end
     end
 end
 
+@testitem "FormConstraintCheckPickDefault is the form constraint's own check strategy" tags = [:engine] begin
+    import ReactiveMP:
+        MessageProductContext,
+        AbstractFormConstraint,
+        FormConstraintCheckEach,
+        FormConstraintCheckLast,
+        FormConstraintCheckPickDefault,
+        UnspecifiedFormConstraint,
+        MessagesProductFromLeftToRight,
+        compute_product_of_messages,
+        getdata
+    using BayesBase, Distributions, ExponentialFamily
+
+    struct ToPointMass <: AbstractFormConstraint end
+    ReactiveMP.constrain_form(::ToPointMass, d) = PointMass(mean(d))
+    ReactiveMP.default_form_check_strategy(::ToPointMass) = FormConstraintCheckLast()
+
+    context = MessageProductContext(; form_constraint = ToPointMass(), form_constraint_check_strategy = FormConstraintCheckPickDefault())
+    @test context.form_constraint_check_strategy === FormConstraintCheckLast()
+    messages = (Message(NormalMeanVariance(1.0, 1.0), false, false), Message(NormalMeanVariance(3.0, 1.0), false, false))
+    @test getdata(compute_product_of_messages(randomvar(), context, messages)) == PointMass(2.0)
+
+    # The positional constructor resolves it too, and an explicit strategy is kept as it is.
+    positional = MessageProductContext(BayesBase.GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckPickDefault(), MessagesProductFromLeftToRight(), nothing, nothing)
+    @test positional.form_constraint_check_strategy === FormConstraintCheckLast()
+    @test MessageProductContext(; form_constraint = ToPointMass(), form_constraint_check_strategy = FormConstraintCheckEach()).form_constraint_check_strategy === FormConstraintCheckEach()
+end
+
 @testitem "Before/after product of messages callbacks" tags = [:engine] setup = [
     MessageProductContextUtils,
 ] begin
