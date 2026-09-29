@@ -3736,7 +3736,8 @@ wait for the release):
   one failure this, which passes with it); a linked data variable reads a non-numeric
   observation's payload and links an array of variables, both failing before; under tracked log
   scales a message missing for a missing input has an undefined log scale, `:missing_input`,
-  not `nothing`.
+  not `nothing`; the alias cache keeps the declaration each alias was resolved under, so a
+  redefined node does not answer with its old aliases.
 - *The documentation pass — done* (user, 2026-09-26): every docstring audited and rewritten to
   one style (the contributing page, *Documentation*), cross-references revised, and one
   documentation site and README per package, built by `make docs-all` in dependency order and

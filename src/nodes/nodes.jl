@@ -273,16 +273,18 @@ interface_key(interface::NodeInterface) = name(interface)
 interface_key(interface::IndexedNodeInterface) = (name(interface), index(interface))
 
 # `alias_interface` scans the node's declaration; a graph asks for the same few names of the
-# same few node types many times, so the answers are cached.
-const ALIAS_CACHE = Dict{Tuple{Any, Symbol}, Symbol}()
+# same few node types many times, so the answers are cached, each with the declaration it was
+# resolved under: one made before the node was redefined is not used.
+const ALIAS_CACHE = Dict{Tuple{Any, Symbol}, Tuple{NodeSpec, Symbol}}()
 const ALIAS_LOCK = ReentrantLock()
 
 function cached_alias_interface(fform, name::Symbol)
     key = (fform, name)
+    spec = nodespec(fform)
     cached = @lock ALIAS_LOCK get(ALIAS_CACHE, key, nothing)
-    cached === nothing || return cached
+    (cached === nothing || first(cached) !== spec) || return last(cached)
     resolved = MessagePassingRulesBase.alias_interface(fform, name)
-    @lock ALIAS_LOCK ALIAS_CACHE[key] = resolved
+    @lock ALIAS_LOCK ALIAS_CACHE[key] = (spec, resolved)
     return resolved
 end
 

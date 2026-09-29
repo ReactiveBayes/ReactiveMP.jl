@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `factornode` resolves an interface alias under the node's current declaration: the alias cache keeps the `NodeSpec` each answer was resolved under, as the creation plans do, so a node redefined in a session (with Revise, or in a test) no longer accepts the aliases of its earlier declaration.
 - Under tracked log scales, a message a mapping does not compute because an input is `missing` carries `UndefinedLogScale(:missing_input)`, where it carried `nothing` and `getlogscale` said log scales were not tracked; `MessagePassingRulesBase` describes the cause. A product with it still takes the other side's log scale.
 - A linked data variable reads its arguments' observations with `BayesBase.getpointmass`, so an observation that is not a number, a `PointMass` of text say, is linked where `mean` overflowed the stack; and an argument that is an array of variables is linked as the vector of their observations, where its source had no latest value and the link failed with a `MethodError` at the first update.
 - `compute_product_of_two_messages` takes a `missing` side as the product's identity, returning the other side without calling `BayesBase.prod`, under any product strategy: `prod(::GenericProd, ::ProductOf, ::Missing)` is ambiguous in BayesBase, and since the equality chain's partial products are no longer form-constrained, an unsupported `ProductOf` reached it where RxInfer expects its error naming the variable.

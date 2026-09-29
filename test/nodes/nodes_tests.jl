@@ -70,6 +70,21 @@ end
     @test getvariable.(getinterfaces(node)) == [out, μ, v]
 end
 
+@testitem "factornode resolves aliases under the node's current declaration" tags = [:nodes] begin
+    using MessagePassingRulesBase
+    import ReactiveMP: getinterfaces, name
+
+    struct Redeclared end
+    @define_factor_node(node = Redeclared, type = Stochastic, interfaces = [:out, (:in, aliases = [:x])])
+    @test name.(getinterfaces(factornode(Redeclared, [(:out, randomvar()), (:x, randomvar())]))) == [:out, :in]
+
+    # Redefined, `:x` names nothing and `:y` is the alias: neither the creation plan nor the
+    # alias resolved under the first declaration is used.
+    @define_factor_node(node = Redeclared, type = Stochastic, interfaces = [:out, (:in, aliases = [:y])])
+    @test name.(getinterfaces(factornode(Redeclared, [(:out, randomvar()), (:y, randomvar())]))) == [:out, :in]
+    @test_throws ArgumentError factornode(Redeclared, [(:out, randomvar()), (:x, randomvar())])
+end
+
 @testitem "factornode takes a group's members by index" tags = [:nodes] setup = [EngineNodes] begin
     import ReactiveMP: getinterfaces, getvariable, name, index, IndexedNodeInterface
     N = EngineNodes
