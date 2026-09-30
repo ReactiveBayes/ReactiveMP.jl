@@ -66,8 +66,19 @@ function push_edge!(edges, label, member, args, targets)
 end
 
 function edge_views(r::RuleResult)
+    # A marginal rule reads the messages on its cluster's members and computes their joint: the
+    # members are drawn as inputs, and the cluster as the one edge out.
+    if r.rule.kind === :marginal
+        members = target_members(r.target)
+        edges = member_edges(r, Any[])
+        push!(edges, EdgeView("q(" * join(map(member_label, members), ", ") * ")", :target, nothing, ""))
+        return edges
+    end
+    return member_edges(r, target_members(r.target))
+end
+
+function member_edges(r::RuleResult, targets)
     spec, args = r.rule, r.arguments
-    targets = target_members(r.target)
     interfaces = applicable(nodespec, spec.node) ? nodespec(spec.node).interfaces : nothing
     edges = EdgeView[]
     if interfaces === nothing

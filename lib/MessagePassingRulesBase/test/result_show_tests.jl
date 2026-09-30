@@ -150,3 +150,18 @@ end
     end
     @test contains(sprint(showerror, err), "note: a rule below takes the joint marginal over :in; a call passes a joint as `clusters = ((:in,) => q,)`")
 end
+
+@testitem "result display:a marginal rule reads its members and computes their joint" tags = [:base] setup = [ResultShowRules] begin
+    using MessagePassingRulesBase
+    R = ResultShowRules
+    struct Paired end
+    @define_factor_node(node = Paired, type = Stochastic, interfaces = [:out, :μ, :v])
+    @define_marginal_update_rule(node = Paired, target = (:out, :μ), args = (m[:out]::Float64, m[:μ]::Float64, q[:v]::Float64), body = (args) -> (args.m[:out], args.m[:μ]))
+    result = call_marginal_update_rule(Paired, (:out, :μ); m = (out = 1.0, μ = 2.0), q = (v = 3.0,))
+    text = R.plain(result)
+    @test contains(text, "out        ──▶  m  1.0") && contains(text, "μ          ──▶  m  2.0")
+    @test contains(text, "q(out, μ)  ◀══  target  (1.0, 2.0)") && count("(1.0, 2.0)", text) == 2
+    @test !contains(text, "its own edge")
+    card = R.html(result)
+    @test count("class=\"edge target\"", card) == 1 && count("class=\"edge message\"", card) == 2
+end

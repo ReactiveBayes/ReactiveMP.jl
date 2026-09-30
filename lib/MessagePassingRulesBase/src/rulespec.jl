@@ -577,7 +577,8 @@ end
         ArgumentError(
             "the $(rule_heading(spec)) needs the context $(length(missing) == 1 ? "service" : "services") " *
                 "$(join(map(repr, missing), ", ")), which its context does not supply; " *
-                "supply them in the context the rule is called with (ReactiveMP's activation option `context = (name = value, ...)`, RxInfer's `infer(...; context = (name = value, ...))`); a call takes it as `ctx = (name = value, ...)`",
+                "supply $(length(missing) == 1 ? "it" : "them") in the context the rule is called with: ReactiveMP's activation option `context = (name = value, ...)`, " *
+                "RxInfer's `infer(...; options = (context = (name = value, ...),))`, or a call's `ctx = (name = value, ...)`",
         ),
     )
 end
