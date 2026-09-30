@@ -77,7 +77,7 @@ function score(
     messages = combineLatest(map(interface -> get_stream_of_inbound_messages(interface) |> skip_initial(), interfaces), PushNew())
     entropy = let mapping = mapping
         (messages) -> begin
-            marginal = has_missing_inputs(messages) ? missing : compute_marginal(mapping, messages, nothing)
+            marginal = has_missing_inputs(messages) || has_missing_statics(node) ? missing : compute_marginal(mapping, messages, nothing)
             return convert(T, -score(DifferentialEntropy(), Marginal(marginal, false, false)))
         end
     end
@@ -107,7 +107,7 @@ function score(
             algorithm = algorithm
 
         (marginals) -> begin
-            args = RuleArgs(rule_messages(getdata, nothing, nothing), rule_marginals(getdata, marginals_names, marginals))
+            args = rule_arguments(nothing, nothing, marginals_names, marginals)
             spec = resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args))
             MessagePassingRulesBase.check_services(spec, ctx)
             ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())

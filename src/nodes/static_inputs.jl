@@ -54,3 +54,13 @@ function with_statics(variables::Tuple, stream::T) where {T}
     statics = map(variable -> get_stream_of_outbound_messages(variable, 1), variables)
     return combineLatest((stream, combineLatest(statics, PushNew()))) |> map(eltype(T), first)
 end
+
+# Whether a static input of the node is data observed as `missing`: its function then has no value
+# to fold in, and the node's messages and marginals are `missing`, as for a missing input.
+has_missing_statics(factornode::FactorNode) = has_missing_statics(static_variables(factornode.nodefn))
+has_missing_statics(::Tuple{}) = false
+has_missing_statics(variables::Tuple) = any(is_missing_static, variables)
+has_missing_statics(_) = false
+
+is_missing_static(::ConstVariable) = false
+is_missing_static(variable::DataVariable) = ismissing(getdata(Rocket.getrecent(get_stream_of_outbound_messages(variable, 1))))

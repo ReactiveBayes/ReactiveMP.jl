@@ -128,6 +128,31 @@ end
     @test result.free_energy ≈ fill(R.free_energy(0.5, 1.0, q, 3.0, 0.1), 3) atol = 1.0e-9
 end
 
+@testitem "engine:delta node with a static data input observed missing" tags = [:engine] setup = [EngineHarness, DeltaReference] begin
+    # x ~ N(0.5, 1), z = f(2, x, s) with the data s folded into f, and y ~ N(z, 0.1) observed at
+    # 3. With s missing, the Delta node's messages are missing, as any node's are for a missing
+    # input, so z's posterior is y's message alone and x's its prior.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, DeltaMessagePassingRules, MessagePassingRulesApproximations
+    H, R = EngineHarness, DeltaReference
+    f = R.scaled_square_plus
+
+    graph = H.Graph()
+    x = H.random!(graph)
+    z = H.random!(graph)
+    s = H.data!(graph)
+    y = H.data!(graph)
+    H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.5)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, DeltaFn{typeof(f)}, [(:out, z), ((:in, 1), H.constant!(graph, 2.0)), ((:in, 2), x), ((:in, 3), s)]; algorithm = DeltaApproximation(method = Linearization()), nodefn = f)
+    H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, z), (:v, H.constant!(graph, 0.1))])
+
+    result = H.run(graph; data = [s => missing, y => 3.0], iterations = 2, posteriors = [:z => z, :x => x], free_energy = false)
+    @test mean(result.posteriors["z"]) ≈ 3.0
+    @test var(result.posteriors["z"]) ≈ 0.1
+    @test mean(result.posteriors["x"]) ≈ 0.5
+    @test var(result.posteriors["x"]) ≈ 1.0
+    @test all(call -> call.node != "DeltaFn" || ismissing(call.result), result.trace)
+end
+
 @testitem "engine:probit under expectation propagation" tags = [:engine] setup = [EngineHarness] begin
     # w ~ N(0, 1), y1 ~ Ber(Φ(w)) observed at 1 and y2 at 0. Expectation propagation run by hand
     # to its fixed point: each site's cavity, the moments of its tilted distribution in closed

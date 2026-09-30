@@ -704,7 +704,8 @@ the rule context (see [`ReactiveMP.node_context`](@ref)), the rule fallback, the
 
 A call:
 
-1. returns a `missing` message, and runs no rule, when an input is `missing`;
+1. returns a `missing` message, and runs no rule, when an input is `missing`, or a static input
+   folded into the node's function is data observed as `missing`;
 2. resolves the rule with
    [`find_message_rule`](@extref MessagePassingRulesBase.find_message_rule) under the node's
    algorithm, from the inputs' types;
@@ -815,7 +816,7 @@ function (mapping::MessageMapping)(messages, marginals)
         end
     end
 
-    result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals)
+    result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)
         missing, (tracks_logscales(mapping) ? MISSING_INPUT_LOGSCALE : nothing)
     else
         fform = message_mapping_fform(mapping)

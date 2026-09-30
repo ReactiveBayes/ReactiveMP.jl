@@ -180,13 +180,13 @@ function cluster_marginal(factornode, key::Tuple)
     return marginals[position]
 end
 
-function activate_messages!(factornode, options, ctx)
+# `algorithm` and `spec` are the node's algorithm and its dependency declaration, `nothing` for
+# the default scheme, as `activate!` resolved them.
+function activate_messages!(factornode, options, ctx, algorithm, spec)
     fform = functionalform(factornode)
-    algorithm = getalgorithm(fform, options)
     annotations = getannotations(options)
     callbacks = getcallbacks(options)
     stream_postprocessor = getpostprocessor(options)
-    spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
 
     return foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)

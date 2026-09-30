@@ -600,7 +600,7 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     ctx = node_context(factornode, getcontext(options))
     initialize_clusters!(getlocalclusters(factornode), factornode, options, ctx)
     seed_initial_messages!(factornode, getinitialmessages(options))
-    return activate_messages!(factornode, options, ctx)
+    return activate_messages!(factornode, options, ctx, algorithm, spec)
 end
 
 # The messages given for this node, set on its inbound messages whatever was set before; then

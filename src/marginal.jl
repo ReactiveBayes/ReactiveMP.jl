@@ -262,7 +262,8 @@ What computes the joint marginal of one cluster of a factor node, called with th
 messages and marginals the node's marginal rule depends on. A node builds one for each joint
 cluster at activation.
 
-A call returns a `missing` marginal, and runs no rule, when an input is `missing`. Otherwise it
+A call returns a `missing` marginal, and runs no rule, when an input is `missing`, or a static
+input folded into the node's function is data observed as `missing`. Otherwise it
 resolves the marginal rule with
 [`find_marginal_rule`](@extref MessagePassingRulesBase.find_marginal_rule) under the node's
 algorithm, checks it against the [`ReactiveMP.EngineDiagnostics`](@ref) and the services the node's
@@ -316,7 +317,7 @@ function (mapping::MarginalMapping)(dependencies)
             __check_all(is_clamped_or_initial, marginals)
     )
 
-    marginal = if has_missing_inputs(messages) || has_missing_inputs(marginals)
+    marginal = if has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)
         missing
     else
         compute_marginal(mapping, messages, marginals)

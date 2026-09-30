@@ -3723,6 +3723,10 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
+- *The audit of 2026-09-30 — in progress* (user: the bugs and the hygiene, the duplication recorded
+  only; one commit per group): the engine, the lib packages and the working documents reviewed
+  again against the code. Done: the engine gives `missing` where a folded static data input is
+  observed `missing` (its rule threw), and `activate!` resolves a node's dependency declaration once.
 - *The documentation overhaul — done* (user, 2026-09-30): every site readable by a
   student, every snippet run by the build, the rich display explaining, two migration guides
   (rule authors here, model authors in RxInfer), and the vague error messages met on the way
