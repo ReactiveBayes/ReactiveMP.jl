@@ -121,8 +121,8 @@ unsubscribe!(subscription)
 
 A rule that declares a service nobody supplies is an error when the engine resolves the rule,
 before it runs. The error names the rule and the service.
-[`bethe_free_energy`](@ref) runs the average energies with the engine's context alone: the
-services of `context` do not reach them.
+[`bethe_free_energy`](@ref) runs each node's average energy with the same context, so an energy
+that declares a service reads it as the node's rules do.
 
 ## [Rule fallbacks](@id lib-activation-options-rulefallback)
 

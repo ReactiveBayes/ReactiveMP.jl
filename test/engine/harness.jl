@@ -98,7 +98,7 @@
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
     `activated`, if given, is called once the nodes are activated, before anything is subscribed to.
     """
-    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing)
+    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = ReactiveMP.EngineDiagnostics())
         trace = RuleCall[]
         iteration = Ref(0)
         callbacks = (
@@ -124,7 +124,7 @@
             end
         end
         for node in graph.nodes
-            activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], callbacks, logscales))
+            activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], callbacks, logscales, context, diagnostics))
         end
         activated === nothing || activated()
 

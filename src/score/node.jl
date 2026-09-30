@@ -12,9 +12,11 @@ a node whose algorithm declares its dependencies gives the joint its rules read,
 
 The average energy is the one the node's rule package declares for its clusters under the
 node's algorithm, found with
-[`find_average_energy`](@extref MessagePassingRulesBase.find_average_energy). It runs with the
-engine's context, [`ReactiveMP.node_context`](@ref)`(node)`, not with the services of the
-activation option `context`, and without the activation's diagnostics.
+[`find_average_energy`](@extref MessagePassingRulesBase.find_average_energy). It runs as the
+node's rules do, with the rule context and the diagnostics the node was activated with (see
+[`ReactiveMP.FactorNodeActivationOptions`](@ref)), read when a value is computed; a node not
+activated yet runs it with the engine's context, [`ReactiveMP.node_context`](@ref)`(node)`, and
+no audits.
 """
 struct FactorBoundFreeEnergy end
 
@@ -64,19 +66,12 @@ function score(
         get_stream_of_marginals(joint) |> skip_initial() |> map(T, (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))),
     )
     interfaces = Tuple(getinterfaces(node))
-    mapping = marginal_mapping(
-        fform,
-        MessagePassingRulesBase.ClusterTarget(name(joint)),
-        input_names(map(interface -> input_label(node, interface), interfaces)),
-        nothing,
-        algorithm,
-        node,
-        EngineDiagnostics(),
-        node_context(node),
-    )
+    names = input_names(map(interface -> input_label(node, interface), interfaces))
     messages = combineLatest(map(interface -> get_stream_of_inbound_messages(interface) |> skip_initial(), interfaces), PushNew())
-    entropy = let mapping = mapping
+    entropy = let target = MessagePassingRulesBase.ClusterTarget(name(joint))
         (messages) -> begin
+            ctx, diagnostics = activation_context(node)
+            mapping = marginal_mapping(fform, target, names, nothing, algorithm, node, diagnostics, ctx)
             marginal = has_missing_inputs(messages) || has_missing_statics(node) ? missing : compute_marginal(mapping, messages, nothing)
             return convert(T, -score(DifferentialEntropy(), Marginal(marginal, false, false)))
         end
@@ -103,12 +98,12 @@ function score(
 
     mapping = let fform = functionalform(node),
             marginals_names = input_names(map(i -> cluster_label(node, clusters, i), Tuple(eachindex(localmarginals)))),
-            ctx = node_context(node),
             algorithm = algorithm
 
         (marginals) -> begin
+            ctx, diagnostics = activation_context(node)
             args = rule_arguments(nothing, nothing, marginals_names, marginals)
-            spec = resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args))
+            spec = audit_rule(diagnostics, resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args)))
             MessagePassingRulesBase.check_services(spec, ctx)
             ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
             average_energy = MessagePassingRulesBase.execute_rule(

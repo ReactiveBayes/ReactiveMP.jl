@@ -125,3 +125,45 @@ end
     @test run(EngineDiagnostics()) == [[1.0]]
     @test_throws ImpureRuleError run(EngineDiagnostics(check_everything_pure = true))
 end
+
+@testitem "engine:an average energy runs with its node's context and diagnostics" tags = [:engine] setup = [EngineHarness] begin
+    # x ~ Priced(0) and y ~ N(x, 1) observed: Priced's average energy reads a service, `price`,
+    # which only the activation option `context` supplies, and a second node's energy declares
+    # itself impure. The free energy runs both as the nodes' rules run.
+    using ExponentialFamily, Distributions, BayesBase, StandardMessagePassingRules, MessagePassingRulesBase
+    import ReactiveMP: EngineDiagnostics, ImpureRuleError
+    H = EngineHarness
+
+    struct Priced end
+    @define_factor_node(node = Priced, type = Stochastic, interfaces = [:out, :μ])
+    @define_message_update_rule(node = Priced, target = :out, args = (q[:μ]::PointMass,), body = (args) -> NormalMeanVariance(mean(args.q[:μ]), 1.0))
+    @define_average_energy(node = Priced, ctx = (:price,), args = (q[:out]::Any, q[:μ]::PointMass), body = (ctx, args) -> ctx.price)
+    struct Unaudited end
+    @define_factor_node(node = Unaudited, type = Stochastic, interfaces = [:out, :μ])
+    @define_message_update_rule(node = Unaudited, target = :out, args = (q[:μ]::PointMass,), body = (args) -> NormalMeanVariance(mean(args.q[:μ]), 1.0))
+    @define_average_energy(node = Unaudited, pure = false, args = (q[:out]::Any, q[:μ]::PointMass), body = (args) -> 0.0)
+
+    function model(node)
+        graph = H.Graph()
+        x, y = H.random!(graph), H.data!(graph)
+        H.node!(graph, node, [(:out, x), (:μ, H.constant!(graph, 0.0))])
+        H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, x), (:v, H.constant!(graph, 1.0))])
+        return graph, y
+    end
+    free_energy(node; kwargs...) = ((graph, y) = model(node); H.run(graph; data = [y => 1.0], iterations = 1, posteriors = [], kwargs...).free_energy)
+
+    # The service reaches the energy: the price is added to the free energy as it is.
+    @test only(free_energy(Priced; context = (price = 3.0,))) ≈ only(free_energy(Priced; context = (price = 0.0,))) + 3.0
+    # Without it, the energy is refused, naming the service.
+    err = try
+        free_energy(Priced)
+        nothing
+    catch e
+        e
+    end
+    @test err isa ArgumentError && contains(sprint(showerror, err), "price")
+
+    # The purity audit reaches the energy, whose node's rules are pure.
+    @test only(free_energy(Unaudited)) isa Real
+    @test_throws ImpureRuleError free_energy(Unaudited; diagnostics = EngineDiagnostics(check_everything_pure = true))
+end

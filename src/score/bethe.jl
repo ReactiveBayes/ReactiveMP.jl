@@ -36,9 +36,9 @@ per iteration. Subscribe to it before giving the data.
 
 The stream fails when it computes a value for a node with no average energy for its clusters'
 marginals, with a [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) naming
-the node. The average energies run with the engine's context,
-[`ReactiveMP.node_context`](@ref)`(node)`: the services of the activation option `context` do not
-reach them, and one that declares a service the engine does not supply fails.
+the node. The average energies run with the rule context each node was activated with, the
+activation option `context` included, and fail, naming the rule and the service, when one declares
+a service nobody supplies.
 
 # Examples
 

@@ -77,9 +77,8 @@ Kullback–Leibler divergence from the mean-field posterior ``q(x_1) q(x_2)`` to
 
 The keyword `algorithm` gives the algorithm each node runs under, as a function of the node, so
 that each node contributes the average energy its rules are consistent with. Its default,
-`nothing`, is every node's default algorithm. The average energies run with the engine's context,
-[`ReactiveMP.node_context`](@ref)`(node)`, without the services of the activation option
-`context` and without the diagnostics.
+`nothing`, is every node's default algorithm. The average energies run as the node's rules do,
+with the rule context and the diagnostics the node was activated with.
 
 ```@docs
 bethe_free_energy

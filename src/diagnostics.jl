@@ -23,8 +23,8 @@ names the rule it objects to by its node, target, algorithm and the place it is 
   `NaN`, so a rule that reads its scratch before writing it returns `NaN` rather than a stale
   value. In-place outputs are allocated for every call and are not poisoned. Default `false`.
 
-The audits apply to message and marginal rules. The average energies of
-[`bethe_free_energy`](@ref) run without them.
+The audits apply to message and marginal rules, and to the average energies of
+[`bethe_free_energy`](@ref), which run under the diagnostics their node was activated with.
 
 # Examples
 

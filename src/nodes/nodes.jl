@@ -114,12 +114,30 @@ struct FactorNode{F, I, C, N} <: AbstractFactorNode
     nodefn::N
     # the node's `CreationPlan`, shared by every node of its shape, or `nothing`
     plan::Union{Nothing, CreationPlan}
+    # what the node was activated with, a `NodeActivation`, or `nothing` before `activate!`
+    activation::Base.RefValue{Any}
 
     FactorNode(fform::Type{F}, interfaces::I, localclusters::C, nodefn::N = nothing, plan = nothing) where {F, I, C, N} =
-        new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn, plan)
+        new{Type{F}, I, C, N}(fform, interfaces, localclusters, nodefn, plan, Ref{Any}(nothing))
     FactorNode(fform::F, interfaces::I, localclusters::C, nodefn::N = nothing, plan = nothing) where {F <: Function, I, C, N} =
-        new{F, I, C, N}(fform, interfaces, localclusters, nodefn, plan)
+        new{F, I, C, N}(fform, interfaces, localclusters, nodefn, plan, Ref{Any}(nothing))
 end
+
+# What a node was activated with that its free energy needs as well: its rule context, the engine's
+# services merged with the `context` option, and the `diagnostics` option.
+struct NodeActivation{G}
+    context::G
+    diagnostics::EngineDiagnostics
+end
+
+# The rule context and diagnostics a node's average energy runs with: those it was activated
+# with, or, for a node not activated, the engine's context and no audits.
+function activation_context(node::FactorNode)
+    activation = node.activation[]
+    activation === nothing && return node_context(node), EngineDiagnostics()
+    return activation.context, activation.diagnostics
+end
+activation_context(node) = node_context(node), EngineDiagnostics()
 
 """
     factornode(fform, interfaces, factorisation = nothing; nodefn = nothing) -> FactorNode
@@ -598,6 +616,7 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
     ctx = node_context(factornode, getcontext(options))
+    factornode.activation[] = NodeActivation(ctx, getdiagnostics(options))
     initialize_clusters!(getlocalclusters(factornode), factornode, options, ctx)
     seed_initial_messages!(factornode, getinitialmessages(options))
     return activate_messages!(factornode, options, ctx, algorithm, spec)
