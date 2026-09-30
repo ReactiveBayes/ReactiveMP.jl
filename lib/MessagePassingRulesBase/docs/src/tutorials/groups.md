@@ -26,8 +26,11 @@ nothing # hide
 
 ## Declare the node
 
-A trailing `...` after an interface name declares a group. Its members are `(:in, 1)`,
-`(:in, 2)`, and so on, and a graph gives them all at once.
+The node is the function `+` would be in a model, but here a type of its own, `Sum`, since a sum
+has no distribution to name it ([What a node is](@ref tutorial-first-node) explains the choice).
+[`@define_factor_node`](@ref) declares it. In its [`interfaces`](@ref keyword-node-interfaces),
+a trailing `...` after a name declares a group. Its members are `(:in, 1)`, `(:in, 2)`, and so
+on, and a graph gives them all at once.
 
 ```@example groups
 struct Sum end
@@ -42,8 +45,8 @@ struct Sum end
 MessagePassingRulesBase.nodespec(Sum)
 ```
 
-[`Deterministic`](@ref) says the node computes `out` from its inputs. `min_group_length = 2`
-says a sum has at least two terms. An engine checks it when it builds the node in a graph, so a
+[`Deterministic`](@ref) says the node computes `out` from its inputs.
+[`min_group_length = 2`](@ref keyword-node-min_group_length) says a sum has at least two terms. An engine checks it when it builds the node in a graph, so a
 sum with one input is an error there. Without the keyword, a group needs one member; with
 `min_group_length = 0`, it may be empty. [`min_group_length`](@ref) reads it back:
 
@@ -62,7 +65,8 @@ distribution of ``y`` when each ``x_k`` has its message as its distribution:
                  = \mathcal{N}\Big(y \;\Big|\; \sum_k m_k,\ \sum_k v_k\Big).
 ```
 
-The means add and the variances add. The rule reads every member of the group with `m[:in...]`:
+The means add and the variances add. [`@define_message_update_rule`](@ref) defines the rule, and
+its [`args`](@ref keyword-message-args) read every member of the group with `m[:in...]`:
 
 ```@example groups
 @define_message_update_rule(

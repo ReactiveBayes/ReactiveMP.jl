@@ -42,9 +42,10 @@ node has no default rules to inherit, so its algorithm stands alone.
 
 ## Declare the node
 
-The `algorithm` keyword makes `LogisticQuadrature(32)` the node's default algorithm: the one its
-rules run under unless a call or a graph asks for another. The section on the initial message
-below explains `initial_messages`.
+[`@define_factor_node`](@ref) declares the node. Its [`algorithm`](@ref keyword-node-algorithm)
+keyword makes `LogisticQuadrature(32)` the node's default algorithm: the one its rules run under
+unless a call or a graph asks for another. The section on the initial message below explains
+[`initial_messages`](@ref keyword-node-initial_messages).
 
 ```@example algorithm
 struct Logistic end
@@ -108,8 +109,9 @@ declaration:
 - The declaration is checked against the node's interfaces when it loads, so an unknown name is
   an error at once.
 
-`@define_factor_node` takes the same list in its `dependencies` keyword, for the node's default
-algorithm. `@define_dependencies` also works after the declaration, and for any other algorithm
+[`@define_factor_node`](@ref) takes the same list in its
+[`dependencies`](@ref keyword-node-dependencies) keyword, for the node's default algorithm.
+[`@define_dependencies`](@ref) also works after the declaration, and for any other algorithm
 of the node.
 
 ## A numerical expectation
@@ -141,7 +143,8 @@ The message towards `y` integrates the input out, and the result is a Bernoulli 
                  = \operatorname{Bernoulli}\big(y \mid \mathbb{E}[\sigma(x)]\big).
 ```
 
-The body names the slot `algo` before `args`, and reads the number of points from it:
+The rule's [`body`](@ref keyword-message-body) names the slot `algo` before `args`, and reads
+the number of points from it:
 
 ```@example algorithm
 @define_message_update_rule(

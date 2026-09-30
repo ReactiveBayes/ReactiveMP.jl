@@ -11,31 +11,69 @@ distribution with a known variance,
 f(y, x, v) = \mathcal{N}(y \mid x, v),
 ```
 
-where `y` is the output, `x` the mean and `v` the variance. You declare the node, write its
-[belief propagation](@ref glossary-belief-propagation) and
+where `y` is the output, `x` the mean and `v` the variance. You define the distribution, declare
+it as a node, write its [belief propagation](@ref glossary-belief-propagation) and
 [variational](@ref glossary-vmp) rules, give it an
 [average energy](@ref glossary-average-energy), and check what it can compute. Every step runs
 the rules by hand, as a test would. An engine such as
 [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) runs the same rules in a
 graph.
 
-The messages are distributions from
-[ExponentialFamily](https://github.com/ReactiveBayes/ExponentialFamily.jl), and observations and
-constants arrive as a [`PointMass`](@ref glossary-point-mass) from BayesBase.
+Observations and constants reach a rule as a [`PointMass`](@ref glossary-point-mass) from
+BayesBase, and the distribution interface (`mean`, `var`, `logpdf`) comes from Distributions.
 
 ```@example first-node
-using MessagePassingRulesBase, BayesBase, ExponentialFamily
+using MessagePassingRulesBase, BayesBase, Distributions
+nothing # hide
+```
+
+## What a node is
+
+A node is a Julia value that names a factor of a model: a type, or a function such as `+`. The
+node is what everything else refers to. A model writes it, `y ~ Gaussian(x, v)`; a rule names it,
+`node = Gaussian`; and finding a rule is Julia's dispatch on its type, so any loaded package can
+add rules for a node another package declared ([Defining rules](@ref) explains how).
+
+Most stochastic nodes are probability distributions, and the rule packages use the
+distribution's own type as the node. StandardMessagePassingRules, for example, declares
+ExponentialFamily's `NormalMeanVariance` as a node. One type then does three jobs:
+
+- **it names the factor** in a model, `y ~ NormalMeanVariance(μ, v)`;
+- **it is the factor's density**: the declaration derives the node's log-density from it,
+  `logpdf(NormalMeanVariance(μ, v), y)`, which rule fallbacks and rule tests use;
+- **it is often a message**: the message towards `out` from point-mass inputs is the node's own
+  density, `NormalMeanVariance(μ, v)`, and many other rules return the same family.
+
+Not every message has the node's type: the message towards a variance is another family. Nor is
+every node a distribution. A deterministic function is a node of its own, as
+[A deterministic node with a group](@ref tutorial-groups) shows with `+`, and a factor that has
+no distribution type is named by an empty type, `struct MyFactor end`, used only as a name.
+
+This tutorial follows the pattern with a small normal distribution of its own. A real package
+takes the type from ExponentialFamily, which also defines products and conversions of messages.
+
+```@example first-node
+struct Gaussian{T <: Real} <: ContinuousUnivariateDistribution
+    μ::T   # the mean
+    v::T   # the variance
+end
+
+Gaussian(μ::Real, v::Real) = Gaussian(promote(μ, v)...)
+
+Distributions.mean(d::Gaussian) = d.μ
+Distributions.var(d::Gaussian) = d.v
+Distributions.logpdf(d::Gaussian, x::Real) = -(log(2π * d.v) + abs2(x - d.μ) / d.v) / 2
 nothing # hide
 ```
 
 ## Declare the node
 
-A node is a type, here an empty `struct`, and a declaration that names its interfaces. The
-first interface is the output. The mean also answers to `mean`, an alias.
+[`@define_factor_node`](@ref) declares the type as a node. The declaration names the node's
+[interfaces](@ref glossary-interface), its edges in a graph, in order: the output first, then the
+distribution's parameters in the order its constructor takes them. The mean also answers to
+`mean`, an alias.
 
 ```@example first-node
-struct Gaussian end
-
 @define_factor_node(
     node = Gaussian,
     type = Stochastic,
@@ -43,6 +81,9 @@ struct Gaussian end
 )
 ```
 
+Each keyword has a section in the [Keyword reference](@ref keyword-factor-node):
+[`node`](@ref keyword-node-node), [`type`](@ref keyword-node-type) and
+[`interfaces`](@ref keyword-node-interfaces), and the optional ones this node does not need.
 [`Stochastic`](@ref) says the node is a density over its interfaces, as opposed to a
 [`Deterministic`](@ref) function. The declaration is data, which [`nodespec`](@ref) returns and
 which draws itself:
@@ -51,7 +92,16 @@ which draws itself:
 MessagePassingRulesBase.nodespec(Gaussian)
 ```
 
-The node has no rules yet, so it can compute nothing.
+Because the node is a distribution, callable with its parameters, the declaration also gives its
+log-density as a function of the interfaces, [`nodefunction`](@ref):
+
+```@example first-node
+f = MessagePassingRulesBase.nodefunction(Gaussian)
+f(out = 1.0, μ = 0.0, v = 2.0) ≈ logpdf(Normal(0.0, sqrt(2.0)), 1.0)
+```
+
+The node has no rules yet, so it can compute no message. [Defining nodes](@ref) covers every
+part of a declaration.
 
 ## A message towards the output
 
@@ -64,66 +114,65 @@ edges. For a normal message on the mean, ``\mathcal{N}(x \mid m, s)``, and a kno
                  = \mathcal{N}(y \mid m, s + v).
 ```
 
-The rule says exactly that. Its target is `out`; its inputs are the message on `μ`, a
-`NormalMeanVariance`, and the message on `v`, a point mass; its body computes the result from
-them:
+[`@define_message_update_rule`](@ref) defines the rule. Its
+[`target`](@ref keyword-message-target) is `out`; its [`args`](@ref keyword-message-args) are
+the message on `μ`, a `Gaussian` or a point mass, and the message on `v`, a point mass; its
+[`body`](@ref keyword-message-body) computes the result from them. The result is the node's own
+type:
 
 ```@example first-node
 @define_message_update_rule(
     node = Gaussian,
     target = :out,
-    args = (m[:μ]::NormalMeanVariance, m[:v]::PointMass),
+    args = (m[:μ]::Union{Gaussian, PointMass}, m[:v]::PointMass),
     logscale = 0,
-    body = (args) -> NormalMeanVariance(mean(args.m[:μ]), var(args.m[:μ]) + mean(args.m[:v])),
+    body = (args) -> Gaussian(mean(args.m[:μ]), var(args.m[:μ]) + mean(args.m[:v])),
 )
 nothing # hide
 ```
 
 `m[:μ]` reads as "the message on `μ`". The body receives the inputs as `args`, and
-`args.m[:μ]` is that message. The `logscale` keyword states the logarithm of the message's
-normalising constant, which the next-but-one section explains.
+`args.m[:μ]` is that message; a point mass has variance zero, so one body serves both. The
+[`logscale`](@ref keyword-message-logscale) keyword states the logarithm of the message's
+normalising constant, which [The log scale of a message](@ref tutorial-first-node-logscale)
+explains.
 
-Call the rule with inputs of your choice, as an engine would:
+[`@call_message_update_rule`](@ref) calls the rule with inputs of your choice, as an engine
+would:
 
 ```@example first-node
 @call_message_update_rule(
     node = Gaussian, target = :out,
-    m = (μ = NormalMeanVariance(1.0, 2.0), v = PointMass(0.5)),
+    m = (μ = Gaussian(1.0, 2.0), v = PointMass(0.5)),
 )
 ```
 
 The result draws the node with the edges the rule read, messages as solid arrows in, and the
-target as the arrow out. Its value is `NormalMeanVariance(1.0, 2.5)`: the variances add.
+target as the arrow out. Its value is `Gaussian(1.0, 2.5)`: the variances add. With the mean
+observed too, the message is the node's density itself:
+
+```@example first-node
+@call_message_update_rule(node = Gaussian, target = :out, m = (μ = PointMass(1.0), v = PointMass(0.5)))
+```
 
 ## A message towards the mean
 
 The message towards `μ` is the same integral taken the other way. When `y` is observed, its
 message is a point mass at the observation, and the message towards `μ` is the likelihood of
-the observation as a function of the mean, ``\mathcal{N}(y \mid x, v)``, a normal in ``x``:
+the observation as a function of the mean, ``\mathcal{N}(y \mid x, v)``, a normal in ``x``. The
+density is symmetric in `y` and `x`, so the rule mirrors the one towards `out`:
 
 ```@example first-node
 @define_message_update_rule(
     node = Gaussian,
     target = :μ,
-    args = (m[:out]::PointMass, m[:v]::PointMass),
+    args = (m[:out]::Union{Gaussian, PointMass}, m[:v]::PointMass),
     logscale = 0,
-    body = (args) -> NormalMeanVariance(mean(args.m[:out]), mean(args.m[:v])),
-)
-
-@define_message_update_rule(
-    node = Gaussian,
-    target = :μ,
-    args = (m[:out]::NormalMeanVariance, m[:v]::PointMass),
-    logscale = 0,
-    body = (args) -> NormalMeanVariance(mean(args.m[:out]), var(args.m[:out]) + mean(args.m[:v])),
+    body = (args) -> Gaussian(mean(args.m[:out]), var(args.m[:out]) + mean(args.m[:v])),
 )
 
 @call_message_update_rule(node = Gaussian, target = :μ, m = (out = PointMass(3.0), v = PointMass(0.5)))
 ```
-
-Two rules share the target `μ`. The types of the inputs select between them, as Julia's
-dispatch selects a method; the card lists the other rule for the same target and shows why it
-does not fit this call.
 
 ## Which inputs a rule takes
 
@@ -145,7 +194,8 @@ delivers. [Algorithms and dependencies](@ref) describes this scheme in full.
 ## A variational rule
 
 Under the mean-field factorisation, the rule towards `out` takes the [marginals](@ref glossary-marginal)
-`q(x)` and `q(v)`. Variational message passing sends the exponentiated expected log-density:
+`q(x)` and `q(v)`, written `q[:μ]` and `q[:v]` among its `args`. Variational message passing
+sends the exponentiated expected log-density:
 
 ```math
 \mu_{f \to y}(y) \propto \exp \mathbb{E}_{q(x)}\big[\log \mathcal{N}(y \mid x, v)\big]
@@ -159,12 +209,12 @@ Only the mean of `q(x)` matters, so the rule accepts any marginal with a mean:
     node = Gaussian,
     target = :out,
     args = (q[:μ]::Any, q[:v]::PointMass),
-    body = (args) -> NormalMeanVariance(mean(args.q[:μ]), mean(args.q[:v])),
+    body = (args) -> Gaussian(mean(args.q[:μ]), mean(args.q[:v])),
 )
 
 @call_message_update_rule(
     node = Gaussian, target = :out,
-    q = (μ = NormalMeanVariance(1.0, 2.0), v = PointMass(0.5)),
+    q = (μ = Gaussian(1.0, 2.0), v = PointMass(0.5)),
 )
 ```
 
@@ -172,7 +222,7 @@ The inputs are drawn dashed, as marginals, and the variance of `q(x)` no longer 
 result. The rule declares no `logscale`, so the result's log scale is undefined: an expected
 log-density has no normalising constant with a meaning of its own.
 
-## The log scale of a message
+## [The log scale of a message](@id tutorial-first-node-logscale)
 
 A message is a distribution up to a constant, and the [log scale](@ref glossary-log-scale) is
 the logarithm of that constant. The belief propagation rules above declare `logscale = 0`
@@ -190,6 +240,10 @@ marginals of its clusters. Under the mean-field factorisation with a known varia
 U = \tfrac{1}{2}\log(2\pi v) + \frac{\operatorname{var}[y] + \operatorname{var}[x] + (\mathbb{E}[y] - \mathbb{E}[x])^2}{2v}.
 ```
 
+[`@define_average_energy`](@ref) defines it, with the same [`args`](@ref keyword-energy-args)
+and [`body`](@ref keyword-energy-body) as a rule and no target, and
+[`@call_average_energy`](@ref) calls it:
+
 ```@example first-node
 @define_average_energy(
     node = Gaussian,
@@ -202,7 +256,7 @@ U = \tfrac{1}{2}\log(2\pi v) + \frac{\operatorname{var}[y] + \operatorname{var}[
 
 @call_average_energy(
     node = Gaussian,
-    q = (out = NormalMeanVariance(0.0, 1.0), μ = NormalMeanVariance(1.0, 2.0), v = PointMass(0.5)),
+    q = (out = Gaussian(0.0, 1.0), μ = Gaussian(1.0, 2.0), v = PointMass(0.5)),
 )
 ```
 
@@ -219,11 +273,11 @@ MessagePassingRulesBase.rule_coverage(Gaussian)
 shows what it consumes:
 
 ```@example first-node
-which_message_update_rule(Gaussian, :out; q = (μ = NormalMeanVariance(1.0, 2.0), v = PointMass(0.5)))
+which_message_update_rule(Gaussian, :out; q = (μ = Gaussian(1.0, 2.0), v = PointMass(0.5)))
 ```
 
 [`check_rules`](@ref) compares every rule with its node's declaration, and returns the problems
-it finds; a rule package's tests run it.
+it finds; a rule package's tests run it. [Inspecting rules](@ref) covers these queries.
 
 ```@example first-node
 MessagePassingRulesBase.check_rules(@__MODULE__)
@@ -243,6 +297,7 @@ end
 ```
 
 The same error reaches a model's user when a graph needs a rule that no package defines.
+[Calling rules](@ref) describes every part of the report.
 
 ## Next steps
 
