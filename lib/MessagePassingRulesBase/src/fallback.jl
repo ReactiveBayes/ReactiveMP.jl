@@ -14,8 +14,8 @@ undefined.
 
 # Returns
 Called as `fallback(node, target, args)`: a [`NodeFunctionLogPdf`](@ref), or `nothing` where the
-node function does not apply: a deterministic node, a node with groups, a member of a group, or
-an input that is a joint.
+node function does not apply: a deterministic node, a node with groups, a member of a group, an
+input that is a joint, or an interface other than the target that has no input.
 
 An engine consults a fallback only when resolution finds no rule, so an error inside a rule is
 never turned into a fallback; ReactiveMP takes it as the activation option `rulefallback`. A
@@ -58,6 +58,8 @@ function (fallback::NodeFunctionRuleFallback)(node, ::Target{E}, args::RuleArgs)
     applicable(nodefunction, node) || return nothing
     inputs = (rule_inputs(node, args.m)..., rule_inputs(node, args.q)...)
     all(((key, _),) -> key isa Symbol, inputs) || return nothing
+    # The log-density needs a value for every interface but the target.
+    issetequal(map(first, inputs), Iterators.filter(!=(E), interfaces(node))) || return nothing
     points = NamedTuple{map(first, inputs)}(map(((_, value),) -> fallback.extract(value), inputs))
     f = nodefunction(node)
     return NodeFunctionLogPdf(x -> f(; points..., (E => x,)...))

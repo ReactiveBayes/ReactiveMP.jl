@@ -140,6 +140,7 @@ end
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, :μ, :μ]))), "duplicate interface `μ`")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, μ]))), "must be a symbol")
     @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, (:μ, aliases = [:out])]))), "alias `out`")
+    @test contains(expansion_error(:(@define_factor_node(node = X, type = Stochastic, interfaces = [:out, (:a, aliases = [:z]), (:b, aliases = [:z])]))), "given to both `a` and `b`")
 
     grouped(keyword) = expansion_error(Expr(:macrocall, Symbol("@define_factor_node"), nothing, :(node = X), :(type = Stochastic), :(interfaces = [:out, :m..., :p...]), keyword))
     @test contains(grouped(:(matched_groups = [(:m, :q)])), "names `q`, which is not a group")

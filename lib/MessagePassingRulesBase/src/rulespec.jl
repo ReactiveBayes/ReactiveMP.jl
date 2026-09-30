@@ -137,7 +137,11 @@ for an inherited rule.
 
 See also [`find_marginal_rule`](@ref), [`find_average_energy`](@ref), [`which_message_update_rule`](@ref).
 """
-function find_message_rule(node, target, algorithm, args)
+find_message_rule(node, target, algorithm, args) = inherited_message_rule(node, target, algorithm, args)
+
+# Where `algorithm` has no rule that fits: the default's, for a `DefaultAlgorithmExtension`. A
+# rule over the default scheme's inputs whose typed inputs do not fit ends here too.
+function inherited_message_rule(node, target, algorithm, args)
     algorithm isa DefaultAlgorithmExtension || return RuleNotFound(:message, node, target, algorithm, args)
     inherited = find_message_rule(node, target, DefaultAlgorithm(), args)
     return inherited isa RuleSpec ? inherited : RuleNotFound(:message, node, target, algorithm, args)
@@ -156,7 +160,9 @@ The [`RuleSpec`](@ref), or a [`RuleNotFound`](@ref) that names the algorithm the
 
 See also [`find_message_rule`](@ref), [`which_marginal_update_rule`](@ref).
 """
-function find_marginal_rule(node, cluster, algorithm, args)
+find_marginal_rule(node, cluster, algorithm, args) = inherited_marginal_rule(node, cluster, algorithm, args)
+
+function inherited_marginal_rule(node, cluster, algorithm, args)
     algorithm isa DefaultAlgorithmExtension || return RuleNotFound(:marginal, node, cluster, algorithm, args)
     inherited = find_marginal_rule(node, cluster, DefaultAlgorithm(), args)
     return inherited isa RuleSpec ? inherited : RuleNotFound(:marginal, node, cluster, algorithm, args)
@@ -175,7 +181,9 @@ The [`RuleSpec`](@ref), or a [`RuleNotFound`](@ref) whose `target` is `nothing`.
 
 See also [`find_message_rule`](@ref), [`which_average_energy`](@ref).
 """
-function find_average_energy(node, algorithm, args)
+find_average_energy(node, algorithm, args) = inherited_average_energy(node, algorithm, args)
+
+function inherited_average_energy(node, algorithm, args)
     algorithm isa DefaultAlgorithmExtension || return RuleNotFound(:average_energy, node, nothing, algorithm, args)
     inherited = find_average_energy(node, DefaultAlgorithm(), args)
     return inherited isa RuleSpec ? inherited : RuleNotFound(:average_energy, node, nothing, algorithm, args)

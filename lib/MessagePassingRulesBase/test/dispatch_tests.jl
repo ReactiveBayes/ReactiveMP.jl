@@ -17,6 +17,11 @@
 
     struct Stateful <: AbstractAlgorithm end
     ispure(::Type{Stateful}) = false
+    # A parametric algorithm is impure through its `UnionAll`.
+    struct SeededStateful{R} <: AbstractAlgorithm
+        rng::R
+    end
+    ispure(::Type{<:SeededStateful}) = false
 
     # Keys in canonical (sorted) order, as the definition macro will generate them.
     const PointArgs = RuleArgs{<:Messages{(:v, :μ), <:Tuple{Real, Real}}, <:Marginals{(), Tuple{}, (), Tuple{}}}
@@ -171,6 +176,7 @@ end
 
     @test ispure(DefaultAlgorithm) && ispure(H.MixtureVMP)
     @test !ispure(H.Stateful)
+    @test !ispure(H.SeededStateful{Int}) && !ispure(H.SeededStateful(1))
     # A rule inherits its algorithm's purity unless it overrides it.
     @test H.GAUSS_OUT.pure
     @test !H.GAUSS_OUT_STATEFUL.pure

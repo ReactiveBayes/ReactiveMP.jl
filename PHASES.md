@@ -3726,7 +3726,12 @@ wait for the release):
 - *The audit of 2026-09-30 — in progress* (user: the bugs and the hygiene, the duplication recorded
   only; one commit per group): the engine, the lib packages and the working documents reviewed
   again against the code. Done: the engine gives `missing` where a folded static data input is
-  observed `missing` (its rule threw), and `activate!` resolves a node's dependency declaration once.
+  observed `missing` (its rule threw), and `activate!` resolves a node's dependency declaration once;
+  in the base package, a `default` rule under an extension inherits where it does not fit, a second
+  `default` rule for one key is refused, `add_outer` checks sizes, a named-function `logscale`, a
+  shared alias and a repeated cluster key are refused at definition, the node-function fallback
+  needs every input; in TestUtils, discrete supports are bounded before they are collected and
+  `check_nonallocating` keeps the scratch, as the engine does.
 - *The documentation overhaul — done* (user, 2026-09-30): every site readable by a
   student, every snippet run by the build, the rich display explaining, two migration guides
   (rule authors here, model authors in RxInfer), and the vague error messages met on the way

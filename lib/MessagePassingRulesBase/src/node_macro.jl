@@ -218,8 +218,11 @@ function parse_interfaces(ex)
         interface.name in names && error("@define_factor_node: duplicate interface `$(interface.name)`")
         push!(names, interface.name)
     end
+    aliased = Dict{Symbol, Symbol}()
     for interface in parsed, alias in interface.aliases
         alias in names && error("@define_factor_node: alias `$alias` of `$(interface.name)` is also an interface name")
+        haskey(aliased, alias) && error("@define_factor_node: alias `$alias` is given to both `$(aliased[alias])` and `$(interface.name)`")
+        aliased[alias] = interface.name
     end
     return parsed
 end

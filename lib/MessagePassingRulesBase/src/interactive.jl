@@ -44,7 +44,7 @@ const INTERACTIVE_SELECTION_OBSERVERS = Function[]
     add_selection_observer!(f) -> nothing
 
 Call `f(spec)` with the [`RuleSpec`](@ref) of every rule an interactive call selects, a
-`call_*`, `@call_*` or `message_passing_*` call, before the rule runs. Test tooling registers one
+`call_*` or `@call_*` call, before the rule runs; a `message_passing_*` call is not observed. Test tooling registers one
 to count a rule a test calls by hand as tested. An engine resolves its rules itself, so its calls
 are not observed. Registering the same `f` twice registers it once.
 """
@@ -63,8 +63,8 @@ function call_resolved(spec, output, algorithm, ctx, args, ann, target)
     return run_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, target)
 end
 
-# A function node is the function itself; its type, `typeof(+)`, is how v6's `@call_rule` named
-# it, and would otherwise fail deep inside the lookup.
+# A function node is the function itself. Named by its type, `typeof(+)`, it would fail deep
+# inside the lookup, so that is refused here with the name to pass instead.
 function interactive_node(node)
     if node isa DataType && node <: Function && isdefined(node, :instance) && !applicable(nodespec, node) && applicable(nodespec, node.instance)
         throw(ArgumentError("`node = $(node)` names a function node by its type; pass the function itself, `node = $(node.instance)`"))

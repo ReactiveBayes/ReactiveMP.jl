@@ -115,4 +115,12 @@ end
 
     @test_throws ArgumentError verify_message_update_rule(V.Gauss, :μ; m = (out = Normal(0.0, 1.0),))
     @test_throws ArgumentError verify_message_update_rule(V.Gauss, :μ; m = (out = Normal(0.0, 1.0),), q = (σ = PointMass(1.0),))
+
+    # A discrete input is enumerated only when its support is small, which its bounds tell before
+    # anything is collected: an unbounded support is refused, as is a huge bounded one.
+    import MessagePassingRulesTestUtils: input_treatment, default_points
+    @test input_treatment(:x, Categorical([0.5, 0.5])).values == [1, 2]
+    @test_throws ArgumentError input_treatment(:x, Poisson(1.0))
+    @test_throws ArgumentError input_treatment(:x, DiscreteUniform(1, 10^9))
+    @test_throws ArgumentError default_points(Poisson(1.0))
 end

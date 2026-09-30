@@ -35,6 +35,23 @@ end
 
 rulekey(spec::RuleSpec) = (spec.kind, spec.node, spec.target, spec.algorithm, spec.signature)
 
+# Every rule over the default scheme's inputs for a node, target and algorithm has the one method
+# signature `::RuleArgs`, so a second one with other typed inputs would replace the first. A rule
+# redefined with the same inputs, at the REPL say, replaces it as any rule does.
+function check_default_collision(registry::Registry, spec::RuleSpec)
+    spec.default || return nothing
+    key = rulekey(spec)
+    position = findfirst(existing -> rulekey(existing) == key, registry.rules)
+    position === nothing && return nothing
+    existing = registry.rules[position]
+    existing.inputs == spec.inputs && return nothing
+    throw(
+        ArgumentError(
+            "the $(rule_heading(spec)) at $(spec.file):$(spec.line) takes `default` inputs, and the node already has a rule over the default scheme's inputs for this target and algorithm, at $(existing.file):$(existing.line); the two would share one method. Fold them into one rule, or list the inputs of one of them instead of `default`",
+        ),
+    )
+end
+
 # Add a rule, replacing one with the same signature, so redefining a rule at the REPL
 # updates it rather than duplicating it.
 function register!(registry::Registry, spec::RuleSpec)

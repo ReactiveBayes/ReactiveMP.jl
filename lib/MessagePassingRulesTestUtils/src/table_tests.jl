@@ -289,27 +289,30 @@ poison!(x::AbstractArray) = (foreach(poison!, x); x)
 poison!(x::Union{Tuple, NamedTuple}) = (foreach(poison!, x); x)
 poison!(x) = x
 
-# Measured through the public entry points with concrete arguments, so resolution is static
-# and the figure is the rule's own, as an engine calling it would see it. `node::N` forces
-# specialisation on a node that is a type; without it Julia passes a `DataType` through and
-# resolution turns dynamic.
+# Measured as an engine runs a rule, with concrete arguments so that resolution is static and the
+# figure is the rule's own: resolved, then run with `execute_rule` on a scratch built once and kept
+# from call to call. `node::N` forces specialisation on a node that is a type; without it Julia
+# passes a `DataType` through and resolution turns dynamic.
 function measure_allocations(spec, table, args, ctx)
-    output = spec.inplace ? spec.prealloc(MessagePassingRulesBase.rule_algorithm(spec, table.algorithm), ctx, args, table.target) : nothing
+    algorithm = MessagePassingRulesBase.rule_algorithm(spec, table.algorithm)
+    target = table.kind === :average_energy ? nothing : table.target
+    output = spec.inplace ? spec.prealloc(algorithm, ctx, args, target) : nothing
+    scratch = spec.scratch === nothing ? nothing : MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, target)
     kind = Val(table.kind)
-    run_measured(kind, output, table.node, table.target, table.algorithm, args, ctx)
-    return run_measured(kind, output, table.node, table.target, table.algorithm, args, ctx)
+    run_measured(kind, output, scratch, table.node, target, table.algorithm, args, ctx)
+    return run_measured(kind, output, scratch, table.node, target, table.algorithm, args, ctx)
 end
 
-@noinline run_measured(::Val{:message}, ::Nothing, node::N, target, algorithm, args, ctx) where {N} =
-    @allocated MessagePassingRulesBase.message_passing_rule(node, target, algorithm, args, ctx)
-@noinline run_measured(::Val{:message}, output, node::N, target, algorithm, args, ctx) where {N} =
-    @allocated MessagePassingRulesBase.message_passing_rule!(output, node, target, algorithm, args, ctx)
-@noinline run_measured(::Val{:marginal}, ::Nothing, node::N, target, algorithm, args, ctx) where {N} =
-    @allocated MessagePassingRulesBase.message_passing_marginalrule(node, target, algorithm, args, ctx)
-@noinline run_measured(::Val{:marginal}, output, node::N, target, algorithm, args, ctx) where {N} =
-    @allocated MessagePassingRulesBase.message_passing_marginalrule!(output, node, target, algorithm, args, ctx)
-@noinline run_measured(::Val{:average_energy}, ::Nothing, node::N, target, algorithm, args, ctx) where {N} =
-    @allocated MessagePassingRulesBase.message_passing_average_energy(node, algorithm, args, ctx)
+resolve_measured(::Val{:message}, node, target, algorithm, args) = MessagePassingRulesBase.find_message_rule(node, target, algorithm, args)
+resolve_measured(::Val{:marginal}, node, target, algorithm, args) = MessagePassingRulesBase.find_marginal_rule(node, target, algorithm, args)
+resolve_measured(::Val{:average_energy}, node, target, algorithm, args) = MessagePassingRulesBase.find_average_energy(node, algorithm, args)
+
+@noinline function run_measured(kind, output, scratch, node::N, target, algorithm, args, ctx) where {N}
+    return @allocated begin
+        spec = resolve_measured(kind, node, target, algorithm, args)
+        MessagePassingRulesBase.execute_rule(spec, output, scratch, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, MessagePassingRulesBase.NoAnnotations(), target)
+    end
+end
 
 function run_table(table::TableContext, cases; atol = nothing, rtol = nothing, check_type_promotion = true, float_types = (Float32, Float64, BigFloat), check_nonallocating = false)
     check_type_promotion in (true, false, :exhaustive) ||
@@ -353,7 +356,7 @@ const DOC_TABLE_KEYWORDS = rstrip(
       `Float32`, `1e-6` for `Float64`, `1e-8` for `BigFloat` and `1e-6` for any other type; a
       `Dict` without an entry for a type falls back to the same values.
     - `rtol`: the relative tolerance, in the same forms. Default: `nothing`, which is `0`. A
-      `Dict` without an entry for a type falls back to the default `atol` values above.
+      `Dict` without an entry for a type gives `0` for it.
     - `check_type_promotion`: whether to run each case again with inputs of other float types.
       `true` (the default) runs it, for every type `T` in `float_types`, with all its inputs
       converted to `T` and, when it has more than one, with each input alone converted;
@@ -364,10 +367,10 @@ const DOC_TABLE_KEYWORDS = rstrip(
       must equal it, type included.
     - `float_types`: the types promotion converts to. Default: `(Float32, Float64, BigFloat)`.
     - `check_nonallocating`: whether the rule must allocate nothing. Default: `false`. When
-      `true`, the call through the engine's entry point,
-      [`message_passing_rule`](@extref MessagePassingRulesBase.message_passing_rule) or its
-      in-place, marginal or average-energy sibling, is measured with `@allocated` on its second
-      run, after compilation, and must allocate 0 bytes.
+      `true`, the rule is run as an engine runs it: resolved, then called with
+      [`execute_rule`](@extref MessagePassingRulesBase.execute_rule) on a scratch built once and
+      kept between calls, and, for an in-place rule, a buffer preallocated once. The call is
+      measured with `@allocated` on its second run, after compilation, and must allocate 0 bytes.
     - `source`: the line checks are reported against. Default: `LineNumberNode(0, :unknown)`;
       the macro form passes its own line.
     """

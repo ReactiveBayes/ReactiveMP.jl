@@ -34,6 +34,8 @@ add_outer(::Type{T}, ::Type{T}, ::Type{T}, A::Matrix, x::Vector, y::Vector) wher
     LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
 
 function add_outer(::Type{T1}, ::Type{T2}, ::Type{T3}, A::AbstractMatrix, x::AbstractVector, y::AbstractVector) where {T1 <: Real, T2 <: Real, T3 <: Real}
+    (axes(A, 1) == axes(x, 1) && axes(A, 2) == axes(y, 1)) ||
+        throw(DimensionMismatch("add_outer: A has axes $(axes(A)), x has $(axes(x)) and y has $(axes(y))"))
     B = Matrix{promote_type(T1, T2, T3)}(undef, size(A))
     @inbounds for k2 in axes(A, 2), k1 in axes(A, 1)
         B[k1, k2] = A[k1, k2] + x[k1] * y[k2]
@@ -162,7 +164,8 @@ promote_cluster(cluster::FactorizedCluster, inputs...) =
 
 `(d log 2π + rest) / 2`, the average energy of a `d`-dimensional normal given `rest`, the
 remainder of its expectation, such as `E[(x - μ)ᵀ Λ (x - μ)] - E[log det Λ]`. It is in `rest`'s
-float type: `d * log2π` alone is a `Float64` for an integer `d`, whatever the inputs.
+float type, a `Float64` for an integer `rest`: `d * log2π` alone is a `Float64` for an integer `d`,
+whatever the inputs.
 
 # Examples
 
@@ -171,7 +174,7 @@ julia> MessagePassingRulesBase.gaussian_average_energy(1, 0.0f0) isa Float32
 true
 ```
 """
-gaussian_average_energy(d, rest) = (d * oftype(rest, log2π) + rest) / 2
+gaussian_average_energy(d, rest) = (d * oftype(float(rest), log2π) + rest) / 2
 
 """
     gaussian_variational_variance(q_v)

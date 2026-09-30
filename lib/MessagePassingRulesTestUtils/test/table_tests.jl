@@ -23,6 +23,7 @@
             cases = [(q = (out = Normal(0.0, 1.0), μ = Normal(1.0, 1.0), σ = PointMass(1.0)),) => 1.5],
         )
         @test_message_update_rule(node = T.Buffered, target = :out, check_nonallocating = true, check_type_promotion = false, cases = [(m = (x = [1.0, 2.0],),) => [2.0, 4.0]])
+        @test_message_update_rule(node = T.Worked, target = :out, check_nonallocating = true, check_type_promotion = false, cases = [(m = (x = [1.0, 2.0],),) => 6.0])
     end
     @test isempty(Recording.failures(set))
     @test Recording.passes(set) > 20

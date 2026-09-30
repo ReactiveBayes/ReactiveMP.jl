@@ -47,6 +47,15 @@
         preallocate = (args) -> similar(args.m[:x]),
         body = (output::Vector{Float64}, args) -> (output .= 2 .* args.m[:x]; output),
     )
+    # Works through a scratch vector, which an engine builds once and keeps: the rule itself
+    # allocates nothing.
+    struct Worked end
+    @define_factor_node(node = Worked, type = Deterministic, interfaces = [:out, :x])
+    @define_message_update_rule(
+        node = Worked, target = :out, args = (m[:x]::Vector{Float64},),
+        scratch = (args) -> (work = similar(args.m[:x]),),
+        body = (scratch, args) -> (scratch.work .= 2 .* args.m[:x]; sum(scratch.work)),
+    )
     # Generic over the element type, so dual numbers pass through.
     struct Scaled end
     @define_factor_node(node = Scaled, type = Deterministic, interfaces = [:out, :x])

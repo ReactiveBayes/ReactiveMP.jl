@@ -124,6 +124,7 @@ end
     @test failure(rule(:(logscale = "zero"), :(body = (args) -> 1))) |> msg -> contains(msg, "a number, a function of its inputs or `from_body`")
     @test failure(rule(:(reads_logscale = 1), :(body = (args) -> 1))) |> msg -> contains(msg, "`reads_logscale` must be `true` or `false`")
     @test failure(rule(:(logscale = (ann) -> 0), :(body = (args) -> 1))) |> msg -> contains(msg, "unknown logscale slot")
+    @test failure(rule(:(logscale = sin), :(body = (args) -> 1))) |> msg -> contains(msg, "write it as a lambda")
     @test failure(rule(:(logscale = from_body), :(body = (args) -> 1))) |> msg -> contains(msg, "did not return `with_logscale(result, logscale)`")
     @test failure(rule(:(body = (args) -> with_logscale(1, 0)))) |> msg -> contains(msg, "does not declare `logscale = from_body`")
     @test failure(

@@ -25,6 +25,13 @@
         body = (args) -> (members, total(Tensor, args) - args.q[:a]),
     )
     @define_average_energy(node = Tensor, args = (default, q[:a]::Float64), body = (args) -> total(Tensor, args))
+
+    # An extension of the default algorithm with a rule of its own for an integer `q(a)`: for any
+    # other inputs it inherits the default's rules.
+    struct Extension <: MessagePassingRulesBase.DefaultAlgorithmExtension end
+    @define_message_update_rule(node = Tensor, target = :out, algorithm = Extension, args = (default, q[:a]::Int), body = (args) -> :extension)
+    @define_marginal_update_rule(node = Tensor, target = members, algorithm = Extension, args = (default, q[:a]::Int), body = (args) -> :extension)
+    @define_average_energy(node = Tensor, algorithm = Extension, args = (default, q[:a]::Int), body = (args) -> :extension)
 end
 
 @testitem "default arguments:the inputs" tags = [:base] setup = [DefaultArgsNodes] begin
@@ -66,6 +73,17 @@ end
     @test contains(sprint(show, MIME("text/plain"), which_message_update_rule(N.Tensor, :out; q = (a = 2.0,))), "default")
 end
 
+@testitem "default arguments:an extension inherits where its own rule does not fit" tags = [:base] setup = [DefaultArgsNodes] begin
+    using MessagePassingRulesBase
+    N = DefaultArgsNodes
+    algorithm = N.Extension()
+
+    @test getresult(call_message_update_rule(N.Tensor, :out; algorithm, q = (a = 2, in = 3.0))) === :extension
+    @test getresult(call_message_update_rule(N.Tensor, :out; algorithm, q = (a = 2.0, in = 3.0))) == 2.0 * 3.0
+    @test getresult(call_marginal_update_rule(N.Tensor, (:out, :in); algorithm, m = (out = 1.0, in = 2.0), q = (a = 1.0,))) == ((:out, :in), 3.0)
+    @test getresult(call_average_energy(N.Tensor; algorithm, clusters = ((:out, :in) => 2.0,), q = (a = 1.0,))) == 3.0
+end
+
 @testitem "default arguments:malformed" tags = [:base] begin
     using MessagePassingRulesBase
 
@@ -81,6 +99,14 @@ end
     node = :(struct N end; @define_factor_node(node = N, type = Stochastic, interfaces = [:out, :in]))
     rule(args; target = :(:out)) = Expr(:block, node, :(@define_message_update_rule(node = N, target = $target, args = $args, body = (args) -> 1)))
     @test contains(failure(rule(:((default, default)))), "`default` twice")
+    # Two rules over the default scheme's inputs for one node, target and algorithm share one
+    # method, so the second is refused rather than replacing the first.
+    two = Expr(
+        :block, node,
+        :(@define_message_update_rule(node = N, target = :out, args = (default, m[:in]::Int), body = (args) -> 1)),
+        :(@define_message_update_rule(node = N, target = :out, args = (default, m[:in]::Float64), body = (args) -> 2)),
+    )
+    @test contains(failure(two), "already has a rule over the default scheme's inputs")
     # A bare name as a target binds a cluster, so it is a marginal rule's only.
     @test contains(failure(rule(:((default,)); target = :members)), "a bare name is a marginal rule's")
 end

@@ -34,7 +34,9 @@ end
     lower = NodeFunctionRuleFallback(first)
     @test logpdf(lower(N.Toy, Target(:out), RuleArgs(q = (a = (0.5, 9.0), b = (4.0, 9.0)))), 1.0) == logpdf(N.Toy(0.5, 4.0), 1.0)
 
-    # None where the node function does not apply: a deterministic node, a group member, a joint.
+    # None where the node function does not apply: a deterministic node, a group member, a joint,
+    # an interface with no input.
+    @test fallback(N.Toy, Target(:out), RuleArgs(m = (a = PointMass(1.0),))) === nothing
     @test fallback(N.Pair2, Target(:out), RuleArgs(m = (in = PointMass(1.0),))) === nothing
     @test fallback(N.Grouped, IndexedTarget(:x, 1), RuleArgs(m = (out = PointMass(1.0),))) === nothing
     @test fallback(N.Toy, Target(:b), RuleArgs(q = MessagePassingRulesBase.Marginals(NamedTuple(), Val(((:out, :a),)), (PointMass([1.0, 2.0]),)))) === nothing

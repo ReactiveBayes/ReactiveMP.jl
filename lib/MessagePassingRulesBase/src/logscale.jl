@@ -218,6 +218,12 @@ describe_logscale_declaration(::FromBody) = "from the body"
 describe_logscale_declaration(::Function) = "a function of the inputs"
 describe_logscale_declaration(declaration::Real) = string(declaration)
 
+# A `logscale` declaration that is neither a lambda nor `from_body`: a constant.
+logscale_constant(name, declaration) = declaration
+logscale_constant(name, declaration::Function) = throw(
+    ArgumentError("$(name): `logscale = $(declaration)` names a function; write it as a lambda of the slots it takes, `logscale = (args) -> $(declaration)(args)`"),
+)
+
 # The log scale a rule declares, for a call with these arguments and this raw result.
 @inline rule_logscale(spec, ::Nothing, raw, algorithm, ctx, args, target) = UndefinedLogScale(:no_declaration, spec)
 @inline rule_logscale(spec, declaration::Real, raw, algorithm, ctx, args, target) = declaration

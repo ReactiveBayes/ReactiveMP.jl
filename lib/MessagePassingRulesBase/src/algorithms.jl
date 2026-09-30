@@ -69,7 +69,8 @@ admits(algorithm, rule_algorithm::Type) =
     ispure(algorithm::AbstractAlgorithm) -> Bool
 
 Whether rules under this algorithm are pure unless they say otherwise. An impure algorithm
-adds a method, `MessagePassingRulesBase.ispure(::Type{MyAlgorithm}) = false`.
+adds a method, `MessagePassingRulesBase.ispure(::Type{<:MyAlgorithm}) = false`, which covers each
+`MyAlgorithm{T}` of a parametric one as well.
 
 A pure rule mutates neither its inputs nor any state shared beyond one call, such as fields
 of its algorithm. It may write to its own output buffer and to scratch storage it owns, so

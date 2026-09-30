@@ -418,8 +418,9 @@ function define_rule_expr(kind, source, macroargs)
         elseif declaration === :from_body
             logscale_fn = from_body
         else
-            # A number, checked by `RuleSpec`.
-            logscale_fn = declaration
+            # A number, checked by `RuleSpec`; a function written by its name is refused here, since
+            # only a lambda tells which slots it takes.
+            logscale_fn = :($logscale_constant($(string(name)), $declaration))
         end
     end
 
@@ -435,14 +436,14 @@ function define_rule_expr(kind, source, macroargs)
 
     method = if has_default
         target_sym, algo_arg, args_arg = gensym(:target), gensym(:algorithm), gensym(:args)
-        notfound(k, t) = :($RuleNotFound($(QuoteNode(k)), $node, $t, $algo_arg, $args_arg))
-        guarded(k, t) = :($default_inputs_match($args_arg, $required, $required_types) ? $spec_sym : $(notfound(k, t)))
+        node_sym = gensym(:node)
+        guarded(inherited) = :($default_inputs_match($args_arg, $required, $required_types) ? $spec_sym : $inherited)
         if kind === :message
-            :($base.find_message_rule(::$dispatch_sym, $target_sym::$target, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:message, target_sym)))
+            :($base.find_message_rule($node_sym::$dispatch_sym, $target_sym::$target, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:($inherited_message_rule($node_sym, $target_sym, $algo_arg, $args_arg)))))
         elseif kind === :marginal
-            :($base.find_marginal_rule(::$dispatch_sym, $target_sym::$target, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:marginal, target_sym)))
+            :($base.find_marginal_rule($node_sym::$dispatch_sym, $target_sym::$target, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:($inherited_marginal_rule($node_sym, $target_sym, $algo_arg, $args_arg)))))
         else
-            :($base.find_average_energy(::$dispatch_sym, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:average_energy, nothing)))
+            :($base.find_average_energy($node_sym::$dispatch_sym, $algo_arg::$algorithm_sym, $args_arg::$RuleArgs) = $(guarded(:($inherited_average_energy($node_sym, $algo_arg, $args_arg)))))
         end
     elseif kind === :message
         :($base.find_message_rule(::$dispatch_sym, ::$target, ::$algorithm_sym, ::$signature_sym) = $spec_sym)
@@ -482,6 +483,7 @@ function define_rule_expr(kind, source, macroargs)
             file = $(QuoteNode(Symbol(something(source.file, :none)))),
             line = $(source.line),
         )
+        $check_default_collision($REGISTRY_NAME, $spec_sym)
         $method
         $register!($REGISTRY_NAME, $spec_sym)
         nothing

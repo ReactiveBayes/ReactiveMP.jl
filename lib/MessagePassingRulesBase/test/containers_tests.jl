@@ -46,6 +46,8 @@ end
     @test q1[:a, :b] === q2[:a, :b] === 4
 
     @test Marginals((out = 1.0,))[:out] === 1.0
+    # A cluster named twice would leave one of its values unreachable.
+    @test_throws ArgumentError Marginals(NamedTuple(), Val(((:a, :b), (:a, :b))), (1, 2))
 end
 
 @testitem "containers:args" tags = [:base] begin

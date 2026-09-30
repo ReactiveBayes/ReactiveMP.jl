@@ -107,6 +107,7 @@ Marginals(singles::NamedTuple = NamedTuple()) = Marginals(singles, Val(()), ())
 @generated function Marginals(singles::NamedTuple, ::Val{J}, joints::Tuple) where {J}
     length(J) == length(joints.parameters) ||
         return :(throw(ArgumentError("got $(length(J)) cluster keys but $(length(joints)) clusters")))
+    allunique(J) || return :(throw(ArgumentError($("the cluster keys $(J) name a cluster more than once"))))
     order = sortperm(collect(J); by = cluster_sort_key)
     sortedkeys = Tuple(J[order])
     sortedvalues = Expr(:tuple, (:(joints[$i]) for i in order)...)

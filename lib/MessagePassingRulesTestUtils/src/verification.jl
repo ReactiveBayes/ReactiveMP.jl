@@ -17,11 +17,21 @@ struct Integrated{D} <: InputTreatment
     upper::Float64
 end
 
+const MAX_ENUMERATED_VALUES = 10_000
+
+# The support of a discrete distribution, checked from its bounds before it is collected: an
+# unbounded one, Poisson's say, cannot be collected at all.
+function enumerated_support(name, distribution)
+    lower, upper = minimum(distribution), maximum(distribution)
+    (isfinite(lower) && isfinite(upper) && upper - lower + 1 < MAX_ENUMERATED_VALUES) ||
+        throw(ArgumentError("`$name` has a discrete support of $(MAX_ENUMERATED_VALUES) values or more, from $(lower) to $(upper), which verification cannot enumerate"))
+    return collect(support(distribution))
+end
+
 function input_treatment(name, input)
     input isa PointMass && return FixedAt(mean(input))
     if input isa DiscreteUnivariateDistribution
-        values = collect(support(input))
-        length(values) < 10_000 || throw(ArgumentError("`$name` has an unbounded discrete support, which verification cannot enumerate"))
+        values = enumerated_support(name, input)
         return Enumerated(values, map(x -> logpdf(input, x), values))
     end
     input isa ContinuousUnivariateDistribution &&
@@ -70,7 +80,7 @@ end
 logsumexp_of(xs) = (m = maximum(xs); m + log(sum(x -> exp(x - m), xs)))
 
 function default_points(output)
-    output isa DiscreteUnivariateDistribution && return collect(support(output))
+    output isa DiscreteUnivariateDistribution && return enumerated_support("the output", output)
     return [quantile(output, p) for p in range(0.05, 0.95; length = 9)]
 end
 

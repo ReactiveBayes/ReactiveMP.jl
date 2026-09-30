@@ -15,6 +15,11 @@
     @test B.add_outer(A, x) !== A && A == [2.0 1.0; 0.5 3.0]     # a new matrix, `A` untouched
     @test eltype(B.add_outer(big.(A), x)) === BigFloat              # the generic loop
     @test B.add_outer(2.0, 3.0) == 11.0 && B.add_outer(2.0, 3.0, 4.0) == 14.0
+    # Sizes that do not match are an error on both paths, never a read out of bounds.
+    @test_throws DimensionMismatch B.add_outer(zeros(3, 3), [1.0, 2.0])
+    @test_throws DimensionMismatch B.add_outer(zeros(Float32, 3, 3), [1.0, 2.0])
+    @test_throws DimensionMismatch B.add_outer(zeros(Float32, 2, 2), [1.0, 2.0, 3.0])
+    @test_throws DimensionMismatch B.add_outer(zeros(Float32, 2, 3), [1.0, 2.0], [1.0, 2.0])
 
     C = [1.0 2.0; -1.0 0.5]
     @test B.trace_product(A, C) ≈ tr(A * C)
@@ -85,6 +90,7 @@ end
 
     @test B.gaussian_average_energy(2, 1.0) ≈ (2 * log(2π) + 1.0) / 2
     @test B.gaussian_average_energy(2, 1.0f0) isa Float32
+    @test B.gaussian_average_energy(1, 0) ≈ log(2π) / 2    # an integer remainder is a Float64
 
     # For point masses, what the factor sees is the parameter itself.
     @test B.gaussian_variational_variance(PointMass(2.0)) ≈ 2.0

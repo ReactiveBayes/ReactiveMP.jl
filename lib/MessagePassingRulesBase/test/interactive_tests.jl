@@ -110,8 +110,8 @@ end
 
     @test getresult(@call_message_update_rule(node = double, target = :out, m = (in = 1.0,))) == 2.0
 
-    # The type of the function, as v6's `@call_rule typeof(f)(...)` wrote it, says what to write
-    # instead, whether the algorithm is the default or given.
+    # The type of the function in place of the function says what to write instead, whether the
+    # algorithm is the default or given.
     message = "pass the function itself, `node = double`"
     for call in (
             () -> call_message_update_rule(typeof(double), :out; m = (in = 1.0,)),
@@ -154,7 +154,7 @@ end
     coverage = rule_coverage(DefaultArgsNodes.Tensor)
     @test "q(any cluster)" in coverage.rows
     @test contains(sprint(show, MIME"text/plain"(), coverage), "q(any cluster)")
-    @test contains(sprint(show, only(filter(s -> s.kind === :marginal, MessagePassingRulesBase.list_rules(DefaultArgsNodes.Tensor)))), "towards any cluster")
+    @test contains(sprint(show, only(filter(s -> s.kind === :marginal && s.algorithm === DefaultAlgorithm, MessagePassingRulesBase.list_rules(DefaultArgsNodes.Tensor)))), "towards any cluster")
 
     # A parametric algorithm: rules on the type itself and on one of its variants are two columns,
     # labelled apart, and the node's own instance adds no empty column of its own.
