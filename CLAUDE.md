@@ -115,12 +115,12 @@ and go at the release.
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (178 of them across 25 files), each self-contained and
+Tests are `@testitem` blocks (190 of them across 25 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (33) and `:engine` (144 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (36) and `:engine` (153 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the engine's doctests. Rules
 are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
@@ -134,8 +134,8 @@ and stay in `make test-all`.
 
 The fast default must never become a coverage reduction — the CI workflows set `TEST_ALL=true`,
 so a `:slow` tag changes what *you* run locally, never what CI runs. `ci.yml` runs the root
-suite and the docs, `LibTests.yml` a job per `make test-<package>` target, on PRs and on pushes to
-`main` and this branch.
+suite and the docs on PRs and on pushes to `main`; `LibTests.yml` runs a job per
+`make test-<package>` target on PRs and on pushes to `main` and this branch.
 
 Rule tests live with the rules, in the lib packages, and are table-driven via
 `MessagePassingRulesTestUtils` (`@test_message_update_rule`). The engine's own tests declare
@@ -225,11 +225,12 @@ discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT
   `FlowMessagePassingRules` (`make test-flow`; Flow, its flow models and `PermutationMatrix`) and
   `DiscreteTransitionMessagePassingRules` (`make test-discrete-transition`; a tensor node, its rules
   `default` ones walking `rule_inputs`, its `T` group possibly empty). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
-- The Standard and Delta suites end with a **rule-coverage gate**: after an unfiltered run
+- Every rule package's suite (Standard, Delta and the ten node packages) ends with a
+  **rule-coverage gate**: after an unfiltered run
   (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
   find every rule selected by some test. A table case, a verification, a derivative check or
   a direct `call_*` counts; a rule reached only through a graph does not. A new rule needs a test
-  in its package, or `make test-standard` fails.
+  in its package, or its `make test-<package>` fails.
 - A node's `algorithm = T` with a **parametric** `T` binds its inline `dependencies`, and every rule
   that omits `algorithm`, to the type of its default instance, `T{Nothing}` say, not to `T`. A
   node whose algorithm has variants declares them against `T` itself, with `@define_dependencies`

@@ -23,7 +23,9 @@ not-done table lists before the release: ManyPlus (the package boundaries are do
 do not reach average energies either); the rest of Phase C's exit criteria wait for the release
 itself.
 
-Done in Phase C so far: rule fallbacks and the open rule context (§3.49); log scales first-class,
+Done in Phase C so far: the audit of 2026-09-30 (its bugs fixed; the duplication and the unscented
+transform's singular covariances recorded in the table below); rule fallbacks and the open rule
+context (§3.49); log scales first-class,
 part of the message, and `RuleResult` (§3.50, superseding §3.48), with 28 more of Standard's
 rules declaring one; `RuleResult`'s rich display (§3.51); the performance pass, every benchmarked
 model faster than v6, and RxInfer's precompile workload (`BENCHMARK.md`); dead code out; the engine tests
@@ -62,6 +64,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | Beta's average energy takes `log B(E[a], E[b])` for `E[log B(a, b)]`, exact for point-mass `a`, `b` only; the node has no rule towards them | left for now (user, 2026-09-26) | § Phase C, *Progress* |
 | found by the documentation pass, documented as they are: ConjugateAR under `ARVMP(Univariate, …)` is a `MethodError`; `AdditiveCouplingLayer` with `partition_dim > 1` builds and then fails in `forward`; BinomialPolya's and Probit's `DefaultAlgorithm` energies use a fixed 32 cubature points; `test_rule_derivatives` throws where the tables record a failure; the engine and migration fixture headers store `julia` as different types; `Dependency.key` cannot name a group member `(:T, 1)` | to discuss | the packages' docs, *Limitations* |
 | the unscented transform with a singular covariance (audit of 2026-09-30): FastCholesky's `cholsqrt` puts `1` on a zero pivot (`unscented.jl`, `sigma_points_weights`), so `approximate(Unscented(), (x, y) -> x + y, (1.0, 2.0), (0.0, 1.0))` gives a variance of about 500 001 for 1, and `[0 0; 0 1]` a covariance of 5e5; the multi-input path has no zero- or infinite-covariance guard, so an `Inf` variance gives `NaN`. Delta's rules towards `out`, towards the joint and its known-inverse rule reach it | with StableCholesky.jl (user), `PLAN.md` open item #5 | this row |
+| the duplication the audit of 2026-09-30 found, recorded only (user): `Message`/`Marginal` repeat their show, `==`, statistics forwarding and `eltype`, and `MessageObservable`/`MarginalObservable` their nine `subscribe!` methods; `message_mapping`/`marginal_mapping` a method each for types and functions; `rule_macro.jl`'s three adapter blocks (`PREALLOCATE_SLOTS`, `SCRATCH_SLOTS`, `LOGSCALE_SLOTS`); three keyword-macro parsers (`parse_keywords`, `keyword_call`, `table_macro_call`); four target-label helpers in `interactive.jl` and `display.jl`; 18 test-local `diageye` copies (AR, CT, DT tests) of Base's; the math-helper rewrite in Standard left half done (`tr(A * B)` in six energies, `m * m' + V`, the coupled precisions of the NMV/NMP marginal rules, about ten univariate difference moments, which need a scalar `gaussian_difference_moment`); GCV's `expected_square_difference`; Flow's sigma-point placement beside Approximations'; Delta's joint and linear pushforward beside Approximations' internal `joint_mean_cov`; Standard's three `promoted_*` constructors; the unused `DEFAULT_CONTEXT_SERVICES`; TestUtils' `output_float_type` alias and the repeated log-scale comparison; an untracked initial message printing `UndefinedLogScale(:initial)` where an initial marginal carries `nothing` | after the release, or with the next edit of each | § Phase C, *Progress* (the audit of 2026-09-30) |
 | ManyPlus, the node main added in #666 and released in 6.6.0 after this branch forked: not on the branch, so v7 would drop it; the v6 oracle (6.5.0) has no ManyPlus either | after the audit's cleanup, a node of its own (user) | § Phase C, *Progress* (the audit) |
 | the downstream check (user, 2026-09-30): all 48 RxInferExamples notebooks and the bmlip course's 11 RxInfer notebooks run on v7, v6 (Julia 1.13) as the baseline, where all pass. Ported on branches `reactivemp-v7` of RxInferExamples.jl (pushed) and of the course (on the fork `bvdmitri/course`, since it needs the registered packages and re-pinned notebooks). Found and fixed, each with a test: a deterministic node's free-energy term read a stale joint in loops; a one-member group alone in a stochastic node's cluster was a joint no rule computes (`DiscreteTransition` with one control); `node = typeof(f)` in the interactive calls; v6's per-node `RequireMessageFunctionalDependencies(in = d)` had no counterpart, now the activation option `initial_messages` and RxInfer's `where { initial_messages = … }`. Left: Nonlinear Sensor Fusion (CVI gone: `Unscented` or a slow `CVIProjection`), Incomplete Data (`StandardBasisVector` is not public), and seven notebooks with rules that need their owners (MARX, EFE, T-Maze, rSLDS, CCVMP, VAEs, LLM), each with a port plan | the two decisions for the user; the seven with their owners | the examples branch's commits; this row |
 | the documentation overhaul (user, 2026-09-30): the sites, the rich display (§3.52), both migration guides, RxInfer's docs on its branch, error messages | done; what it leaves for the user is listed there | § Phase C, *Progress* |
@@ -3724,7 +3727,7 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
-- *The audit of 2026-09-30 — in progress* (user: the bugs and the hygiene, the duplication recorded
+- *The audit of 2026-09-30 — done* (user: the bugs and the hygiene, the duplication recorded
   only; one commit per group): the engine, the lib packages and the working documents reviewed
   again against the code. Done: the engine gives `missing` where a folded static data input is
   observed `missing` (its rule threw), and `activate!` resolves a node's dependency declaration once;
@@ -3738,7 +3741,16 @@ wait for the release):
   declares the exact `log B(q + 1)` for any `q_out` (not only one-hot), and the Wishart
   MvNormalMeanPrecision rules take any scale matrix; AR's mean-field energy keeps the float type,
   BIFM's documented error is public. Dropped after checking: GCV's product in the reverse order,
-  which BayesBase's `GenericProd` already resolves by swapping the pair.
+  which BayesBase's `GenericProd` already resolves by swapping the pair. Then the documents:
+  `CLAUDE.md`'s test counts, its coverage gates (every rule package has one) and its CI triggers,
+  and `CHANGELOG.md`'s two `### Added` sections merged and its compare links. Left for the user,
+  recorded, not changed: the diagnosis note "a joint given as singles" fires for any `q` single
+  that is a member of some candidate's joint, a correct mean-field call included
+  (`diagnostics.jl`); a `default` rule's guard accepts `nothing` members for `m[:in...]::T` where
+  a typed rule's signature and `input_accepts` refuse them; `CHANGELOG.md`'s old `### Tests`
+  section under 5.6.6; NormalMeanVariance towards `μ` has no rule for a `PointMass` `q_v` declaring
+  log scale 0, as towards `out`. The Unscented transform's singular covariances and the
+  duplication are rows of the not-done table.
 - *The documentation overhaul — done* (user, 2026-09-30): every site readable by a
   student, every snippet run by the build, the rich display explaining, two migration guides
   (rule authors here, model authors in RxInfer), and the vague error messages met on the way
