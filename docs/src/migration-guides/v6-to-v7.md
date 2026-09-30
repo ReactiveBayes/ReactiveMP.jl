@@ -626,6 +626,11 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   `-d·log|a|`, and a product that would need `in * A` for a matrix operand has no rule. v6's
   `*` rules towards `in` with their arguments reversed, reachable only through `@call_rule`, are
   gone.
+- **`+`** takes any number of terms, its interfaces `out` and the group `in`: v6's `in1` and `in2`
+  are `(:in, 1)` and `(:in, 2)`, `call_message_update_rule(+, (:in, 2); m = (out = …, in = (…, nothing)))`
+  and `((:in, 1), x)` in a hand-built graph. `a + b + c` is one node, where v6 had no rule for it,
+  and so is 6.6's `ManyPlus`, which v7 does not have. The joint of the terms with `out` known has
+  a rule, so the free energy of a model observing a sum is defined. `-` keeps `in1` and `in2`.
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
 - **NormalMixture** and **GammaMixture** take no type parameter: v6's `NormalMixture{N}` and
   `GammaMixture{N}` are `NormalMixture` and `GammaMixture`, and the number of components is the

@@ -6,6 +6,7 @@ version = "0.1.0-DEV"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
@@ -24,12 +25,14 @@ MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 [compat]
 Aqua = "0.8"
 BayesBase = "1.5"
+Compat = "4.10"
 Distributions = "0.25"
 Documenter = "1"
 DomainSets = "0.7"
 ExponentialFamily = "2.5"
 FastCholesky = "1.3"
 HCubature = "1"
+julia = "1.11"
 LinearAlgebra = "1.11"
 LogExpFunctions = "0.3"
 MatrixCorrectionTools = "1.2"
@@ -41,7 +44,6 @@ StableRNGs = "1"
 StatsFuns = "1"
 Test = "1.11"
 TestItemRunner = "1"
-julia = "1.11"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"

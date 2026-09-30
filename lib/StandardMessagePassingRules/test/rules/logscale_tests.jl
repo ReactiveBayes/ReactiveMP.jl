@@ -51,9 +51,9 @@ end
     total = first(hcubature(x -> pdf(out, x[1] + x[2]) * pdf(in2, x[2]), (-30.0, -30.0), (30.0, 30.0); rtol = 1.0e-8))
     @test total ≈ 1 rtol = 1.0e-6
     for (node, target, m) in (
-            (+, :in1, (out = out, in2 = in2)), (+, :in2, (out = out, in1 = in2)), (+, :out, (in1 = out, in2 = in2)),
+            (+, (:in, 1), (out = out, in = (nothing, in2))), (+, (:in, 2), (out = out, in = (in2, nothing))), (+, :out, (in = (out, in2),)),
             (-, :in1, (out = out, in2 = in2)), (-, :in2, (out = out, in1 = in2)), (-, :out, (in1 = out, in2 = in2)),
-            (+, :out, (in1 = Gamma(2.0, 1.0), in2 = Gamma(3.0, 1.0))), (-, :in1, (out = Gamma(2.0, 1.0), in2 = Gamma(3.0, 1.0))),
+            (+, :out, (in = (Gamma(2.0, 1.0), Gamma(3.0, 1.0)),)), (-, :in1, (out = Gamma(2.0, 1.0), in2 = Gamma(3.0, 1.0))),
         )
         @test getlogscale(call_message_update_rule(node, target; m)) === 0
     end

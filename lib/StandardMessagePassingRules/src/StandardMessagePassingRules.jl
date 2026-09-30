@@ -51,6 +51,7 @@ true
 module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
+using Compat: @compat
 using MessagePassingRulesBase: matrix_correction
 using MessagePassingRulesBase: trace_product, scaled_outer, diageye, promote_cluster
 using MessagePassingRulesBase: gaussian_average_energy, gaussian_variational_variance, gaussian_variational_covariance
@@ -73,6 +74,7 @@ export AND, OR, NOT, IMPLY, MultiplicationSampling
 # `dot`, LinearAlgebra's, is the node `out = dot(A, in)`, and `diageye`, MessagePassingRulesBase's,
 # builds the identity matrices models write.
 export dot, diageye
+@compat public InputsGivenSum
 
 include("helpers.jl")
 
@@ -195,8 +197,7 @@ include("nodes/matrix_normal_wishart.jl")
 include("rules/matrix_normal_wishart/out.jl")
 include("nodes/addition.jl")
 include("rules/addition/out.jl")
-include("rules/addition/in1.jl")
-include("rules/addition/in2.jl")
+include("rules/addition/in.jl")
 include("rules/addition/marginals.jl")
 include("nodes/subtraction.jl")
 include("rules/subtraction/out.jl")

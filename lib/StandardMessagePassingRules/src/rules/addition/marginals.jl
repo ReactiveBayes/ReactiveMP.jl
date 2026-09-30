@@ -1,26 +1,13 @@
-# The joint of the inputs. With one of them known, the other's marginal is its message times
-# its prior; with both Gaussian, a joint Gaussian over [in1; in2].
-
+# The joint of the inputs: with a normal message on `out`, the Gaussian inputs jointly and each
+# known one on its own; with `out` known, the inputs on the plane where they sum to it.
 @define_marginal_update_rule(
-    node = +, target = (:in1, :in2),
-    args = (m[:out]::NormalDistributionsFamily, m[:in1]::NormalDistributionsFamily, m[:in2]::PointMass),
-    body = (args) -> promote_cluster(
-        FactorizedCluster((:in1,) => prod(ClosedProd(), difference_message(args.m[:out], args.m[:in2]), args.m[:in1]), (:in2,) => args.m[:in2]),
-        args.m[:out], args.m[:in1], args.m[:in2],
-    ),
+    node = +, target = (:in,),
+    args = (m[:out]::NormalDistributionsFamily, m[:in...]::NormalOrPoint),
+    body = (args) -> sum_inputs_joint(args.m[:out], args.m[:in]),
 )
 
 @define_marginal_update_rule(
-    node = +, target = (:in1, :in2),
-    args = (m[:out]::NormalDistributionsFamily, m[:in1]::PointMass, m[:in2]::NormalDistributionsFamily),
-    body = (args) -> promote_cluster(
-        FactorizedCluster((:in1,) => args.m[:in1], (:in2,) => prod(ClosedProd(), difference_message(args.m[:out], args.m[:in1]), args.m[:in2])),
-        args.m[:out], args.m[:in1], args.m[:in2],
-    ),
-)
-
-@define_marginal_update_rule(
-    node = +, target = (:in1, :in2),
-    args = (m[:out]::NormalDistributionsFamily, m[:in1]::NormalDistributionsFamily, m[:in2]::NormalDistributionsFamily),
-    body = (args) -> input_joint(args.m[:out], args.m[:in1], args.m[:in2], 1),
+    node = +, target = (:in,),
+    args = (m[:out]::PointMass, m[:in...]::NormalOrPoint),
+    body = (args) -> sum_inputs_joint(args.m[:out], args.m[:in]),
 )

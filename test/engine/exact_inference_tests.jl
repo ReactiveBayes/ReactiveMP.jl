@@ -183,7 +183,7 @@ end
 
     H.node!(graph, NormalMeanVariance, x_prior)
     H.node!(graph, NormalMeanVariance, z_prior)
-    H.node!(graph, +, [(:out, s), (:in1, x), (:in2, z)])
+    H.node!(graph, +, [(:out, s), ((:in, 1), x), ((:in, 2), z)])
     H.node!(graph, NormalMeanVariance, w_prior)
     H.node!(graph, -, [(:out, d), (:in1, s), (:in2, w)])
     H.node!(graph, *, [(:out, m), (:A, two), (:in, d)])
@@ -239,7 +239,7 @@ end
     H.node!(graph, NormalMeanVariance, [(:out, b), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 100.0))])
     ys = map(1:3) do _
         s, y = H.random!(graph), H.data!(graph)
-        H.node!(graph, +, [(:out, s), (:in1, a), (:in2, b)])
+        H.node!(graph, +, [(:out, s), ((:in, 1), a), ((:in, 2), b)])
         H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, s), (:v, H.constant!(graph, 1.0))])
         y
     end
@@ -602,7 +602,7 @@ end
         Az, Bu, Cz = H.random!(graph), H.random!(graph), H.random!(graph)
         H.node!(graph, *, [(:out, Az), (:A, H.constant!(graph, M.A)), (:in, i == 1 ? z_prev : z[i - 1])])
         H.node!(graph, *, [(:out, Bu), (:A, H.constant!(graph, M.B)), (:in, u[i])])
-        H.node!(graph, +, [(:out, z[i]), (:in1, Az), (:in2, Bu)])
+        H.node!(graph, +, [(:out, z[i]), ((:in, 1), Az), ((:in, 2), Bu)])
         H.node!(graph, *, [(:out, Cz), (:A, H.constant!(graph, M.C)), (:in, z[i])])
         H.node!(graph, MvNormalMeanPrecision, [(:out, y[i]), (:μ, Cz), (:Λ, H.constant!(graph, [10.0;;]))])
     end

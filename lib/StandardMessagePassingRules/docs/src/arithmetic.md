@@ -2,7 +2,7 @@
 
 The arithmetic nodes `+`, `-`, `*` and `dot` are
 [deterministic nodes](@extref MessagePassingRulesBase glossary-deterministic-node): their output
-is a function of their inputs, such as `out = in1 + in2`. Base's and LinearAlgebra's functions
+is a function of their inputs, such as `out = in[1] + in[2]`. Base's and LinearAlgebra's functions
 are the nodes themselves, so an RxInfer model writes `y ~ x + z` or `y ~ A * x`, and
 [`rule_coverage`](@extref MessagePassingRulesBase.rule_coverage)`(+)` takes the function. The
 package re-exports LinearAlgebra's `dot` for models to use.
@@ -37,7 +37,7 @@ julia> using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFa
 
 julia> sum_message = getresult(@call_message_update_rule(
            node = +, target = :out,
-           m = (in1 = NormalMeanVariance(1.0, 1.0), in2 = PointMass(2.0)),
+           m = (in = (NormalMeanVariance(1.0, 1.0), PointMass(2.0)),),
        ));
 
 julia> mean(sum_message) ≈ 3.0 && var(sum_message) ≈ 1.0
@@ -55,14 +55,17 @@ true
 ## Addition, `+`
 
 ```math
-\mathrm{out} = \mathrm{in}_1 + \mathrm{in}_2
+\mathrm{out} = \mathrm{in}_1 + \mathrm{in}_2 + \dots + \mathrm{in}_n, \quad n \ge 2
 ```
 
 | interface | meaning | messages its rules take |
 |---|---|---|
 | `out` | the sum | a normal or a `PointMass` |
-| `in1` | the first term | a normal or a `PointMass` |
-| `in2` | the second term | a normal or a `PointMass` |
+| `in` | the terms, a [group](@extref MessagePassingRulesBase glossary-group) of two or more | a normal or a `PointMass` each |
+
+One node sums any number of terms, so `a + b + c`, which Julia parses as one call of `+`, is one
+node, with no variable for an intermediate sum. That matters in a model with loops, where an
+intermediate sum needs initial messages of its own and changes the schedule.
 
 ```@example arithmetic
 MessagePassingRulesBase.nodespec(+)
@@ -72,32 +75,51 @@ MessagePassingRulesBase.nodespec(+)
 MessagePassingRulesBase.rule_coverage(+)
 ```
 
-The message towards `out` from two normal messages adds their means and their variances:
+The message towards `out` adds the means and the variances of the terms:
 
 ```@example arithmetic
 @call_message_update_rule(
     node = +, target = :out,
-    m = (in1 = NormalMeanVariance(1.0, 1.0), in2 = NormalMeanVariance(2.0, 3.0)),
+    m = (in = (NormalMeanVariance(1.0, 1.0), NormalMeanVariance(2.0, 3.0), PointMass(1.0)),),
 )
 ```
 
-Towards an input, the rule subtracts. With `out` observed at `5` and a normal message on `in1`,
-the message towards `in2` is a normal around `5 - 1`:
+Towards a term, the rule subtracts the others from `out`. With `out` observed at `5`, the message
+towards the second of two terms is a normal around `5 - 1`. The group's tuple holds `nothing` at
+the target's own position:
 
 ```@example arithmetic
 @call_message_update_rule(
-    node = +, target = :in2,
-    m = (out = PointMass(5.0), in1 = NormalMeanVariance(1.0, 1.0)),
+    node = +, target = (:in, 2),
+    m = (out = PointMass(5.0), in = (NormalMeanVariance(1.0, 1.0), nothing)),
 )
 ```
 
-The messages are normal whenever any input is normal, and a `PointMass` when both inputs are
-known. A normal shifted by a known value keeps its mean–precision or weighted-mean form. Any
-other result is in mean–variance or mean–covariance form. Towards `out`, Distributions'
-`convolve` sums any other two distributions, and it throws a `MethodError` for a pair it does not
-know. The joint marginal of the inputs is a joint normal when both inputs are normal, and
-factorised when one is known. Every rule has [log scale](@extref MessagePassingRulesBase glossary-log-scale)
-zero.
+The messages are normal whenever any term is normal, and a `PointMass` when every term is known.
+A normal shifted by a known value keeps its mean–precision or weighted-mean form. Any other
+result is in mean–variance or mean–covariance form. Towards `out`, Distributions' `convolve` sums
+any other distributions, and it throws a `MethodError` for a pair it does not know. Every rule has
+[log scale](@extref MessagePassingRulesBase glossary-log-scale) zero.
+
+The joint marginal of the terms, which the
+[free energy](@extref MessagePassingRulesBase glossary-bethe-free-energy) takes the entropy of, depends
+on `out`'s message:
+
+- with a normal `out`, the normal terms are one joint normal, their messages times `out`'s message
+  of their sum, and each known term is a block of its own;
+- with `out` known, the terms lie on the plane where they sum to it. Every normal term but the
+  last is free, and the last is the rest of the sum: an [`StandardMessagePassingRules.InputsGivenSum`](@ref).
+
+```@example arithmetic
+@call_marginal_update_rule(
+    node = +, target = (:in,),
+    m = (out = PointMass(3.0), in = (NormalMeanVariance(2.0, 2.0), PointMass(2.0), NormalMeanVariance(0.0, 1.0))),
+)
+```
+
+```@docs
+StandardMessagePassingRules.InputsGivenSum
+```
 
 ## Subtraction, `-`
 
