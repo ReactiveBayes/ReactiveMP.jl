@@ -24,7 +24,7 @@ end
 
 @testitem "rules:Categorical" tags = [:rules] begin
     using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
-    using SpecialFunctions: digamma
+    using SpecialFunctions: digamma, logbeta
 
     softened = (a -> (ρ = exp.(digamma.(a) .- digamma(sum(a))); ρ ./ sum(ρ)))([1.0, 3.0])
     # Promotion is checked in Float32 and Float64 only, here and below: converting a
@@ -42,7 +42,9 @@ end
     @test_message_update_rule(
         node = Categorical, target = :p, float_types = (Float32, Float64),
         cases = [
-            (q = (out = Categorical([0.3, 0.7]),),) => ExpectedWithLogScale(Dirichlet([1.3, 1.7]), -log(2.0)),
+            # ∫ p^0.3 (1 - p)^0.7 dp = B(1.3, 1.7).
+            (q = (out = Categorical([0.3, 0.7]),),) => ExpectedWithLogScale(Dirichlet([1.3, 1.7]), logbeta(1.3, 1.7)),
+            (q = (out = Categorical([0.0, 1.0]),),) => ExpectedWithLogScale(Dirichlet([1.0, 2.0]), -log(2.0)),
             (q = (out = PointMass([0.0, 1.0]),),) => ExpectedWithLogScale(Dirichlet([1.0, 2.0]), -log(2.0)),
         ],
     )

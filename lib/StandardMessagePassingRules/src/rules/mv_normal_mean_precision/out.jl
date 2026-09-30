@@ -53,6 +53,7 @@
     args = (m[:μ]::MultivariateNormalDistributionsFamily, q[:Λ]::Wishart),
     body = (args) -> begin
         μ, V = mean_cov(args.m[:μ])
-        MvNormalMeanCovariance(μ, V + inv(args.q[:Λ].S.chol) ./ args.q[:Λ].df)
+        df, S = params(args.q[:Λ])
+        MvNormalMeanCovariance(μ, V + inv(S) ./ df)
     end,
 )

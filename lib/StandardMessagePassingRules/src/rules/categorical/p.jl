@@ -1,6 +1,10 @@
-# The likelihood p ↦ p_k of an observed category integrates to 1/K! over the simplex of K
-# categories, hence the log scale -log K!, in the precision of the probabilities.
-categorical_likelihood_logscale(probs) = -convert(float(eltype(probs)), logfactorial(length(probs)))
+# The message p ↦ ∏ₖ p_k^{q_k} integrates over the simplex to the multivariate beta function
+# B(q + 1) = ∏ₖ Γ(q_k + 1) / Γ(K + 1), since the q_k sum to one: its log is the log scale, in the
+# precision of the probabilities. For a one-hot q, an observed category, it is -log K!.
+function categorical_likelihood_logscale(probs)
+    T = float(eltype(probs))
+    return sum(q -> loggamma(q + one(T)), probs) - convert(T, logfactorial(length(probs)))
+end
 
 @define_message_update_rule(
     node = Categorical, target = :p,

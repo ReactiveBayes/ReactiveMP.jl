@@ -52,7 +52,7 @@ module StandardMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: matrix_correction
-using MessagePassingRulesBase: add_outer, trace_product, negate!!, scale!!, scaled_outer, diageye, promote_cluster
+using MessagePassingRulesBase: trace_product, scaled_outer, diageye, promote_cluster
 using MessagePassingRulesBase: gaussian_average_energy, gaussian_variational_variance, gaussian_variational_covariance
 using MessagePassingRulesBase: gaussian_coupled_precision, gaussian_difference_moment, gaussian_series_precision, gaussian_second_moment
 using StatsFuns: log2π, logπ, loghalf
@@ -62,7 +62,7 @@ using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, Term
 using LogExpFunctions: softmax!, softmax, logsumexp
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 import LinearAlgebra
-using LinearAlgebra: I, Hermitian, UniformScaling, tr, logdet, dot
+using LinearAlgebra: Hermitian, UniformScaling, tr, logdet, dot
 using FastCholesky: cholinv, fastcholesky
 using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
 import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily, covmats

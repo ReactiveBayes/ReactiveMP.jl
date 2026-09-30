@@ -136,6 +136,8 @@ end
     )
     @test getresult(call_average_energy(HalfNormal; q = (out = GammaShapeRate(2.0, 1.0), v = PointMass(2.0)))) ≈ 2.072364942925
     @test getresult(call_average_energy(HalfNormal; q = (out = GammaInverse(3.0, 1.0), v = PointMass(2.0)))) ≈ 0.6973649429247
+    # In the inputs' float type.
+    @test_average_energy(node = HalfNormal, cases = [(q = (out = PointMass(1.0), v = PointMass(1.0)),) => (log(π / 2) + 1) / 2])
 end
 
 @testitem "rules:Poisson" tags = [:rules] begin
@@ -166,6 +168,12 @@ end
     # Point masses give -log p(k | λ), and a Poisson q_out its entropy.
     @test all(isapprox(getresult(call_average_energy(Poisson; q = (out = PointMass(k), l = PointMass(l)))), -logpdf(Poisson(l), k); rtol = 1.0e-12) for l in 1:20, k in 1:20)
     @test all(isapprox(getresult(call_average_energy(Poisson; q = (out = Poisson(k), l = PointMass(k)))), entropy(Poisson(k)); rtol = 1.0e-3) for k in 1:100)
+    # The general energy in the inputs' float type; its series is summed in Float64, or in
+    # BigFloat for BigFloat inputs.
+    @test_average_energy(
+        node = Poisson,
+        cases = [(q = (out = Poisson(3.0), l = GammaShapeRate(2.0, 1.0)),) => getresult(call_average_energy(Poisson; q = (out = Poisson(3.0), l = GammaShapeRate(2.0, 1.0))))],
+    )
 end
 
 @testitem "rules:Uniform" tags = [:rules] begin

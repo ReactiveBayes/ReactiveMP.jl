@@ -13,8 +13,8 @@ Its interfaces are `out` and `v`, with the aliases `var` and `σ²`; it runs und
 
 **Rules.** Only the message towards `out`, from a known variance (a `PointMass` marginal of `v`):
 a `Normal(0, √v)` truncated to `[0, ∞)`. There is **no rule towards `v`**, so `v` must be
-known, and no marginal rule. The average energy takes any marginals whose `mean_var` and
-`mean(log, ·)`, `mean(inv, ·)` exist.
+known, and no marginal rule. The average energy takes any marginals `q_out` with a `mean` and
+a `var`, and `q_v` with `mean(log, ·)` and `mean(inv, ·)`.
 
 # Examples
 
@@ -35,6 +35,7 @@ struct HalfNormal end
     node = HalfNormal,
     args = (q[:out]::Any, q[:v]::Any),
     body = (args) -> begin
-        (log(π / 2) + mean(log, args.q[:v]) + mean(inv, args.q[:v]) * gaussian_second_moment(args.q[:out])) / 2
+        rest = mean(log, args.q[:v]) + mean(inv, args.q[:v]) * gaussian_second_moment(args.q[:out])
+        (log(oftype(float(rest), π) / 2) + rest) / 2
     end,
 )

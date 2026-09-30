@@ -3733,7 +3733,10 @@ wait for the release):
   shared alias and a repeated cluster key are refused at definition, the node-function fallback
   needs every input; in TestUtils, discrete supports are bounded before they are collected and
   `check_nonallocating` keeps the scratch, as the engine does; in Approximations, the scalar
-  `approximate_meancov` keeps the input's float type and `Unscented(dim)` checks the dimension.
+  `approximate_meancov` keeps the input's float type and `Unscented(dim)` checks the dimension;
+  in Standard, HalfNormal's and Poisson's energies keep the float type, Categorical towards `p`
+  declares the exact `log B(q + 1)` for any `q_out` (not only one-hot), and the Wishart
+  MvNormalMeanPrecision rules take any scale matrix.
 - *The documentation overhaul — done* (user, 2026-09-30): every site readable by a
   student, every snippet run by the build, the rich display explaining, two migration guides
   (rule authors here, model authors in RxInfer), and the vague error messages met on the way

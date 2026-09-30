@@ -30,6 +30,9 @@
                 (m = NamedTuple{(other,)}((MvNormalMeanCovariance([0.0, 0.0], [7.0 -1.0; -1.0 9.0]),)), q = (Λ = Wishart(3.0, [12.0 -2.0; -2.0 7.0] ./ 3.0),)) =>
                     MvNormalMeanCovariance([0.0, 0.0], [567 / 80 -39 / 40; -39 / 40 183 / 20]),
                 (q = m(MvNormalMeanCovariance([1.0, 2.0], [3.0 2.0; 2.0 4.0]), Wishart(4.0, [1.0 0.0; 0.0 1.0] ./ 4.0)),) => MvNormalMeanPrecision([1.0, 2.0], [1.0 0.0; 0.0 1.0]),
+                # A Wishart whose scale matrix is diagonal, which holds no Cholesky factor.
+                (m = NamedTuple{(other,)}((MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]),)), q = (Λ = Wishart(2.0, Distributions.PDiagMat([2.0, 4.0])),)) =>
+                    MvNormalMeanCovariance([2.0, 1.0], [3.25 2.0; 2.0 4.125]),
             ],
         )
     end
