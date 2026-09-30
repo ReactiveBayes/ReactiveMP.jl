@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, SoftDotMessagePassingRules
-    Aqua.test_all(SoftDotMessagePassingRules)
+    Aqua.test_all(SoftDotMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

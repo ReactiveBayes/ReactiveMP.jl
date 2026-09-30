@@ -89,25 +89,6 @@ end
 )
 
 """
-    flow_unscented(method::Unscented, dim) -> Unscented
-
-The unscented method with its weights for dimension `dim`: `Unscented(dim)` as given, or one built
-from the parameters of `Unscented()`.
-
-# Throws
-
-A `DimensionMismatch` when `method` was built for a dimension other than `dim`.
-"""
-function flow_unscented(method::Unscented, dim)
-    if method.e === nothing
-        return Unscented(dim; alpha = method.α, beta = method.β, kappa = method.κ)
-    end
-    L = MessagePassingRulesApproximations.getL(method)
-    L == dim || throw(DimensionMismatch("`Unscented($L)` was given for a flow of dimension $dim"))
-    return method
-end
-
-"""
     flow_unscented_statistics(f, model, method::Unscented, μ, Σ) -> MvNormalMeanCovariance
 
 The normal of `f(model, x)` for `x ~ N(μ, Σ)` by the unscented transform, `f` being
@@ -119,9 +100,8 @@ them: both are exact for an affine flow, and they differ for a nonlinear one.
 """
 function flow_unscented_statistics(f, model, method, μ, Σ)
     T = eltype(model)
-    approximation = flow_unscented(method, length(μ))
-    A = MessagePassingRulesApproximations
-    λ, L, Wm, Wc = A.getλ(approximation), A.getL(approximation), A.getWm(approximation), A.getWc(approximation)
+    L = length(μ)
+    (; λ, Wm, Wc) = sigma_point_parameters(method, L)
     sqrtΣ = sqrt((L + λ) * Σ)
     χ = [copy(μ) for _ in 1:(2 * L + 1)]
     for l in 2:(L + 1)

@@ -21,6 +21,5 @@ FlowMessagePassingRules.flow_backward_precision
 The unscented rules push the sigma points through the model themselves:
 
 ```@docs
-FlowMessagePassingRules.flow_unscented
 FlowMessagePassingRules.flow_unscented_statistics
 ```

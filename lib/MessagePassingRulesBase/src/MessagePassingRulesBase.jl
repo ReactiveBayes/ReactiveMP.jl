@@ -85,6 +85,7 @@ export RuleResult, getresult, getrule, getannotations
 @compat public Registry, registries, registered_rules, registered_nodes, registered_dependencies, duplicate_rules
 @compat public list_rules, RuleCoverage, rule_coverage, check_rules, RuleIssue, check_rule_ambiguities
 @compat public NodeFunctionLogPdf, visualize_spec
+@compat public as_target, as_cluster, interactive_args, add_selection_observer!
 
 @compat public add_outer, trace_product, negate!!, scale!!, scaled_outer, diageye, promote_cluster
 @compat public gaussian_average_energy, gaussian_variational_variance, gaussian_variational_covariance

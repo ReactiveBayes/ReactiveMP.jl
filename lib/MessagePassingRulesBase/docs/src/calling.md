@@ -122,3 +122,15 @@ message_passing_marginalrule!
 message_passing_average_energy
 ```
 
+## For tools
+
+A tool that calls rules the way the interactive functions do, such as the test tooling, reads
+their inputs with the same functions, and can observe which rule each call selects.
+
+```@docs
+MessagePassingRulesBase.as_target
+MessagePassingRulesBase.as_cluster
+MessagePassingRulesBase.interactive_args
+MessagePassingRulesBase.add_selection_observer!
+```
+

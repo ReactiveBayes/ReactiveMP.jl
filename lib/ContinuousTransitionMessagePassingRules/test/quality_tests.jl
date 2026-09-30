@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, ContinuousTransitionMessagePassingRules
-    Aqua.test_all(ContinuousTransitionMessagePassingRules)
+    Aqua.test_all(ContinuousTransitionMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin
@@ -39,7 +39,7 @@ end
     @test isempty(check_rule_ambiguities(ContinuousTransitionMessagePassingRules))
 end
 
-@testitem "quality:node" tags = [:quality] begin
+@testitem "quality:nodes" tags = [:quality] begin
     using ContinuousTransitionMessagePassingRules, MessagePassingRulesBase
     using MessagePassingRulesBase: dependencies_spec, target_dependencies, extends_default_scheme, default_algorithm, Target
 

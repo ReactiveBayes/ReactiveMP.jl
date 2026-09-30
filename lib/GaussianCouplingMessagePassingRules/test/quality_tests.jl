@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, GaussianCouplingMessagePassingRules
-    Aqua.test_all(GaussianCouplingMessagePassingRules)
+    Aqua.test_all(GaussianCouplingMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

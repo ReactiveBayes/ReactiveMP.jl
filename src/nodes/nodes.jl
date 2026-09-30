@@ -68,6 +68,12 @@ include("interfaces.jl")
 include("clusters.jl")
 include("dependencies.jl")
 
+"""
+    ReactiveMP.AbstractFactorNode
+
+The supertype of the engine's factor nodes, [`FactorNode`](@ref): the type a graph stores its
+nodes as, as RxInfer's model does.
+"""
 abstract type AbstractFactorNode end
 
 # What creating a node from the same declaration, interface keys and factorisation always gives,
@@ -262,7 +268,20 @@ The interfaces of `factornode`, [`ReactiveMP.NodeInterface`](@ref)s and, for a g
 order.
 """
 getinterfaces(factornode::FactorNode) = factornode.interfaces
+
+"""
+    ReactiveMP.getinterface(factornode::FactorNode, index)
+
+The interface of `factornode` at position `index` of [`getinterfaces`](@ref).
+"""
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
+
+"""
+    ReactiveMP.getlocalclusters(factornode::FactorNode) -> ReactiveMP.FactorNodeLocalClusters
+
+The clusters of `factornode`'s factorisation and their local marginals, which
+[`ReactiveMP.get_node_local_marginals`](@ref) lists.
+"""
 getlocalclusters(factornode::FactorNode) = factornode.localclusters
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
@@ -473,8 +492,19 @@ FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks) =
 FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing, logscales::Bool = false) =
     FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics, something(context, NamedTuple()), rulefallback, logscales)
 
+"""
+    ReactiveMP.getpostprocessor(options::FactorNodeActivationOptions)
+
+The `postprocessor` option: the stream postprocessor of the node's streams, or `nothing`.
+"""
 getpostprocessor(options::FactorNodeActivationOptions) = options.postprocessor
 getannotations(options::FactorNodeActivationOptions) = options.annotations
+
+"""
+    ReactiveMP.getcallbacks(options::FactorNodeActivationOptions)
+
+The `callbacks` option: the handler of the node's rule-call events, or `nothing`.
+"""
 getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 getdiagnostics(options::FactorNodeActivationOptions) = options.diagnostics
 getcontext(options::FactorNodeActivationOptions) = options.context

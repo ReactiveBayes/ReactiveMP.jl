@@ -30,10 +30,14 @@ rules are those of belief propagation; with one cluster per interface, `((:out,)
 those of mean-field variational message passing.
 
 ```@docs
+ReactiveMP.AbstractFactorNode
 FactorNode
 factornode
 functionalform
 getinterfaces
+ReactiveMP.getinterface
+ReactiveMP.getlocalclusters
+ReactiveMP.get_node_local_marginals
 ReactiveMP.FactorNodeLocalMarginal
 ```
 

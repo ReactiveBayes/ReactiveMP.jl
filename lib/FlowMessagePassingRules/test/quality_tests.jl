@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, FlowMessagePassingRules
-    Aqua.test_all(FlowMessagePassingRules)
+    Aqua.test_all(FlowMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

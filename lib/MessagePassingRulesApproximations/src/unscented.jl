@@ -110,6 +110,33 @@ getλ(extra::UnscentedExtra) = extra.λ
 getWm(extra::UnscentedExtra) = extra.Wm
 getWc(extra::UnscentedExtra) = extra.Wc
 
+"""
+    sigma_point_parameters(method::Unscented, dim::Integer) -> (; λ, Wm, Wc)
+
+The scaling `λ` and the weights of the mean, `Wm`, and of the covariance, `Wc`, of the `2 dim + 1`
+sigma points `method` places for an input of dimension `dim`: those `method` carries when it was
+built for `dim`, `Unscented(dim; …)`, and computed from its `alpha`, `beta` and `kappa` when it was
+built without a dimension, `Unscented(; …)`. For a caller that places the sigma points itself.
+
+# Throws
+
+- `DimensionMismatch` when `method` was built for a dimension other than `dim`.
+
+# Examples
+
+```jldoctest
+julia> p = MessagePassingRulesApproximations.sigma_point_parameters(Unscented(; alpha = 1.0), 2);
+
+julia> p.λ, length(p.Wm), sum(p.Wm) ≈ 1
+(0.0, 5, true)
+```
+"""
+function sigma_point_parameters(method::Unscented, dim::Integer)
+    extra = getextra(method) === nothing ? getextra(Unscented(dim; alpha = getα(method), beta = getβ(method), kappa = getκ(method))) : getextra(method)
+    getL(extra) == dim || throw(DimensionMismatch("`Unscented($(getL(extra)))` was built for dimension $(getL(extra)), not $dim"))
+    return (λ = getλ(extra), Wm = getWm(extra), Wc = getWc(extra))
+end
+
 # Copied and refactored from ForneyLab.jl
 
 """

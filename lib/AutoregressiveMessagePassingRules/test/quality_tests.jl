@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, AutoregressiveMessagePassingRules
-    Aqua.test_all(AutoregressiveMessagePassingRules)
+    Aqua.test_all(AutoregressiveMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

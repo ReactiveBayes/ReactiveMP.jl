@@ -82,21 +82,10 @@ julia> m ≈ [1.0] && V ≈ [2.0;;]
 true
 ```
 
-In a model, with RxInfer, the chain starts at a [`BIFMHelper`](@ref) and ends at a flat prior
-on the last state:
-
-```julia
-z_prior ~ MvNormalMeanPrecision(zeros(2), diageye(2))
-z[1] ~ BIFMHelper(z_prior)
-for i in eachindex(y)
-    u[i] ~ MvNormalMeanPrecision(μu, Wu)
-    yt[i] ~ BIFM(u[i], z[i], z[i + 1])        # under BIFMSmoother(A, B, C)
-    y[i] ~ MvNormalMeanPrecision(yt[i], Wy)
-end
-z[end] ~ MvNormalMeanPrecision(zeros(2), zeros(2, 2))
-```
-
-with `z_prior` and `z` in separate clusters, `q(z_prior) q(z)`.
+In a model, the chain of BIFM nodes, each under one [`BIFMSmoother`](@ref), starts at a
+[`BIFMHelper`](@ref) whose input is the first state's prior, and ends at a flat prior on the last
+state, a normal of zero precision; the prior and the states are in separate clusters,
+`q(z_prior) q(z)`. Each node's `in` is the input `u[i]` and its `out` the observed `yt[i]`.
 
 See also [`BIFMSmoother`](@ref), [`BIFMHelper`](@ref).
 """

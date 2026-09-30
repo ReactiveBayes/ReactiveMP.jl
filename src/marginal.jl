@@ -194,6 +194,13 @@ function as_marginal end
 
 as_marginal(marginal::Marginal) = marginal
 
+"""
+    ReactiveMP.skip_initial()
+
+The stream operator that drops initial values, those [`ReactiveMP.set_initial_marginal!`](@ref) and
+[`ReactiveMP.set_initial_message!`](@ref) seed, so that what follows only sees computed ones:
+`get_stream_of_marginals(v) |> skip_initial()`. The engine's free energy streams use it.
+"""
 skip_initial() = filter(v -> !is_initial(v))
 
 ## Marginal observable

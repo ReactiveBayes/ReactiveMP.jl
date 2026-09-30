@@ -1,11 +1,34 @@
 # Calling and querying rules by hand, at a REPL or in a notebook.
 
+"""
+    as_target(target) -> Union{Target, IndexedTarget}
+
+The target of a message rule as an interactive call takes it, `:out` or `(:m, 2)`, as the
+[`Target`](@ref) or [`IndexedTarget`](@ref) a lookup takes; a target already of that kind is
+returned as it is. For tools that take targets the way [`call_message_update_rule`](@ref) does.
+"""
 as_target(edge::Symbol) = Target(edge)
 as_target((edge, k)::Tuple{Symbol, Integer}) = IndexedTarget(edge, k)
 as_target(target::Union{Target, IndexedTarget}) = target
+
+"""
+    as_cluster(members) -> ClusterTarget
+
+The target of a marginal rule as an interactive call takes it, a tuple of members such as
+`(:out, :μ)`, as the [`ClusterTarget`](@ref) a lookup takes; a `ClusterTarget` is returned as it
+is. For tools that take targets the way [`call_marginal_update_rule`](@ref) does.
+"""
 as_cluster(members::Tuple{Vararg{ClusterMember}}) = ClusterTarget(members)
 as_cluster(target::ClusterTarget) = target
 
+"""
+    interactive_args(m, q, clusters, logscale = nothing) -> RuleArgs
+
+The [`RuleArgs`](@ref) an interactive call builds from its keywords: the messages `m` and
+marginals `q` as named tuples, the joint marginals `clusters` as a collection of
+`members => marginal` pairs, and the incoming log scales `logscale`, or `nothing`. For tools that
+take a rule's inputs the way [`call_message_update_rule`](@ref) does.
+"""
 function interactive_args(m, q, clusters, logscale = nothing)
     isempty(clusters) && return RuleArgs(m = m, q = q, logscale = logscale)
     keys = Tuple(first.(clusters))
@@ -13,10 +36,22 @@ function interactive_args(m, q, clusters, logscale = nothing)
     return RuleArgs(as_messages(m), Marginals(q, Val(keys), values), as_logscales(logscale))
 end
 
-# Called with every rule an interactive call below selects, before it runs. Test tooling
-# registers one to count a rule a test calls by hand as tested; an engine resolves rules
-# itself and never reaches these.
+# Called with every rule an interactive call below selects, before it runs; see
+# `add_selection_observer!`.
 const INTERACTIVE_SELECTION_OBSERVERS = Function[]
+
+"""
+    add_selection_observer!(f) -> nothing
+
+Call `f(spec)` with the [`RuleSpec`](@ref) of every rule an interactive call selects, a
+`call_*`, `@call_*` or `message_passing_*` call, before the rule runs. Test tooling registers one
+to count a rule a test calls by hand as tested. An engine resolves its rules itself, so its calls
+are not observed. Registering the same `f` twice registers it once.
+"""
+function add_selection_observer!(f)
+    f in INTERACTIVE_SELECTION_OBSERVERS || push!(INTERACTIVE_SELECTION_OBSERVERS, f)
+    return nothing
+end
 
 function selected_interactively(spec)
     foreach(observer -> observer(spec), INTERACTIVE_SELECTION_OBSERVERS)

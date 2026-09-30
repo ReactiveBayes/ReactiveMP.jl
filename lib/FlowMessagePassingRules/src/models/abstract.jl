@@ -10,7 +10,7 @@ abstract type AbstractCouplingFlow end
 abstract type AbstractCouplingFlowEmpty end
 abstract type AbstractCouplingFlowPlaceholder end
 
-public forward, backward, jacobian, inv_jacobian, forward_jacobian, backward_inv_jacobian
+@compat public forward, backward, jacobian, inv_jacobian, forward_jacobian, backward_inv_jacobian
 
 """
     forward(model::CompiledFlowModel, input::AbstractVector{<:Real})

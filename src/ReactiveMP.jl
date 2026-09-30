@@ -56,6 +56,11 @@ export tiny, huge
 
 # The engine's interface that RxInfer and extensions build on, which the documentation tells
 # them to use: public, not exported. `@compat` makes the declaration parse on Julia 1.10.
+@compat public AbstractFactorNode, NodeInterface, IndexedNodeInterface, FactorNodeLocalMarginal,
+    get_node_local_marginals, set_stream_of_outbound_messages!, getcallbacks, getpostprocessor,
+    ImpureRuleError, MessagesProductFromLeftToRight, MessagesProductFromRightToLeft,
+    CompositeStreamPostprocessor, create_new_stream_of_inbound_messages!, set_stream_of_marginals!,
+    set_stream_of_predictions!, skip_initial
 @compat public activate!, FactorNodeActivationOptions, MessageProductContext, EngineDiagnostics,
     node_context, set_initial_marginal!, set_initial_message!, get_stream_of_marginals,
     get_stream_of_predictions, Event, event_name, invoke_callback, handle_event,

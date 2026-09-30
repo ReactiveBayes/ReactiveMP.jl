@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, DiscreteTransitionMessagePassingRules
-    Aqua.test_all(DiscreteTransitionMessagePassingRules)
+    Aqua.test_all(DiscreteTransitionMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

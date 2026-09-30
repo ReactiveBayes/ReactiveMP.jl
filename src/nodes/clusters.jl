@@ -50,6 +50,12 @@ struct FactorNodeLocalClusters{M, F}
     factorization::F
 end
 
+"""
+    ReactiveMP.get_node_local_marginals(clusters::FactorNodeLocalClusters)
+
+The local marginals of a node's clusters, one [`ReactiveMP.FactorNodeLocalMarginal`](@ref) per
+cluster of its factorisation, in the factorisation's order: `get_node_local_marginals(getlocalclusters(node))`.
+"""
 get_node_local_marginals(clusters::FactorNodeLocalClusters) = clusters.marginals
 set_node_local_marginal_stream!(
     clusters::FactorNodeLocalClusters, index, stream

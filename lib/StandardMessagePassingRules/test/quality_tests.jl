@@ -12,7 +12,7 @@
     functions = [typeof(n) for n in StandardMessagePassingRules.NODES if n isa Function]
     types = [T for T in StandardMessagePassingRules.NODES if T isa Type]
     owned = unique([types; map(T -> Base.unwrap_unionall(T).name.wrapper, types); functions; ExponentialFamily.WishartFast; ExponentialFamily.InverseWishartFast])
-    Aqua.test_all(StandardMessagePassingRules; piracies = (treat_as_own = owned,))
+    Aqua.test_all(StandardMessagePassingRules; piracies = (treat_as_own = owned,), deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

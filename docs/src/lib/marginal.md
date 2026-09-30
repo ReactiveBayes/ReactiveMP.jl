@@ -25,6 +25,7 @@ is_initial(::Marginal)
 getannotations(::Marginal)
 getlogscale(::Marginal)
 as_marginal
+ReactiveMP.skip_initial
 ```
 
 ## [A variable's marginal](@id lib-marginal-variable)

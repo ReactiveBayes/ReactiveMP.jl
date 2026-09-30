@@ -55,12 +55,7 @@ julia> getresult(result) isa TerminalProdArgument
 true
 ```
 
-In a model, at the start of the chain:
-
-```julia
-z_prior ~ MvNormalMeanPrecision(zeros(2), diageye(2))
-z[1] ~ BIFMHelper(z_prior)
-```
+In a model, the helper's `out` is the first state of the chain and its `in` the state's prior.
 
 ## Limitations
 

@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, PolyaMessagePassingRules
-    Aqua.test_all(PolyaMessagePassingRules)
+    Aqua.test_all(PolyaMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

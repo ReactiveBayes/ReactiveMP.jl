@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, BIFMMessagePassingRules
-    Aqua.test_all(BIFMMessagePassingRules)
+    Aqua.test_all(BIFMMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

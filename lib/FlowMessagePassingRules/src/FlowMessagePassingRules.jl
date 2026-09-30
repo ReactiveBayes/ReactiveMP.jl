@@ -39,7 +39,8 @@ module FlowMessagePassingRules
 
 using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: AbstractAlgorithm
-using MessagePassingRulesApproximations: Linearization, Unscented
+using MessagePassingRulesApproximations: Linearization, Unscented, sigma_point_parameters
+using Compat: @compat
 import MessagePassingRulesApproximations
 using LinearAlgebra
 using LinearAlgebra: Adjoint, Transpose

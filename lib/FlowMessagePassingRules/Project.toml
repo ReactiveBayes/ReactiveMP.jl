@@ -7,6 +7,7 @@ version = "0.1.0-DEV"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -23,6 +24,7 @@ MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 [compat]
 Aqua = "0.8"
 BayesBase = "1.5"
+Compat = "4.10"
 Distributions = "0.25"
 Documenter = "1"
 ExponentialFamily = "2.5"

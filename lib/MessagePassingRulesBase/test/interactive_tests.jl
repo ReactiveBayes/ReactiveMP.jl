@@ -143,3 +143,25 @@ end
     Base.@deprecate_binding OldName Parametric false
     @test_logs min_level = Base.CoreLogging.Warn registries()
 end
+
+@testitem "interactive:tooling" tags = [:base] setup = [RepresentativeRules] begin
+    using MessagePassingRulesBase
+    import MessagePassingRulesBase as B
+    S = RepresentativeRules
+    P = S.Point
+
+    @test B.as_target(:out) === B.Target(:out) && B.as_target((:m, 2)) === B.IndexedTarget(:m, 2)
+    @test B.as_target(B.Target(:out)) === B.Target(:out)
+    @test B.as_cluster((:out, :μ)) === B.ClusterTarget((:out, :μ)) && B.as_cluster(B.ClusterTarget((:out, :μ))) === B.ClusterTarget((:out, :μ))
+    args = B.interactive_args((μ = P(1.0), v = P(2.0)), (;), ())
+    @test args isa B.RuleArgs && args.m[:μ] == P(1.0) && args.logscale === nothing
+
+    # An observer sees every rule an interactive call selects; registering it twice counts once.
+    seen = []
+    observer = spec -> push!(seen, spec)
+    B.add_selection_observer!(observer)
+    B.add_selection_observer!(observer)
+    call_message_update_rule(S.NMV, :out; m = (μ = P(1.0), v = P(2.0)))
+    @test length(seen) == 1 && only(seen) === which_message_update_rule(S.NMV, :out; m = (μ = P(1.0), v = P(2.0)))
+    filter!(!=(observer), B.INTERACTIVE_SELECTION_OBSERVERS)
+end

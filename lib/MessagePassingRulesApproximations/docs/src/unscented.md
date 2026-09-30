@@ -12,4 +12,5 @@ UnscentedTransform
 approximate(::Unscented, ::F, ::Tuple, ::Tuple) where {F}
 unscented_statistics
 sigma_points_weights
+MessagePassingRulesApproximations.sigma_point_parameters
 ```

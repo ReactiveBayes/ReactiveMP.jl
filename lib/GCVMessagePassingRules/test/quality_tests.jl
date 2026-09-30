@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, GCVMessagePassingRules
-    Aqua.test_all(GCVMessagePassingRules)
+    Aqua.test_all(GCVMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

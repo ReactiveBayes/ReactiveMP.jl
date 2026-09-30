@@ -78,7 +78,7 @@ include("migration.jl")
 include("engine_fixtures.jl")
 
 function __init__()
-    push!(MessagePassingRulesBase.INTERACTIVE_SELECTION_OBSERVERS, record_direct_call!)
+    MessagePassingRulesBase.add_selection_observer!(record_direct_call!)
     return nothing
 end
 

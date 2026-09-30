@@ -7,6 +7,8 @@ model's settings; with the engine alone, they are given to [`ReactiveMP.activate
 
 ```@docs
 ReactiveMP.FactorNodeActivationOptions
+ReactiveMP.getcallbacks
+ReactiveMP.getpostprocessor
 ```
 
 The options that concern the node's rules are described here. The others observe or transform

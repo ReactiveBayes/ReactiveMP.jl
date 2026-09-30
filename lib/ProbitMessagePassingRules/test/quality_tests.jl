@@ -1,6 +1,6 @@
 @testitem "quality:aqua" tags = [:quality] begin
     using Aqua, ProbitMessagePassingRules
-    Aqua.test_all(ProbitMessagePassingRules)
+    Aqua.test_all(ProbitMessagePassingRules; deps_compat = (; check_extras = true))
 end
 
 @testitem "quality:closure" tags = [:quality] begin

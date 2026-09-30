@@ -32,12 +32,15 @@ module MessagePassingRulesApproximations
 using LinearAlgebra
 using FastCholesky: cholinv, cholsqrt
 import ForwardDiff, FastGaussQuadrature
+using Compat: @compat
 
 export AbstractApproximationMethod, approximation_name, approximation_short_name
 export Unscented, UT, UnscentedTransform
 export approximate, unscented_statistics, sigma_points_weights, smoothRTS
 export Linearization, local_linearization
 export GaussHermiteCubature, ghcubature, getweights, getpoints, approximate_meancov
+
+@compat public sigma_point_parameters
 
 include("approximations.jl")
 include("shared.jl")
