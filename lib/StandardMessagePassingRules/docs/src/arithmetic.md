@@ -1,24 +1,36 @@
 # Arithmetic
 
-The deterministic nodes `+`, `-`, `*` and `dot`: Base's and LinearAlgebra's functions are the
-nodes themselves, so a model writes `y ~ x + z` or `y ~ A * x`, and
-`MessagePassingRulesBase.rule_coverage(+)` takes the function. The package re-exports
-LinearAlgebra's `dot` for models to use. A deterministic node's clusters are always `out` and
-the joint over its inputs, so every rule here is belief propagation over messages, whatever the
-factorisation, and none has an average energy of its own.
+The arithmetic nodes `+`, `-`, `*` and `dot` are
+[deterministic nodes](@extref MessagePassingRulesBase glossary-deterministic-node): their output
+is a function of their inputs, such as `out = in1 + in2`. Base's and LinearAlgebra's functions
+are the nodes themselves, so a model writes `y ~ x + z` or `y ~ A * x`, and
+[`rule_coverage`](@extref MessagePassingRulesBase.rule_coverage)`(+)` takes the function. The
+package re-exports LinearAlgebra's `dot` for models to use.
+
+A deterministic node's [clusters](@extref MessagePassingRulesBase glossary-cluster) are always
+`out` and the joint over its inputs, whatever the
+[factorisation](@extref MessagePassingRulesBase glossary-factorisation). Every rule here is
+therefore [belief propagation](@extref MessagePassingRulesBase glossary-belief-propagation) over
+[messages](@extref MessagePassingRulesBase glossary-message). The message towards `out` is the
+[pushforward](@extref MessagePassingRulesBase glossary-pushforward) of the input messages, the
+distribution of `f(in...)`. The message towards an input inverts the function against the other
+messages. For normal messages, with one factor of `*` or `dot` known, these messages are exact
+and normal. Between two uncertain factors of `*` the result has no closed form, and the rules
+return log-densities or samples instead. None of the nodes has an
+[average energy](@extref MessagePassingRulesBase glossary-average-energy) of its own.
 
 `+`, `-` and `dot` run under
-[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), `*` under
-[`MultiplicationSampling`](@ref), its default, so no model names an algorithm for them.
+[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), and `*` runs under
+[`MultiplicationSampling`](@ref), its default. No model names an algorithm for them.
 
 ```@setup arithmetic
-using MessagePassingRulesBase, StandardMessagePassingRules, ExponentialFamily, Distributions
+using MessagePassingRulesBase, StandardMessagePassingRules, ExponentialFamily, Distributions, BayesBase
 ```
 
 ## Example
 
-The sum of a normal and a known value shifts the normal; the message towards an input of `+`
-subtracts:
+The sum of a normal and a known value shifts the normal. A known factor of `*` scales the mean,
+and it scales the variance by its square:
 
 ```jldoctest arithmetic
 julia> using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase
@@ -53,14 +65,39 @@ true
 | `in2` | the second term | a normal or a `PointMass` |
 
 ```@example arithmetic
+MessagePassingRulesBase.nodespec(+)
+```
+
+```@example arithmetic
 MessagePassingRulesBase.rule_coverage(+)
 ```
 
-The messages are normal whenever any input is, and a `PointMass` when both are known; a normal
-shifted by a known value keeps a mean–precision or weighted-mean form, and any other result is
-in mean–variance or mean–covariance form. Towards `out`, any other two distributions are summed
-by Distributions' `convolve`, which is a `MethodError` for a pair it does not know. The joint marginal of the inputs is a joint normal when both are normal,
-and factorised when one is known. Every rule has log scale zero.
+The message towards `out` from two normal messages adds their means and their variances:
+
+```@example arithmetic
+@call_message_update_rule(
+    node = +, target = :out,
+    m = (in1 = NormalMeanVariance(1.0, 1.0), in2 = NormalMeanVariance(2.0, 3.0)),
+)
+```
+
+Towards an input, the rule subtracts. With `out` observed at `5` and a normal message on `in1`,
+the message towards `in2` is a normal around `5 - 1`:
+
+```@example arithmetic
+@call_message_update_rule(
+    node = +, target = :in2,
+    m = (out = PointMass(5.0), in1 = NormalMeanVariance(1.0, 1.0)),
+)
+```
+
+The messages are normal whenever any input is normal, and a `PointMass` when both inputs are
+known. A normal shifted by a known value keeps its mean–precision or weighted-mean form. Any
+other result is in mean–variance or mean–covariance form. Towards `out`, Distributions'
+`convolve` sums any other two distributions, and it throws a `MethodError` for a pair it does not
+know. The joint marginal of the inputs is a joint normal when both inputs are normal, and
+factorised when one is known. Every rule has [log scale](@extref MessagePassingRulesBase glossary-log-scale)
+zero.
 
 ## Subtraction, `-`
 
@@ -78,9 +115,9 @@ and factorised when one is known. Every rule has log scale zero.
 MessagePassingRulesBase.rule_coverage(-)
 ```
 
-Its rules are `+`'s, rearranged: towards `out` the difference, towards `in1` the sum of `out` and
-`in2`, which takes any two distributions through `convolve` as `+` does towards `out`, and
-towards `in2` the difference of `in1` and `out`.
+Its rules are `+`'s, rearranged. Towards `out`, the message is the difference of the inputs.
+Towards `in1`, it is the sum of `out` and `in2`, and it takes any two distributions through
+`convolve`, as `+` does towards `out`. Towards `in2`, it is the difference of `in1` and `out`.
 
 ## Multiplication, `*`
 
@@ -95,20 +132,48 @@ towards `in2` the difference of `in1` and `out`.
 | `in` | the right factor | a `PointMass`, a normal, a Gamma, or any univariate distribution |
 
 ```@example arithmetic
+MessagePassingRulesBase.nodespec(*)
+```
+
+```@example arithmetic
 MessagePassingRulesBase.rule_coverage(*)
 ```
 
-With one factor known the rules are closed-form: a scaled normal or Gamma forwards, and
-backwards a normal in weighted-mean form or a Gamma, with the log scale `-d log |c|` of a known
-scalar `c`. A known factor may be a scalar, a vector (then the other factor is a scalar) or a
-matrix; for a matrix only `A * in` is computed, never `in * A`, so a matrix `in` towards `A` is
-refused. Precision matrices built backwards may be singular, and are corrected with the context's
+With a known matrix `A`, the message towards `out` maps the normal message on `in` through `A`:
+the mean becomes `A μ` and the covariance `A Σ Aᵀ`:
+
+```@example arithmetic
+@call_message_update_rule(
+    node = *, target = :out,
+    m = (A = PointMass([1.0 1.0; 0.0 1.0]), in = MvNormalMeanCovariance([1.0, 2.0], diageye(2))),
+)
+```
+
+Towards `in`, the message is a normal in weighted-mean form, with precision `Aᵀ Σ⁻¹ A` and
+weighted mean `Aᵀ Σ⁻¹ m` from the message `N(m, Σ)` on `out`. The card lists the
+[service](@extref MessagePassingRulesBase glossary-service) the rule reads,
+[`matrix_correction`](@extref MessagePassingRulesBase.matrix_correction):
+
+```@example arithmetic
+@call_message_update_rule(
+    node = *, target = :in,
+    m = (out = MvNormalMeanCovariance([3.0, 2.0], diageye(2)), A = PointMass([1.0 1.0; 0.0 1.0])),
+)
+```
+
+With one factor known, the rules are in closed form. Towards `out`, the message is a scaled
+normal or Gamma. Towards the unknown factor, it is a normal in weighted-mean form or a Gamma, with
+the log scale `-d log |c|` of a known scalar `c`. A known factor may be a scalar, a vector or a
+matrix. With a vector, the other factor is a scalar. With a matrix, the rules compute only
+`A * in`, never `in * A`, so they refuse a matrix `in` towards `A`. The precision matrices that
+the rules towards an input build may be singular. The rules correct them with the context's
 `matrix_correction`, `ReplaceZeroDiagonalEntries(tiny)` by default.
 
-Between two univariate normals the messages are log-densities (a `ContinuousUnivariateLogPdf`):
-towards an input the exact integral, towards `out` a Bessel series truncated at ten terms.
-Between two other univariate distributions they are sampled, from the context's `rng`, with as
-many draws as the algorithm says; they are unnormalised and declare no log scale.
+Between two univariate normals, the messages are log-densities, a `ContinuousUnivariateLogPdf`.
+Towards an input, the rule computes the exact integral. Towards `out`, it sums a Bessel series
+truncated at ten terms. Between two other univariate distributions, the rules draw samples from
+the context's `rng`, as many as the algorithm says. These messages are unnormalised and declare
+no log scale.
 
 ```@docs
 MultiplicationSampling
@@ -130,8 +195,8 @@ MultiplicationSampling
 MessagePassingRulesBase.rule_coverage(dot)
 ```
 
-**Limitations.** One input must be known. Two normal inputs have no closed form: the rules for
-them exist, so that the call fails with a message, and throw an error that points to the
-`SoftDot` node, whose package handles that case. The backward precision `a w aᵀ` has rank one
-and is corrected with the context's `matrix_correction`, `ReplaceZeroDiagonalEntries(tiny)` by
-default.
+**Limitations.** One input must be known. Two normal inputs have no closed form. The rules for
+that case exist only to throw an error that points to the `SoftDot` node, whose package handles
+it. The precision `a w aᵀ` towards an input has rank one, and the rule corrects it with the
+context's [`matrix_correction`](@extref MessagePassingRulesBase.matrix_correction),
+`ReplaceZeroDiagonalEntries(tiny)` by default.

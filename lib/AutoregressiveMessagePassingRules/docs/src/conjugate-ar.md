@@ -13,6 +13,11 @@ regression with unknown noise precision, with the states' expected sufficient st
 place of the data. Use it where `θ` and `γ` should stay coupled, rather than factorised as
 `q(θ) q(γ)`.
 
+Here `q(w)` is the [marginal](@extref MessagePassingRulesBase glossary-marginal) of `w`, the
+approximate posterior that message passing computes. As for [`AR`](@ref), the node's
+[rules](@extref MessagePassingRulesBase glossary-rule) are those of
+[variational message passing](@extref MessagePassingRulesBase glossary-vmp).
+
 ## Definition
 
 For the state `xₜ = (yₜ₋₁, …, yₜ₋ₚ)` and `w = (θ, γ)`:
@@ -28,9 +33,18 @@ with `y = A(θ) x + ε` in companion form, noise on the first component only, as
 C = \langle x x^\top \rangle, \qquad b = \langle x\, y_1 \rangle, \qquad a = \langle y_1^2 \rangle,
 ```
 
-that is `Λ = C`, `μ = C⁻¹ b`, shape `(3 - p)/2` and rate `(a - bᵀ C⁻¹ b)/2`.
+that is `Λ = C`, `μ = C⁻¹ b`, shape `(3 - p)/2` and rate `(a - bᵀ C⁻¹ b)/2`. These are the
+parameters of the [message](@extref MessagePassingRulesBase glossary-message) towards `w`.
 
 ## Interfaces
+
+```@example conjugate-ar
+using AutoregressiveMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily
+MessagePassingRulesBase.nodespec(ConjugateAR)
+```
+
+The node has three [interfaces](@extref MessagePassingRulesBase glossary-interface); `y` also
+answers to `out`.
 
 | name | aliases | meaning | messages and marginals its rules take |
 |---|---|---|---|
@@ -42,27 +56,44 @@ The joint marginal `q(y, x)` is a multivariate normal of dimension `2p`, `y` fir
 
 ## Algorithm
 
-The node shares [`AR`](@ref)'s algorithm, [`ARVMP`](@ref)`(form, order, stype)`, which the
-model must name, with every argument required. `form` must be `Multivariate`, an AR(1)
-included, since `q(w)` has a vector `θ`; `stype` is [`ARsafe`](@ref)`()` or
-[`ARunsafe`](@ref)`()`, as for [`AR`](@ref).
+The node shares [`AR`](@ref)'s [algorithm](@extref MessagePassingRulesBase glossary-algorithm),
+[`ARVMP`](@ref)`(form, order, stype)`, which the model must name, with every argument required.
+`form` must be `Multivariate`, an AR(1) included, since `q(w)` has a vector `θ`. `stype` is
+[`ARsafe`](@ref)`()` or [`ARunsafe`](@ref)`()`, as for [`AR`](@ref). The node declares no
+[dependencies](@extref MessagePassingRulesBase glossary-dependencies), so each rule takes the
+inputs of the [default scheme](@extref MessagePassingRulesBase glossary-default-scheme).
 
 ## Supported rules
 
-```@example
-using MessagePassingRulesBase, AutoregressiveMessagePassingRules # hide
+```@example conjugate-ar
 MessagePassingRulesBase.rule_coverage(ConjugateAR)
 ```
 
-Every rule is under [`ARVMP`](@ref). The rules towards `y` and `x` exist for the structured
-factorisation `q(y, x) q(w)`, as belief propagation between them, and for the mean field; they
-and the joint marginal `q(y, x)` are [`AR`](@ref)'s, computed from the marginals of `θ` and `γ`
-that `q(w)` implies. The rule towards `w` and the average energy need the structured
+Every rule is under [`ARVMP`](@ref). The rules towards `y` and `x` exist for the
+[structured](@extref MessagePassingRulesBase glossary-structured-vmp)
+[factorisation](@extref MessagePassingRulesBase glossary-factorisation) `q(y, x) q(w)`, as
+[belief propagation](@extref MessagePassingRulesBase glossary-belief-propagation) between them,
+and for the [mean field](@extref MessagePassingRulesBase glossary-mean-field). They and the joint
+marginal `q(y, x)` are [`AR`](@ref)'s, computed from the marginals of `θ` and `γ` that `q(w)`
+implies. The rule towards `w` and the
+[average energy](@extref MessagePassingRulesBase glossary-average-energy) need the structured
 factorisation `q(y, x) q(w)`.
 
 ## Example
 
 The message towards `w` of an AR(1) from the joint marginal of the states:
+
+```@example conjugate-ar
+@call_message_update_rule(
+    node = ConjugateAR, target = :w, algorithm = ARVMP(Multivariate, 1, ARsafe()),
+    clusters = ((:y, :x) => MvNormalMeanCovariance([1.0, 0.5], [1.0 0.0; 0.0 1.0]),),
+)
+```
+
+[`@call_message_update_rule`](@extref MessagePassingRulesBase.@call_message_update_rule) runs
+the rule and draws the joint marginal it read. With `C = 1.25`, `b = 0.5` and `a = 2`, the
+[`getresult`](@extref MessagePassingRulesBase.getresult) of the call is the normal-gamma of the
+definition:
 
 ```jldoctest
 julia> result = @call_message_update_rule(

@@ -158,7 +158,7 @@ function Base.show(io::IO, record::RuleInputArgumentsRecord)
     pad = ' '^indent
     mapping = record.mapping
     println(io, pad, "Rule input arguments:")
-    println(io, pad, "  node:       ", message_mapping_fform(mapping))
+    println(io, pad, "  node:       ", node_display(message_mapping_fform(mapping)))
     println(io, pad, "  target:     ", mapping.target)
     if !isnothing(mapping.algorithm)
         println(io, pad, "  algorithm:  ", mapping.algorithm)

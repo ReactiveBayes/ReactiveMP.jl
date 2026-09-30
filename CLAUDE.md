@@ -167,6 +167,15 @@ discrepancies are `@test_broken` there: AR's mean-field rule towards `γ` and CT
   rule calls, never models: no GraphPPL `@model`, RxInfer `infer` or `@algorithm`, only a link
   to them from its overview. A name the docs tell users to
   call is public: exported, or declared with `Compat.@compat public`, which also parses on 1.10.
+  Pages follow the writing rules on the same page (*Pages*): written to "you", one idea per
+  sentence, terms linked to MessagePassingRulesBase's glossary (`glossary-<term>` anchors), and
+  **every Julia block runs** at build time (`@example`, `@setup`, `@repl`, `jldoctest`; only
+  shell and `# v6` halves are plain). **A site loads only its own package's dependencies**, plus
+  BayesBase, ExponentialFamily and Distributions: the engine's site declares its one example node
+  in `docs/nodes.jl` (every page includes it) and loads no rule package, and the base and TestUtils
+  sites declare toy nodes on the page; the learning path with the standard nodes is RxInfer's.
+  A spec, a rule result or a declaration left as an `@example`'s last value renders as a card with
+  the node drawn (`svg.jl`).
 - Julia: work targets **1.13 only**, and siblings are wired with `[sources]`, test-only ones via
   `[extras]` too; the comparison environment is resolved on 1.13 as well. The lowest supported
   version is decided when the packages are registered.

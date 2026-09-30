@@ -43,6 +43,7 @@ makedocs(
     pages = [
         "Introduction" => "index.md",
         "Getting started" => "getting-started.md",
+        "The example node" => "example-node.md",
         "Concepts" => [
             "Factor graphs" => "concepts/factor-graphs.md",
             "Message passing" => "concepts/message-passing.md",

@@ -750,7 +750,7 @@ message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
 function Base.show(io::IO, mapping::MessageMapping)
     print(io, "MessageMapping(")
-    print(io, message_mapping_fform(mapping))
+    print(io, node_display(message_mapping_fform(mapping)))
     print(io, ", ", repr(mapping.target))
     if mapping.msgs_names !== nothing
         print(io, ", msgs=", collect(unval(mapping.msgs_names)))

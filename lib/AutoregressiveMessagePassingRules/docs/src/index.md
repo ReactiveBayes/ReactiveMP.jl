@@ -8,24 +8,27 @@ The message passing rules of the autoregressive nodes, for Bayesian autoregressi
 whose coefficients and noise precision are learnt with the states. Use [`AR`](@ref) when the
 coefficients and the precision have priors of their own, a normal and a gamma, and
 [`ConjugateAR`](@ref) when they share a normal-gamma prior, which makes their update conjugate.
-The rules are variational: a model using either node gives the algorithm [`ARVMP`](@ref) and a
-factorisation.
+The rules are [variational](@extref MessagePassingRulesBase glossary-vmp): a model using either
+node gives the [algorithm](@extref MessagePassingRulesBase glossary-algorithm) [`ARVMP`](@ref)
+and a [factorisation](@extref MessagePassingRulesBase glossary-factorisation).
 
 ```@docs
 AutoregressiveMessagePassingRules
 ```
 
 !!! info "Where these rules run"
-    This package defines message passing rules; it does not build or run models. The
-    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
-    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
-    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
-    here call the rules directly, as a test or an interactive session does.
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) runs these rules on a factor
+    graph, which [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds from a
+    [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl) model. The examples here call the
+    rules directly, as a test does.
 
 ## Example
 
-A message towards the state `y` of a univariate AR(1), from the message on the previous state
-and the marginals of the coefficient and the precision:
+A [message](@extref MessagePassingRulesBase glossary-message) towards the state `y` of a
+univariate AR(1), from the message on the previous state and the
+[marginals](@extref MessagePassingRulesBase glossary-marginal) of the coefficient and the
+precision, run with
+[`@call_message_update_rule`](@extref MessagePassingRulesBase.@call_message_update_rule):
 
 ```jldoctest
 julia> result = @call_message_update_rule(

@@ -3730,9 +3730,14 @@ wait for the release):
   ExponentialFamilyProjection; `NodeSpec`, `RuleSpec` and `DependenciesSpec` draw themselves
   (§3.52), the card follows Documenter's theme; `FactorNode` and the variables show themselves. Error messages: the `RuleNotFoundError` diagnosis ends with what to try, and the engine's
   dependency and service errors say what to change. The base site: tutorials, the keyword reference, the glossary
-  and a prose pass; TestUtils' pages runnable on a toy node.
-  Next: the engine site on its example node; the package sites; RxInfer's site on its branch;
-  RxInfer's error messages. Recorded, not done: an interactive call does not check that a group
+  and a prose pass; TestUtils' pages runnable on a toy node. The engine site on its example node (`docs/nodes.jl`),
+  no rule package in its env; every rule package's site with drawn declarations, rule cards,
+  glossary links and student introductions; RxInfer's error hints (removed v6 names, the `model`
+  keyword, a `RuleNotFoundError`'s pointer, posteriors never computed) on its branch; the Mixture
+  `switch` rule with an observed `out` fixed; `rule_not_found_hint` for a node's own hint.
+  Next: RxInfer's site on its branch (in progress); the engine's v6 → v7 guide, after the
+  downstream session's rows land. Also recorded: `+` has no marginal rule over its inputs for an
+  observed `out`, so `y ~ z + ε` with `y` observed fails under `free_energy = true` (v6 neither). Recorded, not done: an interactive call does not check that a group
   selected `m[:g][!k]` has `nothing` at `k` (in `interactive.jl`); `check_rules` could flag a rule
   that reads its own edge's message where no declaration delivers it.
 - *The audit of 2026-09-29 — done* (user): the engine, the packages and the working

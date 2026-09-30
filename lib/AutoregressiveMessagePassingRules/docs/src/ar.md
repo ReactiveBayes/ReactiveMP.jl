@@ -12,6 +12,12 @@ autoregressive models, in which the states, the coefficients `θ` and the noise 
 are all inferred, each with a prior of its own: a normal on `θ`, a gamma on `γ`. Chained over
 time, `x[t] ~ AR(x[t - 1], θ, γ)`, it is a state-space model whose transition is learnt.
 
+The node is a [stochastic node](@extref MessagePassingRulesBase glossary-stochastic-node), a
+density over its variables. Its [rules](@extref MessagePassingRulesBase glossary-rule) are
+variational: they compute [messages](@extref MessagePassingRulesBase glossary-message) from the
+[marginals](@extref MessagePassingRulesBase glossary-marginal) of the other variables, as
+[variational message passing](@extref MessagePassingRulesBase glossary-vmp) does.
+
 ## Definition
 
 For the state `xₜ = (yₜ₋₁, …, yₜ₋ₚ)`:
@@ -35,6 +41,14 @@ them; the rules and the average energy account for that.
 
 ## Interfaces
 
+```@example ar
+using AutoregressiveMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily
+MessagePassingRulesBase.nodespec(AR)
+```
+
+The node has four [interfaces](@extref MessagePassingRulesBase glossary-interface); `y` also
+answers to `out`.
+
 | name | aliases | meaning | messages and marginals its rules take |
 |---|---|---|---|
 | `y` | `out` | the current state | a normal message; `q(y)` of any type with a mean and covariance |
@@ -49,10 +63,10 @@ raise a `MethodError`. The joint marginal `q(y, x)` is a multivariate normal of 
 
 ## Algorithm
 
-The node's rules run under [`ARVMP`](@ref)`(form, order, stype)`, which the model must name:
-the node declares no algorithm of its own, and under
-[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm) it has no rule. All three
-arguments are required, without defaults:
+The node's rules run under the [algorithm](@extref MessagePassingRulesBase glossary-algorithm)
+[`ARVMP`](@ref)`(form, order, stype)`, which the model must name: the node declares no algorithm
+of its own, and under [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm) it
+has no rule. All three arguments are required, without defaults:
 
 - `form`: `Univariate` for an AR(1) with scalar edges, or `Multivariate`;
 - `order`: the order `p`; `Univariate` forces it to `1`, with a warning for any other value;
@@ -61,24 +75,47 @@ arguments are required, without defaults:
   [`ARunsafe`](@ref)`()`, which forms it from its covariance, exactly, through the Kalman gain.
   The two agree up to that regularisation, and exactly for a univariate AR(1).
 
+`ARVMP` declares no [dependencies](@extref MessagePassingRulesBase glossary-dependencies):
+[`dependencies_spec`](@extref MessagePassingRulesBase.dependencies_spec) returns `nothing`, and
+each rule takes the inputs of the
+[default scheme](@extref MessagePassingRulesBase glossary-default-scheme).
+
 ## Supported rules
 
-```@example
-using MessagePassingRulesBase, AutoregressiveMessagePassingRules # hide
+```@example ar
 MessagePassingRulesBase.rule_coverage(AR)
 ```
 
 Every rule is under [`ARVMP`](@ref), none under the default algorithm. Each target has two
-rules, one for each factorisation: the structured `q(y, x) q(θ) q(γ)`, in which `y` and `x`
-exchange messages by belief propagation and the rules towards `θ` and `γ` read the joint
-`q(y, x)`, and the mean field `q(y) q(x) q(θ) q(γ)`, in which every rule reads marginals only.
-The joint marginal `q(y, x)` has a rule from the messages on `y` and `x`, and both
-factorisations have an average energy, so the node contributes to the Bethe free energy.
+rules, one for each [factorisation](@extref MessagePassingRulesBase glossary-factorisation):
+
+- the [structured](@extref MessagePassingRulesBase glossary-structured-vmp) `q(y, x) q(θ) q(γ)`,
+  in which `y` and `x` exchange messages by
+  [belief propagation](@extref MessagePassingRulesBase glossary-belief-propagation) and the rules
+  towards `θ` and `γ` read the joint `q(y, x)`;
+- the [mean field](@extref MessagePassingRulesBase glossary-mean-field) `q(y) q(x) q(θ) q(γ)`,
+  in which every rule reads marginals only.
+
+The joint marginal `q(y, x)` has a rule from the messages on `y` and `x`. Both factorisations
+have an [average energy](@extref MessagePassingRulesBase glossary-average-energy), so the node
+contributes to the [Bethe free energy](@extref MessagePassingRulesBase glossary-bethe-free-energy).
 
 ## Example
 
 The message towards `γ` of an AR(2), from the joint marginal of the states and the marginal of
 the coefficients: a gamma of shape `3/2` whose rate is half the expected squared residual.
+
+```@example ar
+@call_message_update_rule(
+    node = AR, target = :γ, algorithm = ARVMP(Multivariate, 2, ARsafe()),
+    clusters = ((:y, :x) => MvNormalMeanCovariance(ones(4), [1.0 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]),),
+    q = (θ = MvNormalMeanCovariance([0.5, 0.25], [1.0 0.0; 0.0 1.0]),),
+)
+```
+
+[`@call_message_update_rule`](@extref MessagePassingRulesBase.@call_message_update_rule) runs
+the rule and draws the marginals it read, the joint `q(y, x)` among them.
+[`getresult`](@extref MessagePassingRulesBase.getresult) extracts the message:
 
 ```jldoctest
 julia> result = @call_message_update_rule(

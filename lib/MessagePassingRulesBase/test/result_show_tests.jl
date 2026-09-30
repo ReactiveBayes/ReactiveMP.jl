@@ -36,7 +36,7 @@ end
 
     vmp = R.plain(call_message_update_rule(R.Gauss, :μ; q = (out = 1.0, τ = 2.0)))
     @test contains(vmp, "variational") && contains(vmp, "out  ┄┄▶  q  1.0")
-    @test contains(vmp, "undefined: the message rule for $(R.Gauss) towards :μ")
+    @test contains(vmp, "undefined: the message rule for Gauss towards :μ")
 
     # A joint arrives once; its other members name it.
     joint = R.plain(call_message_update_rule(R.Gauss, :τ; clusters = ((:out, :μ) => (1.0, 2.0),)))
@@ -123,4 +123,30 @@ end
     @test contains(text, "in   ◀══  target  2.0") && contains(text, "in   ──▶  m  1.0  (its own edge)")
     card = R.html(result)
     @test count("class=\"edge message\"", card) == 2 && contains(card, "its own edge")
+end
+
+@testitem "result display:a joint over a whole group, and another algorithm's mode" tags = [:base] setup = [ResultShowRules] begin
+    using MessagePassingRulesBase
+    R = ResultShowRules
+
+    struct WholeGroup end
+    struct GroupEP <: AbstractAlgorithm end
+    @define_factor_node(node = WholeGroup, type = Deterministic, interfaces = [:out, :in...])
+    @define_message_update_rule(node = WholeGroup, target = :out, args = (q[(:in,)]::Vector{Float64},), body = (args) -> sum(args.q[(:in,)]))
+    @define_message_update_rule(node = WholeGroup, target = :out, algorithm = GroupEP, args = (m[:in...]::Float64,), body = (args) -> sum(args.m[:in]))
+
+    # The joint over the whole group is drawn as one edge that carried it, not as unused.
+    joint = call_message_update_rule(WholeGroup, :out; clusters = ((:in,) => [1.0, 2.0],))
+    @test contains(R.plain(joint), "in…  ┄┄▶  q") && !contains(R.plain(joint), "unused")
+    # Under another algorithm the card names the inputs, not an inference scheme.
+    ep = call_message_update_rule(WholeGroup, :out; m = (in = (1.0, 2.0),), algorithm = GroupEP())
+    @test contains(R.plain(ep), "· messages") && !contains(R.plain(ep), "belief propagation")
+
+    # A joint given in `q` is pointed to `clusters`.
+    err = try
+        call_message_update_rule(WholeGroup, :out; q = (in = [1.0, 2.0],))
+    catch e
+        e
+    end
+    @test contains(sprint(showerror, err), "note: a rule below takes the joint marginal over :in; a call passes a joint as `clusters = ((:in,) => q,)`")
 end

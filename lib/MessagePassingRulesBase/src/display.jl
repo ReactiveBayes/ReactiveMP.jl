@@ -12,7 +12,7 @@ kind_label(kind) = kind === :average_energy ? "average energy" : "$kind rule"
 shown(io, x) = io === nothing ? string(x) : sprint(print, x; context = io)
 
 function rule_heading(spec::RuleSpec, io = nothing)
-    heading = "$(kind_label(spec.kind)) for $(shown(io, spec.node))"
+    heading = "$(kind_label(spec.kind)) for $(node_name(spec.node))"
     spec.kind === :average_energy || (heading *= " towards $(target_label(spec.target))")
     return heading * " under $(shown(io, spec.algorithm))"
 end
@@ -30,14 +30,14 @@ function Base.show(io::IO, r::RuleNotFound)
     return print(io, " under ", shown(io, r.algorithm), ")")
 end
 
-Base.show(io::IO, spec::RuleSpec) = print(io, "RuleSpec(", rule_heading(spec, io), " @ ", spec.file, ":", spec.line, ")")
+Base.show(io::IO, spec::RuleSpec) = print(io, "RuleSpec(", rule_heading(spec, io), " @ ", short_path(spec.file), ":", spec.line, ")")
 
 function Base.show(io::IO, ::MIME"text/plain", spec::RuleSpec)
     println(io, "RuleSpec: ", rule_heading(spec, io))
     println(io, "  inputs:   ", inputs_label(spec, io))
     println(io, "  in-place: ", yesno(spec.inplace), " · scratch: ", yesno(spec.scratch !== nothing), " · pure: ", yesno(spec.pure), " · services: ", isempty(spec.services) ? "none" : join(spec.services, ", "))
     spec.kind === :message && println(io, "  logscale: ", describe_logscale_declaration(spec.logscale), spec.reads_logscale ? " · reads incoming log scales" : "")
-    println(io, "  defined:  ", spec.file, ":", spec.line)
+    println(io, "  defined:  ", short_path(spec.file), ":", spec.line)
     print(io, "  body:     ", spec.source)
     return nothing
 end
@@ -95,7 +95,7 @@ function Base.show(io::IO, ::MIME"text/plain", spec::NodeSpec)
     spec.min_group_length == 1 || println(io, "  min group length:  ", spec.min_group_length)
     spec.factorisation === :any || println(io, "  factorisation:     ", spec.factorisation)
     isempty(spec.initial_messages) || println(io, "  initial messages:  ", join(map(p -> "$(first(p)) => $(last(p))", spec.initial_messages), ", "))
-    print(io, "  defined:           ", spec.file, ":", spec.line)
+    print(io, "  defined:           ", short_path(spec.file), ":", spec.line)
     return nothing
 end
 
@@ -183,14 +183,26 @@ coverage_cell(coverage, row, algorithm) =
 # A column of a coverage table: the algorithm's name with its parameters, unqualified, so that the
 # variants of a parametric algorithm, `BinomialPolyaApproximation{Int64}` and the rules declared on
 # `BinomialPolyaApproximation` itself, are told apart.
-algorithm_label(algorithm::UnionAll) = string(nameof(Base.unwrap_unionall(algorithm)))
+# A variant bounded by its parameters, `FlowApproximation{<:AbstractCompiledFlowModel, <:Linearization}`,
+# keeps its bounds, `_` for a free one; with every parameter free it is the bare name.
+function algorithm_label(algorithm::UnionAll)
+    body = Base.unwrap_unionall(algorithm)
+    parameters = body.parameters
+    all(p -> p isa TypeVar && p.ub === Any, parameters) && return string(nameof(body))
+    return string(nameof(body), "{", join(map(bound_label, parameters), ", "), "}")
+end
+bound_label(p::TypeVar) = p.ub === Any ? "_" : "<:" * algorithm_label(p.ub)
+bound_label(p) = parameter_label(p)
 function algorithm_label(algorithm::DataType)
     parameters = algorithm.parameters
     isempty(parameters) && return string(nameof(algorithm))
     return string(nameof(algorithm), "{", join(map(parameter_label, parameters), ", "), "}")
 end
 algorithm_label(algorithm) = string(algorithm)
-parameter_label(parameter::Type) = algorithm_label(parameter)
+# A parameter that is itself a type by its bare name, so a column reads
+# `GCVApproximation{GaussHermiteCubature}`, not the cubature's own parameters.
+parameter_label(parameter::Union{DataType, UnionAll}) = string(nameof(Base.unwrap_unionall(parameter)))
+parameter_label(parameter::Type) = string(parameter)
 parameter_label(parameter) = repr(parameter)
 
 function Base.show(io::IO, ::MIME"text/plain", coverage::RuleCoverage)

@@ -25,6 +25,8 @@ end
 
 GaussHermiteCubature(p::Int) = ghcubature(p)
 
+Base.show(io::IO, method::GaussHermiteCubature) = print(io, "GaussHermiteCubature(", length(method.piter), ")")
+
 """
     ghcubature(p::Int) -> GaussHermiteCubature
 

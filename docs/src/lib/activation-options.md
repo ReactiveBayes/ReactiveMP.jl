@@ -1,9 +1,9 @@
 # [Activation options](@id lib-activation-options)
 
-A factor node is activated with a [`ReactiveMP.FactorNodeActivationOptions`](@ref), which says
+You activate a factor node with a [`ReactiveMP.FactorNodeActivationOptions`](@ref), which says
 what its rules run under. Every option is a keyword with a default, so a node that needs nothing
 special is activated with `FactorNodeActivationOptions()`. RxInfer builds these options from a
-model's settings; with the engine alone, they are given to [`ReactiveMP.activate!`](@ref) directly.
+model's settings. With the engine alone, you pass them to [`ReactiveMP.activate!`](@ref).
 
 ```@docs
 ReactiveMP.FactorNodeActivationOptions
@@ -11,52 +11,94 @@ ReactiveMP.getcallbacks
 ReactiveMP.getpostprocessor
 ```
 
-The options that concern the node's rules are described here. The others observe or transform
+This page describes the options that concern the node's rules. The others observe or transform
 what the node computes: `callbacks` ([Callbacks](@ref lib-callbacks)), `postprocessor`
 ([Stream postprocessors](@ref lib-stream-postprocessors)) and `annotations`
 ([Annotations](@ref lib-annotations)).
 
-## [The algorithm](@id lib-activation-options-algorithm)
-
-A node's rules belong to algorithms, and `algorithm` chooses the one the node runs under. It is
-`nothing` by default, the node's own,
-[`default_algorithm`](@extref MessagePassingRulesBase.default_algorithm), which is
-[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm)`()` for most nodes. A node
-whose algorithm carries settings, such as the approximation method of the Delta node,
-[`DeltaApproximation`](@extref DeltaMessagePassingRules.DeltaApproximation), or that declares no
-default, such as the autoregressive node,
-[`ARVMP`](@extref AutoregressiveMessagePassingRules.ARVMP), is given one:
-
-```julia
-activate!(node, FactorNodeActivationOptions(; algorithm = DeltaApproximation(method = Unscented())))
+```@setup options
+using ReactiveMP, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, Rocket
+import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals
+include(joinpath(pkgdir(ReactiveMP), "docs", "nodes.jl"))
 ```
 
-The algorithm also decides what each rule reads, when it declares its own dependencies, and
-[`bethe_free_energy`](@ref) takes the same algorithm per node, for the average energies.
+The examples use the `Gaussian` node of [The example node](@ref example-node). Each builds the
+same graph, a latent `x` with a normal prior observed through a second node, and activates the
+second node with the option it shows:
+
+```@example options
+function observe(node_type, options; observation = 2.0)
+    x, y = randomvar(label = :x), datavar(label = :y)
+    prior = factornode(Gaussian, [(:out, x), (:μ, constvar(0.0)), (:v, constvar(10.0))])
+    likelihood = factornode(node_type, [(:out, y), (:μ, x), (:v, constvar(1.0))])
+    activate!(x, RandomVariableActivationOptions())
+    activate!(y, DataVariableActivationOptions())
+    activate!(prior, FactorNodeActivationOptions())
+    activate!(likelihood, options)
+    posteriors = Marginal[]
+    subscription = subscribe!(get_stream_of_marginals(x), (q) -> push!(posteriors, q))
+    new_observation!(y, observation)
+    unsubscribe!(subscription)
+    return last(posteriors)
+end
+
+observe(Gaussian, FactorNodeActivationOptions())
+```
+
+## [The algorithm](@id lib-activation-options-algorithm)
+
+A node's rules belong to [algorithms](@extref MessagePassingRulesBase glossary-algorithm), and
+`algorithm` chooses the one the node runs under. Its default, `nothing`, is the node's own,
+[`default_algorithm`](@extref MessagePassingRulesBase.default_algorithm), which is
+[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm)`()` for most nodes.
+
+An algorithm may carry settings. The algorithm below extends the default and inflates the
+variance of the message towards `μ` by a factor:
+
+```@example options
+struct Inflated{T} <: DefaultAlgorithmExtension
+    factor::T
+end
+
+@define_message_update_rule(
+    node = Gaussian, target = :μ, algorithm = Inflated,
+    args = (m[:out]::PointMass, m[:v]::PointMass), logscale = 0,
+    body = (algo, args) -> NormalMeanVariance(mean(args.m[:out]), algo.factor * mean(args.m[:v])),
+)
+
+observe(Gaussian, FactorNodeActivationOptions(; algorithm = Inflated(3.0)))
+```
+
+The observation counts as one with variance 3, so the posterior precision is
+``1/10 + 1/3``. Rules the extension does not override are the default's.
+
+Some nodes need an algorithm with settings. The Delta node takes its approximation method in
+[`DeltaApproximation`](@extref DeltaMessagePassingRules.DeltaApproximation), and the
+autoregressive node declares no default, so a model gives it
+[`ARVMP`](@extref AutoregressiveMessagePassingRules.ARVMP). The algorithm also decides what each
+rule reads, when it declares its own dependencies. [`bethe_free_energy`](@ref) takes the same
+algorithm per node, for the average energies.
 
 ## [Services: the context](@id lib-activation-options-context)
 
-A rule reads the services it needs, such as a random number generator, from its context, `ctx`,
-and declares them, `ctx = (:rng,)`. The engine supplies three to every node's rules, with
-[`ReactiveMP.node_context`](@ref): `node`, the factor node; `rng`, the task's random number
-generator; and `matrix_correction`, `nothing`, so each rule applies its own. The option `context`,
-a `NamedTuple`, is merged over them: it adds services and overrides the engine's.
+A rule reads the [services](@extref MessagePassingRulesBase glossary-service) it needs, such as a
+random number generator, from its context, `ctx`, and declares them, `ctx = (:rng,)`. The engine
+supplies three to every node's rules, with [`ReactiveMP.node_context`](@ref):
+
+- `node`, the factor node;
+- `rng`, the task's random number generator;
+- `matrix_correction`, `nothing`, so that each rule applies its own.
+
+The option `context`, a `NamedTuple`, is merged over them: it adds services and overrides the
+engine's.
 
 ```@docs
 ReactiveMP.node_context
 ```
 
-A rule declaring a service that neither supplies is an error when the rule is resolved, before it
-runs, naming the rule and the service.
+Here a deterministic node scales its input by a service the engine does not supply, `scale`:
 
-```@setup lib-activation-options
-using ReactiveMP, MessagePassingRulesBase, BayesBase, Rocket
-import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals
-```
-
-Here a toy node scales its input by a service the engine does not supply, `scale`:
-
-```@example lib-activation-options
+```@example options
 struct Scale end
 
 @define_factor_node(node = Scale, type = Deterministic, interfaces = [:out, :in])
@@ -66,57 +108,111 @@ struct Scale end
     body = (ctx, args) -> PointMass(ctx.scale * mean(args.m[:in])),
 )
 
-x, y = datavar(), randomvar()
-node = factornode(Scale, [(:out, y), (:in, x)])
-activate!(x, DataVariableActivationOptions())
-activate!(y, RandomVariableActivationOptions())
-activate!(node, FactorNodeActivationOptions(; context = (scale = 3.0,)))
+input, output = datavar(label = :input), randomvar(label = :output)
+scale = factornode(Scale, [(:out, output), (:in, input)])
+activate!(input, DataVariableActivationOptions())
+activate!(output, RandomVariableActivationOptions())
+activate!(scale, FactorNodeActivationOptions(; context = (scale = 3.0,)))
 
-subscription = subscribe!(get_stream_of_marginals(y), (q) -> println("q(y) = ", getdata(q)))
-new_observation!(x, 2.0)
+subscription = subscribe!(get_stream_of_marginals(output), (q) -> println("q(output) = ", q))
+new_observation!(input, 2.0)
 unsubscribe!(subscription)
 ```
 
-[`bethe_free_energy`](@ref) runs the nodes' average energies with the engine's context alone: the
+A rule that declares a service nobody supplies is an error when the engine resolves the rule,
+before it runs. The error names the rule and the service.
+[`bethe_free_energy`](@ref) runs the average energies with the engine's context alone: the
 services of `context` do not reach them.
 
 ## [Rule fallbacks](@id lib-activation-options-rulefallback)
 
-When no rule matches a message's inputs, the message is a
+When no rule matches a message's inputs, the engine throws a
 [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError), which lists the near
-misses. The option `rulefallback` gives a message instead, only where no rule matches: it never
-replaces a rule, and an error inside a rule propagates. It is called as
-`rulefallback(fform, target, args)`; returning `nothing` is the error again.
-[`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()` gives
-the message of the node's function against its inputs, as an unnormalised log-density:
+misses. The node below is a normal density given by a function, and it has no rules:
 
-```julia
-activate!(node, FactorNodeActivationOptions(; rulefallback = NodeFunctionRuleFallback()))
+```@example options
+noisy(μ, v) = NormalMeanVariance(μ, v)
+
+@define_factor_node(node = noisy, type = Stochastic, interfaces = [:out, :μ, :v])
+
+try
+    observe(noisy, FactorNodeActivationOptions())
+catch err
+    showerror(stdout, err)
+end
 ```
 
-A message a fallback computed has an undefined log scale. A marginal rule and an average energy
+The option `rulefallback` gives a message instead, only where no rule matches. It never replaces
+a rule, and an error inside a rule propagates. The engine calls it as
+`rulefallback(fform, target, args)`, and a return value of `nothing` restores the error.
+[`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()` gives
+the node's log-density as a function of the target, an unnormalised message:
+
+```@example options
+q = observe(noisy, FactorNodeActivationOptions(; rulefallback = NodeFunctionRuleFallback()))
+exact = NormalMeanVariance(2.0 / 1.1, 1 / 1.1)
+logpdf(q, 1.0) - logpdf(q, 0.0), logpdf(exact, 1.0) - logpdf(exact, 0.0)
+```
+
+The posterior is the product of the prior's message and the fallback's, a `BayesBase.ProductOf`
+with no closed form. Its log-density agrees with the exact posterior's up to a constant. A
+[form constraint](@ref custom-functional-form) turns such a product into a distribution. A
+message a fallback computed has an undefined log scale. A marginal rule and an average energy
 have no fallback.
 
 ## [Log scales](@id lib-activation-options-logscales)
 
-With `logscales = true`, the node's messages carry the log scale each rule declares, and the rules
-that read their inputs' log scales receive them; the variables combine them through their
-products. It is off by default: the messages carry `nothing`, and a rule that reads its inputs'
-log scales is an error naming the option. A graph tracks log scales when all its nodes do; see
-[Log scales](@ref lib-logscale).
+With `logscales = true`, the node's messages carry the
+[log scale](@extref MessagePassingRulesBase glossary-log-scale) each rule declares. The rules that
+read their inputs' log scales receive them, and the variables combine them through their
+products. A graph tracks log scales when all its nodes do. Here only the second node does:
+
+```@example options
+try
+    getlogscale(observe(Gaussian, FactorNodeActivationOptions(; logscales = true)))
+catch err
+    showerror(stdout, err)
+end
+```
+
+The prior's message carries `nothing`, and so does the posterior, the product of the two
+messages. [Log scales](@ref lib-logscale) activates every node with the option and reads the log
+evidence from the posterior. The option is off by default: messages carry `nothing`, and a rule
+that reads its inputs' log scales is an error naming the option.
 
 ## [Diagnostics](@id lib-activation-options-diagnostics)
 
-Three audits of the rules a node runs, all off by default, are set with `diagnostics`:
-`check_everything_pure` stops at an impure rule, `check_everything_inplace` reports once each rule
-with no in-place form, and `checked_buffers` poisons the memory the engine recycles before each
-reuse, so that a rule reading its scratch before writing it shows `NaN`. Each names the rule it
-objects to, by its node, target, algorithm and the place it is defined. Purity is declared, not
-proved: the audit reads what the rule and its algorithm declare (see
-[`ispure`](@extref MessagePassingRulesBase.ispure)).
+The option `diagnostics`, an [`ReactiveMP.EngineDiagnostics`](@ref), sets three audits of the
+rules a node runs, all off by default:
 
-```julia
-activate!(node, FactorNodeActivationOptions(; diagnostics = EngineDiagnostics(check_everything_pure = true)))
+- `check_everything_pure` stops at an impure rule;
+- `check_everything_inplace` reports once each rule with no
+  [in-place](@extref MessagePassingRulesBase glossary-in-place-rule) form;
+- `checked_buffers` fills the memory the engine recycles with `NaN` before each reuse, so that a
+  rule reading its [scratch](@extref MessagePassingRulesBase glossary-scratch) before writing it
+  returns `NaN`.
+
+Each audit names the rule it objects to, by its node, target, algorithm and the place it is
+defined. Purity is declared, not proved: the audit reads what the rule and its algorithm declare
+(see [`ispure`](@extref MessagePassingRulesBase.ispure)). The rule below draws from the random
+number generator and declares itself impure:
+
+```@example options
+struct Jitter end
+
+@define_factor_node(node = Jitter, type = Stochastic, interfaces = [:out, :μ, :v])
+
+@define_message_update_rule(
+    node = Jitter, target = :μ, args = (m[:out]::PointMass, m[:v]::PointMass),
+    ctx = (:rng,), pure = false,
+    body = (ctx, args) -> NormalMeanVariance(mean(args.m[:out]) + 0.1 * randn(ctx.rng), mean(args.m[:v])),
+)
+
+try
+    observe(Jitter, FactorNodeActivationOptions(; diagnostics = ReactiveMP.EngineDiagnostics(check_everything_pure = true)))
+catch err
+    showerror(stdout, err)
+end
 ```
 
 ```@docs
@@ -126,7 +222,8 @@ ReactiveMP.ImpureRuleError
 
 ## [Variables](@id lib-activation-options-variables)
 
-Variables have their own options, positional structs: a random variable's
-[`RandomVariableActivationOptions`](@ref), with the product contexts of its messages and of its
-marginal, and a data variable's [`DataVariableActivationOptions`](@ref). They are described with
-the [variables](@ref lib-variables).
+Variables have options of their own, positional structs. A random variable's
+[`RandomVariableActivationOptions`](@ref) hold its stream postprocessor and the product contexts
+of its messages and of its marginal. A data variable's [`DataVariableActivationOptions`](@ref)
+ask for its prediction or link it to other variables. The [Variables](@ref lib-variables) page
+describes both.

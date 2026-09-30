@@ -17,16 +17,33 @@ runs the graph on this engine.
 
 # Examples
 
-A normal prior on `x` and one observation `y ~ N(x, 1)`:
+A normal prior on `x` and one observation `y ~ N(x, 1)`, with a normal node declared for the
+example, as a rule package would declare it:
 
-```jldoctest; setup = :(using StandardMessagePassingRules, Rocket)
+```jldoctest; setup = :(using Rocket)
+julia> using MessagePassingRulesBase, BayesBase, ExponentialFamily
+
 julia> import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals
+
+julia> struct Gaussian end   # N(out | μ, v), for a known variance v
+
+julia> @define_factor_node(node = Gaussian, type = Stochastic, interfaces = [:out, :μ, :v])
+
+julia> @define_message_update_rule(
+           node = Gaussian, target = :out, args = (m[:μ]::PointMass, m[:v]::PointMass),
+           body = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
+       )
+
+julia> @define_message_update_rule(
+           node = Gaussian, target = :μ, args = (m[:out]::PointMass, m[:v]::PointMass),
+           body = (args) -> NormalMeanVariance(mean(args.m[:out]), mean(args.m[:v])),
+       )
 
 julia> x, y = randomvar(), datavar();
 
-julia> prior = factornode(NormalMeanVariance, [(:out, x), (:μ, constvar(0.0)), (:v, constvar(10.0))]);
+julia> prior = factornode(Gaussian, [(:out, x), (:μ, constvar(0.0)), (:v, constvar(10.0))]);
 
-julia> likelihood = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, constvar(1.0))]);
+julia> likelihood = factornode(Gaussian, [(:out, y), (:μ, x), (:v, constvar(1.0))]);
 
 julia> activate!(x, RandomVariableActivationOptions()); activate!(y, DataVariableActivationOptions());
 

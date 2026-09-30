@@ -2,8 +2,11 @@
 # and a node drawn as an SVG, a box with labelled edges. Dependency-free, hand-written markup, so
 # a card renders anywhere HTML does, with no script.
 
-# A node by its own name, without the module it is defined in: `NormalMeanVariance`, `+`.
-node_name(node::Union{Type, Function}) = string(nameof(node))
+# A node by its own name, without the module it is defined in or its parameters:
+# `NormalMeanVariance`, `+`. A type is named as it prints, so an alias keeps its name,
+# `Categorical` rather than the `DiscreteNonParametric` it stands for.
+node_name(node::Function) = string(nameof(node))
+node_name(node::Type) = String(last(split(first(split(sprint(print, node), '{')), '.')))
 node_name(node) = string(node)
 
 # A group's member as it is written in a drawing, `m[2]`.

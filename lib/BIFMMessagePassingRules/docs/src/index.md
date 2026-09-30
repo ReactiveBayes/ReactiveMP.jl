@@ -1,12 +1,13 @@
 # BIFMMessagePassingRules
 
 Backward-information-filter forward-marginal (BIFM) smoothing of a linear state-space model, as
-two nodes: [`BIFM`](@ref), a whole time slice, and [`BIFMHelper`](@ref), which starts the chain.
-Use it to smooth a long linear Gaussian chain with known matrices in two passes, without
-inverting a covariance at every step.
+two [factor nodes](@extref MessagePassingRulesBase glossary-factor-node): [`BIFM`](@ref), a whole
+time slice, and [`BIFMHelper`](@ref), which starts the chain. Use it to smooth a long linear
+Gaussian chain with known matrices in two passes, without inverting a covariance at every step.
 
 !!! warning "No free energy"
-    The free energy of a model with BIFM is not supported. Asking for it throws a
+    The [Bethe free energy](@extref MessagePassingRulesBase glossary-bethe-free-energy) of a
+    model with BIFM is not supported. Asking for it throws a
     [`BIFMFreeEnergyError`](@ref BIFMMessagePassingRules.BIFMFreeEnergyError); run the
     inference without it.
 
@@ -15,11 +16,10 @@ BIFMMessagePassingRules
 ```
 
 !!! info "Where these rules run"
-    This package defines message passing rules; it does not build or run models. The
-    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
-    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
-    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
-    here call the rules directly, as a test or an interactive session does.
+    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) runs these rules on a factor
+    graph, which [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds from a
+    [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl) model. The examples here call the
+    rules directly, as a test does.
 
 ## Pages
 

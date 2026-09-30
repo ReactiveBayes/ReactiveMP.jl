@@ -138,3 +138,18 @@ end
     @test map(d -> d.container, target_dependencies(known, IndexedTarget(:in, 1))) == (:m, :m)
     @test free_energy_partition(unknown) == free_energy_partition(known) == ((:out,), (:in,))
 end
+
+@testitem "delta:a call without an approximation method says how to give one" tags = [:rules] begin
+    using DeltaMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase
+    using MessagePassingRulesApproximations: Linearization
+    f(x) = sin(x)
+    err = try
+        call_message_update_rule(DeltaFn{typeof(f)}, :out; m = (in = (NormalMeanVariance(0.0, 1.0),),))
+    catch e
+        e
+    end
+    @test err isa MessagePassingRulesBase.RuleNotFoundError
+    @test contains(sprint(showerror, err), "for DeltaFn: a Delta node, `y := f(x)`, needs an approximation method")
+    # Under its approximation, the node adds nothing.
+    @test MessagePassingRulesBase.rule_not_found_hint(DeltaFn{typeof(f)}, MessagePassingRulesBase.RuleNotFound(:message, DeltaFn{typeof(f)}, nothing, DeltaApproximation(method = Linearization()), nothing)) === nothing
+end

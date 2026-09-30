@@ -5,27 +5,28 @@ DocTestSetup = :(using DeltaMessagePassingRules, MessagePassingRulesBase, Messag
 ```
 
 The Delta node, `out = f(in₁, …, inₙ)` for any deterministic function `f`, and the rules that
-pass messages through it. Use it for a nonlinear function in a model, `z := f(x, y)`, when no
-node with exact rules exists for `f`: the rules approximate the pushforward through `f` with the
-method the model names, the unscented transform or linearization for normal messages, or
-projection onto an exponential family for messages of other families.
+pass [messages](@extref MessagePassingRulesBase glossary-message) through it. Use it for a
+nonlinear function in a model, `z := f(x, y)`, when no node with exact rules exists for `f`.
+The rules approximate the [pushforward](@extref MessagePassingRulesBase glossary-pushforward)
+through `f`, the distribution of `f(x, y)`, with the method the model names. The unscented
+transform and linearisation handle normal messages. Projection onto an exponential family
+handles messages of other families.
 
 ```@docs
 DeltaMessagePassingRules
 ```
 
 !!! info "Where these rules run"
-    This package defines message passing rules; it does not build or run models. The
-    [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs the rules on a
-    factor graph, and [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds that graph from
-    a model written with [GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl). The examples
-    here call the rules directly, as a test or an interactive session does.
+    The [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs these rules on
+    a factor graph, which [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds from a model.
+    The examples here call the rules directly.
 
 ## A first example
 
 The message towards `out` of `out = 2in + 1`, by the unscented transform, which is exact for an
 affine function. A rule reaches the node's function through its node object, which an engine
-provides; here a small stand-in holds it.
+provides. Here a small stand-in holds it, and a
+[`RuleContext`](@extref MessagePassingRulesBase.RuleContext) hands it to the rule.
 
 ```jldoctest index
 julia> struct WithFunction{F}

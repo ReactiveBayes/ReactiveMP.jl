@@ -83,7 +83,14 @@ function edge_views(r::RuleResult)
         end
         n = group_length(interface.name, args, targets)
         if n == 0
-            push!(edges, EdgeView("$(interface.name)…", :unused, nothing, ""))
+            # A joint over the whole group, `q[(:in,)]`, says nothing of its members' number.
+            position = findfirst(key -> interface.name in key, collect(joint_keys(args.q)))
+            if position === nothing
+                push!(edges, EdgeView("$(interface.name)…", :unused, nothing, ""))
+            else
+                key = joint_keys(args.q)[position]
+                push!(edges, EdgeView("$(interface.name)…", :joint, args.q.joints[position], joint_label(key)))
+            end
             continue
         end
         foreach(k -> push_edge!(edges, member_label((interface.name, k)), (interface.name, k), args, targets), 1:n)
@@ -95,8 +102,16 @@ function call_mode(r::RuleResult)
     r.rule.kind === :average_energy && return "average energy"
     r.rule.kind === :marginal && return "marginal"
     args = r.arguments
-    isempty(args.q.singles) && isempty(args.q.joints) && return "belief propagation"
-    isempty(args.m.values) && return "variational"
+    messages_only, marginals_only = isempty(args.q.singles) && isempty(args.q.joints), isempty(args.m.values)
+    # Under the default algorithm the inputs say which scheme ran; another algorithm, an
+    # expectation propagation rule say, is named by its inputs alone.
+    if r.algorithm isa DefaultAlgorithm
+        messages_only && return "belief propagation"
+        marginals_only && return "variational"
+        return "messages and marginals"
+    end
+    messages_only && return "messages"
+    marginals_only && return "marginals"
     return "messages and marginals"
 end
 
@@ -115,7 +130,9 @@ logscale_source(::Nothing) = "not declared"
 function logscale_label(r::RuleResult)
     logscale = r.logscale
     logscale isa UndefinedLogScale && return "undefined: " * sprint(describe_undefined, logscale)
-    return string(logscale, "  (", logscale_source(r.rule.logscale), ")")
+    # An irrational shows its value beside its name, `loghalf = -0.6931471805599...`.
+    value = logscale isa AbstractIrrational ? repr(MIME"text/plain"(), logscale) : string(logscale)
+    return string(value, "  (", logscale_source(r.rule.logscale), ")")
 end
 
 input_labels(m::Messages) = Pair{String, Any}["m[$(repr(key))]" => value for (key, value) in pairs(m.values)]

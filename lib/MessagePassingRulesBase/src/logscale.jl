@@ -51,7 +51,7 @@ Base.:+(a::UndefinedLogScale) = a
 function describe_undefined(io::IO, logscale::UndefinedLogScale)
     cause, detail = logscale.cause, logscale.detail
     if cause === :no_declaration
-        print(io, "the ", detail isa RuleSpec ? rule_heading(detail) : "rule", " declares no `logscale`")
+        print(io, "the ", detail isa RuleSpec ? rule_heading(detail, io) : "rule", " declares no `logscale`")
     elseif cause === :initial
         print(io, "the message is an initial one, not computed by a rule")
     elseif cause === :fallback

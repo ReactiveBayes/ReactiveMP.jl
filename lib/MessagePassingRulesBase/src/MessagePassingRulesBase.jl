@@ -63,6 +63,7 @@ export RuleResult, getresult, getrule, getannotations
 # Generic names a downstream package may well define for itself: public, not exported.
 @compat public getalgorithm, getcontext, getscratch, getarguments, gettarget
 # Nodes: the declaration as data, and its queries.
+@compat public rule_not_found_hint
 @compat public NodeSpec, InterfaceSpec, nodespec, interfaces, interface_groups, sdtype, default_algorithm
 @compat public static_inputs, matched_groups, min_group_length, required_factorisation, initial_messages
 @compat public alias_interface, nodefunction

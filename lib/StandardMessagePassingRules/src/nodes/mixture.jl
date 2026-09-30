@@ -71,3 +71,8 @@ function product_logscale(strategy, left, right)
     result = prod(strategy, left, right)
     return BayesBase.compute_logscale(result, left, right)
 end
+# With a point mass on one side, the integral is the other side's density at the point: an
+# observed `out` weighs each component by its likelihood, whatever the product strategy.
+product_logscale(strategy, left::PointMass, right) = logpdf(right, BayesBase.getpointmass(left))
+product_logscale(strategy, left, right::PointMass) = logpdf(left, BayesBase.getpointmass(right))
+product_logscale(strategy, left::PointMass, right::PointMass) = invoke(product_logscale, Tuple{Any, Any, Any}, strategy, left, right)

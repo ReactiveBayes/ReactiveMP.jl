@@ -43,14 +43,36 @@ end
 
 # What to try, one hint per diagnosis. The inputs a rule receives come from the graph's
 # factorisation, so the hints say which part of the model to look at.
-const HINT_NO_RULE = "no loaded package defines this rule: load the package that defines the node's rules, or define the rule (see the documentation of `@define_message_update_rule`)"
-const HINT_TYPE_MISMATCH = "the inputs arrive in other families than the rule takes: a form constraint on a variable can project them onto a family it takes (in RxInfer, `@constraints`), or define a rule for these types"
+hint_no_rule(kind) = "no loaded package defines this rule: load the package that defines the node's rules, or define the rule with `$(DEFINITION_MACRO[kind])`"
+const DEFINITION_MACRO = Dict(:message => "@define_message_update_rule", :marginal => "@define_marginal_update_rule", :average_energy => "@define_average_energy")
+const HINT_TYPE_MISMATCH = "the inputs arrive with other types than the rule takes. If a rule below takes such an input as a marginal `q`, a factorisation that separates it delivers one (in RxInfer, `@constraints`); a form constraint on a variable projects its marginal onto a family a rule takes; otherwise, define a rule for these types"
 const HINT_ALGORITHM = "give the node the algorithm these rules are defined for"
 const HINT_SHAPE = "the factorisation decides which inputs a rule receives (messages from the target's cluster, marginals of the other clusters): choose one that delivers the inputs a rule below takes (in RxInfer, `@constraints`), or define a rule for these inputs"
 
+"""
+    rule_not_found_hint(node, notfound::RuleNotFound) -> Union{String, Nothing}
+
+A sentence a node's package adds to the report of a [`RuleNotFoundError`](@ref) for `node`,
+after the generic hint, or `nothing`, the default. A package extends it for its node where it
+knows the usual cause, as the Delta node's does for a missing approximation method:
+
+```julia
+MessagePassingRulesBase.rule_not_found_hint(::Type{<:MyNode}, notfound) =
+    notfound.algorithm isa MyAlgorithm ? nothing : "MyNode runs under `MyAlgorithm(...)`"
+```
+"""
+rule_not_found_hint(node, notfound) = nothing
+
+# The node's own hint, when its package gives one.
+function print_node_hint(io::IO, nf::RuleNotFound)
+    hint = rule_not_found_hint(nf.node, nf)
+    hint === nothing || print(io, "\n  for ", node_name(nf.node), ": ", hint)
+    return nothing
+end
+
 function Base.showerror(io::IO, err::RuleNotFoundError)
     nf = err.notfound
-    print(io, "RuleNotFoundError: no ", nf.kind, " rule for ", nf.node)
+    print(io, "RuleNotFoundError: no ", kind_label(nf.kind), " for ", node_name(nf.node))
     nf.target === nothing || print(io, " towards ", nf.target)
     print(io, " under ", nf.algorithm)
     provided = provided_inputs(nf.args)
@@ -64,7 +86,8 @@ function Base.showerror(io::IO, err::RuleNotFoundError)
     candidates = candidate_rules(nf)
     if isempty(candidates)
         print(io, "\n  no rule exists for this node and target under any algorithm")
-        print(io, "\n  what to try: ", HINT_NO_RULE)
+        print(io, "\n  what to try: ", hint_no_rule(nf.kind))
+        print_node_hint(io, nf)
         return nothing
     end
     provided_keys = Set((c, k) for (c, k, _) in provided)
@@ -80,6 +103,18 @@ function Base.showerror(io::IO, err::RuleNotFoundError)
         print(io, "\n  no rule consumes this set of inputs under this algorithm (no rule of this shape)")
         print(io, "\n  what to try: ", HINT_SHAPE)
     end
+    print_node_hint(io, nf)
+    # A joint marginal given as a single one, `q = (in = …,)` for `q[(:in,)]`, is a common slip
+    # of an interactive call.
+    joints_given_as_singles = unique(
+        k for spec in candidates for i in spec.inputs if i.selection === :cluster
+            for (c, k, _) in provided if c === :q && k isa Symbol && k in i.key
+    )
+    isempty(joints_given_as_singles) || print(
+        io, "\n  note: a rule below takes the joint marginal over ",
+        join(map(repr, joints_given_as_singles), ", "), "; a call passes a joint as `clusters = ((",
+        join(map(repr, joints_given_as_singles), ", "), ",) => q,)`, not in `q`"
+    )
     print(io, "\n  near misses:")
     for spec in candidates
         print(io, "\n    rule at ", spec.file, ":", spec.line)
@@ -88,6 +123,17 @@ function Base.showerror(io::IO, err::RuleNotFoundError)
         end
     end
     return nothing
+end
+
+# Why a given input does not fit: for a group, which member, or that it is not a tuple.
+function mismatch_detail(input::InputSpec, type::Type)
+    input.selection in (:all, :aligned, :allbutself) || return "got $type"
+    type <: Tuple || return "got $type, but a group arrives as a tuple of its members"
+    for (k, member) in enumerate(fieldtypes(type))
+        member === Nothing && input.selection !== :all && continue
+        member <: input.type || return "member $k is a $member, not a $(input.type)"
+    end
+    return "got $type"
 end
 
 # How a rule fits a call, slot by slot: its algorithm, each of its inputs against what was
@@ -101,7 +147,8 @@ function fit_report(spec::RuleSpec, algorithm, provided)
             push!(lines, (false, "$label  not provided"))
         else
             type = provided[found][3]
-            push!(lines, (input_accepts(input, type), "$label  got $type"))
+            accepted = input_accepts(input, type)
+            push!(lines, (accepted, "$label  " * (accepted ? "got $type" : mismatch_detail(input, type))))
         end
     end
     for (c, k, t) in provided

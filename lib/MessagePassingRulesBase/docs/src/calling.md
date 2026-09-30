@@ -119,6 +119,7 @@ end
 ```@docs
 MessagePassingRulesBase.RuleNotFoundError
 MessagePassingRulesBase.RuleNotFound
+MessagePassingRulesBase.rule_not_found_hint
 ```
 
 ## Resolving without the interactive layer

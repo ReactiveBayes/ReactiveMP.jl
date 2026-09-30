@@ -30,6 +30,14 @@
         @test probvec(getresult(result)) ≈ softmax(evidence)
         @test getlogscale(result) ≈ logsumexp(evidence)
     end
+
+    # With `out` observed, component k's evidence is its likelihood at the observation.
+    evidence = [0.2 + component_logscales[k] + logpdf(inputs[k], 0.5) for k in 1:2]
+    for algorithm in (MixtureBP(), MixtureBP(prod = ClosedProd()))
+        result = call_message_update_rule(Mixture, :switch; m = (out = PointMass(0.5), inputs = inputs), logscale = (out = 0.2, inputs = component_logscales), algorithm)
+        @test probvec(getresult(result)) ≈ softmax(evidence)
+        @test getlogscale(result) ≈ logsumexp(evidence)
+    end
 end
 
 @testitem "rules:Mixture:needs-logscales" tags = [:rules] begin

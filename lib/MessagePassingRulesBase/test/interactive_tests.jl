@@ -165,3 +165,18 @@ end
     @test length(seen) == 1 && only(seen) === which_message_update_rule(S.NMV, :out; m = (μ = P(1.0), v = P(2.0)))
     filter!(!=(observer), B.INTERACTIVE_SELECTION_OBSERVERS)
 end
+
+@testitem "interactive:coverage labels a bounded variant with its bounds" tags = [:base] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: rule_coverage, AbstractAlgorithm
+
+    struct Bounded{M} <: AbstractAlgorithm end
+    struct FirstMethod end
+    struct SecondMethod end
+    struct Variants end
+    @define_factor_node(node = Variants, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Variants, target = :out, algorithm = Bounded{<:FirstMethod}, args = (m[:in]::Float64,), body = (args) -> args.m[:in])
+    @define_message_update_rule(node = Variants, target = :out, algorithm = Bounded{<:SecondMethod}, args = (m[:in]::Float64,), body = (args) -> args.m[:in])
+    text = sprint(show, MIME"text/plain"(), rule_coverage(Variants))
+    @test contains(text, "Bounded{<:FirstMethod}") && contains(text, "Bounded{<:SecondMethod}")
+end

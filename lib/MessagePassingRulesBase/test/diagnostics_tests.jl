@@ -95,7 +95,7 @@ end
     # The shape fits, a type does not.
     mismatch = text(() -> getresult(message_passing_rule(B.Gauss, Target(:out), DefaultAlgorithm(), RuleArgs(m = (μ = 1.0, τ = "x")))))
     @test startswith(mismatch, "RuleNotFoundError: no message rule for ")
-    @test contains(mismatch, "type mismatch") && contains(mismatch, "what to try: the inputs arrive in other families")
+    @test contains(mismatch, "type mismatch") && contains(mismatch, "what to try: the inputs arrive with other types than the rule takes")
     @test contains(mismatch, "✓ m[:μ]::Real  got Float64")
     @test contains(mismatch, "✗ m[:τ]::Real  got String")
     @test contains(mismatch, "✓ algorithm")
@@ -113,4 +113,35 @@ end
 
     none = text(() -> getresult(message_passing_rule(B.Gauss, Target(:nothing_here), DefaultAlgorithm(), RuleArgs())))
     @test contains(none, "no rule exists for this node and target") && contains(none, "what to try: no loaded package defines this rule")
+end
+
+@testitem "diagnostics:a group's near miss names the member that does not fit" tags = [:base] begin
+    using MessagePassingRulesBase
+    struct Pooled end
+    @define_factor_node(node = Pooled, type = Stochastic, interfaces = [:out, :in...])
+    @define_message_update_rule(node = Pooled, target = :out, args = (m[:in...]::Float64,), body = (args) -> sum(args.m[:in]))
+    text(m) = try
+        @call_message_update_rule(node = Pooled, target = :out, m = m)
+        ""
+    catch err
+        sprint(showerror, err)
+    end
+    @test contains(text((in = (1.0, "2"),)), "✗ m[:in...]::Float64  member 2 is a String, not a Float64")
+    @test contains(text((in = 1.0,)), "✗ m[:in...]::Float64  got Float64, but a group arrives as a tuple of its members")
+end
+
+@testitem "diagnostics:a node's package adds its own hint" tags = [:base] begin
+    using MessagePassingRulesBase
+    struct Hinted end
+    struct HintedAlgorithm <: AbstractAlgorithm end
+    @define_factor_node(node = Hinted, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Hinted, target = :out, algorithm = HintedAlgorithm, args = (m[:in]::Float64,), body = (args) -> args.m[:in])
+    MessagePassingRulesBase.rule_not_found_hint(::Type{Hinted}, notfound) =
+        notfound.algorithm isa HintedAlgorithm ? nothing : "Hinted runs under `HintedAlgorithm()`"
+    err = try
+        call_message_update_rule(Hinted, :out; m = (in = 1.0,))
+    catch e
+        e
+    end
+    @test contains(sprint(showerror, err), "\n  for Hinted: Hinted runs under `HintedAlgorithm()`")
 end

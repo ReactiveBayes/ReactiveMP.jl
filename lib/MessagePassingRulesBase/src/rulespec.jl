@@ -220,7 +220,7 @@ For a node `Shift` with interfaces `out` and `in` and a single rule, towards `ou
 julia> @call_message_update_rule(node = Shift, target = :in, m = (out = 1.0,))
 ERROR: RuleNotFoundError: no message rule for Shift towards :in under DefaultAlgorithm() takes the inputs (m[:out]::Float64)
   no rule exists for this node and target under any algorithm
-  what to try: no loaded package defines this rule: load the package that defines the node's rules, or define the rule (see the documentation of `@define_message_update_rule`)
+  what to try: no loaded package defines this rule: load the package that defines the node's rules, or define the rule with `@define_message_update_rule`
 ```
 """
 struct RuleNotFoundError <: Exception

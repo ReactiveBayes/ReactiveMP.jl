@@ -120,8 +120,16 @@ delta_method_hint(method) = nothing
 # A method that has no use for a known inverse says so when given one.
 check_inverse(method, inverse) = nothing
 
+# A Delta node without its approximation method runs under the default algorithm, where it has no
+# rules: say how to give it one.
+MessagePassingRulesBase.rule_not_found_hint(::Type{<:DeltaFn}, notfound) =
+    notfound.algorithm isa DeltaApproximation ? nothing :
+    "a Delta node, `y := f(x)`, needs an approximation method: `Linearization()`, `Unscented()`, or `CVIProjection()` once ExponentialFamilyProjection is loaded. " *
+    "In RxInfer, give it with `@algorithm begin f() -> Linearization() end` or `y := f(x) where { algorithm = Linearization() }`"
+
 function incompatible_method_message(method)
-    message = "`$method` is not an approximation method of the Delta node. It takes `Unscented()` and " *
+    shown = method isa Union{Number, Symbol, AbstractString, Type} ? string(method) : string(nameof(typeof(method)), "(…)")
+    message = "`$shown` is not an approximation method of the Delta node. It takes `Unscented()` and " *
         "`Linearization()` from MessagePassingRulesApproximations, and `CVIProjection()` once " *
         "ExponentialFamilyProjection is loaded."
     hint = delta_method_hint(method)

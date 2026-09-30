@@ -1,25 +1,40 @@
 # Normal distributions
 
-The univariate and multivariate normal nodes, in each of their parametrisations, and the
-half-normal. They are ExponentialFamily's types, declared as nodes here, and all run under
-[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm): a model never names an
-algorithm for them. Their rules cover belief propagation with known parameters, mean-field
-variational message passing and the structured factorisation that keeps `out` and the mean
-together, `q(out, μ) q(parameter)`.
+A normal node ties a variable `out` to a mean and a spread: a variance, a precision, a
+covariance matrix or a precision matrix. The page covers the univariate and multivariate normals
+in each of their parametrisations, and the half-normal.
 
-In the tables below, *messages* are what a rule takes from an interface in its own cluster and
-*marginals* what it takes from one in another cluster. "Normal" means any univariate or
-multivariate normal of ExponentialFamily in any parametrisation, and "any" a marginal with the
-expectations the rule needs.
+With the spread known, the rules towards `out` and the mean are exact
+[belief propagation](@extref MessagePassingRulesBase glossary-belief-propagation): a normal
+[message](@extref MessagePassingRulesBase glossary-message) on the mean, convolved with the noise,
+gives a normal message on `out`, and the same holds the other way. With the spread unknown,
+belief propagation towards it gives no closed-form message for `NormalMeanVariance`, and the
+other normals have no such rule at all. The rules towards the spread are therefore
+[variational](@extref MessagePassingRulesBase glossary-vmp): they take
+[marginals](@extref MessagePassingRulesBase glossary-marginal) and return a Gamma, a Wishart or
+their inverses. In practice, you choose a
+[factorisation](@extref MessagePassingRulesBase glossary-factorisation) that puts an unknown
+spread in a [cluster](@extref MessagePassingRulesBase glossary-cluster) of its own, such as
+`q(out, μ) q(τ)` or the [mean field](@extref MessagePassingRulesBase glossary-mean-field)
+`q(out) q(μ) q(τ)`.
+
+The nodes are ExponentialFamily's types, declared as nodes here. They all run under
+[`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm), so a model never names an
+algorithm for them.
+
+In the interface tables below, a rule takes *messages* from the interfaces in its target's own
+cluster, and it takes *marginals* from the interfaces in other clusters. "Normal" means any
+univariate or multivariate normal of ExponentialFamily in any parametrisation. "Any" means a
+marginal with the expectations the rule needs.
 
 ```@setup normal
-using MessagePassingRulesBase, StandardMessagePassingRules, ExponentialFamily, Distributions
+using MessagePassingRulesBase, StandardMessagePassingRules, ExponentialFamily, Distributions, BayesBase
 ```
 
 ## Example
 
-The mean-field message towards the mean of a `NormalMeanPrecision` node, from the marginals of
-`out` and of the precision, is a normal around `E[out]` with precision `E[τ]`:
+The mean-field message towards the mean of a `NormalMeanPrecision` node takes the marginals of
+`out` and of the precision. It is a normal around `E[out]` with precision `E[τ]`:
 
 ```jldoctest normal
 julia> using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase
@@ -39,6 +54,10 @@ true
 p(\mathrm{out} \mid μ, v) = \frac{1}{\sqrt{2π v}} \exp\left(-\frac{(\mathrm{out} - μ)^2}{2v}\right)
 ```
 
+```@example normal
+MessagePassingRulesBase.nodespec(NormalMeanVariance)
+```
+
 | interface | aliases | meaning | messages and marginals its rules take |
 |---|---|---|---|
 | `out` | | the variable | a univariate normal or a `PointMass` |
@@ -49,16 +68,40 @@ p(\mathrm{out} \mid μ, v) = \frac{1}{\sqrt{2π v}} \exp\left(-\frac{(\mathrm{ou
 MessagePassingRulesBase.rule_coverage(NormalMeanVariance)
 ```
 
-Towards `out` and `μ` there are belief propagation, variational and structured rules. Towards
-`v`, belief propagation from normal or known `out` and `μ` gives a log-density on the half line,
-a `ContinuousUnivariateLogPdf`, with no closed-form family; the variational rule gives an
-unchecked `GammaInverse` with shape `-1/2`, a likelihood rather than a distribution. The average
-energy covers mean field and `q(out, μ) q(v)`.
+The belief propagation message towards `out`, from a normal message on the mean and a known
+variance, adds the variances:
+
+```@example normal
+@call_message_update_rule(
+    node = NormalMeanVariance, target = :out,
+    m = (μ = NormalMeanVariance(1.0, 1.0), v = PointMass(2.0)),
+)
+```
+
+The variational message takes the marginals of `μ` and `v`. It keeps the mean of `q(μ)`, ignores
+its variance, and uses `1/E[1/v] = 0.5` of the Gamma marginal as the variance:
+
+```@example normal
+@call_message_update_rule(
+    node = NormalMeanVariance, target = :out,
+    q = (μ = NormalMeanVariance(1.0, 1.0), v = GammaShapeRate(3.0, 4.0)),
+)
+```
+
+Towards `out` and `μ`, the node has belief propagation, variational and structured rules. Towards
+`v`, belief propagation from normal or known `out` and `μ` gives a log-density on the half line, a
+`ContinuousUnivariateLogPdf`, which has no closed-form family. The variational rule towards `v`
+gives an unchecked `GammaInverse` with shape `-1/2`, which is a likelihood rather than a
+distribution. The average energy covers the mean field and `q(out, μ) q(v)`.
 
 ## NormalMeanPrecision
 
 ```math
 p(\mathrm{out} \mid μ, τ) = \sqrt{\frac{τ}{2π}} \exp\left(-\frac{τ (\mathrm{out} - μ)^2}{2}\right)
+```
+
+```@example normal
+MessagePassingRulesBase.nodespec(NormalMeanPrecision)
 ```
 
 | interface | aliases | meaning | messages and marginals its rules take |
@@ -71,15 +114,51 @@ p(\mathrm{out} \mid μ, τ) = \sqrt{\frac{τ}{2π}} \exp\left(-\frac{τ (\mathrm
 MessagePassingRulesBase.rule_coverage(NormalMeanPrecision)
 ```
 
-The rules towards `τ` are variational only, from `q(out) q(μ)` or `q(out, μ)`, and give a
-`Gamma`; there is **no belief propagation rule towards `τ`**, so an unknown precision needs a
-factorisation that separates it from `out` and `μ`.
+With a known precision, the message towards `out` stays in precision form. The precisions combine
+as `1 / (1/1 + 1/2) = 2/3`:
+
+```@example normal
+@call_message_update_rule(
+    node = NormalMeanPrecision, target = :out,
+    m = (μ = NormalMeanPrecision(1.0, 1.0), τ = PointMass(2.0)),
+)
+```
+
+The variational message towards `τ` takes the marginals of `out` and `μ`, and it is a `Gamma`:
+
+```@example normal
+@call_message_update_rule(
+    node = NormalMeanPrecision, target = :τ,
+    q = (out = PointMass(3.0), μ = NormalMeanPrecision(1.0, 1.0)),
+)
+```
+
+The rules towards `τ` take `q(out) q(μ)` or `q(out, μ)`. There is **no belief propagation rule
+towards `τ`**, so an unknown precision needs a factorisation that separates it from `out` and
+`μ`. Asking for one throws a
+[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError), which lists the rules
+that do exist:
+
+```@example normal
+try
+    @call_message_update_rule(
+        node = NormalMeanPrecision, target = :τ,
+        m = (out = PointMass(3.0), μ = NormalMeanPrecision(1.0, 1.0)),
+    )
+catch err
+    showerror(stdout, err)
+end
+```
 
 ## MvNormalMeanCovariance
 
 ```math
 p(\mathrm{out} \mid μ, Σ) = |2π Σ|^{-1/2}
 \exp\left(-\tfrac{1}{2} (\mathrm{out} - μ)^\top Σ^{-1} (\mathrm{out} - μ)\right)
+```
+
+```@example normal
+MessagePassingRulesBase.nodespec(MvNormalMeanCovariance)
 ```
 
 | interface | aliases | meaning | messages and marginals its rules take |
@@ -92,8 +171,17 @@ p(\mathrm{out} \mid μ, Σ) = |2π Σ|^{-1/2}
 MessagePassingRulesBase.rule_coverage(MvNormalMeanCovariance)
 ```
 
-Towards `Σ` the rules are variational only and give an inverse-Wishart likelihood; there is no
-belief propagation rule towards `Σ`.
+As in the univariate case, the belief propagation message towards `out` adds the covariances:
+
+```@example normal
+@call_message_update_rule(
+    node = MvNormalMeanCovariance, target = :out,
+    m = (μ = MvNormalMeanCovariance([1.0, 2.0], diageye(2)), Σ = PointMass([2.0 0.0; 0.0 2.0])),
+)
+```
+
+The rules towards `Σ` are variational only, and they give an inverse-Wishart likelihood. There is
+no belief propagation rule towards `Σ`.
 
 ## MvNormalMeanPrecision
 
@@ -106,14 +194,15 @@ p(\mathrm{out} \mid μ, Λ) = \left|\frac{Λ}{2π}\right|^{1/2}
 |---|---|---|---|
 | `out` | | the variable | a multivariate normal or a `PointMass` |
 | `μ` | `mean` | the mean | a multivariate normal or a `PointMass` |
-| `Λ` | `invcov`, `precision` | the precision matrix | a `PointMass` message, or any marginal with `E[Λ]`; a `Wishart` has its own rules |
+| `Λ` | `invcov`, `precision` | the precision matrix | a `PointMass` message, or any marginal with `E[Λ]`; a `Wishart` marginal has rules of its own |
 
 ```@example normal
 MessagePassingRulesBase.rule_coverage(MvNormalMeanPrecision)
 ```
 
-Towards `Λ` the rules are variational only and give a Wishart likelihood; they apply the context's `matrix_correction` to its scale, and none by default.
-There is no belief propagation rule towards `Λ`.
+The rules towards `Λ` are variational only, and they give a Wishart likelihood. They apply the
+context's [`matrix_correction`](@extref MessagePassingRulesBase.matrix_correction) to its scale,
+and none by default. There is no belief propagation rule towards `Λ`.
 
 ## MvNormalWeightedMeanPrecision
 
@@ -131,8 +220,9 @@ p(\mathrm{out} \mid ξ, Λ) = \mathcal{N}(\mathrm{out} \mid Λ^{-1} ξ, Λ^{-1})
 MessagePassingRulesBase.rule_coverage(MvNormalWeightedMeanPrecision)
 ```
 
-Only the message towards `out`, and the joint marginal with known parameters: **no rule towards
-`ξ` or `Λ`**, which must be known or have their marginals from elsewhere.
+**Limitations.** The node has the message towards `out` and the joint marginal with known
+parameters only. There is **no rule towards `ξ` or `Λ`**: they must be known, or have their
+marginals from elsewhere.
 
 ## MvNormalMeanScalePrecision
 
@@ -150,8 +240,8 @@ p(\mathrm{out} \mid μ, γ) = \mathcal{N}(\mathrm{out} \mid μ, (γ I)^{-1})
 MessagePassingRulesBase.rule_coverage(MvNormalMeanScalePrecision)
 ```
 
-Every message rule takes `γ` as a marginal, so `γ` is always in a cluster of its own; towards
-`γ` the rules are variational and give a `GammaShapeRate`.
+Every message rule takes `γ` as a marginal, so `γ` is always in a cluster of its own. The rules
+towards `γ` are variational, and they give a `GammaShapeRate`.
 
 ## MvNormalMeanScaleMatrixPrecision
 
@@ -170,8 +260,8 @@ p(\mathrm{out} \mid μ, γ, G) = \mathcal{N}(\mathrm{out} \mid μ, (γ G)^{-1})
 MessagePassingRulesBase.rule_coverage(MvNormalMeanScaleMatrixPrecision)
 ```
 
-As for `MvNormalMeanScalePrecision`, every message rule takes `γ` and `G` as marginals, and the
-rules towards them are variational.
+As for `MvNormalMeanScalePrecision`, every message rule takes `γ` and `G` as marginals. The rules
+towards them are variational.
 
 ## HalfNormal
 
@@ -182,15 +272,15 @@ p(\mathrm{out} \mid v) = \frac{2}{\sqrt{2π v}} \exp\left(-\frac{\mathrm{out}^2}
 
 | interface | aliases | meaning | messages and marginals its rules take |
 |---|---|---|---|
-| `out` | | the variable | none: nothing is sent from `out` |
-| `v` | `var`, `σ²` | the variance | a `PointMass` marginal |
+| `out` | | the variable | any marginal (average energy) |
+| `v` | `var`, `σ²` | the variance | a `PointMass` marginal (message towards `out`), any marginal (average energy) |
 
 ```@example normal
 MessagePassingRulesBase.rule_coverage(HalfNormal)
 ```
 
-**Limitations.** The only message is towards `out`, a truncated normal, from a known variance.
-There is **no rule towards `v`**, and no marginal rule.
+**Limitations.** [`HalfNormal`](@ref) has one message, a truncated normal towards `out` from a
+known variance. There is **no rule towards `v`**, and no marginal rule.
 
 ```@docs
 HalfNormal

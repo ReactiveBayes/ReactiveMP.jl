@@ -2,11 +2,12 @@
 
 ## Overview
 
-`MultinomialPolya` is a multinomial over `K` categories whose probabilities come from `K - 1`
+[`MultinomialPolya`](@ref) is a multinomial over `K` categories whose probabilities come from `K - 1`
 log-odds `ψ` by logistic stick-breaking: the first category takes `σ(ψ₁)` of the stick, the
 second `σ(ψ₂)` of what is left, and the last the rest. The multinomial then factors into `K - 1`
-binomials, each Pólya-Gamma augmented, so the message towards `ψ` is normal. With `ψ` a linear
-function of covariates it is multinomial regression.
+binomials, each Pólya-Gamma augmented as [the overview](@ref polya-augmentation) shows, so
+the [message](@extref MessagePassingRulesBase glossary-message) towards `ψ` is normal. With `ψ` a
+linear function of covariates it is multinomial regression.
 
 ## Definition
 
@@ -16,9 +17,20 @@ p_k = \sigma(\psi_k) \prod_{j<k} \big(1 - \sigma(\psi_j)\big), \quad
 p_K = \prod_{j<K} \big(1 - \sigma(\psi_j)\big)
 ```
 
-The `k`-th binomial is of `x_k` out of `N_k = N - Σ_{j<k} x_j` trials, with log-odds `ψ_k`.
+The first factor is the multinomial coefficient; `p_k` is the share of the stick that category
+`k` takes. The `k`-th binomial is of `x_k` out of `N_k = N - Σ_{j<k} x_j` trials, with log-odds
+`ψ_k`. [`logistic_stick_breaking`](@ref) computes the `p_k` and [`compose_Nks`](@ref) the `N_k`.
 
 ## Interfaces
+
+```@example multinomial
+using PolyaMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily
+MessagePassingRulesBase.nodespec(MultinomialPolya)
+```
+
+The node has three [interfaces](@extref MessagePassingRulesBase glossary-interface). The table
+lists the [marginals](@extref MessagePassingRulesBase glossary-marginal) and messages the rules
+read on each.
 
 | name | meaning | messages and marginals the rules take |
 |---|---|---|
@@ -36,23 +48,50 @@ towards `N`.
 MultinomialPolyaApproximation
 ```
 
-`MultinomialPolyaApproximation()` is the node's default algorithm, so a model names it only to
+[`MultinomialPolyaApproximation`](@ref)`()` is the node's default
+[algorithm](@extref MessagePassingRulesBase glossary-algorithm), so a model names it only to
 change the number of cubature points of the average energy.
+
+The node declares its [dependencies](@extref MessagePassingRulesBase glossary-dependencies), the
+inputs each target's rule takes:
+
+```@example multinomial
+MessagePassingRulesBase.dependencies_spec(MultinomialPolya, MultinomialPolyaApproximation())
+```
+
+Every target takes the inputs of the
+[default scheme](@extref MessagePassingRulesBase glossary-default-scheme). The rule towards `ψ`
+also reads the message on `ψ`, the current estimate at which it takes the Pólya-Gamma means.
 
 ## Supported rules
 
-```@example
-using MessagePassingRulesBase, PolyaMessagePassingRules # hide
+```@example multinomial
 MessagePassingRulesBase.rule_coverage(MultinomialPolya)
 ```
 
-The rules towards `x` and `ψ` read marginals and, towards `ψ`, the message on `ψ`: they fit a
-mean-field factorisation. With the average energy, the Bethe free energy is available.
+The rules towards `x` and `ψ` read marginals and, towards `ψ`, the message on `ψ`. They fit a
+[mean-field](@extref MessagePassingRulesBase glossary-mean-field)
+[factorisation](@extref MessagePassingRulesBase glossary-factorisation). With the
+[average energy](@extref MessagePassingRulesBase glossary-average-energy), the
+[Bethe free energy](@extref MessagePassingRulesBase glossary-bethe-free-energy) is available.
 
 ## Example
 
 The message towards `ψ` for ten trials over three categories, at a message on `ψ` centred on
 zero:
+
+```@example multinomial
+@call_message_update_rule(
+    node = MultinomialPolya, target = :ψ,
+    q = (x = PointMass([2, 3, 5]), N = PointMass(10)),
+    m = (ψ = MvNormalWeightedMeanPrecision(zeros(2), [1.0 0.0; 0.0 1.0]),),
+)
+```
+
+[`@call_message_update_rule`](@extref MessagePassingRulesBase.@call_message_update_rule) runs
+the rule and draws its inputs. The stick's two breaks leave `N_k = 10` and `8` trials, so the
+weighted means are `x_k - N_k/2` and the precisions `N_k/4`, which
+[`getresult`](@extref MessagePassingRulesBase.getresult) confirms:
 
 ```jldoctest
 julia> using PolyaMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily
@@ -72,7 +111,7 @@ true
 
 ## Limitations
 
-- The rule towards `ψ` needs an **initial message on `ψ`**.
+- The rule towards `ψ` needs an **[initial message](@extref MessagePassingRulesBase glossary-initial-message) on `ψ`**.
 - There is no rule towards `N`, and the average energy takes a `PointMass` `q(N)` only.
 - The messages use the mean of `ψ` only: its variance enters the average energy, not them.
 
