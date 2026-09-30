@@ -351,6 +351,12 @@ function unscented_statistics(
     return (m_tilde, V_tilde, C_tilde)
 end
 
+# A method built for a dimension takes inputs of that dimension only.
+check_unscented_dimension(method::Unscented, d) = check_unscented_dimension(getextra(method), d)
+check_unscented_dimension(::Nothing, d) = nothing
+check_unscented_dimension(extra::UnscentedExtra, d) =
+    getL(extra) == d || throw(DimensionMismatch("`Unscented($(getL(extra)))` was built for dimension $(getL(extra)), not $d"))
+
 """
     sigma_points_weights(method::Unscented, m::Real, V::Real) -> (points, weights_m, weights_c)
     sigma_points_weights(method::Unscented, m::AbstractVector, V::AbstractMatrix) -> (points, weights_m, weights_c)
@@ -360,12 +366,6 @@ and for the covariance, in the same order: tuples for a scalar normal, vectors o
 first point is the mean. It warns when the parameters make `d + λ` negative, which gives
 unreliable estimates.
 """
-# A method built for a dimension takes inputs of that dimension only.
-check_unscented_dimension(method::Unscented, d) = check_unscented_dimension(getextra(method), d)
-check_unscented_dimension(::Nothing, d) = nothing
-check_unscented_dimension(extra::UnscentedExtra, d) =
-    getL(extra) == d || throw(DimensionMismatch("`Unscented($(getL(extra)))` was built for dimension $(getL(extra)), not $d"))
-
 function sigma_points_weights(method::Unscented, m::Real, V::Real)
     check_unscented_dimension(method, 1)
     alpha = getα(method)
