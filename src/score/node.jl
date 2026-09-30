@@ -6,8 +6,9 @@ export FactorBoundFreeEnergy
 Selects a factor node's contribution to the Bethe free energy in [`score`](@ref). A stochastic
 node's is its average energy under its local marginals, less the sum of their entropies; a
 deterministic node's is minus the entropy of its second cluster: a single input's marginal, or the
-joint over its inputs, which its marginal rule computes from the latest messages on all of its
-interfaces once none of them is an initial message.
+joint over its inputs. Under the engine's default dependency scheme its marginal rule computes that
+joint from the latest messages on all of its interfaces once none of them is an initial message;
+a node whose algorithm declares its dependencies gives the joint its rules read, the cluster's.
 
 The average energy is the one the node's rule package declares for its clusters under the
 node's algorithm, found with
@@ -37,13 +38,15 @@ end
 
 ## Deterministic mapping
 
-# Minus the entropy of the joint over the inputs, the node's second cluster, computed by its
-# marginal rule from the latest messages on all of its interfaces once none of them is an initial
-# message, and again whenever they all have been renewed. Not from the cluster's own stream: that
-# one updates as soon as some inputs are renewed, so in a graph with loops it can hold a joint
-# computed from an initial message, which no later update replaces until every input is renewed,
-# and the free energy of the iterations before convergence would not be that of one set of
-# messages.
+# Minus the entropy of the joint over the inputs, the node's second cluster. Under the default
+# scheme it is computed by the node's marginal rule from the latest messages on all of its
+# interfaces once none of them is an initial message, and again whenever they all have been
+# renewed. Not from the cluster's own stream: that one updates as soon as some inputs are renewed,
+# so in a graph with loops it can hold a joint computed from an initial message, which no later
+# update replaces until every input is renewed, and the free energy of the iterations before
+# convergence would not be that of one set of messages. A node whose algorithm declares its
+# dependencies has rules that read the cluster, which may be computed by an impure rule, such as
+# Delta's under `CVIProjection`: its term is that joint's, from the cluster's stream.
 function score(
         ::Type{T},
         ::FactorBoundFreeEnergy,
@@ -53,13 +56,14 @@ function score(
         stream_postprocessors,
     ) where {T <: CountingReal}
     joint = last(get_node_local_marginals(getlocalclusters(node)))
+    fform = functionalform(node)
+    declared = MessagePassingRulesBase.dependencies_spec(fform, algorithm) !== nothing
     # A single input is its variable's own marginal, which is never behind its messages.
-    isjoint(joint) || return postprocess_stream_of_scores(
+    (declared || !isjoint(joint)) && return postprocess_stream_of_scores(
         stream_postprocessors,
         get_stream_of_marginals(joint) |> skip_initial() |> map(T, (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))),
     )
     interfaces = Tuple(getinterfaces(node))
-    fform = functionalform(node)
     mapping = marginal_mapping(
         fform,
         MessagePassingRulesBase.ClusterTarget(name(joint)),

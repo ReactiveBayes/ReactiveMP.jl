@@ -88,7 +88,7 @@
     final(histories::Vector{<:Vector}) = map(final, histories)
 
     """
-        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true)
+        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing)
 
     Activate `graph` as RxInfer does (variables, each followed by its entry in
     `initial_marginals` and then in `initial_messages` (variable => distribution), the latter set
@@ -96,8 +96,9 @@
     `posteriors` (name => variable or vector of variables), then to the `predictions` of data
     variables, then to the free energy, and feed `data` (variable => value, or vectors of
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
+    `activated`, if given, is called once the nodes are activated, before anything is subscribed to.
     """
-    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true)
+    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing)
         trace = RuleCall[]
         iteration = Ref(0)
         callbacks = (
@@ -125,6 +126,7 @@
         for node in graph.nodes
             activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], callbacks, logscales))
         end
+        activated === nothing || activated()
 
         histories = Dict{String, Any}()
         subscriptions = Any[]

@@ -251,6 +251,60 @@ end
     @test result.free_energy ≈ [10.493536582061285, 9.678226605161996] atol = 1.0e-10
 end
 
+@testitem "engine:a node whose algorithm declares its dependencies: the free energy reads its joint" tags = [:engine] setup = [EngineHarness] begin
+    # `Summed` is `+` under an algorithm of its own that declares its dependencies, as Delta's
+    # does: its rules may read the joint over the inputs, which an impure rule may compute, so
+    # the free energy takes that joint from the cluster and runs the marginal rule no extra time.
+    # Something else reads the joint too, as RxInfer's `force_marginal_computation` does.
+    using BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StandardMessagePassingRules, MessagePassingRulesBase, Rocket
+    H = EngineHarness
+
+    struct Summed end
+    struct Declared <: AbstractAlgorithm end
+    @define_factor_node(
+        node = Summed, type = Deterministic, interfaces = [:out, :in1, :in2], algorithm = Declared,
+        dependencies = [:out => (m[:in1], m[:in2]), :in1 => (m[:out], m[:in2]), :in2 => (m[:out], m[:in1])],
+    )
+    @define_message_update_rule(
+        node = Summed, target = :out, args = (m[:in1]::NormalMeanVariance, m[:in2]::NormalMeanVariance),
+        body = (args) -> NormalMeanVariance(mean(args.m[:in1]) + mean(args.m[:in2]), var(args.m[:in1]) + var(args.m[:in2])),
+    )
+    for (target, other) in ((:in1, :in2), (:in2, :in1))
+        @eval @define_message_update_rule(
+            node = Summed, target = $(QuoteNode(target)), args = (m[:out]::NormalMeanVariance, m[$(QuoteNode(other))]::NormalMeanVariance),
+            body = (args) -> NormalMeanVariance(mean(args.m[:out]) - mean(args.m[$(QuoteNode(other))]), var(args.m[:out]) + var(args.m[$(QuoteNode(other))])),
+        )
+    end
+    calls = Ref(0)
+    @define_marginal_update_rule(
+        node = Summed, target = (:in1, :in2), pure = false,
+        args = (m[:out]::NormalMeanVariance, m[:in1]::NormalMeanVariance, m[:in2]::NormalMeanVariance),
+        body = (args) -> begin
+            calls[] += 1
+            return MvNormalMeanCovariance([mean(args.m[:in1]), mean(args.m[:in2])], Diagonal([var(args.m[:in1]), var(args.m[:in2])]))
+        end,
+    )
+
+    function calls_of(free_energy)
+        graph = H.Graph()
+        a, b, s, y = H.random!(graph), H.random!(graph), H.random!(graph), H.data!(graph)
+        H.node!(graph, NormalMeanVariance, [(:out, a), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+        H.node!(graph, NormalMeanVariance, [(:out, b), (:μ, H.constant!(graph, 1.0)), (:v, H.constant!(graph, 2.0))])
+        summed = H.node!(graph, Summed, [(:out, s), (:in1, a), (:in2, b)])
+        H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, s), (:v, H.constant!(graph, 0.5))])
+        calls[] = 0
+        joint = last(ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(summed)))
+        watched = Ref{Any}(nothing)
+        activated = () -> (watched[] = subscribe!(ReactiveMP.get_stream_of_marginals(joint), (_) -> nothing))
+        H.run(graph; data = [y => 3.0], iterations = 3, posteriors = [:a => a], free_energy, activated)
+        unsubscribe!(watched[])
+        return calls[]
+    end
+    with_energy = calls_of(true)
+    @test with_energy > 0
+    @test with_energy == calls_of(false)
+end
+
 @testitem "engine:a transition with one control: exact posterior by enumeration" tags = [:engine] setup = [EngineHarness] begin
     # s ~ DiscreteTransition(x, B, u) with the group `T` of one member, the observed control
     # `u`, and y ~ DiscreteTransition(s, A) observed: the member's cluster is `u`'s own marginal,
