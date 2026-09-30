@@ -164,7 +164,7 @@ end
 # One line, however the value shows itself.
 function compact_repr(value; limit = 120, io = nothing)
     context = io === nothing ? (:compact => true, :limit => true) : IOContext(io, :compact => true, :limit => true)
-    text = replace(strip(sprint(show, value; context)), r"\s*\n\s*" => " ")
+    text = prettify_modules(replace(strip(sprint(show, value; context)), r"\s*\n\s*" => " "))
     return length(text) > limit ? first(text, limit - 1) * "…" : text
 end
 

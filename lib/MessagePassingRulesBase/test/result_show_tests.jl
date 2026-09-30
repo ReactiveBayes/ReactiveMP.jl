@@ -165,3 +165,37 @@ end
     card = R.html(result)
     @test count("class=\"edge target\"", card) == 1 && count("class=\"edge message\"", card) == 2
 end
+
+@testitem "display:generated modules are dropped from printed names" tags = [:base] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: prettify_modules, list_rules
+
+    @test prettify_modules("Main.var\"__atexample__named__first-node\".Gaussian") == "Gaussian"
+    @test prettify_modules("Tuple{Main.var\"##TestItem#12\".Gauss, Float64}") == "Tuple{Gauss, Float64}"
+    # A package's module, and one a user defines in `Main`, stay.
+    @test prettify_modules("q[:v]::BayesBase.PointMass") == "q[:v]::BayesBase.PointMass"
+    @test prettify_modules("Main.MyPackage.Node") == "Main.MyPackage.Node"
+
+    # A node and a type declared in a module named as Documenter names its sandboxes.
+    sandbox = Core.eval(Main, :(module var"__atexample__named__prettify" end))
+    Core.eval(sandbox, :(using MessagePassingRulesBase))
+    Core.eval(
+        sandbox, quote
+            struct Gauss end
+            struct Shift end
+            @define_factor_node(node = Shift, type = Deterministic, interfaces = [:out, :in])
+            @define_message_update_rule(node = Shift, target = :out, args = (m[:in]::Gauss,), body = (args) -> args.m[:in])
+        end
+    )
+    spec = only(list_rules(sandbox.Shift, :out))
+    for text in (sprint(show, MIME"text/plain"(), spec), sprint(show, MIME"text/html"(), spec), sprint(show, MIME"text/plain"(), MessagePassingRulesBase.nodespec(sandbox.Shift)))
+        @test !contains(text, "__atexample__")
+    end
+    @test contains(sprint(show, MIME"text/plain"(), spec), "m[:in]::Gauss")
+    err = try
+        call_message_update_rule(sandbox.Shift, :out; m = (in = 1.0,))
+    catch e
+        e
+    end
+    @test !contains(sprint(showerror, err), "__atexample__")
+end

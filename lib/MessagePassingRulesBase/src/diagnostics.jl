@@ -70,7 +70,9 @@ function print_node_hint(io::IO, nf::RuleNotFound)
     return nothing
 end
 
-function Base.showerror(io::IO, err::RuleNotFoundError)
+Base.showerror(io::IO, err::RuleNotFoundError) = print(io, prettify_modules(sprint(show_rule_not_found, err; context = io)))
+
+function show_rule_not_found(io::IO, err::RuleNotFoundError)
     nf = err.notfound
     print(io, "RuleNotFoundError: no ", kind_label(nf.kind), " for ", node_name(nf.node))
     nf.target === nothing || print(io, " towards ", nf.target)
@@ -155,7 +157,7 @@ function fit_report(spec::RuleSpec, algorithm, provided)
         any(i -> i.container === c && i.key == k, spec.inputs) && continue
         push!(lines, (false, "$(input_label(c, k, k isa Tuple ? :cluster : :single))::$t  provided but not consumed"))
     end
-    return lines
+    return [(ok, prettify_modules(text)) for (ok, text) in lines]
 end
 
 """
@@ -171,7 +173,7 @@ struct RuleIssue
 end
 
 Base.show(io::IO, issue::RuleIssue) =
-    print(io, "RuleIssue(", issue.rule.file, ":", issue.rule.line, ": ", issue.message, ")")
+    print(io, "RuleIssue(", issue.rule.file, ":", issue.rule.line, ": ", prettify_modules(issue.message), ")")
 
 """
     check_rules(modules::Module...) -> Vector{RuleIssue}

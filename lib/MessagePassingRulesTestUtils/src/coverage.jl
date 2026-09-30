@@ -21,7 +21,7 @@ struct RuleCoverageGap
     message::String
 end
 
-Base.show(io::IO, gap::RuleCoverageGap) = print(io, "RuleCoverageGap(", gap.message, ")")
+Base.show(io::IO, gap::RuleCoverageGap) = print(io, "RuleCoverageGap(", MessagePassingRulesBase.prettify_modules(gap.message), ")")
 
 """
     check_rule_coverage(modules...) -> Vector{RuleCoverageGap}

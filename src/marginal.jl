@@ -63,7 +63,7 @@ Marginal(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) 
     Marginal(data, is_clamped, is_initial, annotations, nothing)
 
 function Base.show(io::IO, marginal::Marginal)
-    print(io, "Marginal(", getdata(marginal), ")")
+    print(io, "Marginal(", MessagePassingRulesBase.prettify_modules(sprint(print, getdata(marginal); context = io)), ")")
     marginal.logscale === nothing || print(io, " with logscale = ", marginal.logscale)
     ann = getannotations(marginal)
     return if !isempty(ann)

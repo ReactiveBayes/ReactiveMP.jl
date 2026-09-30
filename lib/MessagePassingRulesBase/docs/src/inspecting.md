@@ -64,6 +64,7 @@ MessagePassingRulesBase.list_rules
 MessagePassingRulesBase.RuleCoverage
 MessagePassingRulesBase.rule_coverage
 MessagePassingRulesBase.visualize_spec
+MessagePassingRulesBase.prettify_modules
 ```
 
 ## Checking the rules

@@ -72,7 +72,7 @@ end
     nf = find_message_rule(A.Gauss, Target(:out), A.Plain(), args)
     @test nf isa RuleNotFound && nf.algorithm === A.Plain()
     text = sprint(showerror, RuleNotFoundError(nf))
-    @test contains(text, "under $(A.Plain())")
+    @test contains(text, "under $(MessagePassingRulesBase.prettify_modules(string(A.Plain())))")
     # The default rule it would have inherited is a near miss, with the algorithm accepted.
     @test contains(text, "type mismatch")
     @test contains(text, "✓ algorithm $(DefaultAlgorithm)")

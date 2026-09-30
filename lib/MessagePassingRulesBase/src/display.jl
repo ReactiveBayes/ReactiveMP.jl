@@ -9,7 +9,22 @@ kind_label(kind) = kind === :average_energy ? "average energy" : "$kind rule"
 
 # A value as `io` would print it: a type defined in a module other than the one `io` shows from
 # is qualified only as far as that module requires, as at the REPL. Without `io`, as `string`.
-shown(io, x) = io === nothing ? string(x) : sprint(print, x; context = io)
+shown(io, x) = prettify_modules(io === nothing ? string(x) : sprint(print, x; context = io))
+
+# A module Julia generates, rather than one a package defines: Documenter's sandboxes,
+# `Main.var"__atexample__named__first-node"`, a test item's, a `gensym`'d one. Such a module means
+# nothing to a reader, so a printed name drops it; a package's module, `ExponentialFamily.`,
+# stays. A generated name is quoted with `var"…"`, starts with `__`, or contains a `#`.
+const GENERATED_MODULE = r"(?:\bMain\.)?(?:var\"[^\"]*\"|__[A-Za-z0-9_]*|[A-Za-z0-9_]*#[A-Za-z0-9_#]*)\.(?=[A-Za-z_]|var\")"
+
+"""
+    prettify_modules(text::AbstractString) -> String
+
+`text`, a printed name, type or value, without the modules Julia generates: Documenter's
+sandboxes (`Main.var"__atexample__named__page".Gaussian` becomes `Gaussian`), test items' and
+`gensym`'d modules. A package's module stays. The displays of this package print through it.
+"""
+prettify_modules(text::AbstractString) = replace(text, GENERATED_MODULE => "")
 
 function rule_heading(spec::RuleSpec, io = nothing)
     heading = "$(kind_label(spec.kind)) for $(node_name(spec.node))"
@@ -84,12 +99,12 @@ end
 
 type_label(spec::NodeSpec) = spec.type isa Stochastic ? "stochastic" : "deterministic"
 
-Base.show(io::IO, spec::NodeSpec) = print(io, "NodeSpec(", spec.node, ", ", type_label(spec), ")")
+Base.show(io::IO, spec::NodeSpec) = print(io, "NodeSpec(", shown(io, spec.node), ", ", type_label(spec), ")")
 
 function Base.show(io::IO, ::MIME"text/plain", spec::NodeSpec)
-    println(io, "NodeSpec: ", spec.node, " (", type_label(spec), ")")
+    println(io, "NodeSpec: ", shown(io, spec.node), " (", type_label(spec), ")")
     println(io, "  interfaces:        ", join(map(interface_label, spec.interfaces), ", "))
-    println(io, "  default algorithm: ", spec.algorithm)
+    println(io, "  default algorithm: ", shown(io, spec.algorithm))
     println(io, "  static inputs:     ", spec.static_inputs)
     isempty(spec.matched_groups) || println(io, "  matched groups:    ", join(map(g -> join(g, " = "), spec.matched_groups), ", "))
     spec.min_group_length == 1 || println(io, "  min group length:  ", spec.min_group_length)
@@ -140,10 +155,10 @@ end
 partition_label(spec::DependenciesSpec) =
     spec.partition === nothing ? "from the factorisation" : join(map(repr, spec.partition), ", ")
 
-Base.show(io::IO, spec::DependenciesSpec) = print(io, "DependenciesSpec(", spec.node, ", ", spec.algorithm, ")")
+Base.show(io::IO, spec::DependenciesSpec) = print(io, "DependenciesSpec(", shown(io, spec.node), ", ", shown(io, spec.algorithm), ")")
 
 function Base.show(io::IO, ::MIME"text/plain", spec::DependenciesSpec)
-    println(io, "DependenciesSpec: ", spec.node, " under ", spec.algorithm)
+    println(io, "DependenciesSpec: ", shown(io, spec.node), " under ", shown(io, spec.algorithm))
     width = maximum(length ∘ dependency_target_label, spec.targets; init = 0)
     for entry in spec.targets
         println(io, "  ", rpad(dependency_target_label(entry), width), " ⇐ ", dependency_inputs_label(entry))
@@ -175,7 +190,7 @@ function Base.show(io::IO, ::MIME"text/html", spec::DependenciesSpec)
     return nothing
 end
 
-Base.show(io::IO, coverage::RuleCoverage) = print(io, "RuleCoverage(", coverage.node, ")")
+Base.show(io::IO, coverage::RuleCoverage) = print(io, "RuleCoverage(", shown(io, coverage.node), ")")
 
 coverage_cell(coverage, row, algorithm) =
     (n = get(coverage.counts, (row, algorithm), 0); n == 0 ? "" : n == 1 ? "✓" : "✓×$n")
@@ -206,7 +221,7 @@ parameter_label(parameter::Type) = string(parameter)
 parameter_label(parameter) = repr(parameter)
 
 function Base.show(io::IO, ::MIME"text/plain", coverage::RuleCoverage)
-    println(io, "Rule coverage for ", coverage.node)
+    println(io, "Rule coverage for ", shown(io, coverage.node))
     names = map(algorithm_label, coverage.algorithms)
     rowwidth = maximum(length, coverage.rows; init = 0)
     widths = map(name -> max(length(name), 3), names)

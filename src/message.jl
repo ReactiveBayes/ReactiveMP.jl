@@ -171,7 +171,7 @@ getdata(::Tuple{}) = ()
 getdata(messages::AbstractArray{<:Message}) = map(getdata, messages)
 
 function show(io::IO, message::Message)
-    print(io, "Message(", getdata(message), ")")
+    print(io, "Message(", MessagePassingRulesBase.prettify_modules(sprint(print, getdata(message); context = io)), ")")
     message.logscale === nothing || print(io, " with logscale = ", message.logscale)
     ann = getannotations(message)
     return if !isempty(ann)
