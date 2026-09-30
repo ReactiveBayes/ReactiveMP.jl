@@ -442,14 +442,16 @@ end
 
         my1, Vy1 = first(my), first(Vy)
 
-        AE = -0.5mean(log, q_γ) + 0.5log2π +
-            0.5 * mγ * (
-            Vy1 + my1^2 - 2 * mθ' * mx * my1 +
-                trace_product(Vθ, Vx) +
-                dot(mx, Vθ, mx) +
-                dot(mθ, Vx, mθ) +
-                abs2(dot(mθ, mx))
-        )
+        AE = (
+            -mean(log, q_γ) + log2π +
+                mγ * (
+                Vy1 + my1^2 - 2 * mθ' * mx * my1 +
+                    trace_product(Vθ, Vx) +
+                    dot(mx, Vθ, mx) +
+                    dot(mθ, Vx, mθ) +
+                    abs2(dot(mθ, mx))
+            )
+        ) / 2
 
         if is_multivariate(algo)
             AE += entropy(q_y)

@@ -37,8 +37,10 @@ using MessagePassingRulesBase: AbstractAlgorithm
 using BayesBase: TerminalProdArgument, promote_samplefloattype
 using FastCholesky: cholinv
 using LinearAlgebra: I, mul!
+using Compat: @compat
 
 export BIFM, BIFMHelper, BIFMSmoother
+@compat public BIFMFreeEnergyError
 
 include("bifm.jl")
 include("bifm_helper.jl")

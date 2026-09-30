@@ -3736,7 +3736,9 @@ wait for the release):
   `approximate_meancov` keeps the input's float type and `Unscented(dim)` checks the dimension;
   in Standard, HalfNormal's and Poisson's energies keep the float type, Categorical towards `p`
   declares the exact `log B(q + 1)` for any `q_out` (not only one-hot), and the Wishart
-  MvNormalMeanPrecision rules take any scale matrix.
+  MvNormalMeanPrecision rules take any scale matrix; AR's mean-field energy keeps the float type,
+  BIFM's documented error is public. Dropped after checking: GCV's product in the reverse order,
+  which BayesBase's `GenericProd` already resolves by swapping the pair.
 - *The documentation overhaul — done* (user, 2026-09-30): every site readable by a
   student, every snippet run by the build, the rich display explaining, two migration guides
   (rule authors here, model authors in RxInfer), and the vague error messages met on the way

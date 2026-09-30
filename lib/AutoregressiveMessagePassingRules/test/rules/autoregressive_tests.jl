@@ -5,9 +5,8 @@
 
     diageye(n) = Matrix{Float64}(I, n, n)
 
-    # Compared without type promotion: `0.5log2π` is a Float64 literal.
     @test_average_energy(
-        node = AR, algorithm = ARVMP(Univariate, 1, ARsafe()), check_type_promotion = false,
+        node = AR, algorithm = ARVMP(Univariate, 1, ARsafe()),
         cases = [
             (q = (y = NormalMeanVariance(0.0, 1.0), x = NormalMeanVariance(0.0, 1.0), θ = NormalMeanVariance(0.0, 1.0), γ = GammaShapeRate(2.0, 3.0)),) => 1.92351917665,
             (q = (y = MvNormalMeanCovariance(zeros(2), diageye(2)), x = MvNormalMeanCovariance(zeros(2), diageye(2)), θ = MvNormalMeanCovariance(zeros(2), diageye(2)), γ = GammaShapeRate(2.0, 3.0)),) => 2.25685250999,
