@@ -193,6 +193,14 @@ end
     @test clusterkey((1, 3), interfaces) === (:a, :c)
     @test clusterkey((2, 3), interfaces) === (:b, :c)
     @test clusterkey((1, 2, 3), interfaces) === (:a, :b, :c)
+
+    # A group of one member alone in a cluster: the joint over the group, as a deterministic
+    # node's inputs are, or the member's own marginal, as in a stochastic node.
+    import ReactiveMP: IndexedNodeInterface
+    grouped = (NodeInterface(:out, randomvar()), IndexedNodeInterface(1, NodeInterface(:in, randomvar())))
+    @test clusterkey((2,), grouped) === (:in,)
+    @test clusterkey((2,), grouped; lone_group_joint = false) === :in
+    @test clusterkey((1, 2), grouped; lone_group_joint = false) === (:out, :in)
 end
 
 @testitem "Correct initialization of clusters" tags = [:nodes] begin

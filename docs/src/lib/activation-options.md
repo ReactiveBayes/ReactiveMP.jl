@@ -160,6 +160,36 @@ with no closed form. Its log-density agrees with the exact posterior's up to a c
 message a fallback computed has an undefined log scale. A marginal rule and an average energy
 have no fallback.
 
+## [Initial messages](@id lib-activation-options-initial-messages)
+
+A rule that reads the message on its own edge needs that message before the first update. A node
+may declare one, [`initial_messages`](@extref MessagePassingRulesBase.initial_messages), which the
+engine sets on its inbound message wherever nothing is set yet. The option `initial_messages`
+sets them for one node: a `NamedTuple` keyed by interface name or alias, with a tuple of one
+message per member for a group. It replaces the node's declared message and any message set on
+that edge before. An interface on a constant is left alone.
+
+The option concerns the node's own edge only. Here two `Gaussian` nodes share the variable `x`,
+and only the first is given a message on its `μ` edge:
+
+```@example options
+x = randomvar(label = :x)
+y1, y2 = datavar(label = :y1), datavar(label = :y2)
+first_node = factornode(Gaussian, [(:out, y1), (:μ, x), (:v, constvar(1.0))])
+second_node = factornode(Gaussian, [(:out, y2), (:μ, x), (:v, constvar(1.0))])
+activate!(x, RandomVariableActivationOptions())
+foreach(y -> activate!(y, DataVariableActivationOptions()), (y1, y2))
+activate!(first_node, FactorNodeActivationOptions(; initial_messages = (μ = NormalMeanVariance(0.0, 100.0),)))
+activate!(second_node, FactorNodeActivationOptions())
+
+on_μ(node) = Rocket.getrecent(ReactiveMP.get_stream_of_inbound_messages(ReactiveMP.getinterface(node, 2)))
+on_μ(first_node), on_μ(second_node)
+```
+
+The first node's `μ` edge starts with the message, and the second node's has none yet. In RxInfer
+this is `where { initial_messages = (μ = …,) }` on the node. `@initialization μ(x) = …` sets the
+message on every edge of `x` instead.
+
 ## [Log scales](@id lib-activation-options-logscales)
 
 With `logscales = true`, the node's messages carry the

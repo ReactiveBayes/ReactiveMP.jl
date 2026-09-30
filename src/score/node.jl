@@ -5,7 +5,9 @@ export FactorBoundFreeEnergy
 
 Selects a factor node's contribution to the Bethe free energy in [`score`](@ref). A stochastic
 node's is its average energy under its local marginals, less the sum of their entropies; a
-deterministic node's is minus the entropy of the joint over its inputs, its second cluster.
+deterministic node's is minus the entropy of its second cluster: a single input's marginal, or the
+joint over its inputs, which its marginal rule computes from the latest messages on all of its
+interfaces once none of them is an initial message.
 
 The average energy is the one the node's rule package declares for its clusters under the
 node's algorithm, found with
@@ -35,8 +37,13 @@ end
 
 ## Deterministic mapping
 
-# Minus the entropy of the joint over the inputs, the node's second cluster, each time it
-# updates.
+# Minus the entropy of the joint over the inputs, the node's second cluster, computed by its
+# marginal rule from the latest messages on all of its interfaces once none of them is an initial
+# message, and again whenever they all have been renewed. Not from the cluster's own stream: that
+# one updates as soon as some inputs are renewed, so in a graph with loops it can hold a joint
+# computed from an initial message, which no later update replaces until every input is renewed,
+# and the free energy of the iterations before convergence would not be that of one set of
+# messages.
 function score(
         ::Type{T},
         ::FactorBoundFreeEnergy,
@@ -46,7 +53,31 @@ function score(
         stream_postprocessors,
     ) where {T <: CountingReal}
     joint = last(get_node_local_marginals(getlocalclusters(node)))
-    stream_of_scores = get_stream_of_marginals(joint) |> skip_initial() |> map(T, (marginal) -> convert(T, -score(DifferentialEntropy(), marginal)))
+    # A single input is its variable's own marginal, which is never behind its messages.
+    isjoint(joint) || return postprocess_stream_of_scores(
+        stream_postprocessors,
+        get_stream_of_marginals(joint) |> skip_initial() |> map(T, (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))),
+    )
+    interfaces = Tuple(getinterfaces(node))
+    fform = functionalform(node)
+    mapping = marginal_mapping(
+        fform,
+        MessagePassingRulesBase.ClusterTarget(name(joint)),
+        input_names(map(interface -> input_label(node, interface), interfaces)),
+        nothing,
+        algorithm,
+        node,
+        EngineDiagnostics(),
+        node_context(node),
+    )
+    messages = combineLatest(map(interface -> get_stream_of_inbound_messages(interface) |> skip_initial(), interfaces), PushNew())
+    entropy = let mapping = mapping
+        (messages) -> begin
+            marginal = has_missing_inputs(messages) ? missing : compute_marginal(mapping, messages, nothing)
+            return convert(T, -score(DifferentialEntropy(), Marginal(marginal, false, false)))
+        end
+    end
+    stream_of_scores = with_statics(node, messages) |> map(T, entropy)
     return postprocess_stream_of_scores(stream_postprocessors, stream_of_scores)
 end
 

@@ -39,11 +39,14 @@ Base.show(io::IO, marginal::FactorNodeLocalMarginal) =
 ## FactorNodeLocalClusters
 
 """
-    ReactiveMP.FactorNodeLocalClusters(interfaces, factorization::Tuple)
+    ReactiveMP.FactorNodeLocalClusters(interfaces, factorization::Tuple; lone_group_joint = true)
 
 The clusters of a factor node: the factorisation, as tuples of positions into `interfaces`, and
 one [`ReactiveMP.FactorNodeLocalMarginal`](@ref) per cluster, keyed with
-[`ReactiveMP.clusterkey`](@ref).
+[`ReactiveMP.clusterkey`](@ref). `lone_group_joint` says whether a cluster that is a whole group
+of one member, and nothing else, is the joint over the group, as a deterministic node's inputs
+are; [`factornode`](@ref) passes `false` for a stochastic node, where such a cluster is the
+member's own marginal.
 """
 struct FactorNodeLocalClusters{M, F}
     marginals::M
@@ -65,8 +68,8 @@ getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) =
     clusters.factorization[index]
 
-function FactorNodeLocalClusters(interfaces::Union{AbstractVector, Tuple}, factorization::Tuple)
-    marginals = map(cluster -> FactorNodeLocalMarginal(clusterkey(cluster, interfaces)), factorization)
+function FactorNodeLocalClusters(interfaces::Union{AbstractVector, Tuple}, factorization::Tuple; lone_group_joint::Bool = true)
+    marginals = map(cluster -> FactorNodeLocalMarginal(clusterkey(cluster, interfaces; lone_group_joint)), factorization)
     return FactorNodeLocalClusters{typeof(marginals), typeof(factorization)}(marginals, factorization)
 end
 
@@ -75,18 +78,21 @@ clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) =
 
 
 """
-    ReactiveMP.clusterkey(cluster::Tuple{Vararg{Int}}, interfaces)
+    ReactiveMP.clusterkey(cluster::Tuple{Vararg{Int}}, interfaces; lone_group_joint = true)
 
 The key a cluster of interface positions is read by:
 
 - the name of its only interface, `:μ`, for a cluster of one interface, which shares its
   variable's marginal;
 - otherwise the tuple of its members' names, a joint, in which a group whose members are all in
-  the cluster appears once, by its name: `(:in,)` is the joint over the group `in`, even of one
-  member. A joint holding only some of a group's members names each as `(group, index)`,
-  `(:out, (:T, 1))`.
+  the cluster appears once, by its name: `(:in,)` is the joint over the group `in`. A joint
+  holding only some of a group's members names each as `(group, index)`, `(:out, (:T, 1))`.
+
+A cluster that is a whole group of one member, and nothing else, is the joint over the group,
+`(:in,)`, as a deterministic node's inputs are, with `lone_group_joint = true`; with `false`, as
+in a stochastic node, it is a cluster of one interface, `:in`.
 """
-function clusterkey(cluster::Tuple{Vararg{Int}}, interfaces)
+function clusterkey(cluster::Tuple{Vararg{Int}}, interfaces; lone_group_joint::Bool = true)
     members = map(i -> interfaces[i], cluster)
     names = Union{Symbol, Tuple{Symbol, Int}}[]
     for member in members
@@ -98,8 +104,8 @@ function clusterkey(cluster::Tuple{Vararg{Int}}, interfaces)
             push!(names, name(member))
         end
     end
-    return isone(length(cluster)) && isone(length(names)) && !(first(members) isa IndexedNodeInterface && whole_group(first(members), members, interfaces)) ?
-        only(names) : Tuple(names)
+    lone_group = first(members) isa IndexedNodeInterface && whole_group(first(members), members, interfaces)
+    return isone(length(cluster)) && isone(length(names)) && !(lone_group_joint && lone_group) ? only(names) : Tuple(names)
 end
 
 # Whether every member of `member`'s group is among `members`.

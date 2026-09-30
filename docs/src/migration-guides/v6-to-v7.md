@@ -288,7 +288,9 @@ getresult(call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) =>
   `MessagePassingRulesApproximations`.
 - **How a rule computes it numerically**, such as a matrix correction or a random number
   generator, is a **context service**, declared with `ctx = (:matrix_correction,)` and read as
-  `matrix_correction(ctx, default)` or `ctx.rng`. `default_meta` becomes the rule's `default`.
+  `matrix_correction(ctx, default)` or `ctx.rng`. A generator that lived in a meta is given to
+  the nodes as the activation option `context`, `(rng = …,)` ([Services: the
+  context](@ref lib-activation-options-context)). `default_meta` becomes the rule's `default`.
 
 ## Functional dependencies
 
@@ -301,7 +303,8 @@ rule the messages in its own cluster and the marginals of the others, needs no d
 | a node with its own `functional_dependencies` | an algorithm of the node's own, with `dependencies = [...]` on [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node) |
 | `RequireMessageFunctionalDependencies`, `RequireMarginalFunctionalDependencies`, `RequireEverythingFunctionalDependencies` | for one model, a [`DefaultAlgorithmExtension`](@extref MessagePassingRulesBase.DefaultAlgorithmExtension) with its own dependencies ([`@define_dependencies`](@extref MessagePassingRulesBase.@define_dependencies)); for a node, its own algorithm |
 | `RequireMarginalFunctionalDependencies(a = nothing)`, keeping the default and adding `q(a)` | `:a => (default, q[:a])`, with `default` alone for the other targets ([`@define_dependencies`](@extref MessagePassingRulesBase.@define_dependencies)) |
-| RxInfer's `where { dependencies = … }` | choosing the node's algorithm |
+| RxInfer's `where { dependencies = RequireMessageFunctionalDependencies(in = d) }`, a start for the message on this node's own edge | RxInfer's `where { initial_messages = (in = d,) }`, the activation option `initial_messages` ([Initial messages](@ref lib-activation-options-initial-messages)); `@initialization μ(x) = d` starts the messages on every edge of `x` instead, which is not the same |
+| RxInfer's `where { dependencies = … }`, otherwise | choosing the node's algorithm |
 
 A target's inputs are subscribed to in the order they are declared, which is the update
 schedule in variational message passing.
@@ -311,6 +314,7 @@ schedule in variational message passing.
 | v6 | v7 |
 |---|---|
 | `@call_rule Node(:out, Marginalisation) (m_x = …,)` | [`getresult`](@extref MessagePassingRulesBase.getresult)`(call_message_update_rule(Node, :out; m = (x = …,)))`, or [`@call_message_update_rule`](@extref MessagePassingRulesBase.@call_message_update_rule) |
+| `@call_rule typeof(f)(:out, Marginalisation) (…)`, for a function node | the node is the function itself, `call_message_update_rule(f, :out; …)`; `typeof(f)` is an `ArgumentError` saying so |
 | `@call_marginalrule` | [`call_marginal_update_rule`](@extref MessagePassingRulesBase.call_marginal_update_rule), [`@call_marginal_update_rule`](@extref MessagePassingRulesBase.@call_marginal_update_rule) |
 | `score(AverageEnergy(), Node, Val{…}(), marginals, meta)` | [`call_average_energy`](@extref MessagePassingRulesBase.call_average_energy)`(Node; q = …)` |
 | a rule calling another rule | both calling a plain helper function |
@@ -319,6 +323,9 @@ schedule in variational message passing.
 | `nodefunction(node, meta, Val(:out))`; a known inverse as `nodefunction(node, meta, (Val(:in), k))` | `getnodefn(ctx.node, Target(:out))`; an inverse is the algorithm's, read from `algo` |
 | `@test_rules` | [`@test_message_update_rule`](@extref MessagePassingRulesTestUtils.@test_message_update_rule) |
 | `ReactiveMP.rank1update`, `mul_trace`, `negate_inplace!`, `mul_inplace!`, `v_a_vT` | MessagePassingRulesBase's [math helpers](@extref MessagePassingRulesBase math-helpers): [`add_outer`](@extref MessagePassingRulesBase.add_outer), [`trace_product`](@extref MessagePassingRulesBase.trace_product), [`negate!!`](@extref MessagePassingRulesBase.negate!!), [`scale!!`](@extref MessagePassingRulesBase.scale!!), [`scaled_outer`](@extref MessagePassingRulesBase.scaled_outer); public, not exported |
+| `ReactiveMP.approximate(method, f, (d,))`, a distribution | [`approximate`](@extref MessagePassingRulesApproximations Moments-through-a-function)`(method, f, (mean(d),), (cov(d),))`, the mean and covariance, from `MessagePassingRulesApproximations` |
+| `StandardBasisVector(n, k)`, as in `softdot(x, StandardBasisVector(n, k), γ)` | a one-hot vector, `[i == k ? 1.0 : 0.0 for i in 1:n]`: the same results; the type is not public |
+| `ReactiveMP.MatrixCorrectionTools`, and a correction given as a node's meta, `*() -> ClampSingularValues(…)` | the registered package MatrixCorrectionTools; the correction is the service `matrix_correction` of the activation option `context`, `(matrix_correction = ClampSingularValues(…),)`, which reaches every rule of the node that reads it |
 | `diageye` | the same, [`MessagePassingRulesBase.diageye`](@extref), exported by StandardMessagePassingRules |
 | [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()` as the engine's `rulefallback` | the same, from `MessagePassingRulesBase`, as the activation option `rulefallback` ([Rule fallbacks](@ref lib-activation-options-rulefallback)); its message is a [`NodeFunctionLogPdf`](@extref MessagePassingRulesBase.NodeFunctionLogPdf) |
 

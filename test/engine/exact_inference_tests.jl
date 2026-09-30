@@ -224,6 +224,57 @@ end
     @test result.free_energy ≈ fill(-logpdf(MvNormal(Hobs * μ0, Matrix(S)), Yobs), 2) atol = 1.0e-9
 end
 
+@testitem "engine:a loop of sums: each iteration's free energy is that of its messages" tags = [:engine] setup = [EngineHarness] begin
+    # a ~ N(0, 1), b ~ N(0, 100), yᵢ ~ N(a + b, 1) for three observations: every `+` node joins
+    # `a` and `b`, a loop, with `b`'s messages started at N(0, 100). Before convergence the free
+    # energy is the Bethe free energy of the messages at the end of the iteration, each `+`
+    # node's joint over (a, b) computed from all three of its latest messages; the values are that
+    # free energy computed by hand from those messages, iteration by iteration.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules
+    H = EngineHarness
+
+    graph = H.Graph()
+    a, b = H.random!(graph), H.random!(graph)
+    H.node!(graph, NormalMeanVariance, [(:out, a), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, NormalMeanVariance, [(:out, b), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 100.0))])
+    ys = map(1:3) do _
+        s, y = H.random!(graph), H.data!(graph)
+        H.node!(graph, +, [(:out, s), (:in1, a), (:in2, b)])
+        H.node!(graph, NormalMeanVariance, [(:out, y), (:μ, s), (:v, H.constant!(graph, 1.0))])
+        y
+    end
+
+    result = H.run(
+        graph; data = [ys => [25.4, 26.1, 26.3]], iterations = 2, posteriors = [:a => a],
+        initial_messages = [b => NormalMeanVariance(0.0, 100.0)],
+    )
+    @test result.free_energy ≈ [10.493536582061285, 9.678226605161996] atol = 1.0e-10
+end
+
+@testitem "engine:a transition with one control: exact posterior by enumeration" tags = [:engine] setup = [EngineHarness] begin
+    # s ~ DiscreteTransition(x, B, u) with the group `T` of one member, the observed control
+    # `u`, and y ~ DiscreteTransition(s, A) observed: the member's cluster is `u`'s own marginal,
+    # as each member's is in a group of two.
+    using BayesBase, ExponentialFamily, Distributions, StandardMessagePassingRules, DiscreteTransitionMessagePassingRules
+    H = EngineHarness
+    normalised(A) = A ./ sum(A; dims = 1)
+    B = normalised(reshape(Float64.(1:18), 3, 3, 2))
+    A = normalised([4.0 1.0 1.0; 1.0 3.0 1.0; 1.0 1.0 2.0])
+    p = [0.2, 0.5, 0.3]
+
+    graph = H.Graph()
+    x, s, u, y = H.random!(graph), H.random!(graph), H.data!(graph), H.data!(graph)
+    H.node!(graph, Categorical, [(:out, x), (:p, H.constant!(graph, p))])
+    transition = H.node!(graph, DiscreteTransition, [(:out, s), (:in, x), (:a, H.constant!(graph, B)), ((:T, 1), u)])
+    H.node!(graph, DiscreteTransition, [(:out, y), (:in, s), (:a, H.constant!(graph, A))])
+    @test ReactiveMP.name.(ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(transition))) == ((:out, :in), :a, :T)
+
+    result = H.run(graph; data = [u => [0.0, 1.0], y => [0.0, 0.0, 1.0]], iterations = 1, posteriors = [:s => s, :x => x], free_energy = false)
+    joint = [p[i] * B[j, i, 2] * A[3, j] for j in 1:3, i in 1:3]
+    @test probvec(result.posteriors["s"]) ≈ vec(sum(joint; dims = 2)) ./ sum(joint)
+    @test probvec(result.posteriors["x"]) ≈ vec(sum(joint; dims = 1)) ./ sum(joint)
+end
+
 @testitem "engine:beta and uniform priors of bernoulli observations: conjugate posteriors and evidence" tags = [:engine] setup = [EngineHarness] begin
     # p ~ Beta(2, 3) and r ~ Uniform(0, 1) = Beta(1, 1), each with three Bernoulli observations:
     # Beta(a + k, b + n - k), and the evidence B(a + k, b + n - k) / B(a, b).

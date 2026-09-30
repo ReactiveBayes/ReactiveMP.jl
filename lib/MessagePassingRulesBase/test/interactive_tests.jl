@@ -99,6 +99,41 @@ end
     @test contains(html(rule_coverage(S.NMV)), "<table")
 end
 
+@testitem "interactive:a function node named by its type" tags = [:base] begin
+    using MessagePassingRulesBase
+
+    double(x) = 2x
+    @define_factor_node(node = double, type = Deterministic, interfaces = [:out, :in])
+    @define_message_update_rule(node = double, target = :out, args = (m[:in]::Real,), logscale = 0, body = (args) -> 2 * args.m[:in])
+    @define_marginal_update_rule(node = double, target = (:out, :in), args = (m[:out]::Real, m[:in]::Real), body = (args) -> (args.m[:out], args.m[:in]))
+    @define_average_energy(node = double, args = (q[:out]::Real, q[:in]::Real), body = (args) -> 0.0)
+
+    @test getresult(@call_message_update_rule(node = double, target = :out, m = (in = 1.0,))) == 2.0
+
+    # The type of the function, as v6's `@call_rule typeof(f)(...)` wrote it, says what to write
+    # instead, whether the algorithm is the default or given.
+    message = "pass the function itself, `node = double`"
+    for call in (
+            () -> call_message_update_rule(typeof(double), :out; m = (in = 1.0,)),
+            () -> call_message_update_rule(typeof(double), :out; m = (in = 1.0,), algorithm = DefaultAlgorithm()),
+            () -> @call_message_update_rule(node = typeof(double), target = :out, m = (in = 1.0,)),
+            () -> call_marginal_update_rule(typeof(double), (:out, :in); m = (out = 2.0, in = 1.0)),
+            () -> call_average_energy(typeof(double); q = (out = 2.0, in = 1.0)),
+            () -> which_message_update_rule(typeof(double), :out; m = (in = 1.0,)),
+            () -> which_marginal_update_rule(typeof(double), (:out, :in); m = (out = 2.0, in = 1.0)),
+            () -> which_average_energy(typeof(double); q = (out = 2.0, in = 1.0)),
+        )
+        err = try
+            call()
+            nothing
+        catch e
+            e
+        end
+        @test err isa ArgumentError
+        @test contains(sprint(showerror, err), message)
+    end
+end
+
 @testitem "interactive:visualize" tags = [:base] setup = [RepresentativeRules] begin
     using MessagePassingRulesBase: visualize_spec, nodespec
     err = try

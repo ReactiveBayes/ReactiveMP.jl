@@ -63,6 +63,15 @@ function call_resolved(spec, output, algorithm, ctx, args, ann, target)
     return run_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, target)
 end
 
+# A function node is the function itself; its type, `typeof(+)`, is how v6's `@call_rule` named
+# it, and would otherwise fail deep inside the lookup.
+function interactive_node(node)
+    if node isa DataType && node <: Function && isdefined(node, :instance) && !applicable(nodespec, node) && applicable(nodespec, node.instance)
+        throw(ArgumentError("`node = $(node)` names a function node by its type; pass the function itself, `node = $(node.instance)`"))
+    end
+    return node
+end
+
 as_annotations(::Nothing) = NoAnnotations()
 as_annotations(ann::RuleAnnotations) = ann
 as_annotations(store) = RuleAnnotations(out = store)
@@ -72,7 +81,8 @@ as_annotations(store) = RuleAnnotations(out = store)
 const DOC_CALL_NODE = rstrip(
     """
     - `node`: the node, as declared with [`@define_factor_node`](@ref): a type,
-      `NormalMeanVariance`, or a function, `+`.
+      `NormalMeanVariance`, or a function, `+`. A function node is the function itself: its type,
+      `typeof(+)`, is an `ArgumentError` saying so.
     """
 )
 
@@ -177,7 +187,8 @@ $(DOC_CALL_ANN)
 
 $(DOC_CALL_ERRORS)
 """
-function call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), logscale = nothing, algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
+function call_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), logscale = nothing, algorithm = default_algorithm(interactive_node(node)), ctx = RuleContext(), ann = nothing)
+    interactive_node(node)
     resolved_target, args = as_target(target), interactive_args(m, q, clusters, logscale)
     return call_resolved(find_message_rule(node, resolved_target, algorithm, args), nothing, algorithm, ctx, args, as_annotations(ann), resolved_target)
 end
@@ -211,7 +222,8 @@ $(DOC_CALL_ANN)
 
 $(DOC_CALL_ERRORS)
 """
-function call_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
+function call_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(interactive_node(node)), ctx = RuleContext(), ann = nothing)
+    interactive_node(node)
     cluster, args = as_cluster(target), interactive_args(m, q, clusters)
     return call_resolved(find_marginal_rule(node, cluster, algorithm, args), nothing, algorithm, ctx, args, as_annotations(ann), cluster)
 end
@@ -243,7 +255,8 @@ $(DOC_CALL_ANN)
 
 $(DOC_CALL_ERRORS)
 """
-function call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node), ctx = RuleContext(), ann = nothing)
+function call_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(interactive_node(node)), ctx = RuleContext(), ann = nothing)
+    interactive_node(node)
     args = interactive_args(m, q, clusters)
     return call_resolved(find_average_energy(node, algorithm, args), nothing, algorithm, ctx, args, as_annotations(ann), nothing)
 end
@@ -272,7 +285,8 @@ $(DOC_CALL_ALGORITHM)
 When no rule fits, the query throws a [`RuleNotFoundError`](@ref), which lists the closest rules
 and why each does not fit.
 """
-function which_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+function which_message_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(interactive_node(node)))
+    interactive_node(node)
     resolved_target = as_target(target)
     return throw_if_not_found(find_message_rule(node, resolved_target, algorithm, interactive_args(m, q, clusters)))
 end
@@ -301,7 +315,8 @@ $(DOC_CALL_ALGORITHM)
 When no rule fits, the query throws a [`RuleNotFoundError`](@ref), which lists the closest rules
 and why each does not fit.
 """
-function which_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+function which_marginal_update_rule(node, target; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(interactive_node(node)))
+    interactive_node(node)
     return throw_if_not_found(find_marginal_rule(node, as_cluster(target), algorithm, interactive_args(m, q, clusters)))
 end
 
@@ -327,7 +342,8 @@ $(DOC_CALL_ALGORITHM)
 When no energy fits, the query throws a [`RuleNotFoundError`](@ref), which lists the closest
 ones and why each does not fit.
 """
-function which_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(node))
+function which_average_energy(node; m = NamedTuple(), q = NamedTuple(), clusters = (), algorithm = default_algorithm(interactive_node(node)))
+    interactive_node(node)
     return throw_if_not_found(find_average_energy(node, algorithm, interactive_args(m, q, clusters)))
 end
 

@@ -261,3 +261,54 @@ end
     node = seeded(N.Gaussian, [(:out, randomvar()), (:μ, randomvar()), (:v, randomvar())])
     @test getrecent(inbound(node, 2)) === nothing
 end
+
+@testitem "activate! sets the initial messages given for the node" tags = [:nodes] setup = [EngineNodes] begin
+    import ReactiveMP: getinterfaces, get_stream_of_inbound_messages, getdata, is_initial, set_initial_message!, FactorNodeActivationOptions,
+        activate!, RandomVariableActivationOptions, MessageProductContext
+    import Rocket: getrecent
+    N = EngineNodes
+    inbound(node, i) = get_stream_of_inbound_messages(getinterfaces(node)[i])
+    activate_variables!(interfaces) =
+        foreach(((_, v),) -> v isa ReactiveMP.RandomVariable && activate!(v, RandomVariableActivationOptions(nothing, MessageProductContext(), MessageProductContext())), interfaces)
+    function seeded(fform, interfaces, given; before = nothing)
+        node = factornode(fform, interfaces)
+        activate_variables!(interfaces)
+        before === nothing || before(node)
+        activate!(node, FactorNodeActivationOptions(; initial_messages = given))
+        return node
+    end
+
+    # In place of the one the node declares, and of one set before.
+    node = seeded(N.Seeded, [(:out, randomvar()), (:in, randomvar())], (in = 0.25,))
+    @test getdata(getrecent(inbound(node, 2))) == 0.25
+    @test is_initial(getrecent(inbound(node, 2)))
+    @test getrecent(inbound(node, 1)) === nothing
+    node = seeded(N.Seeded, [(:out, randomvar()), (:in, randomvar())], (in = 0.25,); before = node -> set_initial_message!(inbound(node, 2), 2.0))
+    @test getdata(getrecent(inbound(node, 2))) == 0.25
+
+    # By alias; an interface on a constant is left alone.
+    node = seeded(N.Gaussian, [(:out, randomvar()), (:μ, randomvar()), (:v, constvar(1.0))], (mean = 3.0, v = 4.0))
+    @test getdata(getrecent(inbound(node, 2))) == 3.0
+
+    # A group takes one message per member, `nothing` leaving a member alone.
+    node = seeded(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], (m = (1.0, nothing),))
+    @test getdata(getrecent(inbound(node, 3))) == 1.0
+    @test getrecent(inbound(node, 4)) === nothing
+
+    # Only this node's edge: another node on the same variable starts with nothing.
+    x = randomvar()
+    first_interfaces = [(:out, randomvar()), (:μ, x), (:v, randomvar())]
+    second_interfaces = [(:out, randomvar()), (:μ, x), (:v, randomvar())]
+    first_node, second_node = factornode(N.Gaussian, first_interfaces), factornode(N.Gaussian, second_interfaces)
+    activate_variables!(first_interfaces)
+    activate_variables!(filter(((key, _),) -> key !== :μ, second_interfaces))
+    activate!(first_node, FactorNodeActivationOptions(; initial_messages = (μ = 5.0,)))
+    activate!(second_node, FactorNodeActivationOptions())
+    @test getdata(getrecent(inbound(first_node, 2))) == 5.0
+    @test getrecent(inbound(second_node, 2)) === nothing
+
+    # What cannot be one.
+    @test_throws "has no interface or alias `in`" seeded(N.Gaussian, [(:out, randomvar()), (:μ, randomvar()), (:v, randomvar())], (in = 1.0,))
+    @test_throws "one per member, 2 here" seeded(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], (m = 1.0,))
+    @test_throws "is a NamedTuple keyed by interface" seeded(N.Seeded, [(:out, randomvar()), (:in, randomvar())], [:in => 0.25])
+end

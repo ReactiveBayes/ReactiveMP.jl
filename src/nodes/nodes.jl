@@ -190,7 +190,7 @@ function create_factornode(fform, spec::NodeSpec, interfaces, factorisation, nod
     check_group_lengths(fform, spec, processed)
     clusters = collect_factorisation(fform, spec, processed, factorisation)
     check_factorisation(fform, spec, clusters)
-    localclusters = FactorNodeLocalClusters(processed, clusters)
+    localclusters = FactorNodeLocalClusters(processed, clusters; lone_group_joint = isdeterministic(spec.type))
     plan = spec.static_inputs === :fold ? nothing : record_creation_plan!(fform, spec, interfaces, factorisation, processed, localclusters)
     return FactorNode(fform, processed, localclusters, node_function(fform, spec, nodefn, statics), plan)
 end
@@ -471,7 +471,7 @@ function collect_factorisation(fform, spec::NodeSpec, interfaces, factorisation)
 end
 
 """
-    ReactiveMP.FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing, logscales = false)
+    ReactiveMP.FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing, logscales = false, initial_messages = nothing)
     ReactiveMP.FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks)
 
 What activating a [`FactorNode`](@ref) needs. The positional form gives the first four options,
@@ -503,11 +503,17 @@ the others taking their defaults.
   rule that matches, and an error inside a rule propagates;
 - `logscales`: whether the node's messages carry log scales (see [`getlogscale`](@ref)): each
   rule's declared one, with its inputs' ones given to the rules that read them. Default
-  `false`, none, and a rule that reads its inputs' log scales is then an error.
+  `false`, none, and a rule that reads its inputs' log scales is then an error;
+- `initial_messages`: messages to start the node's inbound messages with, a `NamedTuple` keyed by
+  interface name or alias, `(in = NormalMeanPrecision(0.0, 0.01),)`; a group takes a tuple, one
+  message per member, `nothing` for a member left alone. Each is set on this node's own edge
+  only, before inference, and takes the place of any message set there before and of one the
+  node declares ([`initial_messages`](@extref MessagePassingRulesBase.initial_messages)); an
+  interface on a constant is left alone. Default `nothing`, none.
 
 See [Activation options](@ref lib-activation-options) for each in use.
 """
-struct FactorNodeActivationOptions{A, P, N, E, C <: NamedTuple, B}
+struct FactorNodeActivationOptions{A, P, N, E, C <: NamedTuple, B, I}
     algorithm::A
     postprocessor::P
     annotations::N
@@ -516,13 +522,14 @@ struct FactorNodeActivationOptions{A, P, N, E, C <: NamedTuple, B}
     context::C
     rulefallback::B
     logscales::Bool
+    initial_messages::I
 end
 
 FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks) =
-    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, EngineDiagnostics(), NamedTuple(), nothing, false)
+    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, EngineDiagnostics(), NamedTuple(), nothing, false, nothing)
 
-FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing, logscales::Bool = false) =
-    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics, something(context, NamedTuple()), rulefallback, logscales)
+FactorNodeActivationOptions(; algorithm = nothing, postprocessor = nothing, annotations = nothing, callbacks = nothing, diagnostics = EngineDiagnostics(), context = NamedTuple(), rulefallback = nothing, logscales::Bool = false, initial_messages = nothing) =
+    FactorNodeActivationOptions(algorithm, postprocessor, annotations, callbacks, diagnostics, something(context, NamedTuple()), rulefallback, logscales, initial_messages)
 
 """
     ReactiveMP.getpostprocessor(options::FactorNodeActivationOptions)
@@ -542,6 +549,7 @@ getdiagnostics(options::FactorNodeActivationOptions) = options.diagnostics
 getcontext(options::FactorNodeActivationOptions) = options.context
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 getlogscales(options::FactorNodeActivationOptions) = options.logscales
+getinitialmessages(options::FactorNodeActivationOptions) = options.initial_messages
 
 """
     ReactiveMP.getalgorithm(fform, options::FactorNodeActivationOptions)
@@ -562,8 +570,9 @@ Wire the message and marginal streams of a factor node, after its variables are 
    [`ReactiveMP.FactorNodeLocalMarginal`](@ref). A cluster of one interface shares the variable's
    own marginal stream; a joint, keyed by a tuple, is computed by the node's marginal rule
    ([`ReactiveMP.MarginalMapping`](@ref)).
-2. **Initial messages**: a node that declares `initial_messages` has them set on its inbound
-   messages, on each interface where nothing was set before.
+2. **Initial messages**: the option `initial_messages` sets its messages on the node's inbound
+   messages, in place of anything set before; then a node that declares `initial_messages` has
+   them set on each interface where nothing is set yet.
 3. **Outbound messages**: for every interface connected to a random or a data variable, the
    inputs its rule needs are combined, and each update gives a [`DeferredMessage`](@ref) computed
    by a [`ReactiveMP.MessageMapping`](@ref), which resolves and runs the rule. An interface on a
@@ -590,19 +599,46 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
     ctx = node_context(factornode, getcontext(options))
     initialize_clusters!(getlocalclusters(factornode), factornode, options, ctx)
-    seed_initial_messages!(factornode)
+    seed_initial_messages!(factornode, getinitialmessages(options))
     return activate_messages!(factornode, options, ctx)
 end
 
-# The messages the node declares for its interfaces, set on the inbound message of each where
-# nothing is set yet, so a user's initialisation wins; an interface on a constant has none.
-function seed_initial_messages!(factornode::FactorNode)
+# The messages given for this node, set on its inbound messages whatever was set before; then
+# the ones the node declares, set where nothing is set yet, so a user's initialisation wins. An
+# interface on a constant has none.
+function seed_initial_messages!(factornode::FactorNode, given = nothing)
+    given === nothing || seed_given_messages!(factornode, given)
     for (key, message) in MessagePassingRulesBase.initial_messages(functionalform(factornode))
         interface = getinterface(factornode, interfaceindex(factornode, key))
         israndom(interface) || isdata(interface) || continue
         stream = get_stream_of_inbound_messages(interface)
         Rocket.getrecent(stream) === nothing && set_initial_message!(stream, message)
     end
+    return nothing
+end
+
+function seed_given_messages!(factornode::FactorNode, given::NamedTuple)
+    fform, interfaces = functionalform(factornode), getinterfaces(factornode)
+    for (key, message) in pairs(given)
+        resolved = given_key(fform, key)
+        positions = findall(interface -> name(interface) === resolved, interfaces)
+        isempty(positions) && throw(ArgumentError("`$(fform)`: an initial message for `$(key)`, which this node does not connect"))
+        if interfaces[first(positions)] isa IndexedNodeInterface
+            message isa Union{Tuple, AbstractVector} && length(message) == length(positions) || throw(
+                ArgumentError("`$(fform)`: the initial messages of the group `$(key)` are a tuple, one per member, $(length(positions)) here; got `$(repr(message))`"),
+            )
+            foreach((position, member) -> member === nothing || seed_message!(interfaces[position], member), positions, message)
+        else
+            seed_message!(interfaces[only(positions)], message)
+        end
+    end
+    return nothing
+end
+seed_given_messages!(factornode::FactorNode, given) =
+    throw(ArgumentError("`$(functionalform(factornode))`: `initial_messages` is a NamedTuple keyed by interface, `(in = …,)`; got `$(repr(given))`"))
+
+function seed_message!(interface, message)
+    (israndom(interface) || isdata(interface)) && set_initial_message!(get_stream_of_inbound_messages(interface), message)
     return nothing
 end
 
