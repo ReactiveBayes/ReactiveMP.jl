@@ -19,8 +19,9 @@ them again, so re-check before relying on one.
 ## Next action
 
 **Phase C, in progress** (§ Phase C, *Progress*). Next, for the user to choose, what the
-not-done table lists before the release: the remaining 27 log scales; the rest of Phase C's exit criteria wait for the release
-itself.
+not-done table lists before the release; the rest of Phase C's exit criteria wait for the release
+itself. The 27 rules without a log scale are settled: left as they are until a separate effort
+after the release (user, 2026-09-30).
 
 Done in Phase C so far: ManyPlus as an n-ary `+`; the free energy's context; the audit of 2026-09-30 (its bugs fixed; the duplication and the unscented
 transform's singular covariances recorded in the table below); rule fallbacks and the open rule
@@ -39,7 +40,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | What | Where it lands | Recorded in |
 |---|---|---|
 | the free energy's context: **done** (user, 2026-09-30): `activate!` keeps the node's rule context and diagnostics on the `FactorNode`, and `score` reads them when it computes a value, so an average energy runs with the `context` option's services and under the node's audits, as the node's rules do; a node not activated falls back to the engine's context. No API change, RxInfer's unchanged | done | § Phase C, *Progress* |
-| log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space) and towards `out` from two normals (a rule that only raises an error), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | before 7.0, to discuss (user) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
+| log scales of Standard's 27 message-only rules still declaring none, each left because its constant is not easy or not sure (user: declare only the easy ones): NormalMeanVariance towards `v` (its integral diverges), `dot` towards an input (improper along the null space) and towards `out` from two normals (a rule that only raises an error), MatrixNormal's rules (approximations, and towards `U`/`V` an inverse-Wishart-shaped constant), `*`'s sampled rules (unnormalised sums, as in v6: a missing constant), Bessel-product and point-mass-only rules and its multivariate ones towards `in`/`A`, and `Uninformative`; then, if wanted, a gate listing each rule that declares none with its reason | after the release, a separate effort; left as they are, no gate, not reopened before the release (user, 2026-09-30) | `DISCUSSION.md` §3.50; § Phase 5, *Step 7 brief* |
 | two rule discrepancies the engine tests found, `@test_broken` in `test/engine/variational_tests.jl`: AR's mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]` | for the user to decide | § Phase C, *Progress* |
 | the end-of-refactor performance pass: **applied** (user), in ReactiveMP and on RxInfer's branch `refactor/reactivemp-v7`: every benchmarked model runs at 0.51–0.95× v6 (iid at n = 10⁴ level, 0.99, without Rocket#91), posteriors unchanged; first inference without a workload on either side is 1.1–1.4× v6, and RxInfer's branch precompiles one, which takes the common paths from 6.7–7.4 s to 0.27–0.44 s at 12 s of RxInfer's precompile | done; what it leaves is in the rows below | `BENCHMARK.md`; `PLAN.md` § The performance pass; `DISCUSSION.md` §5 |
 | Rocket's and GraphPPL's fixes, pull requests of their own: ReactiveBayes/Rocket.jl#91 (pending counters, mutable wrappers) is merged, for Rocket 1.10.1, still to be tagged; ReactiveBayes/GraphPPL.jl#333 (the two quadratic passes of model creation) awaits review. No compat bump is needed: both change performance only | upstream | `BENCHMARK.md` §3, §6 |

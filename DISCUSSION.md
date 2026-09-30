@@ -1922,7 +1922,10 @@ ownerless) and §3.48 (log scales as v6 has them past the release).
   output-only `with_logscale` avoids it); dropping log scales.
 - **Then, the easy ones** (user: declare a log scale only where it is easy, leave it undeclared
   where unsure): 28 more of Standard's rules, checked by enumeration or quadrature. The other 27
-  stay undeclared, each with its reason in PHASES; whether a gate should list them is open.
+  stay undeclared, each with its reason in PHASES.
+- **Settled for the release** (user, 2026-09-30): the 27 stay as they are, with no gate listing
+  them. Declaring any of them is a separate effort after the release; the question is not
+  reopened before it.
 
 ### 3.51 The rich display of `RuleResult` (user, 2026-09-25)
 
