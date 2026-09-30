@@ -212,3 +212,17 @@
         )
     end
 end
+
+@testitem "Unscented built for a dimension" tags = [:approximations] begin
+    using MessagePassingRulesApproximations
+    import MessagePassingRulesApproximations: Unscented, approximate, sigma_point_parameters
+
+    # Any integer dimension, and inputs of that dimension only.
+    @test sigma_point_parameters(Unscented(Int32(2)), 2).Wm == sigma_point_parameters(Unscented(2), 2).Wm
+    m, V = approximate(Unscented(2), x -> x, ([0.0, 1.0],), ([1.0 0.0; 0.0 2.0],))
+    @test m ≈ [0.0, 1.0] && V ≈ [1.0 0.0; 0.0 2.0]
+    @test_throws DimensionMismatch approximate(Unscented(2), x -> x, ([0.0, 1.0, 2.0],), ([1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],))
+    @test_throws DimensionMismatch approximate(Unscented(2), x -> x, (0.0,), (1.0,))
+    # Two scalar inputs are one joint of dimension 2.
+    @test first(approximate(Unscented(2), (x, y) -> x + y, (1.0, 2.0), (1.0, 1.0))) ≈ 3.0
+end

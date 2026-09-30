@@ -33,6 +33,9 @@ end
 
     # g ≡ 1 leaves the normal as it is.
     @test all(approximate_meancov(GaussHermiteCubature(3), x -> 1.0, 0.5, 2.0) .≈ (0.5, 2.0))
+    # In the input's float type, though the weights are Float64 and `g` returns one.
+    @test approximate_meancov(GaussHermiteCubature(3), x -> 1.0, 0.5f0, 2.0f0) isa Tuple{Float32, Float32}
+    @test all(approximate_meancov(GaussHermiteCubature(3), x -> 1.0, 0.5f0, 2.0f0) .≈ (0.5f0, 2.0f0))
 
     # g(x) = x² under N(0, 1): the mean is E[x³]/E[x²] = 0 and the variance E[x⁴]/E[x²] = 3,
     # exact with three points, since the integrands have degree at most four.

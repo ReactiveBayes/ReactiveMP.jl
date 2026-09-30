@@ -11,7 +11,7 @@ end
 
 """
     Unscented(; alpha = 1e-3, beta = 2.0, kappa = 0.0)
-    Unscented(dim::Int; alpha = 1e-3, beta = 2.0, kappa = 0.0)
+    Unscented(dim::Integer; alpha = 1e-3, beta = 2.0, kappa = 0.0)
 
 The unscented transform: the mean and covariance of `f(x)` for a normal `x`, estimated from
 `2d + 1` deterministically placed sigma points, `d` being the dimension of `x`. It needs no
@@ -26,8 +26,11 @@ derivatives and captures the mean and covariance of `f(x)` to second order. [`UT
   `2.0`;
 - `kappa`: the secondary scaling. Default `0.0`.
 
-With `dim`, the weights for that dimension are computed once and stored with the method;
-without it, they are computed on each call, for whatever dimension the inputs have.
+With `dim`, the method is for inputs of that dimension, and [`sigma_point_parameters`](@ref)
+returns the weights it stores; an input of another dimension, or several inputs whose joint has
+another dimension, is a `DimensionMismatch`.
+Without it, the method takes inputs of any dimension. The sigma points and their weights are
+computed on each call either way.
 
 It is used through [`approximate`](@ref), for the output's moments, and
 [`unscented_statistics`](@ref), which adds the cross-covariance [`smoothRTS`](@ref) needs.
@@ -57,7 +60,7 @@ function Unscented(;
 end
 
 function Unscented(
-        dim::Int64;
+        dim::Integer;
         alpha::Real = default_alpha,
         beta::Real = default_beta,
         kappa::Real = default_kappa,
@@ -133,7 +136,7 @@ julia> p.λ, length(p.Wm), sum(p.Wm) ≈ 1
 """
 function sigma_point_parameters(method::Unscented, dim::Integer)
     extra = getextra(method) === nothing ? getextra(Unscented(dim; alpha = getα(method), beta = getβ(method), kappa = getκ(method))) : getextra(method)
-    getL(extra) == dim || throw(DimensionMismatch("`Unscented($(getL(extra)))` was built for dimension $(getL(extra)), not $dim"))
+    check_unscented_dimension(extra, dim)
     return (λ = getλ(extra), Wm = getWm(extra), Wc = getWc(extra))
 end
 
@@ -357,7 +360,14 @@ and for the covariance, in the same order: tuples for a scalar normal, vectors o
 first point is the mean. It warns when the parameters make `d + λ` negative, which gives
 unreliable estimates.
 """
+# A method built for a dimension takes inputs of that dimension only.
+check_unscented_dimension(method::Unscented, d) = check_unscented_dimension(getextra(method), d)
+check_unscented_dimension(::Nothing, d) = nothing
+check_unscented_dimension(extra::UnscentedExtra, d) =
+    getL(extra) == d || throw(DimensionMismatch("`Unscented($(getL(extra)))` was built for dimension $(getL(extra)), not $d"))
+
 function sigma_points_weights(method::Unscented, m::Real, V::Real)
+    check_unscented_dimension(method, 1)
     alpha = getα(method)
     beta = getβ(method)
     kappa = getκ(method)
@@ -380,6 +390,7 @@ function sigma_points_weights(
         method::Unscented, m::AbstractVector, V::AbstractMatrix
     )
     d = length(m)
+    check_unscented_dimension(method, d)
     alpha = getα(method)
     beta = getβ(method)
     kappa = getκ(method)

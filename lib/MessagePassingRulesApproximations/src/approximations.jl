@@ -56,20 +56,22 @@ function approximate_meancov(method::AbstractApproximationMethod, g::G, m::T, v:
     weights = getweights(method, m, v)
     points = getpoints(method, m, v)
 
-    cs = Vector{eltype(m)}(undef, length(weights))
-    norm = 0.0
-    mean = 0.0
+    # The moments in the input's float type, whatever the points', the weights' and `g`'s.
+    R = float(T)
+    cs = Vector{R}(undef, length(weights))
+    norm = zero(R)
+    mean = zero(R)
     for (index, (weight, point)) in enumerate(zip(weights, points))
-        cv = weight * g(point)
-        mean += point * cv
+        cv = convert(R, weight * g(point))
+        mean += convert(R, point) * cv
         norm += cv
         @inbounds cs[index] = cv
     end
     mean /= norm
 
-    var = 0.0
+    var = zero(R)
     for (point, c) in zip(points, cs)
-        var += c * (point - mean)^2
+        var += c * (convert(R, point) - mean)^2
     end
     var /= norm
 
