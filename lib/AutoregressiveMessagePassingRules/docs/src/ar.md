@@ -10,7 +10,7 @@ DocTestSetup = :(using AutoregressiveMessagePassingRules, MessagePassingRulesBas
 combination of its `p` previous values plus Gaussian noise. It is the building block of latent
 autoregressive models, in which the states, the coefficients `θ` and the noise precision `γ`
 are all inferred, each with a prior of its own: a normal on `θ`, a gamma on `γ`. Chained over
-time, `x[t] ~ AR(x[t - 1], θ, γ)`, it is a state-space model whose transition is learnt.
+time, `x[t] ~ AR(x[t - 1], θ, γ)` in an RxInfer model, it is a state-space model whose transition is learnt.
 
 The node is a [stochastic node](@extref MessagePassingRulesBase glossary-stochastic-node), a
 density over its variables. Its [rules](@extref MessagePassingRulesBase glossary-rule) are

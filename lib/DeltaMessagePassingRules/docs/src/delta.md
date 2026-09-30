@@ -7,8 +7,8 @@ DocTestSetup = :(using DeltaMessagePassingRules, MessagePassingRulesBase, Messag
 ## Overview
 
 The Delta node puts a deterministic function into a
-[factor graph](@extref MessagePassingRulesBase glossary-factor-graph). A model line such as
-`z := f(x, y)` creates a [`DeltaFn`](@ref) node with `z` on its output `out` and `x`, `y` on
+[factor graph](@extref MessagePassingRulesBase glossary-factor-graph). In a model written
+with [RxInfer](https://reactivebayes.github.io/RxInfer.jl/stable/), a line such as `z := f(x, y)` creates a [`DeltaFn`](@ref) node with `z` on its output `out` and `x`, `y` on
 its inputs. Use it when `f` has no node with exact rules, for example a nonlinear sensor model
 or a change of coordinates.
 

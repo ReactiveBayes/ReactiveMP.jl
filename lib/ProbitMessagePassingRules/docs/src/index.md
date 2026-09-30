@@ -3,7 +3,7 @@
 The [`Probit`](@ref) node for reactive message passing: a binary observation explained by a real
 latent variable through the standard normal CDF. Use it for probit regression and binary
 classification, where each label `y` is linked to a latent score `x`, itself normal, by
-`y ~ Probit(x)`.
+`y ~ Probit(x)` in an RxInfer model.
 
 ```@docs
 ProbitMessagePassingRules

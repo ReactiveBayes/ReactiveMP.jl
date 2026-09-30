@@ -30,15 +30,17 @@ nothing # hide
 ## What a node is
 
 A node is a Julia value that names a factor of a model: a type, or a function such as `+`. The
-node is what everything else refers to. A model writes it, `y ~ Gaussian(x, v)`; a rule names it,
-`node = Gaussian`; and finding a rule is Julia's dispatch on its type, so any loaded package can
-add rules for a node another package declared ([Defining rules](@ref) explains how).
+node is what everything else refers to. A rule names it, `node = Gaussian`, and finding a rule is
+Julia's dispatch on its type, so any loaded package can add rules for a node another package
+declared ([Defining rules](@ref) explains how). This package builds no models: an engine such as
+ReactiveMP places the node in a graph, and a model written with [RxInfer](https://reactivebayes.github.io/RxInfer.jl/stable/) names it in a statement such
+as `y ~ Gaussian(x, v)`.
 
 Most stochastic nodes are probability distributions, and the rule packages use the
 distribution's own type as the node. StandardMessagePassingRules, for example, declares
 ExponentialFamily's `NormalMeanVariance` as a node. One type then does three jobs:
 
-- **it names the factor** in a model, `y ~ NormalMeanVariance(μ, v)`;
+- **it names the factor** in a model, `y ~ NormalMeanVariance(μ, v)` in RxInfer's syntax;
 - **it is the factor's density**: the declaration derives the node's log-density from it,
   `logpdf(NormalMeanVariance(μ, v), y)`, which rule fallbacks and rule tests use;
 - **it is often a message**: the message towards `out` from point-mass inputs is the node's own

@@ -1,7 +1,7 @@
 # Logic
 
 The logic nodes compute Boolean functions of Boolean variables. A model uses them to build a
-probabilistic circuit, such as `z ~ AND(x, y)`. Each variable carries a `Bernoulli` belief, the
+probabilistic circuit, such as `z ~ AND(x, y)` in RxInfer's syntax. Each variable carries a `Bernoulli` belief, the
 probability that it is true.
 
 The nodes are [deterministic](@extref MessagePassingRulesBase glossary-deterministic-node): their

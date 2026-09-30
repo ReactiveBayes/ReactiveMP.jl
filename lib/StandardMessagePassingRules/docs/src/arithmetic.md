@@ -3,7 +3,7 @@
 The arithmetic nodes `+`, `-`, `*` and `dot` are
 [deterministic nodes](@extref MessagePassingRulesBase glossary-deterministic-node): their output
 is a function of their inputs, such as `out = in1 + in2`. Base's and LinearAlgebra's functions
-are the nodes themselves, so a model writes `y ~ x + z` or `y ~ A * x`, and
+are the nodes themselves, so an RxInfer model writes `y ~ x + z` or `y ~ A * x`, and
 [`rule_coverage`](@extref MessagePassingRulesBase.rule_coverage)`(+)` takes the function. The
 package re-exports LinearAlgebra's `dot` for models to use.
 

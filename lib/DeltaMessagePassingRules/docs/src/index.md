@@ -6,7 +6,7 @@ DocTestSetup = :(using DeltaMessagePassingRules, MessagePassingRulesBase, Messag
 
 The Delta node, `out = f(in₁, …, inₙ)` for any deterministic function `f`, and the rules that
 pass [messages](@extref MessagePassingRulesBase glossary-message) through it. Use it for a
-nonlinear function in a model, `z := f(x, y)`, when no node with exact rules exists for `f`.
+nonlinear function in a model, `z := f(x, y)` in RxInfer's syntax, when no node with exact rules exists for `f`.
 The rules approximate the [pushforward](@extref MessagePassingRulesBase glossary-pushforward)
 through `f`, the distribution of `f(x, y)`, with the method the model names. The unscented
 transform and linearisation handle normal messages. Projection onto an exponential family

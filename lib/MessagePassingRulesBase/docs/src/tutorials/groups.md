@@ -26,8 +26,9 @@ nothing # hide
 
 ## Declare the node
 
-The node is the function `+` would be in a model, but here a type of its own, `Sum`, since a sum
-has no distribution to name it ([What a node is](@ref tutorial-first-node) explains the choice).
+A sum could be the function `+` itself, as StandardMessagePassingRules declares it, so that an
+RxInfer model writes `y ~ x + z`. Here it is a type of its own, `Sum`, since a sum has no
+distribution to name it ([What a node is](@ref tutorial-first-node) explains the choice).
 [`@define_factor_node`](@ref) declares it. In its [`interfaces`](@ref keyword-node-interfaces),
 a trailing `...` after a name declares a group. Its members are `(:in, 1)`, `(:in, 2)`, and so
 on, and a graph gives them all at once.

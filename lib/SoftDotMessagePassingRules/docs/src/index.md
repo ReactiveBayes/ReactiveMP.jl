@@ -130,7 +130,7 @@ true
 
 ## API
 
-The node and its alias, the name a model writes:
+The node and its alias, the name an RxInfer model writes:
 
 ```@docs
 SoftDot

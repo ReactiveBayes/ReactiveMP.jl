@@ -10,7 +10,8 @@ as the chain's starting marginal.
 
 ## Definition
 
-`out ~ BIFMHelper(in)`, with `out` the first state and `in` its prior. As a density it is the
+In an RxInfer model the helper is written `out ~ BIFMHelper(in)`, with `out` the first state and
+`in` its prior. As a density it is the
 identity, `p(out | in) = δ(out - in)`; its rules implement the switch between the passes rather
 than a product with it.
 
