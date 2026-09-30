@@ -47,7 +47,7 @@ rule fallbacks use; `node` must then be callable as a distribution of the other 
 $(DOC_DEPENDENCY_ENTRIES)
 
   Default: none, and every target follows the default scheme. Declarations for the node's other
-  algorithms go in [`@define_dependencies`](@ref).
+  algorithms, and a `free_energy_partition`, go in [`@define_dependencies`](@ref).
 
 - `initial_messages`: messages an engine seeds on the node's inbound interfaces before inference,
   where the graph sets none, a vector of `:name => message` pairs:
@@ -58,7 +58,8 @@ $(DOC_DEPENDENCY_ENTRIES)
 - `static_inputs`: how the node treats inputs connected to constants and data. `:none`, the
   default, treats them like any other input; `:fold` folds them into the node function, reached as
   [`getnodefn`](@ref)`(ctx.node, target)`, and every update waits until they are available. An
-  engine builds such a node with its function, `factornode(…; nodefn = f)`. See
+  engine builds such a node with its function, `factornode(…; nodefn = f)`; ReactiveMP folds
+  the members of a group, so it requires such a node to have exactly one group. See
   [`static_inputs`](@ref).
 
 - `matched_groups`: groups that must have as many members as each other, a vector of tuples of

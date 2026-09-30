@@ -109,3 +109,18 @@ end
     missing_rule = RuleNotFound(:message, R.Gauss, MessagePassingRulesBase.Target(:out), DefaultAlgorithm(), nothing)
     @test startswith(sprint(show, missing_rule), "RuleNotFound(message rule for ") && contains(sprint(show, missing_rule), "towards :out under ")
 end
+
+@testitem "result display:an input on the target's own edge" tags = [:base] setup = [ResultShowRules] begin
+    using MessagePassingRulesBase
+    R = ResultShowRules
+
+    # A rule towards `in` that reads the message on `in` itself shows it beside the target.
+    struct OwnEdge end
+    @define_factor_node(node = OwnEdge, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = OwnEdge, target = :in, args = (m[:out]::Float64, m[:in]::Float64), body = (args) -> args.m[:out] - args.m[:in])
+    result = call_message_update_rule(OwnEdge, :in; m = (out = 3.0, in = 1.0))
+    text = R.plain(result)
+    @test contains(text, "in   ◀══  target  2.0") && contains(text, "in   ──▶  m  1.0  (its own edge)")
+    card = R.html(result)
+    @test count("class=\"edge message\"", card) == 2 && contains(card, "its own edge")
+end

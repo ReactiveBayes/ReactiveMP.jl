@@ -4,17 +4,19 @@ CurrentModule = MessagePassingRulesBase
 
 # [Math helpers](@id math-helpers)
 
-The linear algebra and the Gaussian algebra that rules of many nodes compute, kept here so that
-every rule package computes them the same way. They are public, not exported: call them
-qualified, `MessagePassingRulesBase.add_outer(V, m)`, or import them by name.
+The math helpers are the linear algebra and the Gaussian algebra that the rules of many nodes
+compute. They live here so that every rule package computes them the same way.
 
-Each takes numbers as well as arrays, so a rule written once serves univariate and
-multivariate inputs, and each keeps the float type of its inputs.
+They are public but not exported. Call them qualified, as
+`MessagePassingRulesBase.add_outer(V, m)`, or import them by name.
+
+Each helper takes numbers as well as arrays, so a rule written once serves univariate and
+multivariate inputs. Each keeps the float type of its inputs.
 
 ## Linear algebra
 
-The functions ending in `!!` overwrite their argument where it is a dense `Array` and return a
-new value otherwise, so they are given a value the caller owns, such as a fresh product.
+The functions ending in `!!` overwrite their argument when it is a dense `Array`, and return a
+new value otherwise. Give them only a value you own, such as a fresh product.
 
 ```@docs
 add_outer
@@ -28,8 +30,9 @@ promote_cluster
 
 ## Gaussians
 
-Moments and energies of normal distributions, and what a normal factor sees of its parameters
-under variational message passing.
+These helpers compute the moments and energies of normal distributions. They also compute what
+a normal factor sees of its parameters under
+[variational message passing](@ref glossary-vmp).
 
 ```@docs
 gaussian_second_moment

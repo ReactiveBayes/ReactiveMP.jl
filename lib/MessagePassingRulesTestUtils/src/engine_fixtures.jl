@@ -100,7 +100,8 @@ happened. Saved with [`save_engine_fixture`](@ref), compared with
 - `description`: what the run is, in words. Default: `""`.
 - `free_energy`: the free energy after each iteration, converted to `Vector{Float64}`.
   Required; empty when the run computes none.
-- `posteriors`: the final posteriors, any collection of `name => value` pairs, stored as a
+- `posteriors`: the final posteriors, a `NamedTuple` or any collection of `name => value`
+  pairs, stored as a
   `Dict{String, Any}` with the names converted with `string`. A value is a distribution or its
   [`encode_fixture_value`](@ref) form. Required.
 - `trace`: the rule calls, a collection of [`RuleCallRecord`](@ref)s in the order they
@@ -115,7 +116,7 @@ struct EngineTrajectory
 end
 
 EngineTrajectory(id::AbstractString; description = "", free_energy, posteriors, trace) =
-    EngineTrajectory(String(id), String(description), Float64.(free_energy), Dict{String, Any}(string(k) => v for (k, v) in posteriors), collect(RuleCallRecord, trace))
+    EngineTrajectory(String(id), String(description), Float64.(free_energy), Dict{String, Any}(string(k) => v for (k, v) in (posteriors isa NamedTuple ? pairs(posteriors) : posteriors)), collect(RuleCallRecord, trace))
 
 const ENGINE_FIXTURE_FORMAT = 1
 

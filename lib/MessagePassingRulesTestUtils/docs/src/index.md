@@ -1,97 +1,159 @@
 # MessagePassingRulesTestUtils
 
-A rule package, one that defines nodes and rules with
-[`MessagePassingRulesBase`](@extref MessagePassingRulesBase.MessagePassingRulesBase), tests its rules
-with this package: on their own, the way they are defined, without building a graph. It is a test
-dependency only; nothing at run time needs it.
+A rule package defines [factor nodes](@extref MessagePassingRulesBase glossary-factor-node) and
+their [rules](@extref MessagePassingRulesBase glossary-rule) with
+[`MessagePassingRulesBase`](@extref MessagePassingRulesBase.MessagePassingRulesBase). This package
+tests those rules on their own, the way they are defined, without building a graph. It is a test
+dependency only: nothing needs it at run time.
 
 ```@docs
 MessagePassingRulesTestUtils
 ```
 
+## A node to test
+
+The examples on these pages test a toy node, a normal distribution with a known variance,
+``f(y, x, v) = \mathcal{N}(y \mid x, v)``, where `y` is the output `out`, `x` the mean `μ` and `v`
+the variance. Its messages are distributions from
+[ExponentialFamily](https://github.com/ReactiveBayes/ExponentialFamily.jl).
+[Your first node](@extref MessagePassingRulesBase tutorial-first-node) derives each of its rules.
+
+```@example index
+using MessagePassingRulesBase, MessagePassingRulesTestUtils
+using BayesBase, ExponentialFamily, Distributions, Test
+
+struct Gaussian end
+Gaussian(μ, v) = NormalMeanVariance(μ, v)
+
+@define_factor_node(node = Gaussian, type = Stochastic, interfaces = [:out, :μ, :v])
+
+# Belief propagation towards `out`: the variances add.
+@define_message_update_rule(
+    node = Gaussian, target = :out,
+    args = (m[:μ]::NormalMeanVariance, m[:v]::PointMass),
+    logscale = 0,
+    body = (args) -> NormalMeanVariance(mean(args.m[:μ]), var(args.m[:μ]) + mean(args.m[:v])),
+)
+
+# Variational message passing towards `out`: only the mean of q(x) matters.
+@define_message_update_rule(
+    node = Gaussian, target = :out,
+    args = (q[:μ]::Any, q[:v]::PointMass),
+    body = (args) -> NormalMeanVariance(mean(args.q[:μ]), mean(args.q[:v])),
+)
+
+# Belief propagation towards `μ` from an observed `out`.
+@define_message_update_rule(
+    node = Gaussian, target = :μ,
+    args = (m[:out]::PointMass, m[:v]::PointMass),
+    logscale = 0,
+    body = (args) -> NormalMeanVariance(mean(args.m[:out]), mean(args.m[:v])),
+)
+nothing # hide
+```
+
+The line `Gaussian(μ, v) = NormalMeanVariance(μ, v)` makes the node callable as the distribution
+of its output. The declaration then defines the node's log-density,
+[`nodefunction`](@extref MessagePassingRulesBase.nodefunction), which
+[verification](@ref "Verification against the node") integrates.
+
 ## Testing a rule package, end to end
 
-A rule package's suite is a set of `@testitem`s run by TestItemRunner, one or a few per node, and
-a gate after them. The rule packages of this repository, such as `StandardMessagePassingRules`,
-all follow this recipe.
+A rule package's suite is a set of `@testitem`s, run by TestItemRunner, one or a few per node,
+and a gate after them. Every rule package of this repository, such as
+`StandardMessagePassingRules`, follows this recipe. Every check is a `Test` assertion, so the
+tools go inside a `@testitem` or a `@testset`; the examples below use `@testset`.
 
 ### 1. A table for every rule
 
-Each test item states, case by case, what a rule must return. A case is the inputs of one call,
-`m` for messages, `q` for marginals, `clusters` for joint marginals, and the expected result:
+A table states, case by case, what a rule must return. A case is the inputs of one call and the
+expected result. The inputs are `m` for the [messages](@extref MessagePassingRulesBase glossary-message),
+`q` for the [marginals](@extref MessagePassingRulesBase glossary-marginal) and `clusters` for
+joint marginals.
 
-```julia
-@testitem "rules:NormalMeanVariance:out" tags = [:rules] begin
-    using StandardMessagePassingRules, MessagePassingRulesTestUtils, ExponentialFamily, BayesBase, Distributions
-
+```@example index
+@testset "Gaussian: out" begin
     @test_message_update_rule(
-        node = NormalMeanVariance, target = :out,
+        node = Gaussian, target = :out,
         cases = [
-            (m = (μ = PointMass(-1.0), v = PointMass(2.0)),) => NormalMeanVariance(-1.0, 2.0),
-            (m = (μ = NormalMeanVariance(0.0, 1.0), v = PointMass(2.0)),) => ExpectedWithLogScale(NormalMeanVariance(0.0, 3.0), 0),
-            (q = (μ = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)),) => NormalMeanVariance(1.0, 4 / 3),
+            (m = (μ = NormalMeanVariance(1.0, 2.0), v = PointMass(0.5)),) => ExpectedWithLogScale(NormalMeanVariance(1.0, 2.5), 0),
+            (q = (μ = NormalMeanVariance(1.0, 2.0), v = PointMass(0.5)),) => NormalMeanVariance(1.0, 0.5),
+            (q = (μ = PointMass(-1.0), v = PointMass(2.0)),) => NormalMeanVariance(-1.0, 2.0),
         ],
     )
 end
+nothing # hide
 ```
 
-The table runs every case again with its inputs converted to other float types, checks an
-in-place rule through `rule!`, and a rule with scratch on a poisoned scratch; see
-[Table tests](@ref). Marginal rules and average energies have their own tables,
-[`@test_marginal_update_rule`](@ref) and [`@test_average_energy`](@ref).
+The summary counts many more checks than cases, because the table runs every case again with
+its inputs converted to other float types. It also checks an in-place rule through `rule!` and a rule with scratch on a
+poisoned scratch. [Table tests](@ref) describes every check. Marginal rules and average
+energies have tables of their own, [`@test_marginal_update_rule`](@ref) and
+[`@test_average_energy`](@ref).
 
 ### 2. Verification against the node
 
 A table's expected values are worked out by hand, and can share the author's mistake. For a
-stochastic node, [`@verify_message_update_rule`](@ref) checks a message rule against the node's
-own log-density instead, integrated numerically, and the rule's log scale with it:
+[stochastic node](@extref MessagePassingRulesBase glossary-stochastic-node),
+[`@verify_message_update_rule`](@ref) checks a message rule against the node's own log-density,
+integrated numerically. It checks the rule's [log scale](@extref MessagePassingRulesBase glossary-log-scale)
+as well.
 
-```julia
-@verify_message_update_rule(node = NormalMeanVariance, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
-@verify_message_update_rule(node = NormalMeanVariance, target = :μ, q = (out = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)))
+```@example index
+@testset "Gaussian: verification" begin
+    @verify_message_update_rule(node = Gaussian, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
+    @verify_message_update_rule(node = Gaussian, target = :μ, m = (out = PointMass(3.0), v = PointMass(0.5)))
+end
+nothing # hide
 ```
 
-See [Verification against the node](@ref) for what it can integrate.
+[Verification against the node](@ref) lists what it can integrate.
 
 ### 3. Derivatives, where they matter
 
-A rule that a model differentiates through, with ForwardDiff, is checked with
-[`@test_rule_derivatives`](@ref) against finite differences; see [Derivatives](@ref).
+A model may be differentiated through its rules with ForwardDiff.
+[`@test_rule_derivatives`](@ref) checks such a rule against finite differences:
+
+```@example index
+@testset "Gaussian: derivatives" begin
+    @test_rule_derivatives(
+        node = Gaussian, target = :out,
+        inputs = θ -> (m = (μ = NormalMeanVariance(θ, 1.0), v = PointMass(θ^2)),),
+        at = 1.5, summary = d -> mean(d) + var(d),
+    )
+end
+nothing # hide
+```
+
+[Derivatives](@ref) says what fails.
 
 ### 4. The rule-coverage gate
 
-`test/runtests.jl` runs the items and then, only when none was filtered out, asks
-[`check_rule_coverage`](@ref) for every rule of the package that no test selected. A new rule
-without a test fails the suite:
+After the test items, [`check_rule_coverage`](@ref) lists every rule of the package that no test
+selected. The tests above selected all three rules of the node, so the list is empty:
 
-```julia
-using TestItemRunner, Test, MessagePassingRulesTestUtils, MyRules
-
-# `is_selected(ti)` is the suite's own selection, from `ARGS` (paths, `tag:`, `name:`).
-const FILTERED_OUT = Ref(false)
-test_item_filter(ti) = is_selected(ti) || (FILTERED_OUT[] = true; false)
-
-@run_package_tests(filter = test_item_filter, verbose = true)
-
-if !FILTERED_OUT[]
-    @testset "rule coverage" begin
-        gaps = check_rule_coverage(MyRules)
-        foreach(println, gaps)
-        @test isempty(gaps)
-    end
-end
+```@example index
+check_rule_coverage(@__MODULE__)
 ```
 
-See [The rule-coverage gate](@ref) for what counts as tested.
+A package's `test/runtests.jl` runs the gate only when its filter left no test item out, and a
+new rule without a test then fails the suite. [The rule-coverage gate](@ref) shows that file and
+says what counts as tested.
 
 ### Beyond rules
 
 Two more tools serve a package that reimplements another:
-[`compare_with_reference`](@ref) compares a rule with a reference implementation on the same
-inputs, with investigated differences declared and explained ([Comparing with a
-reference](@ref)); an [`EngineTrajectory`](@ref) records a whole inference run, free energy,
-posteriors and every rule call, and compares it with a recorded one ([Engine
-trajectories](@ref)).
+
+- [`compare_with_reference`](@ref) compares a rule with a reference implementation on the same
+  inputs, and each investigated difference is declared and explained. See
+  [Comparing with a reference](@ref).
+- An [`EngineTrajectory`](@ref) records a whole inference run: its free energy, its posteriors
+  and every rule call. It is compared with a recorded run. See [Engine trajectories](@ref).
+
+The rules on these pages are called directly, never inside a model. To use a node in a model, see
+[ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/),
+[GraphPPL](https://reactivebayes.github.io/GraphPPL.jl/stable/) and
+[RxInfer](https://reactivebayes.github.io/RxInfer.jl/stable/).
 
 ## Pages
 

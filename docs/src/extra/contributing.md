@@ -92,6 +92,33 @@ enough to use the name without reading its source:
 - **Names a user is told to call are public**: exported, or declared with
   `Compat.@compat public name`, which also parses on Julia 1.10.
 
+#### Pages
+
+A page is read by someone learning the topic, often a student, so it explains before it lists.
+The rules follow [Google's developer documentation style guide](https://developers.google.com/style),
+adapted to the ones above:
+
+- **Write to the reader**: "you", the active voice, the present tense. "The engine calls the rule",
+  not "the rule is called".
+- **One idea per sentence, one topic per paragraph.** Split a chain of commas and semicolons into
+  sentences. Keep the verb in each clause: "a rule takes messages from its own cluster and
+  marginals from the others", not "…and marginals the others".
+- **Define a term where it first appears**, and link it to the [glossary](@extref MessagePassingRulesBase glossary).
+  A page uses no term it has not defined or linked.
+- **Show, then explain.** Put the code first, then one or two sentences on what it shows. Let the
+  output speak: a rule's result, a node's declaration and a rule's inputs draw themselves.
+- **Every Julia block runs** when the site is built: `@example`, `@setup`, `@repl` or `jldoctest`.
+  Show an error with `try … catch err; showerror(stdout, err) end` in an `@example`. The only
+  blocks that do not run are shell commands and the v6 halves of a migration guide, which say
+  `# v6` on their first line.
+- **A site loads only its own package's dependencies**, plus BayesBase, ExponentialFamily and
+  Distributions. The engine's and the base package's pages declare the small nodes they need;
+  they link a rule package's site, or RxInfer's, for a model with the standard nodes.
+- **Headings** are nouns or tasks, in sentence case: "Log scales", "Define a node".
+- **Plain words.** No "simply", "just", "easily", "powerful" or "seamless"; no analogy in place
+  of the maths; no rhetorical questions; no summary repeating the page.
+- **Cross-reference** every name and every concept another page explains, once per section.
+
 ### Unit tests
 
 We use the test-driven development (TDD) methodology for ReactiveMP.jl development. The test coverage should be as complete as possible. Please make sure that you write tests for each piece of code that you want to add.

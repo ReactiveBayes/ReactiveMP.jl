@@ -53,6 +53,18 @@ function group_length(name, args::RuleArgs, targets)
 end
 
 
+# An edge, and when it is a target the rule also reads, a second edge for what it read there: a
+# rule towards `in` may take the message on `in` itself, which the target's arrow would hide.
+function push_edge!(edges, label, member, args, targets)
+    role, value, detail = edge_role(member, args, targets)
+    push!(edges, EdgeView(label, role, value, detail))
+    if role === :target
+        role, value, detail = edge_role(member, args, ())
+        role === :unused || push!(edges, EdgeView(label, role, value, isempty(detail) ? "its own edge" : detail * ", its own edge"))
+    end
+    return edges
+end
+
 function edge_views(r::RuleResult)
     spec, args = r.rule, r.arguments
     targets = target_members(r.target)
@@ -61,16 +73,12 @@ function edge_views(r::RuleResult)
     if interfaces === nothing
         # A node without a declaration: its edges are what the call names.
         members = unique([targets; [key for key in keys(args.m.values)]; [key for key in keys(args.q.singles)]])
-        for member in members
-            role, value, detail = edge_role(member, args, targets)
-            push!(edges, EdgeView(member_label(member), role, value, detail))
-        end
+        foreach(member -> push_edge!(edges, member_label(member), member, args, targets), members)
         return edges
     end
     for interface in interfaces
         if !interface.group
-            role, value, detail = edge_role(interface.name, args, targets)
-            push!(edges, EdgeView(string(interface.name), role, value, detail))
+            push_edge!(edges, string(interface.name), interface.name, args, targets)
             continue
         end
         n = group_length(interface.name, args, targets)
@@ -78,14 +86,10 @@ function edge_views(r::RuleResult)
             push!(edges, EdgeView("$(interface.name)…", :unused, nothing, ""))
             continue
         end
-        for k in 1:n
-            role, value, detail = edge_role((interface.name, k), args, targets)
-            push!(edges, EdgeView(member_label((interface.name, k)), role, value, detail))
-        end
+        foreach(k -> push_edge!(edges, member_label((interface.name, k)), (interface.name, k), args, targets), 1:n)
     end
     return edges
 end
-
 
 function call_mode(r::RuleResult)
     r.rule.kind === :average_energy && return "average energy"

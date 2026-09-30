@@ -50,6 +50,7 @@ end
 BayesBase.logpdf(d::NodeFunctionLogPdf, x) = d.logpdf(x)
 BayesBase.insupport(::NodeFunctionLogPdf, x) = true
 (d::NodeFunctionLogPdf)(x) = logpdf(d, x)
+Base.show(io::IO, ::NodeFunctionLogPdf) = print(io, "NodeFunctionLogPdf(the node's log-density, other inputs fixed)")
 
 (fallback::NodeFunctionRuleFallback)(node, target, args) = nothing
 

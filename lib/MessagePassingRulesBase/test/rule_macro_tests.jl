@@ -266,3 +266,18 @@ end
     @test rule(base..., kw(:args, :(())), kw(:body, :(() -> 1)), kw(:ctx, :((:gpu,)))) == ""
     @test contains(rule(kw(:node, :X), kw(:target, :out), kw(:args, :(())), kw(:body, :(() -> 1))), "`target` must be")
 end
+
+@testitem "rule macro:an average energy takes no output or scratch" tags = [:base] begin
+    using MessagePassingRulesBase
+    struct EnergySlots end
+    @define_factor_node(node = EnergySlots, type = Stochastic, interfaces = [:out, :in])
+    for body in (:((output, args) -> 0.0), :((scratch, args) -> 0.0))
+        err = try
+            macroexpand(@__MODULE__, :(@define_average_energy(node = EnergySlots, args = (q[:out]::Any, q[:in]::Any), body = $body)))
+            nothing
+        catch e
+            e
+        end
+        @test err !== nothing && contains(sprint(showerror, err), "an average energy's body takes the slots `algo`, `ctx`, `args` and `ann`")
+    end
+end

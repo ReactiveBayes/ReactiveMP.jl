@@ -3729,9 +3729,12 @@ wait for the release):
   they link to first; the base docs load BayesBase, ExponentialFamily and Distributions, Delta's
   ExponentialFamilyProjection; `NodeSpec`, `RuleSpec` and `DependenciesSpec` draw themselves
   (§3.52), the card follows Documenter's theme; `FactorNode` and the variables show themselves. Error messages: the `RuleNotFoundError` diagnosis ends with what to try, and the engine's
-  dependency and service errors say what to change.
-  Next: the base site's tutorials, keyword reference and glossary; the engine site on toy nodes;
-  the package sites; RxInfer's site on its branch; the error messages.
+  dependency and service errors say what to change. The base site: tutorials, the keyword reference, the glossary
+  and a prose pass; TestUtils' pages runnable on a toy node.
+  Next: the engine site on its example node; the package sites; RxInfer's site on its branch;
+  RxInfer's error messages. Recorded, not done: an interactive call does not check that a group
+  selected `m[:g][!k]` has `nothing` at `k` (in `interactive.jl`); `check_rules` could flag a rule
+  that reads its own edge's message where no declaration delivers it.
 - *The audit of 2026-09-29 — done* (user): the engine, the packages and the working
   documents reviewed against each other and the code. Decided (user): ManyPlus, main's node from
   #666 (6.6.0), is added after this effort; the package boundaries are one effort after the

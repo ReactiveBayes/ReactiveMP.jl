@@ -4,19 +4,26 @@ CurrentModule = MessagePassingRulesBase
 
 # Defining rules
 
-A node computes three kinds of thing, each defined with its own macro:
+A node computes three kinds of thing, and you define each with its own macro:
 
-- a **message** towards one of its interfaces, [`@define_message_update_rule`](@ref);
-- the joint **marginal** of a structural cluster of its interfaces,
-  [`@define_marginal_update_rule`](@ref);
-- its **average energy**, its term of the Bethe free energy, [`@define_average_energy`](@ref).
+- a [message](@ref glossary-message) towards one of its [interfaces](@ref glossary-interface),
+  with [`@define_message_update_rule`](@ref);
+- the joint [marginal](@ref glossary-marginal) of a [cluster](@ref glossary-cluster) of its
+  interfaces, with [`@define_marginal_update_rule`](@ref);
+- its [average energy](@ref glossary-average-energy), its term of the
+  [Bethe free energy](@ref glossary-bethe-free-energy), with [`@define_average_energy`](@ref).
 
-Each definition names its node, its target (none for an energy), the inputs it takes with their
-types, and its body, an ordinary lambda. It becomes a method of [`find_message_rule`](@ref),
-[`find_marginal_rule`](@ref) or [`find_average_energy`](@ref), so a rule defined in any loaded
-package is found by dispatch on the node, the target, the algorithm and the inputs' types. A
-rule that omits `algorithm` belongs to its node's default algorithm, so the node must be
-declared before the rule is loaded.
+Each definition names its node and its target. An average energy has no target. The definition
+also lists the inputs the rule takes, with their types, and gives its body, an ordinary lambda.
+
+The macro turns the definition into a method of [`find_message_rule`](@ref),
+[`find_marginal_rule`](@ref) or [`find_average_energy`](@ref). Julia's dispatch then finds the
+rule by the node, the target, the [algorithm](@ref glossary-algorithm) and the types of the
+inputs, in any loaded package. A rule that omits `algorithm` belongs to its node's default
+algorithm, so you declare the node before the rule is loaded.
+
+[Your first node](@ref tutorial-first-node) writes the rules of one node step by step. The
+[Keyword reference](@ref keyword-reference) lists every keyword of the three macros.
 
 ```@docs
 @define_message_update_rule
@@ -26,10 +33,14 @@ declared before the rule is loaded.
 
 ## Targets
 
-A message rule's target is a single interface, `target = :out`, or any member of a group,
-`target = (:in, k)`, which binds `k` to the member's index in the body and lets the inputs select
-by it. A marginal rule's target is a cluster, `target = (:out, :μ)`, its members in interface
-order, a group's member written `(:T, 1)`. Internally a target is a type, so rules dispatch on it:
+A message rule's target is a single interface, `target = :out`, or any member of a
+[group](@ref glossary-group), `target = (:in, k)`. The second form binds `k` to the member's
+index in the body, and the inputs can select members by it.
+
+A marginal rule's target is a cluster, `target = (:out, :μ)`, with its members in interface
+order. A member of a group is written `(:T, 1)` inside a cluster.
+
+Internally a target is a type, so rules dispatch on it:
 
 ```@docs
 MessagePassingRulesBase.Target
@@ -42,10 +53,17 @@ MessagePassingRulesBase.cluster_members
 
 ## Inputs
 
-`args` lists what a rule consumes: messages `m[:x]`, marginals `q[:x]`, joint marginals
-`q[:y, :x]`, whole groups `m[:in...]`, and for a group target the aligned member `m[:in][k]` or
-every other member `m[:in][!k]`. A group arrives as a tuple in member order, with `nothing` where
-the selection leaves a member out, so `args.m[:in][k]` is member `k` whatever was selected:
+`args` lists what a rule consumes:
+
+- `m[:x]`, the message on `x`;
+- `q[:x]`, the marginal of `x`;
+- `q[:y, :x]`, the joint marginal of the cluster `(y, x)`;
+- `m[:in...]`, every member of the group `in`;
+- `m[:in][k]`, for a group target, the member aligned with the target;
+- `m[:in][!k]`, for a group target, every other member.
+
+A group arrives as a tuple in member order. The tuple holds `nothing` where the selection leaves
+a member out, so `args.m[:in][k]` is member `k` whatever was selected:
 
 ```jldoctest rules
 julia> using MessagePassingRulesBase
@@ -71,10 +89,13 @@ julia> getresult(@call_message_update_rule(node = Sum, target = (:in, 2), m = (o
 2.0
 ```
 
-The body receives them as a [`RuleArgs`](@ref): `args.m`, a [`Messages`](@ref), and `args.q`, a
-[`Marginals`](@ref). Which inputs a rule receives is not the rule's choice but the engine's: under
-the default algorithm it follows from the factorisation (see
-[Algorithms and dependencies](@ref)). A rule is defined for the inputs it will be given.
+The body receives the inputs as a [`RuleArgs`](@ref): `args.m` is a [`Messages`](@ref), and
+`args.q` is a [`Marginals`](@ref).
+
+The rule does not choose its inputs. The engine chooses them, and under the default algorithm
+they follow from the [factorisation](@ref glossary-factorisation), as
+[Algorithms and dependencies](@ref) explains. You define a rule for the inputs it will be given.
+[A deterministic node with a group](@ref tutorial-groups) writes group rules step by step.
 
 ```@docs
 MessagePassingRulesBase.RuleArgs
@@ -85,23 +106,57 @@ MessagePassingRulesBase.canonical_cluster_keys
 
 ### Rules over whatever the factorisation delivers
 
-A node whose rules are one computation over any factorisation, such as a tensor node, declares
-`default` among a rule's `args`: the rule takes whatever inputs the default scheme delivers, and
-requires the typed inputs named beside it.
+A tensor node, among others, computes the same thing under any factorisation. Such a node's
+rule declares `default` among its `args`. The rule then takes whatever inputs the
+[default scheme](@ref glossary-default-scheme) delivers, and it requires the typed inputs named
+beside `default`.
 
-```julia
+The node below averages the means of its inputs `x`, whether they arrive as messages or as
+marginals. Its rule requires the marginal of `v` to be a point mass:
+
+```@example rules-default
+using MessagePassingRulesBase, BayesBase, ExponentialFamily
+using MessagePassingRulesBase: rule_inputs
+
+struct Average end   # out ~ N(mean of x₁, x₂, …, v)
+
+@define_factor_node(node = Average, type = Stochastic, interfaces = [:out, :v, :x...])
+
 @define_message_update_rule(
-    node = DiscreteTransition, target = (:T, k), args = (default, q[:a]::DirichletCollection),
-    body = (args) -> contract(args, k),
+    node = Average, target = :out, args = (default, q[:v]::PointMass),
+    body = (args) -> begin
+        inputs = (rule_inputs(Average, args.m)..., rule_inputs(Average, args.q)...)
+        means = [mean(value) for (key, value) in inputs if key isa Tuple]
+        NormalMeanVariance(sum(means) / length(means), mean(args.q[:v]))
+    end,
+)
+
+@call_message_update_rule(
+    node = Average, target = :out,
+    m = (x = (NormalMeanVariance(1.0, 1.0), NormalMeanVariance(3.0, 1.0)),),
+    q = (v = PointMass(2.0),),
 )
 ```
 
-The body walks its inputs with [`rule_inputs`](@ref), `key => value` pairs: an interface by its
-name, a group's member as `(:T, k)`, and a joint by its key. A marginal rule over any cluster
-names its target with a bare name, `target = members`, bound in the body to the cluster's key. A
-rule with explicit inputs for the same node and target is more specific and wins where it
-applies, so a fast path can sit on top. Missing or mistyped typed inputs make the lookup a
-[`RuleNotFound`](@ref). There is at most one `default` rule per node, target and algorithm.
+The same rule runs when the `x` arrive as marginals:
+
+```@example rules-default
+@call_message_update_rule(
+    node = Average, target = :out,
+    q = (x = (NormalMeanVariance(1.0, 1.0), NormalMeanVariance(3.0, 1.0)), v = PointMass(2.0)),
+)
+```
+
+The body walks its inputs with [`rule_inputs`](@ref), which returns `key => value` pairs. The
+key is an interface's name, `(:x, k)` for a member of a group, or a joint's key.
+
+A marginal rule over any cluster names its target with a bare name, `target = members`. The body
+receives the cluster's key under that name.
+
+A rule with explicit inputs for the same node and target is more specific, and it wins where it
+applies. You can therefore place a fast path on top of a `default` rule. When a typed input is
+missing or has another type, the lookup returns a [`RuleNotFound`](@ref). A node has at most one
+`default` rule per target and algorithm.
 
 ```@docs
 MessagePassingRulesBase.rule_inputs
@@ -109,27 +164,27 @@ MessagePassingRulesBase.rule_inputs
 
 ## The body
 
-The body is a lambda over some of the slots `(output, scratch, algo, ctx, args, ann)`, named in
-that order, and only those it uses:
+The body is a lambda over some of the slots `(output, scratch, algo, ctx, args, ann)`. You name
+only the slots the body uses, in that order:
 
-- `output`: the buffer an in-place rule writes into;
-- `scratch`: its working memory;
-- `algo`: the algorithm value it runs under, and so its parameters (see
+- `output`: the buffer an [in-place rule](@ref glossary-in-place-rule) writes into;
+- `scratch`: the rule's working memory;
+- `algo`: the algorithm value the rule runs under, which carries its parameters (see
   [Algorithms and dependencies](@ref));
-- `ctx`: the [`RuleContext`](@ref), the services the rule declares with `ctx = (...)` (see
-  [The rule context](@ref));
+- `ctx`: the [`RuleContext`](@ref), which holds the [services](@ref glossary-service) the rule
+  declares with `ctx = (...)` (see [The rule context](@ref));
 - `args`: the inputs;
 - `ann`: the annotations.
 
-A rule that reuses another's computation calls a plain helper function both share, rather than
-the other rule.
+A rule that reuses another rule's computation calls a plain helper function that both share. It
+does not call the other rule.
 
 ## In-place rules
 
-A rule that writes its result into a buffer declares `inplace = true` and how to build the
-buffer, `preallocate`, over the slots `(algo, ctx, args)`; its body takes `output` first and
-returns it. An engine may keep the buffer between calls. [`buffer_like`](@ref) builds storage of
-the right kind from an input.
+A rule that writes its result into a buffer declares `inplace = true`. It also declares
+`preallocate`, a function over the slots `(algo, ctx, args)` that builds the buffer. Its body
+takes `output` first and returns it. An engine may keep the buffer between calls.
+[`buffer_like`](@ref) builds storage of the right kind from an input.
 
 ```jldoctest rules
 julia> struct Double end
@@ -155,40 +210,59 @@ MessagePassingRulesBase.buffer_like
 
 ## Scratch
 
-A rule that needs working memory declares how to build it from its inputs, and takes it as its
-`scratch`:
+A rule that needs working memory, its [scratch](@ref glossary-scratch), declares how to build it
+from its inputs. The body then takes it as its `scratch` slot:
 
-```julia
+```@example rules-scratch
+using MessagePassingRulesBase
+
+struct Summing end   # out = 2 · sum(in), for a vector in
+
+@define_factor_node(node = Summing, type = Deterministic, interfaces = [:out, :in])
+
 @define_message_update_rule(
     node = Summing, target = :out, args = (m[:in]::Vector{Float64},),
     scratch = (args) -> (work = similar(args.m[:in]),),
     body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
 )
+
+@call_message_update_rule(node = Summing, target = :out, m = (in = [1.0, 2.0],))
 ```
 
-An engine keeps one scratch per outbound stream, builds it at the first call and passes the same
-one to every later call, so the memory is allocated once. It is **write-before-read**: a rule
-never relies on what an earlier call left in it, and the engine may drop or rebuild it at any
-time, so the rule's result depends on its inputs alone and the rule stays pure. It never leaves
-the rule, so a rule must not return it or a view into it, and it is never shared with another
-rule, not even one of the same node. It is independent of `inplace`, and a rule may declare both,
-taking `output` and then `scratch`.
+An engine keeps one scratch per outbound stream. It builds the scratch at the first call and
+passes the same one to every later call, so the memory is allocated once.
 
-The scratch's type depends on the inputs' types, their element types included, so an engine
-keeping it between calls infers it from them ([`rule_scratch_type`](@ref)) and asserts the kept
-scratch to it; inputs of other types get a scratch of their own. Nothing is declared for this. A
-builder whose result type infers, as one made of `similar` or `zeros(eltype(...), ...)` over the
-inputs does, runs the rule on a concretely typed scratch; one that does not, say because it
-reads a global, runs it on an untyped one, which costs a dynamic call per call.
+A scratch is **write-before-read**:
+
+- A rule never relies on what an earlier call left in the scratch. The engine may drop or
+  rebuild it at any time. The rule's result therefore depends on its inputs alone, and the rule
+  stays pure.
+- The scratch never leaves the rule. A rule does not return it, or a view into it.
+- The scratch is never shared with another rule, not even one of the same node.
+
+Scratch is independent of `inplace`. A rule may declare both, and its body then takes `output`
+and then `scratch`.
+
+The scratch's type depends on the types of the inputs, their element types included. An engine
+that keeps the scratch between calls infers its type from them, with
+[`rule_scratch_type`](@ref), and asserts the kept scratch to that type. Inputs of other types get
+a scratch of their own. You declare nothing for this.
+
+A builder whose result type infers runs the rule on a concretely typed scratch. Builders made of
+`similar` or `zeros(eltype(...), ...)` over the inputs infer. A builder that does not infer, say
+because it reads a global, runs the rule on an untyped scratch, which costs a dynamic call per
+call.
 
 ## Annotations
 
 A rule may record facts about its result beside it, keyed by symbol, with
-[`annotate!`](@ref)`(ann, key, value)`, and read what its inputs arrived with as `ann.m[:x]` and
-`ann.q[:x]`. Annotations never take part in dispatch. Where the rule's annotations go is the
-caller's choice: an engine passes its own store, and a call by hand passes an
-[`AnnotationStore`](@ref) to collect them, or nothing to drop them. A message's log scale is not
-an annotation: a rule declares it with `logscale` (see [Log scales](@ref)).
+[`annotate!`](@ref)`(ann, key, value)`. It reads the annotations its inputs arrived with as
+`ann.m[:x]` and `ann.q[:x]`. Annotations never take part in dispatch.
+
+The caller decides where the rule's annotations go. An engine passes its own store. A call by
+hand passes an [`AnnotationStore`](@ref) to collect them, or nothing to drop them. A message's
+[log scale](@ref glossary-log-scale) is not an annotation: a rule declares it with `logscale`
+(see [Log scales](@ref)).
 
 ```jldoctest rules
 julia> struct Solver end
@@ -219,8 +293,9 @@ MessagePassingRulesBase.getannotation
 
 ## Working types
 
-A rule may compute in a type chosen for the arithmetic rather than the reader, and declare how
-it converts to the type users expect, which an engine applies to every marginal it forms.
+A rule may compute in a type chosen for the arithmetic rather than for the reader. It then
+declares how that type converts to the type users expect, with [`public_equivalent`](@ref). An
+engine applies the conversion to every marginal it forms.
 
 ```@docs
 public_equivalent

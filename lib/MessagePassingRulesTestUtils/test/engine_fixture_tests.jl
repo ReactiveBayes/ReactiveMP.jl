@@ -35,6 +35,10 @@ end
             RuleCallRecord(2, "Normal", "(:m, 2)", PointMass(1.0), -0.5),
         ],
     )
+    # The posteriors may also come as a `NamedTuple` or a vector of pairs.
+    for posteriors in ((x = Normal(0.5, 0.7),), [:x => Normal(0.5, 0.7)])
+        @test EngineTrajectory("toy"; free_energy = [1.0], posteriors, trace = []).posteriors == Dict{String, Any}("x" => Normal(0.5, 0.7))
+    end
     path = joinpath(mktempdir(), "toy.toml")
     save_engine_fixture(path, trajectory; packages = Dict("ReactiveMP" => v"6.5.0"), notes = "recorded by a test")
     header, loaded = load_engine_fixture(path)

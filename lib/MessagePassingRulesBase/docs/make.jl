@@ -23,6 +23,11 @@ makedocs(
     plugins = [links],
     pages = [
         "Overview" => "index.md",
+        "Tutorials" => [
+            "Your first node" => "tutorials/first-node.md",
+            "A deterministic node with a group" => "tutorials/groups.md",
+            "A node with its own algorithm" => "tutorials/algorithm.md",
+        ],
         "Defining nodes" => "nodes.md",
         "Defining rules" => "rules.md",
         "Algorithms and dependencies" => "algorithms.md",
@@ -32,6 +37,8 @@ makedocs(
         "Inspecting rules" => "inspecting.md",
         "Rule fallbacks" => "fallbacks.md",
         "Math helpers" => "math.md",
+        "Keyword reference" => "keywords.md",
+        "Glossary" => "glossary.md",
         "Internals" => "internals.md",
     ],
     # Pages that show rule results as cards are larger than the defaults allow.

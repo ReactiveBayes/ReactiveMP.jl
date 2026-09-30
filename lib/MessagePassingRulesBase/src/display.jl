@@ -127,9 +127,14 @@ function Base.show(io::IO, ::MIME"text/html", spec::NodeSpec)
     return nothing
 end
 
+# A dependency as a declaration writes it. `dependency_label` is the form a rule's input matches,
+# where a custom selection of a group's members is the whole group, `m[:x...]`.
+dependency_display(d::Dependency) = d.selector isa CustomGroupSelector ?
+    "$(d.container)[:$(d.key)][select_group_members(…; arity = $(d.selector.arity))]" : dependency_label(d)
+
 dependency_target_label(entry::TargetDependencies) = entry.indexed ? "(:$(entry.edge), k)" : ":$(entry.edge)"
 function dependency_inputs_label(entry::TargetDependencies)
-    labels = [entry.default ? ["default"] : String[]; map(dependency_label, collect(entry.inputs))]
+    labels = [entry.default ? ["default"] : String[]; map(dependency_display, collect(entry.inputs))]
     return isempty(labels) ? "nothing" : join(labels, ", ")
 end
 partition_label(spec::DependenciesSpec) =
@@ -147,11 +152,11 @@ function Base.show(io::IO, ::MIME"text/plain", spec::DependenciesSpec)
     return nothing
 end
 
-Base.show(io::IO, d::Dependency) = print(io, dependency_label(d))
+Base.show(io::IO, d::Dependency) = print(io, dependency_display(d))
 Base.show(io::IO, entry::TargetDependencies) = print(io, dependency_target_label(entry), " ⇐ ", dependency_inputs_label(entry))
 
 dependency_edges(entry::TargetDependencies) =
-    [entry.default ? [SvgEdge("default", :default)] : SvgEdge[]; [SvgEdge(dependency_label(d), input_role(d.container, d.key)) for d in entry.inputs]]
+    [entry.default ? [SvgEdge("default", :default)] : SvgEdge[]; [SvgEdge(dependency_display(d), input_role(d.container, d.key)) for d in entry.inputs]]
 
 function Base.show(io::IO, ::MIME"text/html", spec::DependenciesSpec)
     id = open_card(io, "DependenciesSpec: $(node_name(spec.node))", "under $(shown(io, spec.algorithm))")

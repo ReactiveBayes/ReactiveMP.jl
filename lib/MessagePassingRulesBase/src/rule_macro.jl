@@ -352,6 +352,9 @@ function define_rule_expr(kind, source, macroargs)
 
     body = keywords[:body]
     slots = parse_slots(name, body, BODY_SLOTS)
+    # An average energy writes no buffer and keeps no scratch, so it takes neither slot.
+    kind === :average_energy && any(in((:output, :scratch)), slots) &&
+        error("@$name: an average energy's body takes the slots `algo`, `ctx`, `args` and `ann`, in that order; it has no `output` or `scratch`")
     if inplace
         haskey(keywords, :preallocate) || error("@$name: `preallocate` is required when `inplace = true`")
         (!isempty(slots) && first(slots) === :output) ||

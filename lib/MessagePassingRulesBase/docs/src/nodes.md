@@ -4,54 +4,61 @@ CurrentModule = MessagePassingRulesBase
 
 # Defining nodes
 
-A factor node is declared once, with [`@define_factor_node`](@ref), before any of its rules. The
-declaration names the node, says whether it is stochastic or deterministic, lists its
-interfaces, and optionally gives its own algorithm, its dependencies, its initial messages and
-what it requires of a graph. The node itself is a type, `node = NormalMeanVariance`, or a
-function, `node = +`; the same value names it in every rule and in a graph.
+You declare a [factor node](@ref glossary-factor-node) once, with [`@define_factor_node`](@ref),
+before any of its rules. The declaration names the node and says whether it is stochastic or
+deterministic. It lists the node's [interfaces](@ref glossary-interface), its named edges. It
+may also give the node's own [algorithm](@ref glossary-algorithm), its
+[dependencies](@ref glossary-dependencies), its [initial messages](@ref glossary-initial-message)
+and what the node requires of a graph.
 
-```jldoctest nodes
-julia> using MessagePassingRulesBase
+```@example nodes
+using MessagePassingRulesBase
 
-julia> struct Mixture end
+struct Mixture end
 
-julia> @define_factor_node(
-           node = Mixture,
-           type = Stochastic,
-           interfaces = [:out, (:switch, aliases = [:s]), :inputs...],
-           min_group_length = 2,
-       )
+@define_factor_node(
+    node = Mixture,
+    type = Stochastic,
+    interfaces = [:out, (:switch, aliases = [:s]), :inputs...],
+    min_group_length = 2,
+)
 
-julia> MessagePassingRulesBase.interfaces(Mixture)
-(:out, :switch, :inputs)
-
-julia> MessagePassingRulesBase.interface_groups(Mixture)
-(:inputs,)
-
-julia> MessagePassingRulesBase.alias_interface(Mixture, :s)
-:switch
+MessagePassingRulesBase.nodespec(Mixture)
 ```
+
+The node itself is a type, as `Mixture` here or `NormalMeanVariance` in a rule package, or a
+function, as `+`. The same value names the node in every rule and in a graph. The declaration
+draws itself: this node has an output, an interface `switch` with the alias `s`, and a group of
+inputs with at least two members. [Your first node](@ref tutorial-first-node) declares a node
+and writes its rules step by step. The [Keyword reference](@ref keyword-reference) lists every
+keyword of the macro.
 
 ## Interfaces
 
-The interfaces are listed in order, the output first by convention. An interface may have
-aliases, `(:μ, aliases = [:mean])`, other names a graph may use for it. A trailing `...`
-declares a **group**, any number of members `(:inputs, 1)`, `(:inputs, 2)`, …, which a graph
-gives as a whole: a mixture's components, a sum's summands. A rule then targets any member,
-`target = (:inputs, k)`, and reads a group as a tuple in member order. Names may contain
-underscores: nothing in the package joins names together.
+You list the interfaces in order, the output first by convention. An interface may have
+aliases, other names a graph may use for it: `(:μ, aliases = [:mean])`.
+
+A trailing `...` declares a [group](@ref glossary-group). A group has any number of members,
+`(:inputs, 1)`, `(:inputs, 2)` and so on, and a graph gives them as a whole. A mixture's
+components and a sum's summands are groups. A rule targets any member with
+`target = (:inputs, k)`, and it reads a group as a tuple in member order.
+[A deterministic node with a group](@ref tutorial-groups) writes the rules of such a node.
+
+Names may contain underscores, since nothing in the package joins names together.
 
 ## Kinds
 
-A [`Stochastic`](@ref) node has a density over its interfaces, `f(out | inputs)`. Its clusters
-follow the graph's factorisation, it has an average energy, and, without groups, the macro also
-defines its log-density as [`nodefunction`](@ref), which rule verification and the
-[`NodeFunctionRuleFallback`](@ref) use.
+A [`Stochastic`](@ref) node has a density over its interfaces, `f(out | inputs)`. Its
+[clusters](@ref glossary-cluster) follow the graph's [factorisation](@ref glossary-factorisation),
+and it has an [average energy](@ref glossary-average-energy). When a stochastic node has no
+groups, the macro also defines its log-density as [`nodefunction`](@ref). Rule verification and
+the [`NodeFunctionRuleFallback`](@ref) use it.
 
 A [`Deterministic`](@ref) node computes its output from its inputs, `out = f(inputs)`. Its
-clusters are always its output and the joint over its inputs, whatever the factorisation. A rule
-reaches the function through [`getnodefn`](@ref)`(ctx.node, Target(:out))`, which the engine
-implements, since the engine's node owns the function and any static inputs folded into it.
+clusters are always its output and the joint over its inputs, whatever the factorisation. A
+rule reaches the function through [`getnodefn`](@ref)`(ctx.node, Target(:out))`. The engine
+implements that call, because the engine's node owns the function and any static inputs folded
+into it.
 
 ```@docs
 @define_factor_node
@@ -62,28 +69,28 @@ getnodefn
 
 ## What a node requires of a graph
 
-A node may say what it requires of the graph it is placed in, and an engine checks it when it
-creates the node, so a malformed graph is an error there rather than a rule silently reading
-fewer components:
+A node may state what it requires of the graph it is placed in. An engine checks these
+requirements when it creates the node. A malformed graph is then an error at creation, rather
+than a rule that silently reads fewer components.
 
-- `matched_groups = [(:m, :p)]`: groups with as many members as each other;
-- `min_group_length = 2`: at least two members in every group; `0` allows an empty group;
-- `factorisation = :meanfield`: only graphs giving every interface a cluster of its own, for a
-  node whose rules are variational whatever the factorisation.
+- `matched_groups = [(:m, :p)]`: the named groups have as many members as each other.
+- `min_group_length = 2`: every group has at least two members. `0` allows an empty group.
+- `factorisation = :meanfield`: the graph gives every interface a cluster of its own. A node
+  whose rules are variational whatever the factorisation declares it.
 
-`static_inputs = :fold` asks the engine to fold inputs connected to constants and data into the
-node's function, read through [`getnodefn`](@ref); such a node is built with its function.
+`static_inputs = :fold` asks the engine to fold the inputs that are connected to constants and
+data into the node's function, which a rule reads through [`getnodefn`](@ref). An engine builds
+such a node with its function.
 
 ## The declaration as data
 
-The macro produces a [`NodeSpec`](@ref), which [`nodespec`](@ref) returns and every query below
-reads. It shows itself as a summary:
+The macro produces a [`NodeSpec`](@ref), which [`nodespec`](@ref) returns. The card at the top of
+this page is that `NodeSpec`. Every query below reads it:
 
 ```@repl nodes
-using MessagePassingRulesBase # hide
-struct Mixture end # hide
-@define_factor_node(node = Mixture, type = Stochastic, interfaces = [:out, (:switch, aliases = [:s]), :inputs...], min_group_length = 2) # hide
-MessagePassingRulesBase.nodespec(Mixture)
+MessagePassingRulesBase.interfaces(Mixture)
+MessagePassingRulesBase.interface_groups(Mixture)
+MessagePassingRulesBase.alias_interface(Mixture, :s)
 ```
 
 ```@docs

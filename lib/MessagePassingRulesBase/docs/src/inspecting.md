@@ -4,9 +4,12 @@ CurrentModule = MessagePassingRulesBase
 
 # Inspecting rules
 
-Which rule a call would run, which rules a node has, and whether they are consistent: the
-queries a rule author uses at the REPL and a rule package's tests run. The examples use the
-`Shift` node of [Calling rules](@ref), `out = in + c`, with rules towards `out` and `in`.
+This page covers three questions: which [rule](@ref glossary-rule) a call would run, which rules
+a node has, and whether the rules are consistent. A rule author asks them at the REPL, and a
+rule package's tests ask them too.
+
+The examples use the `Shift` node of [Calling rules](@ref), `out = in + c`, with rules towards
+`out` and `in`:
 
 ```@setup inspecting
 using MessagePassingRulesBase
@@ -19,12 +22,15 @@ struct Shift end
 
 ## Which rule would run
 
-The `which_*` queries resolve without running, and return the [`RuleSpec`](@ref), which shows its
-inputs, its flags, its log-scale declaration, where it was defined and its body:
+The `which_*` queries resolve a rule without running it. They return the rule's
+[`RuleSpec`](@ref):
 
-```@repl inspecting
+```@example inspecting
 which_message_update_rule(Shift, :in; m = (out = Gauss(4.0, 2.0), c = 3.0))
 ```
+
+The `RuleSpec` shows the rule's inputs, its flags, its [log scale](@ref glossary-log-scale)
+declaration, where it was defined, and its body.
 
 ```@docs
 which_message_update_rule
@@ -39,14 +45,15 @@ MessagePassingRulesBase.InputSpec
 
 ## Which rules exist
 
-[`rule_coverage`](@ref) tabulates what a node can compute, under which algorithm; node packages
-show it on their pages:
+[`rule_coverage`](@ref) tabulates what a node can compute, and under which
+[algorithm](@ref glossary-algorithm). Node packages show it on their pages.
 
-```@repl inspecting
+```@example inspecting
 MessagePassingRulesBase.rule_coverage(Shift)
 ```
 
-[`list_rules`](@ref) returns the rules themselves:
+`Shift` has a rule towards `out` and one towards `in`, both under `DefaultAlgorithm`. It has no
+rule towards `c`. [`list_rules`](@ref) returns the rules themselves:
 
 ```@repl inspecting
 MessagePassingRulesBase.list_rules(Shift, :in)
@@ -61,12 +68,18 @@ MessagePassingRulesBase.visualize_spec
 
 ## Checking the rules
 
-A rule package's tests check its rules against their nodes' declarations with
-[`check_rules`](@ref), and against each other with [`check_rule_ambiguities`](@ref): a pair of
-rules some call matches equally well makes resolution throw a `MethodError`.
+A rule package's tests check its rules in two ways:
+
+- against their nodes' declarations, with [`check_rules`](@ref);
+- against each other, with [`check_rule_ambiguities`](@ref). Two rules that some call matches
+  equally well make resolution throw a `MethodError`.
+
+Each check takes the modules to check, every loaded module by default, and returns the problems
+it finds. Both lists are empty for this page's module:
 
 ```@repl inspecting
-MessagePassingRulesBase.check_rules(), MessagePassingRulesBase.check_rule_ambiguities()
+MessagePassingRulesBase.check_rules(@__MODULE__)
+MessagePassingRulesBase.check_rule_ambiguities(@__MODULE__)
 ```
 
 ```@docs
@@ -78,9 +91,9 @@ MessagePassingRulesBase.duplicate_rules
 
 ## The registries
 
-Each module that defines nodes or rules keeps a registry of what it defined, filled when the
-module loads. It is for introspection only, listings, coverage, checks and the near misses of a
-[`RuleNotFoundError`](@ref); resolution never reads it.
+Each module that defines nodes or rules keeps a registry of what it defined. The registry is
+filled when the module loads. It serves introspection only: listings, coverage, checks, and the
+near misses a [`RuleNotFoundError`](@ref) reports. Resolution never reads it.
 
 ```@docs
 MessagePassingRulesBase.Registry

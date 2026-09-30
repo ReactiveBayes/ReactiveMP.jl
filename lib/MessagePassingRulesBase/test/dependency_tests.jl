@@ -185,3 +185,10 @@ end
         )
     ) |> msg -> contains(msg, "does not cover `μ`")
 end
+
+@testitem "dependencies:a custom selection shows as declared" tags = [:base] setup = [DependencyNodes] begin
+    using MessagePassingRulesBase: dependencies_spec, target_dependencies, IndexedTarget
+    spec = dependencies_spec(DependencyNodes.DeltaFn, DependencyNodes.Chain())
+    @test sprint(show, only(target_dependencies(spec, IndexedTarget(:in, 1)))) == "m[:in][select_group_members(…; arity = 1)]"
+    @test contains(sprint(show, MIME"text/html"(), spec), "select_group_members(…; arity = 1)")
+end
