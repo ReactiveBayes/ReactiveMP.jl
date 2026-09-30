@@ -19,6 +19,8 @@ mutable struct DataVariable{M, P} <: AbstractVariable
     label::Any
 end
 
+Base.show(io::IO, variable::DataVariable) = print(io, "DataVariable(", repr(variable.label), ")")
+
 function DataVariable(; label = nothing)
     messageout = RecentSubject(Message)
     marginal = MarginalObservable()

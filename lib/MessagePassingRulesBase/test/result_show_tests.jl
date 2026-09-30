@@ -77,3 +77,35 @@ end
     # Values are escaped.
     @test !contains(R.html(call_message_update_rule(R.Gauss, :out; m = (μ = 1, τ = 2))), "<Int")
 end
+
+@testitem "spec display:text/html" tags = [:base] setup = [ResultShowRules] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: nodespec, list_rules, RuleNotFound
+    R = ResultShowRules
+
+    # A declaration draws its node: the output on the right, the other interfaces on the left,
+    # a group by its name, then the interfaces and the declaration's fields.
+    node = R.html(nodespec(R.Gauss))
+    @test startswith(node, "<div class=\"mprb-card\"") && endswith(node, "</div>") && !contains(node, "<script")
+    @test count("<svg", node) == 1 && contains(node, "<rect class=\"node\"") && contains(node, ">stochastic</text>")
+    @test count("class=\"edge interface\"", node) == 4 && contains(node, ">w…</text>")
+    @test contains(node, "a group of any number of members") && contains(node, "default algorithm")
+    @test count("<table>", node) == count("</table>", node)
+
+    # A rule draws what it consumes, coloured by how, and what it computes.
+    bp = R.html(only(filter(s -> s.inputs[1].type === Float64, list_rules(R.Gauss, :out))))
+    @test count("class=\"edge message\"", bp) == 2 && count("class=\"edge target\"", bp) == 1
+    @test contains(bp, "m[:μ]") && contains(bp, "<pre>") && contains(bp, "class=\"mprb-legend\"")
+    vmp = R.html(only(list_rules(R.Gauss, :μ)))
+    @test count("class=\"edge marginal\"", vmp) == 2
+    joint = R.html(only(list_rules(R.Gauss, :τ)))
+    @test contains(joint, "class=\"edge joint\"") && contains(joint, "q[:out, :μ]")
+    energy = R.html(only(filter(s -> s.kind === :average_energy, list_rules(R.Gauss))))
+    @test !contains(energy, "class=\"edge target\"")
+
+    # The pieces of a declaration show themselves as they are written.
+    @test sprint(show, nodespec(R.Gauss).interfaces[4]) == "w..."
+    @test sprint(show, only(list_rules(R.Gauss, :μ)).inputs[1]) == "q[:out]::Float64"
+    missing_rule = RuleNotFound(:message, R.Gauss, MessagePassingRulesBase.Target(:out), DefaultAlgorithm(), nothing)
+    @test startswith(sprint(show, missing_rule), "RuleNotFound(message rule for ") && contains(sprint(show, missing_rule), "towards :out under ")
+end

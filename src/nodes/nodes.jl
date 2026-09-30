@@ -283,6 +283,38 @@ The clusters of `factornode`'s factorisation and their local marginals, which
 [`ReactiveMP.get_node_local_marginals`](@ref) lists.
 """
 getlocalclusters(factornode::FactorNode) = factornode.localclusters
+
+# How a node shows its edges: an interface by its name, a group's member as `name[k]`, and the
+# variable it connects to by its label, or a constant by its value.
+interface_display(interface::NodeInterface) = string(name(interface))
+interface_display(interface::IndexedNodeInterface) = string(name(interface), "[", index(interface), "]")
+variable_display(variable::ConstVariable) = variable.label === nothing ? repr(variable.constant) : string(variable.label)
+variable_display(variable::AbstractVariable) = variable.label === nothing ? "unnamed" : string(variable.label)
+variable_kind(variable::ConstVariable) = "constant"
+variable_kind(variable::DataVariable) = "data"
+variable_kind(variable::RandomVariable) = "random"
+variable_kind(variable::AbstractVariable) = ""
+
+node_display(fform::Union{Type, Function}) = string(nameof(fform))
+node_display(fform) = string(fform)
+
+Base.show(io::IO, factornode::FactorNode) =
+    print(io, "FactorNode(", node_display(functionalform(factornode)), ", ", join(map(interface_display, getinterfaces(factornode)), ", "), ")")
+
+function Base.show(io::IO, ::MIME"text/plain", factornode::FactorNode)
+    fform = functionalform(factornode)
+    println(io, "FactorNode ", node_display(fform), " (", isstochastic(fform) ? "stochastic" : "deterministic", ")")
+    interfaces = getinterfaces(factornode)
+    names = map(interface_display, interfaces)
+    variables = map(i -> variable_display(getvariable(i)), interfaces)
+    namewidth, varwidth = maximum(length, names; init = 0), maximum(length, variables; init = 0)
+    for (label, variable, interface) in zip(names, variables, interfaces)
+        println(io, "  ", rpad(label, namewidth), " ── ", rpad(variable, varwidth), "  ", variable_kind(getvariable(interface)))
+    end
+    clusters = map(cluster -> "(" * join(map(i -> names[i], cluster), ", ") * ")", getfactorization(getlocalclusters(factornode)))
+    print(io, "  clusters: ", join(clusters, " "))
+    return nothing
+end
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
 interfaceindex(factornode::FactorNode, iname::Symbol) = findfirst(interface -> name(interface) === iname, getinterfaces(factornode))

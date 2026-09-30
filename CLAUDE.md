@@ -78,7 +78,7 @@ RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
 make docs-all                              # every documentation site, in dependency order, ReactiveMP's last
-make docs-base                             # one package's site (docs-<package>, as the test targets), into lib/<Pkg>/docs/build
+make docs-base                             # one package's site (docs-<package>, as the test targets), into lib/<Pkg>/docs/build, after the sites it links to
 make docs                                  # ReactiveMP's site alone; it links to the package sites, so they must be built
 make test-base                             # lib/MessagePassingRulesBase's own suite
 make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
@@ -115,12 +115,12 @@ and go at the release.
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (176 of them across 25 files), each self-contained and
+Tests are `@testitem` blocks (177 of them across 25 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (31) and `:engine` (144 —
+**Every test item carries a tag.** The taxonomy is `:nodes` (32) and `:engine` (144 —
 everything except the node tests and the quality items), plus `:alloc` on the two items that
 assert allocation counts and `:quality` on the engine's doctests. Rules
 are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been

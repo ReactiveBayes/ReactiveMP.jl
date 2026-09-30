@@ -41,6 +41,24 @@ end
     @test name.(getinterfaces(shifted)) == [:out, :in]
 end
 
+@testitem "a factor node shows its edges, the variables they connect and its clusters" tags = [:nodes] setup = [EngineNodes] begin
+    N = EngineNodes
+
+    x, y = randomvar(label = :x), datavar(label = :y)
+    gaussian = factornode(N.Gaussian, [(:out, y), (:μ, x), (:v, constvar(1.0))], ((:out, :μ), (:v,)))
+    @test repr(gaussian) == "FactorNode(Gaussian, out, μ, v)"
+    text = sprint(show, MIME"text/plain"(), gaussian)
+    @test startswith(text, "FactorNode Gaussian (stochastic)")
+    @test contains(text, "out ── y    data") && contains(text, "μ   ── x    random") && contains(text, "v   ── 1.0  constant")
+    @test endswith(text, "clusters: (out, μ) (v)")
+
+    mixture = factornode(N.Mixture, [(:out, randomvar()), (:switch, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())])
+    @test contains(sprint(show, MIME"text/plain"(), mixture), "m[2]   ── unnamed  random")
+
+    @test repr(x) == "RandomVariable(:x)" && repr(y) == "DataVariable(:y)"
+    @test repr(constvar(2.0)) == "ConstVariable(2.0)"
+end
+
 @testitem "sdtype comes from the node declaration" tags = [:nodes] setup = [EngineNodes] begin
     N = EngineNodes
 

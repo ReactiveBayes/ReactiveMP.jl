@@ -113,6 +113,7 @@ include("rule_macro.jl")
 include("diagnostics.jl")
 include("fallback.jl")
 include("interactive.jl")
+include("svg.jl")
 include("display.jl")
 include("result_show.jl")
 

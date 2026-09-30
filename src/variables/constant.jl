@@ -18,6 +18,8 @@ mutable struct ConstVariable <: AbstractVariable
     label::Any
 end
 
+Base.show(io::IO, variable::ConstVariable) = print(io, "ConstVariable(", variable.label === nothing ? repr(variable.constant) : repr(variable.label), ")")
+
 function ConstVariable(constant; label = nothing)
     marginal = MarginalObservable()
     # A point mass observed: its log scale is zero.

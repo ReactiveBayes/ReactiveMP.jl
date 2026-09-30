@@ -34,5 +34,9 @@ makedocs(
         "Math helpers" => "math.md",
         "Internals" => "internals.md",
     ],
-    format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
+    # Pages that show rule results as cards are larger than the defaults allow.
+    format = Documenter.HTML(
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        example_size_threshold = 400 * 1024, size_threshold_warn = 400 * 1024, size_threshold = 400 * 1024,
+    ),
 )

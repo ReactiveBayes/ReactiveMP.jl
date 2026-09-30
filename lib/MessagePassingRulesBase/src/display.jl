@@ -4,17 +4,6 @@ Base.show(io::IO, ::Target{E}) where {E} = print(io, repr(E))
 Base.show(io::IO, target::IndexedTarget{E}) where {E} = print(io, "(", repr(E), ", ", target.index, ")")
 Base.show(io::IO, ::ClusterTarget{K}) where {K} = print(io, repr(K))
 
-html_escape(x) = replace(string(x), "&" => "&amp;", "<" => "&lt;", ">" => "&gt;", "\"" => "&quot;")
-
-function html_table(io::IO, title, rows)
-    print(io, "<table><caption>", html_escape(title), "</caption>")
-    for (key, value) in rows
-        print(io, "<tr><th style=\"text-align:left\">", html_escape(key), "</th><td><code>", html_escape(value), "</code></td></tr>")
-    end
-    print(io, "</table>")
-    return nothing
-end
-
 yesno(flag) = flag ? "yes" : "no"
 kind_label(kind) = kind === :average_energy ? "average energy" : "$kind rule"
 
@@ -33,6 +22,14 @@ function inputs_label(spec::RuleSpec, io = nothing)
     return isempty(labels) ? "none" : join(labels, ", ")
 end
 
+Base.show(io::IO, input::InputSpec) = print(io, input_label(input.container, input.key, input.selection), "::", shown(io, input.type))
+
+function Base.show(io::IO, r::RuleNotFound)
+    print(io, "RuleNotFound(", kind_label(r.kind), " for ", shown(io, r.node))
+    r.target === nothing || print(io, " towards ", r.target)
+    return print(io, " under ", shown(io, r.algorithm), ")")
+end
+
 Base.show(io::IO, spec::RuleSpec) = print(io, "RuleSpec(", rule_heading(spec, io), " @ ", spec.file, ":", spec.line, ")")
 
 function Base.show(io::IO, ::MIME"text/plain", spec::RuleSpec)
@@ -45,14 +42,39 @@ function Base.show(io::IO, ::MIME"text/plain", spec::RuleSpec)
     return nothing
 end
 
-Base.show(io::IO, ::MIME"text/html", spec::RuleSpec) = html_table(
-    io, "RuleSpec: " * rule_heading(spec, io), [
-        "inputs" => inputs_label(spec, io), "in-place" => yesno(spec.inplace), "scratch" => yesno(spec.scratch !== nothing), "pure" => yesno(spec.pure),
-        "services" => isempty(spec.services) ? "none" : join(spec.services, ", "),
-        "logscale" => describe_logscale_declaration(spec.logscale), "reads log scales" => yesno(spec.reads_logscale),
-        "defined" => "$(spec.file):$(spec.line)", "body" => spec.source,
+# The role an input plays in a drawing: a joint's members, a marginal or a message.
+input_role(container, key) = key isa Tuple ? :joint : container === :m ? :message : :marginal
+
+function rule_edges(spec::RuleSpec)
+    left = [spec.default ? [SvgEdge("default", :default)] : SvgEdge[]; [SvgEdge(input_label(i.container, i.key, i.selection), input_role(i.container, i.key)) for i in spec.inputs]]
+    spec.kind === :average_energy && return left, SvgEdge[]
+    target = spec.target
+    label = target === ClusterTarget ? "q(any cluster)" :
+        target <: ClusterTarget ? "q(" * join(map(member_label, target.parameters[1]), ", ") * ")" :
+        target <: IndexedTarget ? "$(target.parameters[1])[k]" : string(target.parameters[1])
+    return left, [SvgEdge(label, :target)]
+end
+
+function Base.show(io::IO, ::MIME"text/html", spec::RuleSpec)
+    id = open_card(io, "RuleSpec: " * rule_heading(spec, io))
+    left, right = rule_edges(spec)
+    print(io, "<div class=\"mprb-body\"><figure class=\"mprb-figure\">")
+    svg_node(io, id, node_name(spec.node); left, right, aria = rule_heading(spec, io))
+    html_legend(io, Set(e.role for e in [left; right]))
+    print(io, "</figure><div class=\"mprb-sections\">")
+    rows = Pair{String, String}[
+        "inputs" => html_code(inputs_label(spec, io)),
+        "in-place" => yesno(spec.inplace), "scratch" => yesno(spec.scratch !== nothing), "pure" => yesno(spec.pure),
+        "services" => isempty(spec.services) ? "none" : html_code(join(spec.services, ", ")),
     ]
-)
+    spec.kind === :message && push!(rows, "log scale" => html_escape(describe_logscale_declaration(spec.logscale)) * (spec.reads_logscale ? ", reads the incoming ones" : ""))
+    push!(rows, "defined" => html_code("$(short_path(spec.file)):$(spec.line)"))
+    push!(rows, "body" => "<pre>" * html_escape(spec.source) * "</pre>")
+    html_rows(io, rows)
+    print(io, "</div></div>")
+    close_card(io)
+    return nothing
+end
 
 function interface_label(interface::InterfaceSpec)
     label = string(interface.name) * (interface.group ? "..." : "")
@@ -77,13 +99,33 @@ function Base.show(io::IO, ::MIME"text/plain", spec::NodeSpec)
     return nothing
 end
 
-Base.show(io::IO, ::MIME"text/html", spec::NodeSpec) = html_table(
-    io, "NodeSpec: $(spec.node) ($(type_label(spec)))", [
-        "interfaces" => join(map(interface_label, spec.interfaces), ", "),
-        "default algorithm" => spec.algorithm, "static inputs" => spec.static_inputs,
-        "defined" => "$(spec.file):$(spec.line)",
-    ]
-)
+Base.show(io::IO, interface::InterfaceSpec) = print(io, interface_label(interface))
+
+interface_edge(interface::InterfaceSpec) =
+    SvgEdge(string(interface.name) * (interface.group ? "…" : ""), :interface, join(interface.aliases, ", "))
+
+function Base.show(io::IO, ::MIME"text/html", spec::NodeSpec)
+    id = open_card(io, "NodeSpec: " * node_name(spec.node))
+    edges = map(interface_edge, collect(spec.interfaces))
+    print(io, "<div class=\"mprb-body\"><figure class=\"mprb-figure\">")
+    svg_node(io, id, node_name(spec.node); left = edges[2:end], right = edges[1:min(1, end)], kind = type_label(spec), aria = "the node $(node_name(spec.node)) and its interfaces")
+    print(io, "</figure><div class=\"mprb-sections\">")
+    print(io, "<table><tr><th>interface</th><th></th><th>aliases</th></tr>")
+    for interface in spec.interfaces
+        print(io, "<tr><td>", html_code(interface.name), "</td><td>", interface.group ? "a group of any number of members" : "", "</td><td>", join(map(html_code, interface.aliases), ", "), "</td></tr>")
+    end
+    print(io, "</table>")
+    rows = Pair{String, String}["default algorithm" => html_code(shown(io, spec.algorithm)), "static inputs" => html_code(spec.static_inputs)]
+    isempty(spec.matched_groups) || push!(rows, "matched groups" => html_code(join(map(g -> join(g, " = "), spec.matched_groups), ", ")))
+    spec.min_group_length == 1 || push!(rows, "min group length" => string(spec.min_group_length))
+    spec.factorisation === :any || push!(rows, "factorisation" => html_code(spec.factorisation))
+    isempty(spec.initial_messages) || push!(rows, "initial messages" => html_code(join(map(p -> "$(first(p)) => $(shown(io, last(p)))", spec.initial_messages), ", ")))
+    push!(rows, "defined" => html_code("$(short_path(spec.file)):$(spec.line)"))
+    html_rows(io, rows)
+    print(io, "</div></div>")
+    close_card(io)
+    return nothing
+end
 
 dependency_target_label(entry::TargetDependencies) = entry.indexed ? "(:$(entry.edge), k)" : ":$(entry.edge)"
 function dependency_inputs_label(entry::TargetDependencies)
@@ -105,13 +147,28 @@ function Base.show(io::IO, ::MIME"text/plain", spec::DependenciesSpec)
     return nothing
 end
 
-Base.show(io::IO, ::MIME"text/html", spec::DependenciesSpec) = html_table(
-    io, "DependenciesSpec: $(spec.node) under $(spec.algorithm)",
-    [
-        [dependency_target_label(entry) => dependency_inputs_label(entry) for entry in spec.targets];
-        ["free-energy partition" => partition_label(spec)]
-    ]
-)
+Base.show(io::IO, d::Dependency) = print(io, dependency_label(d))
+Base.show(io::IO, entry::TargetDependencies) = print(io, dependency_target_label(entry), " ⇐ ", dependency_inputs_label(entry))
+
+dependency_edges(entry::TargetDependencies) =
+    [entry.default ? [SvgEdge("default", :default)] : SvgEdge[]; [SvgEdge(dependency_label(d), input_role(d.container, d.key)) for d in entry.inputs]]
+
+function Base.show(io::IO, ::MIME"text/html", spec::DependenciesSpec)
+    id = open_card(io, "DependenciesSpec: $(node_name(spec.node))", "under $(shown(io, spec.algorithm))")
+    print(io, "<div class=\"mprb-grid\">")
+    roles = Set{Symbol}([:target])
+    for entry in spec.targets
+        left = dependency_edges(entry)
+        union!(roles, (e.role for e in left))
+        target = entry.indexed ? "$(entry.edge)[k]" : string(entry.edge)
+        svg_node(io, id, node_name(spec.node); left, right = [SvgEdge(target, :target)], aria = "the inputs of the rules towards $target", stub = 40)
+    end
+    print(io, "</div>")
+    html_legend(io, roles)
+    html_rows(io, ["free-energy partition" => html_escape(partition_label(spec))])
+    close_card(io)
+    return nothing
+end
 
 Base.show(io::IO, coverage::RuleCoverage) = print(io, "RuleCoverage(", coverage.node, ")")
 

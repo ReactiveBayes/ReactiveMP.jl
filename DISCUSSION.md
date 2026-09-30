@@ -1935,6 +1935,23 @@ unclear how to generate one. **Tests of structure**, the elements and sections p
 balanced, rather than byte-exact snapshots. The card lists the other rules for the same target
 with how each fits the call, the report the not-found error gives, now shared (`fit_report`).
 
+### 3.52 Declarations drawn, and the docs' dependencies (user, 2026-09-30)
+
+For the documentation overhaul (user: rich output through Julia's `show`, with SVG diagrams),
+§3.51's card extends from one call to the declarations: `NodeSpec` draws its node with its
+interfaces, `RuleSpec` what the rule consumes and computes, `DependenciesSpec` one small node per
+target, each input coloured as a message or a marginal. One drawing routine and one card frame
+serve all four (`svg.jl`), still dependency-free and in the base package; the palette follows
+Documenter's theme toggle as well as the reader's system. The engine's `FactorNode` and variables
+get `text/plain` displays only: an SVG there would reach into the base package's internals, which
+become another repository's. `visualize_spec` stays the place for graph-scale pictures.
+
+**Docs dependencies** (user): a site loads only what its package depends on, plus the registered
+distribution packages. The engine, `MessagePassingRulesBase` and TestUtils sites never load a rule
+package; their examples declare small nodes on the page, and link the rule packages' sites and
+RxInfer's. The learning path that needs the standard nodes lives in RxInfer's documentation, the
+one package that loads them all.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

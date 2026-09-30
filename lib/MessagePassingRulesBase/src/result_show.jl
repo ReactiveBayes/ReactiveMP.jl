@@ -52,8 +52,6 @@ function group_length(name, args::RuleArgs, targets)
     return n
 end
 
-member_label(member::Symbol) = string(member)
-member_label((group, k)::Tuple) = "$group[$k]"
 
 function edge_views(r::RuleResult)
     spec, args = r.rule, r.arguments
@@ -88,9 +86,6 @@ function edge_views(r::RuleResult)
     return edges
 end
 
-# A node by its own name, without the module it is defined in: `NormalMeanVariance`, `+`.
-node_name(node::Union{Type, Function}) = string(nameof(node))
-node_name(node) = string(node)
 
 function call_mode(r::RuleResult)
     r.rule.kind === :average_energy && return "average energy"
@@ -141,8 +136,6 @@ function compact_repr(value; limit = 120, io = nothing)
     return length(text) > limit ? first(text, limit - 1) * "…" : text
 end
 
-# A rule's file as its directory and name, which is what tells rules apart.
-short_path(file) = (parts = splitpath(String(file)); joinpath(parts[max(end - 1, 1):end]...))
 
 # A joint arrives once; its members after the first only name it.
 function first_of_joints(edges)
@@ -202,86 +195,19 @@ end
 
 ## text/html
 
-# Distinct ids for the SVG markers of every card on a page.
-const HTML_CARD_COUNTER = Ref(0)
-
-const HTML_CARD_STYLE = """
-.mprb-card{--mprb-fg:#1f2328;--mprb-muted:#6e7781;--mprb-bg:#ffffff;--mprb-border:#d0d7de;--mprb-target:#1a7f37;--mprb-message:#0969da;--mprb-marginal:#8250df;--mprb-warn:#9a6700;
-  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;color:var(--mprb-fg);background:var(--mprb-bg);border:1px solid var(--mprb-border);border-radius:8px;padding:12px 14px;margin:6px 0;max-width:960px}
-@media (prefers-color-scheme: dark){.mprb-card{--mprb-fg:#e6edf3;--mprb-muted:#8d96a0;--mprb-bg:#0d1117;--mprb-border:#30363d;--mprb-target:#3fb950;--mprb-message:#58a6ff;--mprb-marginal:#bc8cff;--mprb-warn:#d29922}}
-.mprb-card .mprb-head{font-weight:600;margin-bottom:8px}.mprb-card .mprb-mode{color:var(--mprb-muted);font-weight:400;margin-left:6px}
-.mprb-card .mprb-body{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}.mprb-card .mprb-sections{flex:1;min-width:280px}
-.mprb-card details{margin:4px 0}.mprb-card summary{cursor:pointer;font-weight:600}
-.mprb-card table{border-collapse:collapse;margin:4px 0 6px 0;color:inherit;font-size:inherit;font-family:inherit}.mprb-card td,.mprb-card th{padding:2px 8px 2px 0;text-align:left;vertical-align:top}
-.mprb-card th{color:var(--mprb-muted);font-weight:500}.mprb-card code,.mprb-card pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
-.mprb-card pre{white-space:pre-wrap;margin:2px 0}.mprb-card .mprb-ok{color:var(--mprb-target)}.mprb-card .mprb-no{color:var(--mprb-warn)}.mprb-card .mprb-undefined{color:var(--mprb-warn)}
-.mprb-card svg text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;fill:var(--mprb-fg);stroke:none}
-.mprb-card svg text.target{fill:var(--mprb-target)}.mprb-card svg marker path{stroke:none}
-.mprb-card svg marker path.target{fill:var(--mprb-target)}.mprb-card svg marker path.message{fill:var(--mprb-message)}
-.mprb-card svg marker path.marginal,.mprb-card svg marker path.joint{fill:var(--mprb-marginal)}
-.mprb-card svg line.edge{stroke-width:1.6;fill:none}.mprb-card svg line.target{stroke:var(--mprb-target);stroke-width:2.4}
-.mprb-card svg line.message{stroke:var(--mprb-message)}.mprb-card svg line.marginal,.mprb-card svg line.joint{stroke:var(--mprb-marginal);stroke-dasharray:5 3}
-.mprb-card svg line.unused{stroke:var(--mprb-border);stroke-dasharray:2 3}.mprb-card svg text.unused{fill:var(--mprb-muted)}
-.mprb-card svg text.message{fill:var(--mprb-message)}.mprb-card svg text.marginal,.mprb-card svg text.joint{fill:var(--mprb-marginal)}
-.mprb-card svg .node{fill:var(--mprb-bg);stroke:var(--mprb-fg);stroke-width:1.6}
-"""
-
-role_class(role) = string(role)
 
 # The node as a box with its edges: the target(s) on the right with arrows out, every other edge
 # on the left, an arrow into the box for each input, greyed where unused.
 function html_node_svg(io::IO, r::RuleResult, edges, id)
-    left = [e for e in edges if e.role !== :target]
-    right = [e for e in edges if e.role === :target]
-    rows = max(length(left), length(right), 1)
-    height = 30 * rows + 30
-    label_width = 8 * maximum(e -> length(e.label), edges; init = 3) + 10
-    name = node_name(r.rule.node)
-    box_width = max(60, 8 * length(name) + 16)
-    width = 2 * label_width + 2 * 70 + box_width
-    box_x, box_y, box_h = label_width + 70, 15, height - 30
-    print(io, "<svg class=\"mprb-node\" role=\"img\" aria-label=\"", html_escape(result_label(r)), "\" width=\"", width, "\" height=\"", height, "\" viewBox=\"0 0 ", width, " ", height, "\">")
-    print(io, "<defs>")
-    for role in (:target, :message, :marginal, :joint)
-        print(io, "<marker id=\"", id, "-", role, "\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerUnits=\"userSpaceOnUse\" markerWidth=\"9\" markerHeight=\"9\" orient=\"auto-start-reverse\">")
-        print(io, "<path d=\"M0,0 L10,5 L0,10 z\" class=\"", role, "\"/></marker>")
-    end
-    print(io, "</defs>")
-    y_of(i, n) = box_y + box_h * i / (n + 1)
-    for (i, edge) in enumerate(left)
-        y = y_of(i, length(left))
-        marker = edge.role === :unused ? "" : " marker-end=\"url(#$id-$(edge.role))\""
-        print(io, "<line class=\"edge ", role_class(edge.role), "\" x1=\"", label_width, "\" y1=\"", y, "\" x2=\"", box_x, "\" y2=\"", y, "\"", marker, "/>")
-        print(io, "<text class=\"", role_class(edge.role), "\" x=\"", label_width - 6, "\" y=\"", y + 4, "\" text-anchor=\"end\">", html_escape(edge.label), "</text>")
-    end
-    for (i, edge) in enumerate(right)
-        y = y_of(i, length(right))
-        x1, x2 = box_x + box_width, box_x + box_width + 70
-        print(io, "<line class=\"edge target\" x1=\"", x1, "\" y1=\"", y, "\" x2=\"", x2, "\" y2=\"", y, "\" marker-end=\"url(#", id, "-target)\"/>")
-        print(io, "<text class=\"target\" x=\"", x2 + 8, "\" y=\"", y + 4, "\" font-weight=\"bold\">", html_escape(edge.label), "</text>")
-    end
-    print(io, "<rect class=\"node\" x=\"", box_x, "\" y=\"", box_y, "\" width=\"", box_width, "\" height=\"", box_h, "\" rx=\"4\"/>")
-    print(io, "<text x=\"", box_x + box_width / 2, "\" y=\"", box_y + box_h / 2 + 4, "\" text-anchor=\"middle\">", html_escape(name), "</text>")
-    print(io, "</svg>")
+    left = [SvgEdge(e.label, e.role) for e in edges if e.role !== :target]
+    right = [SvgEdge(e.label, e.role) for e in edges if e.role === :target]
+    svg_node(io, id, node_name(r.rule.node); left, right, aria = result_label(r), stub = 70)
     return nothing
 end
-
-function html_rows(io::IO, rows)
-    print(io, "<table>")
-    for (key, value) in rows
-        print(io, "<tr><th>", html_escape(key), "</th><td>", value, "</td></tr>")
-    end
-    print(io, "</table>")
-    return nothing
-end
-
-html_code(value) = "<code>" * html_escape(value) * "</code>"
 
 function Base.show(io::IO, ::MIME"text/html", r::RuleResult)
-    id = "mprb-" * string(HTML_CARD_COUNTER[] += 1)
     edges = edge_views(r)
-    print(io, "<div class=\"mprb-card\" id=\"", id, "\"><style>", HTML_CARD_STYLE, "</style>")
-    print(io, "<div class=\"mprb-head\">RuleResult: ", html_escape(result_label(r)), "<span class=\"mprb-mode\">", html_escape(call_mode(r)), "</span></div>")
+    id = open_card(io, "RuleResult: " * result_label(r), call_mode(r))
     print(io, "<div class=\"mprb-body\">")
     html_node_svg(io, r, edges, id)
     print(io, "<div class=\"mprb-sections\">")

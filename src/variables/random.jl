@@ -18,6 +18,8 @@ mutable struct RandomVariable <: AbstractVariable
     label::Any
 end
 
+Base.show(io::IO, variable::RandomVariable) = print(io, "RandomVariable(", repr(variable.label), ")")
+
 """
     randomvar(; label = nothing) -> RandomVariable
 

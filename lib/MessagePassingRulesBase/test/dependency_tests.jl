@@ -114,7 +114,9 @@ end
     plain = sprint(show, MIME("text/plain"), declaration)
     @test contains(plain, ":a ⇐ default, q[:a]")
     @test contains(plain, ":y ⇐ default")
-    @test contains(sprint(show, MIME("text/html"), declaration), "default, q[:a]")
+    # The card draws the default scheme's inputs and the added marginal as two edges.
+    html = sprint(show, MIME("text/html"), declaration)
+    @test contains(html, "class=\"edge default\"") && contains(html, ">q[:a]</text>")
 end
 
 @testitem "dependencies:selectors" tags = [:base] setup = [DependencyNodes] begin

@@ -62,6 +62,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | Beta's average energy takes `log B(E[a], E[b])` for `E[log B(a, b)]`, exact for point-mass `a`, `b` only; the node has no rule towards them | left for now (user, 2026-09-26) | § Phase C, *Progress* |
 | found by the documentation pass, documented as they are: ConjugateAR under `ARVMP(Univariate, …)` is a `MethodError`; `AdditiveCouplingLayer` with `partition_dim > 1` builds and then fails in `forward`; BinomialPolya's and Probit's `DefaultAlgorithm` energies use a fixed 32 cubature points; `test_rule_derivatives` throws where the tables record a failure; the engine and migration fixture headers store `julia` as different types; `Dependency.key` cannot name a group member `(:T, 1)` | to discuss | the packages' docs, *Limitations* |
 | ManyPlus, the node main added in #666 and released in 6.6.0 after this branch forked: not on the branch, so v7 would drop it; the v6 oracle (6.5.0) has no ManyPlus either | after the audit's cleanup, a node of its own (user) | § Phase C, *Progress* (the audit) |
+| the documentation overhaul (user, 2026-09-30): the sites, the rich display (§3.52), both migration guides, RxInfer's docs on its branch, error messages | in progress | § Phase C, *Progress* |
 | the package boundaries, one coherent effort (user): **done**. The math helpers are in `MessagePassingRulesBase`, public and documented (user: Standard's helpers move there, renamed, with Gaussian ones prefixed `gaussian_`), and Standard, AR, ContinuousTransition, SoftDot and GCV use them; AR, ContinuousTransition and SoftDot no longer depend on Standard, and AR's basis vector extends Base's public `scaled_outer`. Flow reads `Unscented` through `sigma_point_parameters`; TestUtils uses Base's documented tooling API (`add_selection_observer!` and the input functions); the engine documents and declares public what its pages and RxInfer use. The criterion (user): a name documented in the docs is public, exported or not; the repository's convention declares it `public` as well. On RxInfer's branch, `ReactiveMP.Any` is `Any` and `CountingReal` comes from BayesBase (`73839bdd`, not pushed; its whole suite passes, 14 718 checks) | done | § Phase C, *Progress* (the audit) |
 | the package sites published with the repository split: each `InterLinks` sibling then lists the online `objects.inv` first, so a link follows the deployed pages' URL form | Phase 8 | `docs/make.jl`, `lib/*/docs/make.jl` |
 
@@ -3721,6 +3722,15 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
+- *The documentation overhaul — in progress* (user, 2026-09-30): every site readable by a
+  student, every snippet run by the build, the rich display explaining, two migration guides
+  (rule authors here, model authors in RxInfer), and the vague error messages met on the way
+  fixed. Docs dependencies as §3.52 decides. Done: the `docs-<package>` targets build the sites
+  they link to first; the base docs load BayesBase, ExponentialFamily and Distributions, Delta's
+  ExponentialFamilyProjection; `NodeSpec`, `RuleSpec` and `DependenciesSpec` draw themselves
+  (§3.52), the card follows Documenter's theme; `FactorNode` and the variables show themselves.
+  Next: the base site's tutorials, keyword reference and glossary; the engine site on toy nodes;
+  the package sites; RxInfer's site on its branch; the error messages.
 - *The audit of 2026-09-29 — done* (user): the engine, the packages and the working
   documents reviewed against each other and the code. Decided (user): ManyPlus, main's node from
   #666 (6.6.0), is added after this effort; the package boundaries are one effort after the

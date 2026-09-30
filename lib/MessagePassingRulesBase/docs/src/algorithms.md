@@ -153,7 +153,7 @@ julia> @define_factor_node(node = Link, type = Stochastic, interfaces = [:out, :
 julia> @define_dependencies(node = Link, algorithm = LinkVMP, dependencies = [:out => (q[:in],), :in => (q[:out],)])
 
 julia> MessagePassingRulesBase.target_dependencies(MessagePassingRulesBase.dependencies_spec(Link, LinkVMP()), MessagePassingRulesBase.Target(:out))
-(MessagePassingRulesBase.Dependency(:q, :in, MessagePassingRulesBase.SingleInterface()),)
+(q[:in],)
 ```
 
 A declaration shows itself as a table of targets and their inputs:
