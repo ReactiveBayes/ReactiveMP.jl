@@ -63,7 +63,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | found by the documentation pass, documented as they are: ConjugateAR under `ARVMP(Univariate, …)` is a `MethodError`; `AdditiveCouplingLayer` with `partition_dim > 1` builds and then fails in `forward`; BinomialPolya's and Probit's `DefaultAlgorithm` energies use a fixed 32 cubature points; `test_rule_derivatives` throws where the tables record a failure; the engine and migration fixture headers store `julia` as different types; `Dependency.key` cannot name a group member `(:T, 1)` | to discuss | the packages' docs, *Limitations* |
 | ManyPlus, the node main added in #666 and released in 6.6.0 after this branch forked: not on the branch, so v7 would drop it; the v6 oracle (6.5.0) has no ManyPlus either | after the audit's cleanup, a node of its own (user) | § Phase C, *Progress* (the audit) |
 | the downstream check (user, 2026-09-30): all 48 RxInferExamples notebooks and the bmlip course's 11 RxInfer notebooks run on v7, v6 (Julia 1.13) as the baseline, where all pass. Ported on branches `reactivemp-v7` of RxInferExamples.jl (pushed) and of the course (on the fork `bvdmitri/course`, since it needs the registered packages and re-pinned notebooks). Found and fixed, each with a test: a deterministic node's free-energy term read a stale joint in loops; a one-member group alone in a stochastic node's cluster was a joint no rule computes (`DiscreteTransition` with one control); `node = typeof(f)` in the interactive calls; v6's per-node `RequireMessageFunctionalDependencies(in = d)` had no counterpart, now the activation option `initial_messages` and RxInfer's `where { initial_messages = … }`. Left: Nonlinear Sensor Fusion (CVI gone: `Unscented` or a slow `CVIProjection`), Incomplete Data (`StandardBasisVector` is not public), and seven notebooks with rules that need their owners (MARX, EFE, T-Maze, rSLDS, CCVMP, VAEs, LLM), each with a port plan | the two decisions for the user; the seven with their owners | the examples branch's commits; this row |
-| the documentation overhaul (user, 2026-09-30): the sites, the rich display (§3.52), both migration guides, RxInfer's docs on its branch, error messages | in progress | § Phase C, *Progress* |
+| the documentation overhaul (user, 2026-09-30): the sites, the rich display (§3.52), both migration guides, RxInfer's docs on its branch, error messages | done; what it leaves for the user is listed there | § Phase C, *Progress* |
 | the package boundaries, one coherent effort (user): **done**. The math helpers are in `MessagePassingRulesBase`, public and documented (user: Standard's helpers move there, renamed, with Gaussian ones prefixed `gaussian_`), and Standard, AR, ContinuousTransition, SoftDot and GCV use them; AR, ContinuousTransition and SoftDot no longer depend on Standard, and AR's basis vector extends Base's public `scaled_outer`. Flow reads `Unscented` through `sigma_point_parameters`; TestUtils uses Base's documented tooling API (`add_selection_observer!` and the input functions); the engine documents and declares public what its pages and RxInfer use. The criterion (user): a name documented in the docs is public, exported or not; the repository's convention declares it `public` as well. On RxInfer's branch, `ReactiveMP.Any` is `Any` and `CountingReal` comes from BayesBase (`73839bdd`, not pushed; its whole suite passes, 14 718 checks) | done | § Phase C, *Progress* (the audit) |
 | the package sites published with the repository split: each `InterLinks` sibling then lists the online `objects.inv` first, so a link follows the deployed pages' URL form | Phase 8 | `docs/make.jl`, `lib/*/docs/make.jl` |
 
@@ -3723,7 +3723,7 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
-- *The documentation overhaul — in progress* (user, 2026-09-30): every site readable by a
+- *The documentation overhaul — done* (user, 2026-09-30): every site readable by a
   student, every snippet run by the build, the rich display explaining, two migration guides
   (rule authors here, model authors in RxInfer), and the vague error messages met on the way
   fixed. Docs dependencies as §3.52 decides. Done: the `docs-<package>` targets build the sites
@@ -3736,8 +3736,13 @@ wait for the release):
   glossary links and student introductions; RxInfer's error hints (removed v6 names, the `model`
   keyword, a `RuleNotFoundError`'s pointer, posteriors never computed) on its branch; the Mixture
   `switch` rule with an observed `out` fixed; `rule_not_found_hint` for a node's own hint.
-  The v6 → v7 guide restructured for people, with the engine API and the moved names. Next:
-  RxInfer's site on its branch (built, to commit after the downstream session's commit there). Also recorded: `+` has no marginal rule over its inputs for an
+  The v6 → v7 guide restructured for people, with the engine API and the moved names. RxInfer's
+  site on its branch (`1416e04e`, `2a11443c`): a learning path, the v5 → v6 guide, every v6 page
+  rewritten, all runnable. Left for the user: Polya's rules gave identical posteriors under two
+  `context` seeds in RxInfer (not investigated); `infer` takes `diagnostics` and `context` only
+  inside `options`, and `EngineDiagnostics` is not exported; Flow's `getmodel`/`getmethod`, which
+  the v6 → v7 guide names, are internal; the near misses of a `RuleNotFoundError` print absolute
+  paths; GraphPPL shows an `@algorithm` specification as "Meta:". Also recorded: `+` has no marginal rule over its inputs for an
   observed `out`, so `y ~ z + ε` with `y` observed fails under `free_energy = true` (v6 neither). Recorded, not done: an interactive call does not check that a group
   selected `m[:g][!k]` has `nothing` at `k` (in `interactive.jl`); `check_rules` could flag a rule
   that reads its own edge's message where no declaration delivers it.
