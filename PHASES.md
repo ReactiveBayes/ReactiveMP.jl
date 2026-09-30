@@ -3736,8 +3736,8 @@ wait for the release):
   glossary links and student introductions; RxInfer's error hints (removed v6 names, the `model`
   keyword, a `RuleNotFoundError`'s pointer, posteriors never computed) on its branch; the Mixture
   `switch` rule with an observed `out` fixed; `rule_not_found_hint` for a node's own hint.
-  Next: RxInfer's site on its branch (in progress); the engine's v6 → v7 guide, after the
-  downstream session's rows land. Also recorded: `+` has no marginal rule over its inputs for an
+  The v6 → v7 guide restructured for people, with the engine API and the moved names. Next:
+  RxInfer's site on its branch (built, to commit after the downstream session's commit there). Also recorded: `+` has no marginal rule over its inputs for an
   observed `out`, so `y ~ z + ε` with `y` observed fails under `free_energy = true` (v6 neither). Recorded, not done: an interactive call does not check that a group
   selected `m[:g][!k]` has `nothing` at `k` (in `interactive.jl`); `check_rules` could flag a rule
   that reads its own edge's message where no declaration delivers it.

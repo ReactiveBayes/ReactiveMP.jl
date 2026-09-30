@@ -1,38 +1,52 @@
 # [Migrating from v6 to v7](@id migration-v6-to-v7)
 
-ReactiveMP v7 moves nodes and rules out of the engine into packages of their own. The engine
-keeps variables, factor nodes, messages, marginals and the free energy; `MessagePassingRulesBase`
-defines how nodes and rules are declared and found; `StandardMessagePassingRules` holds the
-standard nodes' rules; `MessagePassingRulesApproximations` and `DeltaMessagePassingRules` hold the
-approximation methods and the Delta node; and every other node has a package of its own
-([Node packages](@ref migration-v6-to-v7-node-packages)). Most of a port is mechanical, and this guide lists the
-mechanical translations as before/after pairs. The v7 side of each pair runs when these docs are
-built.
+This guide is for you if you wrote nodes and rules against ReactiveMP v6, maintain a package
+that does, or build graphs with the engine by hand. If you write models with RxInfer, read
+RxInfer's [Migration from v5 to v6](https://reactivebayes.github.io/RxInfer.jl/stable/manuals/migration/v5-to-v6/)
+instead: it covers `@model`, `infer` and the standard nodes a model uses.
 
-## For an agent porting code
+ReactiveMP v7 moves nodes and rules out of the engine into packages of their own. Most of a port
+is mechanical, and this guide gives each mechanical translation as a before/after pair, in the
+order a port happens. The v6 half of a pair starts with `# v6` and does not run. The v7 half runs
+when these docs are built, on small nodes declared on this page. If you port code mechanically,
+as a person or a tool, follow the [Checklist for a mechanical port](@ref migration-v6-to-v7-checklist)
+at the end.
 
-Read this section before changing anything.
+For the concepts behind the pairs, read
+[Your first node](@extref MessagePassingRulesBase tutorial-first-node), the
+[keyword reference](@extref MessagePassingRulesBase keyword-reference) and the
+[glossary](@extref MessagePassingRulesBase glossary).
 
-- **Read first:** the macros of [MessagePassingRulesBase](https://reactivebayes.github.io/MessagePassingRulesBase.jl/dev/),
-  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node),
-  [`@define_message_update_rule`](@extref MessagePassingRulesBase.@define_message_update_rule) and
-  [`@define_dependencies`](@extref MessagePassingRulesBase.@define_dependencies), then the pairs below.
-- **Translate only what a pair covers.** Each construct in the code you port must match a pair
-  in this guide. Anything else, and everything in [What cannot be translated
-  mechanically](@ref migration-v6-to-v7-manual), is a question for the person who owns the code.
-  Stop and ask; do not guess. A rule that compiles and returns a plausible distribution can
-  still be wrong, and nothing downstream will catch it.
-- **Never guess** which inputs a rule consumes, whether an input is a message or a marginal, the
-  order of interfaces, or what `meta` held: all of these change the result.
-- **Verify every rule you port** as [Verifying a port](@ref migration-v6-to-v7-verify) describes:
-  a table of cases, and a comparison with the old rule while it is available.
-- **Stop** when a rule reads raw message tuples, builds graph objects, keeps state in `meta`, or
-  when a verification fails and you cannot explain the difference.
+## What moved where
 
-## Nodes
+| v6, in `ReactiveMP` | v7 |
+|---|---|
+| variables, factor nodes, messages, marginals, the free energy | `ReactiveMP`, the engine |
+| `@node`, `@rule`, `@marginalrule`, `@average_energy`, `@call_rule`, rule lookup | [`MessagePassingRulesBase`](@extref MessagePassingRulesBase MessagePassingRulesBase) |
+| `@test_rules`, `@test_marginalrules` | [`MessagePassingRulesTestUtils`](@extref MessagePassingRulesTestUtils MessagePassingRulesTestUtils) |
+| the standard nodes and their rules | [`StandardMessagePassingRules`](@extref StandardMessagePassingRules StandardMessagePassingRules) |
+| the approximation methods | [`MessagePassingRulesApproximations`](@extref MessagePassingRulesApproximations MessagePassingRulesApproximations) |
+| the Delta node | [`DeltaMessagePassingRules`](@extref DeltaMessagePassingRules DeltaMessagePassingRules) |
+| every other node | a package of its own ([Node packages](@ref migration-v6-to-v7-node-packages)) |
 
-A node is declared with [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node), keyword by keyword. Aliases are written on the
-interface, and the first interface is the output, as before.
+Loading a package is enough for the engine to find its rules. These names moved with their
+packages:
+
+| v6 | v7 |
+|---|---|
+| `Unscented`, `UT`, `UnscentedTransform`, `Linearization`, `GaussHermiteCubature`, `ghcubature`, `AbstractApproximationMethod`, `approximation_name`, `approximation_short_name` | the same names, exported by `MessagePassingRulesApproximations`: [`Unscented`](@extref MessagePassingRulesApproximations.Unscented), [`Linearization`](@extref MessagePassingRulesApproximations.Linearization), [`GaussHermiteCubature`](@extref MessagePassingRulesApproximations.GaussHermiteCubature), [`ghcubature`](@extref MessagePassingRulesApproximations.ghcubature), [`AbstractApproximationMethod`](@extref MessagePassingRulesApproximations.AbstractApproximationMethod), [`approximation_name`](@extref MessagePassingRulesApproximations.approximation_name), [`approximation_short_name`](@extref MessagePassingRulesApproximations.approximation_short_name) |
+| `DeltaFn`, `CVIProjection`, `CVISamplingStrategy`, `FullSampling`, `MeanBased` | the same names, exported by `DeltaMessagePassingRules`: [`DeltaFn`](@extref DeltaMessagePassingRules.DeltaFn), [`CVIProjection`](@extref DeltaMessagePassingRules.CVIProjection), [`CVISamplingStrategy`](@extref DeltaMessagePassingRules.CVISamplingStrategy), [`FullSampling`](@extref DeltaMessagePassingRules.FullSampling), [`MeanBased`](@extref DeltaMessagePassingRules.MeanBased); `CVIProjection`'s rules load with ExponentialFamilyProjection |
+| `DeltaFnNode`, the Delta node's own node type | none: a Delta node is an ordinary `FactorNode` of `DeltaFn`, which folds its constant and data inputs into its function ([Static inputs](@ref lib-node-static-inputs)) |
+| `Autoregressive`, an alias of `AR` | the same alias, exported by `AutoregressiveMessagePassingRules` |
+| `GaussianMixture`, an alias of `NormalMixture` | the same alias, exported by `StandardMessagePassingRules` |
+| Flow's `compile`, `nr_params`, `getlayers` | the same names, exported by `FlowMessagePassingRules` |
+| Flow's `getmodel(meta)`, `getapproximation(meta)` | `FlowMessagePassingRules.getmodel(algo)` and `FlowMessagePassingRules.getmethod(algo)` on a [`FlowApproximation`](@extref FlowMessagePassingRules.FlowApproximation), internal |
+
+## Declaring a node
+
+A node is declared with [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node),
+keyword by keyword. Aliases are written on the interface, and the first interface is the output,
+as before.
 
 ```julia
 # v6
@@ -53,14 +67,20 @@ struct MyGaussian end
 ```
 
 A node with a variable number of edges of one kind, which v6 wrote by hand with `ManyOf` and a
-node type of its own, declares an interface group, `:in...`; see [Groups](@ref migration-v6-to-v7-groups).
+node type of its own, declares an interface [group](@extref MessagePassingRulesBase glossary-group),
+`:in...`; see [Groups](@ref migration-v6-to-v7-groups). The checks a node's constructor made
+become keywords of the declaration: `matched_groups`, `min_group_length` and `factorisation`
+([keyword reference](@extref MessagePassingRulesBase keyword-factor-node)).
 
 ## Message update rules
 
-`@rule` becomes [`@define_message_update_rule`](@extref MessagePassingRulesBase.@define_message_update_rule). The node, the target and the inputs are keywords;
-the inputs are typed like the old arguments, with `m_x` becoming `m[:x]` and `q_x` becoming
-`q[:x]`; the body is a lambda over the slots it needs. `Marginalisation` is gone: a rule belongs
-to an algorithm, the node's default unless it says otherwise.
+`@rule` becomes [`@define_message_update_rule`](@extref MessagePassingRulesBase.@define_message_update_rule).
+The node, the target and the inputs are keywords. The inputs are typed like the old arguments:
+the [message](@extref MessagePassingRulesBase glossary-message) `m_x` becomes `m[:x]`, and the
+[marginal](@extref MessagePassingRulesBase glossary-marginal) `q_x` becomes `q[:x]`. The body is a
+lambda over the slots it needs. `Marginalisation` is gone: a rule belongs to an
+[algorithm](@extref MessagePassingRulesBase glossary-algorithm), the node's default unless it says
+otherwise.
 
 ```julia
 # v6
@@ -110,11 +130,44 @@ end
 getresult(call_message_update_rule(MyGaussian, :τ; clusters = ((:out, :μ) => MvNormalMeanCovariance([1.0, 0.0], [1.0 0.0; 0.0 1.0]),)))
 ```
 
+A rule that took `meta::MyMeta` names its algorithm instead, `algorithm = MyMeta`, and reads the
+value from its `algo` slot. The algorithm is a subtype of
+[`DefaultAlgorithmExtension`](@extref MessagePassingRulesBase.DefaultAlgorithmExtension), which
+keeps the default's rules for every target it has none for:
+
+```julia
+# v6
+struct MyScale
+    factor::Float64
+end
+
+@rule MyGaussian(:μ, Marginalisation) (m_out::PointMass, m_τ::PointMass, meta::MyScale) = begin
+    return NormalMeanPrecision(mean(m_out), meta.factor * mean(m_τ))
+end
+```
+
+```@example v7
+struct MyScale <: DefaultAlgorithmExtension
+    factor::Float64
+end
+
+@define_message_update_rule(
+    node = MyGaussian, target = :μ, algorithm = MyScale,
+    args = (m[:out]::PointMass, m[:τ]::PointMass),
+    body = (algo, args) -> NormalMeanPrecision(mean(args.m[:out]), algo.factor * mean(args.m[:τ])),
+)
+
+getresult(call_message_update_rule(MyGaussian, :μ; m = (out = PointMass(1.0), τ = PointMass(2.0)), algorithm = MyScale(0.5)))
+```
+
+What else `meta` held is covered in [`meta`: algorithm or context service](@ref migration-v6-to-v7-meta).
+
 ## Marginal rules
 
-`@marginalrule` becomes [`@define_marginal_update_rule`](@extref MessagePassingRulesBase.@define_marginal_update_rule), its target the cluster's members as a
-tuple rather than a joined name (`:out_μ` becomes `(:out, :μ)`). A result that factorises into
-independent blocks, which v6 returned as a NamedTuple, is a [`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster), each
+`@marginalrule` becomes [`@define_marginal_update_rule`](@extref MessagePassingRulesBase.@define_marginal_update_rule).
+Its target is the cluster's members as a tuple rather than a joined name: `:out_μ` becomes
+`(:out, :μ)`. A result that factorises into independent blocks, which v6 returned as a
+NamedTuple, is a [`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster), each
 block labelled with the members it covers.
 
 ```julia
@@ -139,7 +192,8 @@ getresult(call_marginal_update_rule(MyGaussian, (:out, :μ); m = (out = PointMas
 
 ## Average energies
 
-`@average_energy` becomes [`@define_average_energy`](@extref MessagePassingRulesBase.@define_average_energy), with the same argument syntax as the rules.
+`@average_energy` becomes [`@define_average_energy`](@extref MessagePassingRulesBase.@define_average_energy),
+with the same argument syntax as the rules.
 
 ```julia
 # v6
@@ -160,22 +214,19 @@ getresult(call_average_energy(MyGaussian; q = (out = PointMass(1.0), μ = PointM
 
 ## Log scales
 
-A message's log scale is no longer an annotation: it is part of the message, the scalar with
-`message = exp(logscale) · distribution` (see [Log scales](@ref lib-logscale)). A rule declares
-it with the `logscale` keyword instead of writing it in its body: `@logscale v` becomes
-`logscale = v` for a constant, `logscale = (args) -> …` for one computed from the inputs, or
-`logscale = from_body` with the body returning [`with_logscale`](@extref MessagePassingRulesBase.with_logscale)`(result, v)`. A rule that reads the
-log scales its inputs arrived with, which v6 read from the raw `messages` tuple, declares
-`reads_logscale = true` and reads `args.logscale.m[:x]`.
+A message's [log scale](@extref MessagePassingRulesBase glossary-log-scale) is part of the
+message, not an annotation: it is the scalar with `message = exp(logscale) · distribution` (see
+[Log scales](@ref lib-logscale)). A rule declares it with the `logscale` keyword instead of
+writing it in its body:
 
-The engine tracks them with the activation option `logscales = true`, which replaces
-`LogScaleAnnotations`; RxInfer's `infer(...; logscales = true)` replaces
-`annotations = LogScaleAnnotations()`, and `getlogscale(getannotations(q))` becomes
-`getlogscale(q)`. A rule that declares none no longer makes inference fail: its message's log
-scale is an [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) saying why, which propagates through products, and only a rule or
-a user that needs the number errors. v6's fallback, which set zero whenever every input was a
-point mass, is gone, since it was not right for every rule; the rules it covered declare their log
-scale.
+- `@logscale v` becomes `logscale = v` for a constant;
+- `logscale = (args) -> …` computes it from the inputs;
+- `logscale = from_body` takes it from the body, which returns
+  [`with_logscale`](@extref MessagePassingRulesBase.with_logscale)`(result, v)`.
+
+A rule that reads the log scales its inputs arrived with, which v6 read from the raw `messages`
+tuple, declares `reads_logscale = true` and reads `args.logscale.m[:x]`
+([keyword reference](@extref MessagePassingRulesBase keyword-message-logscale)).
 
 ```julia
 # v6
@@ -201,20 +252,25 @@ result = call_message_update_rule(MyBernoulli, :p; m = (out = PointMass(1.0),))
 getresult(result), getlogscale(result)
 ```
 
-## Calling a rule
+The engine tracks log scales with the activation option `logscales = true`, which replaces
+`LogScaleAnnotations`. RxInfer's `infer(...; logscales = true)` replaces
+`annotations = LogScaleAnnotations()`, and `getlogscale(getannotations(q))` becomes
+`getlogscale(q)`.
 
-`@call_rule` returned the message, or a tuple with its add-ons under an option. Every call now
-returns a [`RuleResult`](@extref MessagePassingRulesBase.RuleResult), the same shape whatever the rule: [`getresult`](@extref MessagePassingRulesBase.getresult)`(result)` is the message,
-`getlogscale(result)` its log scale, and [`getrule`](@extref MessagePassingRulesBase.getrule), `MessagePassingRulesBase.getalgorithm` and
-the other getters say what produced it.
+A rule that declares no log scale does not make inference fail. Its message's log scale is an
+[`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) saying why, which
+propagates through products. Only a rule or a user that needs the number gets an error. v6's
+fallback, which set zero whenever every input was a point mass, is gone, since it was not right
+for every rule; the rules it covered declare their log scale.
 
 ## [Groups](@id migration-v6-to-v7-groups)
 
 A variable number of edges of one kind, `ManyOf` in v6, is an interface group. A rule towards a
-member names it `(:in, k)`, and its inputs select members: `m[:in...]` all of them, `m[:in][k]`
+member names it `(:in, k)`. Its inputs select members: `m[:in...]` takes all of them, `m[:in][k]`
 the target's own, and `m[:in][!k]` all but it. A group arrives as a tuple in member order, with
 `nothing` for a member the rule does not take. The node needs no node type, `factornode` or
 `activate!` of its own, and no `{N}` parameter: the number of members is the group's length.
+[Groups](@extref MessagePassingRulesBase tutorial-groups) builds such a node step by step.
 
 ```julia
 # v6
@@ -247,10 +303,10 @@ getresult(call_message_update_rule(MySum, (:in, 1); m = (out = NormalMeanVarianc
 ```
 
 A group may be empty where the node declares `min_group_length = 0`. A joint may hold some of a
-group's members with other interfaces, keyed with the members, `(:out, (:T, 1))`, and read as
-`q[:out, (:T, 1)]`. v6 handed such joints to hand-written `rule` methods under mangled names,
+group's members with other interfaces. It is keyed with the members, `(:out, (:T, 1))`, and read
+as `q[:out, (:T, 1)]`. v6 handed such joints to hand-written `rule` methods under mangled names,
 `q_out_T1`, which the rule parsed. A rule that takes whatever inputs the factorisation delivers,
-as those did, is written with `default` in its arguments, and walks its inputs by key with
+as those did, is written with `default` in its arguments. It walks its inputs by key with
 [`MessagePassingRulesBase.rule_inputs`](@extref): an interface by its name, a member as `(:T, k)`,
 a joint by its key.
 
@@ -275,27 +331,64 @@ struct MyTensor end
 getresult(call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) => 0.5,), q = (T = (nothing, 1.0),)))
 ```
 
-## `meta`
+## [`meta`: algorithm or context service](@id migration-v6-to-v7-meta)
 
-`meta` served two purposes, and each has its own place now.
+`meta` served two purposes, and each has its own place.
 
 - **What a rule computes**, such as an approximation method, is an **algorithm**: a type
   `struct MyMethod <: AbstractAlgorithm end`, possibly with fields, that the rule names with
-  `algorithm = MyMethod` and receives in its `algo` slot. The node's user chooses it per node, as
-  they chose the meta. `DeltaMeta(method = Unscented())` is [`DeltaApproximation`](@extref DeltaMessagePassingRules.DeltaApproximation)`(method = Unscented())`,
-  and `DeltaMeta(method = Linearization(), inverse = f⁻¹)` is `DeltaApproximation(method =
-  Linearization(), inverse = f⁻¹)`; [`Unscented`](@extref MessagePassingRulesApproximations.Unscented) and [`Linearization`](@extref MessagePassingRulesApproximations.Linearization) come from
-  `MessagePassingRulesApproximations`.
+  `algorithm = MyMethod` and receives in its `algo` slot. A direct subtype of
+  [`AbstractAlgorithm`](@extref MessagePassingRulesBase.AbstractAlgorithm) stands alone; a
+  subtype of `DefaultAlgorithmExtension` inherits the default's rules, as `MyScale` above does.
+  The node's user chooses the algorithm per node, as they chose the meta.
+  `DeltaMeta(method = Unscented())` is
+  [`DeltaApproximation`](@extref DeltaMessagePassingRules.DeltaApproximation)`(method = Unscented())`,
+  and `DeltaMeta(method = Linearization(), inverse = f⁻¹)` is
+  `DeltaApproximation(method = Linearization(), inverse = f⁻¹)`.
+  [A node with its own algorithm](@extref MessagePassingRulesBase tutorial-algorithm) builds
+  one step by step.
 - **How a rule computes it numerically**, such as a matrix correction or a random number
-  generator, is a **context service**, declared with `ctx = (:matrix_correction,)` and read as
-  `matrix_correction(ctx, default)` or `ctx.rng`. A generator that lived in a meta is given to
-  the nodes as the activation option `context`, `(rng = …,)` ([Services: the
-  context](@ref lib-activation-options-context)). `default_meta` becomes the rule's `default`.
+  generator, is a **context service** ([service](@extref MessagePassingRulesBase glossary-service)).
+  The rule declares it with `ctx = (:matrix_correction,)` and reads it as
+  [`matrix_correction`](@extref MessagePassingRulesBase.matrix_correction)`(ctx, default)` or
+  `ctx.rng`. A generator that lived in a meta is given to the nodes as the activation option
+  `context`, `(rng = …,)` ([Services: the context](@ref lib-activation-options-context)).
+
+A `default_meta` becomes the rule's `default`: the node's `algorithm` keyword for a default
+algorithm, and the `default` of `matrix_correction(ctx, default)` for a default correction.
+
+```julia
+# v6
+struct MySampling
+    rng::AbstractRNG
+end
+
+@rule MyBernoulli(:out, Marginalisation) (q_p::Beta, meta::MySampling) = begin
+    return Bernoulli(mean(rand(meta.rng, q_p, 100)))
+end
+```
+
+```@example v7
+using Random
+
+@define_message_update_rule(
+    node = MyBernoulli, target = :out,
+    args = (q[:p]::Beta,), ctx = (:rng,),
+    body = (ctx, args) -> Bernoulli(mean(rand(ctx.rng, args.q[:p], 100))),
+)
+
+getresult(call_message_update_rule(MyBernoulli, :out; q = (p = Beta(2.0, 2.0),), ctx = MessagePassingRulesBase.RuleContext(rng = Xoshiro(1))))
+```
+
+The engine supplies `rng`, `node` and `matrix_correction`, and the activation option `context`
+adds to them or overrides them (see [`RuleContext`](@extref MessagePassingRulesBase.RuleContext)).
 
 ## Functional dependencies
 
-v6's functional dependencies become declared dependencies. The default scheme, which gives a
-rule the messages in its own cluster and the marginals of the others, needs no declaration.
+v6's functional dependencies become declared
+[dependencies](@extref MessagePassingRulesBase glossary-dependencies). The
+[default scheme](@extref MessagePassingRulesBase glossary-default-scheme), which gives a rule the
+messages in its own cluster and the marginals of the others, needs no declaration.
 
 | v6 | v7 |
 |---|---|
@@ -307,31 +400,61 @@ rule the messages in its own cluster and the marginals of the others, needs no d
 | RxInfer's `where { dependencies = … }`, otherwise | choosing the node's algorithm |
 
 A target's inputs are subscribed to in the order they are declared, which is the update
-schedule in variational message passing.
+schedule in [variational message passing](@extref MessagePassingRulesBase glossary-vmp).
 
-## Calling rules, and other renames
+## Calling rules
+
+`@call_rule` returned the message, or a tuple with its add-ons under an option. Every call
+returns a [`RuleResult`](@extref MessagePassingRulesBase.RuleResult), the same shape whatever the
+rule. [`getresult`](@extref MessagePassingRulesBase.getresult)`(result)` is the message and
+`getlogscale(result)` its log scale. [`getrule`](@extref MessagePassingRulesBase.getrule),
+`MessagePassingRulesBase.getalgorithm` and the other getters say what produced it.
 
 | v6 | v7 |
 |---|---|
 | `@call_rule Node(:out, Marginalisation) (m_x = …,)` | [`getresult`](@extref MessagePassingRulesBase.getresult)`(call_message_update_rule(Node, :out; m = (x = …,)))`, or [`@call_message_update_rule`](@extref MessagePassingRulesBase.@call_message_update_rule) |
+| `@call_rule … (…, meta = x)` | `call_message_update_rule(…; algorithm = x)` |
 | `@call_rule typeof(f)(:out, Marginalisation) (…)`, for a function node | the node is the function itself, `call_message_update_rule(f, :out; …)`; `typeof(f)` is an `ArgumentError` saying so |
 | `@call_marginalrule` | [`call_marginal_update_rule`](@extref MessagePassingRulesBase.call_marginal_update_rule), [`@call_marginal_update_rule`](@extref MessagePassingRulesBase.@call_marginal_update_rule) |
 | `score(AverageEnergy(), Node, Val{…}(), marginals, meta)` | [`call_average_energy`](@extref MessagePassingRulesBase.call_average_energy)`(Node; q = …)` |
 | a rule calling another rule | both calling a plain helper function |
+
+The calls for the standard nodes that a model author meets, such as
+`@call_rule typeof(+)(:out, Marginalisation) (…)`, are in RxInfer's
+[migration guide](https://reactivebayes.github.io/RxInfer.jl/stable/manuals/migration/v5-to-v6/).
+
+These helpers and extension points have new names or homes:
+
+| v6 | v7 |
+|---|---|
 | `to_marginal(d)` | [`public_equivalent`](@extref MessagePassingRulesBase.public_equivalent)`(d)`, a method a package adds for its working types |
 | `getnodefn(node)`, `getnode()` in a rule | [`getnodefn`](@extref MessagePassingRulesBase.getnodefn)`(ctx.node, target)`, `ctx.node` |
 | `nodefunction(node, meta, Val(:out))`; a known inverse as `nodefunction(node, meta, (Val(:in), k))` | `getnodefn(ctx.node, Target(:out))`; an inverse is the algorithm's, read from `algo` |
-| `@test_rules` | [`@test_message_update_rule`](@extref MessagePassingRulesTestUtils.@test_message_update_rule) |
 | `ReactiveMP.rank1update`, `mul_trace`, `negate_inplace!`, `mul_inplace!`, `v_a_vT` | MessagePassingRulesBase's [math helpers](@extref MessagePassingRulesBase math-helpers): [`add_outer`](@extref MessagePassingRulesBase.add_outer), [`trace_product`](@extref MessagePassingRulesBase.trace_product), [`negate!!`](@extref MessagePassingRulesBase.negate!!), [`scale!!`](@extref MessagePassingRulesBase.scale!!), [`scaled_outer`](@extref MessagePassingRulesBase.scaled_outer); public, not exported |
 | `ReactiveMP.approximate(method, f, (d,))`, a distribution | [`approximate`](@extref MessagePassingRulesApproximations Moments-through-a-function)`(method, f, (mean(d),), (cov(d),))`, the mean and covariance, from `MessagePassingRulesApproximations` |
 | `StandardBasisVector(n, k)`, as in `softdot(x, StandardBasisVector(n, k), γ)` | a one-hot vector, `[i == k ? 1.0 : 0.0 for i in 1:n]`: the same results; the type is not public |
 | `ReactiveMP.MatrixCorrectionTools`, and a correction given as a node's meta, `*() -> ClampSingularValues(…)` | the registered package MatrixCorrectionTools; the correction is the service `matrix_correction` of the activation option `context`, `(matrix_correction = ClampSingularValues(…),)`, which reaches every rule of the node that reads it |
 | `diageye` | the same, [`MessagePassingRulesBase.diageye`](@extref), exported by StandardMessagePassingRules |
 | [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()` as the engine's `rulefallback` | the same, from `MessagePassingRulesBase`, as the activation option `rulefallback` ([Rule fallbacks](@ref lib-activation-options-rulefallback)); its message is a [`NodeFunctionLogPdf`](@extref MessagePassingRulesBase.NodeFunctionLogPdf) |
+| `RuleMethodError`, `MarginalRuleMethodError` | [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError), for every kind of rule |
+
+## Testing rules
+
+Table tests move to `MessagePassingRulesTestUtils` and take keywords. A case is the inputs of
+one call paired with the expected result.
+
+| v6 | v7 |
+|---|---|
+| `@test_rules [opts] Node(:out, Marginalisation) [(input = (m_x = …,), output = d), …]` | [`@test_message_update_rule`](@extref MessagePassingRulesTestUtils.@test_message_update_rule)`(node = Node, target = :out, cases = [(m = (x = …,),) => d, …], opts…)` |
+| `@test_marginalrules [opts] Node(:out_μ) [(input = …, output = d), …]` | [`@test_marginal_update_rule`](@extref MessagePassingRulesTestUtils.@test_marginal_update_rule)`(node = Node, target = (:out, :μ), cases = […], opts…)` |
+| an average energy checked by hand | [`@test_average_energy`](@extref MessagePassingRulesTestUtils.@test_average_energy)`(node = Node, cases = [(q = …,) => value, …])` |
+| the options `atol`, `rtol`, `check_type_promotion` (default `false`) | the same keywords; `check_type_promotion` defaults to `true` |
+| the option `extra_float_types` | `float_types`, with the same default, `(Float32, Float64, BigFloat)` |
+| nothing | [`check_rule_coverage`](@extref MessagePassingRulesTestUtils.check_rule_coverage), which fails a suite that leaves a rule untested |
 
 ## [What cannot be translated mechanically](@id migration-v6-to-v7-manual)
 
-These need a person who knows what the rule means. Stop and ask.
+These need a person who knows what the rule means.
 
 - **Rules reading the raw `messages` or `marginals` tuple**, often for their annotations or log
   scales. Each use has to be matched to a named input, to `ann.m`/`ann.q` or to
@@ -340,19 +463,90 @@ These need a person who knows what the rule means. Stop and ask.
   scale of a product of two distributions is `BayesBase.compute_logscale` of it, as `Mixture`'s
   rule towards its switch computes it; anything else has no counterpart.
 - **`meta` used as mutable workspace**, such as a cache filled across calls. A rule is pure unless
-  it says `pure = false`; state belongs to an algorithm that declares itself impure, and whether
-  that is right depends on the model.
+  it says `pure = false`. State belongs to an algorithm that declares itself impure, and whether
+  that is right depends on the model. Working memory that carries nothing between calls is the
+  rule's `scratch`.
 
 ## [Verifying a port](@id migration-v6-to-v7-verify)
 
-A ported rule is checked three ways:
+Check a ported rule three ways:
 
-1. A table of cases, [`@test_message_update_rule`](@extref MessagePassingRulesTestUtils.@test_message_update_rule), with values derived by hand or taken
-   from the old tests.
-2. Where the inputs allow, [`@verify_message_update_rule`](@extref MessagePassingRulesTestUtils.@verify_message_update_rule), which checks a message against
-   the node's definition.
-3. While the old implementation is at hand, [`compare_with_reference`](@extref MessagePassingRulesTestUtils.compare_with_reference) on the same inputs:
-   every difference is either a bug in the port or a declared correction with its reason.
+1. A table of cases, [`@test_message_update_rule`](@extref MessagePassingRulesTestUtils.@test_message_update_rule),
+   with values derived by hand or taken from the old tests.
+2. Where the inputs allow, [`@verify_message_update_rule`](@extref MessagePassingRulesTestUtils.@verify_message_update_rule),
+   which checks a message against the node's definition.
+3. While the old implementation is at hand,
+   [`compare_with_reference`](@extref MessagePassingRulesTestUtils.compare_with_reference) on the
+   same inputs: every difference is either a bug in the port or a declared correction with its
+   reason.
+
+## Building a graph by hand
+
+The engine's calls keep their shape. A factorisation names interfaces instead of positions, and
+the activation options are keywords. [Getting started](@ref getting-started) builds a whole graph
+this way.
+
+```julia
+# v6
+node = factornode(NormalMeanVariance, [(:out, y), (:μ, x), (:v, v)], ((1,), (2,), (3,)))
+activate!(node, FactorNodeActivationOptions(meta, DefaultFunctionalDependencies(), nothing, nothing, nothing, nothing))
+```
+
+```@example engine
+using ReactiveMP, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
+import ReactiveMP: activate!, FactorNodeActivationOptions
+include(joinpath(pkgdir(ReactiveMP), "docs", "nodes.jl"))   # declares the node `Gaussian`
+
+x, y, v = randomvar(label = :x), datavar(label = :y), constvar(1.0)
+node = factornode(Gaussian, [(:out, y), (:μ, x), (:v, v)], ((:out,), (:μ,), (:v,)))
+```
+
+```@example engine
+activate!(x, RandomVariableActivationOptions())
+activate!(y, DataVariableActivationOptions())
+activate!(node, FactorNodeActivationOptions(; logscales = true))
+```
+
+- **[`factornode`](@ref)** takes its factorisation by interface name, `((:out, :μ), (:v,))`,
+  where v6 took positions, `((1, 2), (3,))`. A group member is `(:in, k)`
+  ([Creating a node](@ref lib-node-create)).
+- **[`ReactiveMP.FactorNodeActivationOptions`](@ref)** was positional,
+  `(metadata, dependencies, postprocessor, annotations, rulefallback, callbacks)`. It takes the
+  keywords `algorithm`, `postprocessor`, `annotations`, `callbacks`, `diagnostics`, `context`,
+  `rulefallback`, `logscales` and `initial_messages`, each with a default, and a positional form
+  of the first four, `(algorithm, postprocessor, annotations, callbacks)`. `metadata` becomes
+  `algorithm`, and `dependencies` becomes the algorithm's declaration
+  ([Activation options](@ref lib-activation-options)).
+- **[`bethe_free_energy`](@ref)**`(Float64, nodes, variables)` is the stream of the free energy of
+  an activated graph. v6 left the sum to its caller, which combined each node's
+  `score(T, FactorBoundFreeEnergy(), node, meta, postprocessors)` and each variable's
+  `VariableBoundEntropy`, as RxInfer's `BetheFreeEnergy` did
+  ([Computing the free energy](@ref lib-score-bethe-stream)). The node's score takes the
+  node's algorithm in the place of `meta`.
+- **`factorisation`, `localmarginals` and `localmarginalnames`**, which v6 exported without a
+  method, are gone. [`ReactiveMP.getlocalclusters`](@ref)`(node)` and
+  [`ReactiveMP.get_node_local_marginals`](@ref) give a node's clusters. `AverageEnergy` is gone
+  too: [`call_average_energy`](@extref MessagePassingRulesBase.call_average_energy) computes an
+  average energy.
+
+## Features without a v6 form
+
+These have no v6 name to translate. The left column says what served the purpose in v6, if
+anything.
+
+| v6 | v7 |
+|---|---|
+| nothing | [in-place rules](@extref MessagePassingRulesBase glossary-in-place-rule), `inplace = true` with `preallocate`, which write the result into a buffer ([keyword reference](@extref MessagePassingRulesBase keyword-message-inplace)) |
+| `meta` as a cache | `scratch`, working memory the engine keeps per outbound stream and the rule writes before it reads ([scratch](@extref MessagePassingRulesBase glossary-scratch)) |
+| nothing | `pure`, a rule's declared purity, which overrides its algorithm's [`ispure`](@extref MessagePassingRulesBase.ispure) ([keyword reference](@extref MessagePassingRulesBase keyword-message-pure)) |
+| `RequireMessageFunctionalDependencies(in = d)` as a start | `initial_messages` on [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node), set where the graph sets none ([keyword reference](@extref MessagePassingRulesBase keyword-node-initial_messages)) |
+| `DeltaFnNode`'s handling of constants and data | `static_inputs = :fold` on any deterministic node ([Static inputs](@ref lib-node-static-inputs)) |
+| the factorisation alone | `free_energy_partition` on [`@define_dependencies`](@extref MessagePassingRulesBase.@define_dependencies), the clusters an algorithm's free energy splits into ([keyword reference](@extref MessagePassingRulesBase keyword-dependencies-free_energy_partition)) |
+| nothing | [`which_message_update_rule`](@extref MessagePassingRulesBase.which_message_update_rule), [`which_marginal_update_rule`](@extref MessagePassingRulesBase.which_marginal_update_rule) and [`which_average_energy`](@extref MessagePassingRulesBase.which_average_energy), which resolve a rule without running it |
+| nothing | [`rule_coverage`](@extref MessagePassingRulesBase.rule_coverage), a node's rules by target and algorithm, and [`check_rules`](@extref MessagePassingRulesBase.check_rules), which checks rules against their nodes' declarations |
+| `RuleMethodError`'s "Possible fix, define:" | the not-found report of a [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError): the closest rules, why each does not fit, and a `what to try` line |
+| nothing | [`rule_not_found_hint`](@extref MessagePassingRulesBase.rule_not_found_hint), a sentence a node's package adds to that report |
+| nothing | [`ReactiveMP.EngineDiagnostics`](@ref), the activation option `diagnostics`: audits of purity, in-place coverage and scratch reuse ([Diagnostics](@ref lib-activation-options-diagnostics)) |
 
 ## [Node packages](@id migration-v6-to-v7-node-packages)
 
@@ -374,7 +568,7 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 | `DiscreteTransition` | [DiscreteTransitionMessagePassingRules](https://reactivebayes.github.io/DiscreteTransitionMessagePassingRules.jl/dev/), no algorithm of its own |
 
 - **Probit** declared `RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0, 100))`. Its
-  algorithm now declares that the rule towards `in` reads the message on its own edge, and the
+  algorithm declares that the rule towards `in` reads the message on its own edge, and the
   node declares that message's start, set only where the model sets none. A model that chose
   another initial message keeps it. v6's rules without expectation propagation run under
   [`DefaultAlgorithm`](@extref MessagePassingRulesBase.DefaultAlgorithm)`()`.
@@ -386,17 +580,17 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 - **SoftDot** does not need the AR package; loading its own package is enough.
 - **ContinuousTransition** declares no algorithm, as v6 had no default `CTMeta`: a model gives
   each node [`CTVMP`](@extref ContinuousTransitionMessagePassingRules.CTVMP)`(f)`. Its rule towards `a` still reads `q(a)`, as
-  `RequireMarginalFunctionalDependencies(a = nothing)` made it, now through its declaration
+  `RequireMarginalFunctionalDependencies(a = nothing)` made it, through its declaration
   ([`@define_dependencies`](@extref MessagePassingRulesBase.@define_dependencies)). As in v6, the node sets no
   initial `q(a)`; a model initialises it.
 - **BinomialPolya** and **MultinomialPolya** read the message on their weights' own edge, which v6
   required each model to ask for with `where { dependencies = RequireMessageFunctionalDependencies(β
-  = …) }`. The nodes now declare it; drop the `dependencies` and initialise the message instead,
+  = …) }`. The nodes declare it; drop the `dependencies` and initialise the message instead,
   `μ(β) = …` in RxInfer's `@initialization`. Their package is GPL-3 licensed, through
   PolyaGammaHybridSamplers.
 - **BIFM** keeps nothing between calls. v6's `BIFMMeta` was a cache its rules shared, so they had
   to run in a set order and each node needed a meta of its own. [`BIFMSmoother`](@extref BIFMMessagePassingRules.BIFMSmoother) is an ordinary
-  value that nodes may share, and the order the posteriors are subscribed in no longer matters.
+  value that nodes may share, and the order the posteriors are subscribed in does not matter.
   `BIFMMeta(A, B, C, μu, Σu)` has no counterpart: the input's statistics come from its message.
 - **Flow**'s models, layers and [`PermutationMatrix`](@extref FlowMessagePassingRules.PermutationMatrix) live in its package. `ReactiveMP.forward(model, x)`
   and its siblings are `FlowMessagePassingRules.forward`, public and unexported. Building a
@@ -490,8 +684,8 @@ A random variable's outbound messages change under a form constraint on messages
   checks it, such as RxInfer's check that the form is supported, runs once per message. The
   callbacks see one [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref) and one
   [`ReactiveMP.AfterProductOfMessagesEvent`](@ref) per outbound message, and one pair of
-  two-message product events fewer per recomputation, since a cached partial product is no
-  longer computed again. [`FormConstraintCheckEach`](@ref) is unchanged.
+  two-message product events fewer per recomputation, since a cached partial product is not
+  computed again. [`FormConstraintCheckEach`](@ref) is unchanged.
 
 Two changes in the engine concern code that reads annotations or traces rule calls:
 
@@ -517,7 +711,7 @@ with no remaining consumer (`CVI`, `ProdCVI`, `Adam` and its `update!`, `Forward
 marginal rules for BIFM's `TerminalProdArgument` messages are gone too: only the free energy of a
 BIFM model reached them, and it is not supported.
 
-The engine no longer defines these internal helpers, none of which it used: `skip_clamped` and
+The engine does not define these internal helpers, none of which it used: `skip_clamped` and
 `skip_clamped_and_initial` (`skip_initial` stays), `KLDivergence` and its `score` method
 (`BayesBase.kldivergence` computes the divergence directly), `dropproxytype`, `other_clusters`,
 `getinboundinterfaces`, `interfaceindices`, `ReactiveMP.hasfield` (which shadowed
@@ -527,3 +721,25 @@ are gone as well: nothing used them; `(x for (i, x) in enumerate(xs) if i != k)`
 copy does the same. The v5 stubs `AddonLogScale` and `AddonMemory`, which only raised an error
 pointing to their replacements, are gone too: use the `logscales = true` option and
 `InputArgumentsAnnotations`.
+
+## [Checklist for a mechanical port](@id migration-v6-to-v7-checklist)
+
+Follow this checklist when you port code by rote, or have a tool port it for you. A rule that
+compiles and returns a plausible distribution can still be wrong, and nothing downstream
+catches it.
+
+- **Read first:** the macros of [MessagePassingRulesBase](https://reactivebayes.github.io/MessagePassingRulesBase.jl/dev/),
+  [`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node),
+  [`@define_message_update_rule`](@extref MessagePassingRulesBase.@define_message_update_rule) and
+  [`@define_dependencies`](@extref MessagePassingRulesBase.@define_dependencies), then the pairs
+  of this guide.
+- **Translate only what a pair covers.** Each construct in the code you port must match a pair
+  in this guide. Anything else, and everything in [What cannot be translated
+  mechanically](@ref migration-v6-to-v7-manual), is a question for the person who owns the code.
+  Stop and ask; do not guess.
+- **Never guess** which inputs a rule consumes, whether an input is a message or a marginal, the
+  order of interfaces, or what `meta` held: all of these change the result.
+- **Verify every rule you port** as [Verifying a port](@ref migration-v6-to-v7-verify) describes:
+  a table of cases, and a comparison with the old rule while it is available.
+- **Stop** when a rule reads raw message tuples, builds graph objects or keeps state in `meta`,
+  or when a verification fails and you cannot explain the difference.
