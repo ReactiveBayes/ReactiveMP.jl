@@ -41,9 +41,16 @@ function candidate_rules(notfound::RuleNotFound)
     end
 end
 
+# What to try, one hint per diagnosis. The inputs a rule receives come from the graph's
+# factorisation, so the hints say which part of the model to look at.
+const HINT_NO_RULE = "no loaded package defines this rule: load the package that defines the node's rules, or define the rule (see the documentation of `@define_message_update_rule`)"
+const HINT_TYPE_MISMATCH = "the inputs arrive in other families than the rule takes: a form constraint on a variable can project them onto a family it takes (in RxInfer, `@constraints`), or define a rule for these types"
+const HINT_ALGORITHM = "give the node the algorithm these rules are defined for"
+const HINT_SHAPE = "the factorisation decides which inputs a rule receives (messages from the target's cluster, marginals of the other clusters): choose one that delivers the inputs a rule below takes (in RxInfer, `@constraints`), or define a rule for these inputs"
+
 function Base.showerror(io::IO, err::RuleNotFoundError)
     nf = err.notfound
-    print(io, "no ", nf.kind, " rule for ", nf.node)
+    print(io, "RuleNotFoundError: no ", nf.kind, " rule for ", nf.node)
     nf.target === nothing || print(io, " towards ", nf.target)
     print(io, " under ", nf.algorithm)
     provided = provided_inputs(nf.args)
@@ -57,14 +64,21 @@ function Base.showerror(io::IO, err::RuleNotFoundError)
     candidates = candidate_rules(nf)
     if isempty(candidates)
         print(io, "\n  no rule exists for this node and target under any algorithm")
+        print(io, "\n  what to try: ", HINT_NO_RULE)
         return nothing
     end
     provided_keys = Set((c, k) for (c, k, _) in provided)
     same_shape = filter(spec -> Set((i.container, i.key) for i in spec.inputs) == provided_keys, candidates)
     if any(spec -> admits(nf.algorithm, spec.algorithm), same_shape)
         print(io, "\n  a rule of this shape exists, but the input types do not fit (type mismatch)")
+        print(io, "\n  what to try: ", HINT_TYPE_MISMATCH)
+    elseif !isempty(same_shape)
+        algorithms = unique(map(spec -> string(spec.algorithm), same_shape))
+        print(io, "\n  rules of this shape exist under another algorithm (", join(algorithms, ", "), ")")
+        print(io, "\n  what to try: ", HINT_ALGORITHM)
     else
         print(io, "\n  no rule consumes this set of inputs under this algorithm (no rule of this shape)")
+        print(io, "\n  what to try: ", HINT_SHAPE)
     end
     print(io, "\n  near misses:")
     for spec in candidates

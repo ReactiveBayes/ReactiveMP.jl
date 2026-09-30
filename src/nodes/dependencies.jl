@@ -100,7 +100,7 @@ function declared_dependencies(factornode, spec::MessagePassingRulesBase.Depende
     target = rule_target(interface)
     inputs = MessagePassingRulesBase.target_dependencies(spec, target)
     inputs === nothing && throw(
-        ArgumentError("`$(functionalform(factornode))` declares no dependencies for the target `$(repr(interface_key(interface)))` under $(nameof(spec.algorithm))"),
+        ArgumentError("`$(functionalform(factornode))` declares no dependencies for the target `$(repr(interface_key(interface)))` under $(nameof(spec.algorithm)), so its rules cannot run towards that edge in this graph; the algorithm's `@define_dependencies` must list every target a graph connects (`target => (default,)` for one that follows the default scheme)"),
     )
     MessagePassingRulesBase.extends_default_scheme(spec, target) && return extended_default_dependencies(factornode, interface, inputs)
     messages, marginals = (Any[], Any[]), (Any[], Any[])
@@ -175,7 +175,7 @@ function cluster_marginal(factornode, key::Tuple)
     marginals = get_node_local_marginals(getlocalclusters(factornode))
     position = findfirst(marginal -> name(marginal) == key, marginals)
     position === nothing && throw(
-        ArgumentError("`$(functionalform(factornode))` consumes `q[$(join(repr.(key), ", "))]`, which is not a cluster of its factorisation"),
+        ArgumentError("`$(functionalform(factornode))` consumes `q[$(join(repr.(key), ", "))]`, which is not a cluster of its factorisation: its clusters are $(join(map(m -> repr(name(m)), marginals), ", ")). The factorisation (in RxInfer, `@constraints`) must keep these interfaces together, or the node's algorithm must declare other dependencies"),
     )
     return marginals[position]
 end

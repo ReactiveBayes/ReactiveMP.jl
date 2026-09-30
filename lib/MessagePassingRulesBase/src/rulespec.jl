@@ -205,8 +205,10 @@ Its message reads, from the top:
   `m[:name]::Type` or `q[:name]::Type`;
 - a diagnosis: *no rule exists for this node and target under any algorithm*; *a rule of this
   shape exists, but the input types do not fit* (a rule takes exactly these inputs, and some
-  type differs); or *no rule consumes this set of inputs* (the rules take other inputs, or are
-  under another algorithm);
+  type differs); *rules of this shape exist under another algorithm*; or *no rule consumes this
+  set of inputs* (the rules take other inputs);
+- what to try for that diagnosis: loading the package that defines the rules, a form
+  constraint, the node's algorithm, or another factorisation;
 - the near misses, every rule for the node and target, by file and line, each with a line per
   slot: `✓` or `✗` for the algorithm, then for each input the rule takes, what was given for it
   or `not provided`, and each input given that the rule does not take, `provided but not
@@ -216,8 +218,9 @@ For a node `Shift` with interfaces `out` and `in` and a single rule, towards `ou
 
 ```julia
 julia> @call_message_update_rule(node = Shift, target = :in, m = (out = 1.0,))
-ERROR: no message rule for Shift towards :in under DefaultAlgorithm() takes the inputs (m[:out]::Float64)
+ERROR: RuleNotFoundError: no message rule for Shift towards :in under DefaultAlgorithm() takes the inputs (m[:out]::Float64)
   no rule exists for this node and target under any algorithm
+  what to try: no loaded package defines this rule: load the package that defines the node's rules, or define the rule (see the documentation of `@define_message_update_rule`)
 ```
 """
 struct RuleNotFoundError <: Exception
@@ -330,7 +333,7 @@ caller does not track them.
     spec.reads_logscale && args.logscale === nothing && throw(
         ArgumentError(
             "the $(rule_heading(spec)) reads the log scales of its inbound messages, and none were given: " *
-                "pass them to a call as `logscale = (name = value, ...)`, or have the engine track them (ReactiveMP's `logscales = true`)",
+                "pass them to a call as `logscale = (name = value, ...)`, or have the engine track them (ReactiveMP's activation option `logscales = true`, RxInfer's `infer(...; logscales = true)`)",
         ),
     )
     return nothing
@@ -574,7 +577,7 @@ end
         ArgumentError(
             "the $(rule_heading(spec)) needs the context $(length(missing) == 1 ? "service" : "services") " *
                 "$(join(map(repr, missing), ", ")), which its context does not supply; " *
-                "supply them in the context the rule is called with (ReactiveMP's activation option `context = (name = value, ...)`)",
+                "supply them in the context the rule is called with (ReactiveMP's activation option `context = (name = value, ...)`, RxInfer's `infer(...; context = (name = value, ...))`); a call takes it as `ctx = (name = value, ...)`",
         ),
     )
 end

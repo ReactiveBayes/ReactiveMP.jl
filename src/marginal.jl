@@ -127,7 +127,7 @@ A data variable's marginal, an observation, has log scale zero, and so does a co
 """
 getlogscale(marginal::Marginal) = marginal.logscale === nothing ? throw(
         ArgumentError(
-            "this marginal carries no log scale: either log scales are not tracked (activate the graph with `logscales = true`), " *
+            "this marginal carries no log scale: either log scales are not tracked (activate the graph with `logscales = true`, RxInfer's `infer(...; logscales = true)`), " *
             "or it is an initial marginal, set with `set_initial_marginal!`, or the joint marginal of a node's cluster, which carry none",
         ),
     ) : marginal.logscale

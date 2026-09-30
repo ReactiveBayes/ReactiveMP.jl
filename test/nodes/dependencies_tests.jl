@@ -474,3 +474,37 @@ end
     @test map(ReactiveMP.name, ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(members))) == (:out, ((:m, 1), (:m, 3)), :m)
     @test activate!(members, FactorNodeActivationOptions()) === nothing
 end
+
+@testitem "a declaration that does not fit the graph says what to change" tags = [:nodes] begin
+    using MessagePassingRulesBase
+    import ReactiveMP: activate!, FactorNodeActivationOptions, RandomVariableActivationOptions, MessageProductContext
+
+    struct Partial end
+    struct PartialAlgorithm <: AbstractAlgorithm end
+    @define_factor_node(node = Partial, type = Stochastic, interfaces = [:out, :μ, :τ])
+    @define_dependencies(node = Partial, algorithm = PartialAlgorithm, dependencies = [:out => (q[:μ, :τ],)])
+
+    edges() = [(:out, randomvar()), (:μ, randomvar()), (:τ, randomvar())]
+    # As RxInfer does: the node is created, then its variables are activated, then the node.
+    function activated(interfaces, factorisation)
+        node = factornode(Partial, interfaces, factorisation)
+        foreach(((_, v),) -> activate!(v, RandomVariableActivationOptions(nothing, MessageProductContext(), MessageProductContext())), interfaces)
+        return node
+    end
+    options = FactorNodeActivationOptions(; algorithm = PartialAlgorithm())
+    # A joint the factorisation does not have names the clusters there are.
+    err = try
+        activate!(activated(edges(), ((:out,), (:μ,), (:τ,))), options)
+    catch e
+        e
+    end
+    @test err isa ArgumentError && contains(err.msg, "is not a cluster of its factorisation: its clusters are :out, :μ, :τ")
+    @test contains(err.msg, "`@constraints`")
+    # A target the declaration leaves out says the declaration must list it.
+    err = try
+        activate!(activated(edges(), ((:out,), (:μ, :τ))), options)
+    catch e
+        e
+    end
+    @test err isa ArgumentError && contains(err.msg, "declares no dependencies for the target `:μ`") && contains(err.msg, "must list every target")
+end

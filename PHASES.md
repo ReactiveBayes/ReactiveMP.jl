@@ -3728,7 +3728,8 @@ wait for the release):
   fixed. Docs dependencies as §3.52 decides. Done: the `docs-<package>` targets build the sites
   they link to first; the base docs load BayesBase, ExponentialFamily and Distributions, Delta's
   ExponentialFamilyProjection; `NodeSpec`, `RuleSpec` and `DependenciesSpec` draw themselves
-  (§3.52), the card follows Documenter's theme; `FactorNode` and the variables show themselves.
+  (§3.52), the card follows Documenter's theme; `FactorNode` and the variables show themselves. Error messages: the `RuleNotFoundError` diagnosis ends with what to try, and the engine's
+  dependency and service errors say what to change.
   Next: the base site's tutorials, keyword reference and glossary; the engine site on toy nodes;
   the package sites; RxInfer's site on its branch; the error messages.
 - *The audit of 2026-09-29 — done* (user): the engine, the packages and the working

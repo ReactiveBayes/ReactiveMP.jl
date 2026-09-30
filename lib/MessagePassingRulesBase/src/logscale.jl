@@ -118,7 +118,7 @@ ERROR: UndefinedLogScaleError: a log scale is needed but not known: the message 
 """
 require_logscale(logscale::Real) = logscale
 require_logscale(logscale::UndefinedLogScale) = throw(UndefinedLogScaleError(logscale))
-require_logscale(::Nothing) = throw(ArgumentError("log scales are not tracked; an engine tracks them when asked to, e.g. ReactiveMP's `logscales = true`"))
+require_logscale(::Nothing) = throw(ArgumentError("log scales are not tracked; an engine tracks them when asked to, e.g. ReactiveMP's `logscales = true` or RxInfer's `infer(...; logscales = true)`"))
 
 """
     isdefined_logscale(logscale) -> Bool
