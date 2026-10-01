@@ -41,9 +41,11 @@ using FastCholesky: cholinv
 using StatsFuns: log2π
 import LinearAlgebra
 using LinearAlgebra: dot, pinv
+using Compat: @compat
 using MessagePassingRulesBase: add_outer, trace_product, negate!!, scale!!, gaussian_cross_moment
 
 export AR, Autoregressive, ConjugateAR, ARVMP, ARsafe, ARunsafe
+@compat public StandardBasisVector
 
 include("algebra/companion_matrix.jl")
 include("algebra/standard_basis_vector.jl")

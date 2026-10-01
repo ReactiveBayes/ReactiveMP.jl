@@ -154,3 +154,9 @@ ARVMP
 ARsafe
 ARunsafe
 ```
+
+The vector that picks one component, which the rules use for the first component of the state:
+
+```@docs
+AutoregressiveMessagePassingRules.StandardBasisVector
+```

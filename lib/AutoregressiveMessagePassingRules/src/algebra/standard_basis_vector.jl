@@ -1,8 +1,38 @@
-# The vector of length `length` that is zero except for `scale` at `index`: `ar_unit`'s e₁, which
-# picks the first component of the AR state. Internal. Its products are written out only
-# against a scalar, a dense `Matrix` or `Vector` and each other, the combinations the rules
-# form; any other operand takes the generic `AbstractVector` fallback, which reads `getindex`.
-# Written only against concrete operands, no method of theirs is ambiguous.
+"""
+    AutoregressiveMessagePassingRules.StandardBasisVector(length::Int, index::Int, scale = 1)
+
+The vector of `length` entries that is zero everywhere except for `scale` at `index`, the
+standard basis vector `scale ⋅ eᵢ`, held as those three numbers. The AR rules use `e₁` to pick
+the first component of the state; a model can use one to pick an entry of a vector, as in
+`softdot(x, StandardBasisVector(n, j), γ)` with the SoftDot node, in place of a dense one-hot
+vector, which gives the same messages more slowly: the products the rules form read one entry
+instead of `length`.
+
+It is an `AbstractVector`, so it works wherever a vector does. The products written out without
+building the dense vector are those with a number, `dot` with a dense `Vector` or
+another basis vector, `dot(e₁, A, e₂)` and `A * e` with a dense `Matrix`, `v * eᵀ`, and
+[`scaled_outer`](@extref MessagePassingRulesBase.scaled_outer)`(e, a)`. Any other operation
+reads its entries.
+
+# Throws
+
+- `ArgumentError` when `length < 1` or `index` is not in `1:length`.
+
+# Examples
+
+```jldoctest; setup = :(using AutoregressiveMessagePassingRules)
+julia> e = AutoregressiveMessagePassingRules.StandardBasisVector(3, 2)
+3-element AutoregressiveMessagePassingRules.StandardBasisVector{Int64}:
+ 0
+ 1
+ 0
+
+julia> using LinearAlgebra: dot
+
+julia> dot(e, [10.0, 20.0, 30.0])
+20.0
+```
+"""
 struct StandardBasisVector{T <: Real} <: AbstractVector{T}
     length::Int
     index::Int

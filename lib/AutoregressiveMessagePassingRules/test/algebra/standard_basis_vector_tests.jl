@@ -7,6 +7,7 @@
 
     rng = StableRNG(1234)
 
+    @test Base.ispublic(AutoregressiveMessagePassingRules, :StandardBasisVector)
     @test_throws ArgumentError StandardBasisVector(0, 1)
     @test_throws ArgumentError StandardBasisVector(-10, 1)
     @test_throws ArgumentError StandardBasisVector(10, 11)
