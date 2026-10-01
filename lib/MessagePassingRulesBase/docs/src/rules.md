@@ -176,8 +176,35 @@ only the slots the body uses, in that order:
 - `args`: the inputs;
 - `ann`: the annotations.
 
-A rule that reuses another rule's computation calls a plain helper function that both share. It
-does not call the other rule.
+A rule may compute its result with another rule, of its own node or of another, a packaged one
+included. It calls that rule with the inputs it builds and forwards its `ctx`, so the other rule
+sees the same services. The node below shifts the message of the `Average` node above:
+
+```@example rules-default
+struct ShiftedAverage end   # out ~ N(1 + mean of x₁, x₂, …, v)
+
+@define_factor_node(node = ShiftedAverage, type = Stochastic, interfaces = [:out, :v, :x...])
+
+@define_message_update_rule(
+    node = ShiftedAverage, target = :out, args = (m[:x...]::NormalMeanVariance, q[:v]::PointMass),
+    body = (ctx, args) -> begin
+        average = getresult(call_message_update_rule(Average, :out; m = (x = args.m[:x],), q = (v = args.q[:v],), ctx))
+        NormalMeanVariance(mean(average) + 1.0, var(average))
+    end,
+)
+
+@call_message_update_rule(
+    node = ShiftedAverage, target = :out,
+    m = (x = (NormalMeanVariance(1.0, 1.0), NormalMeanVariance(3.0, 1.0)),),
+    q = (v = PointMass(2.0),),
+)
+```
+
+The keyword call allocates its arguments. Where that matters, call the positional
+[`message_passing_rule`](@ref)`(Average, Target(:out), algorithm, RuleArgs(m = …, q = …), ctx)`
+instead, which allocates nothing, or `message_passing_marginalrule` and
+`message_passing_average_energy` for the other kinds (see
+[Resolving without the interactive layer](@ref)).
 
 ## In-place rules
 

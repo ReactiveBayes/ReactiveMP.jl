@@ -331,6 +331,18 @@ struct MyTensor end
 getresult(call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) => 0.5,), q = (T = (nothing, 1.0),)))
 ```
 
+A rule with typed inputs for the same node, target and algorithm is more specific than one with
+`default`, and wins wherever its inputs fit; the `default` rule takes the rest. A model adds a rule
+for a packaged node this way, for inputs the package's `default` rule does not handle as it needs:
+
+```@example v7
+@define_message_update_rule(node = MyTensor, target = :out, args = (q[:in]::Float64,), body = (args) -> -args.q[:in])
+
+# The typed rule fits, so it wins; with a joint the `default` rule still answers.
+getresult(call_message_update_rule(MyTensor, :out; q = (in = 2.0,))),
+getresult(call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) => 0.5,), q = (T = (nothing, 1.0),)))
+```
+
 ## [`meta`: algorithm or context service](@id migration-v6-to-v7-meta)
 
 `meta` served two purposes, and each has its own place.
@@ -417,11 +429,49 @@ rule. [`getresult`](@extref MessagePassingRulesBase.getresult)`(result)` is the 
 | `@call_rule typeof(f)(:out, Marginalisation) (…)`, for a function node | the node is the function itself, `call_message_update_rule(f, :out; …)`; `typeof(f)` is an `ArgumentError` saying so |
 | `@call_marginalrule` | [`call_marginal_update_rule`](@extref MessagePassingRulesBase.call_marginal_update_rule), [`@call_marginal_update_rule`](@extref MessagePassingRulesBase.@call_marginal_update_rule) |
 | `score(AverageEnergy(), Node, Val{…}(), marginals, meta)` | [`call_average_energy`](@extref MessagePassingRulesBase.call_average_energy)`(Node; q = …)` |
-| a rule calling another rule | both calling a plain helper function |
+| a rule calling another rule | the same: the rule calls the other one, forwarding its `ctx` ([Delegating to another rule](@ref migration-v6-to-v7-delegate)) |
 
 The calls for the standard nodes that a model author meets, such as
 `@call_rule typeof(+)(:out, Marginalisation) (…)`, are in RxInfer's
 [migration guide](https://reactivebayes.github.io/RxInfer.jl/stable/manuals/migration/v5-to-v6/).
+
+### [Delegating to another rule](@id migration-v6-to-v7-delegate)
+
+A rule may compute its message with another node's rule, a packaged one included, as a v6 rule
+did with `@call_rule`. It calls the other rule with the inputs it builds and forwards its own
+context, so the other rule sees the engine's services and the model's:
+
+```julia
+# v6
+@rule MyShiftedSum(:out, Marginalisation) (m_in::ManyOf{N, NormalMeanVariance},) where {N} = begin
+    s = @call_rule MySum(:out, Marginalisation) (m_in = m_in,)
+    return NormalMeanVariance(mean(s) + 1.0, var(s))
+end
+```
+
+```@example v7
+struct MyShiftedSum end
+
+@define_factor_node(node = MyShiftedSum, type = Deterministic, interfaces = [:out, :in...])
+
+@define_message_update_rule(
+    node = MyShiftedSum, target = :out,
+    args = (m[:in...]::NormalMeanVariance,),
+    body = (ctx, args) -> begin
+        s = getresult(call_message_update_rule(MySum, :out; m = (in = args.m[:in],), ctx))
+        NormalMeanVariance(mean(s) + 1.0, var(s))
+    end,
+)
+
+getresult(call_message_update_rule(MyShiftedSum, :out; m = (in = (NormalMeanVariance(1.0, 1.0), NormalMeanVariance(2.0, 3.0)),)))
+```
+
+The keyword call builds its arguments from named tuples, which allocates. Where that matters, the
+positional form allocates nothing:
+[`message_passing_rule`](@extref MessagePassingRulesBase.message_passing_rule)`(MySum, Target(:out), DefaultAlgorithm(), RuleArgs(m = (in = args.m[:in],)), ctx)`,
+and `message_passing_marginalrule` and `message_passing_average_energy` for the other kinds. The
+other rule runs under the algorithm the call names, the node's default unless `algorithm` says
+otherwise.
 
 These helpers and extension points have new names or homes:
 
@@ -432,7 +482,7 @@ These helpers and extension points have new names or homes:
 | `nodefunction(node, meta, Val(:out))`; a known inverse as `nodefunction(node, meta, (Val(:in), k))` | `getnodefn(ctx.node, Target(:out))`; an inverse is the algorithm's, read from `algo` |
 | `ReactiveMP.rank1update`, `mul_trace`, `negate_inplace!`, `mul_inplace!`, `v_a_vT` | MessagePassingRulesBase's [math helpers](@extref MessagePassingRulesBase math-helpers): [`add_outer`](@extref MessagePassingRulesBase.add_outer), [`trace_product`](@extref MessagePassingRulesBase.trace_product), [`negate!!`](@extref MessagePassingRulesBase.negate!!), [`scale!!`](@extref MessagePassingRulesBase.scale!!), [`scaled_outer`](@extref MessagePassingRulesBase.scaled_outer); public, not exported |
 | `ReactiveMP.approximate(method, f, (d,))`, a distribution | [`approximate`](@extref MessagePassingRulesApproximations Moments-through-a-function)`(method, f, (mean(d),), (cov(d),))`, the mean and covariance, from `MessagePassingRulesApproximations` |
-| `StandardBasisVector(n, k)`, as in `softdot(x, StandardBasisVector(n, k), γ)` | a one-hot vector, `[i == k ? 1.0 : 0.0 for i in 1:n]`: the same results; the type is not public |
+| `StandardBasisVector(n, k)`, as in `softdot(x, StandardBasisVector(n, k), γ)` | [`AutoregressiveMessagePassingRules.StandardBasisVector`](@extref)`(n, k)`, public in that package: the rules' products with it read one entry, so it gives a dense one-hot vector's messages faster |
 | `ReactiveMP.MatrixCorrectionTools`, and a correction given as a node's meta, `*() -> ClampSingularValues(…)` | the registered package MatrixCorrectionTools; the correction is the service `matrix_correction` of the activation option `context`, `(matrix_correction = ClampSingularValues(…),)`, which reaches every rule of the node that reads it |
 | `diageye` | the same, [`MessagePassingRulesBase.diageye`](@extref), exported by StandardMessagePassingRules |
 | [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()` as the engine's `rulefallback` | the same, from `MessagePassingRulesBase`, as the activation option `rulefallback` ([Rule fallbacks](@ref lib-activation-options-rulefallback)); its message is a [`NodeFunctionLogPdf`](@extref MessagePassingRulesBase.NodeFunctionLogPdf) |
@@ -465,7 +515,52 @@ These need a person who knows what the rule means.
 - **`meta` used as mutable workspace**, such as a cache filled across calls. A rule is pure unless
   it says `pure = false`. State belongs to an algorithm that declares itself impure, and whether
   that is right depends on the model. Working memory that carries nothing between calls is the
-  rule's `scratch`.
+  rule's `scratch`. State that several nodes share, as one meta given to them did, is one
+  algorithm object given to each (below).
+
+### [State shared by several nodes](@id migration-v6-to-v7-shared-state)
+
+An algorithm is any value, so a mutable one holds state, and every node given the same object
+reads and writes the same state: in RxInfer, `where { algorithm = shared }` on each node, or one
+`@algorithm` block naming them. It declares itself impure, which the purity audit then reports
+for every rule under it. Keeping the state consistent is the algorithm's job, as it was the
+meta's: the engine computes each message when a variable needs it, in the order of the update
+schedule, and promises no other order between the nodes.
+
+```julia
+# v6
+mutable struct MyTally
+    calls::Int
+end
+
+@rule MyTallyA(:out, Marginalisation) (q_in::Any, meta::MyTally) = (meta.calls += 1; q_in)
+@rule MyTallyB(:out, Marginalisation) (q_in::Any, meta::MyTally) = (meta.calls += 1; q_in)
+```
+
+```@example v7
+mutable struct MyTally <: MessagePassingRulesBase.AbstractAlgorithm
+    calls::Int
+end
+MessagePassingRulesBase.ispure(::Type{<:MyTally}) = false
+
+struct MyTallyA end
+struct MyTallyB end
+@define_factor_node(node = MyTallyA, type = Stochastic, interfaces = [:out, :in])
+@define_factor_node(node = MyTallyB, type = Stochastic, interfaces = [:out, :in])
+
+for node in (MyTallyA, MyTallyB)
+    @eval @define_message_update_rule(
+        node = $node, target = :out, algorithm = MyTally,
+        args = (q[:in]::Any,),
+        body = (algo, args) -> (algo.calls += 1; args.q[:in]),
+    )
+end
+
+shared = MyTally(0)
+getresult(call_message_update_rule(MyTallyA, :out; q = (in = 1.0,), algorithm = shared))
+getresult(call_message_update_rule(MyTallyB, :out; q = (in = 2.0,), algorithm = shared))
+shared.calls
+```
 
 ## [Verifying a port](@id migration-v6-to-v7-verify)
 
@@ -607,7 +702,9 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 - **A distribution value as a prior**, `x ~ d` for `d = Beta(4.0, 8.0)` or `Truncated(…)`, was
   v6's `StandaloneDistributionNode`, an engine node type. It is Standard's
   [`StandaloneDistribution`](@extref StandardMessagePassingRules.StandaloneDistribution), an ordinary node `out ~ d` with `d` a constant: the message towards
-  `out` is `d`, and the free-energy term `KL(q ‖ d)`, as before.
+  `out` is `d`, and the free-energy term `KL(q ‖ d)`, as before. It is stochastic, so a model's
+  `ReactiveMP.sdtype(::StandaloneDistributionNode) = Stochastic()`, which some v6 models added, is
+  deleted.
 
 ## Behaviour that changed
 
