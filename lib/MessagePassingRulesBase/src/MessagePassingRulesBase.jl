@@ -81,7 +81,7 @@ export RuleResult, getresult, getrule, getannotations
 @compat public RuleSpec, InputSpec, RuleNotFound, RuleNotFoundError
 @compat public find_message_rule, find_marginal_rule, find_average_energy, rule_algorithm
 @compat public execute_rule, execute_rule_with_logscale, rule_scratch, rule_scratch_type
-@compat public check_services, missing_services, check_reads_logscale
+@compat public check_services, missing_services, check_reads_logscale, check_selected_members
 # Inspecting and checking the rules that exist.
 @compat public Registry, registries, registered_rules, registered_nodes, registered_dependencies, duplicate_rules
 @compat public list_rules, RuleCoverage, rule_coverage, check_rules, RuleIssue, check_rule_ambiguities

@@ -203,3 +203,33 @@ end
     text = sprint(show, MIME"text/plain"(), rule_coverage(Variants))
     @test contains(text, "Bounded{<:FirstMethod}") && contains(text, "Bounded{<:SecondMethod}")
 end
+
+@testitem "interactive:a selection by the target's index takes what a graph delivers" tags = [:base] begin
+    using MessagePassingRulesBase
+
+    struct Sum end
+    struct Copied <: AbstractAlgorithm end
+    @define_factor_node(node = Sum, type = Deterministic, interfaces = [:out, :in...])
+    @define_message_update_rule(
+        node = Sum, target = (:in, k), args = (m[:out]::Float64, m[:in][!k]::Float64),
+        body = (args) -> args.m[:out] - sum(something(x, 0.0) for x in args.m[:in]),
+    )
+    @define_message_update_rule(node = Sum, target = (:in, k), algorithm = Copied, args = (m[:in][k]::Float64,), body = (args) -> args.m[:in][2])
+
+    # Every member but the target's: as a graph delivers it, and with the target's own given too.
+    @test getresult(call_message_update_rule(Sum, (:in, 2); m = (out = 10.0, in = (1.0, nothing, 3.0)))) == 6.0
+    err = try
+        call_message_update_rule(Sum, (:in, 2); m = (out = 10.0, in = (1.0, 5.0, 3.0)))
+    catch e
+        e
+    end
+    @test err isa ArgumentError && contains(err.msg, "`m[:in][!k]` leaves out member 2 of `in`, the target's own")
+    # The target's member alone: as a graph delivers it, and with another member given too.
+    @test getresult(call_message_update_rule(Sum, (:in, 2); m = (in = (nothing, 4.0, nothing),), algorithm = Copied())) == 4.0
+    err = try
+        call_message_update_rule(Sum, (:in, 2); m = (in = (1.0, 4.0, nothing),), algorithm = Copied())
+    catch e
+        e
+    end
+    @test err isa ArgumentError && contains(err.msg, "`m[:in][k]` takes only member 2 of `in`, the target's own, but member 1 was given")
+end

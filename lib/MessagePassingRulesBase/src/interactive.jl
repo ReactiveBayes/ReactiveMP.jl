@@ -60,6 +60,7 @@ end
 
 function call_resolved(spec, output, algorithm, ctx, args, ann, target)
     spec = selected_interactively(throw_if_not_found(spec))
+    check_selected_members(spec, target, args)
     return run_rule(spec, output, rule_algorithm(spec, algorithm), ctx, args, ann, target)
 end
 

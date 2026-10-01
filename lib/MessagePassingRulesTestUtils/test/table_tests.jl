@@ -309,3 +309,28 @@ end
     end
     @test errors(scratch) == 0 && length(Recording.failures(scratch)) == 1 && contains(Recording.failure_text(scratch), "after `poison!` of its scratch")
 end
+
+@testitem "tables:a selection by the target's index takes what a graph delivers" tags = [:testutils] setup = [Recording] begin
+    using MessagePassingRulesTestUtils, MessagePassingRulesBase, Test
+
+    module Selections
+    using MessagePassingRulesBase
+    struct Sum end
+    @define_factor_node(node = Sum, type = Deterministic, interfaces = [:out, :in...])
+    @define_message_update_rule(
+        node = Sum, target = (:in, k), args = (m[:out]::Float64, m[:in][!k]::Float64),
+        body = (args) -> args.m[:out] - sum(something(x, 0.0) for x in args.m[:in]),
+    )
+    end
+
+    # A case giving the target's own member fails, and says so; the next case still runs.
+    set = Recording.recorded() do
+        @test_message_update_rule(
+            node = Selections.Sum, target = (:in, 2), check_type_promotion = false,
+            cases = [(m = (out = 10.0, in = (1.0, 5.0, 3.0)),) => 1.0, (m = (out = 10.0, in = (1.0, nothing, 3.0)),) => 6.0],
+        )
+    end
+    @test count(r -> r isa Test.Error, set.results) == 0 && length(Recording.failures(set)) == 1
+    @test contains(Recording.failure_text(set), "leaves out member 2 of `in`, the target's own")
+    @test Recording.passes(set) == 2
+end

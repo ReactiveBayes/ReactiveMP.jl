@@ -3776,7 +3776,7 @@ wait for the release):
   paths *(done, user, 2026-10-01: errors print the path as Julia's stack traces do, `~` for the home directory)*; GraphPPL shows an `@algorithm` specification as "Meta:" *(left as it is, user, 2026-10-01: display only, GraphPPL's own type)*. Also recorded: `+` had no marginal rule over its inputs for an
   observed `out`; the n-ary `+` has one, so `y := z + ε` with `y` observed has a free energy, while
   RxInfer's `y ~ z + ε` still fails to build (v6 neither) *(settled, user, 2026-10-01: it builds now, `y ~ z + ε` and three terms give the exact posterior and log evidence; with a constant term, `y ~ z + 1.0`, BayesBase leaves the prior times the point-mass message unevaluated, as in v6, and that stays as it is)*. Recorded, not done: an interactive call does not check that a group
-  selected `m[:g][!k]` has `nothing` at `k` (in `interactive.jl`); `check_rules` could flag a rule
+  selected `m[:g][!k]` has `nothing` at `k` (in `interactive.jl`) *(done, user, 2026-10-01: `check_selected_members`, in the interactive calls and the tables)*; `check_rules` could flag a rule
   that reads its own edge's message where no declaration delivers it.
 - *The audit of 2026-09-29 — done* (user): the engine, the packages and the working
   documents reviewed against each other and the code. Decided (user): ManyPlus, main's node from

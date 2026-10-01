@@ -25,6 +25,7 @@ MessagePassingRulesBase.execute_rule_with_logscale
 MessagePassingRulesBase.rule_scratch
 MessagePassingRulesBase.rule_scratch_type
 MessagePassingRulesBase.check_reads_logscale
+MessagePassingRulesBase.check_selected_members
 ```
 
 ## Internal helpers

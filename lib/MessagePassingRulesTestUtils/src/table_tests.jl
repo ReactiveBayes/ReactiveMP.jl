@@ -149,6 +149,7 @@ function run_case(table::TableContext, args, ctx, output = nothing)
     spec = resolve(table, args)
     spec isa MessagePassingRulesBase.RuleSpec || return spec, nothing, nothing, nothing
     MessagePassingRulesBase.check_reads_logscale(spec, args)
+    table.kind === :message && MessagePassingRulesBase.check_selected_members(spec, table.target, args)
     annotations = MessagePassingRulesBase.RuleAnnotations(out = MessagePassingRulesBase.AnnotationStore())
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, table.algorithm)
     result, logscale = if table.kind === :message

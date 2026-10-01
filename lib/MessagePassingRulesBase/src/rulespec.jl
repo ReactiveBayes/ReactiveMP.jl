@@ -347,6 +347,42 @@ caller does not track them.
     return nothing
 end
 
+"""
+    check_selected_members(spec::RuleSpec, target, args::RuleArgs) -> nothing
+
+Check that a group which `spec` selects members of by the target's index holds `nothing` where
+the selection leaves a member out, as an engine delivers it: for a target `(:in, k)`, member
+`k` of `m[:in][!k]`, and every member but `k` of `m[:in][k]`. A caller that writes a group's
+tuple by hand calls it before running the rule; this package's interactive calls and the tables
+of MessagePassingRulesTestUtils do. An engine, or code that builds its `RuleArgs` for
+[`message_passing_rule`](@ref), builds the tuple itself and need not.
+
+# Throws
+`ArgumentError` naming the selection and the member, and saying to pass `nothing` there: the
+rule would read a value no graph gives it.
+"""
+function check_selected_members(spec::RuleSpec, target, args)
+    target isa IndexedTarget || return nothing
+    k = target.index
+    for input in spec.inputs
+        input.selection in (:aligned, :allbutself) || continue
+        values = input.container === :m ? args.m.values : args.q.singles
+        haskey(values, input.key) || continue
+        members = values[input.key]
+        members isa Tuple || continue
+        for (i, member) in enumerate(members)
+            left_out = input.selection === :aligned ? i != k : i == k
+            (left_out && member !== nothing) || continue
+            label = input_label(input.container, input.key, input.selection)
+            message = input.selection === :aligned ?
+                "`$label` takes only member $k of `$(input.key)`, the target's own, but member $i was given: pass `nothing` for it, as a graph does" :
+                "`$label` leaves out member $k of `$(input.key)`, the target's own, but a value was given there: pass `nothing`, as a graph does"
+            throw(ArgumentError(message))
+        end
+    end
+    return nothing
+end
+
 # Run a resolved rule into a `RuleResult`.
 @inline function run_rule(spec::RuleSpec, output, algorithm, ctx, args, ann, target)
     check_reads_logscale(spec, args)
