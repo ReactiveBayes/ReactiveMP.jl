@@ -6,8 +6,11 @@ collect_latest_messages(interfaces) = collect_latest_messages(map(name, Tuple(in
 collect_latest_messages(labels, interfaces) =
     collect_latest_updates(labels, map(get_stream_of_inbound_messages, Tuple(interfaces)), nothing)
 collect_latest_marginals(sources) = collect_latest_marginals(map(name, Tuple(sources)), sources)
-collect_latest_marginals(labels, sources) =
-    collect_latest_updates(labels, map(get_stream_of_marginals, Tuple(sources)), RelaxOnce())
+function collect_latest_marginals(labels, sources)
+    relaxation = MarginalRelaxation()
+    inputs = map(source -> RelaxedInput(get_stream_of_marginals(source), relaxation), Tuple(sources))
+    return collect_latest_updates(labels, inputs, relaxation)
+end
 
 # Inputs are subscribed in the order they are listed, which for declared dependencies is the
 # declaration's: in variational message passing that order is the update schedule.
@@ -17,38 +20,76 @@ function collect_latest_updates(labels, streams::Tuple, callback::C) where {C}
 end
 
 """
-    ReactiveMP.RelaxOnce()
+    ReactiveMP.MarginalRelaxation()
 
-When a rule's marginal inputs fire it, as the callback of their combination. The combination
-fires once every input has a new value since the last firing, with one exception: after a firing
-that consumed initial marginals alone, those [`ReactiveMP.set_initial_marginal!`](@ref) set or
-computed from them, the next update of any single input fires it again, **once** for each
-subscription. From then on every input must refresh before the rule runs again.
+When a rule's marginal inputs fire it: the callback of their combination, and the state its
+[`ReactiveMP.RelaxedInput`](@ref)s share. The combination fires once every input has a new value
+since the last firing, with two exceptions, both after a firing that consumed initial marginals
+alone, those [`ReactiveMP.set_initial_marginal!`](@ref) set or computed from them:
 
-The exception breaks a deadlock. Under a structured factorisation with three or more clusters
-that depend on each other, as in RxInfer#344, each cluster waits for the others to refresh, and
-an initial value consumed by the first firing is never refreshed on its own, so nothing would
-run again. One relaxed firing is enough to start them; more are not needed. Relaxing every
-firing whose inputs are still initial would also let the rules re-fire each other on initial
-values alone, before any data arrives, until they settle: tens of thousands of rule calls for a
-mixture of two components on five points, where relaxing once makes a few dozen.
+- the next update of any single input fires it again, **once** for each subscription;
+- an update that is not initial, a value computed from data, fires it again, every time.
 
-It applies to the marginal inputs only: a rule's message inputs keep strict refreshing, which an
-initial message must not relax. It keeps the subscription it relaxed, so a combination subscribed
-again relaxes once more.
+Strict refreshing would otherwise deadlock structured or mean-field factorisations whose
+clusters wait on each other: each waits for the others to refresh, and an initial value
+consumed by a firing is never refreshed on its own (RxInfer#344). Real values reach a rule far
+from the data only after several rounds, so a rule may need restarting more than once, whenever
+one arrives. Initial values alone restart it at most once: restarting on every one let the rules
+re-fire each other on initial values before any data arrived, tens of thousands of rule calls for
+a mixture of two components on five points, where these two exceptions make a few dozen.
+
+It applies to the marginal inputs only: a rule's message inputs keep strict refreshing. It keeps
+the subscription it belongs to, so a combination subscribed again relaxes once more.
 """
-mutable struct RelaxOnce
-    relaxed::Any
+mutable struct MarginalRelaxation
+    subscription::Any
+    armed::Bool
+    spent::Bool
 end
 
-RelaxOnce() = RelaxOnce(nothing)
+MarginalRelaxation() = MarginalRelaxation(nothing, false, false)
 
-function (relax::RelaxOnce)(wrapper, sources)
-    relax.relaxed === wrapper && return nothing
-    is_initial(map(getrecent, sources)) || return nothing
-    relax.relaxed = wrapper
-    Rocket.fill_vstatus!(wrapper, true)
+# After every firing: whether it consumed initial marginals alone, and the one relaxation for them.
+function (relaxation::MarginalRelaxation)(wrapper, inputs)
+    if relaxation.subscription !== wrapper
+        relaxation.subscription = wrapper
+        relaxation.spent = false
+    end
+    relaxation.armed = is_initial(map(getrecent, inputs))
+    if relaxation.armed && !relaxation.spent
+        relaxation.spent = true
+        Rocket.fill_vstatus!(wrapper, true)
+    end
     return nothing
+end
+
+# On every update of an input: a value that is not initial, after a firing on initial ones alone.
+function relax_on_update!(relaxation::MarginalRelaxation, value)
+    if relaxation.armed && relaxation.subscription !== nothing && !is_initial(value)
+        relaxation.armed = false
+        Rocket.fill_vstatus!(relaxation.subscription, true)
+    end
+    return nothing
+end
+
+"""
+    ReactiveMP.RelaxedInput(source, relaxation::MarginalRelaxation)
+
+A rule's marginal input as its combination subscribes to it: the marginals of `source`, a stream
+such as a [`ReactiveMP.MarginalObservable`](@ref), each
+reported to `relaxation` as it arrives (see [`ReactiveMP.MarginalRelaxation`](@ref)). Its latest
+value is `source`'s.
+"""
+struct RelaxedInput{S} <: Subscribable{Marginal}
+    source::S
+    relaxation::MarginalRelaxation
+end
+
+Rocket.getrecent(input::RelaxedInput) = Rocket.getrecent(input.source)
+
+function Rocket.on_subscribe!(input::RelaxedInput, actor)
+    relaxation = input.relaxation
+    return subscribe!(input.source |> tap((value) -> relax_on_update!(relaxation, value)), actor)
 end
 
 """

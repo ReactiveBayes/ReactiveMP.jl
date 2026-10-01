@@ -812,12 +812,13 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   a rule, so the free energy of a model observing a sum is defined. `-` keeps `in1` and `in2`.
 - **When a rule fires.** A rule runs once every input has refreshed since its last run. v6
   relaxed this for marginal inputs whenever every one of them was still initial, which started
-  structured factorisations whose clusters wait on each other (RxInfer#344), but also let rules
-  re-fire each other on initial values alone before any data arrived, without bound. v7 relaxes
-  it once for each rule ([`ReactiveMP.RelaxOnce`](@ref)), which starts them as well. A model with
-  every marginal initialised can therefore converge elsewhere than on v6, usually to a lower free
-  energy, with far fewer rule calls; v6's mixtures and Delta wired their own inputs and were never
-  relaxed, so models with them can differ the most.
+  factorisations whose clusters wait on each other (RxInfer#344), but also let rules re-fire each
+  other on initial values alone before any data arrived, without bound. v7 relaxes it, after a
+  run on initial marginals alone, once for any update and every time a value computed from data
+  arrives ([`ReactiveMP.MarginalRelaxation`](@ref)), which starts them as well. A model with every
+  marginal initialised can therefore converge elsewhere than on v6, so far always to a free energy
+  as low or lower, with far fewer rule calls; v6's mixtures and Delta wired their own inputs and
+  were never relaxed, so models with them can differ the most.
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
 - **NormalMixture** and **GammaMixture** take no type parameter: v6's `NormalMixture{N}` and
   `GammaMixture{N}` are `NormalMixture` and `GammaMixture`, and the number of components is the

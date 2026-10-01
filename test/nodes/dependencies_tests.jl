@@ -147,8 +147,8 @@ end
     # combined stream may fire again. If the first firing consumed only provisional
     # (`is_initial`) marginals, structured VMP with 3+ mutually-dependent clusters deadlocks:
     # the combination never fires again because the clusters wait on each other.
-    # `RelaxOnce` lets a single refreshed dependency fire the combination again after a firing
-    # that consumed initial values alone, and strict `PushNew()` semantics apply afterwards.
+    # `MarginalRelaxation` lets a single refreshed dependency fire the combination again after a
+    # firing that consumed initial values alone, and strict `PushNew()` semantics apply afterwards.
     include("../testutilities.jl")
     using BayesBase, Rocket
 
@@ -243,28 +243,40 @@ end
 
 end
 
-@testitem "RelaxOnce relaxes once for each subscription" tags = [:nodes] begin
-    # On subjects alone, so that a subscription replays each value once: the replay fires the
-    # combination, a single update fires it once more, and then strict `PushNew()` applies.
+@testitem "MarginalRelaxation: once on initial values, on every value computed from data" tags = [:nodes] begin
+    # On plain subjects, so that a subscription replays each value once.
     using BayesBase, Rocket
-    import ReactiveMP: RelaxOnce
+    import ReactiveMP: MarginalRelaxation, RelaxedInput
 
     sa, sb, sc = RecentSubject(Marginal), RecentSubject(Marginal), RecentSubject(Marginal)
-    sources = (sa, sb, sc)
-    stream = combineLatestUpdates(sources, PushNew(), typeof(sources), identity, RelaxOnce())
+    relaxation = MarginalRelaxation()
+    inputs = map(s -> RelaxedInput(s, relaxation), (sa, sb, sc))
+    stream = combineLatestUpdates(inputs, PushNew(), typeof(inputs), identity, relaxation)
     initial(value) = Marginal(value, false, true)
+    computed(value) = Marginal(value, false, false)
 
     fired = Ref(0)
     subscription = subscribe!(stream, (_) -> fired[] += 1)
-    foreach(source -> next!(source, initial(PointMass(1))), sources)
+    foreach(source -> next!(source, initial(PointMass(1))), (sa, sb, sc))
     @test fired[] == 1
+    # The one relaxation for initial values.
     next!(sa, initial(PointMass(1)))
     @test fired[] == 2
     next!(sb, initial(PointMass(1)))
     @test fired[] == 2
+    # Still all initial: a value computed from data fires it, every time it comes to that state.
+    next!(sc, computed(PointMass(1)))
+    @test fired[] == 3
+    # It consumed a computed value: strict refreshing until every input is new.
+    next!(sa, computed(PointMass(1)))
+    @test fired[] == 3
+    next!(sb, computed(PointMass(1)))
+    next!(sc, computed(PointMass(1)))
+    @test fired[] == 4
     unsubscribe!(subscription)
 
-    # A new subscription: the replay fires it, and its own relaxed firing follows.
+    # A new subscription relaxes once more: the replay fires it, and its own relaxed firing follows.
+    foreach(source -> next!(source, initial(PointMass(1))), (sa, sb, sc))
     fired[] = 0
     subscription = subscribe!(stream, (_) -> fired[] += 1)
     @test fired[] == 1
