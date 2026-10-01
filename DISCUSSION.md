@@ -1961,6 +1961,19 @@ package; their examples declare small nodes on the page, and link the rule packa
 RxInfer's. The learning path that needs the standard nodes lives in RxInfer's documentation, the
 one package that loads them all.
 
+### 3.53 The v6 reference does not ship (user, 2026-10-01)
+
+Asked whether the engine and migration fixture headers should agree on the type of `julia`, the
+user settled what the question kept circling: the comparison with v6 is scaffolding for the
+rewrite, mega useful while it lasts and worthless after it. A test of v7 compares v7 with what is
+true (a closed form, an enumeration, the node's definition, a fixed point), never with an old
+implementation, whose numbers v7 may change on purpose. So at the release `compat/` goes
+entirely and TestUtils' comparison machinery with it, with no exceptions (`PLAN.md` § The v6
+reference is scaffolding); the v6 → v7 guide shows v6 code as text and runs none. Checked the
+same day: no root, rule-package or RxInfer test uses the machinery, and the engine tests verify
+every whole graph without v6. The guide's *Verifying a port* no longer recommends
+`compare_with_reference`. Polishing the machinery, its headers or formats, is moot.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -2089,6 +2102,11 @@ Claims the assistant made that were **wrong** and should not be revived:
     from the inputs' types (`rule_scratch_type`, `Base.promote_op` over the builder, concrete or
     `Any`), measured as fast as the declaration on BIFM's rules. It only ever decides whether a
     kept scratch is typed, never what a rule computes.
+30. **"`compare_with_reference` (or the engine fixtures, or `compat/`) will likely ship, as a
+    migration aid", and any question about its fate or polish.** No (user, 2026-10-01). A
+    comparison with an old implementation is not a test; all of it is removed at the release,
+    with no exceptions, and its quirks (fixture headers, formats) are not worth a question
+    before then. §3.53, `PLAN.md` § The v6 reference is scaffolding.
 
 ---
 

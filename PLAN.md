@@ -1343,6 +1343,37 @@ derived from one source** — if the transform encodes a rule, the guide documen
 rule, with a test asserting they agree. *(Dropped with the tool at the Phase 5 entry brief:
 the guide is written from what the hand ports find, its pairs as doctests.)*
 
+## The v6 reference is scaffolding, and none of it ships (user, 2026-10-01)
+
+Comparing against v6 is how the rewrite was verified, while it lasted: it caught migration bugs
+and found the corrections. **It is not a test, and nothing of it survives the release, with no
+exceptions.** A comparison against an old implementation fails whenever v7 changes a number on
+purpose, and proves nothing v7's own tests do not; once v7 is checked on its own terms, it stays
+correct by them. At the release, Phase C removes:
+
+- `compat/` entirely: `compat/v6-comparison` (the oracle, every `compare_*.jl`, `check.jl`,
+  the engine fixtures and their recorder, `slice_rule_inventory.jl`) and
+  `compat/rxinfer-examples`;
+- TestUtils' comparison machinery, `migration.jl` and `engine_fixtures.jl`:
+  `compare_with_reference`, `DeclaredDisagreement`, `MigrationRecord`,
+  `save_migration_fixtures`, `load_migration_fixtures`, `encode_fixture_value`,
+  `RuleCallRecord`, `EngineTrajectory`, `save_engine_fixture`, `load_engine_fixture`,
+  `compare_engine_trajectory`, with their tests, their docs pages (`reference.md`, `engine.md`),
+  their exports and any dependency only they use;
+- the inventory (`INVENTORY.md`, `scripts/inventory.jl`) and the working documents.
+
+What stays is what tests v7 by itself: the rule tables, verification against the node's own
+definition (`verify_message_update_rule`, which integrates the node's `nodefunction` and compares
+with no implementation), derivative checks and the rule-coverage gate in every package, and the
+engine tests, which check whole graphs against closed forms, enumeration, minus the log
+evidence, coordinate-ascent fixed points and approximations recomputed in the test. No suite
+outside TestUtils, in this repository or RxInfer's, uses the comparison machinery (checked
+2026-10-01). The v6 → v7 guide shows v6 code side by side, as plain text, and never runs it.
+
+**Do not raise the fate of any of this again**: not as an open item, not as "keep it as a
+migration aid", not as a reason to polish it (its headers, its formats). Until the release it is
+a local tool and only has to work.
+
 ## Testing infrastructure
 
 Applies to **both** the new packages and ReactiveMP itself.

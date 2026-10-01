@@ -105,7 +105,9 @@ Work targets **Julia 1.13**, and every check above is run locally. The workflows
 `.github/` run the root suite, the docs and the package suites on 1.13 (the format check on
 1.10, where Runic's output is byte-identical). The v6 comparisons, the engine fixtures and the
 inventory are **not** CI: they are the migration tool that verified the rewrite, run locally,
-and go at the release.
+and go at the release, `compat/` and TestUtils' comparison machinery entirely, with no
+exceptions (user). Do not ask about their fate or polish them (`PLAN.md` § The v6 reference is
+scaffolding).
 
 `test_args` takes three kinds of entry, and they compose:
 

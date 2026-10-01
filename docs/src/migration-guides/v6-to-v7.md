@@ -644,16 +644,15 @@ shared.calls
 
 ## [Verifying a port](@id migration-v6-to-v7-verify)
 
-Check a ported rule three ways:
+Check a ported rule two ways:
 
 1. A table of cases, [`@test_message_update_rule`](@extref MessagePassingRulesTestUtils.@test_message_update_rule),
    with values derived by hand or taken from the old tests.
 2. Where the inputs allow, [`@verify_message_update_rule`](@extref MessagePassingRulesTestUtils.@verify_message_update_rule),
    which checks a message against the node's definition.
-3. While the old implementation is at hand,
-   [`compare_with_reference`](@extref MessagePassingRulesTestUtils.compare_with_reference) on the
-   same inputs: every difference is either a bug in the port or a declared correction with its
-   reason.
+
+Both test the rule against what is true, not against the old implementation, so they keep
+holding when a later release changes a number on purpose.
 
 ## Building a graph by hand
 
