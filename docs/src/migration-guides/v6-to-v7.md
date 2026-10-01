@@ -867,7 +867,7 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   account, as its message towards `x` and its joint `q(y, x)` do. v6's pushed the message on `x`
   through `E[A]` alone, so its message was too wide and its mean off whenever `q(a)` was uncertain.
   A model under `q(y, x) q(a) q(W)` gives different posteriors for `a`, `W` and the states
-  (ReactiveMP.jl#681). With `a` known, nothing changes.
+  (ReactiveMP.jl#681, #682). With `a` known, nothing changes.
 - **The Delta node takes three methods**: [`Unscented`](@extref MessagePassingRulesApproximations.Unscented)`()`, [`Linearization`](@extref MessagePassingRulesApproximations.Linearization)`()` and, once
   `using ExponentialFamilyProjection` loads its rules, [`CVIProjection`](@extref DeltaMessagePassingRules.CVIProjection)`()`. v6's other methods are
   gone, with no replacement: `CVI` and `ProdCVI`, `LaplaceApproximation`,
