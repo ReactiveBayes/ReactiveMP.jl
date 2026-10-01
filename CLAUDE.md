@@ -54,7 +54,7 @@ compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons
 compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants
 docs/                  the engine's documentation site; each package's is lib/<Pkg>/docs/
-scripts/               the formatter (Runic, pinned), the inventory generator, a message-representation benchmark
+scripts/               the formatter (Runic, pinned) and the inventory generator; no benchmarks, which live in RxInferBenchmarks.jl
 ```
 
 Include order in `src/ReactiveMP.jl` is load-bearing: `nodes/equality.jl` must precede

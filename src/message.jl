@@ -38,8 +38,7 @@ The supertype of the messages the engine passes: a [`Message`](@ref), which hold
 abstract type AbstractMessage end
 
 # The representation is a mutable struct with `const` fields: measured faster than an
-# immutable one through the equality chain, and lighter everywhere
-# (`scripts/benchmark_message_representation.jl`).
+# immutable one through the equality chain, and lighter everywhere.
 """
     Message(data, is_clamped::Bool, is_initial::Bool)
     Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict)

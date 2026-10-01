@@ -500,8 +500,8 @@ The user's call, and the right one: this is not a baseline, it is the appearance
 Performance verification moves to **RxInferBenchmarks.jl** at implementation time, where
 there is a new engine to measure against. Phase P therefore captures no performance
 baseline, which is an honest gap rather than a hidden one. *(The end-of-refactor pass was
-measured in this repository instead, §5 and `BENCHMARK.md`; where benchmarking lives from now on
-is for the user to decide, `PHASES.md`.)*
+measured in this repository instead, §5 and `BENCHMARK.md`, as a one-off analysis; from now on
+benchmarking lives in RxInferBenchmarks.jl and this repository keeps none (user, 2026-10-01).)*
 
 #### Standard versus models
 
