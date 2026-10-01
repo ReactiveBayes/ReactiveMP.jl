@@ -110,3 +110,26 @@ end
     # A bare name as a target binds a cluster, so it is a marginal rule's only.
     @test contains(failure(rule(:((default,)); target = :members)), "a bare name is a marginal rule's")
 end
+
+@testitem "default args:a group's members, as a typed rule takes them" tags = [:base] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: find_message_rule, as_target, RuleArgs, RuleSpec
+
+    # The same inputs declared typed and beside `default` select alike: every member of `in` must be
+    # present, and a selection by the target's index leaves the target's own member `nothing`.
+    struct Sum end
+    struct Typed <: AbstractAlgorithm end
+    struct Defaulted <: AbstractAlgorithm end
+    @define_factor_node(node = Sum, type = Deterministic, interfaces = [:out, :in...])
+    @define_message_update_rule(node = Sum, target = :out, algorithm = Typed, args = (m[:in...]::Float64,), body = (args) -> 1.0)
+    @define_message_update_rule(node = Sum, target = :out, algorithm = Defaulted, args = (default, m[:in...]::Float64), body = (args) -> 1.0)
+    @define_message_update_rule(node = Sum, target = (:in, k), algorithm = Typed, args = (m[:out]::Float64, m[:in][!k]::Float64), body = (args) -> 1.0)
+    @define_message_update_rule(node = Sum, target = (:in, k), algorithm = Defaulted, args = (default, m[:in][!k]::Float64), body = (args) -> 1.0)
+
+    found(target, algorithm, m) = find_message_rule(Sum, as_target(target), algorithm, RuleArgs(; m)) isa RuleSpec
+    for algorithm in (Typed(), Defaulted())
+        @test found(:out, algorithm, (in = (1.0, 2.0),))
+        @test !found(:out, algorithm, (in = (1.0, nothing),))
+        @test found((:in, 1), algorithm, (out = 3.0, in = (nothing, 2.0)))
+    end
+end

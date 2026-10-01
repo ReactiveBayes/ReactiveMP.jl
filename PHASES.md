@@ -3748,7 +3748,8 @@ wait for the release):
   recorded, not changed: the diagnosis note "a joint given as singles" fires for any `q` single
   that is a member of some candidate's joint, a correct mean-field call included
   (`diagnostics.jl`) *(done, user, 2026-10-01: only when no rule takes the call's shape)*; a `default` rule's guard accepts `nothing` members for `m[:in...]::T` where
-  a typed rule's signature and `input_accepts` refuse them; `CHANGELOG.md`'s old `### Tests`
+  a typed rule's signature and `input_accepts` refuse them *(done, user, 2026-10-01: the guard
+  requires every member for a whole group)*; `CHANGELOG.md`'s old `### Tests`
   section under 5.6.6; NormalMeanVariance towards `μ` has no rule for a `PointMass` `q_v` declaring
   log scale 0, as towards `out`. The Unscented transform's singular covariances and the
   duplication are rows of the not-done table.

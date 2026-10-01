@@ -614,7 +614,10 @@ constant.
         position = findfirst(==(key), names)
         position === nothing && return false
         selection === :single && return types[position] <: type
-        return types[position] <: Tuple && all(t -> t <: Union{Nothing, type}, types[position].parameters)
+        # Every member of the group, as a typed rule's `Tuple{Vararg{T}}`; a selection by the target's
+        # index leaves the other members `nothing`.
+        member_type = selection === :all ? type : Union{Nothing, type}
+        return types[position] <: Tuple && all(t -> t <: member_type, types[position].parameters)
     end
     return all(((r, type),) -> held(r..., type), zip(required, types.parameters))
 end
