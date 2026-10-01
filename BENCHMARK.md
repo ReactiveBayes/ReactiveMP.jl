@@ -7,7 +7,7 @@ and completed it. The changes are applied: ReactiveMP `b46046c83`, then `83b77d1
 annotations only where written, scratch slots on demand) and `adf4023b6` (the scratch's type
 inferred instead of declared), and RxInfer `1a6bb502`, then `af1f082f`
 (the precompile workload). The Rocket and GraphPPL fixes are pull requests of their own:
-ReactiveBayes/Rocket.jl#91 is merged, for Rocket 1.10.1, and ReactiveBayes/GraphPPL.jl#333 is open.
+ReactiveBayes/Rocket.jl#91 is merged and tagged as Rocket 1.10.1 (registration pending), and ReactiveBayes/GraphPPL.jl#333 is open.
 The scripts, diffs, profiles and raw data are in the history, up to `b46046c83` (`investigations/`).
 
 ## 1. Result
@@ -186,7 +186,7 @@ each figure the minimum of fresh processes:
 
 ## 6. Left open
 
-- **Rocket 1.10.1 and GraphPPL#333.** Rocket#91 is merged and its release is to be tagged;
+- **Rocket 1.10.1 and GraphPPL#333.** Rocket#91 is merged and tagged as 1.10.1, its registration pending;
   GraphPPL#333 awaits review. Neither needs a compat bump, since both change performance only.
 - **Precompile workloads in the rule packages** with many nodes (the multivariate Gaussians,
   Delta, DiscreteTransition), as extensions on ReactiveMP; RxInfer's is done (§4.5).

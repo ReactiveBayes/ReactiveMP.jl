@@ -1931,7 +1931,7 @@ ownerless) and §3.48 (log scales as v6 has them past the release).
 
 Four decisions shaped it. **Dependency-free, in the base package**: a hand-written SVG of one node
 and a `text/plain` report, through `show(io, mime, x)`; `visualize_spec`'s extensions stay the
-place for graph-scale pictures. **A single rule call**: a trace of an inference run, recording
+place for graph-scale pictures *(`visualize_spec` removed since, user, 2026-10-01: see §3.52)*. **A single rule call**: a trace of an inference run, recording
 rule calls through callbacks and drawing them on the graph, is a separate piece of work. **No
 maths**: showing a node's density or a rule's formula would need a declaration of it, and it is
 unclear how to generate one. **Tests of structure**, the elements and sections present and
@@ -2318,8 +2318,8 @@ Open as of the Phase 4.5 reconciliation:
 - ~~**Default initial messages**~~ — **RESOLVED in Phase 6 step 3**: Probit declares its own
   with `initial_messages` on its node, separately from `dependencies` (§3.21).
 - ~~**Log scales** — preserved as v6 has them~~ — **first-class since §3.50** (Phase C): part of
-  the message, declared per rule. Still open: 27 of Standard's message-only rules declare none,
-  and whether a gate should list them (`PHASES.md`, not-done table).
+  the message, declared per rule. 27 of Standard's message-only rules declare none, left as they
+  are until a separate effort after the release, with no gate (user, 2026-09-30; `PHASES.md`).
 - ~~**The models package's name**~~ — *settled by §3.30: no such package; each node gets its own.*
 - **The Julia floor** — 1.13 only until registration, when 1.10 support is reconsidered
   (§3.22).
@@ -2328,8 +2328,8 @@ Open as of Phase C (2026-09-26; `PHASES.md`'s not-done table is the full list):
 
 - ~~**`missing_services` at resolution**~~ — **done** (Phase C): the engine calls the base's
   `check_services` as it resolves each rule, so a declared service nobody supplies is an error
-  naming the rule. Left: the free energy's average energies run with the engine's default
-  context, not the node's `context` option.
+  naming the rule. The free energy's average energies run with the node's `context` option too,
+  since `activate!` keeps it on the node (user, 2026-09-30).
 - ~~**Two rule discrepancies**~~ — **corrected in v7** (2026-10-01; user, after Nimrais
   confirmed ReactiveMP.jl#681): AR's mean-field rule towards `γ` takes `tr(Vθ Vx)`, and
   ContinuousTransition's rule towards `y` from `m[:x]` the uncertainty of `a`. v6 stays as it is,

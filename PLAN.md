@@ -450,7 +450,7 @@ methods is a requirement, not a preference. The per-module `const` of § Registr
 introspection only and is never read on the resolution path (`DISCUSSION.md` §3.23).
 
 **Measuring this is easy to get wrong, in the direction that flatters whatever you built.**
-If the spec is constructed inline inside an inlinable `find_rule`, the compiler constant-folds
+If the spec is constructed inline inside an inlinable `find_message_rule` (or a sibling), the compiler constant-folds
 the whole expression and *every* representation reports zero allocations — so an implementer
 can "confirm" a gate and learn nothing. Equally, a micro-benchmark where a call site can only
 ever reach one rule measures the best case and hides the indirect call entirely. So **Phase
@@ -1110,7 +1110,7 @@ The dispatch result, ownership contracts and early engine integration are separa
    `AlgorithmExtension{Parent}`, rather than a registry axis; both are sketched in
    `DISCUSSION.md` §3.23.)* The rule-fallback contract was
    specified independently, as required:
-   **resolution is a separate, total function** — `find_rule` returns a spec or a
+   **resolution is a separate, total function** — `find_message_rule` and its siblings return a spec or a
    `RuleNotFound`, never throws and never runs anything, and the fallback is consulted on the
    not-found branch only, which is decided before any body runs. An exception from inside a
    selected rule therefore cannot reach the fallback, structurally rather than by discipline.
@@ -1206,7 +1206,7 @@ The dispatch result, ownership contracts and early engine integration are separa
     *(Case (d) moved the guard to `DeltaApproximation`, and Phase 6 step 2 settled both
     follow-ups: the check is in its inner constructor, so the positional form cannot bypass
     it, and the error names the methods the node takes and the package that supplies
-    `CVIProjection` (`lib/DeltaMessagePassingRules/src/node.jl:41–66`).)*
+    `CVIProjection` (`lib/DeltaMessagePassingRules/src/node.jl:98–107`).)*
 
 12. ~~**Context service contracts.**~~ Phase 0 turned both hard cases into signatures, each
     demonstrated as a standalone call with no graph and no Rocket:

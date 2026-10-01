@@ -18,9 +18,10 @@ them again, so re-check before relying on one.
 
 ## Next action
 
-**Phase C, in progress** (§ Phase C, *Progress*). Next, for the user to choose, what the
-not-done table lists before the release; the rest of Phase C's exit criteria wait for the release
-itself. The 27 rules without a log scale are settled: left as they are until a separate effort
+**Phase C, in progress** (§ Phase C, *Progress*). Nothing in the not-done table is left to do
+before the release (checked 2026-10-01): every row is done, upstream, after the release, or
+release work (Phase 8, the examples branch). The rest of Phase C's exit criteria wait for the
+release itself. The 27 rules without a log scale are settled: left as they are until a separate effort
 after the release (user, 2026-09-30).
 
 Done in Phase C so far: ManyPlus as an n-ary `+`; the free energy's context; the audit of 2026-09-30 (its bugs fixed; the duplication and the unscented
@@ -57,7 +58,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | BayesBase owns `Uninformative` as a product identity, as it treats `missing`, and the Uniform(0, 1)×Beta product moves upstream; Standard's `UninformativeProd` and the Uniform piracy then go | upstream, a non-breaking BayesBase (or ExponentialFamily) release | § Phase 5, step 3 |
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only), and its `mean(loggamma, ::GammaShapeRate)` is a Float64 (GammaMixture's switch and energy tables run in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
-| RxInfer's documentation adapted to v7 | with the release work (user) | § Phase 7, *Item 6 brief* |
+| RxInfer's documentation adapted to v7: **done** on its branch (`1416e04e`, `2a11443c`): a learning path, the v5 → v6 guide, every v6 page rewritten, all runnable; it is published with RxInfer's release | done; published with the release (user) | § Phase 7, *Item 6 brief*; § Phase C, *Progress* |
 | a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 | Gamma's variational rule towards `out` uses `E[θ]` where naive VMP gives `1/E[1/θ]`, which its own average energy uses; exact for a point-mass `θ`, and the node has no rule towards `θ` | left as v6 has it (user, 2026-09-26) | § Phase C, *Progress* |
@@ -76,8 +77,10 @@ The rule registry was clarified with the user after step 4 and **stays as it is*
 the base package's method table, global already, and the per-module registries are
 introspection only (`DISCUSSION.md` §3.23, Correction 25).
 
-Ground rules since Phase 4.5: work on **Julia 1.13 only** wired with `[sources]`, and **no CI
-runs until a PR is opened**, everything verified locally (`DISCUSSION.md` §3.22).
+Ground rules since Phase 4.5: work on **Julia 1.13 only** wired with `[sources]`, and everything
+verified locally (`DISCUSSION.md` §3.22). Of the CI, only `LibTests.yml`, the package suites, runs
+on pushes to this branch; `ci.yml` (the root suite and the docs) and `IntegrationTest.yml` run on a
+pull request.
 
 Phases 0–7 are closed. `lib/` holds the rule system (`MessagePassingRulesBase`), its test tooling
 (`MessagePassingRulesTestUtils`), the standard nodes (`StandardMessagePassingRules`), the numerics
@@ -452,7 +455,8 @@ omission.
       version stays pinned, since its output may change between releases. Reformatted 389 of
       518 files; `docs/` stays excluded, as before, and no docstring or doctest line was
       touched
-- [ ] Aqua `ambiguities` — **deliberately left off; revisit after the split.** Re-measured on
+- [x] Aqua `ambiguities` — *on since Phase 7, in the root suite and every package's own
+      (`test/runtests.jl`).* It was **deliberately left off; revisit after the split.** Re-measured on
       this branch (Julia 1.13, `Aqua.detect_ambiguities(ReactiveMP; recursive = true)`):
       **322 pairs**, identical to the Phase P baseline. Attributing each pair to the
       ReactiveMP files on either side:
@@ -3822,7 +3826,8 @@ wait for the release):
   `MarginalMapping`, the node's free energy). The interactive calls do not, since they run with
   the caller's context, empty by default; their docstrings state it as their contract, and a
   test pins it (user). Found: the free energy's average energies never see
-  the node's `context` option (not-done table).
+  the node's `context` option (not-done table) *(done since: the node keeps its activation
+  context, and `score` reads it)*.
 - *The end-of-refactor performance pass — done* (user, 2026-09-26 to 2026-09-29, `BENCHMARK.md`):
   applied in `b46046c83` (the typed `RuleSpec`, callback events only for handlers that listen,
   span ids from a salted counter, a creation plan per node shape, a mutable `MessageMapping`, a
@@ -3869,11 +3874,13 @@ wait for the release):
   TestUtils' unused names, unused dependencies and test extras; docstrings for `MessageMapping`,
   `hasannotation` and the three modules; Flow's and DiscreteTransition's quality items; the
   workflows and the Makefile. `visualize_spec` stays: it was taken for dead code, but is the
-  entry point of the planned visualisations (see the not-done table).
+  entry point of the planned visualisations (see the not-done table) *(removed since, user,
+  2026-10-01; `drawing` gives the drawing on its own)*.
 - *The engine tests without v6 as reference — done*: `test/engine/{exact_inference,variational,
   approximation}_tests.jl` (39 items) replace `fixtures_tests.jl`; `harness.jl` reads no
   fixture. Two rule discrepancies found (AR towards `γ` under mean-field, CT towards `y` from
-  `m[:x]`) are `@test_broken`, for the user to decide.
+  `m[:x]`) are `@test_broken`, for the user to decide *(both corrected in v7 since, 2026-10-01;
+  nothing is `@test_broken`)*.
 - *History out of the engine, base, TestUtils and Approximations — done* (one subagent for the
   three lib packages, the engine by hand; every diff reviewed).
 - *Docs, READMEs and CLAUDE.md — done*: the package pages carry no v6 notes, their differences
