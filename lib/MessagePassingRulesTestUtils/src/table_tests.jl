@@ -187,8 +187,10 @@ end
 function check_case(table::TableContext, index, inputs::CaseInputs, expected; atol, rtol, check_type_promotion, float_types, check_nonallocating)
     label = describe_case(table, index, inputs)
     args = rule_args(inputs)
-    spec, result, annotations, logscale = run_case(table, args, inputs.ctx)
-    record_check(spec isa MessagePassingRulesBase.RuleSpec, :(rule_found), () -> sprint(showerror, MessagePassingRulesBase.RuleNotFoundError(spec)), table.source) || return nothing
+    ran, outcome = guarded(() -> run_case(table, args, inputs.ctx), label, table.source)
+    ran || return nothing
+    spec, result, annotations, logscale = outcome
+    record_check(spec isa MessagePassingRulesBase.RuleSpec, :(rule_found), () -> "$label: " * sprint(showerror, MessagePassingRulesBase.RuleNotFoundError(spec)), table.source) || return nothing
     record_selected_rule!(spec, table.source)
 
     check_value(table, label, result, expected_value(expected), atol, something(rtol, 0.0))
@@ -205,21 +207,24 @@ function check_case(table::TableContext, index, inputs::CaseInputs, expected; at
     expected_scale === nothing || check_logscale(table, label, logscale, expected_scale, atol, something(rtol, 0.0))
 
     if spec.inplace
-        buffer = spec.prealloc(MessagePassingRulesBase.rule_algorithm(spec, table.algorithm), inputs.ctx, args, table.target)
-        _, inplace_result, _, _ = run_case(table, args, inputs.ctx, buffer)
-        T = output_float_type(result)
-        record_check(inplace_result === buffer, :(rule!(buffer) === buffer), "$label: `rule!` returned a new object instead of writing into its buffer", table.source)
-        record_check(
-            approximately_equal(inplace_result, result; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(something(rtol, 0.0), T)),
-            :(rule! == rule), () -> "$label: `rule!` into a preallocated buffer gave $(repr(inplace_result)), `rule` gave $(repr(result))", table.source,
-        )
+        inplace_run() = (buffer = spec.prealloc(MessagePassingRulesBase.rule_algorithm(spec, table.algorithm), inputs.ctx, args, table.target); (buffer, run_case(table, args, inputs.ctx, buffer)[2]))
+        ran, outcome = guarded(inplace_run, () -> "$label, through `rule!`", table.source)
+        if ran
+            buffer, inplace_result = outcome
+            T = output_float_type(result)
+            record_check(inplace_result === buffer, :(rule!(buffer) === buffer), "$label: `rule!` returned a new object instead of writing into its buffer", table.source)
+            record_check(
+                approximately_equal(inplace_result, result; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(something(rtol, 0.0), T)),
+                :(rule! == rule), () -> "$label: `rule!` into a preallocated buffer gave $(repr(inplace_result)), `rule` gave $(repr(result))", table.source,
+            )
+        end
     end
 
     spec.scratch === nothing || check_scratch(table, label, spec, args, inputs.ctx, result, atol, rtol)
 
     if check_nonallocating
-        bytes = measure_allocations(spec, table, args, inputs.ctx)
-        record_check(bytes == 0, :(allocated_bytes == 0), "$label: allocated $bytes bytes", table.source)
+        ran, bytes = guarded(() -> measure_allocations(spec, table, args, inputs.ctx), () -> "$label, measuring its allocations", table.source)
+        ran && record_check(bytes == 0, :(allocated_bytes == 0), "$label: allocated $bytes bytes", table.source)
     end
 
     if check_type_promotion !== false
@@ -230,8 +235,10 @@ function check_case(table::TableContext, index, inputs::CaseInputs, expected; at
             output_type = promote_type(map(value_float_type, values_in)...)
             promoted_expected = convert_input(output_type, expected_value(expected))
             promoted_args = rule_args(promoted)
-            promoted_spec, promoted_result, _, promoted_logscale = run_case(table, promoted_args, promoted.ctx)
             promoted_label = "$label, with input(s) $(selected) converted to $T"
+            ran, outcome = guarded(() -> run_case(table, promoted_args, promoted.ctx), promoted_label, table.source)
+            ran || continue
+            promoted_spec, promoted_result, _, promoted_logscale = outcome
             if promoted_spec isa MessagePassingRulesBase.RuleSpec
                 check_value(table, promoted_label, promoted_result, promoted_expected, atol, something(rtol, 0.0))
                 expected_scale === nothing || check_logscale_type(table, promoted_label, promoted_logscale, output_type)
@@ -248,12 +255,15 @@ end
 # reads its scratch before writing it.
 function check_scratch(table::TableContext, label, spec, args, ctx, result, atol, rtol)
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, table.algorithm)
-    scratch = MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, table.target)
+    ran, scratch = guarded(() -> MessagePassingRulesBase.rule_scratch(spec, algorithm, ctx, args, table.target), () -> "$label, building its scratch", table.source)
+    ran || return false
     fresh_output() = spec.inplace ? spec.prealloc(algorithm, ctx, args, table.target) : nothing
     run() = MessagePassingRulesBase.execute_rule(spec, fresh_output(), scratch, algorithm, ctx, args, MessagePassingRulesBase.NoAnnotations(), table.target)
-    reused = run()
+    ran, reused = guarded(run, () -> "$label, on a reused scratch", table.source)
+    ran || return false
     poison!(scratch)
-    poisoned = run()
+    ran, poisoned = guarded(run, () -> "$label, after `poison!` of its scratch", table.source)
+    ran || return false
     T = output_float_type(result)
     agree(value) = approximately_equal(value, result; atol = tolerance_for(atol, T), rtol = relative_tolerance_for(something(rtol, 0.0), T))
     return record_check(
@@ -380,10 +390,11 @@ const DOC_TABLE_CHECKS = rstrip(
     """
     Each case makes these checks, each a `Test` assertion:
 
-    1. A rule is found for the inputs; if none is, the case fails with the
+    1. A rule is found for the inputs and runs. If none is found, the case fails with the
        [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) text, which
-       lists the closest rules, and its other checks are skipped. The rule found is recorded as
-       selected for [`check_rule_coverage`](@ref).
+       lists the closest rules; if the rule throws, the case fails with the exception and where
+       it was thrown. Either way its other checks are skipped, and the table's other cases still
+       run. The rule found is recorded as selected for [`check_rule_coverage`](@ref).
     2. The result equals the expected value by [`approximately_equal`](@ref): same type, values
        within the tolerances.
     3. The annotations an [`ExpectedWithAnnotations`](@ref) names, and the log scale an
@@ -397,6 +408,9 @@ const DOC_TABLE_CHECKS = rstrip(
     7. With `check_type_promotion`, every promoted run finds a rule and returns the promoted
        expected value, and a floating-point log scale of the promoted type when the case expects
        one. Annotations, `rule!` and scratch are checked on the case's own inputs only.
+
+    A rule that throws in any of these runs, `rule!`, the scratch runs, the measured run or a
+    promoted one, fails that check with the exception, and the others still run.
     """
 )
 
@@ -404,8 +418,8 @@ const DOC_TABLE_THROWS = rstrip(
     """
     - `ArgumentError` when `check_type_promotion` is not `true`, `false` or `:exhaustive`, when a
       case is not a `Pair`, or when a case's inputs have an entry other than `m`, `q`,
-      `clusters`, `ctx` and `logscale`. A rule that is missing or wrong is a test failure, not
-      an error.
+      `clusters`, `ctx` and `logscale`. A rule that is missing, wrong or throws is a test
+      failure, not an error.
     """
 )
 

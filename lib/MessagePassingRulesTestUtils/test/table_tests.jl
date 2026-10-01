@@ -244,3 +244,68 @@ end
         cases = [(m = (out = Normal(1.0, 1.0), μ = Normal(0.0, 1.0)), q = (σ = PointMass(1.0),)) => ExpectedWithLogScale((1.0, 0.0), 0.0)],
     )
 end
+
+@testitem "tables:a rule that throws fails its own check" tags = [:testutils] setup = [Recording] begin
+    using MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, Test
+
+    module Throwing
+    using MessagePassingRulesBase, BayesBase
+    struct Root end
+    @define_factor_node(node = Root, type = Deterministic, interfaces = [:out, :in])
+    # The square root of a negative input throws a DomainError.
+    @define_message_update_rule(node = Root, target = :out, args = (m[:in]::PointMass,), body = (args) -> PointMass(sqrt(mean(args.m[:in]))))
+    # Throws for a BigFloat input only.
+    @define_message_update_rule(
+        node = Root, target = :in, args = (m[:out]::PointMass,),
+        body = (args) -> (mean(args.m[:out]) isa BigFloat && error("no BigFloat"); PointMass(mean(args.m[:out])^2)),
+    )
+    # In place, and throws from its second call on: `rule` runs, `rule!` throws.
+    const CALLS = Ref(0)
+    struct Doubled end
+    @define_factor_node(node = Doubled, type = Deterministic, interfaces = [:out, :x])
+    @define_message_update_rule(
+        node = Doubled, target = :out, inplace = true, args = (m[:x]::Vector{Float64},),
+        preallocate = (args) -> similar(args.m[:x]),
+        body = (output::Vector{Float64}, args) -> ((CALLS[] += 1) > 1 && error("called twice"); output .= 2 .* args.m[:x]; output),
+    )
+    # Throws when it finds its scratch poisoned, as a rule that reads its scratch first would.
+    struct Worked end
+    @define_factor_node(node = Worked, type = Deterministic, interfaces = [:out, :x])
+    @define_message_update_rule(
+        node = Worked, target = :out, args = (m[:x]::Vector{Float64},),
+        scratch = (args) -> (work = zeros(length(args.m[:x])),),
+        body = (scratch, args) -> (any(isnan, scratch.work) && error("read its scratch"); scratch.work .= 2 .* args.m[:x]; sum(scratch.work)),
+    )
+    end
+
+    errors(set) = count(r -> r isa Test.Error, set.results)
+
+    # The throwing case fails, named, and the next case still runs and passes.
+    body = Recording.recorded() do
+        @test_message_update_rule(
+            node = Throwing.Root, target = :out, check_type_promotion = false,
+            cases = [(m = (in = PointMass(-1.0),),) => PointMass(1.0), (m = (in = PointMass(4.0),),) => PointMass(2.0)],
+        )
+    end
+    @test errors(body) == 0 && length(Recording.failures(body)) == 1 && Recording.passes(body) == 2   # case 2: found, and its value
+    text = Recording.failure_text(body)
+    @test contains(text, "rule_runs") && contains(text, "case 1,") && contains(text, "the rule threw DomainError") && contains(text, "\n    at ")
+
+    # A rule that throws for one float type fails that promoted run only.
+    promoted = Recording.recorded() do
+        @test_message_update_rule(node = Throwing.Root, target = :in, cases = [(m = (out = PointMass(3.0),),) => PointMass(9.0)])
+    end
+    @test errors(promoted) == 0 && length(Recording.failures(promoted)) == 1
+    @test contains(Recording.failure_text(promoted), "converted to BigFloat") && contains(Recording.failure_text(promoted), "no BigFloat")
+    @test Recording.passes(promoted) == 2 + 2                       # the case found and its value, then Float32 and Float64
+
+    # `rule!` and the poisoned scratch run fail on their own, after the case's other checks.
+    inplace = Recording.recorded() do
+        @test_message_update_rule(node = Throwing.Doubled, target = :out, check_type_promotion = false, cases = [(m = (x = [1.0, 2.0],),) => [2.0, 4.0]])
+    end
+    @test errors(inplace) == 0 && length(Recording.failures(inplace)) == 1 && contains(Recording.failure_text(inplace), "through `rule!`")
+    scratch = Recording.recorded() do
+        @test_message_update_rule(node = Throwing.Worked, target = :out, check_type_promotion = false, cases = [(m = (x = [1.0, 2.0],),) => 6.0])
+    end
+    @test errors(scratch) == 0 && length(Recording.failures(scratch)) == 1 && contains(Recording.failure_text(scratch), "after `poison!` of its scratch")
+end

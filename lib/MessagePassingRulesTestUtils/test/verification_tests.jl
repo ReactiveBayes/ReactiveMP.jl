@@ -124,3 +124,17 @@ end
     @test_throws ArgumentError input_treatment(:x, DiscreteUniform(1, 10^9))
     @test_throws ArgumentError default_points(Poisson(1.0))
 end
+
+@testitem "verification:a missing rule is a failure" tags = [:testutils] setup = [VerifiedRules, Recording] begin
+    using MessagePassingRulesTestUtils, Distributions, BayesBase, Test
+    V = VerifiedRules
+
+    # Gauss has no rule towards σ: the verification fails as `rule_found` and returns no points.
+    differences = Ref{Any}(nothing)
+    set = Recording.recorded() do
+        differences[] = @verify_message_update_rule(node = V.Gauss, target = :σ, m = (out = Normal(0.0, 1.0), μ = PointMass(0.0)))
+    end
+    @test differences[] == Float64[]
+    @test count(r -> r isa Test.Error, set.results) == 0 && length(Recording.failures(set)) == 1
+    @test contains(Recording.failure_text(set), "rule_found") && contains(Recording.failure_text(set), "belief propagation message target :σ")
+end

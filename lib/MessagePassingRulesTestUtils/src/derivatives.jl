@@ -16,8 +16,11 @@ automatic_derivative(f, θ::AbstractVector) = ForwardDiff.gradient(f, θ)
 
 Check that derivatives propagate through the message rule of `node` towards `target`: the
 derivative of `θ -> summary(rule(inputs(θ)))` by ForwardDiff must agree with a central finite
-difference at `θ = at`. A rule that drops the dual part of its inputs, or cannot take dual
-numbers, fails. [`@test_rule_derivatives`](@ref) is the same check written with keywords, and
+difference at `θ = at`. A rule that drops the dual part of its inputs fails the comparison. One
+that cannot take dual numbers, or throws at a perturbed `θ`, fails as `rule_runs` with the
+exception; no rule for the inputs, at `at` or at a dual or perturbed `θ`, fails as
+`rule_found` with the near misses. Nothing is thrown for a rule, and the checks after it
+still run. [`@test_rule_derivatives`](@ref) is the same check written with keywords, and
 reports failures at its own line.
 
 The rule is resolved for the inputs at each `θ`, and the one found at `at` is recorded as
@@ -48,11 +51,6 @@ its log scale is not checked.
   Defaults: `1e-5` and `1e-8`.
 - `source`: the line checks are reported against. Default: `LineNumberNode(0, :unknown)`;
   the macro form passes its own line.
-
-# Throws
-
-- [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) when no rule
-  takes the inputs, at `at` or at a dual or perturbed `θ`: an error, not a test failure.
 """
 function test_rule_derivatives(node, target; inputs::Function, at, summary = mean, algorithm = MessagePassingRulesBase.default_algorithm(node), step = 1.0e-6, rtol = 1.0e-5, atol = 1.0e-8, source = LineNumberNode(0, :unknown))
     resolved_target = MessagePassingRulesBase.as_target(target)
@@ -69,17 +67,21 @@ function test_rule_derivatives(node, target; inputs::Function, at, summary = mea
     run(args, output) = run(resolved(args), args, output)
     prealloc(spec, args) = spec.prealloc(MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, resolved_target)
 
-    spec = resolved(args_at(at))
+    described = "the rule for $node target $resolved_target"
+    found, spec = guarded(() -> resolved(args_at(at)), () -> "$described at $at", source)
+    found || return nothing
     record_selected_rule!(spec, source)
     paths = Tuple{String, Function}[("rule", θ -> summary(run(args_at(θ), nothing)))]
     if spec.inplace
         push!(paths, ("rule!", θ -> (args = args_at(θ); found = resolved(args); summary(run(found, args, prealloc(found, args))))))
     end
     for (path, f) in paths
-        automatic = automatic_derivative(f, at)
-        numeric = central_difference(f, at, step)
+        label = "derivative through `$path` of $described at $at"
+        differentiated, automatic = guarded(() -> automatic_derivative(f, at), () -> "$label, by ForwardDiff", source)
+        differenced, numeric = guarded(() -> central_difference(f, at, step), () -> "$label, by a central difference", source)
+        (differentiated && differenced) || continue
         ok = all(isapprox.(automatic, numeric; rtol, atol))
-        record_check(ok, :(automatic_derivative ≈ finite_difference), () -> "derivative through `$path` of the rule for $node target $resolved_target at $at: ForwardDiff gives $automatic, a central difference $numeric", source)
+        record_check(ok, :(automatic_derivative ≈ finite_difference), () -> "$label: ForwardDiff gives $automatic, a central difference $numeric", source)
     end
     return nothing
 end

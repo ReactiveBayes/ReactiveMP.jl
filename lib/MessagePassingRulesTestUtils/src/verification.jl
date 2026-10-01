@@ -149,7 +149,8 @@ $(DOC_VERIFY_REFERENCE)
 
 - `message`: a function `(m, q) -> (message, logscale)`, called once with the keywords `m` and
   `q`, returning the outbound message, a univariate distribution, and its log scale, a number,
-  or `nothing` to leave the scale unchecked.
+  or `nothing` to leave the scale unchecked. If it throws, the check fails with the exception,
+  as `rule_found` for a missing rule and `rule_runs` otherwise.
 - `logdensity`: the node's log-density, called with one keyword per interface:
   `logdensity(; out, μ, σ)`.
 - `interfaces`: the node's interface names, `target` among them.
@@ -161,7 +162,8 @@ $(DOC_VERIFY_KEYWORDS)
 
 # Returns
 
-The log-ratio `logpdf(message, x) - reference(x)` at each test point, in order.
+The log-ratio `logpdf(message, x) - reference(x)` at each test point, in order; empty when the
+message could not be computed, which is recorded as a failure.
 
 # Throws
 
@@ -177,7 +179,10 @@ function verify_message_update(message, logdensity, interfaces, target::Symbol; 
         haskey(inputs, name) || throw(ArgumentError("verification needs an input for every other interface; `$name` is missing"))
     end
     treatments = [input_treatment(name, inputs[name]) for name in others]
-    output, logscale = message(m, q)
+    label = "$(mode === :bp ? "belief propagation" : "variational") message target :$target"
+    ran, computed = guarded(() -> message(m, q), label, source)
+    ran || return Float64[]
+    output, logscale = computed
     test_points = something(points, default_points(output))
     names = (target, others...)
 
@@ -186,7 +191,6 @@ function verify_message_update(message, logdensity, interfaces, target::Symbol; 
         reference = reference_value(nt -> g(merge(NamedTuple{(target,)}((x,)), nt)), others, treatments, mode)
         logpdf(output, x) - reference
     end
-    label = "$(mode === :bp ? "belief propagation" : "variational") message target :$target"
     spread = maximum(differences) - minimum(differences)
     shape = record_check(spread <= atol, :(shape_matches_node_definition), () -> "$label: log-ratio to the node definition varies by $spread over the test points; differences $(differences)", source)
     if shape && mode === :bp && logscale !== nothing
@@ -232,13 +236,13 @@ $(DOC_VERIFY_KEYWORDS)
 
 # Returns
 
-The log-ratio `logpdf(message, x) - reference(x)` at each test point, in order.
+The log-ratio `logpdf(message, x) - reference(x)` at each test point, in order; empty when no
+rule takes the inputs or the rule throws, each recorded as a failure, `rule_found` or
+`rule_runs`.
 
 # Throws
 
 $(DOC_VERIFY_THROWS)
-- [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) when no rule
-  takes the inputs.
 - `MethodError` when `node` has no `nodefunction`.
 
 # Examples

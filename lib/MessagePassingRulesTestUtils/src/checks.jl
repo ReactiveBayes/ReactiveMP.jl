@@ -6,6 +6,28 @@ function record_check(passed::Bool, expression, description, source::LineNumberN
     return passed
 end
 
+# Run `f`, a call into a rule; `(true, value)`, or `(false, nothing)` with a failure recorded when
+# it throws, so that a rule that throws fails its own check and the checks after it still run.
+# A missing rule fails as `rule_found`, with the near misses; any other exception as `rule_runs`,
+# with the frames it was thrown from. `label` names the call, a string or a function producing
+# one. An interrupt is never caught.
+function guarded(f, label, source::LineNumberNode)
+    try
+        return true, f()
+    catch err
+        err isa InterruptException && rethrow()
+        trace = stacktrace(catch_backtrace())
+        name() = label isa Function ? label() : label
+        if err isa MessagePassingRulesBase.RuleNotFoundError
+            record_check(false, :(rule_found), () -> name() * ": " * sprint(showerror, err), source)
+        else
+            frames = join(("\n    at " * sprint(show, frame) for frame in first(trace, 6)), "")
+            record_check(false, :(rule_runs), () -> name() * ": the rule threw " * sprint(showerror, err) * frames, source)
+        end
+        return false, nothing
+    end
+end
+
 """
     approximately_equal(a, b; atol, rtol) -> Bool
 

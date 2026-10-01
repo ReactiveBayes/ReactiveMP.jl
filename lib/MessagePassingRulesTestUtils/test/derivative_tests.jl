@@ -30,3 +30,29 @@ end
     @test length(Recording.failures(set)) == 1
     @test contains(Recording.failure_text(set), "ForwardDiff gives 0.0")
 end
+
+@testitem "derivatives:a missing rule, or one that cannot take dual numbers" tags = [:testutils] setup = [ToyRules, Recording] begin
+    using MessagePassingRulesTestUtils, MessagePassingRulesBase, Distributions, BayesBase, Test
+
+    module Typed
+    using MessagePassingRulesBase, BayesBase
+    struct Node end
+    @define_factor_node(node = Node, type = Stochastic, interfaces = [:out, :x])
+    # Writes into a Float64 buffer: a dual number cannot be stored there.
+    @define_message_update_rule(node = Node, target = :out, args = (m[:x]::PointMass,), body = (args) -> (buffer = zeros(1); buffer[1] = 2 * mean(args.m[:x]); PointMass(buffer[1])))
+    end
+
+    set = Recording.recorded() do
+        # No rule towards `x`: a failure, with the near misses.
+        @test_rule_derivatives(node = Typed.Node, target = :x, inputs = θ -> (m = (out = PointMass(θ),),), at = 1.0)
+        # ForwardDiff fails inside the rule; the central difference runs, and no comparison is made.
+        @test_rule_derivatives(node = Typed.Node, target = :out, inputs = θ -> (m = (x = PointMass(θ),),), at = 1.0)
+        # The checks after them still run.
+        @test_rule_derivatives(node = ToyRules.Gauss, target = :μ, inputs = θ -> (m = (out = Normal(θ, 2.0), σ = PointMass(θ^2)),), at = 1.5)
+    end
+    @test count(r -> r isa Test.Error, set.results) == 0
+    @test length(Recording.failures(set)) == 2 && Recording.passes(set) == 1
+    text = Recording.failure_text(set)
+    @test contains(text, "rule_found") && contains(text, "the rule for $(Typed.Node) target :x at 1.0")
+    @test contains(text, "rule_runs") && contains(text, "by ForwardDiff: the rule threw") && !contains(text, "by a central difference")
+end
