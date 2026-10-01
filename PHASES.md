@@ -3770,7 +3770,7 @@ wait for the release):
   The v6 → v7 guide restructured for people, with the engine API and the moved names. RxInfer's
   site on its branch (`1416e04e`, `2a11443c`): a learning path, the v5 → v6 guide, every v6 page
   rewritten, all runnable. Left for the user: Polya's rules gave identical posteriors under two
-  `context` seeds in RxInfer (not investigated); `infer` takes `diagnostics` and `context` only
+  `context` seeds in RxInfer (not investigated) *(done, user, 2026-10-01: by design without sampling; with `samples = k` the seed reaches the sampler, and RxInfer's tests now check both)*; `infer` takes `diagnostics` and `context` only
   inside `options`, and `EngineDiagnostics` is not exported; Flow's `getmodel`/`getmethod`, which
   the v6 → v7 guide names, are internal; the near misses of a `RuleNotFoundError` print absolute
   paths; GraphPPL shows an `@algorithm` specification as "Meta:". Also recorded: `+` had no marginal rule over its inputs for an
