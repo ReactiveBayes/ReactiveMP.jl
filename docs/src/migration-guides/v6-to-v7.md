@@ -40,7 +40,7 @@ packages:
 | `Autoregressive`, an alias of `AR` | the same alias, exported by `AutoregressiveMessagePassingRules` |
 | `GaussianMixture`, an alias of `NormalMixture` | the same alias, exported by `StandardMessagePassingRules` |
 | Flow's `compile`, `nr_params`, `getlayers` | the same names, exported by `FlowMessagePassingRules` |
-| Flow's `getmodel(meta)`, `getapproximation(meta)` | `FlowMessagePassingRules.getmodel(algo)` and `FlowMessagePassingRules.getmethod(algo)` on a [`FlowApproximation`](@extref FlowMessagePassingRules.FlowApproximation), internal |
+| Flow's `getmodel(meta)`, `getapproximation(meta)` | [`FlowMessagePassingRules.getmodel`](@extref)`(algo)` and [`FlowMessagePassingRules.getmethod`](@extref)`(algo)` on a [`FlowApproximation`](@extref FlowMessagePassingRules.FlowApproximation), public and called qualified |
 
 ## Declaring a node
 

@@ -52,6 +52,8 @@ export FlowModel, CompiledFlowModel, compile, nr_params, getlayers
 export AdditiveCouplingLayer, InputLayer, PermutationLayer
 export PlanarFlow, RadialFlow
 export Flow, FlowApproximation
+# Called qualified, `FlowMessagePassingRules.getmodel(algo)`: RxInfer exports a `getmodel` of its own.
+@compat public getmodel, getmethod
 
 include("algebra/permutation_matrix.jl")
 

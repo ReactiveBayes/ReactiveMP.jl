@@ -135,9 +135,11 @@ true
 
 ## API
 
-The node and its algorithm:
+The node and its algorithm, and the algorithm's accessors, called qualified:
 
 ```@docs
 Flow
 FlowApproximation
+FlowMessagePassingRules.getmodel
+FlowMessagePassingRules.getmethod
 ```

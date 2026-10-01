@@ -2,11 +2,9 @@
 
 The helpers the rules are built on. None is public; a contributor changing the rules reads them.
 
-The algorithm's accessors, and the two types the rules are declared under, one per method:
+The two types the rules are declared under, one per method:
 
 ```@docs
-FlowMessagePassingRules.getmodel
-FlowMessagePassingRules.getmethod
 FlowMessagePassingRules.FlowLinearization
 FlowMessagePassingRules.FlowUnscented
 ```

@@ -13,6 +13,8 @@
         @test getmodel(algorithm) === algorithm.model
         @test getmethod(algorithm) === algorithm.method
         @test getmethod(algorithm) isa Linearization
+        # Public, called qualified: not exported, since RxInfer exports a `getmodel` of its own.
+        @test all(name -> Base.ispublic(FlowMessagePassingRules, name) && !Base.isexported(FlowMessagePassingRules, name), (:getmodel, :getmethod))
     end
 
     @testset "FlowApproximation: Linearization" begin

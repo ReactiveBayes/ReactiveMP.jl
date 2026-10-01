@@ -98,16 +98,20 @@ end
 FlowApproximation(model::AbstractCompiledFlowModel; method::Union{Linearization, Unscented} = Linearization()) = FlowApproximation(model, method)
 
 """
-    getmodel(algo::FlowApproximation) -> CompiledFlowModel
+    FlowMessagePassingRules.getmodel(algo::FlowApproximation) -> CompiledFlowModel
 
-The compiled flow model of a [`FlowApproximation`](@ref).
+The compiled flow model of a [`FlowApproximation`](@ref). Public, not exported: call it
+qualified, since RxInfer exports a `getmodel` of its own.
 """
 getmodel(algo::FlowApproximation) = algo.model
 
 """
-    getmethod(algo::FlowApproximation)
+    FlowMessagePassingRules.getmethod(algo::FlowApproximation)
 
-The method of a [`FlowApproximation`](@ref), a `Linearization` or an `Unscented`.
+The method of a [`FlowApproximation`](@ref), a
+[`Linearization`](@extref MessagePassingRulesApproximations.Linearization) or an
+[`Unscented`](@extref MessagePassingRulesApproximations.Unscented). Public, not exported: call it
+qualified.
 """
 getmethod(algo::FlowApproximation) = algo.method
 
