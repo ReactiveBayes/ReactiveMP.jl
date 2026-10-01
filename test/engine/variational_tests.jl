@@ -476,10 +476,9 @@ end
     λθ = 1.0 + Eγ * sum(Ex²[1:3])
     @test precision(q_θ) ≈ λθ atol = 1.0e-9
     @test mθ ≈ (0.5 + Eγ * sum(m[t + 1] * m[t] for t in 1:3)) / λθ atol = 1.0e-9
-    # q(γ) = Gamma(2 + 3/2, 1 + Σ E[(x[t] - θ x[t - 1])²]/2), and E[θ² x²] = E[θ²] E[x²]. The
-    # mean-field rule towards γ leaves out Var[θ] Var[x[t - 1]] from it, so this does not hold.
+    # q(γ) = Gamma(2 + 3/2, 1 + Σ E[(x[t] - θ x[t - 1])²]/2), and E[θ² x²] = E[θ²] E[x²].
     @test shape(q_γ) ≈ 2 + 3 / 2 atol = 1.0e-12
-    @test_broken rate(q_γ) ≈ 1 + sum(Ex²[t + 1] - 2 * mθ * m[t + 1] * m[t] + Eθ² * Ex²[t] for t in 1:3) / 2 atol = 1.0e-9
+    @test rate(q_γ) ≈ 1 + sum(Ex²[t + 1] - 2 * mθ * m[t + 1] * m[t] + Eθ² * Ex²[t] for t in 1:3) / 2 atol = 1.0e-9
     @test V.settled(result.free_energy)
 end
 

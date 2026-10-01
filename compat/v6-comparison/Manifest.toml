@@ -132,13 +132,13 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
 
 [[deps.AutoregressiveMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase", "StatsFuns"]
+deps = ["BayesBase", "Compat", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase", "StatsFuns"]
 path = "../../lib/AutoregressiveMessagePassingRules"
 uuid = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
 version = "0.1.0-DEV"
 
 [[deps.BIFMMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase"]
+deps = ["BayesBase", "Compat", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase"]
 path = "../../lib/BIFMMessagePassingRules"
 uuid = "3092217e-9fde-41d8-8729-057ea730fd7c"
 version = "0.1.0-DEV"
@@ -1280,7 +1280,7 @@ version = "2.9.0"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
 [[deps.StandardMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "DomainSets", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "LogExpFunctions", "MatrixCorrectionTools", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
+deps = ["BayesBase", "Compat", "Distributions", "DomainSets", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "LogExpFunctions", "MatrixCorrectionTools", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
 path = "../../lib/StandardMessagePassingRules"
 uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
 version = "0.1.0-DEV"

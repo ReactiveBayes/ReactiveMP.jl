@@ -134,9 +134,6 @@ true
 - The rules are variational only: there is no belief propagation towards `θ` or `γ`, so both
   need an initial marginal, as does any edge a mean-field schedule reads first.
 - The messages on `y` and `x` must be normals of the algorithm's variate form.
-- The mean-field rule towards `γ` computes the expected squared residual without the term
-  `tr(Vθ Vx)`, the product of the coefficients' and the previous state's covariances; the
-  structured rule includes it.
 
 ## API
 

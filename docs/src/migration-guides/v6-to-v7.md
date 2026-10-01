@@ -855,6 +855,11 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   an infinite node bound.
 - **[`ARunsafe`](@extref AutoregressiveMessagePassingRules.ARunsafe)'s joint `q(y, x)`** is correct: v6's disagreed with [`ARsafe`](@extref AutoregressiveMessagePassingRules.ARsafe) even for an AR(1), and
   threw for a multivariate AR. `ARsafe` is unchanged.
+- **AR's mean-field message towards `γ`** includes `tr(Vθ Vx)` in the expected squared residual
+  `E[(y₁ - θᵀx)²]`, as its structured message and its average energy do. v6's left it out, so its
+  `q(γ)` had a smaller rate, a larger expected precision, whenever `θ` and `x` were both uncertain.
+  A model under `MeanField()` with an AR node gives a different `q(γ)`, and a different `q(θ)`
+  and `q(x)` through it (ReactiveMP.jl#681).
 - **The Delta node takes three methods**: [`Unscented`](@extref MessagePassingRulesApproximations.Unscented)`()`, [`Linearization`](@extref MessagePassingRulesApproximations.Linearization)`()` and, once
   `using ExponentialFamilyProjection` loads its rules, [`CVIProjection`](@extref DeltaMessagePassingRules.CVIProjection)`()`. v6's other methods are
   gone, with no replacement: `CVI` and `ProdCVI`, `LaplaceApproximation`,

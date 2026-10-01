@@ -410,7 +410,8 @@ end
         mx, Vx = mean_cov(args.q[:x])
         mθ, Vθ = mean_cov(args.q[:θ])
 
-        B = first(Vy) + first(my)^2 - 2 * first(my) * mθ' * mx + mx' * Vθ * mx + mθ' * add_outer(Vx, mx) * mθ
+        # E[(θᵀx)²] = tr((Vθ + mθ mθᵀ)(Vx + mx mxᵀ)), the same expectation as the average energy's
+        B = first(Vy) + first(my)^2 - 2 * first(my) * mθ' * mx + trace_product(Vθ, Vx) + mx' * Vθ * mx + mθ' * add_outer(Vx, mx) * mθ
 
         GammaShapeRate(convert(eltype(B), 3 // 2), B / 2)
     end,

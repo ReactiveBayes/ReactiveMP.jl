@@ -1,8 +1,8 @@
 # AutoregressiveMessagePassingRules compared with v6's AR and ConjugateAR on identical inputs: a
 # univariate AR(1) and multivariate ARs of orders 2 and 3, under ARsafe and ARunsafe. The
 # messages under mean-field and the structured q(y, x), the joint and the energies. v6's
-# ARunsafe joint was wrong, and is declared a correction; ConjugateAR's single-interface `w`
-# marginal is not ported.
+# ARunsafe joint and its mean-field message towards γ were wrong, and are declared corrections;
+# ConjugateAR's single-interface `w` marginal is not ported.
 #
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_autoregressive.jl
 
@@ -19,6 +19,13 @@ disagreed with ARsafe even for a univariate AR(1), where ARsafe regularises noth
 multivariate AR it inverted the companion matrix, which is singular, and threw. The port
 computes it by the Kalman gain, exactly; the AR package's marginal tests pin it against the
 closed-form joint.
+"""
+
+const MEANFIELD_GAMMA = """
+v6's mean-field message towards γ left tr(Vθ Vx) out of E[(y₁ - θᵀx)²], which its structured
+message, its mean-field average energy and SoftDot's message towards γ all include
+(ReactiveMP.jl#681). The port includes it; the AR package's γ tests pin the rate against the
+average energy.
 """
 
 # A normal over d dimensions, univariate when the AR is.
@@ -71,7 +78,10 @@ v6_stype(::ARunsafe) = ReactiveMP.ARunsafe()
             v7 = getresult(call_message_update_rule(AR, target; m, q, clusters, algorithm))
             v6_q = isempty(clusters) ? q : merge((y_x = last(only(clusters)),), q)
             v6, _ = v6_message_update(ReactiveMP.AR, target, m, v6_q; meta)
-            @test compare_with_reference("AR:$target:$label", dense(v7), dense(v6); node = "AR", target = ":$target").outcome === :agree
+            corrected = target === :γ && isempty(clusters)
+            id = "AR:$target:$label"
+            declared = corrected ? [DeclaredDisagreement(id; kind = :correction, reasoning = MEANFIELD_GAMMA)] : DeclaredDisagreement[]
+            @test compare_with_reference(id, dense(v7), dense(v6); node = "AR", target = ":$target", declared).outcome === (corrected ? :correction : :agree)
         end
 
         # AR, the joint: ARsafe agrees, ARunsafe is v6's bug corrected.
