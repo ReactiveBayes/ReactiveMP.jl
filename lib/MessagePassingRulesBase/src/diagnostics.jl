@@ -192,7 +192,10 @@ an empty vector means none. It checks:
 - for a message rule whose algorithm has a dependency declaration (its own, or for a
   [`DefaultAlgorithmExtension`](@ref) that declares none, the default's) listing its target:
   that it consumes exactly the declared inputs, or, for a target declared with `default`, at
-  least the added ones. A rule declared with `default` in its `args` is not compared.
+  least the added ones. A rule declared with `default` in its `args` is not compared;
+- for a message rule whose algorithm has no dependency declaration, that it does not read the
+  message on its own edge, `m[:e]` towards `:e` or `m[:g][k]` towards `(:g, k)`, which the
+  default scheme never delivers.
 
 A package's tests call it on the package's own module.
 """
@@ -274,6 +277,18 @@ function rule_problems(spec::RuleSpec, node::NodeSpec, declarations)
     own = filter(d -> d.node === spec.node && spec.algorithm <: d.algorithm, declarations)
     if isempty(own) && spec.algorithm <: DefaultAlgorithmExtension
         own = filter(d -> d.node === spec.node && d.algorithm === DefaultAlgorithm, declarations)
+    end
+    # The default scheme never delivers the message on a target's own edge: a rule that reads it,
+    # `m[:e]` towards `:e` or `m[:g][k]` towards `(:g, k)`, runs in a graph only by a declaration.
+    if spec.kind === :message && !spec.default && isempty(own)
+        own_edge = target <: Target ? target.parameters[1] : target <: IndexedTarget ? target.parameters[1] : nothing
+        selection = target <: IndexedTarget ? :aligned : :single
+        if own_edge !== nothing && any(i -> i.container === :m && i.key === own_edge && i.selection === selection, spec.inputs)
+            label = input_label(:m, own_edge, selection)
+            advice = selection === :single ? "declare it with `@define_dependencies`, `:$own_edge => (default, $label)`" :
+                "list it among the rule's inputs in a `@define_dependencies` declaration for `(:$own_edge, k)`"
+            push!(problems, "reads `$label`, the message on its own edge, which the default scheme never delivers: $advice, or the rule cannot run in a graph")
+        end
     end
     for declaration in own
         spec.kind === :message || continue

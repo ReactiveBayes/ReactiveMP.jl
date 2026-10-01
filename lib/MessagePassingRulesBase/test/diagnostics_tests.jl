@@ -34,6 +34,16 @@
     @define_dependencies(node = Transition, algorithm = Extended, dependencies = [:y => (default,), :x => (default,), :a => (default, q[:a])])
     @define_message_update_rule(node = Transition, target = :a, algorithm = Extended, args = (q[:y]::Any, q[:x]::Any), body = (args) -> 1)
 
+    # Rules reading the message on their own edge, which the default scheme never delivers: two
+    # with no declaration, and one whose algorithm declares it.
+    struct Cavity end
+    struct CavityEP <: AbstractAlgorithm end
+    @define_factor_node(node = Cavity, type = Stochastic, interfaces = [:out, :in, :g...])
+    @define_message_update_rule(node = Cavity, target = :in, args = (m[:out]::Any, m[:in]::Any), body = (args) -> 1)
+    @define_message_update_rule(node = Cavity, target = (:g, k), args = (m[:g][k]::Any,), body = (args) -> 1)
+    @define_dependencies(node = Cavity, algorithm = CavityEP, dependencies = [:out => (default,), :in => (default, m[:in]), (:g, k) => (default,)])
+    @define_message_update_rule(node = Cavity, target = :in, algorithm = CavityEP, args = (m[:out]::Any, m[:in]::Any), body = (args) -> 1)
+
     # Two rules some call matches equally well.
     struct Amb end
     @define_factor_node(node = Amb, type = Stochastic, interfaces = [:out, :a, :b])
@@ -62,7 +72,11 @@ end
     @test has("has no declaration")
     @test has("consumes (q[:m...]) but the dependencies of")
     @test has("consumes (q[:x], q[:y]) but the dependencies of Extended add (q[:a]) to the default scheme's inputs")
-    @test length(messages) == 9
+    # An own edge's message, without a declaration: the one to add; with one, nothing.
+    @test has("reads `m[:in]`, the message on its own edge, which the default scheme never delivers: declare it with `@define_dependencies`, `:in => (default, m[:in])`")
+    @test has("reads `m[:g][k]`, the message on its own edge") && has("a `@define_dependencies` declaration for `(:g, k)`")
+    @test count(issue -> issue.rule.node === B.Cavity, check_rules(B)) == 2
+    @test length(messages) == 11
 end
 
 @testitem "diagnostics:clean" tags = [:base] setup = [RepresentativeRules, DependencyNodes, ToyNodes] begin

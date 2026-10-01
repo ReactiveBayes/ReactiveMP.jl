@@ -107,6 +107,8 @@
         args = (m[:out]::Point,),
         body = (algo, args) -> Point(algo.inverse(mean(args.m[:out]))),
     )
+    # The rule towards `in[k]` reads the message on its own edge, which only a declaration delivers.
+    @define_dependencies(node = DeltaFn, algorithm = ToyDelta{Nothing}, dependencies = [:out => (default,), (:in, k) => (m[:in][k], q[:in...])])
 
     # 9. A marginal rule over a structural cluster, and a joint as an input.
     @define_marginal_update_rule(
@@ -134,6 +136,7 @@
         preallocate = (args) -> similar(args.m[:μ]),
         body = (output::Vector{Float64}, args) -> (output .= args.m[:μ] .+ args.m[:out]; output),
     )
+    @define_dependencies(node = Vec, algorithm = DefaultAlgorithm, dependencies = [:out => (default, m[:out]), :μ => (default,)])
 
     # In place towards a group member: `k` is bound in `preallocate` as well.
     struct Stack end
