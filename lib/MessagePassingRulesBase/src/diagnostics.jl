@@ -107,11 +107,12 @@ function show_rule_not_found(io::IO, err::RuleNotFoundError)
     end
     print_node_hint(io, nf)
     # A joint marginal given as a single one, `q = (in = …,)` for `q[(:in,)]`, is a common slip
-    # of an interactive call.
-    joints_given_as_singles = unique(
-        k for spec in candidates for i in spec.inputs if i.selection === :cluster
+    # of an interactive call: noted only when no rule takes the call's shape, since where one does
+    # the singles were meant, a mean-field call whose types are wrong, say.
+    joints_given_as_singles = !isempty(same_shape) ? Symbol[] : unique(
+            k for spec in candidates for i in spec.inputs if i.selection === :cluster
             for (c, k, _) in provided if c === :q && k isa Symbol && k in i.key
-    )
+        )
     isempty(joints_given_as_singles) || print(
         io, "\n  note: a rule below takes the joint marginal over ",
         join(map(repr, joints_given_as_singles), ", "), "; a call passes a joint as `clusters = ((",

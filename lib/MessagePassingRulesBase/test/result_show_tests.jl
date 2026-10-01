@@ -149,6 +149,18 @@ end
         e
     end
     @test contains(sprint(showerror, err), "note: a rule below takes the joint marginal over :in; a call passes a joint as `clusters = ((:in,) => q,)`")
+
+    # A mean-field call of a shape a rule takes, whose types do not fit, meant its singles: no note.
+    struct Paired2 end
+    @define_factor_node(node = Paired2, type = Stochastic, interfaces = [:out, :μ, :τ])
+    @define_message_update_rule(node = Paired2, target = :τ, args = (q[:out]::Float64, q[:μ]::Float64), body = (args) -> 1.0)
+    @define_message_update_rule(node = Paired2, target = :τ, args = (q[:out, :μ]::Tuple,), body = (args) -> 1.0)
+    mismatch = try
+        call_message_update_rule(Paired2, :τ; q = (out = 1, μ = 2.0))
+    catch e
+        e
+    end
+    @test contains(sprint(showerror, mismatch), "type mismatch") && !contains(sprint(showerror, mismatch), "note: a rule below takes the joint")
 end
 
 @testitem "result display:a marginal rule reads its members and computes their joint" tags = [:base] setup = [ResultShowRules] begin
