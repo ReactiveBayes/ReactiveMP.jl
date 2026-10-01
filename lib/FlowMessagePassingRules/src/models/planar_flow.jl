@@ -105,21 +105,18 @@ Base.length(f::PlanarFlow{T1, T2}) where {T1 <: AbstractVector, T2 <: Real} = le
 Base.length(f::PlanarFlowEmpty{N}) where {N} = return N
 
 # forward pass through the PlanarFlow function (multivariate input)
-function _forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
+function _forward(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real})
 
     u, w, b = getall(f)
 
-    result = u .* ones(size(u))
-    result .*= tanh(dot(w, input) + b)
-    result .+= input
-
-    return result
+    # in the promoted element type, so that the input may be a dual number's vector
+    return u .* tanh(dot(w, input) + b) .+ input
 end
-forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
+forward(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) =
     _forward(f, input)
 Broadcast.broadcasted(
-    ::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}
-) where {T1, T2 <: Real} = broadcast(_forward, Ref(f), input)
+    ::typeof(forward), f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:AbstractVector{<:Real}}
+) = broadcast(_forward, Ref(f), input)
 
 # forward pass through the PlanarFlow function (univariate input)
 function _forward(
@@ -154,8 +151,8 @@ Broadcast.broadcasted(
 
 # inplace forward pass through the PlanarFlow function (multivariate input)
 function forward!(
-        output::T1, f::PlanarFlow{T1, T2}, input::T1
-    ) where {T1, T2 <: Real}
+        output::AbstractVector{<:Real}, f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}
+    )
 
     @assert length(output) == length(input) "The length of the preallocated vector does not seem to match the length of the input vector."
 
@@ -167,23 +164,22 @@ function forward!(
 end
 
 # jacobian of the PlanarFlow function (multivariate input)
-function _jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
+function _jacobian(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real})
 
     u, w, b = getall(f)
 
-    result = u * w'
-    result .*= dtanh(dot(w, input) + b)
+    result = (u * w') .* dtanh(dot(w, input) + b)
     @inbounds for k in 1:length(input)
-        result[k, k] += 1.0
+        result[k, k] += 1
     end
 
     return result
 end
-jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
+jacobian(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) =
     _jacobian(f, input)
 Broadcast.broadcasted(
-    ::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}
-) where {T1, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
+    ::typeof(jacobian), f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:AbstractVector{<:Real}}
+) = broadcast(_jacobian, Ref(f), input)
 
 # jacobian of the PlanarFlow function (univariate input)
 function _jacobian(
@@ -219,8 +215,8 @@ Broadcast.broadcasted(
 
 # inplace jacobian of the PlanarFlow function (multivariate input)
 function jacobian!(
-        output::AbstractMatrix{T2}, f::PlanarFlow{T1, T2}, input::T1
-    ) where {T1, T2 <: Real}
+        output::AbstractMatrix{<:Real}, f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}
+    )
 
     @assert size(output) == (length(input), length(f.u)) "The dimensionality of the preallocated jacobian matrix seems incorrect."
 
@@ -238,7 +234,7 @@ function jacobian!(
 end
 
 # determinant of the jacobian of the PlanarFlow function (multivariate input)
-det_jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
+det_jacobian(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) =
     det(jacobian(f, input))
 
 # determinant of the jacobian of the PlanarFlow function (univariate input)
@@ -252,9 +248,9 @@ function det_jacobian(f::PlanarFlow{T, T}, input::T) where {T <: Real}
 end
 
 # extra utility function (multivariate)
-inv_jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = inv(jacobian(f, input))
-absdet_jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = abs(det_jacobian(f, input))
-logabsdet_jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = logabsdet(jacobian(f, input))
+inv_jacobian(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) = inv(jacobian(f, input))
+absdet_jacobian(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) = abs(det_jacobian(f, input))
+logabsdet_jacobian(f::PlanarFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) = logabsdet(jacobian(f, input))
 
 # extra utility functions (univariate)
 inv_jacobian(f::PlanarFlow{T, T}, input::T) where {T <: Real} = 1.0 / jacobian(f, input)

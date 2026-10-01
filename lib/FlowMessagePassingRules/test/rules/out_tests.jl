@@ -96,3 +96,19 @@ end
         end
     end
 end
+
+@testitem "rules:Flow:out through coupling layers over partitions" tags = [:rules] begin
+    using FlowMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, ForwardDiff, StableRNGs
+    using FlowMessagePassingRules: forward
+
+    # NICE's layout: two halves of a 4-dimensional input, coupled, permuted and coupled again. The
+    # linearised message is the input's pushed through the model with its ForwardDiff Jacobian.
+    layers = (AdditiveCouplingLayer(PlanarFlow(); partition_dim = 2), AdditiveCouplingLayer(PlanarFlow(); partition_dim = 2, permute = false))
+    model = compile(StableRNG(1), FlowModel(4, layers))
+    m, V = [0.5, -1.0, 0.3, 1.2], Matrix(Diagonal([1.0, 0.5, 2.0, 0.3]))
+    J = ForwardDiff.jacobian(z -> forward(model, z), m)
+    @test_message_update_rule(
+        node = Flow, target = :out, algorithm = FlowApproximation(model), check_type_promotion = false, atol = 1.0e-8,
+        cases = [(m = (in = MvNormalMeanCovariance(m, V),),) => MvNormalMeanCovariance(forward(model, m), J * V * J')],
+    )
+end

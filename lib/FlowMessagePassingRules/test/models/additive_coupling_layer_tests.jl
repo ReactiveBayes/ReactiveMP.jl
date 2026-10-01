@@ -189,3 +189,43 @@
         @test logabsdet_jacobian(layer, [2.5, 6.4]) == 0.0
     end
 end
+
+@testitem "models:Additive Coupling Layer over partitions of several coordinates" tags = [:models] begin
+    using FlowMessagePassingRules, ForwardDiff, LinearAlgebra, StableRNGs
+    using FlowMessagePassingRules: forward, backward, jacobian, inv_jacobian, logabsdet_jacobian
+
+    # y₁ = x₁, yₖ = xₖ + fₖ₋₁(xₖ₋₁) over partitions of `pdim` coordinates: every pass agrees with
+    # the map written out, and the Jacobians with ForwardDiff's of `forward` and `backward`.
+    rng = StableRNG(7)
+    for flow in (PlanarFlow(), RadialFlow()), (dim, pdim) in ((2, 1), (4, 1), (4, 2), (6, 2), (6, 3), (6, 6))
+        @testset "$(flow isa FlowMessagePassingRules.PlanarFlowPlaceholder ? "planar" : "radial"), dim = $dim, partition_dim = $pdim" begin
+            model = compile(rng, FlowModel(dim, (AdditiveCouplingLayer(flow; partition_dim = pdim, permute = false),)))
+            layer = only(model.layers)
+            blocks = dim ÷ pdim
+            @test length(layer.f) == blocks - 1
+            block(k) = (1 + (k - 1) * pdim):(k * pdim)
+            x = randn(rng, dim)
+            expected = copy(x)
+            for k in 2:blocks
+                expected[block(k)] .+= forward(layer.f[k - 1], pdim == 1 ? x[block(k - 1)][1] : x[block(k - 1)])
+            end
+            y = forward(layer, x)
+            @test y ≈ expected
+            @test backward(layer, y) ≈ x
+            @test Matrix(jacobian(layer, x)) ≈ ForwardDiff.jacobian(z -> forward(layer, z), x)
+            @test Matrix(inv_jacobian(layer, y)) ≈ ForwardDiff.jacobian(z -> backward(layer, z), y)
+            @test Matrix(inv_jacobian(layer, y)) * Matrix(jacobian(layer, x)) ≈ I
+            @test logabsdet_jacobian(layer, x) == 0
+            @test first(logabsdet(Matrix(jacobian(layer, x)))) ≈ 0 atol = 1.0e-12
+        end
+    end
+
+    # A coupling flow over a block takes any vector, a view or a dual number's.
+    f = PlanarFlow(StableRNG(3), 3)
+    x = randn(StableRNG(4), 5)
+    @test forward(f, view(x, 2:4)) ≈ forward(f, x[2:4])
+    @test ForwardDiff.jacobian(z -> forward(f, z), x[2:4]) ≈ jacobian(f, x[2:4])
+    r = RadialFlow(StableRNG(5), 3)
+    @test forward(r, view(x, 2:4)) ≈ forward(r, x[2:4])
+    @test ForwardDiff.jacobian(z -> forward(r, z), x[2:4]) ≈ jacobian(r, x[2:4])
+end

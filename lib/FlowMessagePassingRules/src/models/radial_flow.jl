@@ -99,25 +99,20 @@ Base.length(f::RadialFlow{T1, T2}) where {T1 <: AbstractVector, T2 <: Real} = le
 Base.length(f::RadialFlowEmpty{N}) where {N} = return N
 
 # forward pass through the RadialFlow function (multivariate input)
-function _forward(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
+function _forward(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real})
 
     z0, α, β = getall(f)
 
     denominator = α + norm(input - z0) # Not sure whether this is the correct norm
     denominator /= β
 
-    result = copy(input)
-    result .-= z0
-    result ./= denominator
-    result .+= input
-
-    return result
+    return (input .- z0) ./ denominator .+ input
 end
-forward(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
+forward(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) =
     _forward(f, input)
 Broadcast.broadcasted(
-    ::typeof(forward), f::RadialFlow{T1, T2}, input::AbstractVector{T1}
-) where {T1, T2 <: Real} = broadcast(_forward, Ref(f), input)
+    ::typeof(forward), f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:AbstractVector{<:Real}}
+) = broadcast(_forward, Ref(f), input)
 
 # forward pass through the RadialFlow function (univariate input)
 function _forward(
@@ -156,8 +151,8 @@ Broadcast.broadcasted(
 
 # inplace forward pass through the RadialFlow function (multivariate input)
 function forward!(
-        output::T1, f::RadialFlow{T1, T2}, input::T1
-    ) where {T1, T2 <: Real}
+        output::AbstractVector{<:Real}, f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}
+    )
 
     @assert length(output) == length(input) "The length of the preallocated vector does not seem to match the length of the input vector."
 
@@ -173,7 +168,7 @@ function forward!(
 end
 
 # jacobian of the RadialFlow function (multivariate input)
-function _jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
+function _jacobian(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real})
 
     z0, α, β = getall(f)
 
@@ -190,11 +185,11 @@ function _jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
 
     return result
 end
-jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
+jacobian(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) =
     _jacobian(f, input)
 Broadcast.broadcasted(
-    ::typeof(jacobian), f::RadialFlow{T1, T2}, input::AbstractVector{T1}
-) where {T1, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
+    ::typeof(jacobian), f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:AbstractVector{<:Real}}
+) = broadcast(_jacobian, Ref(f), input)
 
 function _jacobian(f::RadialFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     # function when the input is an array with 1 element
@@ -230,8 +225,8 @@ Broadcast.broadcasted(
 
 # inplace jacobian of the RadialFlow function (multivariate input)
 function jacobian!(
-        output::AbstractMatrix{T2}, f::RadialFlow{T1, T2}, input::T1
-    ) where {T1, T2 <: Real}
+        output::AbstractMatrix{<:Real}, f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}
+    )
 
     @assert size(output) == (length(input), length(f.z0)) "The dimensionality of the preallocated jacobian matrix seems incorrect."
 
@@ -254,7 +249,7 @@ function jacobian!(
 end
 
 # determinant of the jacobian of the RadialFlow function (multivariate input)
-det_jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} =
+det_jacobian(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) =
     det(jacobian(f, input))
 
 # determinant of the jacobian of the RadialFlow function (univariate input)
@@ -270,9 +265,9 @@ function det_jacobian(f::RadialFlow{T, T}, input::T) where {T <: Real}
 end
 
 # extra utility function (multivariate)
-inv_jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = inv(jacobian(f, input))
-absdet_jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = abs(det_jacobian(f, input))
-logabsdet_jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = logabsdet(jacobian(f, input))
+inv_jacobian(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) = inv(jacobian(f, input))
+absdet_jacobian(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) = abs(det_jacobian(f, input))
+logabsdet_jacobian(f::RadialFlow{<:AbstractVector, <:Real}, input::AbstractVector{<:Real}) = logabsdet(jacobian(f, input))
 
 # extra utility functions (univariate)
 inv_jacobian(f::RadialFlow{T, T}, input::T) where {T <: Real} = 1.0 / jacobian(f, input)

@@ -10,16 +10,12 @@ it. For an input ``x \in \mathbb{R}^d``,
 y_1 = x_1, \qquad y_k = x_k + f_{k-1}(x_{k-1}), \quad k = 2, \dots, d,
 ```
 
-with a flow ``f_{k-1}`` of its own for each ``k``, all of the kind of `flow`. It is invertible
-whatever the flows are, ``x_k = y_k - f_{k-1}(x_{k-1})`` in order, and its Jacobian is
-lower-triangular with a unit diagonal, so its determinant is one. For ``d = 2`` it is the layer
-of Dinh, Krueger and Bengio, "NICE: Non-linear independent components estimation",
-arXiv:1410.8516 (2014).
-
-!!! warning "Scalar partitions only"
-    Only `partition_dim = 1` works: every coordinate is its own partition. A larger
-    `partition_dim` builds a model whose [`FlowMessagePassingRules.forward`](@ref) throws a
-    `MethodError`, since a coupling flow is not applied to a block of coordinates.
+with a flow ``f_{k-1}`` of its own for each ``k``, all of the kind of `flow`. Here ``x_k`` is a
+partition of `partition_dim` coordinates, one coordinate by default. It is invertible whatever
+the flows are, ``x_k = y_k - f_{k-1}(x_{k-1})`` in order, and its Jacobian is block
+lower-triangular with identity blocks on the diagonal, so its determinant is one. With two
+partitions, `partition_dim = d / 2`, it is the layer of Dinh, Krueger and Bengio, "NICE:
+Non-linear independent components estimation", arXiv:1410.8516 (2014).
 
 # Arguments
 
@@ -30,7 +26,7 @@ arXiv:1410.8516 (2014).
 # Keywords
 
 - `partition_dim`: the size of a partition, which must divide the model's dimension. Default
-  `1`, the only size that works.
+  `1`, every coordinate its own partition.
 - `permute`: whether the model places a random [`PermutationLayer`](@ref) after the layer, so
   that the next coupling layer mixes the coordinates in another order. Default `true`.
 
@@ -40,6 +36,15 @@ arXiv:1410.8516 (2014).
 julia> model = compile(FlowModel(3, (AdditiveCouplingLayer(PlanarFlow(); permute = false),)), zeros(6));
 
 julia> FlowMessagePassingRules.forward(model, [1.0, 2.0, 3.0]) ≈ [1.0, 3.0, 5.0]   # u = 0: each fₖ(x) = x
+true
+```
+
+Two halves of four coordinates, as in NICE, with one planar flow on two coordinates:
+
+```jldoctest; setup = :(using FlowMessagePassingRules)
+julia> model = compile(FlowModel(4, (AdditiveCouplingLayer(PlanarFlow(); partition_dim = 2, permute = false),)), zeros(5));
+
+julia> FlowMessagePassingRules.forward(model, [1.0, 2.0, 3.0, 4.0]) ≈ [1.0, 2.0, 4.0, 6.0]   # y₂ = x₂ + x₁
 true
 ```
 """
@@ -75,7 +80,7 @@ _prepare(dim::Int, layer::AdditiveCouplingLayerPlaceholder) = _prepare(default_r
 function _prepare(
         rng::AbstractRNG, dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, true}
     ) where {T}
-    ## TODO: generalize for non-1 partition dim and overlap
+    ## TODO: generalize for overlapping partitions
     @assert dim % getpartitiondim(layer) == 0 "The input dimensionality is not exactly divisible by the partition dimension."
     nr_maps = (dim ÷ getpartitiondim(layer)) - 1
     maps = ntuple((x) -> getf(layer), Val(nr_maps))
@@ -85,7 +90,7 @@ end
 function _prepare(
         rng::AbstractRNG, dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, false}
     ) where {T}
-    ## TODO: generalize for non-1 partition dim and overlap
+    ## TODO: generalize for overlapping partitions
     @assert dim % getpartitiondim(layer) == 0 "The input dimensionality is not exactly divisible by the partition dimension."
     nr_maps = (dim ÷ getpartitiondim(layer)) - 1
     maps = ntuple((x) -> getf(layer), Val(nr_maps))
@@ -256,8 +261,9 @@ function jacobian!(
 
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
+    # identity blocks on the diagonal, and the coupling flow's Jacobian below each
     result .= zero(T)
-    for k in 1:(dim ÷ pdim)
+    for k in 1:dim
         result[k, k] = one(T)
     end
     for k in 1:(dim ÷ pdim - 1)
@@ -306,13 +312,17 @@ function inv_jacobian!(
     # calculate input of layer for simpler jacobian calculation
     input = backward(layer, output)
 
+    # The inverse of the block lower-bidiagonal Jacobian, block by block: identity on the
+    # diagonal and, below it, Inv[i, j] = -Jᵢ₋₁ Inv[i - 1, j], with Jₖ the k-th flow's Jacobian.
+    blocks = dim ÷ pdim
+    block(k) = (1 + (k - 1) * pdim):(k * pdim)
+    J = [jacobian(f[k], input[block(k)]) for k in 1:(blocks - 1)]
     result .= zero(T)
-    for k in 1:(dim ÷ pdim)
-        result[k:end, k] .= one(T)
+    for k in 1:dim
+        result[k, k] = one(T)
     end
-    for k in 1:(dim ÷ pdim - 1)
-        result[(k + 1):end, 1:k] .*=
-            -jacobian(f[k], input[(1 + (k - 1) * pdim):(k * pdim)])
+    for j in 1:blocks, i in (j + 1):blocks
+        result[block(i), block(j)] .= -J[i - 1] * view(result, block(i - 1), block(j))
     end
     return
 end

@@ -37,11 +37,8 @@ Base.eltype(::CompiledFlowModel)
 A model's tuple of layers may start with an [`InputLayer`](@ref) in place of the dimension. An
 [`AdditiveCouplingLayer`](@ref) holds the coupling flows and, by default, is followed by a random
 [`PermutationLayer`](@ref), so that the next coupling layer mixes the coordinates in another
-order.
-
-!!! warning "Scalar partitions only"
-    An [`AdditiveCouplingLayer`](@ref) works only with `partition_dim = 1`, its default: a larger
-    partition builds a model that throws when it is evaluated.
+order. Its `partition_dim` sets the size of the blocks it couples: one coordinate each by default,
+or two halves, `partition_dim = d / 2`, as in NICE.
 
 ```@docs
 InputLayer

@@ -132,7 +132,6 @@ true
   message's mean read as a point on the other side of the flow, where the covariance form
   evaluates it at the mean itself: the two forms agree for a two-dimensional model of one
   coupling layer, and differ in general for a nonlinear flow.
-- [`AdditiveCouplingLayer`](@ref) works only with `partition_dim = 1`.
 
 ## API
 
