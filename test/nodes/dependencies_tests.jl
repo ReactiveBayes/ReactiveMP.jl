@@ -147,9 +147,8 @@ end
     # combined stream may fire again. If the first firing consumed only provisional
     # (`is_initial`) marginals, structured VMP with 3+ mutually-dependent clusters deadlocks:
     # the combination never fires again because the clusters wait on each other.
-    # `reset_vstatus_of_sources` must keep the combination hot while all of its recent
-    # values are `is_initial`, and strict `PushNew()` semantics must be restored as soon as
-    # at least one dependency holds a real (non-initial) value.
+    # `RelaxOnce` lets a single refreshed dependency fire the combination again after a firing
+    # that consumed initial values alone, and strict `PushNew()` semantics apply afterwards.
     include("../testutilities.jl")
     using BayesBase, Rocket
 
@@ -200,6 +199,79 @@ end
     next!(sb, non_initial(PointMass(2)))
     @test updates[] == 3
 
+    unsubscribe!(subscription)
+end
+
+@testitem "collect_latest_marginals relaxes once: initial values cannot re-fire it indefinitely" tags = [:nodes] setup = [DependencySchemeNodes] begin
+    # After the one relaxed firing, a combination whose values are still all initial waits for
+    # every dependency again, so rules cannot keep re-firing each other on initial values alone.
+    include("../testutilities.jl")
+    using BayesBase, Rocket
+
+    import ReactiveMP: collect_latest_marginals, getlocalclusters, set_stream_of_marginals!, get_node_local_marginals
+
+    node = factornode(
+        DependencySchemeNodes.ThreeInterfaces,
+        [(:a, randomvar()), (:b, randomvar()), (:c, randomvar())],
+        ((:a,), (:b,), (:c,)),
+    )
+    a, b, c = get_node_local_marginals(getlocalclusters(node))
+    sa, sb, sc = RecentSubject(Marginal), RecentSubject(Marginal), RecentSubject(Marginal)
+    set_stream_of_marginals!(a, sa)
+    set_stream_of_marginals!(b, sb)
+    set_stream_of_marginals!(c, sc)
+
+    (_, stream) = collect_latest_marginals((a, b, c))
+    initial(value) = Marginal(value, false, true)
+    updates = Ref(0)
+    subscription = subscribe!(stream, (_) -> updates[] += 1)
+
+    next!(sa, initial(PointMass(1)))
+    next!(sb, initial(PointMass(2)))
+    next!(sc, initial(PointMass(3)))
+    @test updates[] == 1
+    # The one relaxed firing, on an initial value again.
+    next!(sa, initial(PointMass(1)))
+    @test updates[] == 2
+    # Spent: every dependency must refresh, initial values included.
+    next!(sb, initial(PointMass(2)))
+    next!(sa, initial(PointMass(1)))
+    @test updates[] == 2
+    next!(sc, initial(PointMass(3)))
+    @test updates[] == 3
+    unsubscribe!(subscription)
+
+end
+
+@testitem "RelaxOnce relaxes once for each subscription" tags = [:nodes] begin
+    # On subjects alone, so that a subscription replays each value once: the replay fires the
+    # combination, a single update fires it once more, and then strict `PushNew()` applies.
+    using BayesBase, Rocket
+    import ReactiveMP: RelaxOnce
+
+    sa, sb, sc = RecentSubject(Marginal), RecentSubject(Marginal), RecentSubject(Marginal)
+    sources = (sa, sb, sc)
+    stream = combineLatestUpdates(sources, PushNew(), typeof(sources), identity, RelaxOnce())
+    initial(value) = Marginal(value, false, true)
+
+    fired = Ref(0)
+    subscription = subscribe!(stream, (_) -> fired[] += 1)
+    foreach(source -> next!(source, initial(PointMass(1))), sources)
+    @test fired[] == 1
+    next!(sa, initial(PointMass(1)))
+    @test fired[] == 2
+    next!(sb, initial(PointMass(1)))
+    @test fired[] == 2
+    unsubscribe!(subscription)
+
+    # A new subscription: the replay fires it, and its own relaxed firing follows.
+    fired[] = 0
+    subscription = subscribe!(stream, (_) -> fired[] += 1)
+    @test fired[] == 1
+    next!(sa, initial(PointMass(1)))
+    @test fired[] == 2
+    next!(sb, initial(PointMass(1)))
+    @test fired[] == 2
     unsubscribe!(subscription)
 end
 

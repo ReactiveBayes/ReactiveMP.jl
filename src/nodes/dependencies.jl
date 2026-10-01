@@ -7,7 +7,7 @@ collect_latest_messages(labels, interfaces) =
     collect_latest_updates(labels, map(get_stream_of_inbound_messages, Tuple(interfaces)), nothing)
 collect_latest_marginals(sources) = collect_latest_marginals(map(name, Tuple(sources)), sources)
 collect_latest_marginals(labels, sources) =
-    collect_latest_updates(labels, map(get_stream_of_marginals, Tuple(sources)), reset_vstatus_of_sources)
+    collect_latest_updates(labels, map(get_stream_of_marginals, Tuple(sources)), RelaxOnce())
 
 # Inputs are subscribed in the order they are listed, which for declared dependencies is the
 # declaration's: in variational message passing that order is the update schedule.
@@ -16,19 +16,39 @@ function collect_latest_updates(labels, streams::Tuple, callback::C) where {C}
     return (input_names(labels), combineLatestUpdates(streams, PushNew(), typeof(streams), identity, callback))
 end
 
-# Mirrors `reset_vstatus` from `clusters.jl`/`random.jl`: without this, a sibling that only ever
-# emitted a provisional (`is_initial`) value permanently retires `PushNew()`'s mutual-refresh
-# requirement for the rest of the group once it settles on its real value.
-# The reset is applied to marginal dependencies only. Applying it to message dependencies as well
-# alters the message-update schedule in models that are not affected by the deadlock (an outbound
-# message would be recomputed as soon as a single dependency refreshes while the others are still
-# `is_initial`), which changes free-energy trajectories and breaks strict FE-monotonicity
-# guarantees downstream. Marginal dependencies alone are sufficient to resolve the deadlock.
-function reset_vstatus_of_sources(wrapper, sources)
-    values = map(getrecent, sources)
-    return if is_initial(values)
-        Rocket.fill_vstatus!(wrapper, true)
-    end
+"""
+    ReactiveMP.RelaxOnce()
+
+When a rule's marginal inputs fire it, as the callback of their combination. The combination
+fires once every input has a new value since the last firing, with one exception: after a firing
+that consumed initial marginals alone, those [`ReactiveMP.set_initial_marginal!`](@ref) set or
+computed from them, the next update of any single input fires it again, **once** for each
+subscription. From then on every input must refresh before the rule runs again.
+
+The exception breaks a deadlock. Under a structured factorisation with three or more clusters
+that depend on each other, as in RxInfer#344, each cluster waits for the others to refresh, and
+an initial value consumed by the first firing is never refreshed on its own, so nothing would
+run again. One relaxed firing is enough to start them; more are not needed. Relaxing every
+firing whose inputs are still initial would also let the rules re-fire each other on initial
+values alone, before any data arrives, until they settle: tens of thousands of rule calls for a
+mixture of two components on five points, where relaxing once makes a few dozen.
+
+It applies to the marginal inputs only: a rule's message inputs keep strict refreshing, which an
+initial message must not relax. It keeps the subscription it relaxed, so a combination subscribed
+again relaxes once more.
+"""
+mutable struct RelaxOnce
+    relaxed::Any
+end
+
+RelaxOnce() = RelaxOnce(nothing)
+
+function (relax::RelaxOnce)(wrapper, sources)
+    relax.relaxed === wrapper && return nothing
+    is_initial(map(getrecent, sources)) || return nothing
+    relax.relaxed = wrapper
+    Rocket.fill_vstatus!(wrapper, true)
+    return nothing
 end
 
 """

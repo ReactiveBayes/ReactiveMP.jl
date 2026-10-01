@@ -31,6 +31,13 @@ With one cluster, the rule towards `μ` reads the messages on `out` and `v`. Wit
 interface, it reads their marginals. With the clusters `(out, μ)` and `(v)`, it reads the message
 on `out` and the marginal of `v`.
 
+A rule runs once every input has a new value since its last run, so each of its inputs refreshes
+once per run, which in variational message passing is one coordinate update. Its marginal inputs
+make one exception, [`ReactiveMP.RelaxOnce`](@ref): after a run that consumed initial marginals
+alone, a single refreshed input runs it once more. That starts structured factorisations whose
+clusters depend on each other, which would otherwise wait on each other forever, without letting
+rules re-fire each other on initial values before any data arrives.
+
 Each input carries a label for the rule: its interface name, a cluster's key, or a group member.
 [`ReactiveMP.input_names`](@ref) folds a group's members into one tuple, and the labels become the
 names a [`ReactiveMP.MessageMapping`](@ref) carries.
@@ -48,6 +55,7 @@ ReactiveMP.GroupInputs
 ReactiveMP.EmptyGroup
 ReactiveMP.FactorNodeLocalClusters
 ReactiveMP.clusterkey
+ReactiveMP.RelaxOnce
 ```
 
 ## [Rule arguments](@id internals-rule-arguments)

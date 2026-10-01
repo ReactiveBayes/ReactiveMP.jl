@@ -776,7 +776,11 @@ Required.
 `target` is the cluster whose joint marginal the rule computes. Required. It is one of:
 
 - `(:out, :μ)`, a cluster of interfaces, its members in interface order, as above;
-- `(:out, (:in, 1))`, a cluster with a member of a group, written with a literal index;
+- `(:out, (:in, 1))`, a cluster with some of a group's members, written with a literal index;
+- `(:out, :in)`, a cluster with every member of a group, which names the group once, whatever
+  its length. A group of one member in a cluster is the whole group, so the cluster is
+  `(:out, :in)`, never `(:out, (:in, 1))`; a rule written for the latter is valid, and an
+  interactive call reaches it, but a graph never asks for it, so another rule runs or none does;
 - a bare name, `target = members`: any cluster of the node, the name bound to the cluster's key
   in `body` and in the `preallocate` and `scratch` functions. It goes with `default` in `args`,
   for one rule over every factorisation.

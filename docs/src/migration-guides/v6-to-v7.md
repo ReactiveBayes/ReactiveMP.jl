@@ -304,7 +304,9 @@ getresult(call_message_update_rule(MySum, (:in, 1); m = (out = NormalMeanVarianc
 
 A group may be empty where the node declares `min_group_length = 0`. A joint may hold some of a
 group's members with other interfaces. It is keyed with the members, `(:out, (:T, 1))`, and read
-as `q[:out, (:T, 1)]`. v6 handed such joints to hand-written `rule` methods under mangled names,
+as `q[:out, (:T, 1)]`. A joint holding every member of a group names the group once, so with one
+member, `T₁` alone, the joint over `out`, `in` and it is `(:out, :in, :T)`: a rule written for
+`(:out, :in, (:T, 1))` is valid but never runs in that graph. v6 handed such joints to hand-written `rule` methods under mangled names,
 `q_out_T1`, which the rule parsed. A rule that takes whatever inputs the factorisation delivers,
 as those did, is written with `default` in its arguments. It walks its inputs by key with
 [`MessagePassingRulesBase.rule_inputs`](@extref): an interface by its name, a member as `(:T, k)`,
@@ -342,6 +344,84 @@ for a packaged node this way, for inputs the package's `default` rule does not h
 getresult(call_message_update_rule(MyTensor, :out; q = (in = 2.0,))),
 getresult(call_message_update_rule(MyTensor, :out; clusters = ((:in, (:T, 1)) => 0.5,), q = (T = (nothing, 1.0),)))
 ```
+
+### [A node with a group and its own dependencies](@id migration-v6-to-v7-gate)
+
+A node that v6 wrote as an engine node type, with its own `factornode`, functional dependencies
+and `activate!`, such as a gate that passes on the input a switch selects, is a declaration in v7.
+The group holds the inputs, the algorithm declares what each rule reads, and the joint over the
+inputs, which a deterministic node's free energy takes, is a
+[`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster) when its blocks are
+independent:
+
+```julia
+# v6
+struct GateNode{N} <: AbstractFactorNode
+    out::NodeInterface
+    switch::NodeInterface
+    inputs::NTuple{N, IndexedNodeInterface}
+end
+# … a `factornode` method, functional dependencies, `collect_latest_messages`, `activate!` …
+```
+
+```@example v7
+struct MyGate end                                     # out = inputs[switch]
+struct MyGateMP <: MessagePassingRulesBase.AbstractAlgorithm end
+
+@define_factor_node(
+    node = MyGate, type = Deterministic,
+    interfaces = [:out, :switch, :inputs...],
+    algorithm = MyGateMP,
+    dependencies = [
+        :out => (m[:inputs...], q[:switch]),
+        :switch => (m[:out], m[:inputs...]),
+        (:inputs, k) => (m[:out], q[:switch]),
+    ],
+)
+
+# Towards `out`: the inputs' messages weighted by the switch.
+@define_message_update_rule(
+    node = MyGate, target = :out,
+    args = (m[:inputs...]::NormalMeanVariance, q[:switch]::Categorical),
+    body = (args) -> BayesBase.MixtureDistribution(collect(args.m[:inputs]), probs(args.q[:switch])),
+)
+
+# Towards `switch`: how well each input explains `out`'s message, from the log scale of their product.
+@define_message_update_rule(
+    node = MyGate, target = :switch,
+    args = (m[:out]::NormalMeanVariance, m[:inputs...]::NormalMeanVariance),
+    body = (args) -> begin
+        logweights = [BayesBase.compute_logscale(prod(ClosedProd(), args.m[:out], input), args.m[:out], input) for input in args.m[:inputs]]
+        weights = exp.(logweights .- maximum(logweights))
+        Categorical(weights ./ sum(weights))
+    end,
+)
+
+# Towards input k: `out`'s message raised to the probability that the switch selects k.
+@define_message_update_rule(
+    node = MyGate, target = (:inputs, k),
+    args = (m[:out]::NormalMeanVariance, q[:switch]::Categorical),
+    body = (args) -> begin
+        ξ, w = weightedmean_precision(args.m[:out])
+        z = probs(args.q[:switch])[k]
+        NormalWeightedMeanPrecision(z * ξ, z * w)
+    end,
+)
+
+# The joint over the switch and the inputs: their messages, independent.
+@define_marginal_update_rule(
+    node = MyGate, target = (:switch, :inputs),
+    args = (m[:out]::Any, m[:switch]::Categorical, m[:inputs...]::NormalMeanVariance),
+    body = (args) -> FactorizedCluster((:switch,) => args.m[:switch], (:inputs,) => BayesBase.FactorizedJoint(args.m[:inputs])),
+)
+
+inputs = (NormalMeanVariance(0.0, 1.0), NormalMeanVariance(5.0, 1.0))
+getresult(call_message_update_rule(MyGate, :switch; m = (out = NormalMeanVariance(4.5, 1.0), inputs = inputs)))
+```
+
+The joint's key names the group once, `(:switch, :inputs)`, since it holds every member. A rule
+that needs v6's per-node schedule declares it this way; one that reads what the default scheme
+delivers declares nothing, or `default` beside the inputs it adds.
 
 ## [`meta`: algorithm or context service](@id migration-v6-to-v7-meta)
 
@@ -698,7 +778,9 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
   none per factorisation. A marginal rule's observed members come as [`FactorizedCluster`](@extref MessagePassingRulesBase.FactorizedCluster)
   blocks, `(:out,) => …, (:in, (:T, 2)) => …`, where v6 returned `(out = …, in_T2 = …)`; one inside
   a joint over the whole group `T` stays in the joint as a one-hot axis. v6 ignored the node's
-  `meta`, and it has no algorithm.
+  `meta`, and it has no algorithm. Its rules clamp probabilities into `[tiny, huge]`
+  relative to `a`'s own values, where v6 did it after normalising the whole tensor, so entries
+  near `1e-9` differ from v6's.
 - **A distribution value as a prior**, `x ~ d` for `d = Beta(4.0, 8.0)` or `Truncated(…)`, was
   v6's `StandaloneDistributionNode`, an engine node type. It is Standard's
   [`StandaloneDistribution`](@extref StandardMessagePassingRules.StandaloneDistribution), an ordinary node `out ~ d` with `d` a constant: the message towards
@@ -728,6 +810,14 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   and `((:in, 1), x)` in a hand-built graph. `a + b + c` is one node, where v6 had no rule for it,
   and so is 6.6's `ManyPlus`, which v7 does not have. The joint of the terms with `out` known has
   a rule, so the free energy of a model observing a sum is defined. `-` keeps `in1` and `in2`.
+- **When a rule fires.** A rule runs once every input has refreshed since its last run. v6
+  relaxed this for marginal inputs whenever every one of them was still initial, which started
+  structured factorisations whose clusters wait on each other (RxInfer#344), but also let rules
+  re-fire each other on initial values alone before any data arrived, without bound. v7 relaxes
+  it once for each rule ([`ReactiveMP.RelaxOnce`](@ref)), which starts them as well. A model with
+  every marginal initialised can therefore converge elsewhere than on v6, usually to a lower free
+  energy, with far fewer rule calls; v6's mixtures and Delta wired their own inputs and were never
+  relaxed, so models with them can differ the most.
 - **Mixture** has no average energy: the free energy of a model with one is an error, not zero.
 - **NormalMixture** and **GammaMixture** take no type parameter: v6's `NormalMixture{N}` and
   `GammaMixture{N}` are `NormalMixture` and `GammaMixture`, and the number of components is the

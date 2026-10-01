@@ -1050,3 +1050,80 @@ end
     @test var(q_z) ≈ sum((grid .- m) .^ 2 .* tilted) / Z atol = 2.0e-5
     @test V.settled(result.free_energy)
 end
+
+@testitem "engine:structured factorisation with four clusters and an initial message (RxInfer#344)" tags = [:engine] setup = [EngineHarness] begin
+    # x, z, κ, ω ~ N(0, 1), y ~ GCV(x, z, κ, ω), ay ~ N(y, 1) observed, under q(y, x) q(z) q(κ) q(ω).
+    # The clusters wait on each other, so an initial message on y once deadlocked them: no
+    # posterior was ever computed. The same model without that message converges; with it, it
+    # must reach the same posteriors.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, GCVMessagePassingRules
+    H = EngineHarness
+
+    function model()
+        graph = H.Graph()
+        x, y, z, κ, ω = (H.random!(graph) for _ in 1:5)
+        ay = H.data!(graph)
+        for v in (x, z, κ, ω)
+            H.node!(graph, NormalMeanVariance, [(:out, v), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))]; factorisation = ((:out,), (:μ,), (:v,)))
+        end
+        H.node!(graph, GCV, [(:y, y), (:x, x), (:z, z), (:κ, κ), (:ω, ω)]; factorisation = ((:y, :x), (:z,), (:κ,), (:ω,)))
+        H.node!(graph, NormalMeanVariance, [(:out, ay), (:μ, y), (:v, H.constant!(graph, 1.0))]; factorisation = ((:out, :μ), (:v,)))
+        return graph, (; x, y, z, κ, ω), ay
+    end
+    run(; initial_messages) = begin
+        graph, v, ay = model()
+        H.run(
+            graph; data = [ay => 1.0], iterations = 50, posteriors = [name => getfield(v, name) for name in (:x, :y, :z, :κ, :ω)],
+            initial_marginals = [v.z => NormalMeanVariance(0.0, 1.0), v.κ => NormalMeanVariance(0.0, 1.0), v.ω => NormalMeanVariance(0.0, 1.0)],
+            initial_messages = initial_messages(v),
+        )
+    end
+
+    with_message = run(initial_messages = v -> [v.y => NormalMeanVariance(0.0, 1.0)])
+    without = run(initial_messages = v -> [])
+    for name in ("x", "y", "z", "κ", "ω")
+        @test with_message.posteriors[name] !== nothing
+        @test mean(with_message.posteriors[name]) ≈ mean(without.posteriors[name]) atol = 1.0e-8
+        @test var(with_message.posteriors[name]) ≈ var(without.posteriors[name]) atol = 1.0e-8
+    end
+end
+
+@testitem "engine:a mixture with initialised marginals: rules do not re-fire each other before the data" tags = [:engine] setup = [EngineHarness, VariationalChecks] begin
+    # s ~ Beta(1, 1), m[k] ~ N(·, 1/2), w[k] ~ Gamma(0.01, 0.01), z[i] ~ Ber(s),
+    # y[i] ~ NormalMixture(z[i], m, w), x[i] ~ N(y[i], 1/2) observed, every marginal initialised and
+    # every variable a factor of its own. While all of a rule's marginal inputs are initial, one
+    # refreshed input may fire it once; firing it on every such update made the rules compute each
+    # other's initial values tens of thousands of times before any data arrived.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules
+    H, V = EngineHarness, VariationalChecks
+    node!(graph, fform, interfaces; kwargs...) = H.node!(graph, fform, interfaces; factorisation = H.meanfield_factorisation(interfaces), kwargs...)
+    X = [2.0, 8.0, 8.0, 2.0, 5.0]
+
+    graph = H.Graph()
+    s = H.random!(graph)
+    node!(graph, Beta, [(:out, s), (:a, H.constant!(graph, 1.0)), (:b, H.constant!(graph, 1.0))])
+    m, w = [H.random!(graph) for _ in 1:2], [H.random!(graph) for _ in 1:2]
+    for (k, μ) in enumerate((2.0, 8.0))
+        node!(graph, NormalMeanVariance, [(:out, m[k]), (:μ, H.constant!(graph, μ)), (:v, H.constant!(graph, 0.5))])
+        node!(graph, GammaShapeRate, [(:out, w[k]), (:α, H.constant!(graph, 0.01)), (:β, H.constant!(graph, 0.01))])
+    end
+    z, y, x = [H.random!(graph) for _ in X], [H.random!(graph) for _ in X], [H.data!(graph) for _ in X]
+    for i in eachindex(X)
+        node!(graph, Bernoulli, [(:out, z[i]), (:p, s)])
+        node!(graph, NormalMixture, [(:out, y[i]), (:switch, z[i]), ((:m, 1), m[1]), ((:m, 2), m[2]), ((:p, 1), w[1]), ((:p, 2), w[2])]; algorithm = NormalMixtureVMP())
+        node!(graph, NormalMeanVariance, [(:out, x[i]), (:μ, y[i]), (:v, H.constant!(graph, 0.5))])
+    end
+    result = H.run(
+        graph; data = [x => X], iterations = 60, posteriors = [:z => z, :m => m],
+        initial_marginals = [
+            s => Beta(1.0, 1.0), m[1] => NormalMeanVariance(0.0, 1.0e2), m[2] => NormalMeanVariance(10.0, 1.0e2),
+            (y .=> Ref(NormalMeanVariance(5.0, 1.0e2)))..., (w .=> Ref(GammaShapeRate(0.01, 0.01)))...,
+        ],
+    )
+    before_data = count(call -> call.iteration == 0, result.trace)
+    @test before_data < 100
+    # Every iteration after the first computes the same messages, each once per node and edge.
+    per_iteration = [count(call -> call.iteration == it, result.trace) for it in 2:60]
+    @test allequal(per_iteration)
+    @test V.settled(result.free_energy)
+end
