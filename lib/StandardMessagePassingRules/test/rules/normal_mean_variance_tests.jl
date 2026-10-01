@@ -36,6 +36,8 @@ end
             (m = (out = PointMass(-1.0),), q = (v = InverseGamma(3.0, 4.0),)) => NormalMeanVariance(-1.0, 4 / 3),
             # No log scale: see `rules/normal_mean_variance/mean.jl`.
             (m = (out = NormalMeanVariance(0.0, 1.0),), q = (v = InverseGamma(3.0, 4.0),)) => NormalMeanVariance(0.0, 1 + 4 / 3),
+            # A known variance, as towards `out`: the exact convolution, log scale 0.
+            (m = (out = NormalMeanVariance(2.0, 0.5),), q = (v = PointMass(1.0),)) => ExpectedWithLogScale(NormalMeanVariance(2.0, 1.5), 0),
         ],
     )
 end
@@ -74,7 +76,8 @@ end
     # Against the node's own log-density, not against stored numbers: belief propagation and
     # variational inputs, the latter checking the variance 1/E[1/v]. Rules mixing
     # messages and marginals are checked by their tables only: the verification tool takes
-    # one kind of input or the other.
+    # one kind of input or the other. Those with a `PointMass` `q_v` give what the verified
+    # belief-propagation rules give with that `v`.
     @verify_message_update_rule(node = NormalMeanVariance, target = :out, m = (μ = NormalMeanVariance(0.5, 1.5), v = PointMass(2.0)))
     @verify_message_update_rule(node = NormalMeanVariance, target = :μ, m = (out = NormalMeanVariance(-1.0, 0.5), v = PointMass(3.0)))
     @verify_message_update_rule(node = NormalMeanVariance, target = :out, q = (μ = NormalMeanVariance(1.0, 2.0), v = InverseGamma(3.0, 4.0)))

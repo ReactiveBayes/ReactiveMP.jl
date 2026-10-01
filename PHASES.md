@@ -3752,7 +3752,7 @@ wait for the release):
   requires every member for a whole group)*; `CHANGELOG.md`'s old `### Tests`
   section under 5.6.6 *(done, user, 2026-10-01: 5.6.3–5.6.6's Tests, Performance and Documentation sections are
   merged into Changed, every entry kept)*; NormalMeanVariance towards `μ` has no rule for a `PointMass` `q_v` declaring
-  log scale 0, as towards `out`. The Unscented transform's singular covariances and the
+  log scale 0, as towards `out` *(done, user, 2026-10-01: the mirror rule, log scale 0)*. The Unscented transform's singular covariances and the
   duplication are rows of the not-done table.
 - *The documentation overhaul — done* (user, 2026-09-30): every site readable by a
   student, every snippet run by the build, the rich display explaining, two migration guides

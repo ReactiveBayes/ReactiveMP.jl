@@ -34,13 +34,24 @@
     body = (args) -> NormalMeanVariance(mean(args.m[:out]), gaussian_variational_variance(args.q[:v])),
 )
 
-# No log scale: `q_v` may be any marginal. Towards `:out`, a rule of its own for a `PointMass`
-# `q_v` declares 0; this target has no such rule.
+# No log scale: `q_v` may be any marginal. A `PointMass` `q_v` has a rule of its own, below.
 @define_message_update_rule(
     node = NormalMeanVariance, target = :μ,
     args = (m[:out]::UnivariateNormalDistributionsFamily, q[:v]::Any),
     body = (args) -> begin
         out_mean, out_var = mean_var(args.m[:out])
         NormalMeanVariance(out_mean, out_var + gaussian_variational_variance(args.q[:v]))
+    end,
+)
+
+# A known variance: the message is the normal on `out` convolved with the noise, both normalised,
+# so its log scale is 0, as towards `:out`.
+@define_message_update_rule(
+    node = NormalMeanVariance, target = :μ,
+    args = (m[:out]::UnivariateNormalDistributionsFamily, q[:v]::PointMass),
+    logscale = 0,
+    body = (args) -> begin
+        out_mean, out_var = mean_var(args.m[:out])
+        NormalMeanVariance(out_mean, out_var + mean(args.q[:v]))
     end,
 )
