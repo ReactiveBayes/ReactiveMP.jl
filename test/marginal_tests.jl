@@ -170,3 +170,19 @@ end
     @test score(DifferentialEntropy(), Marginal(PointMass(Beta(4.0f0, 8.0f0)), true, false)) === BayesBase.MinusInfinity(Float32)
     @test score(DifferentialEntropy(), Marginal(PointMass(2.0), true, false)) === BayesBase.MinusInfinity(Float64)
 end
+
+@testitem "the entropy of a point mass holding a value with no number type" tags = [:engine] begin
+    # An observation that is not a number, text a custom node reads say, is a point mass as well:
+    # −∞, in Float64, since the value has no float type to take it in.
+    import ReactiveMP: score, DifferentialEntropy, Marginal
+    using BayesBase
+
+    struct Reading
+        label::String
+    end
+    for point in ("a review of the machine", :positive, Reading("sensor 3"))
+        @test score(DifferentialEntropy(), Marginal(PointMass(point), false, false)) === BayesBase.MinusInfinity(Float64)
+    end
+    # A number keeps its own type.
+    @test score(DifferentialEntropy(), Marginal(PointMass(1.0f0), false, false)) === BayesBase.MinusInfinity(Float32)
+end
