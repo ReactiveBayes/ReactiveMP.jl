@@ -120,7 +120,7 @@ function show_rule_not_found(io::IO, err::RuleNotFoundError)
     )
     print(io, "\n  near misses:")
     for spec in candidates
-        print(io, "\n    rule at ", spec.file, ":", spec.line)
+        print(io, "\n    rule at ", source_location(spec.file, spec.line))
         for (ok, text) in fit_report(spec, nf.algorithm, provided)
             print(io, "\n      ", ok ? "✓" : "✗", " ", text)
         end
@@ -174,7 +174,7 @@ struct RuleIssue
 end
 
 Base.show(io::IO, issue::RuleIssue) =
-    print(io, "RuleIssue(", issue.rule.file, ":", issue.rule.line, ": ", prettify_modules(issue.message), ")")
+    print(io, "RuleIssue(", source_location(issue.rule.file, issue.rule.line), ": ", prettify_modules(issue.message), ")")
 
 """
     check_rules(modules::Module...) -> Vector{RuleIssue}

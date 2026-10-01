@@ -17,6 +17,10 @@ member_label((group, k)::Tuple) = "$group[$k]"
 # A rule's file as its directory and name, which is what tells rules apart.
 short_path(file) = (parts = splitpath(String(file)); joinpath(parts[max(end - 1, 1):end]...))
 
+# Where a rule is defined, in an error: the whole path, to open, with the home directory as `~`,
+# as Julia's own stack traces print it.
+source_location(file, line) = string(Base.contractuser(String(file)), ":", line)
+
 html_escape(x) = replace(string(x), "&" => "&amp;", "<" => "&lt;", ">" => "&gt;", "\"" => "&quot;")
 html_code(value) = "<code>" * html_escape(value) * "</code>"
 

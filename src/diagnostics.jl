@@ -52,7 +52,7 @@ end
 rule_description(spec) = string(
     "the ", spec.kind === :average_energy ? "average energy" : "$(spec.kind) rule", " of `", display_name(spec.node), "`",
     spec.target === nothing ? "" : string(spec.kind === :marginal ? " over " : " towards ", target_text(spec.target)),
-    " under `", display_name(spec.algorithm), "`, defined at ", spec.file, ":", spec.line,
+    " under `", display_name(spec.algorithm), "`, defined at ", Base.contractuser(String(spec.file)), ":", spec.line,
 )
 
 display_name(x::Type) = x isa DataType ? string(nameof(x)) : string(x)

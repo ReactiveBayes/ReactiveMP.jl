@@ -161,6 +161,10 @@ end
         e
     end
     @test contains(sprint(showerror, mismatch), "type mismatch") && !contains(sprint(showerror, mismatch), "note: a rule below takes the joint")
+    # A near miss is where the rule is defined, to open: the whole path, the home directory as `~`.
+    file = String(first(MessagePassingRulesBase.list_rules(Paired2, :τ)).file)
+    @test contains(sprint(showerror, mismatch), "rule at " * Base.contractuser(file) * ":")
+    startswith(file, homedir()) && @test !contains(sprint(showerror, mismatch), homedir())
 end
 
 @testitem "result display:a marginal rule reads its members and computes their joint" tags = [:base] setup = [ResultShowRules] begin

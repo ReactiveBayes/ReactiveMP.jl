@@ -47,7 +47,7 @@ function check_default_collision(registry::Registry, spec::RuleSpec)
     existing.inputs == spec.inputs && return nothing
     throw(
         ArgumentError(
-            "the $(rule_heading(spec)) at $(spec.file):$(spec.line) takes `default` inputs, and the node already has a rule over the default scheme's inputs for this target and algorithm, at $(existing.file):$(existing.line); the two would share one method. Fold them into one rule, or list the inputs of one of them instead of `default`",
+            "the $(rule_heading(spec)) at $(source_location(spec.file, spec.line)) takes `default` inputs, and the node already has a rule over the default scheme's inputs for this target and algorithm, at $(source_location(existing.file, existing.line)); the two would share one method. Fold them into one rule, or list the inputs of one of them instead of `default`",
         ),
     )
 end
