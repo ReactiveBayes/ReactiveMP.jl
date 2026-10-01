@@ -2306,9 +2306,10 @@ Open as of Phase C (2026-09-26; `PHASES.md`'s not-done table is the full list):
   `check_services` as it resolves each rule, so a declared service nobody supplies is an error
   naming the rule. Left: the free energy's average energies run with the engine's default
   context, not the node's `context` option.
-- **Two rule discrepancies** the engine tests found against closed forms, `@test_broken`: AR's
-  mean-field rule towards `γ`, and ContinuousTransition's rule towards `y` from `m[:x]`. For the
-  user to decide.
+- ~~**Two rule discrepancies**~~ — **corrected in v7** (2026-10-01; user, after Nimrais
+  confirmed ReactiveMP.jl#681): AR's mean-field rule towards `γ` takes `tr(Vθ Vx)`, and
+  ContinuousTransition's rule towards `y` from `m[:x]` the uncertainty of `a`. v6 stays as it is,
+  the issue open; both engine tests pass.
 - **`visualize_spec`'s backend** — the entry point is kept (user), the extension not written
   (§3.12, §3.51).
 - ~~**The performance pass** — before the release~~ — done (§5, `BENCHMARK.md`); what it leaves

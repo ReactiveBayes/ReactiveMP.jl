@@ -29,7 +29,7 @@ using MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions
 using MessagePassingRulesBase: AbstractAlgorithm
 using ExponentialFamily: WishartFast
 using FastCholesky: cholinv
-using LinearAlgebra: tr, logdet
+using LinearAlgebra: tr, logdet, lu, I
 import ForwardDiff
 using MessagePassingRulesBase: add_outer, trace_product, negate!!, gaussian_cross_moment, gaussian_average_energy
 

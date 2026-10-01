@@ -142,10 +142,9 @@ Rule tests live with the rules, in the lib packages, and are table-driven via
 toy nodes and rules with the base package's macros. `test/engine/harness.jl` builds a graph the
 way RxInfer does and returns its posteriors and free energies; the engine tests check them
 against closed forms computed in the test (exact models), coordinate ascent or convergence
-(variational ones) and quadrature or Monte Carlo (approximations). One known rule
-discrepancy is `@test_broken` there: CT's rule towards `y` from `m[:x]` (ReactiveMP.jl#681, not
-yet confirmed). AR's mean-field rule towards `γ`, the other one the issue raised, is corrected in
-v7 and stays as it is in v6; the issue stays open.
+(variational ones) and quadrature or Monte Carlo (approximations). Nothing there is
+`@test_broken`: the two rule discrepancies they found, AR's mean-field rule towards `γ` and CT's
+rule towards `y` from `m[:x]` (ReactiveMP.jl#681), are corrected in v7 and stay as they are in v6.
 
 ## Conventions
 

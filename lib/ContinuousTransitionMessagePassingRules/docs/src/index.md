@@ -110,13 +110,14 @@ rule.
 ## Example
 
 The message towards `y` under a known identity transition: the mean is `A` times the input's,
-the covariance the input's plus the inverse of the mean of `q(W)`.
+the covariance the input's plus the inverse of the mean of `q(W)`. When `a` is uncertain, its
+spread adds to the precision of `x` before the transition, as it does in the joint `q(y, x)`.
 
 ```@example ct
 @call_message_update_rule(
     node = ContinuousTransition, target = :y, algorithm = CTVMP(a -> reshape(a, 2, 2)),
     m = (x = MvNormalMeanCovariance([1.0, 2.0], [1.0 0.0; 0.0 1.0]),),
-    q = (a = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], 1e-8 * Matrix(1.0I, 4, 4)), W = Wishart(3, [1.0 0.0; 0.0 1.0])),
+    q = (a = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], 1e-12 * Matrix(1.0I, 4, 4)), W = Wishart(3, [1.0 0.0; 0.0 1.0])),
 )
 ```
 
@@ -131,7 +132,7 @@ julia> using ContinuousTransitionMessagePassingRules, MessagePassingRulesBase, E
 julia> result = @call_message_update_rule(
            node = ContinuousTransition, target = :y, algorithm = CTVMP(a -> reshape(a, 2, 2)),
            m = (x = MvNormalMeanCovariance([1.0, 2.0], [1.0 0.0; 0.0 1.0]),),
-           q = (a = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], 1e-8 * Matrix(1.0I, 4, 4)), W = Wishart(3, [1.0 0.0; 0.0 1.0])),
+           q = (a = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], 1e-12 * Matrix(1.0I, 4, 4)), W = Wishart(3, [1.0 0.0; 0.0 1.0])),
        );
 
 julia> m, V = mean_cov(getresult(result));

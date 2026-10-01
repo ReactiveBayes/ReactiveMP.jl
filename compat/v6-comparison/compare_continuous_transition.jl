@@ -1,8 +1,9 @@
 # ContinuousTransitionMessagePassingRules compared with v6's ContinuousTransition on identical
 # inputs: a linear f (reshape, with dx = dy and dx ≠ dy both ways), a rotation and an affine f.
-# Every rule, mean-field and structured, the joint, and both energies. Two corrections are
-# declared: v6's energies, wrong in three terms for every f, and its rules towards `a` and `W`,
-# which dropped the offset of an affine or nonlinear f.
+# Every rule, mean-field and structured, the joint, and both energies. Three corrections are
+# declared: v6's energies, wrong in three terms for every f; its rules towards `a` and `W`, which
+# dropped the offset of an affine or nonlinear f; and its structured rule towards `y`, which
+# dropped the uncertainty of `a`.
 #
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_continuous_transition.jl
 
@@ -25,6 +26,14 @@ v6's rules towards `a` and `W` took each row of A = f(a) as linear in `a` throug
 dropping the offset f(m_a) - J m_a of an affine or nonlinear f that the other rules and the energy
 keep. The port uses the same linearisation in every rule; the package's tests pin an affine f
 against the linear model on y - B x (user, 2026-09-24).
+"""
+
+const UNCERTAIN_A = """
+v6's structured message towards `y`, N(mA mx, mA Vx mAᵀ + ⟨W⟩⁻¹), left out the uncertainty of `a`:
+under q(a) the factor's `x` part carries the precision K = E[AᵀWA] - mAᵀ⟨W⟩mA, which its rule
+towards `x` and its joint q(y, x) include (ReactiveMP.jl#681). The port integrates `x` out of
+m_x(x) exp⟨log N(y; A x, W⁻¹)⟩ with it, so m_y times the message is the joint's q(y); the
+package's tests pin both, and quadrature agrees.
 """
 
 spd(d, s) = [i == j ? s + i : 0.2 / (i + j) for i in 1:d, j in 1:d]
@@ -67,8 +76,9 @@ const TRANSFORMATIONS = [
             v6_q = isempty(clusters) ? q : merge((y_x = last(only(clusters)),), q)
             v6, _ = v6_message_update(ReactiveMP.ContinuousTransition, target, m, v6_q; meta)
             id = "ContinuousTransition:$target:$form:$name"
-            corrected = !linear && target in (:a, :W)
-            declared = corrected ? [DeclaredDisagreement(id; kind = :correction, reasoning = OFFSET)] : DeclaredDisagreement[]
+            corrected = (!linear && target in (:a, :W)) || (target === :y && form == "structured")
+            reasoning = target === :y ? UNCERTAIN_A : OFFSET
+            declared = corrected ? [DeclaredDisagreement(id; kind = :correction, reasoning)] : DeclaredDisagreement[]
             @test compare_with_reference(id, v7, v6; node = "ContinuousTransition", target = ":$target", declared).outcome === (corrected ? :correction : :agree)
         end
 

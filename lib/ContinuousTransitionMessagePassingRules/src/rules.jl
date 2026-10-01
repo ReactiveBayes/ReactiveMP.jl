@@ -1,14 +1,25 @@
 # The rules of y ~ N(A x, W⁻¹), A = f(a), each in a structured `q(y, x)` and a mean-field form.
-# Rows of A are linear in `a` through the Jacobians `Fs`, so E[AᵀWA] = mAᵀ⟨W⟩mA + Σᵢⱼ ⟨W⟩ᵢⱼ Fᵢ Va Fⱼᵀ.
+# Rows of A are linear in `a` through the Jacobians `Fs`, so E[AᵀWA] = mAᵀ⟨W⟩mA + K, with
+# K = Σᵢⱼ ⟨W⟩ⱼᵢ Fⱼ Va Fᵢᵀ the precision the uncertainty of `a` adds on `x`.
+function ct_uncertainty(algo, q_a, mW)
+    ma, Va = mean_cov(q_a)
+    Fs = jacobians(algo, ma)
+    H = weighted_jacobians(mW, Fs)
+    return sum(H[i] * Va * Fs[i]' for i in eachindex(Fs))
+end
 
-# Towards `y`: A x pushed through the transition, with the noise ⟨W⟩⁻¹.
+# Towards `y`: ∫ m_x(x) exp⟨log N(y; A x, W⁻¹)⟩ dx, whose `x` part is m_x(x) exp(-xᵀ K x / 2), a
+# normal of precision Wx + K, pushed through mA with the noise ⟨W⟩⁻¹. Its moments are taken as
+# (I + Vx K)⁻¹ (mx, Vx), which never inverts Vx and is m_x itself when `a` is known.
 @define_message_update_rule(
     node = ContinuousTransition, target = :y, algorithm = CTVMP,
     args = (m[:x]::MultivariateNormalDistributionsFamily, q[:a]::MultivariateNormalDistributionsFamily, q[:W]::Any),
     body = (algo, args) -> begin
         mx, Vx = mean_cov(args.m[:x])
         mA = ct_matrix(algo, args.q[:a])
-        MvNormalMeanCovariance(mA * mx, mA * Vx * mA' + cholinv(mean(args.q[:W])))
+        mW = mean(args.q[:W])
+        G = lu(I + Vx * ct_uncertainty(algo, args.q[:a], mW))
+        MvNormalMeanCovariance(mA * (G \ mx), mA * (G \ Vx) * mA' + cholinv(mW))
     end,
 )
 
@@ -22,15 +33,8 @@
 # the message on `y` (Woodbury: (Wy⁻¹ + ⟨W⟩⁻¹)⁻¹ = Wy - Wy (Wy + ⟨W⟩)⁻¹ Wy), or ⟨W⟩ itself under
 # mean-field.
 function ct_towards_x(algo, W̃, my, q_a, q_W)
-    ma, Va = mean_cov(q_a)
-    mW = mean(q_W)
-    Fs = jacobians(algo, ma)
     mA = ct_matrix(algo, q_a)
-    Ξ = mA' * W̃ * mA
-    for (i, j) in Iterators.product(eachindex(Fs), eachindex(Fs))
-        Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
-    end
-    return MvNormalWeightedMeanPrecision(mA' * W̃ * my, Ξ)
+    return MvNormalWeightedMeanPrecision(mA' * W̃ * my, mA' * W̃ * mA + ct_uncertainty(algo, q_a, mean(q_W)))
 end
 
 @define_message_update_rule(
@@ -126,17 +130,11 @@ end
     node = ContinuousTransition, target = (:y, :x), algorithm = CTVMP,
     args = (m[:y]::MultivariateNormalDistributionsFamily, m[:x]::MultivariateNormalDistributionsFamily, q[:a]::Any, q[:W]::Any),
     body = (algo, args) -> begin
-        ma, Va = mean_cov(args.q[:a])
         mW = mean(args.q[:W])
-        Fs = jacobians(algo, ma)
         mA = ct_matrix(algo, args.q[:a])
         ξy, Wy = weightedmean_precision(args.m[:y])
         ξx, Wx = weightedmean_precision(args.m[:x])
-        H = weighted_jacobians(mW, Fs)
-        Ξ = Wx
-        for i in eachindex(Fs)
-            Ξ += H[i] * Va * Fs[i]'
-        end
+        Ξ = Wx + ct_uncertainty(algo, args.q[:a], mW)
         W = [Wy + mW negate!!(mW * mA); negate!!(mA' * mW) Ξ + mA' * mW * mA]
         MvNormalWeightedMeanPrecision([ξy; ξx], W)
     end,

@@ -79,7 +79,7 @@ julia> algorithm = CTVMP(a -> reshape(a, 2, 2));
 julia> result = @call_message_update_rule(
            node = ContinuousTransition, target = :y, algorithm = algorithm,
            m = (x = MvNormalMeanCovariance([1.0, 2.0], [1.0 0.0; 0.0 1.0]),),
-           q = (a = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], 1e-8 * Matrix(1.0I, 4, 4)), W = Wishart(3, [1.0 0.0; 0.0 1.0])),
+           q = (a = MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], 1e-12 * Matrix(1.0I, 4, 4)), W = Wishart(3, [1.0 0.0; 0.0 1.0])),
        );
 
 julia> m, V = mean_cov(getresult(result));

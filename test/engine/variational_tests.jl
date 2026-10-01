@@ -724,10 +724,7 @@ end
 @testitem "engine:continuous transition under a structured factorisation: coordinate ascent" tags = [:engine] setup = [EngineHarness, VariationalChecks, ContinuousTransitionModel] begin
     # Under q(x0, x) q(a) q(W): given q(a) and q(W) the chain is exact, a joint Gaussian of
     # x[0:3] whose transitions read E[W], E[W] E[A] and E[Aᵀ W A]; q(a) and q(W) are the updates of
-    # the mean-field case, read from the joint's moments, E[x[i] x[i - 1]ᵀ] included. The rule
-    # towards `y` from the message on `x`, N(E[A] m, E[A] V E[A]ᵀ + E[W]⁻¹), leaves out the
-    # uncertainty of `a` that E[Aᵀ W A] carries, so the engine settles elsewhere, by about 1e-2:
-    # those comparisons are broken.
+    # the mean-field case, read from the joint's moments, E[x[i] x[i - 1]ᵀ] included.
     using ExponentialFamily, Distributions, LinearAlgebra
     M, V = ContinuousTransitionModel, VariationalChecks
     initial(v) = [v.a => MvNormalMeanCovariance([1.0, 0.0, 0.0, 1.0], M.I4), v.W => Wishart(4, M.I2)]
@@ -766,12 +763,12 @@ end
         return (; ma, Va, ν, S, x = [(m[block(t)], Σ[block(t), block(t)]) for t in 0:3])
     end
     reference = coordinate_ascent()
-    @test_broken mean(result.posteriors["a"]) ≈ reference.ma atol = 1.0e-8
-    @test_broken cov(result.posteriors["a"]) ≈ reference.Va atol = 1.0e-8
+    @test mean(result.posteriors["a"]) ≈ reference.ma atol = 1.0e-8
+    @test cov(result.posteriors["a"]) ≈ reference.Va atol = 1.0e-8
     @test result.posteriors["W"].df ≈ reference.ν atol = 1.0e-12
-    @test_broken Matrix(result.posteriors["W"].S) ≈ reference.S atol = 1.0e-8
-    @test_broken all(t -> isapprox(mean(result.posteriors["x"][t]), reference.x[t][1]; atol = 1.0e-8), 1:4)
-    @test_broken all(t -> isapprox(cov(result.posteriors["x"][t]), reference.x[t][2]; atol = 1.0e-8), 1:4)
+    @test Matrix(result.posteriors["W"].S) ≈ reference.S atol = 1.0e-8
+    @test all(t -> isapprox(mean(result.posteriors["x"][t]), reference.x[t][1]; atol = 1.0e-8), 1:4)
+    @test all(t -> isapprox(cov(result.posteriors["x"][t]), reference.x[t][2]; atol = 1.0e-8), 1:4)
     @test isposdef(cov(result.posteriors["a"])) && isposdef(Matrix(result.posteriors["W"].S))
     @test all(q -> isposdef(cov(q)), result.posteriors["x"])
     @test V.settled(result.free_energy)
