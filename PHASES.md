@@ -3750,7 +3750,8 @@ wait for the release):
   (`diagnostics.jl`) *(done, user, 2026-10-01: only when no rule takes the call's shape)*; a `default` rule's guard accepts `nothing` members for `m[:in...]::T` where
   a typed rule's signature and `input_accepts` refuse them *(done, user, 2026-10-01: the guard
   requires every member for a whole group)*; `CHANGELOG.md`'s old `### Tests`
-  section under 5.6.6; NormalMeanVariance towards `μ` has no rule for a `PointMass` `q_v` declaring
+  section under 5.6.6 *(done, user, 2026-10-01: 5.6.3–5.6.6's Tests, Performance and Documentation sections are
+  merged into Changed, every entry kept)*; NormalMeanVariance towards `μ` has no rule for a `PointMass` `q_v` declaring
   log scale 0, as towards `out`. The Unscented transform's singular covariances and the
   duplication are rows of the not-done table.
 - *The documentation overhaul — done* (user, 2026-09-30): every site readable by a

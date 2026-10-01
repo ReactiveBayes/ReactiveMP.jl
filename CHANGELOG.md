@@ -491,11 +491,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.6.6] - 2026-03-13
 
+### Changed
+- Added performance test for structured rule specialized for `MvNormalMeanScalePrecision`
+
 ### Fixed
 - Implemented effective rules with specialized dispatch for `MvNormalMeanScalePrecision` ([#579](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/579))
-
-### Tests
-- Added performance test for structured rule specialized for `MvNormalMeanScalePrecision`
 
 ## [5.6.5] - 2026-02-02
 
@@ -509,21 +509,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed vibe coded required fields from issue template ([#562](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/562))
 - Bumped compat for Optim to 2 ([#574](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/574))
 - Removed `Zygote` extension requirement for compatibility
+- Pre-computed double loops in CT model ([#571](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/571))
 
 ### Fixed
 - Fixed documentation build ([#567](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/567))
 
-### Performance
-- Pre-computed double loops in CT model ([#571](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/571))
-
 ## [5.6.4] - 2025-11-18
+
+### Changed
+- Added `MessageMapping` documentation ([#550](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/550))
 
 ### Fixed
 - Fixed bug in average energy of `Uninformative` type ([#553](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/553))
 - Improved robustness of inverse precision matrix computation in `MvNormalMeanPrecision` rule ([#540](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/540))
-
-### Documentation
-- Added `MessageMapping` documentation ([#550](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/550))
 
 ## [5.6.3] - 2025-11-04
 
@@ -533,15 +531,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Changed dispatch to `AbstractVector` to allow other vector implementations ([#536](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/536))
+- Improved code coverage with tests for BIFM, Autoregressive, Mixture, GammaMixture, Wishart, InverseWishart, DotProduct, Multiplication, and Uniform nodes ([#539](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/539))
 
 ### Fixed
 - Renamed softdot marginal rules test file to include it in test runs ([#535](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/535))
 - Avoided `Vararg` deprecation warnings ([#537](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/537))
 - Defined `AverageEnergy` for `Mixture` node with warning ([#546](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/546))
 - Allowed different numeric types for `GammaShapeLikelihood` constructor ([#544](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/544))
-
-### Tests
-- Improved code coverage with tests for BIFM, Autoregressive, Mixture, GammaMixture, Wishart, InverseWishart, DotProduct, Multiplication, and Uniform nodes ([#539](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/539))
 
 ## [5.6.2] - 2025-10-21
 
