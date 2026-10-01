@@ -584,17 +584,7 @@ end
 
 function cluster_members(name, ref, container, keys)
     container === :q || error("@$name: `$ref`: only marginals have structural clusters; use `q[...]`")
-    members = map(keys) do key
-        symbol = quoted_symbol(key)
-        symbol === nothing || return symbol
-        # One member of a group, by a literal index: `(:T, 1)`.
-        if key isa Expr && key.head === :tuple && length(key.args) == 2 && quoted_symbol(key.args[1]) !== nothing
-            key.args[2] isa Integer && return (quoted_symbol(key.args[1]), Int(key.args[2]))
-            error("@$name: a group member in a cluster is `(:T, 1)`, with a literal index; got `$key`")
-        end
-        error("@$name: a cluster member is a symbol like `:y`, or a group member like `(:T, 1)`; got `$key`")
-    end
-    return Tuple(members)
+    return parse_cluster_members(name, keys)
 end
 
 function parse_member_selection(name, ref, type, index_name)

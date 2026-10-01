@@ -162,6 +162,11 @@ end
     @test failure(node(:([(:p, k) => (m[:μ][k],)]))) |> msg -> contains(msg, "`μ` is not a group")
     @test failure(node(:([(:p, k) => (m[:p][j],)]))) |> msg -> contains(msg, "`j` is not the index")
     @test failure(node(:([:out => (q[:μ, :out],)]))) |> msg -> contains(msg, "interface order")
+    # A cluster may hold members of a group by index, as a rule's input does.
+    @test failure(node(:([:out => (q[:μ, (:out, 1)],)]))) |> msg -> contains(msg, "`out` is not a group")
+    @test failure(node(:([:out => (q[:μ, (:p, 0)],)]))) |> msg -> contains(msg, "indexed from 1")
+    @test failure(node(:([:out => (q[:μ, (:p, 2), (:p, 1)],)]))) |> msg -> contains(msg, "a group's by index")
+    @test failure(node(:([:out => (q[:μ, (:p, k)],)]))) |> msg -> contains(msg, "with a literal index")
     @test failure(node(:([:out => (m[:μ], m[:μ])]))) |> msg -> contains(msg, "twice")
     @test failure(node(:([:out => (m[:μ],), :out => (q[:μ],)]))) |> msg -> contains(msg, "declared twice")
     # `default` once, and beside it only inputs of a single interface.
@@ -191,4 +196,27 @@ end
     spec = dependencies_spec(DependencyNodes.DeltaFn, DependencyNodes.Chain())
     @test sprint(show, only(target_dependencies(spec, IndexedTarget(:in, 1)))) == "m[:in][select_group_members(…; arity = 1)]"
     @test contains(sprint(show, MIME"text/html"(), spec), "select_group_members(…; arity = 1)")
+end
+
+@testitem "dependencies:a joint holding a group member" tags = [:base] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: dependencies_spec, target_dependencies, Target, IndexedTarget, SingleInterface
+
+    struct Tensor end
+    struct MemberJoint <: AbstractAlgorithm end
+    @define_factor_node(node = Tensor, type = Stochastic, interfaces = [:out, :in, :T...])
+    # The joint of `out` and the first member of `T`, as a rule takes it, and one of two members.
+    @define_dependencies(
+        node = Tensor, algorithm = MemberJoint,
+        dependencies = [:out => (default,), :in => (q[:out, (:T, 1), (:T, 2)],), (:T, k) => (q[:out, (:T, 1)], m[:in])],
+    )
+    spec = dependencies_spec(Tensor, MemberJoint())
+    joint, message = target_dependencies(spec, IndexedTarget(:T, 2))
+    @test joint.container === :q && joint.key == (:out, (:T, 1)) && joint.selector isa SingleInterface
+    @test message.key === :in
+    @test only(target_dependencies(spec, Target(:in))).key == (:out, (:T, 1), (:T, 2))
+    # It shows as it is written, in the terminal and on the card.
+    @test sprint(show, joint) == "q[:out, (:T, 1)]"
+    @test contains(sprint(show, MIME"text/plain"(), spec), "⇐ q[:out, (:T, 1)], m[:in]")
+    @test contains(sprint(show, MIME"text/html"(), spec), ">q[:out, (:T, 1)]</text>")
 end

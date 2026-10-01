@@ -592,3 +592,28 @@ end
     end
     @test err isa ArgumentError && contains(err.msg, "declares no dependencies for the target `:μ`") && contains(err.msg, "must list every target")
 end
+
+@testitem "a declaration names a joint holding a group member" tags = [:nodes] setup = [DependencySchemeNodes] begin
+    using MessagePassingRulesBase
+    import ReactiveMP
+    N = DependencySchemeNodes
+
+    # Under q(out, m[1]) q(m[2]), the rule towards m[2] is declared to read the joint q[:out, (:m, 1)]:
+    # the engine hands it that cluster's local marginal, keyed as the rule takes it.
+    struct MemberJoint <: AbstractAlgorithm end
+    @define_dependencies(node = N.PartialJoint, algorithm = MemberJoint, dependencies = [:out => (default,), (:m, k) => (q[:out, (:m, 1)],)])
+    spec = MessagePassingRulesBase.dependencies_spec(N.PartialJoint, MemberJoint())
+    node = factornode(N.PartialJoint, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out, (:m, 1)), ((:m, 2),)))
+    member = ReactiveMP.getinterfaces(node)[3]
+    (messagelabels, _), (labels, sources) = ReactiveMP.declared_dependencies(node, spec, member)
+    @test isempty(messagelabels) && labels == ((:out, (:m, 1)),)
+    @test only(sources) === ReactiveMP.cluster_marginal(node, (:out, (:m, 1)))
+    # A member the factorisation does not join with `out` is no cluster of it.
+    apart = factornode(N.PartialJoint, [(:out, randomvar()), ((:m, 1), randomvar()), ((:m, 2), randomvar())], ((:out,), ((:m, 1),), ((:m, 2),)))
+    err = try
+        ReactiveMP.declared_dependencies(apart, spec, ReactiveMP.getinterfaces(apart)[3])
+    catch e
+        e
+    end
+    @test err isa ArgumentError && contains(err.msg, "consumes `q[:out, (:m, 1)]`, which is not a cluster of its factorisation")
+end

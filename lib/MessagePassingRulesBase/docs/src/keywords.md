@@ -1253,6 +1253,7 @@ types:
 |---|---|
 | `m[:μ]`, `q[:μ]` | the message or the marginal of an interface |
 | `q[:y, :x]` | the joint marginal of a cluster, its members in interface order |
+| `q[:out, (:T, 1)]` | the joint marginal of a cluster holding a group's member by its index, as a rule takes it |
 | `m[:in...]` | every member of the group `in` |
 | `m[:in][k]`, `m[:in][!k]` | the member with the target's index, or every other member |
 | `m[:in][select_group_members(f; arity)]` | the members `f(k)` returns, always `arity` of them |
@@ -1262,8 +1263,8 @@ A target with no inputs is `target => ()`. Every target a graph connects must be
 `target => (default,)` declares one that follows the default scheme. The inputs are subscribed to
 in the order written, which under variational message passing is the update schedule. The
 declaration is checked when it is loaded: unknown names, a group written as a single interface or
-the other way round, a target or an input given twice, and a cluster out of interface order are
-errors.
+the other way round, a target or an input given twice, a cluster out of interface order (a group's
+members by index), and a member of something that is not a group are errors.
 
 **Adding to the default scheme.** A rule may need an input the factorisation does not give it,
 while its other inputs follow the factorisation. `:a => (default, q[:a])` is the default scheme's

@@ -129,13 +129,14 @@ selection_arity(selector::CustomGroupSelector, n) = selector.arity
 One input a target consumes, as a dependency declaration lists it. Fields:
 
 - `container::Symbol`: `:m` for a message, `:q` for a marginal;
-- `key`: the interface's or group's name, or, for a cluster's joint, the tuple of its members;
+- `key`: the interface's or group's name, or, for a cluster's joint, the tuple of its members,
+  each an interface's name or a group member by its index, `(:out, (:T, 1))`;
 - `selector::DependencySelector`: what it takes of the interface, a [`DependencySelector`](@ref);
   [`SingleInterface`](@ref) for an interface or a cluster.
 """
 struct Dependency
     container::Symbol
-    key::Union{Symbol, Tuple{Vararg{Symbol}}}
+    key::Union{Symbol, Tuple{Vararg{Union{Symbol, Tuple{Symbol, Int}}}}}
     selector::DependencySelector
 end
 
@@ -247,6 +248,14 @@ function validate_dependencies(spec::NodeSpec, declaration::DependenciesSpec)
         name in names || throw(ArgumentError("$node has no interface `$name`; its interfaces are $names"))
         return name
     end
+    # A cluster's member: an interface, or a member of a group by an index from 1.
+    known_member(member::Symbol) = known(member)
+    function known_member((group, k)::Tuple{Symbol, Int})
+        known(group)
+        isgroup(group) || throw(ArgumentError("`$group` is not a group of $node, so `($(repr(group)), $k)` names no member"))
+        k >= 1 || throw(ArgumentError("a member of `$group` is indexed from 1; got `($(repr(group)), $k)`"))
+        return group
+    end
     seen_targets = Set{Tuple{Symbol, Bool}}()
     for entry in declaration.targets
         known(entry.edge)
@@ -268,12 +277,15 @@ function validate_dependencies(spec::NodeSpec, declaration::DependenciesSpec)
             entry.default && (input.key isa Tuple || !(input.selector isa SingleInterface) || isgroup(input.key)) &&
                 throw(ArgumentError("the target `$(entry.edge)` of $node extends the default scheme with a single interface's message or marginal, `m[:x]` or `q[:x]`; got `$(dependency_label(input))`"))
             if input.key isa Tuple
-                foreach(known, input.key)
-                length(input.key) == 1 && !isgroup(only(input.key)) &&
+                foreach(known_member, input.key)
+                length(input.key) == 1 && only(input.key) isa Symbol && !isgroup(only(input.key)) &&
                     throw(ArgumentError("`q[($(repr(only(input.key))),)]` is a one-member cluster of a single interface, which is its marginal; write `q[$(repr(only(input.key)))]`"))
-                positions = map(member -> findfirst(==(member), names), input.key)
-                issorted(positions) ||
-                    throw(ArgumentError("the cluster `q[$(join(repr.(input.key), ", "))]` must list its members in interface order, $(Tuple(names[sort(collect(positions))]))"))
+                length(input.key) == 1 && only(input.key) isa Tuple &&
+                    throw(ArgumentError("`q[$(repr(only(input.key)))]` is the marginal of one member of `$(first(only(input.key)))`; select it with `q[:$(first(only(input.key)))][…]`"))
+                # Members in interface order, and a group's members by their index.
+                order(member) = member isa Tuple ? (findfirst(==(first(member)), names), last(member)) : (findfirst(==(member), names), 0)
+                issorted(map(order, collect(input.key))) && allunique(input.key) ||
+                    throw(ArgumentError("the cluster `q[$(join(repr.(input.key), ", "))]` must list its members once each, in interface order and a group's by index"))
             elseif input.selector isa SingleInterface
                 known(input.key)
                 isgroup(input.key) &&
@@ -370,12 +382,7 @@ function parse_dependency_input(name, entry, index)
         return :($Dependency($(QuoteNode(container)), $(QuoteNode(symbol)), $SingleInterface()))
     end
     container === :q || error("@$name: only marginals have clusters; use `q[...]`, got `$entry`")
-    members = map(selectors) do key
-        symbol = quoted_symbol(key)
-        symbol === nothing && error("@$name: a cluster member is a symbol like `:y`, got `$key`")
-        symbol
-    end
-    return :($Dependency(:q, $(Tuple(members)), $SingleInterface()))
+    return :($Dependency(:q, $(parse_cluster_members(name, selectors)), $SingleInterface()))
 end
 
 function parse_partition(name, ex)
