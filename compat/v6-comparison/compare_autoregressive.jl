@@ -1,8 +1,9 @@
 # AutoregressiveMessagePassingRules compared with v6's AR and ConjugateAR on identical inputs: a
 # univariate AR(1) and multivariate ARs of orders 2 and 3, under ARsafe and ARunsafe. The
 # messages under mean-field and the structured q(y, x), the joint and the energies. v6's
-# ARunsafe joint and its mean-field message towards γ were wrong, and are declared corrections;
-# ConjugateAR's single-interface `w` marginal is not ported.
+# ARunsafe joint and its mean-field message towards γ were wrong, and are declared corrections,
+# as is ConjugateAR under Univariate, where v6 threw; ConjugateAR's single-interface `w` marginal
+# is not ported.
 #
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_autoregressive.jl
 
@@ -26,6 +27,13 @@ v6's mean-field message towards γ left tr(Vθ Vx) out of E[(y₁ - θᵀx)²], 
 message, its mean-field average energy and SoftDot's message towards γ all include
 (ReactiveMP.jl#681). The port includes it; the AR package's γ tests pin the rate against the
 average energy.
+"""
+
+const UNIVARIATE_CONJUGATEAR = """
+v6's ConjugateAR under ARMeta(Univariate, 1, …) threw a MethodError in every rule that reads q(w)
+through AR's algebra, which received q(w)'s coefficients as a vector. The port reads the one
+coefficient as a scalar θ, and the AR package's tests pin every univariate rule against the
+Multivariate AR(1).
 """
 
 # A normal over d dimensions, univariate when the AR is.
@@ -99,8 +107,10 @@ v6_stype(::ARunsafe) = ReactiveMP.ARunsafe()
         v6 = v6_average_energy(ReactiveMP.AR, (y = q_y, x = q_x, θ = q_θ, γ = q_γ); meta)
         @test compare_with_reference("AR:energy:meanfield:$label", v7, v6; node = "AR", target = "energy").outcome === :agree
 
-        # ConjugateAR, under the structured q(y, x) q(w) its rules take, for a multivariate AR.
-        form === Multivariate || continue
+        # ConjugateAR, under the structured q(y, x) q(w) its rules take. v6 threw under Univariate
+        # wherever AR's algebra reads q(w); its message towards `w`, from q(y, x) alone, agrees.
+        univariate = form === Univariate
+        declared_univariate(id) = univariate ? [DeclaredDisagreement(id; kind = :correction, reasoning = UNIVARIATE_CONJUGATEAR)] : DeclaredDisagreement[]
         q_w = MvNormalGamma(spread(0.5, -0.3, order), 10.0 * spd(order, 1.0), 3.0, 2.0)
         cases = [
             (:y, (x = m_x,), (w = q_w,), ()),
@@ -112,16 +122,20 @@ v6_stype(::ARunsafe) = ReactiveMP.ARunsafe()
         for (target, m, q, clusters) in cases
             v7 = getresult(call_message_update_rule(ConjugateAR, target; m, q, clusters, algorithm))
             v6_q = isempty(clusters) ? q : merge((y_x = last(only(clusters)),), q)
-            v6, _ = v6_message_update(ReactiveMP.ConjugateAR, target, m, v6_q; meta)
-            @test compare_with_reference("ConjugateAR:$target:$label", dense(v7), dense(v6); node = "ConjugateAR", target = ":$target").outcome === :agree
+            v6 = attempt(() -> first(v6_message_update(ReactiveMP.ConjugateAR, target, m, v6_q; meta)))
+            id = "ConjugateAR:$target:$label"
+            corrected = univariate && target !== :w
+            declared = corrected ? declared_univariate(id) : DeclaredDisagreement[]
+            @test compare_with_reference(id, dense(v7), dense(v6); node = "ConjugateAR", target = ":$target", declared).outcome === (corrected ? :correction : :agree)
         end
         v7 = getresult(call_marginal_update_rule(ConjugateAR, (:y, :x); m = (y = m_y, x = m_x), q = (w = q_w,), algorithm))
         v6 = attempt(() -> v6_marginal_update(ReactiveMP.ConjugateAR, (:y, :x), (y = m_y, x = m_x), (w = q_w,); meta))
         id = "ConjugateAR:joint:$label"
-        declared = stype === ARunsafe() ? [DeclaredDisagreement(id; kind = :correction, reasoning = ARUNSAFE_JOINT)] : DeclaredDisagreement[]
-        @test compare_with_reference(id, v7, v6; node = "ConjugateAR", target = "(:y, :x)", declared).outcome === (stype === ARunsafe() ? :correction : :agree)
+        declared = univariate ? declared_univariate(id) : stype === ARunsafe() ? [DeclaredDisagreement(id; kind = :correction, reasoning = ARUNSAFE_JOINT)] : DeclaredDisagreement[]
+        @test compare_with_reference(id, v7, v6; node = "ConjugateAR", target = "(:y, :x)", declared).outcome === (isempty(declared) ? :agree : :correction)
         v7 = getresult(call_average_energy(ConjugateAR; clusters = ((:y, :x) => joint,), q = (w = q_w,), algorithm))
-        v6 = v6_average_energy(ReactiveMP.ConjugateAR, (w = q_w,), ((:y, :x) => joint,); meta)
-        @test compare_with_reference("ConjugateAR:energy:$label", v7, v6; node = "ConjugateAR", target = "energy").outcome === :agree
+        v6 = attempt(() -> v6_average_energy(ReactiveMP.ConjugateAR, (w = q_w,), ((:y, :x) => joint,); meta))
+        id = "ConjugateAR:energy:$label"
+        @test compare_with_reference(id, v7, v6; node = "ConjugateAR", target = "energy", declared = declared_univariate(id)).outcome === (univariate ? :correction : :agree)
     end
 end

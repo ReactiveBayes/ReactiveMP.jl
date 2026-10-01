@@ -16,12 +16,13 @@ Bayesian linear regression with unknown noise precision.
 
 # Interfaces
 
-- `y` (alias `out`): the current state, a multivariate normal;
-- `x`: the previous state, a multivariate normal of the same dimension;
+- `y` (alias `out`): the current state, a normal, multivariate unless the form is `Univariate`;
+- `x`: the previous state, a normal of the same dimension;
 - `w`: the coefficients and the precision, an `MvNormalGamma` of dimension `p`.
 
-$(DOC_AR_ALGORITHM) Its form must be `Multivariate`, an AR(1) included: every rule reads `q(w)`,
-whose `θ` is a vector.
+$(DOC_AR_ALGORITHM) Under `Univariate`, an AR(1) with scalar `y` and `x`, the rules read the one
+coefficient of `q(w)` as a scalar `θ`; the message towards `w` is an `MvNormalGamma` of
+dimension 1 either way.
 
 The rules towards `y` and `x` and the joint marginal `q(y, x)` are [`AR`](@ref)'s, computed
 from the marginals of `θ` and `γ` that `q(w)` implies. The message towards `w` needs the
@@ -49,37 +50,40 @@ struct ConjugateAR end
 
 # The marginals of θ and γ under which AR's algebra reproduces ConjugateAR's moments, for
 # q(w) = MvNormalGamma(μ, Λ, α, β): ⟨γ⟩ = α / β, ⟨θ⟩ = μ and ⟨γ⟩ Vθ = Λ⁻¹, the coupling
-# ⟨γθθᵀ⟩ - ⟨γ⟩μμᵀ.
-function conjugatear_effective_marginals(q_w::MvNormalGamma)
+# ⟨γθθᵀ⟩ - ⟨γ⟩μμᵀ. A univariate AR reads a scalar q(θ), the one entry of q(w)'s.
+function conjugatear_effective_marginals(algo::ARVMP, q_w::MvNormalGamma)
     μ, Λ, α, β = params(q_w)
     mγ = α / β
-    q_θ = MvNormalMeanCovariance(μ, cholinv(Λ) / mγ)
+    q_θ = conjugatear_coefficients(getvform(algo), μ, cholinv(Λ) / mγ)
     q_γ = GammaShapeRate(α, β)
     return q_θ, q_γ
 end
 
+conjugatear_coefficients(::Type{Multivariate}, μ, V) = MvNormalMeanCovariance(μ, V)
+conjugatear_coefficients(::Type{Univariate}, μ, V) = NormalMeanVariance(only(μ), only(V))
+
 @define_message_update_rule(
     node = ConjugateAR, target = :y, algorithm = ARVMP,
     args = (m[:x]::NormalDistributionsFamily, q[:w]::MvNormalGamma),
-    body = (algo, args) -> ar_towards_y(algo, args.m[:x], conjugatear_effective_marginals(args.q[:w])...),
+    body = (algo, args) -> ar_towards_y(algo, args.m[:x], conjugatear_effective_marginals(algo, args.q[:w])...),
 )
 
 @define_message_update_rule(
     node = ConjugateAR, target = :y, algorithm = ARVMP,
     args = (q[:x]::Any, q[:w]::MvNormalGamma),
-    body = (algo, args) -> ar_towards_y_meanfield(algo, args.q[:x], conjugatear_effective_marginals(args.q[:w])...),
+    body = (algo, args) -> ar_towards_y_meanfield(algo, args.q[:x], conjugatear_effective_marginals(algo, args.q[:w])...),
 )
 
 @define_message_update_rule(
     node = ConjugateAR, target = :x, algorithm = ARVMP,
     args = (m[:y]::NormalDistributionsFamily, q[:w]::MvNormalGamma),
-    body = (algo, args) -> ar_towards_x(algo, args.m[:y], conjugatear_effective_marginals(args.q[:w])...),
+    body = (algo, args) -> ar_towards_x(algo, args.m[:y], conjugatear_effective_marginals(algo, args.q[:w])...),
 )
 
 @define_message_update_rule(
     node = ConjugateAR, target = :x, algorithm = ARVMP,
     args = (q[:y]::Any, q[:w]::MvNormalGamma),
-    body = (algo, args) -> ar_towards_x_meanfield(algo, args.q[:y], conjugatear_effective_marginals(args.q[:w])...),
+    body = (algo, args) -> ar_towards_x_meanfield(algo, args.q[:y], conjugatear_effective_marginals(algo, args.q[:w])...),
 )
 
 # Towards `w`: the AR likelihood as a function of (θ, γ), averaged over q(y, x), a Normal-Gamma
@@ -121,11 +125,11 @@ end
 @define_marginal_update_rule(
     node = ConjugateAR, target = (:y, :x), algorithm = ARVMP,
     args = (m[:y]::NormalDistributionsFamily, m[:x]::NormalDistributionsFamily, q[:w]::MvNormalGamma),
-    body = (algo, args) -> ar_joint(algo, args.m[:y], args.m[:x], conjugatear_effective_marginals(args.q[:w])...),
+    body = (algo, args) -> ar_joint(algo, args.m[:y], args.m[:x], conjugatear_effective_marginals(algo, args.q[:w])...),
 )
 
 @define_average_energy(
     node = ConjugateAR, algorithm = ARVMP,
     args = (q[:y, :x]::MultivariateNormalDistributionsFamily, q[:w]::MvNormalGamma),
-    body = (algo, args) -> ar_energy(algo, args.q[:y, :x], conjugatear_effective_marginals(args.q[:w])...),
+    body = (algo, args) -> ar_energy(algo, args.q[:y, :x], conjugatear_effective_marginals(algo, args.q[:w])...),
 )

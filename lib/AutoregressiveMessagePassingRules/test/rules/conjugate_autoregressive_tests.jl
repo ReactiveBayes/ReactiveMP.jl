@@ -141,7 +141,7 @@ end
             for order in (1, 2)
                 algorithm = ARVMP(Multivariate, order, ARsafe())
                 q_w = random_w(rng, order)
-                q_θ, q_γ = conjugatear_effective_marginals(q_w)
+                q_θ, q_γ = conjugatear_effective_marginals(algorithm, q_w)
                 input = (; other => MvNormalMeanCovariance(randn(rng, order), diageye(order)))
                 got, expected = if kind === :m
                     (
@@ -169,7 +169,7 @@ end
     for order in (1, 2)
         algorithm = ARVMP(Multivariate, order, ARsafe())
         q_w = random_w(rng, order)
-        q_θ, q_γ = conjugatear_effective_marginals(q_w)
+        q_θ, q_γ = conjugatear_effective_marginals(algorithm, q_w)
         m_y = MvNormalMeanCovariance(randn(rng, order), diageye(order))
         m_x = MvNormalMeanCovariance(randn(rng, order), diageye(order))
 
@@ -192,7 +192,7 @@ end
             μ = randn(rng, order)
             α = 2.0 + rand(rng)
             β = 1.0 + rand(rng)
-            q_θ, q_γ = conjugatear_effective_marginals(MvNormalGamma(μ, Λ, α, β))
+            q_θ, q_γ = conjugatear_effective_marginals(ARVMP(Multivariate, order, ARsafe()), MvNormalGamma(μ, Λ, α, β))
             @test mean(q_θ) ≈ μ
             @test mean(q_γ) ≈ α / β
             @test mean(q_γ) * cov(q_θ) ≈ inv(Λ)
@@ -205,12 +205,51 @@ end
             algorithm = ARVMP(Multivariate, order, ARsafe())
             q_y_x = random_joint(rng, order)
             q_w = random_w(rng, order)
-            q_θ, q_γ = conjugatear_effective_marginals(q_w)
+            q_θ, q_γ = conjugatear_effective_marginals(algorithm, q_w)
 
             ae_car = getresult(call_average_energy(ConjugateAR; clusters = ((:y, :x) => q_y_x,), q = (w = q_w,), algorithm))
             ae_ar = getresult(call_average_energy(AR; clusters = ((:y, :x) => q_y_x,), q = (θ = q_θ, γ = q_γ), algorithm))
             @test isfinite(ae_car)
             @test ae_car ≈ ae_ar
         end
+    end
+end
+
+@testitem "ConjugateAR under Univariate: every rule as under Multivariate of order 1" tags = [:rules] setup = [ConjugateARTestUtils] begin
+    using AutoregressiveMessagePassingRules, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
+    using .ConjugateARTestUtils: random_joint, random_w
+
+    # An AR(1) is the same model under either form; the univariate rules take and give scalars.
+    rng = StableRNG(88)
+    univariate, multivariate = ARVMP(Univariate, 1, ARsafe()), ARVMP(Multivariate, 1, ARsafe())
+    scalar(d) = NormalMeanVariance(only(mean(d)), only(cov(d)))
+    same(u, m) = u isa UnivariateDistribution && mean(u) ≈ only(mean(m)) && var(u) ≈ only(cov(m))
+
+    for _ in 1:3
+        q_w = random_w(rng, 1)
+        m_y, m_x = MvNormalMeanCovariance(randn(rng, 1), fill(0.5 + rand(rng), 1, 1)), MvNormalMeanCovariance(randn(rng, 1), fill(0.5 + rand(rng), 1, 1))
+        q_y_x = random_joint(rng, 1)
+
+        for (target, other, input) in ((:y, :x, m_x), (:x, :y, m_y))
+            @test same(
+                getresult(call_message_update_rule(ConjugateAR, target; m = (; other => scalar(input)), q = (w = q_w,), algorithm = univariate)),
+                getresult(call_message_update_rule(ConjugateAR, target; m = (; other => input), q = (w = q_w,), algorithm = multivariate)),
+            )
+            @test same(
+                getresult(call_message_update_rule(ConjugateAR, target; q = (; other => scalar(input), w = q_w), algorithm = univariate)),
+                getresult(call_message_update_rule(ConjugateAR, target; q = (; other => input, w = q_w), algorithm = multivariate)),
+            )
+        end
+
+        joint_u = getresult(call_marginal_update_rule(ConjugateAR, (:y, :x); m = (y = scalar(m_y), x = scalar(m_x)), q = (w = q_w,), algorithm = univariate))
+        joint_m = getresult(call_marginal_update_rule(ConjugateAR, (:y, :x); m = (y = m_y, x = m_x), q = (w = q_w,), algorithm = multivariate))
+        @test mean(joint_u) ≈ mean(joint_m) && cov(joint_u) ≈ cov(joint_m)
+
+        w_u = getresult(call_message_update_rule(ConjugateAR, :w; clusters = ((:y, :x) => q_y_x,), algorithm = univariate))
+        w_m = getresult(call_message_update_rule(ConjugateAR, :w; clusters = ((:y, :x) => q_y_x,), algorithm = multivariate))
+        @test all(map((a, b) -> a ≈ b, params(w_u), params(w_m)))
+
+        @test getresult(call_average_energy(ConjugateAR; clusters = ((:y, :x) => q_y_x,), q = (w = q_w,), algorithm = univariate)) ≈
+            getresult(call_average_energy(ConjugateAR; clusters = ((:y, :x) => q_y_x,), q = (w = q_w,), algorithm = multivariate))
     end
 end

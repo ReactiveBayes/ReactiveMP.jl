@@ -48,8 +48,8 @@ answers to `out`.
 
 | name | aliases | meaning | messages and marginals its rules take |
 |---|---|---|---|
-| `y` | `out` | the current state | a multivariate normal message; `q(y)` with a mean and covariance |
-| `x` | | the previous state | a multivariate normal message; `q(x)` with a mean and covariance |
+| `y` | `out` | the current state | a normal message, multivariate unless the form is `Univariate`; `q(y)` with a mean and covariance |
+| `x` | | the previous state | a normal message of the same dimension; `q(x)` with a mean and covariance |
 | `w` | | the coefficients and the precision | `q(w)`, an `MvNormalGamma` of dimension `p` |
 
 The joint marginal `q(y, x)` is a multivariate normal of dimension `2p`, `y` first.
@@ -58,7 +58,8 @@ The joint marginal `q(y, x)` is a multivariate normal of dimension `2p`, `y` fir
 
 The node shares [`AR`](@ref)'s [algorithm](@extref MessagePassingRulesBase glossary-algorithm),
 [`ARVMP`](@ref)`(form, order, stype)`, which the model must name, with every argument required.
-`form` must be `Multivariate`, an AR(1) included, since `q(w)` has a vector `θ`. `stype` is
+`form` is `Univariate` for an AR(1) on scalars, whose rules read `q(w)`'s one coefficient as a
+scalar `θ`, or `Multivariate` for an AR of any order on state vectors. `stype` is
 [`ARsafe`](@ref)`()` or [`ARunsafe`](@ref)`()`, as for [`AR`](@ref). The node declares no
 [dependencies](@extref MessagePassingRulesBase glossary-dependencies), so each rule takes the
 inputs of the [default scheme](@extref MessagePassingRulesBase glossary-default-scheme).
@@ -109,8 +110,7 @@ true
 
 ## Limitations
 
-- A model must give [`ARVMP`](@ref), with the `Multivariate` form; under `Univariate` the rules
-  raise a `MethodError`.
+- A model must give [`ARVMP`](@ref); without it the node has no rule.
 - The rule towards `w` and the average energy need the structured factorisation
   `q(y, x) q(w)`: under the mean field `q(y) q(x) q(w)` there is no message towards `w` and no
   average energy.

@@ -860,6 +860,9 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   `q(γ)` had a smaller rate, a larger expected precision, whenever `θ` and `x` were both uncertain.
   A model under `MeanField()` with an AR node gives a different `q(γ)`, and a different `q(θ)`
   and `q(x)` through it (ReactiveMP.jl#681).
+- **ConjugateAR under `Univariate`** works: an AR(1) on scalars, `ARVMP(Univariate, 1, stype)`,
+  where v6's `ARMeta(Univariate, 1, stype)` raised a `MethodError`. `Multivariate` of order 1 gives
+  the same results on one-dimensional vectors.
 - **ContinuousTransition's structured message towards `y`** takes the uncertainty of `a` into
   account, as its message towards `x` and its joint `q(y, x)` do. v6's pushed the message on `x`
   through `E[A]` alone, so its message was too wide and its mean off whenever `q(a)` was uncertain.
