@@ -114,6 +114,13 @@ true
 - The rule towards `ψ` needs an **[initial message](@extref MessagePassingRulesBase glossary-initial-message) on `ψ`**.
 - There is no rule towards `N`, and the average energy takes a `PointMass` `q(N)` only.
 - The messages use the mean of `ψ` only: its variance enters the average energy, not them.
+- The average energy computes each `⟨softplus(ψ_k)⟩` by Gauss–Hermite cubature with
+  `MultinomialPolyaApproximation(points = …)` points, 21 by default. It is exact to rounding
+  while `ψ_k` is narrow, a variance up to about 1, and loses accuracy as it broadens, since
+  softplus bends sharply on the
+  cubature's scale: about `1e-4` relative at a variance of 25 and `1e-2` at 400, and more
+  points help slowly. The free energy of a model with broad priors is approximate in its first
+  iterations; the messages do not use the cubature.
 
 ## API
 

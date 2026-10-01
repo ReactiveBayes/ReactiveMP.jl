@@ -45,6 +45,20 @@ end
         @test energy ≈ exact rtol = 1.0e-8
         @test energy > -coefficient - y * mψ + n * softplus(mψ)
     end
+    # `points` sets the cubature: with a broad ψ, where 32 points are approximate, more of them come
+    # closer to the exact expectation; the messages do not depend on it.
+    @test BinomialPolyaApproximation().points == 32 && BinomialPolyaApproximation(nothing).points == 32
+    broad_β = MvNormalMeanCovariance([0.4, 0.2], 25 * [0.8 0.1; 0.1 0.5])
+    broad = (y = PointMass(y), x = PointMass(x), n = PointMass(n), β = broad_β)
+    vψ_broad = dot(x, cov(broad_β) * x)
+    exact_broad = -coefficient - y * mψ + n * R.expected_softplus(mψ, vψ_broad)
+    errors = map((8, 32, 128)) do points
+        abs(getresult(call_average_energy(BinomialPolya; q = broad, algorithm = BinomialPolyaApproximation(points = points))) - exact_broad)
+    end
+    @test errors[1] > errors[2] > errors[3] && errors[3] < 1.0e-4 * abs(exact_broad)
+    towards_y = (x = PointMass(x), n = PointMass(n), β = broad_β)
+    @test getresult(call_message_update_rule(BinomialPolya, :y; q = towards_y, algorithm = BinomialPolyaApproximation(points = 8))) ==
+        getresult(call_message_update_rule(BinomialPolya, :y; q = towards_y, algorithm = BinomialPolyaApproximation()))
     # A point-mass q(β) has no spread, and the energy is the negative log-likelihood itself.
     β = [0.3, -0.1]
     @test getresult(call_average_energy(BinomialPolya; q = (y = PointMass(y), x = PointMass(x), n = PointMass(n), β = PointMass(β)))) ≈

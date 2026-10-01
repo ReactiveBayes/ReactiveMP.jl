@@ -30,7 +30,7 @@ samples.
 
 The average energy is that of the binomial likelihood itself, not of the augmented one:
 `-log C(n, y) - y ⟨ψ⟩ + n ⟨softplus(ψ)⟩`, with `⟨softplus(ψ)⟩` under the normal `ψ = xᵀβ` by
-Gauss–Hermite cubature with a fixed 32 points.
+Gauss–Hermite cubature with the algorithm's `points`.
 
 # Limitations
 
@@ -38,6 +38,7 @@ Gauss–Hermite cubature with a fixed 32 points.
   factorisation gives it, so a model must initialise that message.
 - `y`, `x` and `n` must be observed: their rules and the average energy take `PointMass`
   marginals only, and there is no rule towards `x` or `n`.
+- $(DOC_POLYA_CUBATURE_ACCURACY)
 
 # Examples
 
@@ -58,9 +59,10 @@ See also [`BinomialPolyaApproximation`](@ref), [`MultinomialPolya`](@ref).
 struct BinomialPolya end
 
 """
-    BinomialPolyaApproximation(; samples = nothing)
+    BinomialPolyaApproximation(; samples = nothing, points = 32)
 
-The algorithm of [`BinomialPolya`](@ref), and its default: a model names it only to sample.
+The algorithm of [`BinomialPolya`](@ref), and its default: a model names it only to sample or to
+change `points`.
 
 # Keywords
 
@@ -69,6 +71,8 @@ The algorithm of [`BinomialPolya`](@ref), and its default: a model names it only
   With a number `k`, they average over `k` draws of `β`, the rule towards `β` over one
   Pólya-Gamma draw for each, from the rule context's generator, `ctx.rng`. An engine supplies
   it; a call by hand passes `ctx = MessagePassingRulesBase.RuleContext(rng = …)`.
+- `points`: the number of Gauss–Hermite points with which the average energy computes
+  `⟨softplus(ψ)⟩`. Default `32`. The messages do not depend on it.
 
 The average energy does not sample under either: `xᵀβ` is normal under a normal `q(β)`, so its
 expectation is computed by Gauss–Hermite cubature.
@@ -81,13 +85,18 @@ true
 
 julia> BinomialPolyaApproximation(samples = 100).samples
 100
+
+julia> BinomialPolyaApproximation(points = 64).points
+64
 ```
 """
 struct BinomialPolyaApproximation{S <: Union{Nothing, Int}} <: AbstractAlgorithm
     samples::S
+    points::Int
 end
 
-BinomialPolyaApproximation(; samples = nothing) = BinomialPolyaApproximation(samples)
+BinomialPolyaApproximation(samples::Union{Nothing, Int}) = BinomialPolyaApproximation(samples, 32)
+BinomialPolyaApproximation(; samples = nothing, points = 32) = BinomialPolyaApproximation(samples, points)
 
 @define_factor_node(node = BinomialPolya, type = Stochastic, interfaces = [:y, :x, :n, :β], algorithm = BinomialPolyaApproximation)
 
@@ -150,21 +159,17 @@ end
     end,
 )
 
-# The number of Gauss–Hermite points of the average energy, fixed: the algorithm has no keyword
-# for it.
-const BINOMIAL_POLYA_CUBATURE_POINTS = 32
-
 # ⟨-log p(y | n, x, β)⟩ = -log C(n, y) - y ⟨ψ⟩ + n ⟨softplus(ψ)⟩ with ψ = xᵀβ, normal under a normal
 # q(β). softplus at the mean of ψ would be biased low, since softplus is convex, so the
 # expectation is computed by cubature.
 @define_average_energy(
     node = BinomialPolya, algorithm = BinomialPolyaApproximation,
     args = (q[:y]::PointMass, q[:x]::PointMass, q[:n]::PointMass, q[:β]::Any),
-    body = (args) -> begin
+    body = (algo, args) -> begin
         y, x, n = mean(args.q[:y]), mean(args.q[:x]), mean(args.q[:n])
         mβ, Vβ = mean_cov(args.q[:β])
         mψ, vψ = dot(x, mβ), dot(x, Vβ * x)
-        gh = ghcubature(BINOMIAL_POLYA_CUBATURE_POINTS)
+        gh = ghcubature(algo.points)
         softplus_ψ = sum(((w, p),) -> w * softplus(p), zip(getweights(gh, mψ, vψ), getpoints(gh, mψ, vψ)))
         -(loggamma(n + 1) - loggamma(n - y + 1) - loggamma(y + 1)) - y * mψ + n * softplus_ψ
     end,

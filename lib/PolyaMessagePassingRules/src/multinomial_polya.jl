@@ -42,6 +42,7 @@ expectation is `log N! - Σ_k ⟨log x_k!⟩` over its binomial marginals.
   factorisation gives it, so a model must initialise that message.
 - There is no rule towards `N`, and the average energy takes a `PointMass` `q(N)` only.
 - The rules use the mean of `ψ` only: its variance enters the average energy, not the messages.
+- $(DOC_POLYA_CUBATURE_ACCURACY)
 
 # Examples
 

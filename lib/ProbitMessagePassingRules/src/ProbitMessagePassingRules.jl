@@ -96,7 +96,8 @@ the node runs this one.
 # Keywords
 
 - `p`: the number of Gauss–Hermite points of the average energy, a positive integer. Default
-  `32`. The messages are computed in closed form and do not use it.
+  `32`, the number the average energy under `DefaultAlgorithm` uses too. The messages are
+  computed in closed form and do not use it.
 
 # Examples
 

@@ -64,6 +64,14 @@ const DOC_POLYA_AUGMENTATION = rstrip(
     """
 )
 
+# The accuracy of the average energy's cubature, which both nodes share.
+const DOC_POLYA_CUBATURE_ACCURACY = """
+The Gauss–Hermite cubature of `⟨softplus(ψ)⟩` is exact to rounding while `ψ` is narrow, a
+  variance up to about 1, and loses accuracy as `ψ` broadens, since softplus bends sharply on
+  the cubature's scale: about `1e-4` relative at a variance of 25 and `1e-2` at 400 with 32
+  points. More `points` help slowly. The free energy of a model with broad priors is therefore
+  approximate in its first iterations; the messages do not use the cubature."""
+
 include("binomial_polya.jl")
 include("multinomial_polya.jl")
 

@@ -166,8 +166,11 @@ true
 - Under `DefaultAlgorithm`, the mean-field rules take point-mass marginals only (`q(in)`
   towards `out`, `q(out)` towards `in`), and the message towards `in` is a
   `ContinuousUnivariateLogPdf`, not a normal: something downstream must approximate it.
-- The average energy under `DefaultAlgorithm` always uses 32 Gauss–Hermite points; only
-  `ProbitEP` makes the number configurable.
+- The average energy computes `⟨-log Φ⟩` by Gauss–Hermite cubature: with `ProbitEP(p = …)`
+  points, 32 by default, and with 32 under `DefaultAlgorithm`, which has no keyword for it. It
+  is exact to rounding while `q(in)` is narrow, a variance up to about 1, and loses accuracy as
+  it broadens: about `1e-4` relative at a variance of 25 and `2e-3` at 400, and more points help
+  slowly. The messages do not use the cubature.
 - No rule declares a [log scale](@extref MessagePassingRulesBase glossary-log-scale): where the
   engine tracks log scales (`logscales = true`), a message from this node carries an
   [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale).

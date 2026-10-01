@@ -119,7 +119,13 @@ true
 - The rule towards `β` needs an **[initial message](@extref MessagePassingRulesBase glossary-initial-message) on `β`**.
 - `y`, `x` and `n` must be **observed**: there are no rules towards `x` or `n`, and the average
   energy takes `PointMass` marginals of all three.
-- The average energy uses a fixed 32-point Gauss–Hermite cubature, which no keyword changes.
+- The average energy computes `⟨softplus(ψ)⟩` by Gauss–Hermite cubature with
+  `BinomialPolyaApproximation(points = …)` points, 32 by default. It is exact to rounding while
+  `ψ = xᵀβ` is narrow, a variance up to about 1, and loses accuracy as `ψ` broadens, since
+  softplus bends sharply on the
+  cubature's scale: about `1e-4` relative at a variance of 25 and `1e-2` at 400, and more
+  points help slowly. The free energy of a model with broad priors is approximate in its first
+  iterations; the messages do not use the cubature.
 
 ## API
 
