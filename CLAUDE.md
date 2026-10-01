@@ -254,9 +254,10 @@ rule towards `y` from `m[:x]` (ReactiveMP.jl#681), are corrected in v7 and stay 
   `getresult(message_passing_rule(...))` still allocates nothing (the routing gates).
 - The v6 code is only in the 6.5.0 release and in git. The inventory check runs in
   `compat/v6-comparison`, locally, since only v6.5.0 still has everything it enumerates.
-- `visualize_spec` is a deliberate entry point for visualisation backends (extensions), none
-  written yet: comprehensive visualisations of nodes, dependencies and rules, rendered in the
-  documentation. Not dead code.
+- The rich displays (`svg.jl`, `display.jl`, `result_show.jl`) draw a node once, through
+  `svg_node`, for two uses: the cards (`text/html`), themed by their CSS, and `drawing(x)`, a
+  standalone SVG whose colours are presentation attributes from `SVG_LIGHT`. The card's CSS
+  overrides those attributes, so a change of colour goes in `SVG_LIGHT` and the dark CSS palette.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 

@@ -1949,6 +1949,12 @@ Documenter's theme toggle as well as the reader's system. The engine's `FactorNo
 get `text/plain` displays only: an SVG there would reach into the base package's internals, which
 become another repository's. `visualize_spec` stays the place for graph-scale pictures.
 
+*(2026-10-01, user: `visualize_spec` is removed, a public name with no methods that the display
+had made redundant; a graph-scale picture, if ever built, belongs to ReactiveMP or RxInfer, where
+the graph is. The drawing stands alone too: `drawing(x)` returns it as an SVG document whose
+colours are presentation attributes from one light palette, which the cards' CSS overrides, so
+one routine serves both and a file needs no stylesheet.)*
+
 **Docs dependencies** (user): a site loads only what its package depends on, plus the registered
 distribution packages. The engine, `MessagePassingRulesBase` and TestUtils sites never load a rule
 package; their examples declare small nodes on the page, and link the rule packages' sites and
@@ -2310,8 +2316,8 @@ Open as of Phase C (2026-09-26; `PHASES.md`'s not-done table is the full list):
   confirmed ReactiveMP.jl#681): AR's mean-field rule towards `γ` takes `tr(Vθ Vx)`, and
   ContinuousTransition's rule towards `y` from `m[:x]` the uncertainty of `a`. v6 stays as it is,
   the issue open; both engine tests pass.
-- **`visualize_spec`'s backend** — the entry point is kept (user), the extension not written
-  (§3.12, §3.51).
+- ~~**`visualize_spec`'s backend**~~ — **removed** (user, 2026-10-01): the rich display covered it;
+  `drawing` gives the cards' drawing as a standalone SVG (§3.52).
 - ~~**The performance pass** — before the release~~ — done (§5, `BENCHMARK.md`); what it leaves
   open is `BENCHMARK.md` §6.
 - **The mutation detector** (`PLAN.md` § Purity) — not built; after the release.

@@ -230,11 +230,21 @@ end
 
 # The node as a box with its edges: the target(s) on the right with arrows out, every other edge
 # on the left, an arrow into the box for each input, greyed where unused.
-function html_node_svg(io::IO, r::RuleResult, edges, id)
+function result_part(r::RuleResult, edges = edge_views(r))
     left = [SvgEdge(e.label, e.role) for e in edges if e.role !== :target]
     right = [SvgEdge(e.label, e.role) for e in edges if e.role === :target]
-    svg_node(io, id, node_name(r.rule.node); left, right, aria = result_label(r), stub = 70)
+    return SvgPart(node_name(r.rule.node), left, right; aria = result_label(r), stub = 70)
+end
+
+function html_node_svg(io::IO, r::RuleResult, edges, id)
+    part = result_part(r, edges)
+    svg_node(io, id, part.name; part.left, part.right, part.aria, part.stub)
     return nothing
+end
+
+function drawing(r::RuleResult)
+    part = result_part(r)
+    return svg_drawing([part], "RuleResult: " * result_label(r); roles = Set(e.role for e in [part.left; part.right]))
 end
 
 function Base.show(io::IO, ::MIME"text/html", r::RuleResult)

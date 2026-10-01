@@ -6,7 +6,8 @@ CurrentModule = MessagePassingRulesBase
 
 This page covers three questions: which [rule](@ref glossary-rule) a call would run, which rules
 a node has, and whether the rules are consistent. A rule author asks them at the REPL, and a
-rule package's tests ask them too.
+rule package's tests ask them too. [Drawings](#Drawings) draws a node or a rule as an image of its
+own, for slides and notes.
 
 The examples use the `Shift` node of [Calling rules](@ref), `out = in + c`, with rules towards
 `out` and `in`:
@@ -63,8 +64,35 @@ MessagePassingRulesBase.list_rules(Shift, :in)
 MessagePassingRulesBase.list_rules
 MessagePassingRulesBase.RuleCoverage
 MessagePassingRulesBase.rule_coverage
-MessagePassingRulesBase.visualize_spec
 MessagePassingRulesBase.prettify_modules
+```
+
+## Drawings
+
+A node's declaration, a rule, a rule's result and a node's dependencies show as cards in a
+notebook, each with the node drawn. [`drawing`](@ref) gives you that drawing on its own, as an SVG
+image:
+
+```@example inspecting
+d = MessagePassingRulesBase.drawing(MessagePassingRulesBase.nodespec(Shift))
+```
+
+The image carries its colours on its elements, so it needs no stylesheet. `write` saves it to a
+file, which a slide, a document or a vector editor opens as it is:
+
+```@example inspecting
+write(joinpath(mktempdir(), "shift.svg"), d)
+```
+
+The result is the number of bytes written. A rule draws what it consumes and what it computes:
+
+```@example inspecting
+MessagePassingRulesBase.drawing(which_message_update_rule(Shift, :in; m = (out = Gauss(4.0, 2.0), c = 3.0)))
+```
+
+```@docs
+MessagePassingRulesBase.drawing
+MessagePassingRulesBase.Drawing
 ```
 
 ## Checking the rules

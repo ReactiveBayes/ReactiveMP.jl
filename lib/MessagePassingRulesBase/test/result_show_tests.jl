@@ -199,3 +199,68 @@ end
     end
     @test !contains(sprint(showerror, err), "__atexample__")
 end
+
+@testitem "drawing: a standalone SVG of each drawable" tags = [:base] setup = [ResultShowRules, DependencyNodes] begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: drawing, Drawing, nodespec, list_rules, dependencies_spec, SVG_LIGHT
+    R, D = ResultShowRules, DependencyNodes
+    svg(d) = sprint(show, MIME"image/svg+xml"(), d)
+    balanced(text, tag) = count("<$tag", text) == count("</$tag>", text) + count(r"<" * tag * r"\b[^>]*/>", text)
+
+    drawings = (
+        node = drawing(nodespec(R.Gauss)),
+        rule = drawing(only(list_rules(R.Gauss, :μ))),
+        result = drawing(call_message_update_rule(R.Gauss, :out; m = (μ = 1.0, τ = 2.0))),
+        dependencies = drawing(dependencies_spec(D.Transition, D.TransitionVMP())),
+    )
+    for (name, d) in pairs(drawings)
+        @testset "$name" begin
+            @test d isa Drawing
+            @test showable(MIME"image/svg+xml"(), d) && !showable(MIME"text/html"(), d)
+            text = svg(d)
+            # A document on its own: the SVG namespace, its colours on its elements, no stylesheet.
+            @test startswith(text, "<svg xmlns=\"http://www.w3.org/2000/svg\"") && endswith(text, "</svg>")
+            @test !contains(text, "<style") && !contains(text, "var(--") && !contains(text, "<script") && !contains(text, "mprb-card")
+            @test all(tag -> balanced(text, tag), ("svg", "text", "marker", "defs"))
+            @test all(m -> contains(m.match, "stroke=") || contains(m.match, "fill="), eachmatch(r"<(?:line|path|rect)\b[^>]*>", text))
+            @test contains(text, "<rect class=\"node\"") && contains(text, "fill=\"$(SVG_LIGHT.bg)\"")
+            # Every arrow points at a marker the document defines.
+            for m in eachmatch(r"url\(#([^)]+)\)", text)
+                @test contains(text, "id=\"$(m.captures[1])\"")
+            end
+            # Its size and what it shows, in the terminal.
+            @test contains(text, "width=\"$(d.width)\"") && contains(text, "height=\"$(d.height)\"")
+            @test startswith(sprint(show, MIME"text/plain"(), d), "Drawing of ") && contains(sprint(show, MIME"text/plain"(), d), "$(d.width)×$(d.height) SVG")
+        end
+    end
+
+    # What each draws, in the light palette.
+    @test count("class=\"edge interface\"", svg(drawings.node)) == 4 && contains(svg(drawings.node), ">stochastic</text>")
+    @test !contains(svg(drawings.node), "<tspan")
+    rule = svg(drawings.rule)
+    @test count("class=\"edge marginal\"", rule) == 2 && count("class=\"edge target\"", rule) == 1
+    @test contains(rule, "stroke=\"$(SVG_LIGHT.marginal)\"") && contains(rule, "stroke=\"$(SVG_LIGHT.target)\"") && contains(rule, "stroke-dasharray=\"5 3\"")
+    result = svg(drawings.result)
+    @test count("class=\"edge message\"", result) == 2 && contains(result, "stroke=\"$(SVG_LIGHT.message)\"") && contains(result, "class=\"edge unused\"")
+    @test contains(result, "─▶ message m") && contains(result, "━▶ target")
+    # The dependencies: one node per target, placed in the document, and the legend under them.
+    dependencies = svg(drawings.dependencies)
+    targets = length(dependencies_spec(D.Transition, D.TransitionVMP()).targets)
+    @test count("<svg class=\"mprb-node\"", dependencies) == targets
+    @test count(r"<svg class=\"mprb-node\"[^>]* x=\"\d+\" y=\"\d+\"", dependencies) == targets
+    @test count("<defs>", dependencies) == 1 && contains(dependencies, "the default scheme's inputs")
+
+    # `write` saves exactly the markup.
+    path = tempname() * ".svg"
+    @test write(path, drawings.dependencies) == ncodeunits(dependencies)
+    @test read(path, String) == dependencies
+    rm(path)
+
+    # Every drawing's markers are its own.
+    ids = [match(r"id=\"(mprb-drawing-\d+)-target\"", svg(drawing(only(list_rules(R.Gauss, :μ))))).captures[1] for _ in 1:2]
+    @test ids[1] != ids[2]
+
+    # The cards are as before: themed by their stylesheet, the drawing inside without a namespace.
+    card = R.html(nodespec(R.Gauss))
+    @test contains(card, "<style>") && contains(card, "--mprb-target:$(SVG_LIGHT.target)") && !contains(card, "xmlns")
+end

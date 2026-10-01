@@ -85,7 +85,7 @@ export RuleResult, getresult, getrule, getannotations
 # Inspecting and checking the rules that exist.
 @compat public Registry, registries, registered_rules, registered_nodes, registered_dependencies, duplicate_rules
 @compat public list_rules, RuleCoverage, rule_coverage, check_rules, RuleIssue, check_rule_ambiguities
-@compat public NodeFunctionLogPdf, visualize_spec
+@compat public NodeFunctionLogPdf, drawing, Drawing
 @compat public as_target, as_cluster, interactive_args, add_selection_observer!
 
 @compat public add_outer, trace_product, negate!!, scale!!, scaled_outer, diageye, promote_cluster
@@ -117,13 +117,5 @@ include("interactive.jl")
 include("svg.jl")
 include("display.jl")
 include("result_show.jl")
-
-function __init__()
-    Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-        exc.f === visualize_spec &&
-            print(io, "\n`visualize_spec` needs a visualisation backend, provided by a package extension, and none is loaded.")
-    end
-    return nothing
-end
 
 end

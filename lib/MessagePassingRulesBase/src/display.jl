@@ -70,6 +70,12 @@ function rule_edges(spec::RuleSpec)
     return left, [SvgEdge(label, :target)]
 end
 
+function drawing(spec::RuleSpec)
+    left, right = rule_edges(spec)
+    part = SvgPart(node_name(spec.node), left, right; aria = rule_heading(spec))
+    return svg_drawing([part], "RuleSpec: " * rule_heading(spec); roles = Set(e.role for e in [left; right]))
+end
+
 function Base.show(io::IO, ::MIME"text/html", spec::RuleSpec)
     id = open_card(io, "RuleSpec: " * rule_heading(spec, io))
     left, right = rule_edges(spec)
@@ -119,11 +125,19 @@ Base.show(io::IO, interface::InterfaceSpec) = print(io, interface_label(interfac
 interface_edge(interface::InterfaceSpec) =
     SvgEdge(string(interface.name) * (interface.group ? "…" : ""), :interface, join(interface.aliases, ", "))
 
+# The output on the right, every other interface on the left.
+function node_part(spec::NodeSpec)
+    edges = map(interface_edge, collect(spec.interfaces))
+    return SvgPart(node_name(spec.node), edges[2:end], edges[1:min(1, end)]; kind = type_label(spec), aria = "the node $(node_name(spec.node)) and its interfaces")
+end
+
+drawing(spec::NodeSpec) = svg_drawing([node_part(spec)], "NodeSpec: " * node_name(spec.node) * " (" * type_label(spec) * ")"; aria = node_part(spec).aria)
+
 function Base.show(io::IO, ::MIME"text/html", spec::NodeSpec)
     id = open_card(io, "NodeSpec: " * node_name(spec.node))
-    edges = map(interface_edge, collect(spec.interfaces))
+    part = node_part(spec)
     print(io, "<div class=\"mprb-body\"><figure class=\"mprb-figure\">")
-    svg_node(io, id, node_name(spec.node); left = edges[2:end], right = edges[1:min(1, end)], kind = type_label(spec), aria = "the node $(node_name(spec.node)) and its interfaces")
+    svg_node(io, id, part.name; part.left, part.right, part.kind, part.aria)
     print(io, "</figure><div class=\"mprb-sections\">")
     print(io, "<table><tr><th>interface</th><th></th><th>aliases</th></tr>")
     for interface in spec.interfaces
@@ -173,16 +187,27 @@ Base.show(io::IO, entry::TargetDependencies) = print(io, dependency_target_label
 dependency_edges(entry::TargetDependencies) =
     [entry.default ? [SvgEdge("default", :default)] : SvgEdge[]; [SvgEdge(dependency_display(d), input_role(d.container, d.key)) for d in entry.inputs]]
 
+# One small node per target, with the inputs its rules take.
+function dependency_part(spec::DependenciesSpec, entry::TargetDependencies)
+    target = entry.indexed ? "$(entry.edge)[k]" : string(entry.edge)
+    return SvgPart(node_name(spec.node), dependency_edges(entry), [SvgEdge(target, :target)]; aria = "the inputs of the rules towards $target", stub = 40)
+end
+dependency_roles(parts) = union(Set([:target]), (e.role for p in parts for e in p.left))
+
+function drawing(spec::DependenciesSpec)
+    parts = [dependency_part(spec, entry) for entry in spec.targets]
+    description = "DependenciesSpec: $(node_name(spec.node)) under $(shown(nothing, spec.algorithm))"
+    return svg_drawing(parts, description; roles = dependency_roles(parts))
+end
+
 function Base.show(io::IO, ::MIME"text/html", spec::DependenciesSpec)
     id = open_card(io, "DependenciesSpec: $(node_name(spec.node))", "under $(shown(io, spec.algorithm))")
     print(io, "<div class=\"mprb-grid\">")
-    roles = Set{Symbol}([:target])
-    for entry in spec.targets
-        left = dependency_edges(entry)
-        union!(roles, (e.role for e in left))
-        target = entry.indexed ? "$(entry.edge)[k]" : string(entry.edge)
-        svg_node(io, id, node_name(spec.node); left, right = [SvgEdge(target, :target)], aria = "the inputs of the rules towards $target", stub = 40)
+    parts = [dependency_part(spec, entry) for entry in spec.targets]
+    for part in parts
+        svg_node(io, id, part.name; part.left, part.right, part.aria, part.stub)
     end
+    roles = dependency_roles(parts)
     print(io, "</div>")
     html_legend(io, roles)
     html_rows(io, ["free-energy partition" => html_escape(partition_label(spec))])

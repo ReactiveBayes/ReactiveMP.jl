@@ -355,8 +355,8 @@ built on it.
   Documenter's `@example` blocks: a self-contained card, inline CSS following the reader's theme,
   with an inline SVG of the node — its interfaces as edges, the inputs used as incoming arrows
   styled as messages or marginals, the unused interfaces greyed, the target the highlighted
-  outgoing arrow — and the report's sections as tables. Dependency-free; `visualize_spec` stays
-  the extension point for richer backends. Not in it (user, §3.51): traces of an inference run,
+  outgoing arrow — and the report's sections as tables. Dependency-free; `drawing` gives the
+  drawing as a standalone SVG (`visualize_spec`, once the extension point, is removed). Not in it (user, §3.51): traces of an inference run,
   and the maths of a node or a rule, which nothing declares.
 - **Error messages are pedagogy.** The "no rule found" output showing near-miss rules with
   per-slot ✓/✗ diffs is a teaching tool for students who get an input wrong, which is the

@@ -134,18 +134,6 @@ end
     end
 end
 
-@testitem "interactive:visualize" tags = [:base] setup = [RepresentativeRules] begin
-    using MessagePassingRulesBase: visualize_spec, nodespec
-    err = try
-        visualize_spec(nodespec(RepresentativeRules.NMV))
-        nothing
-    catch e
-        e
-    end
-    @test err isa MethodError
-    @test contains(sprint(showerror, err), "visualisation backend")
-end
-
 @testitem "interactive:coverage of wildcard and parametric rules" tags = [:base] setup = [DefaultArgsNodes] begin
     using MessagePassingRulesBase
     using MessagePassingRulesBase: rule_coverage, registries

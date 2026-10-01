@@ -668,16 +668,6 @@ function rule_coverage(node)
 end
 
 """
-    visualize_spec(spec)
-
-Draw a [`NodeSpec`](@ref), [`RuleSpec`](@ref), [`DependenciesSpec`](@ref) or
-[`RuleCoverage`](@ref). The function is declared here with no methods: visualisation backends,
-package extensions, provide them, and none exists yet. Without one loaded, a call is a
-`MethodError` whose message says a backend is needed.
-"""
-function visualize_spec end
-
-"""
     @which_marginal_update_rule(node = ..., target = (:y, :x), m = (...), q = (...), clusters = (...), algorithm = ...)
 
 The [`RuleSpec`](@ref) that [`@call_marginal_update_rule`](@ref) would run for these inputs,
