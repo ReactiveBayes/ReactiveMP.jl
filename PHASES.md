@@ -3773,7 +3773,7 @@ wait for the release):
   `context` seeds in RxInfer (not investigated) *(done, user, 2026-10-01: by design without sampling; with `samples = k` the seed reaches the sampler, and RxInfer's tests now check both)*; `infer` takes `diagnostics` and `context` only
   inside `options`, and `EngineDiagnostics` is not exported *(done, user, 2026-10-01: both stay in `options`, as every engine setting; `diagnostics` takes a `NamedTuple` of the audits, RxInfer `ca1ba38a`)*; Flow's `getmodel`/`getmethod`, which
   the v6 → v7 guide names, are internal *(done, user, 2026-10-01: public, not exported, called qualified)*; the near misses of a `RuleNotFoundError` print absolute
-  paths *(done, user, 2026-10-01: errors print the path as Julia's stack traces do, `~` for the home directory)*; GraphPPL shows an `@algorithm` specification as "Meta:". Also recorded: `+` had no marginal rule over its inputs for an
+  paths *(done, user, 2026-10-01: errors print the path as Julia's stack traces do, `~` for the home directory)*; GraphPPL shows an `@algorithm` specification as "Meta:" *(left as it is, user, 2026-10-01: display only, GraphPPL's own type)*. Also recorded: `+` had no marginal rule over its inputs for an
   observed `out`; the n-ary `+` has one, so `y := z + ε` with `y` observed has a free energy, while
   RxInfer's `y ~ z + ε` still fails to build (v6 neither). Recorded, not done: an interactive call does not check that a group
   selected `m[:g][!k]` has `nothing` at `k` (in `interactive.jl`); `check_rules` could flag a rule
