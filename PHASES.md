@@ -3940,8 +3940,9 @@ this phase requires it to pass for release, rather than being its first executio
       registered as 1.0.0, General#170326, merging after the 3-day wait; the procedure is
       `RELEASING.md`; the other packages follow once their grouping is decided, user with Mykola)*
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed
-      *(the order is in `RELEASING.md`, dependencies first; MessagePassingRulesBase supports
-      Julia 1.10 and later, user)*.
+      *(the order is in `RELEASING.md`, dependencies first; every package supports Julia 1.10 and
+      later, user, 2026-10-02: checked on 1.10 with the suites, RxInfer, the examples and the
+      course, and CI runs 1.10 to 1.13)*.
       Work targets 1.13 only until then (§3.22); whether the 1.10 floor and its workarounds
       come back is decided here
 - [x] each package's `LICENSE` file: MIT, but GPL-3 for `PolyaMessagePassingRules`, which

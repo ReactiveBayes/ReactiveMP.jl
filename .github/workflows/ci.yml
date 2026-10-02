@@ -37,8 +37,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Julia 1.13; the lowest supported version is decided at registration.
+        # Every supported Julia, 1.10 and later. Julia 1.10 ignores [sources], so until the
+        # siblings are registered its job cannot install them (user: gating regardless).
         version:
+          - '1.10'
+          - '1.11'
+          - '1.12'
           - '1.13'
         os:
           - ubuntu-latest

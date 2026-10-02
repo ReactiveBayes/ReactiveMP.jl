@@ -27,4 +27,4 @@ getresult(result)   # NormalMeanVariance(0.5, 1.5)
 - Tests: `make test-autoregressive`.
 - Depends on MessagePassingRulesBase, on BayesBase,
   ExponentialFamily and Distributions for the distributions, and on FastCholesky, LinearAlgebra
-  and StatsFuns. Julia 1.11 or later. MIT licence.
+  and StatsFuns. Julia 1.10 or later. MIT licence.

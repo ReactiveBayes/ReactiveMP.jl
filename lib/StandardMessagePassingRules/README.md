@@ -33,4 +33,4 @@ MessagePassingRulesBase.rule_coverage(NormalMeanVariance)  # which rules exist
   selected by some test.
 - Depends on MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions and a few
   numerical packages (FastCholesky, MatrixCorrectionTools, SpecialFunctions, StatsFuns,
-  LogExpFunctions, DomainSets), not on ReactiveMP. Julia 1.11 or later. MIT licence.
+  LogExpFunctions, DomainSets), not on ReactiveMP. Julia 1.10 or later. MIT licence.

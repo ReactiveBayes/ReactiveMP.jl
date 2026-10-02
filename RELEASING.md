@@ -26,7 +26,7 @@ one, about 15 minutes. Packages with no unregistered dependency can be registere
 
 ## 1. Decide (human)
 
-- The Julia versions supported. MessagePassingRulesBase: 1.10 and later.
+- The Julia versions supported: 1.10 and later, for every package (user, 2026-10-02).
 - The repository name, `ReactiveBayes/<Package>.jl`: AutoMerge requires the URL to end in
   `/<Package>.jl.git`, and the name to be at least five characters, start upper-case and include
   neither `julia` nor a `Ju` prefix nor a `jl` suffix.
@@ -51,6 +51,9 @@ one, about 15 minutes. Packages with no unregistered dependency can be registere
     `measure(f::F, args::Vararg{Any, N}) where {F, N}` measures the call itself;
   - JET 0.9, the last for 1.10 and 1.11, fails inside its own report building: `@test_opt` runs
     on 1.12 and later.
+- Checked on 1.10 for all packages (2026-10-02, every sibling developed into one environment,
+  since 1.10 ignores `[sources]`): every suite, RxInfer, the examples and the course pass, after
+  two tests that used `Base.ispublic` (1.11 and later) dropped it.
 - Changes the package needs land in the monorepo first, with a CHANGELOG entry, so the split
   history carries them.
 

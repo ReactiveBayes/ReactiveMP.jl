@@ -16,4 +16,4 @@ A, b = approximate(Linearization(), x -> x^2, (3.0,))          # (6.0, -9.0)
   `docs/build`; it will be published at <https://reactivebayes.github.io/MessagePassingRulesApproximations.jl/dev/>.
 - Tests: `make test-approximations`.
 - Depends on LinearAlgebra, FastCholesky, FastGaussQuadrature and ForwardDiff only, on no
-  distribution package. Julia 1.11 or later. MIT licence.
+  distribution package. Julia 1.10 or later. MIT licence.

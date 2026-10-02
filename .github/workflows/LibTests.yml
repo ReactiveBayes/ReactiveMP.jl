@@ -23,15 +23,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Julia 1.13, whose [sources] wire the siblings, so each package is tested from its own project, as `make test-<package>` does.
+# Each package is tested from its own project, as `make test-<package>` does, on every supported
+# Julia, 1.10 and later. Julia 1.11 and later wire the siblings with [sources]; 1.10 ignores
+# [sources], so until the siblings are registered its jobs cannot install them (user: gating
+# regardless).
 jobs:
   test:
-    name: ${{ matrix.package }} - Julia 1.13
+    name: ${{ matrix.package }} - Julia ${{ matrix.version }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
+        version: ['1.10', '1.11', '1.12', '1.13']
         # The Makefile's targets, one per package under lib/.
         package:
           - base
@@ -53,7 +57,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3
         with:
-          version: '1.13'
+          version: ${{ matrix.version }}
       - uses: julia-actions/cache@v2
       - name: Test
         env:

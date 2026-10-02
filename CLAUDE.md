@@ -101,9 +101,13 @@ julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures
 julia --project=compat/v6-comparison scripts/inventory.jl --check
 ```
 
-Work targets **Julia 1.13**, and every check above is run locally. The workflows under
-`.github/` run the root suite, the docs and the package suites on 1.13 (the format check on
-1.10, where Runic's output is byte-identical). The v6 comparisons, the engine fixtures and the
+The packages support **Julia 1.10 and later** (user, 2026-10-02), and local work runs on 1.13.
+The workflows under `.github/` run the root suite and the package suites on 1.10, 1.11, 1.12 and
+1.13, all gating, and the docs on 1.13 (the format check on 1.10, where Runic's output is
+byte-identical). Julia 1.10 ignores `[sources]`, so until the siblings are registered its jobs
+cannot install them and fail (user: accepted; it works once they are registered). Checked locally
+on 1.10, with every sibling developed into one environment: every suite, RxInfer, the examples
+and the course pass. The v6 comparisons, the engine fixtures and the
 inventory are **not** CI: they are the migration tool that verified the rewrite, run locally,
 and go at the release, `compat/` and TestUtils' comparison machinery entirely, with no
 exceptions (user). Do not ask about their fate or polish them (`PLAN.md` § The v6 reference is
@@ -179,9 +183,10 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   sites declare toy nodes on the page; the learning path with the standard nodes is RxInfer's.
   A spec, a rule result or a declaration left as an `@example`'s last value renders as a card with
   the node drawn (`svg.jl`).
-- Julia: work targets **1.13 only**, and siblings are wired with `[sources]`, test-only ones via
-  `[extras]` too; the comparison environment is resolved on 1.13 as well. The lowest supported
-  version is decided when the packages are registered.
+- Julia: the packages support **1.10 and later** (`julia = "1.10"`, stdlib compat entries 1.10);
+  local work runs on 1.13, and siblings are wired with `[sources]`, test-only ones via `[extras]`
+  too, which 1.10 ignores until the packages are registered. The comparison environment is
+  resolved on 1.13.
 
 ## Gotchas
 

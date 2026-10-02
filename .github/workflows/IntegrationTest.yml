@@ -22,9 +22,10 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                # Julia 1.13 while the rewrite targets it: the downstream branch wires this
-                # repository with [sources].
-                julia-version: ['1.13']
+                # Every supported Julia, 1.10 and later. The downstream branch wires this
+                # repository with [sources], which Julia 1.10 ignores, so until the packages
+                # are registered its 1.10 job cannot install them (user: gating regardless).
+                julia-version: ['1.10', '1.11', '1.12', '1.13']
                 os: [ubuntu-latest]
                 package:
                     # Add downstream packages that depend on ReactiveMP here

@@ -31,5 +31,5 @@ using MessagePassingRulesTestUtils
   <https://reactivebayes.github.io/MessagePassingRulesTestUtils.jl/dev/>.
 - Tests: `make test-testutils`.
 - Depends on MessagePassingRulesBase, BayesBase, Distributions, ForwardDiff and HCubature, and
-  on no engine. A test dependency: nothing at run time needs it. Julia 1.11 or later. MIT
+  on no engine. A test dependency: nothing at run time needs it. Julia 1.10 or later. MIT
   licence.

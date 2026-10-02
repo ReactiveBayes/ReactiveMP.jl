@@ -20,5 +20,5 @@ getresult(result)   # an MvNormalMeanCovariance, the linearised image of m_in
   be published at <https://reactivebayes.github.io/FlowMessagePassingRules.jl/dev/>.
 - Tests: `make test-flow`.
 - Depends on MessagePassingRulesBase and MessagePassingRulesApproximations, with BayesBase,
-  ExponentialFamily, Distributions, LinearAlgebra, Random and TupleTools. Julia 1.11 or later.
+  ExponentialFamily, Distributions, LinearAlgebra, Random and TupleTools. Julia 1.10 or later.
   MIT licence.

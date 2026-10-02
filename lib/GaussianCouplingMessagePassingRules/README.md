@@ -19,5 +19,5 @@ getresult(result)   # NormalWeightedMeanPrecision(-1.0, -0.75)
 - Documentation: `make docs-gaussian-coupling` from the repository root builds it into
   `docs/build`; it will be published at <https://reactivebayes.github.io/GaussianCouplingMessagePassingRules.jl/dev/>.
 - Tests: `make test-gaussian-coupling`.
-- Depends on MessagePassingRulesBase, BayesBase, ExponentialFamily and Distributions. Julia 1.11
+- Depends on MessagePassingRulesBase, BayesBase, ExponentialFamily and Distributions. Julia 1.10
   or later. MIT licence.

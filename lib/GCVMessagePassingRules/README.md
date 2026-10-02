@@ -23,4 +23,4 @@ getresult(result)   # NormalMeanVariance(1.0, 3.0): the noise variance exp(1 ⋅
 - Tests: `make test-gcv`.
 - Depends on MessagePassingRulesBase, MessagePassingRulesApproximations (the Gauss–Hermite
   cubature), StandardMessagePassingRules (the normal nodes it extends), BayesBase,
-  ExponentialFamily, Distributions and StatsFuns. Julia 1.11 or later. MIT licence.
+  ExponentialFamily, Distributions and StatsFuns. Julia 1.10 or later. MIT licence.

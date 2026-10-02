@@ -27,4 +27,4 @@ getresult(result)   # NormalMeanVariance(μ = 1.0, v = 0.5)
 - Tests: `make test-delta`.
 - Depends on MessagePassingRulesBase, MessagePassingRulesApproximations, BayesBase,
   ExponentialFamily and Distributions; ExponentialFamilyProjection is a weak dependency, for
-  `CVIProjection`. Julia 1.11 or later. MIT licence.
+  `CVIProjection`. Julia 1.10 or later. MIT licence.
