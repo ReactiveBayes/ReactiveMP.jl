@@ -59,7 +59,8 @@ models agreeing with v6. Phases 0–6 are closed too.
 | ExponentialFamily 2.6's `mean(logdet, ::InverseWishart{Float32})` is a Float64 (`d * log(2)`), so MvNormalMeanCovariance's energy with an InverseWishart `q_Σ` is too (`@test_broken` in Standard), and its `mean(cholinv, ::InverseWishart{BigFloat})` fails (InverseWishart's energy table runs in Float64 only), and its `mean(loggamma, ::GammaShapeRate)` is a Float64 (GammaMixture's switch and energy tables run in Float64 only) | upstream, an ExponentialFamily patch release | ExponentialFamily.jl#322 |
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | RxInfer's documentation adapted to v7: **done** on its branch (`1416e04e`, `2a11443c`): a learning path, the v5 → v6 guide, every v6 page rewritten, all runnable; it is published with RxInfer's release | done; published with the release (user) | § Phase 7, *Item 6 brief*; § Phase C, *Progress* |
-| a `LICENSE` file for each package under `lib/`, GPL-3 for `PolyaMessagePassingRules` | Phase 8, registration | § Phase 8 |
+| a `LICENSE` file for each package under `lib/`: **done** (user, 2026-10-02), MIT for 14, the root's text, and GPL-3 for `PolyaMessagePassingRules`, gnu.org's canonical text. Each package's runtime closure was checked: every Julia package in it is MIT, Graphs (BSD, through Delta's weak dependency) and StatsFuns (MIT and Boost) aside, except PolyaGammaHybridSamplers, GPL-3 and only Pólya's. Two GPL binaries come transitively and are called by none of our code: Rmath (GPL-2) through StatsFuns, and SuiteSparse's GPL modules through SparseArrays; MIT packages of the ecosystem carry them alike. ReactiveMP and RxInfer load Pólya in their tests only, so both stay MIT | done | § Phase 8 |
+| `IntegrationTest.yml` reporting success on a resolver error: **done** (user, 2026-10-02), the job fails on it as on any test, since the downstream reaches this checkout through `[sources]` and a resolver error means a broken pair of branches. The release-time job pinning registered revisions is still Phase 8's | Phase 8, the release job | § Phase 8 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
 | Gamma's variational rule towards `out` uses `E[θ]` where naive VMP gives `1/E[1/θ]`, which its own average energy uses; exact for a point-mass `θ`, and the node has no rule towards `θ` | left as v6 has it (user, 2026-09-26) | § Phase C, *Progress* |
 | Beta's average energy takes `log B(E[a], E[b])` for `E[log B(a, b)]`, exact for point-mass `a`, `b` only; the node has no rule towards them | left for now (user, 2026-09-26) | § Phase C, *Progress* |
@@ -3930,15 +3931,15 @@ this phase requires it to pass for release, rather than being its first executio
 **Exit criteria**
 - [ ] **strict coordinated downstream CI**: a job pinning mutually compatible revisions of
       the new packages and their consumers, in which `Pkg.Resolve.ResolverError` is a hard
-      failure. Today `.github/workflows/IntegrationTest.yml` catches it and `exit(0)`s, so
-      it would report green without running a single downstream test
+      failure. *(The branch's `IntegrationTest.yml` is strict since 2026-10-02: it no longer
+      catches the error and `exit(0)`s. What is left is the job over registered revisions.)*
 - [ ] the monorepo split into `ReactiveBayes/*` repositories, one per package, with their
       history, at registration (`DISCUSSION.md` §3.40; `PLAN.md` had it at Phase 6)
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed.
       Work targets 1.13 only until then (§3.22); whether the 1.10 floor and its workarounds
       come back is decided here
-- [ ] each package's `LICENSE` file, which none under `lib/` has yet: MIT, but GPL-3 for
-      `PolyaMessagePassingRules`, which says so in its docstring and `Project.toml` (Phase 6)
+- [x] each package's `LICENSE` file: MIT, but GPL-3 for `PolyaMessagePassingRules`, which
+      its README and docs say too *(done 2026-10-02, the dependencies checked; the not-done table)*
 - [ ] RxInfer's default package set updated
 - [ ] documentation links across the three levels updated
 - [ ] downstream migration readiness confirmed — the v6 → v7 guide exercised against a real

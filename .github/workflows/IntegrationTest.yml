@@ -59,14 +59,8 @@ jobs:
               shell: julia --project=downstream {0}
               run: |
                   using Pkg
-                  try
-                      # The downstream's [sources] already use this checkout of ReactiveMP
-                      # and its rule packages.
-                      Pkg.instantiate()
-                      Pkg.test()  # run downstream tests
-                  catch err
-                      err isa Pkg.Resolve.ResolverError || rethrow()
-                      # If resolver fails, assume intentional breaking change (SemVer)
-                      @info "Not compatible with this release. No problem." exception=err
-                      exit(0)  # Treat as success
-                  end
+                  # The downstream's [sources] use this checkout of ReactiveMP and its rule
+                  # packages, so a resolver error is a broken pair of branches, never an
+                  # intentional breaking release: it fails the job, as any test does.
+                  Pkg.instantiate()
+                  Pkg.test()

@@ -985,8 +985,9 @@ downstream to RxInfer.
 **Decision: live with it.** It has been the situation for over a year; this rewrite resolves
 it rather than a separate fix. The resolution is a side effect of the split — the Pólya
 nodes move to their own package, which may be GPL-3, and ReactiveMP goes back to being
-honestly MIT. *(Done in Phase 6 step 6: only `PolyaMessagePassingRules` depends on the sampler;
-its `LICENSE` file comes with registration, Phase 8.)*
+honestly MIT. *(Done in Phase 6 step 6: only `PolyaMessagePassingRules` depends on the sampler.
+Every package under `lib/` has its `LICENSE` since 2026-10-02, MIT and Pólya's GPL-3, each
+package's dependencies checked; ReactiveMP and RxInfer load Pólya in their tests only.)*
 
 **Hard constraint: `MessagePassingRulesBase` must not depend on `ExponentialFamily`.**
 BayesBase exists precisely to hold this machinery. Where a needed piece is missing from
@@ -1586,4 +1587,5 @@ half-maintained copies that drift.
   single downstream test. Add a job pinning mutually compatible revisions of the new
   packages and their consumers, in which resolution failure is a hard failure. Start it as
   soon as compatible development revisions exist; Phase 8 requires it to pass for release.
+  *(The branch's job is strict since 2026-10-02; the job over registered revisions is Phase 8's.)*
 - End-to-end: RxInfer's test suite and RxInferExamples against the new packages.
