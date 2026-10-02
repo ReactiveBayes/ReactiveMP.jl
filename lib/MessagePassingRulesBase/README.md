@@ -29,4 +29,4 @@ getresult(result), getlogscale(result)   # (2.0, 0)
 - Tests: `make test-base`; `TEST_ALL=true make test-base` includes the items tagged `:slow`.
 - Depends on BayesBase, MacroTools, Compat, FastCholesky, IrrationalConstants and LinearAlgebra:
   no distribution package and no engine.
-  Julia 1.11 or later. MIT licence.
+  Julia 1.10 or later. MIT licence.

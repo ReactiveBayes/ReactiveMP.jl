@@ -45,7 +45,9 @@
     # Negative control: the body allocates, so the gate must see it.
     allocating() = getresult(message_passing_rule(Gauss, Target(:μ), DefaultAlgorithm(), OUT))
 
-    measure(f, args...) = (f(args...); @allocated f(args...))
+    # Specialised on `f`: Julia 1.10 and 1.11 do not specialise a function called through a
+    # splatted vararg, and the dynamic call would box its result.
+    measure(f::F, args::Vararg{Any, N}) where {F, N} = (f(args...); @allocated f(args...))
 end
 
 @testitem "gate:routing-macros" tags = [:base, :alloc] setup = [MacroGate] begin
@@ -71,7 +73,11 @@ end
     @test (@inferred G.one_rule()) === 3.0
     @test (@inferred G.indexed()) === 10.0
     @test G.two_rules(true) == 3.0 && G.two_rules(false) == 2.0
-    JET.@test_opt G.one_rule()
-    JET.@test_opt G.indexed()
-    JET.@test_opt G.inherited()
+    # JET 0.9, the last for Julia 1.10 and 1.11, fails inside its own report building; the
+    # allocation and inference checks above cover those versions.
+    @static if VERSION >= v"1.12"
+        JET.@test_opt G.one_rule()
+        JET.@test_opt G.indexed()
+        JET.@test_opt G.inherited()
+    end
 end
