@@ -39,6 +39,9 @@ const MVNG_OUT = "ReactiveMP.jl#676: v6's MvNormalGamma out rule drops tr(E[Λ] 
 # takes μ_in2 - μ_out, the generic rule's negation of the mean; `-` reaches it through its redirects.
 const ADDITION_SIGN = "ReactiveMP.jl#677: v6's `+` in1 rule for two weighted-mean normals computes E[in2] - E[out]; it is E[out] - E[in2], as v6's generic rule gives"
 # v6's `-` marginal shifts in2 by out - in1 when in1 is known; out = in1 - in2 gives in1 - out.
+# v6's log scale of Categorical's message towards `p` from a Categorical q(out) is -log K!, the
+# normaliser for a one-hot q only; the message p ↦ ∏ p_k^{q_k} integrates to B(q + 1).
+const CATEGORICAL_LOGSCALE = "v6's log scale of the message towards `p` from a Categorical q(out) is -log K!, right for a one-hot q only; the message p ↦ ∏ p_k^{q_k} integrates to B(q + 1), whose log is Σ_k log Γ(q_k + 1) - log K!, as a Monte Carlo estimate of the integral confirms"
 const SUBTRACTION_MARGINAL = "ReactiveMP.jl#678: v6's `-` marginal takes in2's likelihood at out - in1 for a known in1; it is in1 - out, as v6's own `-` in2 message rule gives"
 # v6's `*` `:in` log-scale for a scalar A is -logdet(a) = -log a; m(x) = N_out(a x) integrates
 # to |a|^(-d), so it is -d log |a|. They agree for d = 1 and a > 0; v6 throws for a < 0.
@@ -50,6 +53,9 @@ const WISHART = Wishart(4.0, [1.0 0.2; 0.2 0.5])
 # v6 returns a split cluster as a NamedTuple and the port as a `FactorizedCluster`; its shape
 # likelihood is v6's own type. Both are read as the port's before comparing.
 as_v7(node, v6::NamedTuple) = FactorizedCluster(v6_cluster_blocks(node, v6)...)
+# v7's `+` keys its terms' blocks by member, `(:in, 1)`, where v6 names them `in1`.
+v7_member(name::Symbol) = name === :in1 ? (:in, 1) : name === :in2 ? (:in, 2) : name
+as_v7(::typeof(+), v6::NamedTuple) = FactorizedCluster((map(v7_member, key) => value for (key, value) in v6_cluster_blocks(+, v6))...)
 # v6's MvNormalWeightedMeanPrecision marginal keys its blocks by its argument names, `m_out`
 # and so on (ReactiveMP.jl#674); the values are right, so the keys are read without the prefix.
 as_v7(::Type{MvNormalWeightedMeanPrecision}, v6::NamedTuple) =
@@ -107,7 +113,7 @@ const MESSAGE_CASES = [
     ("Categorical:out:q-dirichlet", Categorical, :out, (q = (p = Dirichlet([1.0, 3.0, 0.5]),),), false),
     ("Categorical:out:m-point-mass", Categorical, :out, (m = (p = PointMass([0.2, 0.8]),),), false),
     ("Categorical:out:q-point-mass", Categorical, :out, (q = (p = PointMass([0.2, 0.8]),),), false),
-    ("Categorical:p:q-categorical", Categorical, :p, (q = (out = Categorical([0.3, 0.2, 0.5]),),), false),
+    ("Categorical:p:q-categorical", Categorical, :p, (q = (out = Categorical([0.3, 0.2, 0.5]),),), CATEGORICAL_LOGSCALE),
     ("Categorical:p:q-one-hot", Categorical, :p, (q = (out = PointMass([0.0, 1.0, 0.0]),),), false),
     ("Dirichlet:out:m", Dirichlet, :out, (m = (a = PointMass([1.0, 2.0]),),), false),
     ("Dirichlet:out:q", Dirichlet, :out, (q = (a = PointMass([1.0, 2.0, 4.0]),),), false),
@@ -465,11 +471,22 @@ declared_reason(flagged::Bool) = NMV_669
 declared_reason(flagged::AbstractString) = flagged
 declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDisagreement(id; kind = :correction, reasoning = declared_reason(flagged))]
 
+# The cases name v6's interfaces. v7's `+` is n-ary: its terms are the group `in`, v6's `in1` and
+# `in2` the members 1 and 2, and a target term's own position holds `nothing`.
+v7_target(node, edge) = edge
+v7_target(::typeof(+), edge::Symbol) = edge === :in1 ? (:in, 1) : edge === :in2 ? (:in, 2) : edge
+v7_target(::typeof(+), members::Tuple) = members == (:in1, :in2) ? (:in,) : members
+v7_inputs(node, inputs::NamedTuple) = inputs
+function v7_inputs(::typeof(+), inputs::NamedTuple)
+    (haskey(inputs, :in1) || haskey(inputs, :in2)) || return inputs
+    return merge(Base.structdiff(inputs, NamedTuple{(:in1, :in2)}), (in = (get(inputs, :in1, nothing), get(inputs, :in2, nothing)),))
+end
+
 @testset "StandardMessagePassingRules against v6" begin
     @testset "message rules" begin
         for (id, node, edge, inputs, flagged) in MESSAGE_CASES
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
-            result = call_message_update_rule(node, edge; m, q)
+            result = call_message_update_rule(node, v7_target(node, edge); m = v7_inputs(node, m), q = v7_inputs(node, q))
             v7, v7_logscale = getresult(result), getlogscale(result)
             v6, v6_logscale = v6_message_update(v6_node(node), edge, m, q)
             # Where v6 has a log scale, v7's must agree; v7 also declares some v6 left out.
@@ -566,7 +583,7 @@ declare(id, flagged) = flagged === false ? DeclaredDisagreement[] : [DeclaredDis
     @testset "marginal rules" begin
         for (id, node, members, inputs, flagged) in MARGINAL_CASES
             m, q = get(inputs, :m, NamedTuple()), get(inputs, :q, NamedTuple())
-            v7 = getresult(call_marginal_update_rule(node, members; m, q))
+            v7 = getresult(call_marginal_update_rule(node, v7_target(node, members); m = v7_inputs(node, m), q = v7_inputs(node, q)))
             v6 = v6_marginal_update(v6_node(node), members, m, q)
             record = compare_with_reference(id, v7, as_v7(node, v6); inputs, node = string(node), target = string(members), declared = declare(id, flagged))
             @test (flagged !== false) == (record.outcome === :correction)
