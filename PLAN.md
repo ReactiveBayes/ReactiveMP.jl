@@ -1087,7 +1087,8 @@ The dispatch result, ownership contracts and early engine integration are separa
    keywords. See § Rule surface.
 2. **`aligned` generality** — everything in-tree is `k ↔ k`. `q[:p][f(k)]` extends
    naturally; don't build until something needs it. (Not `q[:p[f(k)]]`, which parses as
-   `(:p)[f(k)]` — indexing a `Symbol`. See § Rule surface.)
+   `(:p)[f(k)]` — indexing a `Symbol`. See § Rule surface.) **Not in this release** (user,
+   2026-10-02): maybe eventually, when a node needs it.
 3. ~~**Per-(target, factorisation) group selection.**~~ **RESOLVED at the Phase 3
    sign-off: per target.** No in-tree rule chooses group members from the factorisation —
    the mixtures reject anything but mean-field, and `Mixture` ignores the factorisation. Since
@@ -1250,7 +1251,8 @@ The dispatch result, ownership contracts and early engine integration are separa
     **Parked by the user until the late phases** — no proposal is on the table. The entry
     brief's `approx_cholinv`/`approx_cholsqrt` idea was set aside for further thought, not
     rejected; do not treat it as the plan. What is parked is the rules' and the numerics'
-    direct FastCholesky calls; no context service stands in for it.
+    direct FastCholesky calls; no context service stands in for it. **Not before the release**
+    (user, 2026-10-02): maybe after it, beside StableCholesky (#5).
 
 14. ~~**A complete disposition inventory is missing.**~~ **RESOLVED in Phase P.**
     `INVENTORY.md` assigns a destination or a deliberate deletion to all **231** entities —
