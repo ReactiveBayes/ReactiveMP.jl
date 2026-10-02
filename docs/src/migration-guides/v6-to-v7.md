@@ -880,6 +880,14 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   in turn, each against the others' latest projections, where v6 used the previous proposal for
   all: its results differ from v6's, and on a posterior with several modes it settles on one
   where v6's alternated.
+- **The Delta node's joint marginal over its inputs** is right for a function with more outputs
+  than inputs, and so is the message towards an input when no inverse is given. Its smoothing
+  step, [`smoothRTS`](@extref MessagePassingRulesApproximations.smoothRTS), conditions on the
+  message from `out` without inverting the forward covariance of `out`, which a linearisation of
+  such a function makes singular: three distances of a position in the plane vary in two
+  directions only. v6's inverted it, and its marginal was wrong and asymmetric, with FastCholesky
+  warning that a matrix is not symmetric. Where that covariance is invertible, the results are the
+  same.
 
 A random variable's outbound messages change under a form constraint on messages:
 

@@ -2001,6 +2001,20 @@ Migrated: SoftDot's four mean-field rules and its mean-field energy (variate for
 Probit's two expectation-propagation rules, Categorical's one-hot rule towards `p`, Bernoulli's
 `Categorical` rule towards `p` and Uniform's energy.
 
+### 3.55 `smoothRTS` does not invert the forward covariance (user, 2026-10-02)
+
+The super check found RxInferExamples' Nonlinear Sensor Fusion printing 602 FastCholesky warnings
+that a matrix is not symmetric, all from its `Linearization()` inference, whose estimates were off
+by 1 130 m where `Unscented()`'s were off by 2.8 m. v6 gives the same numbers: its notebook never ran
+that inference. Three distances of a position in the plane vary in two directions only, so a
+linearisation's forward covariance `V_tilde` of `out` is singular, and `smoothRTS` (ForneyLab's RTS
+step) inverted it; its guard caught a determinant of exactly zero only. The update needs no such
+inverse: conditioning the joint normal on the backward message gives `m_in = m_fw + K (m_bw -
+m_tilde)` and `V_in = V_fw - K Cᵀ` with `K = C (V_tilde + V_bw)⁻¹`, equal to the old formula
+wherever `V_tilde` is invertible. With it, linearisation tracks the robot as the unscented
+transform does. Decided (user): fix it in v7, leave v6 as it is, and show both methods in the
+example without calling either a failure.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -2138,6 +2152,11 @@ Claims the assistant made that were **wrong** and should not be revived:
     it."** Not in the documented form (2026-10-02). In `cond || "...$(x)"` the string is after
     `||`, so a passing call never builds it: measured 0 bytes and 0.46 ns, eager or lazy, against
     0.45 ns with no check. The trap is a message built before or regardless of the condition. §3.54.
+32. **"Linearization loses WALL-E in Nonlinear Sensor Fusion because it only sees the local slope
+    of the distances."** No (2026-10-02). The port's commit and text said so; the failure was
+    `smoothRTS` inverting a singular forward covariance. With the inverse-free update the two
+    methods track the robot equally well. A method's bad result is a reason to check the
+    numerics before explaining it by the method. §3.55.
 
 ---
 

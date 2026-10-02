@@ -18,14 +18,18 @@ N\left(\begin{pmatrix} m_{\mathrm{in}} \\ \tilde{m} \end{pmatrix},
 \begin{pmatrix} V_{\mathrm{in}} & C \\ C^\top & \tilde{V} \end{pmatrix}\right).
 ```
 
-A backward normal ``N(m_{\mathrm{bw}}, V_{\mathrm{bw}})`` on `out` multiplies the forward one,
-which gives the corrected belief ``N(m_{\mathrm{out}}, V_{\mathrm{out}})`` about `out`. The
-correction then passes to `in` through the gain ``D = C \tilde{V}^{-1}``:
+A backward normal ``N(m_{\mathrm{bw}}, V_{\mathrm{bw}})`` on `out` acts as a noisy observation of
+`out`, and conditioning the joint normal on it corrects the belief about `in`. The correction
+passes through the gain ``K = C (\tilde{V} + V_{\mathrm{bw}})^{-1}``:
 
 ```math
-m'_{\mathrm{in}} = m_{\mathrm{in}} + D (m_{\mathrm{out}} - \tilde{m}), \qquad
-V'_{\mathrm{in}} = V_{\mathrm{in}} + D (V_{\mathrm{out}} - \tilde{V}) D^\top.
+m'_{\mathrm{in}} = m_{\mathrm{in}} + K (m_{\mathrm{bw}} - \tilde{m}), \qquad
+V'_{\mathrm{in}} = V_{\mathrm{in}} - K C^\top.
 ```
+
+Only ``\tilde{V} + V_{\mathrm{bw}}`` is inverted. ``\tilde{V}`` itself may be singular: a
+linearisation of a `g` with more outputs than inputs makes it so, since three outputs of two
+inputs vary in two directions only.
 
 For an affine `g` the result is the exact posterior of `in`. For `out = 2in + 1`, with `in`
 normal with mean `1` and variance `0.5`, and a backward normal on `out` with mean `4` and

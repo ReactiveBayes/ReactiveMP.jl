@@ -99,3 +99,25 @@ end
         ],
     )
 end
+
+@testitem "rules:Delta:linearization:marginals into more outputs than inputs" tags = [:rules] setup = [DeltaTestNode] begin
+    using DeltaMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesApproximations, ExponentialFamily
+    using .DeltaTestNode: context
+    linearized = DeltaApproximation(method = Linearization())
+
+    # Three outputs of two inputs: the linearisation's forward covariance of `out` has rank 2. For
+    # an affine map the joint marginal is the exact posterior of `in` given the message on `out`.
+    A, b = [1 2; -1 1; 0 -1], [1, -1, 2]
+    f(x) = A * x .+ b
+    m_in, V_in = [1.0, -2.0], [2.0 0.5; 0.5 1.0]
+    m_out, V_out = [3.0, 1.0, -0.5], [1.0 0.2 0.0; 0.2 0.5 0.1; 0.0 0.1 2.0]
+    Λ = inv(V_in) + A' * inv(V_out) * A
+    posterior = MvNormalMeanCovariance(Λ \ (V_in \ m_in + A' * (V_out \ (m_out - b))), inv(Λ))
+
+    @test_marginal_update_rule(
+        node = DeltaFn, target = (:in,), algorithm = linearized,
+        cases = [
+            (m = (out = MvNormalMeanCovariance(m_out, V_out), in = (MvNormalMeanCovariance(m_in, V_in),)), ctx = context(f)) => JointNormal(posterior, ((2,),)),
+        ],
+    )
+end
