@@ -21,10 +21,6 @@ end
 # Entries of the same kind are OR'ed together; different kinds are AND'ed. So
 # `test_args="tag:engine name:MessageMapping"` runs the engine tests whose names mention MessageMapping.
 #
-# TestItemRunner's filter already receives `(filename, name, tags)` -- this file previously
-# chose to look at `filename` alone, which is why name and tag selection appeared to need a
-# different runner. It did not.
-#
 # `:slow` items are skipped by default, so `make test` is the fast local subset. CI sets
 # TEST_ALL=true and therefore runs everything; `make test-all` does the same locally. A
 # filter that names `tag:slow` explicitly also runs them.

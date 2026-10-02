@@ -119,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `compat/v6-comparison/`, a pinned environment holding `ReactiveMP@6.5.0` from the registry, in which the Phase 4 migration checker will run a v6 rule and a v7 rule on identical inputs in one process. Its `Manifest.toml` is tracked so the pin is reproducible.
 
 ### Changed
+- The root suite's `runtests.jl` drops a remark about how an earlier version of it filtered (user); its comments describe the filter as it is.
 - `IntegrationTest.yml` fails when RxInfer's branch cannot resolve against this checkout (user), where it reported success: the downstream reaches it through `[sources]`, so a resolver error is a broken pair of branches, not an intentional breaking release.
 - The working documents record PLAN's open items #2 (`q[:p][f(k)]`) and #13 (the approximations' numerical protocol) as after the release (user), rows of the not-done table they were missing from.
 - SoftDot's mean-field rules and average energy, Probit's expectation-propagation rules towards `in` and `q(out, in)`, Categorical's rule towards `p` from a point mass, Bernoulli's from a `Categorical` and Uniform's average energy check their inputs with `args_check` and raise a `RuleInputError` (user), where they threw an `ArgumentError` from the body (Probit, Categorical, Bernoulli, Uniform) or a `MethodError` or `DimensionMismatch` from deep inside (SoftDot, given a multivariate `y`, or `θ` and `x` of different variate forms).
