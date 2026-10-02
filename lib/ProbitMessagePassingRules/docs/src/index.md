@@ -160,7 +160,8 @@ true
 
 - `in` is univariate; there are no multivariate rules.
 - The value on `out` must lie in `[0, 1]`; the expectation-propagation rules towards `in` and
-  the joint marginal throw an `ArgumentError` otherwise.
+  the joint marginal check it and throw a
+  [`RuleInputError`](@extref MessagePassingRulesBase.RuleInputError) otherwise.
 - The joint marginal `q(out, in)` exists only under [`ProbitEP`](@ref) and only for a point-mass
   `out`.
 - Under `DefaultAlgorithm`, the mean-field rules take point-mass marginals only (`q(in)`

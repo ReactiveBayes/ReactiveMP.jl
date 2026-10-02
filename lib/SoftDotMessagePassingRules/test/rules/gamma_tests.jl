@@ -1,5 +1,6 @@
 @testitem "rules:SoftDot:γ" tags = [:rules] begin
     using SoftDotMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using MessagePassingRulesBase: RuleInputError
     using LinearAlgebra: I
 
     # Semi-exhaustive combinations of input types, labelled y, θ, x by
@@ -38,18 +39,18 @@
         )
     end
 
-    # TODO: these errors have to be caught in the implementations themselves. The error type and
-    # message itself will not provide any information or might not match. The rules take any
-    # marginal, so a rule is found and fails inside.
+    # The mean-field rules take any marginal; their `args_check` refuses the wrong shapes.
     @testset "VMP: Incorrect Inputs" begin
         to_γ(q) = getresult(call_message_update_rule(SoftDot, :γ; q))
         # 2**: INCORRECT (y cannot be Mv)
-        @test_throws DimensionMismatch to_γ((y = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), θ = NormalMeanVariance(7.0, 11.0), x = NormalMeanVariance(13.0, 5.0)))
+        @test_throws RuleInputError to_γ((y = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), θ = NormalMeanVariance(7.0, 11.0), x = NormalMeanVariance(13.0, 5.0)))
+        @test_throws "`y` must be univariate" to_γ((y = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), θ = NormalMeanVariance(7.0, 11.0), x = NormalMeanVariance(13.0, 5.0)))
+        @test_throws "`θ` and `x` must be both univariate or both multivariate" to_γ((y = NormalMeanVariance(3.0, 7.0), θ = PointMass(7.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0])))
         # *02, *20, *12, *21: INCORRECT (θ and x have to have the same dimensions)
-        @test_throws MethodError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = PointMass(7.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0])))
-        @test_throws MethodError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = PointMass(7.0)))
-        @test_throws MethodError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = NormalMeanVariance(7.0, 11.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0])))
-        @test_throws MethodError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = NormalMeanVariance(7.0, 11.0)))
+        @test_throws RuleInputError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = PointMass(7.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0])))
+        @test_throws RuleInputError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = PointMass(7.0)))
+        @test_throws RuleInputError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = NormalMeanVariance(7.0, 11.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0])))
+        @test_throws RuleInputError to_γ((y = NormalMeanVariance(3.0, 7.0), θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = NormalMeanVariance(7.0, 11.0)))
     end
 
     @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any)" begin

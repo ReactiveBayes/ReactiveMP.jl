@@ -122,6 +122,14 @@ MessagePassingRulesBase.RuleNotFound
 MessagePassingRulesBase.rule_not_found_hint
 ```
 
+A rule that was found can still refuse its inputs, when they fail the check its definition
+declares with `args_check` ([Checking inputs](@ref rules-checking-inputs)). The call then throws a
+[`RuleInputError`](@ref), which names the rule and says why.
+
+```@docs
+MessagePassingRulesBase.RuleInputError
+```
+
 ## Resolving without the interactive layer
 
 Code that builds its own [`RuleArgs`](@ref) resolves a rule with the `find_*` functions. They

@@ -41,6 +41,8 @@ What it declares, read as fields:
 - `logscale`: what a message rule declares about its result's log scale: `nothing` for none, a
   number, a function, or [`from_body`](@ref); `reads_logscale`: whether it reads its inbound
   messages' log scales;
+- `args_check`: the source of the check its inputs must pass as its body starts, or `nothing`
+  for none (the definition macros' `args_check` keyword; a failure is a [`RuleInputError`](@ref));
 - `source`, `file`, `line`: its body's source and where it was defined.
 
 The other fields are internal: `signature`, the [`RuleArgs`](@ref) type it dispatches on;
@@ -66,6 +68,7 @@ struct RuleSpec{B, P, S, L, A}
     services::Tuple{Vararg{Symbol}}
     logscale::L
     reads_logscale::Bool
+    args_check::Union{Nothing, String}
     source::String
     file::Symbol
     line::Int
@@ -76,7 +79,8 @@ function RuleSpec(;
         inputs::Tuple{Vararg{InputSpec}} = (),
         prealloc = nothing, scratch = nothing, default::Bool = false, inplace::Bool = false, pure::Union{Nothing, Bool} = nothing,
         annotates::Bool = true,
-        services::Tuple{Vararg{Symbol}} = (), logscale = nothing, reads_logscale::Bool = false, source::AbstractString = "",
+        services::Tuple{Vararg{Symbol}} = (), logscale = nothing, reads_logscale::Bool = false,
+        args_check::Union{Nothing, AbstractString} = nothing, source::AbstractString = "",
         file::Symbol = :none, line::Integer = 0,
     )
     kind in (:message, :marginal, :average_energy) ||
@@ -90,7 +94,7 @@ function RuleSpec(;
     effective = something(pure, algorithm <: AbstractAlgorithm ? ispure(algorithm) : true)
     return RuleSpec(
         kind, node, target, algorithm, signature, inputs, body, prealloc, scratch, default, inplace, effective,
-        annotates, services, logscale, reads_logscale, String(source), file, Int(line),
+        annotates, services, logscale, reads_logscale, args_check === nothing ? nothing : String(args_check), String(source), file, Int(line),
     )
 end
 
@@ -344,6 +348,65 @@ caller does not track them.
                 "pass them to a call as `logscale = (name = value, ...)`, or have the engine track them (ReactiveMP's activation option `logscales = true`, RxInfer's `infer(...; logscales = true)`)",
         ),
     )
+    return nothing
+end
+
+"""
+    RuleInputError <: Exception
+
+A rule refused its inputs: their types matched its `args`, so it was selected, but they failed the
+check its definition declares with the `args_check` keyword. Its message names the rule, its node,
+target and algorithm, where it is defined, the inputs it was given, and why: the string the check
+returned, or, where it returned `false`, the check's own source.
+
+A failed check is an error, not a reason to select another rule: resolution has already chosen
+this one. A rule whose inputs a check refuses would compute something wrong or fail inside its
+body; the error says so where it happens.
+
+Fields: `rule`, the [`RuleSpec`](@ref); `reason`, the string the check returned, or `nothing`
+where it returned `false`; `args`, the [`RuleArgs`](@ref) it was given.
+"""
+struct RuleInputError{R <: RuleSpec, A} <: Exception
+    rule::R
+    reason::Union{Nothing, String}
+    args::A
+end
+
+# The check's result: `true` passes; `false` fails, reported with the check's source; a string fails,
+# reported with that string. Folded at compile time where the check depends on types only.
+@inline args_check_passed(result::Bool) = result
+@inline args_check_passed(::AbstractString) = false
+@inline args_check_passed(result) = false
+
+# Run a rule's check on its inputs. The error path is outlined, so a rule pays a branch at most,
+# and nothing where the check folds.
+@inline function require_args_check(result, spec, args)
+    args_check_passed(result) || throw_rule_input_error(result, spec, args)
+    return nothing
+end
+
+@noinline throw_rule_input_error(result::Bool, spec, args) = throw(RuleInputError(spec, nothing, args))
+@noinline throw_rule_input_error(result::AbstractString, spec, args) = throw(RuleInputError(spec, String(result), args))
+@noinline throw_rule_input_error(result, spec, args) = throw(
+    ArgumentError("the `args_check` of the $(rule_heading(spec)) returned a $(typeof(result)); it returns `true` when the inputs pass, and `false` or a string saying why when they do not"),
+)
+
+Base.showerror(io::IO, err::RuleInputError) = print(io, prettify_modules(sprint(show_rule_input_error, err; context = io)))
+
+function show_rule_input_error(io::IO, err::RuleInputError)
+    spec = err.rule
+    print(io, "RuleInputError: the ", rule_heading(spec), " refuses its inputs: ")
+    if err.reason === nothing
+        print(io, "`", something(spec.args_check, "args_check"), "` is false")
+    else
+        print(io, err.reason)
+    end
+    provided = provided_inputs(err.args)
+    if provided !== nothing
+        labels = [input_label(c, k, k isa Tuple ? :cluster : :single) * "::" * string(t) for (c, k, t) in provided]
+        print(io, "\n  inputs: ", join(labels, ", "))
+    end
+    print(io, "\n  rule at ", source_location(spec.file, spec.line))
     return nothing
 end
 

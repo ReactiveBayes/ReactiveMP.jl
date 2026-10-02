@@ -184,7 +184,8 @@ its probability is the mean `2/5`. The variational rule from a `Beta(2, 3)` marg
 @call_message_update_rule(node = Bernoulli, target = :out, q = (p = Beta(2.0, 3.0),))
 ```
 
-A `Categorical` marginal of `out` with other than two categories is an `ArgumentError`.
+A `Categorical` marginal of `out` with other than two categories is a
+[`RuleInputError`](@extref MessagePassingRulesBase.RuleInputError).
 
 ## Categorical
 
@@ -220,8 +221,8 @@ The variational message towards `out` from a `Dirichlet` marginal of `p` normali
 ```
 
 **Limitations.** The rules towards `p` take the marginal of `out` only, a `Categorical` or a
-one-hot `PointMass`, and give a `Dirichlet`. Any other marginal, or a `PointMass` that is not
-one-hot, is an `ArgumentError`. There is no rule towards `p` from a message on `out`. The
+one-hot `PointMass`, and give a `Dirichlet`. Any other marginal is an `ArgumentError`, and a
+`PointMass` that is not one-hot a [`RuleInputError`](@extref MessagePassingRulesBase.RuleInputError). There is no rule towards `p` from a message on `out`. The
 variational message towards `out` keeps every probability above `tiny`.
 
 ## Dirichlet
@@ -299,6 +300,6 @@ MessagePassingRulesBase.rule_coverage(Uniform)
 ```
 
 **Limitations.** No rules towards `a` or `b`, and no marginal rule. The average energy is
-defined only for `Uniform(0, 1)` with a `Beta` marginal of `out`, and is an `ArgumentError` for
-other bounds. The package defines the product of `Uniform(0, 1)` and a `Beta`, two types of other
+defined only for `Uniform(0, 1)` with a `Beta` marginal of `out`, and is a
+[`RuleInputError`](@extref MessagePassingRulesBase.RuleInputError) for other bounds. The package defines the product of `Uniform(0, 1)` and a `Beta`, two types of other
 packages, as the `Beta`. For any other bounds the product is an `ArgumentError`.

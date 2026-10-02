@@ -1,5 +1,6 @@
 @testitem "rules:SoftDot:θ" tags = [:rules] begin
     using SoftDotMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using MessagePassingRulesBase: RuleInputError
     using LinearAlgebra: I
 
     # Semi-exhaustive combinations of input types, labelled y, x, γ by
@@ -38,17 +39,14 @@
         )
     end
 
-    # TODO: these errors have to be caught in the implementations themselves. The error type and
-    # message itself will not provide any information or might not match. The rule takes any
-    # marginal, so it is found and fails inside.
+    # The mean-field rules take any marginal; their `args_check` refuses the wrong shapes.
     @testset "VMP: Incorrect Inputs" begin
         # 2**: INCORRECT (y cannot be Mv)
-        @test_throws MethodError getresult(
+        @test_throws RuleInputError getresult(
             call_message_update_rule(
                 SoftDot, :θ; q = (y = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = NormalMeanVariance(7.0, 11.0), γ = GammaShapeScale(13.0, 5.0)),
             )
         )
-        # NOTE: γ can theoretically be Any, so also NormalMeanVariance
     end
 
     @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any)" begin

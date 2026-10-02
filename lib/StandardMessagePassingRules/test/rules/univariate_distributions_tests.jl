@@ -53,7 +53,7 @@ end
         node = Bernoulli, target = :p, float_types = (Float32, Float64),
         cases = [(q = (out = Categorical([0.7, 0.3]),),) => Beta(13 / 10, 17 / 10)],
     )
-    @test_throws ArgumentError getresult(call_message_update_rule(Bernoulli, :p; q = (out = Categorical([0.2, 0.3, 0.5]),)))
+    @test_throws "`q(out)` must have two categories, the support {0, 1}; got 3" getresult(call_message_update_rule(Bernoulli, :p; q = (out = Categorical([0.2, 0.3, 0.5]),)))
     @test_marginal_update_rule(
         node = Bernoulli, target = (:out, :p),
         cases = [
@@ -187,6 +187,7 @@ end
     @test_message_update_rule(node = Uniform, target = :out, cases = [(m = (a = PointMass(2.0), b = PointMass(3.0)),) => Uniform(2.0, 3.0)])
 
     @test getresult(call_average_energy(Uniform; q = (out = Beta(0.3, 0.7), a = PointMass(0.0), b = PointMass(1.0)))) == 0.0
+    @test_throws MessagePassingRulesBase.RuleInputError call_average_energy(Uniform; q = (out = Beta(0.3, 0.7), a = PointMass(0.0), b = PointMass(2.0)))
     @test BayesBase.default_prod_rule(Uniform, Beta) == PreserveTypeProd(Distribution)
     @test prod(PreserveTypeProd(Distribution), Uniform(0.0, 1.0), Beta(2.0, 5.0)) === Beta(2.0, 5.0)
     @test_throws ArgumentError prod(PreserveTypeProd(Distribution), Uniform(0.0, 2.0), Beta(2.0, 5.0))

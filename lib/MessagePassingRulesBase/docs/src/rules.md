@@ -318,6 +318,59 @@ MessagePassingRulesBase.hasannotation
 MessagePassingRulesBase.getannotation
 ```
 
+## [Checking inputs](@id rules-checking-inputs)
+
+A rule's `args` say which types its inputs have. Some rules need more: a probability between 0
+and 1, a vector of a given length, a univariate marginal where the rule takes `Any`. The
+`args_check` keyword checks that as the body starts. It is a function of the inputs, over the
+same slots as [`logscale`](@ref keyword-message-logscale), `(algo, ctx, args)`, and returns:
+
+- `true` when the inputs pass;
+- `false` when they do not, and the rule raises a [`RuleInputError`](@ref) that quotes the check's
+  source;
+- a string when they do not, and the error says that instead. Return one when the check combines
+  several conditions, whose source would read poorly, or when the message should name the
+  offending value.
+
+```@example rules-checks
+using MessagePassingRulesBase, BayesBase, ExponentialFamily
+
+struct Coin end   # f(out, p) = Bernoulli(out | p)
+@define_factor_node(node = Coin, type = Stochastic, interfaces = [:out, :p])
+
+@define_message_update_rule(
+    node = Coin, target = :out, args = (m[:p]::PointMass,),
+    args_check = (args) -> 0 <= mean(args.m[:p]) <= 1 || lazy"`p` is a probability, between 0 and 1; got $(mean(args.m[:p]))",
+    body = (args) -> Bernoulli(mean(args.m[:p])),
+)
+
+try
+    @call_message_update_rule(node = Coin, target = :out, m = (p = PointMass(1.5),))
+catch err
+    print(first(split(sprint(showerror, err), "\n  rule at")))
+end
+```
+
+The check runs wherever the rule runs: in an engine, in a call by hand and in a test. A failed
+check is an error, not a reason to select another rule, since resolution has already chosen this
+one. A combination of inputs a node does not support at all is a rule of its own whose body raises
+the error, found by dispatch like any other.
+
+**Cost.** A check that reads only the inputs' types, such as
+`args_check = (args) -> variate_form(typeof(args.q[:y])) === Univariate`, costs nothing: the rule
+is compiled for those types, and the check folds away. A check that reads a value costs one
+comparison. The error path is outlined, so the rule allocates nothing until a check fails. A
+rule with a [`preallocate`](@ref keyword-message-preallocate) or
+[`scratch`](@ref keyword-message-scratch) helper runs it first: the check guards the body, not
+the helpers.
+
+**Performance trap.** Build the message only where the check fails. Placed after `||`, as above,
+it is: `cond || "...$(x)"` builds nothing on a passing call, and costs what the plain condition
+does. A message bound before the condition, `msg = "...$(x)"; cond || msg`, or formatted by a
+helper before it decides, is built on every call and allocates there. Writing it as a
+`lazy"..."` string is the safe habit: the formatting waits until the error is shown, wherever the
+string is made.
+
 ## Working types
 
 A rule may compute in a type chosen for the arithmetic rather than for the reader. It then

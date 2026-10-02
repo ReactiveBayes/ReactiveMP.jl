@@ -14,8 +14,6 @@ end
 @define_average_energy(
     node = Uniform,
     args = (q[:out]::Beta, q[:a]::PointMass, q[:b]::PointMass),
-    body = (args) -> begin
-        (mean(args.q[:a]), mean(args.q[:b])) == (0, 1) || throw(ArgumentError("a and b must be equal to 0 and 1 respectively"))
-        zero(paramfloattype(args.q[:out]))
-    end,
+    args_check = (args) -> (mean(args.q[:a]), mean(args.q[:b])) == (0, 1) || lazy"the bounds must be 0 and 1; got $(mean(args.q[:a])) and $(mean(args.q[:b]))",
+    body = (args) -> zero(paramfloattype(args.q[:out])),
 )

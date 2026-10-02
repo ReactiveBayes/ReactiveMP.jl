@@ -124,7 +124,9 @@ true
   factorisation, mean-field or `q(y, x)q(θ)q(γ)`. It also needs initial marginals where the
   schedule reads them before they are computed.
 - No rules for other factorisations, such as a joint over `θ` and `x` or over `y` and `θ`.
-- `y` is a scalar: a vector-valued output needs one node per component.
+- `y` is a scalar: a vector-valued output needs one node per component. The mean-field rules
+  and energy check it, and that `θ` and `x` are both univariate or both multivariate, and throw a
+  [`RuleInputError`](@extref MessagePassingRulesBase.RuleInputError) otherwise.
 - The rules take normal marginals and messages on `y`, `θ` and `x` and a gamma-like marginal on
   `γ` (anything with a mean, and a mean of the logarithm for the energy).
 

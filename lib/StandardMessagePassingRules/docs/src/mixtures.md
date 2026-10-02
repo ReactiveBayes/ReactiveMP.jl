@@ -78,12 +78,14 @@ The message towards `switch` compares the expected log-density of `out` under ea
 ```
 
 The message towards the first mean, `(:m, 1)`, is a normal around `E[out]`. Its precision is
-`E[p₁]`, weighted by the switch's probability of the first component, `0.9 × 2`:
+`E[p₁]`, weighted by the switch's probability of the first component, `0.9 × 2`. The rule reads
+only the first precision, `q[:p][k]`, so the call passes `nothing` for the second, as a graph
+does:
 
 ```@example mixtures
 @call_message_update_rule(
     node = NormalMixture, target = (:m, 1),
-    q = (out = PointMass(0.5), switch = Categorical([0.9, 0.1]), p = (GammaShapeRate(2.0, 1.0), GammaShapeRate(2.0, 1.0))),
+    q = (out = PointMass(0.5), switch = Categorical([0.9, 0.1]), p = (GammaShapeRate(2.0, 1.0), nothing)),
 )
 ```
 

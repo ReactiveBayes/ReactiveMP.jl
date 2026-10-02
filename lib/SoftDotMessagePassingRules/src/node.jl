@@ -43,6 +43,7 @@ softdot_energy(q_γ, expected_square) = (-mean(log, q_γ) + log2π + mean(q_γ) 
 
 @define_average_energy(
     node = SoftDot, args = (q[:y]::Any, q[:θ]::Any, q[:x]::Any, q[:γ]::Any),
+    args_check = (args) -> check_y_θ_x(args.q[:y], args.q[:θ], args.q[:x]),
     body = (args) -> begin
         m_y, V_y = mean_cov(args.q[:y])
         m_θ, V_θ = mean_cov(args.q[:θ])

@@ -47,7 +47,8 @@ end
             [(m = (out = Bernoulli(0.5), in = c),) => NormalWeightedMeanPrecision(0.0, 1.0 * tiny) for c in cavities],
         ),
     )
-    @test_throws ArgumentError getresult(call_message_update_rule(Probit, :in; m = (out = PointMass(2.0), in = NormalMeanVariance(1.0, 0.5))))
+    @test_throws MessagePassingRulesBase.RuleInputError getresult(call_message_update_rule(Probit, :in; m = (out = PointMass(2.0), in = NormalMeanVariance(1.0, 0.5))))
+    @test_throws "the value on `out` must lie in [0, 1]; got -0.5" getresult(call_marginal_update_rule(Probit, (:out, :in); m = (out = PointMass(-0.5), in = NormalMeanVariance(1.0, 0.5))))
 end
 
 @testitem "rules:Probit:in, belief propagation" tags = [:rules] begin

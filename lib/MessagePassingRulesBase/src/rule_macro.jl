@@ -2,10 +2,11 @@ const BODY_SLOTS = (:output, :scratch, :algo, :ctx, :args, :ann)
 const PREALLOCATE_SLOTS = (:algo, :ctx, :args)
 const SCRATCH_SLOTS = PREALLOCATE_SLOTS
 const LOGSCALE_SLOTS = PREALLOCATE_SLOTS
+const ARGS_CHECK_SLOTS = PREALLOCATE_SLOTS
 
-const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx, :logscale, :reads_logscale)
-const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx)
-const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx)
+const MESSAGE_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx, :logscale, :reads_logscale, :args_check)
+const MARGINAL_KEYWORDS = (:node, :target, :algorithm, :args, :body, :inplace, :preallocate, :scratch, :pure, :ctx, :args_check)
+const AVERAGE_ENERGY_KEYWORDS = (:node, :algorithm, :args, :body, :pure, :ctx, :args_check)
 
 # Parts of the definition macros' docstrings that several share, written once and interpolated.
 
@@ -112,11 +113,36 @@ const DOC_RULE_PURE = rstrip(
     """
 )
 
+const DOC_RULE_ARGS_CHECK = rstrip(
+    """
+    - `args_check`: a check of the inputs, run as the body starts, for what their types cannot say:
+      a value in range, a vector's length, a variate form an `Any` input must have. A function over
+      the slots `(algo, ctx, args)`, in that order, returning
+      - `true` when the inputs pass;
+      - `false` when they do not: the rule raises a [`RuleInputError`](@ref) quoting the check's
+        source, `args_check = (args) -> length(mean(args.q[:out])) == 2`;
+      - a string when they do not, and the error says that instead: for a check that combines
+        several conditions, whose source would read poorly, or that names the offending value,
+        `args_check = (args) -> 0 <= mean(args.m[:out]) <= 1 || lazy"a probability in [0, 1]; got \$(mean(args.m[:out]))"`.
+      A string is always a failure. A failed check is an error, not a reason to select another rule:
+      resolution has already chosen this one.
+
+      The check costs nothing where it depends on the inputs' types only, since it folds away when
+      the rule is compiled for them, and one comparison where it reads a value; its error path is
+      outlined, so it allocates nothing until it fails. It runs after a `preallocate` or `scratch`
+      helper, which see the same inputs. **Performance trap**: build the message only where the
+      check fails. After `||` it is: `cond || "...\$x"` builds nothing on a passing call. A message
+      bound before the condition, or formatted by a helper before it decides, is built and
+      allocated on every call. A `lazy"..."` string is the safe habit, since it defers the
+      formatting until the error is shown. Default: none.
+    """
+)
+
 """
     @define_message_update_rule(
         node = ..., target = ..., args = (...), body = (...) -> ...,
         algorithm = ..., logscale = ..., reads_logscale = ..., ctx = (...),
-        inplace = ..., preallocate = ..., scratch = ..., pure = ...,
+        inplace = ..., preallocate = ..., scratch = ..., pure = ..., args_check = ...,
     )
 
 Define the rule for the message a node sends towards one of its interfaces. The macro takes
@@ -134,7 +160,7 @@ $(DOC_RULE_NODE)
 - `target`: the interface the message goes to:
   - `:out`, a single interface;
   - `(:m, k)`, any member of the group `m`. The name `k` is bound to the member's index, an
-    `Int`, in `body` and in the `preallocate`, `scratch` and `logscale` functions, without being
+    `Int`, in `body` and in the `preallocate`, `scratch`, `logscale` and `args_check` functions, without being
     listed among their parameters; `args` can select by it.
 
 $(DOC_RULE_ARGS)
@@ -175,6 +201,8 @@ $(DOC_RULE_SCRATCH)
 
 $(DOC_RULE_PURE)
 
+$(DOC_RULE_ARGS_CHECK)
+
 # Examples
 
 ```julia
@@ -204,6 +232,7 @@ end
     @define_marginal_update_rule(
         node = ..., target = (:y, :x), args = (...), body = (...) -> ...,
         algorithm = ..., ctx = (...), inplace = ..., preallocate = ..., scratch = ..., pure = ...,
+        args_check = ...,
     )
 
 Define the rule for the joint marginal of a structural cluster: the marginal of, say,
@@ -249,6 +278,8 @@ $(DOC_RULE_SCRATCH)
 
 $(DOC_RULE_PURE)
 
+$(DOC_RULE_ARGS_CHECK)
+
 # Example
 
 ```julia
@@ -265,7 +296,7 @@ macro define_marginal_update_rule(args...)
 end
 
 """
-    @define_average_energy(node = ..., args = (...), body = (...) -> ..., algorithm = ..., ctx = (...), pure = ...)
+    @define_average_energy(node = ..., args = (...), body = (...) -> ..., algorithm = ..., ctx = (...), pure = ..., args_check = ...)
 
 Define a node's average energy, `E_q[-log f]` under the marginals of its clusters: the node's
 term of the Bethe free energy before the clusters' entropies are subtracted. The macro takes
@@ -306,6 +337,8 @@ $(DOC_RULE_ALGORITHM)
 $(DOC_RULE_CTX)
 
 $(DOC_RULE_PURE)
+
+$(DOC_RULE_ARGS_CHECK)
 
 # Example
 
@@ -424,6 +457,22 @@ function define_rule_expr(kind, source, macroargs)
         end
     end
 
+    # A check of the inputs, run as the body starts; its error path is outlined (`require_args_check`).
+    check_defs = []
+    check_call = nothing
+    check_source = nothing
+    if haskey(keywords, :args_check)
+        declaration = keywords[:args_check]
+        (declaration isa Expr && declaration.head === :->) ||
+            error("@$name: `args_check` is a function of the inputs, `args_check = (args) -> ...`, returning `true` when they pass, and `false` or a string saying why when they do not")
+        ck_slots = parse_slots(name, declaration, ARGS_CHECK_SLOTS; what = "args_check")
+        user_ck = gensym(:args_check)
+        ck_passed = [adapter_args[findfirst(==(slot), BODY_SLOTS)] for slot in ck_slots]
+        push!(check_defs, :(const $user_ck = $(append_parameter(declaration, index_name))))
+        check_call = :($user_ck($(ck_passed...), $(index_arg...)))
+        check_source = string(MacroTools.prettify(lambda_body(declaration); alias = false))
+    end
+
     algorithm_type = haskey(keywords, :algorithm) ? :($algorithm_dispatch_type($(keywords[:algorithm]))) :
         :(typeof($default_algorithm($node)))
     # A rule over the default scheme's inputs takes any arguments for its node, target and
@@ -462,6 +511,7 @@ function define_rule_expr(kind, source, macroargs)
         $(prealloc_defs...)
         $(scratch_defs...)
         $(logscale_defs...)
+        $(check_defs...)
         const $spec_sym = $RuleSpec(
             kind = $(QuoteNode(kind)),
             node = $node,
@@ -469,7 +519,10 @@ function define_rule_expr(kind, source, macroargs)
             algorithm = $algorithm_sym,
             signature = $signature_sym,
             inputs = $(input_specs(inputs)),
-            body = ($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...)),
+            body = $(
+                check_call === nothing ? :(($(adapter_args...), $target_arg) -> $user_body($(passed...), $(index_arg...))) :
+                    :(($(adapter_args...), $target_arg) -> ($require_args_check($check_call, $spec_sym, $(adapter_args[findfirst(==(:args), BODY_SLOTS)])); $user_body($(passed...), $(index_arg...))))
+            ),
             prealloc = $prealloc,
             scratch = $scratch_fn,
             default = $has_default,
@@ -479,6 +532,7 @@ function define_rule_expr(kind, source, macroargs)
             services = $services,
             logscale = $logscale_fn,
             reads_logscale = $reads_logscale,
+            args_check = $check_source,
             source = $(string(MacroTools.prettify(body; alias = false))),
             file = $(QuoteNode(Symbol(something(source.file, :none)))),
             line = $(source.line),
@@ -659,6 +713,14 @@ function parse_slots(name, ex, valid; what = "body")
     issorted(positions) ||
         error("@$name: $what slots must follow the canonical order $(join(valid, ", ")); got $(join(slots, ", "))")
     return slots
+end
+
+# What a lambda computes, its body without its parameters, as an error message quotes it.
+function lambda_body(lambda)
+    body = lambda.args[2]
+    body isa Expr && body.head === :block || return body
+    statements = filter(x -> !(x isa LineNumberNode), body.args)
+    return length(statements) == 1 ? only(statements) : Expr(:block, statements...)
 end
 
 function append_parameter(lambda, parameter)

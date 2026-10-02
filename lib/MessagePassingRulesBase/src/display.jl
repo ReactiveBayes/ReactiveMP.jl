@@ -52,6 +52,7 @@ function Base.show(io::IO, ::MIME"text/plain", spec::RuleSpec)
     println(io, "  inputs:   ", inputs_label(spec, io))
     println(io, "  in-place: ", yesno(spec.inplace), " · scratch: ", yesno(spec.scratch !== nothing), " · pure: ", yesno(spec.pure), " · services: ", isempty(spec.services) ? "none" : join(spec.services, ", "))
     spec.kind === :message && println(io, "  logscale: ", describe_logscale_declaration(spec.logscale), spec.reads_logscale ? " · reads incoming log scales" : "")
+    spec.args_check === nothing || println(io, "  checks:   ", spec.args_check)
     println(io, "  defined:  ", short_path(spec.file), ":", spec.line)
     print(io, "  body:     ", spec.source)
     return nothing
@@ -89,6 +90,7 @@ function Base.show(io::IO, ::MIME"text/html", spec::RuleSpec)
         "services" => isempty(spec.services) ? "none" : html_code(join(spec.services, ", ")),
     ]
     spec.kind === :message && push!(rows, "log scale" => html_escape(describe_logscale_declaration(spec.logscale)) * (spec.reads_logscale ? ", reads the incoming ones" : ""))
+    spec.args_check === nothing || push!(rows, "checks" => html_code(spec.args_check))
     push!(rows, "defined" => html_code("$(short_path(spec.file)):$(spec.line)"))
     push!(rows, "body" => "<pre>" * html_escape(spec.source) * "</pre>")
     html_rows(io, rows)

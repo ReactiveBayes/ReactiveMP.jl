@@ -31,3 +31,9 @@ function y_from_x(m_x, q_θ, q_γ)
     c = (Wx + mγ * Vθ) \ mθ
     return NormalMeanVariance(dot(c, Wx * mx), dot(c, mθ) + inv(mγ))
 end
+
+# What the mean-field rules and energy require of marginals they otherwise take as `Any`: `y` a
+# scalar, and `θ` and `x` of one variate form. Each is a check of types, which folds away.
+check_y(q_y) = variate_form(typeof(q_y)) === Univariate || "`y` must be univariate"
+check_θ_x(q_θ, q_x) = variate_form(typeof(q_θ)) === variate_form(typeof(q_x)) || "`θ` and `x` must be both univariate or both multivariate"
+check_y_θ_x(q_y, q_θ, q_x) = (passed = check_y(q_y)) === true ? check_θ_x(q_θ, q_x) : passed

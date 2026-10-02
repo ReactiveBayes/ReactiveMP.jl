@@ -276,6 +276,13 @@ end
         scratch = (args) -> (work = zeros(length(args.m[:x])),),
         body = (scratch, args) -> (any(isnan, scratch.work) && error("read its scratch"); scratch.work .= 2 .* args.m[:x]; sum(scratch.work)),
     )
+    # Refuses a negative input by its `args_check`.
+    struct Checked end
+    @define_factor_node(node = Checked, type = Deterministic, interfaces = [:out, :in])
+    @define_message_update_rule(
+        node = Checked, target = :out, args = (m[:in]::PointMass,),
+        args_check = (args) -> mean(args.m[:in]) >= 0 || "a non-negative input", body = (args) -> PointMass(sqrt(mean(args.m[:in]))),
+    )
     end
 
     errors(set) = count(r -> r isa Test.Error, set.results)
@@ -308,6 +315,16 @@ end
         @test_message_update_rule(node = Throwing.Worked, target = :out, check_type_promotion = false, cases = [(m = (x = [1.0, 2.0],),) => 6.0])
     end
     @test errors(scratch) == 0 && length(Recording.failures(scratch)) == 1 && contains(Recording.failure_text(scratch), "after `poison!` of its scratch")
+
+    # A case that fails the rule's `args_check` fails the same way, with the check's reason.
+    checked = Recording.recorded() do
+        @test_message_update_rule(
+            node = Throwing.Checked, target = :out, check_type_promotion = false,
+            cases = [(m = (in = PointMass(-1.0),),) => PointMass(1.0), (m = (in = PointMass(4.0),),) => PointMass(2.0)],
+        )
+    end
+    @test errors(checked) == 0 && length(Recording.failures(checked)) == 1 && Recording.passes(checked) == 2
+    @test contains(Recording.failure_text(checked), "case 1,") && contains(Recording.failure_text(checked), "RuleInputError") && contains(Recording.failure_text(checked), "a non-negative input")
 end
 
 @testitem "tables:a selection by the target's index takes what a graph delivers" tags = [:testutils] setup = [Recording] begin

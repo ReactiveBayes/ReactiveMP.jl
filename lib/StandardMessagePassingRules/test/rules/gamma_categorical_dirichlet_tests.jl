@@ -48,7 +48,7 @@ end
             (q = (out = PointMass([0.0, 1.0]),),) => ExpectedWithLogScale(Dirichlet([1.0, 2.0]), -log(2.0)),
         ],
     )
-    @test_throws ArgumentError getresult(call_message_update_rule(Categorical, :p; q = (out = PointMass([0.5, 0.5]),)))
+    @test_throws MessagePassingRulesBase.RuleInputError getresult(call_message_update_rule(Categorical, :p; q = (out = PointMass([0.5, 0.5]),)))
     @test_average_energy(
         node = Categorical, float_types = (Float32, Float64),
         cases = [(q = (out = Categorical([0.3, 0.7]), p = Dirichlet([1.0, 3.0])),) => -sum([0.3, 0.7] .* (digamma.([1.0, 3.0]) .- digamma(4.0)))],

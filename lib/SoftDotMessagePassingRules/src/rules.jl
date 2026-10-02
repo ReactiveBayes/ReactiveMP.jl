@@ -9,6 +9,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
 # Towards `y`: under mean-field, N(⟨θ⟩ᵀ⟨x⟩, ⟨γ⟩⁻¹).
 @define_message_update_rule(
     node = SoftDot, target = :y, args = (q[:θ]::Any, q[:x]::Any, q[:γ]::Any),
+    args_check = (args) -> check_θ_x(args.q[:θ], args.q[:x]),
     body = (args) -> NormalMeanPrecision(mean(args.q[:θ])' * mean(args.q[:x]), mean(args.q[:γ])),
 )
 
@@ -21,6 +22,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
 # Towards `θ`: under mean-field, weighted mean ⟨γ⟩⟨x⟩⟨y⟩ and precision ⟨γ⟩⟨xxᵀ⟩.
 @define_message_update_rule(
     node = SoftDot, target = :θ, args = (q[:y]::Any, q[:x]::Any, q[:γ]::Any),
+    args_check = (args) -> check_y(args.q[:y]),
     body = (args) -> begin
         my = mean(args.q[:y])
         mx, Vx = mean_cov(args.q[:x])
@@ -42,6 +44,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
 # Towards `x`: under mean-field, the image of the rule towards `θ`.
 @define_message_update_rule(
     node = SoftDot, target = :x, args = (q[:y]::Any, q[:θ]::Any, q[:γ]::Any),
+    args_check = (args) -> check_y(args.q[:y]),
     body = (args) -> begin
         my = mean(args.q[:y])
         mθ, Vθ = mean_cov(args.q[:θ])
@@ -66,6 +69,7 @@ weighted_mean_precision(ξ::AbstractVector, W) = MvNormalWeightedMeanPrecision(�
 # Towards `γ`: Γ(3/2, ⟨(y - θᵀx)²⟩ / 2), under mean-field.
 @define_message_update_rule(
     node = SoftDot, target = :γ, args = (q[:y]::Any, q[:θ]::Any, q[:x]::Any),
+    args_check = (args) -> check_y_θ_x(args.q[:y], args.q[:θ], args.q[:x]),
     body = (args) -> begin
         my, Vy = mean_cov(args.q[:y])
         mθ, Vθ = mean_cov(args.q[:θ])

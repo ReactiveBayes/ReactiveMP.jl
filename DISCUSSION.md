@@ -1974,6 +1974,33 @@ same day: no root, rule-package or RxInfer test uses the machinery, and the engi
 every whole graph without v6. The guide's *Verifying a port* no longer recommends
 `compare_with_reference`. Polishing the machinery, its headers or formats, is moot.
 
+### 3.54 `args_check`: a rule checks its inputs (user, 2026-10-02)
+
+The TODOs carried over from v6 included rules that validated their inputs in the body, with an
+`ArgumentError` worded each its own way (Probit's output probability, Categorical's one-hot
+point mass, Bernoulli's two categories, Uniform's bounds), and SoftDot's mean-field rules, which
+take `Any` and failed deep inside with a `MethodError` or a `DimensionMismatch`. The user
+accepted a keyword on the three rule macros only if it cost nothing, and chose its shape:
+
+- **One keyword, `args_check`, dispatching on what it returns.** `true` passes; `false` fails with
+  a generic message quoting the check's source; a string fails with that string. A string is
+  always a failure. Two keywords, a condition and a message, were rejected: one suffices.
+- **One error type, `RuleInputError`**, naming the rule, the reason, the inputs and where the
+  rule is defined. Any other return is an `ArgumentError` about the check itself.
+- **A failure is an error, never a fall-through to another rule**: resolution has chosen the
+  rule. A combination a node does not support at all stays a rule of its own whose body throws,
+  found by dispatch (Categorical's `q[:out]::Any`, NormalMixture's integer switch).
+- **Zero cost, measured**: a check of types folds away; a check of a value costs its comparison,
+  0 bytes; the thrower is `@noinline`. The check runs as the body starts, after a `preallocate` or
+  `scratch` helper.
+- **Documented with its performance trap** (user): a message built before the condition is
+  built on every call. `lazy"..."` is the recommended habit; after `||`, an eager string costs
+  nothing on a passing call either (Correction 31).
+
+Migrated: SoftDot's four mean-field rules and its mean-field energy (variate forms, folded away),
+Probit's two expectation-propagation rules, Categorical's one-hot rule towards `p`, Bernoulli's
+`Categorical` rule towards `p` and Uniform's energy.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -2107,6 +2134,10 @@ Claims the assistant made that were **wrong** and should not be revived:
     comparison with an old implementation is not a test; all of it is removed at the release,
     with no exceptions, and its quirks (fixture headers, formats) are not worth a question
     before then. §3.53, `PLAN.md` § The v6 reference is scaffolding.
+31. **"An interpolated message in `args_check` is built on every call; only `lazy"..."` avoids
+    it."** Not in the documented form (2026-10-02). In `cond || "...$(x)"` the string is after
+    `||`, so a passing call never builds it: measured 0 bytes and 0.46 ns, eager or lazy, against
+    0.45 ns with no check. The trap is a message built before or regardless of the condition. §3.54.
 
 ---
 

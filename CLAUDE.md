@@ -207,6 +207,9 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   `nothing` in an interactive call; the engine refuses a rule that declares one
   (`check_services`, as it resolves the rule). The free energy's average energies run with the
   context and diagnostics their node was activated with, which `activate!` keeps on the node.
+- A rule checks what its inputs' types cannot say with `args_check` (returning `true`, or `false`
+  or a string saying why), raising a `RuleInputError`; a failed check never falls through to
+  another rule. A combination a node does not support at all is a rule of its own that throws.
 - The activation option `rulefallback` (e.g. `NodeFunctionRuleFallback()`) gives a message only
   where no rule matches; an exception inside a rule always propagates.
 - `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:

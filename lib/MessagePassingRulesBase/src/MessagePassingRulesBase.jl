@@ -78,7 +78,7 @@ export RuleResult, getresult, getrule, getannotations
 @compat public DependencySelector, SingleInterface, AllGroupMembers, AlignedGroupMember, AllGroupMembersButSelf
 @compat public CustomGroupSelector, select_group_members, selected_indices, selection_arity
 # Resolving and running rules: what an engine calls.
-@compat public RuleSpec, InputSpec, RuleNotFound, RuleNotFoundError
+@compat public RuleSpec, InputSpec, RuleNotFound, RuleNotFoundError, RuleInputError
 @compat public find_message_rule, find_marginal_rule, find_average_energy, rule_algorithm
 @compat public execute_rule, execute_rule_with_logscale, rule_scratch, rule_scratch_type
 @compat public check_services, missing_services, check_reads_logscale, check_selected_members

@@ -1,5 +1,6 @@
 @testitem "rules:SoftDot:y" tags = [:rules] begin
     using SoftDotMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using MessagePassingRulesBase: RuleInputError
     using LinearAlgebra: I
 
     # Semi-exhaustive combinations of input types, labelled θ, x, γ by
@@ -30,15 +31,13 @@
         )
     end
 
-    # TODO: these errors have to be caught in the implementations themselves. The error type and
-    # message itself will not provide any information or might not match. The rule takes any
-    # marginal, so it is found and fails inside.
+    # The mean-field rules take any marginal; their `args_check` refuses the wrong shapes.
     @testset "VMP: Incorrect Inputs" begin
         to_y(q) = getresult(call_message_update_rule(SoftDot, :y; q))
         # 02*, 12*, 21*: INCORRECT (θ and x have to be of the same dimension)
-        @test_throws MethodError to_y((θ = PointMass(7.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), γ = GammaShapeRate(13.0, 5.0)))
-        @test_throws MethodError to_y((θ = NormalMeanVariance(7.0, 11.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), γ = GammaShapeRate(13.0, 5.0)))
-        @test_throws MethodError to_y((θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = NormalMeanVariance(7.0, 11.0), γ = GammaShapeRate(13.0, 5.0)))
+        @test_throws RuleInputError to_y((θ = PointMass(7.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), γ = GammaShapeRate(13.0, 5.0)))
+        @test_throws RuleInputError to_y((θ = NormalMeanVariance(7.0, 11.0), x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), γ = GammaShapeRate(13.0, 5.0)))
+        @test_throws RuleInputError to_y((θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), x = NormalMeanVariance(7.0, 11.0), γ = GammaShapeRate(13.0, 5.0)))
     end
 
     @testset "VMP: structured rules" begin

@@ -17,10 +17,22 @@
     @define_message_update_rule(node = Gauss, target = :out, algorithm = Alternative, args = (m[:μ]::Float64, m[:v]::Float64), body = (args) -> args.m[:μ] * args.m[:v])
     @define_message_update_rule(node = Gauss, target = (:p, k), args = (q[:p][k]::Float64,), body = (args) -> 2 * args.q[:p][k])
     @define_message_update_rule(node = Gauss, target = :μ, args = (m[:out]::Float64,), body = (args) -> fill(args.m[:out], 4))
+    # Checked rules: by the inputs' types, which folds away, and by a value, with a lazy reason.
+    struct Checked <: AbstractAlgorithm end
+    @define_message_update_rule(
+        node = Gauss, target = :out, algorithm = Checked, args = (m[:μ]::Float64, m[:v]::Float64),
+        args_check = (args) -> args.m[:v] isa Float64, body = (args) -> args.m[:μ] + args.m[:v],
+    )
+    @define_message_update_rule(
+        node = Gauss, target = :v, args = (m[:out]::Float64, m[:μ]::Float64),
+        args_check = (args) -> args.m[:out] >= args.m[:μ] || lazy"`out` below `μ`: $(args.m[:out]) < $(args.m[:μ])",
+        body = (args) -> args.m[:out] - args.m[:μ],
+    )
 
     const POINT = RuleArgs(m = (μ = 1.0, v = 2.0))
     const MEMBER = RuleArgs(q = (p = (nothing, 5.0),))
     const OUT = RuleArgs(m = (out = 1.0,))
+    const OUT_MU = RuleArgs(m = (out = 3.0, μ = 1.0))
 
     one_rule() = getresult(message_passing_rule(Gauss, Target(:out), DefaultAlgorithm(), POINT))
     indexed() = getresult(message_passing_rule(Gauss, IndexedTarget(:p, 2), DefaultAlgorithm(), MEMBER))
@@ -28,6 +40,8 @@
     two_rules(flag::Bool) = getresult(message_passing_rule(Gauss, Target(:out), flag ? DefaultAlgorithm() : Alternative(), POINT))
     # An extension with no rule of its own reaches the default's through the fallback.
     inherited() = getresult(message_passing_rule(Gauss, Target(:out), Extension(), POINT))
+    type_checked() = getresult(message_passing_rule(Gauss, Target(:out), Checked(), POINT))
+    value_checked(args) = getresult(message_passing_rule(Gauss, Target(:v), DefaultAlgorithm(), args))
     # Negative control: the body allocates, so the gate must see it.
     allocating() = getresult(message_passing_rule(Gauss, Target(:μ), DefaultAlgorithm(), OUT))
 
@@ -51,6 +65,9 @@ end
     @test inherited == 0
     @test (@inferred G.inherited()) === 3.0
     @test control > 0
+    # A rule's check allocates nothing: by type it folds away, by value its error path is outlined.
+    @test G.measure(G.type_checked) == 0 && (@inferred G.type_checked()) === 3.0
+    @test G.measure(G.value_checked, G.OUT_MU) == 0 && G.value_checked(G.OUT_MU) === 2.0
     @test (@inferred G.one_rule()) === 3.0
     @test (@inferred G.indexed()) === 10.0
     @test G.two_rules(true) == 3.0 && G.two_rules(false) == 2.0

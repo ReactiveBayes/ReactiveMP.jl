@@ -12,9 +12,9 @@ of each macro, with a minimal example and its output. The pages on
 | macro | required | optional |
 |---|---|---|
 | [`@define_factor_node`](@ref) | `node`, `type`, `interfaces` | `algorithm`, `dependencies`, `initial_messages`, `static_inputs`, `matched_groups`, `min_group_length`, `factorisation` |
-| [`@define_message_update_rule`](@ref) | `node`, `target`, `args`, `body` | `algorithm`, `logscale`, `reads_logscale`, `ctx`, `inplace`, `preallocate`, `scratch`, `pure` |
-| [`@define_marginal_update_rule`](@ref) | `node`, `target`, `args`, `body` | `algorithm`, `ctx`, `inplace`, `preallocate`, `scratch`, `pure` |
-| [`@define_average_energy`](@ref) | `node`, `args`, `body` | `algorithm`, `ctx`, `pure` |
+| [`@define_message_update_rule`](@ref) | `node`, `target`, `args`, `body` | `algorithm`, `logscale`, `reads_logscale`, `ctx`, `inplace`, `preallocate`, `scratch`, `pure`, `args_check` |
+| [`@define_marginal_update_rule`](@ref) | `node`, `target`, `args`, `body` | `algorithm`, `ctx`, `inplace`, `preallocate`, `scratch`, `pure`, `args_check` |
+| [`@define_average_energy`](@ref) | `node`, `args`, `body` | `algorithm`, `ctx`, `pure`, `args_check` |
 | [`@define_dependencies`](@ref) | `node`, `algorithm`, `dependencies` | `free_energy_partition` |
 
 A macro rejects an unknown or repeated keyword when it is expanded, and the error names the valid
@@ -728,6 +728,40 @@ and draws randomness only from `ctx.rng`. `Counted` is impure, so the first rule
 second touches no counter and says so. Purity is declared, not proved: an engine's purity audit
 reads the flag. See [Algorithms and dependencies](@ref "Algorithms and dependencies").
 
+### [args_check](@id keyword-message-args_check)
+
+```@example messages
+@define_message_update_rule(
+    node = Gaussian,
+    target = :μ,
+    args = (m[:out]::PointMass, m[:τ]::PointMass),
+    logscale = 0,
+    args_check = (args) -> mean(args.m[:τ]) > 0 || lazy"the precision `τ` must be positive; got $(mean(args.m[:τ]))",
+    body = (args) -> NormalMeanPrecision(mean(args.m[:out]), mean(args.m[:τ])),
+)
+
+@call_message_update_rule(node = Gaussian, target = :μ, m = (out = PointMass(1.0), τ = PointMass(4.0)))
+```
+
+`args_check` checks the inputs as the body starts, for what their types cannot say: here, that
+the precision is positive. It is a function over the slots `(algo, ctx, args)`, like
+[`logscale`](@ref keyword-message-logscale), and returns `true` when the inputs pass. When they do
+not, it returns `false`, and the rule raises a [`RuleInputError`](@ref) quoting the check's source,
+or a string, and the error says that instead:
+
+```@example messages
+try
+    @call_message_update_rule(node = Gaussian, target = :μ, m = (out = PointMass(1.0), τ = PointMass(-1.0)))
+catch err
+    print(first(split(sprint(showerror, err), "\n  rule at")))
+end
+```
+
+A string is always a failure. Build it after `||`, so a passing call never builds it; a
+`lazy"..."` string also waits to be formatted until the error is shown. A failed check is an error, not a reason to select another rule. The check costs nothing
+where it reads the inputs' types only, and one comparison where it reads a value. See
+[Checking inputs](@ref rules-checking-inputs).
+
 ## [`@define_marginal_update_rule`](@id keyword-marginal-rule)
 
 [`@define_marginal_update_rule`](@ref) defines the rule for the joint marginal of a cluster of
@@ -1029,6 +1063,28 @@ which_marginal_update_rule(Gaussian, (:out, :μ, :τ); m = (out = PointMass(1.0)
 pure rule under an impure algorithm, as for a [message rule](@ref keyword-message-pure). Default:
 the algorithm's [`ispure`](@ref).
 
+### [args_check](@id keyword-marginal-args_check)
+
+```@example marginals
+struct Checked <: AbstractAlgorithm end
+
+@define_marginal_update_rule(
+    node = Gaussian,
+    target = (:out, :μ),
+    algorithm = Checked,
+    args = (m[:out]::PointMass, m[:μ]::PointMass, q[:τ]::PointMass),
+    args_check = (args) -> mean(args.q[:τ]) > 0,
+    body = (args) -> FactorizedCluster((:out,) => args.m[:out], (:μ,) => args.m[:μ]),
+)
+
+which_marginal_update_rule(Gaussian, (:out, :μ); m = (out = PointMass(1.0), μ = PointMass(0.0)), q = (τ = PointMass(4.0),), algorithm = Checked()).args_check
+```
+
+`args_check` checks the inputs as the body starts, as for a
+[message rule](@ref keyword-message-args_check): `true` when they pass, `false` or a string saying
+why when they do not, which raises a [`RuleInputError`](@ref). A rule's spec keeps the check's
+source.
+
 ## [`@define_average_energy`](@id keyword-average-energy)
 
 [`@define_average_energy`](@ref) defines a node's [average energy](@ref glossary-average-energy),
@@ -1196,6 +1252,26 @@ which_average_energy(Gaussian; q = (out = PointMass(1.0), μ = PointMass(0.0), �
 `pure = false` declares an energy with side effects, here a global counter of its evaluations;
 `pure = true` declares a pure energy under an impure algorithm, as for a
 [message rule](@ref keyword-message-pure). Default: the algorithm's [`ispure`](@ref).
+
+### [args_check](@id keyword-energy-args_check)
+
+```@example energies
+struct Checked <: AbstractAlgorithm end
+
+@define_average_energy(
+    node = Gaussian,
+    algorithm = Checked,
+    args = (q[:out]::PointMass, q[:μ]::PointMass, q[:τ]::PointMass),
+    args_check = (args) -> mean(args.q[:τ]) > 0,
+    body = (args) -> -logpdf(NormalMeanPrecision(mean(args.q[:μ]), mean(args.q[:τ])), mean(args.q[:out])),
+)
+
+getresult(@call_average_energy(node = Gaussian, algorithm = Checked(), q = (out = PointMass(1.0), μ = PointMass(0.0), τ = PointMass(4.0))))
+```
+
+`args_check` checks the inputs as the body starts, as for a
+[message rule](@ref keyword-message-args_check): `true` when they pass, `false` or a string saying
+why when they do not, which raises a [`RuleInputError`](@ref).
 
 ## [`@define_dependencies`](@id keyword-dependencies)
 

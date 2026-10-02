@@ -69,8 +69,9 @@ loop through `in` it needs one to start from: the node declares
 
 # Throws
 
-- `ArgumentError`, from the expectation-propagation rules towards `in` and the joint marginal,
-  when the value on `out` lies outside `[0, 1]`.
+- [`RuleInputError`](@extref MessagePassingRulesBase.RuleInputError), from the
+  expectation-propagation rules towards `in` and the joint marginal, when the value on `out`
+  lies outside `[0, 1]`.
 
 See also [`ProbitEP`](@ref).
 """
@@ -139,11 +140,13 @@ ProbitEP(; p = 32) = ProbitEP(p)
     body = (args) -> Bernoulli(normcdf(mean(args.m[:in]) / sqrt(1 + var(args.m[:in])))),
 )
 
+# The check of the expectation-propagation rules: the value on `out` is a probability.
+check_probability(m_out) = (p = mean(m_out); zero(p) <= p <= one(p) || lazy"the value on `out` must lie in [0, 1]; got $p")
+
 # The moments of the tilted distribution Φ-likelihood × the cavity m_in, for an output
-# probability p, and the variance clamped to the cavity's.
+# probability p in [0, 1], and the variance clamped to the cavity's.
 function tilted_moments(p, m_in)
     mz, vz = mean_cov(m_in)
-    zero(p) <= p <= one(p) || throw(ArgumentError("the Probit node takes a message on its output with a value between 0 and 1, got $p"))
     γ = mz / sqrt(1 + vz)
     log_mom0 = if γ > 0 && p > 0.5
         logsumexp((log(1 - p), log(2 * p - 1) + normlogccdf(-γ)))
@@ -163,6 +166,7 @@ end
 # Towards `in`, expectation propagation: the tilted distribution's moments over the cavity.
 @define_message_update_rule(
     node = Probit, target = :in, args = (m[:out]::Union{PointMass, Bernoulli}, m[:in]::UnivariateNormalDistributionsFamily),
+    args_check = (args) -> check_probability(args.m[:out]),
     body = (args) -> begin
         mpz, vpz, mz, vz = tilted_moments(mean(args.m[:out]), args.m[:in])
         NormalWeightedMeanPrecision(mpz / vpz - mz / vz, clamp(1 / vpz - 1 / vz, tiny, huge))
@@ -172,6 +176,7 @@ end
 # The joint of a point-mass output and `in`: the output, and the tilted distribution of `in`.
 @define_marginal_update_rule(
     node = Probit, target = (:out, :in), args = (m[:out]::PointMass, m[:in]::UnivariateNormalDistributionsFamily),
+    args_check = (args) -> check_probability(args.m[:out]),
     body = (args) -> begin
         mpz, vpz, _, _ = tilted_moments(mean(args.m[:out]), args.m[:in])
         cluster = FactorizedCluster((:out,) => args.m[:out], (:in,) => NormalMeanVariance(mpz, vpz))

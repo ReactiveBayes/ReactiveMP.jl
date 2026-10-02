@@ -19,10 +19,10 @@ end
 @define_message_update_rule(
     node = Categorical, target = :p,
     args = (q[:out]::PointMass{<:AbstractVector{<:Real}},),
+    args_check = (args) -> isonehot(mean(args.q[:out])) || lazy"`q(out)` must be one-hot; got $(mean(args.q[:out]))",
     logscale = (args) -> categorical_likelihood_logscale(mean(args.q[:out])),
     body = (args) -> begin
         probs = mean(args.q[:out])
-        isonehot(probs) || throw(ArgumentError("q_out must be one-hot encoded. Got: $probs"))
         Dirichlet(probs .+ one(eltype(probs)))
     end,
 )
