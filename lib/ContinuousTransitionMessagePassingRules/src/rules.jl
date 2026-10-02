@@ -92,6 +92,8 @@ end
 
 # E[(y - A x)(y - A x)ᵀ] over q(y, x) (or q(y) q(x), with no cross-covariance) and q(a), for the
 # rule towards `W` and the energy: A's mean is the linearised f(m_a), its spread the Jacobians at m_a.
+# Symmetric by construction, so exactly symmetrised: rounding would otherwise leave an asymmetry the
+# Wishart's inversion refuses in a narrow float type such as Float32.
 function ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)
     ma, Va = mean_cov(q_a)
     Fs = jacobians(algo, ma)
@@ -99,7 +101,8 @@ function ct_residual(algo, my, Vy, mx, Vx, Vyx, q_a)
     Exx = add_outer(Vx, mx)
     Eyx = gaussian_cross_moment(Vyx, my, mx)
     S = add_outer(Vy, my) - Eyx * mA' - mA * Eyx' + mA * Exx * mA'
-    return S + [trace_product(Fs[i]' * Exx * Fs[j], Va) for i in eachindex(Fs), j in eachindex(Fs)]
+    R = S + [trace_product(Fs[i]' * Exx * Fs[j], Va) for i in eachindex(Fs), j in eachindex(Fs)]
+    return (R + R') / 2
 end
 
 # Towards `W`: a Wishart with dy + 2 degrees of freedom and the inverse scale

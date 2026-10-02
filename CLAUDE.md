@@ -204,6 +204,10 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   the default scheme's inputs plus the listed ones, placed in interface order. A
   deterministic node's clusters are always `out` and the joint over its inputs,
   and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)`.
+- **CI sets `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1`**, which makes FastCholesky throw
+  on a matrix that is not symmetric within 1e-8 instead of warning; set it on local runs too
+  (`JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1 TEST_ALL=true make test-<package>`). Without it,
+  ContinuousTransition's suite passed locally while CI failed for a week (Float32 rounding).
 - Aqua's checks run in full in `test/runtests.jl`, `ambiguities` included; `deps_compat` checks
   `[extras]` too.
 - A rule reads its services from `ctx`, a `RuleContext` wrapping a `NamedTuple`: the engine

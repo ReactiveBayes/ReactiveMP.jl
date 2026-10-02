@@ -40,7 +40,8 @@ one, about 15 minutes. Packages with no unregistered dependency can be registere
   siblings go once those are registered.
 - `[compat]` has an upper-bounded entry for `julia` and every dependency, `[extras]` included, as
   Aqua's `deps_compat` and AutoMerge both require.
-- The suite passes on every Julia version supported, with `TEST_ALL=true`, and on the oldest and
+- The suite passes on every Julia version supported, with `TEST_ALL=true` and
+  `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1` as CI sets them, and on the oldest and
   newest with `Pkg.test(coverage = true)` too, since CI collects coverage. Test copies of the
   package in the scratchpad (`git ls-files -co --exclude-standard`), with `julia +1.10` and so on
   (juliaup), so the package's own Manifest is not rewritten.
