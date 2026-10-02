@@ -3935,8 +3935,13 @@ this phase requires it to pass for release, rather than being its first executio
       failure. *(The branch's `IntegrationTest.yml` is strict since 2026-10-02: it no longer
       catches the error and `exit(0)`s. What is left is the job over registered revisions.)*
 - [ ] the monorepo split into `ReactiveBayes/*` repositories, one per package, with their
-      history, at registration (`DISCUSSION.md` §3.40; `PLAN.md` had it at Phase 6)
-- [ ] package registration order decided, compat bounds set, supported Julia versions agreed.
+      history, at registration (`DISCUSSION.md` §3.40; `PLAN.md` had it at Phase 6) *(started
+      2026-10-02: MessagePassingRulesBase is in its own repository, its copy in `lib/` frozen, and
+      registered as 1.0.0, General#170326, merging after the 3-day wait; the procedure is
+      `RELEASING.md`; the other packages follow once their grouping is decided, user with Mykola)*
+- [ ] package registration order decided, compat bounds set, supported Julia versions agreed
+      *(the order is in `RELEASING.md`, dependencies first; MessagePassingRulesBase supports
+      Julia 1.10 and later, user)*.
       Work targets 1.13 only until then (§3.22); whether the 1.10 floor and its workarounds
       come back is decided here
 - [x] each package's `LICENSE` file: MIT, but GPL-3 for `PolyaMessagePassingRules`, which
