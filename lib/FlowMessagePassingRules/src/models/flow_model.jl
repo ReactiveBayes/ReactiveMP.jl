@@ -111,7 +111,6 @@ See also [`compile(::FlowModel, ::Vector)`](@ref).
 """
 compile(model::FlowModel) = compile(default_rng(), model)
 function compile(rng::AbstractRNG, model::FlowModel)
-    # do not create parameters here for decentralized initializers (TODO)
     return CompiledFlowModel(model.dim, compile(rng, model.layers))
 end
 

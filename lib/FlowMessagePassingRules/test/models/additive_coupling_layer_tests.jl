@@ -59,9 +59,16 @@
         @test layer_compp.f[1].w == 2.0
         @test layer_compp.f[1].b == 3.0
 
-        # TODO expend for multiple mappings
         @test nr_params(outf) == 3
         @test nr_params(layer_comp) == 3
+
+        # Several coupling flows: one per partition after the first, each of its own parameters.
+        scalar = FlowMessagePassingRules._prepare(rng, 4, AdditiveCouplingLayer(PlanarFlow(); permute = false))
+        @test length(scalar.f) == 3 && nr_params(scalar) == 3 * 3 && nr_params(compile(rng, scalar)) == 9
+        blocks = FlowMessagePassingRules._prepare(rng, 6, AdditiveCouplingLayer(PlanarFlow(); partition_dim = 2, permute = false))
+        @test length(blocks.f) == 2 && nr_params(blocks) == 2 * (2 * 2 + 1)
+        # The partitions must tile the input.
+        @test_throws "needs a model dimension that is a multiple of it; got 5" FlowMessagePassingRules._prepare(rng, 5, AdditiveCouplingLayer(PlanarFlow(); partition_dim = 2))
     end
 
     @testset "Get" begin

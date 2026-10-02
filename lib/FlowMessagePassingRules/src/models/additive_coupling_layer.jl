@@ -25,8 +25,8 @@ Non-linear independent components estimation", arXiv:1410.8516 (2014).
 
 # Keywords
 
-- `partition_dim`: the size of a partition, which must divide the model's dimension. Default
-  `1`, every coordinate its own partition.
+- `partition_dim`: the size of a partition, which must divide the model's dimension: a model of
+  another dimension is an `ArgumentError`. Default `1`, every coordinate its own partition.
 - `permute`: whether the model places a random [`PermutationLayer`](@ref) after the layer, so
   that the next coupling layer mixes the coordinates in another order. Default `true`.
 
@@ -75,13 +75,16 @@ function AdditiveCouplingLayer(
     )
 end
 
+# The partitions tile the input: its dimension must be a multiple of the partition's.
+check_partition(dim, partition_dim) = dim % partition_dim == 0 ||
+    throw(ArgumentError("an `AdditiveCouplingLayer` with `partition_dim = $partition_dim` needs a model dimension that is a multiple of it; got $dim"))
+
 # include permute as value type for type stability; the permutation is drawn from `rng`
 _prepare(dim::Int, layer::AdditiveCouplingLayerPlaceholder) = _prepare(default_rng(), dim, layer)
 function _prepare(
         rng::AbstractRNG, dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, true}
     ) where {T}
-    ## TODO: generalize for overlapping partitions
-    @assert dim % getpartitiondim(layer) == 0 "The input dimensionality is not exactly divisible by the partition dimension."
+    check_partition(dim, getpartitiondim(layer))
     nr_maps = (dim ÷ getpartitiondim(layer)) - 1
     maps = ntuple((x) -> getf(layer), Val(nr_maps))
     return AdditiveCouplingLayerEmpty(dim, maps, getpartitiondim(layer)),
@@ -90,8 +93,7 @@ end
 function _prepare(
         rng::AbstractRNG, dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, false}
     ) where {T}
-    ## TODO: generalize for overlapping partitions
-    @assert dim % getpartitiondim(layer) == 0 "The input dimensionality is not exactly divisible by the partition dimension."
+    check_partition(dim, getpartitiondim(layer))
     nr_maps = (dim ÷ getpartitiondim(layer)) - 1
     maps = ntuple((x) -> getf(layer), Val(nr_maps))
     return AdditiveCouplingLayerEmpty(dim, maps, getpartitiondim(layer))
