@@ -182,3 +182,16 @@ Release notes:
   it, `lib/MessagePassingRulesBase` deleted, the sites linking to its `stable/` inventory, and
   `test-base`/`docs-base` out of the Makefile, `LibTests.yml` and `CompatHelper.yml`; RxInfer's
   branch the same.
+- **MessagePassingRulesTestUtils and MessagePassingRulesApproximations 1.0.0** (2026-10-06):
+  prepared in the monorepo first: TestUtils' v6 comparison machinery moved to
+  `compat/v6-comparison/ReferenceComparison.jl` (user), both documentation sites reworked, both at
+  1.0.0 with every sibling's `[compat]` at `"1"`. Split with their history (17 commits for
+  Approximations, 40 for TestUtils, one session-link line stripped from each) plus a standalone
+  commit; suites green on 1.10, 1.11, 1.12 and 1.13 locally, with coverage on 1.10 and 1.13 (143
+  and 117 checks), docs and Runic clean. Repositories created new, deploy keys and
+  `DOCUMENTER_KEY` set, `main` pushed. CI on Julia 1.10 to 1.13 and the prerelease additionally
+  sets `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1`, as the Makefile's `test` does. CI green on
+  every version, Runic and the docs; docs live at `/dev/`; coverage 96.29% for Approximations (260
+  of 270 lines, release commit `70b55a9`) and 94.83% for TestUtils (349 of 368, `4c613dd`).
+  Codecov's repository summary stays empty for a while after the first upload; the commit's own
+  report, `…/commits/<sha>/`, has the totals.

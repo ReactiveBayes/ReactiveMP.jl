@@ -225,6 +225,13 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   the monorepo depends on it from General (`[compat] "1"`), and its docs link to its published
   inventory. A change to it goes to that repository. `RELEASING.md` is the procedure that split it
   out, for the other packages too.
+- **`lib/MessagePassingRulesTestUtils` and `lib/MessagePassingRulesApproximations` are frozen**
+  (2026-10-06): their sources of truth are
+  [ReactiveBayes/MessagePassingRulesTestUtils.jl](https://github.com/ReactiveBayes/MessagePassingRulesTestUtils.jl)
+  and [ReactiveBayes/MessagePassingRulesApproximations.jl](https://github.com/ReactiveBayes/MessagePassingRulesApproximations.jl),
+  at 1.0.0 and registering. Do not edit the copies here; a change goes to those repositories. Once
+  both are in General, the siblings depend on them and the copies are deleted, as
+  MessagePassingRulesBase's was.
 - `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:
   `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; every standard node: the distributions, arithmetic, logic and the mixtures), `MessagePassingRulesApproximations` (`make test-approximations`;
