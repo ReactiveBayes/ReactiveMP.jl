@@ -78,10 +78,9 @@ RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
 make docs-all                              # every documentation site, in dependency order, ReactiveMP's last
-make docs-base                             # one package's site (docs-<package>, as the test targets), into lib/<Pkg>/docs/build, after the sites it links to
+make docs-standard                         # one package's site (docs-<package>, as the test targets), into lib/<Pkg>/docs/build, after the sites it links to
 make docs                                  # ReactiveMP's site alone; it links to the package sites, so they must be built
-make test-base                             # lib/MessagePassingRulesBase's own suite
-make test-testutils                        # lib/MessagePassingRulesTestUtils, against the local base
+make test-testutils                        # lib/MessagePassingRulesTestUtils
 make test-standard                         # lib/StandardMessagePassingRules
 make test-approximations                   # lib/MessagePassingRulesApproximations, which depends on no sibling
 make test-delta                            # lib/DeltaMessagePassingRules
@@ -131,10 +130,8 @@ everything except the node tests and the quality items), plus `:alloc` on the tw
 assert allocation counts and `:quality` on the engine's doctests. Rules
 are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
 measured as slow, so nothing claims to be.
-The lib suites honour it the same way: `registry:lifecycle` in `MessagePassingRulesBase` is
-`:slow`, so `make test-base` skips it unless you set `TEST_ALL=true`
-(`TEST_ALL=true make test-base`). Delta's CVIProjection item (`cvi_projection_tests.jl`) is
-`:slow` too, and a filtered run skips the rule-coverage gate, so a plain `make test-delta` never
+The lib suites honour it the same way: Delta's CVIProjection item (`cvi_projection_tests.jl`) is
+`:slow`, and a filtered run skips the rule-coverage gate, so a plain `make test-delta` never
 runs Delta's gate: use `TEST_ALL=true make test-delta`. When items are tagged `:slow` they disappear from `make test`
 and stay in `make test-all`.
 
@@ -165,8 +162,10 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   for each package, and a `README.md`. A site documents its own modules only (`checkdocs = :all`,
   strict), and links into another's with `` [`name`](@extref Package.name) ``, against the planned
   address `https://reactivebayes.github.io/<Pkg>.jl/dev/` and the sibling's local
-  `docs/build/objects.inv` until the sites are published; a plain `@ref` to another package's
-  name fails the build. Node pages follow one template (overview, definition, interfaces,
+  `docs/build/objects.inv` until the sites are published; a registered package's (MessagePassingRulesBase)
+  by its published `stable/objects.inv`, through `registered(name)` in `make.jl`, which waits 30 s
+  where DocInventories waits 1 s: a first request to GitHub Pages took 3 s here and failed the
+  build. A plain `@ref` to another package's name fails the build. Node pages follow one template (overview, definition, interfaces,
   algorithm, a `rule_coverage` table, example, limitations, API). The docstring style is on the
   contributing page (`docs/src/extra/contributing.md`, *Documentation*): signature first, then
   only the sections that carry something, every documented name linked, shared text as
@@ -221,13 +220,13 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   another rule. A combination a node does not support at all is a rule of its own that throws.
 - The activation option `rulefallback` (e.g. `NodeFunctionRuleFallback()`) gives a message only
   where no rule matches; an exception inside a rule always propagates.
-- **`lib/MessagePassingRulesBase` is frozen** (user, 2026-10-02): its source of truth is
-  [ReactiveBayes/MessagePassingRulesBase.jl](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl),
-  registered as 1.0.0 (Julia 1.10 and later). Do not edit the copy here; a change goes to that
-  repository. Once 1.0.0 is in General, the siblings depend on it and the copy is deleted.
-  `RELEASING.md` is the procedure, for the other packages too.
+- **MessagePassingRulesBase is registered** (1.0.0, 2026-10-05; Julia 1.10 and later) and lives in
+  [ReactiveBayes/MessagePassingRulesBase.jl](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl):
+  the monorepo depends on it from General (`[compat] "1"`), and its docs link to its published
+  inventory. A change to it goes to that repository. `RELEASING.md` is the procedure that split it
+  out, for the other packages too.
 - `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:
-  `MessagePassingRulesBase` (`make test-base`), `MessagePassingRulesTestUtils`
+  `MessagePassingRulesTestUtils`
   (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; every standard node: the distributions, arithmetic, logic and the mixtures), `MessagePassingRulesApproximations` (`make test-approximations`;
   `Unscented`, `Linearization`, Gauss–Hermite cubature and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation`, its Unscented and

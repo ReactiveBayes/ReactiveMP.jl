@@ -173,4 +173,12 @@ Release notes:
   history of 76 commits plus the standalone commit `6194f45`; CI green on 1.10, 1.11, 1.12, 1.13
   and the prerelease, docs live at `/dev/`, coverage 96.64% (1 815 of 1 878 lines); registration
   [JuliaRegistries/General#170326](https://github.com/JuliaRegistries/General/pull/170326), every
-  AutoMerge guideline met, merging after the 3-day wait.
+  AutoMerge guideline met, merged 2026-10-05.
+- **MessagePassingRulesBase 1.1.0** (2026-10-06): Mykola's review (issue #9) and a coverage pull
+  request merged, registration [JuliaRegistries/General#170727](https://github.com/JuliaRegistries/General/pull/170727),
+  merged the same day; TagBot tagged `v1.1.0`.
+- **The monorepo on the registered MessagePassingRulesBase** (step 8, 2026-10-06): its 29
+  `[sources]` path entries gone, `[compat]` `"1"` in the root and the 13 packages that depend on
+  it, `lib/MessagePassingRulesBase` deleted, the sites linking to its `stable/` inventory, and
+  `test-base`/`docs-base` out of the Makefile, `LibTests.yml` and `CompatHelper.yml`; RxInfer's
+  branch the same.

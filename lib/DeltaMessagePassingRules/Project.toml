@@ -20,7 +20,6 @@ DeltaMessagePassingRulesProjectionExt = "ExponentialFamilyProjection"
 
 [sources]
 MessagePassingRulesApproximations = {path = "../MessagePassingRulesApproximations"}
-MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
@@ -31,7 +30,7 @@ Documenter = "1"
 ExponentialFamily = "2.5"
 ExponentialFamilyProjection = "3"
 MessagePassingRulesApproximations = "0.1"
-MessagePassingRulesBase = "0.1"
+MessagePassingRulesBase = "1"
 MessagePassingRulesTestUtils = "0.1"
 Pkg = "1.10"
 StableRNGs = "1"

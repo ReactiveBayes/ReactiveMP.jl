@@ -152,8 +152,8 @@ tested on Julia 1.13.
   - `make test test_args="nodes"` runs only the tests under `test/nodes/`, and `make test test_args="engine:variational"` only `test/engine/variational_tests.jl`
   - `make test test_args="tag:engine"` and `make test test_args="name:MessageMapping"` select test items by tag and by name; entries of the same kind are alternatives, entries of different kinds all apply
   - `RUN_AQUA=false make test` skips the slow Aqua checks, which are enabled by default
-- `make test-<package>` runs one package's suite under `lib/`, with the same `test_args`, for example `make test-standard test_args="name:rules:Beta"`. The targets are `test-base`, `test-testutils`, `test-standard`, `test-approximations`, `test-delta`, `test-gaussian-coupling`, `test-probit`, `test-gcv`, `test-autoregressive`, `test-softdot`, `test-continuous-transition`, `test-polya`, `test-bifm`, `test-flow` and `test-discrete-transition`. They skip items tagged `:slow` unless `TEST_ALL=true` is set, and the coverage check runs only on an unfiltered run
-- `make docs-<package>` builds one package's documentation site, for example `make docs-base`;
+- `make test-<package>` runs one package's suite under `lib/`, with the same `test_args`, for example `make test-standard test_args="name:rules:Beta"`. The targets are `test-testutils`, `test-standard`, `test-approximations`, `test-delta`, `test-gaussian-coupling`, `test-probit`, `test-gcv`, `test-autoregressive`, `test-softdot`, `test-continuous-transition`, `test-polya`, `test-bifm`, `test-flow` and `test-discrete-transition`. They skip items tagged `:slow` unless `TEST_ALL=true` is set, and the coverage check runs only on an unfiltered run
+- `make docs-<package>` builds one package's documentation site, for example `make docs-standard`;
   `make docs-all` builds every site in dependency order, and `make docs` the ReactiveMP site,
   which needs the package sites built first
 - `make check-format`: Checks the formatting (Runic), without modifying files

@@ -1,6 +1,6 @@
 # The documentation site of DeltaMessagePassingRules. Build it with `make docs-delta` from the repository
 # root, which builds the sites it links to first, or `julia --project=docs docs/make.jl` here.
-using Documenter, DocumenterInterLinks
+using Documenter, DocumenterInterLinks, DocInventories
 using DeltaMessagePassingRules
 
 # Another package's site, for `@extref` links: its planned address, and the inventory of its local
@@ -10,9 +10,16 @@ sibling(name) = (
     joinpath(@__DIR__, "..", "..", name, "docs", "build", "objects.inv"),
 )
 
+# A registered package's site, by its published inventory. A first request to GitHub Pages can take
+# seconds, longer than DocInventories' default timeout of one second, so it waits longer.
+registered(name) = Inventory(
+    "https://reactivebayes.github.io/$(name).jl/stable/objects.inv";
+    root_url = "https://reactivebayes.github.io/$(name).jl/stable/", timeout = 30,
+)
+
 links = InterLinks(
     "MessagePassingRulesApproximations" => sibling("MessagePassingRulesApproximations"),
-    "MessagePassingRulesBase" => sibling("MessagePassingRulesBase"),
+    "MessagePassingRulesBase" => registered("MessagePassingRulesBase"),
 )
 
 DocMeta.setdocmeta!(

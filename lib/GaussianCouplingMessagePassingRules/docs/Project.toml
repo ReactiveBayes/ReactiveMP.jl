@@ -1,5 +1,6 @@
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+DocInventories = "43dc2714-ed3b-44b5-b226-857eda1aa7de"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterInterLinks = "d12716ef-a0f6-4df4-a9f1-a5a34e75c656"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
@@ -8,4 +9,3 @@ MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 
 [sources]
 GaussianCouplingMessagePassingRules = {path = ".."}
-MessagePassingRulesBase = {path = "../../MessagePassingRulesBase"}

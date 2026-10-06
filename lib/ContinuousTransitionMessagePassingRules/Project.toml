@@ -15,7 +15,6 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 
 [sources]
-MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
@@ -27,7 +26,7 @@ ExponentialFamily = "2.5"
 FastCholesky = "1.3"
 ForwardDiff = "0.10, 1"
 LinearAlgebra = "1.10"
-MessagePassingRulesBase = "0.1"
+MessagePassingRulesBase = "1"
 MessagePassingRulesTestUtils = "0.1"
 Pkg = "1.10"
 Random = "1.10"

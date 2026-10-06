@@ -26,8 +26,8 @@ using MessagePassingRulesTestUtils
 @test isempty(check_rule_coverage(MyRules))
 ```
 
-- Documentation: `make docs-testutils` from the repository root builds it into `docs/build`
-  (after `make docs-base`, whose site it links to); it will be published at
+- Documentation: `make docs-testutils` from the repository root builds it into `docs/build`; it
+  will be published at
   <https://reactivebayes.github.io/MessagePassingRulesTestUtils.jl/dev/>.
 - Tests: `make test-testutils`.
 - Depends on MessagePassingRulesBase, BayesBase, Distributions, ForwardDiff and HCubature, and

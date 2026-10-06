@@ -893,9 +893,10 @@ version = "0.1.0-DEV"
 
 [[deps.MessagePassingRulesBase]]
 deps = ["BayesBase", "Compat", "FastCholesky", "IrrationalConstants", "LinearAlgebra", "MacroTools"]
-path = "../../lib/MessagePassingRulesBase"
+git-tree-sha1 = "47df464317597bbbd8b45de6f6ee013d4adc6b48"
+registries = "General"
 uuid = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.MessagePassingRulesTestUtils]]
 deps = ["BayesBase", "Compat", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Serialization", "Statistics", "TOML", "Test"]

@@ -27,7 +27,6 @@ FlowMessagePassingRules = {path = "lib/FlowMessagePassingRules"}
 GCVMessagePassingRules = {path = "lib/GCVMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassingRules"}
 MessagePassingRulesApproximations = {path = "lib/MessagePassingRulesApproximations"}
-MessagePassingRulesBase = {path = "lib/MessagePassingRulesBase"}
 PolyaMessagePassingRules = {path = "lib/PolyaMessagePassingRules"}
 ProbitMessagePassingRules = {path = "lib/ProbitMessagePassingRules"}
 SoftDotMessagePassingRules = {path = "lib/SoftDotMessagePassingRules"}
@@ -39,7 +38,7 @@ Compat = "4.10"
 Distributions = "0.24, 0.25"
 LinearAlgebra = "1.10"
 MacroTools = "0.5"
-MessagePassingRulesBase = "0.1"
+MessagePassingRulesBase = "1"
 Rocket = "1.8.0"
 TinyHugeNumbers = "1.0.0"
 TupleTools = "1.2.0"

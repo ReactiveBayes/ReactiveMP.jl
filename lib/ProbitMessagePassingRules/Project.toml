@@ -15,7 +15,6 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 
 [sources]
 MessagePassingRulesApproximations = {path = "../MessagePassingRulesApproximations"}
-MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
@@ -25,7 +24,7 @@ Distributions = "0.25"
 Documenter = "1"
 ExponentialFamily = "2.5"
 MessagePassingRulesApproximations = "0.1"
-MessagePassingRulesBase = "0.1"
+MessagePassingRulesBase = "1"
 MessagePassingRulesTestUtils = "0.1"
 Pkg = "1.10"
 StatsFuns = "1"

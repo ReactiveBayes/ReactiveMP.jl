@@ -1,6 +1,6 @@
 # The documentation site of ReactiveMP, the engine. Build it with `make docs` from the repository
 # root, after the package sites it links to (`make docs-all` builds them all, this one last).
-using Documenter, DocumenterInterLinks
+using Documenter, DocumenterInterLinks, DocInventories
 using ReactiveMP
 
 # Another package's site, for `@extref` links: its planned address, and the inventory of its local
@@ -11,7 +11,6 @@ sibling(name) = (
 )
 
 const SIBLINGS = [
-    "MessagePassingRulesBase",
     "MessagePassingRulesTestUtils",
     "StandardMessagePassingRules",
     "MessagePassingRulesApproximations",
@@ -28,7 +27,16 @@ const SIBLINGS = [
     "DiscreteTransitionMessagePassingRules",
 ]
 
-links = InterLinks((name => sibling(name) for name in SIBLINGS)...)
+# A registered package's site, by its published inventory. A first request to GitHub Pages can take
+# seconds, longer than DocInventories' default timeout of one second, so it waits longer.
+registered(name) = Inventory(
+    "https://reactivebayes.github.io/$(name).jl/stable/objects.inv";
+    root_url = "https://reactivebayes.github.io/$(name).jl/stable/", timeout = 30,
+)
+
+const REGISTERED = ["MessagePassingRulesBase" => registered("MessagePassingRulesBase")]
+
+links = InterLinks(REGISTERED..., (name => sibling(name) for name in SIBLINGS)...)
 
 DocMeta.setdocmeta!(
     ReactiveMP, :DocTestSetup, :(using ReactiveMP, BayesBase, Distributions, ExponentialFamily); recursive = true

@@ -18,7 +18,6 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [sources]
 MessagePassingRulesApproximations = {path = "../MessagePassingRulesApproximations"}
-MessagePassingRulesBase = {path = "../MessagePassingRulesBase"}
 MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
@@ -30,7 +29,7 @@ ExponentialFamily = "2.5"
 LinearAlgebra = "1.10"
 LogExpFunctions = "0.3"
 MessagePassingRulesApproximations = "0.1"
-MessagePassingRulesBase = "0.1"
+MessagePassingRulesBase = "1"
 MessagePassingRulesTestUtils = "0.1"
 Pkg = "1.10"
 PolyaGammaHybridSamplers = "1.2"

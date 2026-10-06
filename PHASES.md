@@ -87,7 +87,8 @@ verified locally (`DISCUSSION.md` §3.22). Of the CI, only `LibTests.yml`, the p
 on pushes to this branch; `ci.yml` (the root suite and the docs) and `IntegrationTest.yml` run on a
 pull request.
 
-Phases 0–7 are closed. `lib/` holds the rule system (`MessagePassingRulesBase`), its test tooling
+Phases 0–7 are closed. The rule system, `MessagePassingRulesBase`, is registered and has its own
+repository; `lib/` holds its test tooling
 (`MessagePassingRulesTestUtils`), the standard nodes (`StandardMessagePassingRules`), the numerics
 (`MessagePassingRulesApproximations`: `Unscented`, `Linearization`, Gauss–Hermite cubature,
 `smoothRTS`) and one package per remaining node (Delta, GaussianCoupling, Probit, GCV,
@@ -3936,9 +3937,11 @@ this phase requires it to pass for release, rather than being its first executio
       catches the error and `exit(0)`s. What is left is the job over registered revisions.)*
 - [ ] the monorepo split into `ReactiveBayes/*` repositories, one per package, with their
       history, at registration (`DISCUSSION.md` §3.40; `PLAN.md` had it at Phase 6) *(started
-      2026-10-02: MessagePassingRulesBase is in its own repository, its copy in `lib/` frozen, and
-      registered as 1.0.0, General#170326, merging after the 3-day wait; the procedure is
-      `RELEASING.md`; the other packages follow once their grouping is decided, user with Mykola)*
+      2026-10-02: MessagePassingRulesBase is in its own repository and registered, 1.0.0 on
+      2026-10-05, General#170326; the monorepo and RxInfer's branch depend on the registered
+      package and `lib/MessagePassingRulesBase` is deleted (2026-10-06). The procedure is
+      `RELEASING.md`; MessagePassingRulesApproximations and MessagePassingRulesTestUtils follow,
+      the rule packages once their grouping is decided, user with Mykola)*
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed
       *(the order is in `RELEASING.md`, dependencies first; every package supports Julia 1.10 and
       later, user, 2026-10-02: checked on 1.10 with the suites, RxInfer, the examples and the

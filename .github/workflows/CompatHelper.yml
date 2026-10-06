@@ -49,7 +49,6 @@ jobs:
               "lib/GCVMessagePassingRules",
               "lib/GaussianCouplingMessagePassingRules",
               "lib/MessagePassingRulesApproximations",
-              "lib/MessagePassingRulesBase",
               "lib/MessagePassingRulesTestUtils",
               "lib/PolyaMessagePassingRules",
               "lib/ProbitMessagePassingRules",
