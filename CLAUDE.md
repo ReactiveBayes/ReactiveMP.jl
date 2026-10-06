@@ -108,8 +108,8 @@ cannot install them and fail (user: accepted; it works once they are registered)
 on 1.10, with every sibling developed into one environment: every suite, RxInfer, the examples
 and the course pass. The v6 comparisons, the engine fixtures and the
 inventory are **not** CI: they are the migration tool that verified the rewrite, run locally,
-and go at the release, `compat/` and TestUtils' comparison machinery entirely, with no
-exceptions (user). Do not ask about their fate or polish them (`PLAN.md` § The v6 reference is
+and go at the release, `compat/` entirely, with the comparison machinery, which moved there from TestUtils
+(`ReferenceComparison.jl`), with no exceptions (user). Do not ask about their fate or polish them (`PLAN.md` § The v6 reference is
 scaffolding).
 
 `test_args` takes three kinds of entry, and they compose:

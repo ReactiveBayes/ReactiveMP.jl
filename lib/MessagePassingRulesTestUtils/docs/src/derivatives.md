@@ -7,7 +7,7 @@ parameter `θ`, reduces the rule's output to a number with `summary`, and compar
 derivative with a central finite difference.
 
 The rule under test is the belief propagation rule towards `out` of the `Gaussian` node of the
-[overview](@ref "A node to test"):
+[first tutorial](@ref tutorial-first-rule):
 
 ```@example derivatives
 using MessagePassingRulesBase, MessagePassingRulesTestUtils
@@ -48,7 +48,8 @@ nothing # hide
 
 A rule that converts its inputs to `Float64`, or strips the dual part of a number, gives a wrong
 or zero derivative and fails. An [in-place rule](@extref MessagePassingRulesBase glossary-in-place-rule)
-is checked twice, through `rule` and through `rule!`.
+is checked twice, through `rule` and through `rule!`. [Reading a failure](@ref) shows what a
+failing check reports.
 
 ## API
 

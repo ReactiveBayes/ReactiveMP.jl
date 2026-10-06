@@ -5,8 +5,9 @@
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/check.jl
 
 include(joinpath(@__DIR__, "V6Oracle.jl"))
+include(joinpath(@__DIR__, "ReferenceComparison.jl"))
 
-using .V6Oracle, Test
+using .V6Oracle, .ReferenceComparison, Test
 using ExponentialFamily, BayesBase, Distributions
 import ReactiveMP
 using MessagePassingRulesTestUtils

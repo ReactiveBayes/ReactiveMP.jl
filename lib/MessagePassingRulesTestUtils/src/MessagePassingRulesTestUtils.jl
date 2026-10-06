@@ -19,10 +19,6 @@ A rule package's suite uses them in four layers:
 4. **The rule-coverage gate**, [`check_rule_coverage`](@ref): after an unfiltered run of the
    suite, every rule the package defines must have been selected by some test.
 
-For implementations with a predecessor, [`compare_with_reference`](@ref) compares a rule with a
-reference implementation on the same inputs, and [`EngineTrajectory`](@ref) records and
-compares whole inference runs.
-
 # Examples
 
 ```jldoctest; setup = :(using MessagePassingRulesBase, BayesBase, Distributions)
@@ -53,7 +49,7 @@ true
 """
 module MessagePassingRulesTestUtils
 
-using BayesBase, Distributions, ForwardDiff, HCubature, Serialization, Statistics, Test, TOML
+using BayesBase, Distributions, ForwardDiff, HCubature, Statistics, Test
 using Compat: @compat
 using MessagePassingRulesBase
 using MessagePassingRulesBase: FactorizedCluster, cluster_blocks
@@ -64,8 +60,6 @@ export ExpectedWithAnnotations, ExpectedWithLogScale
 export check_rule_coverage
 export @verify_message_update_rule, verify_message_update_rule, verify_message_update
 export @test_rule_derivatives, test_rule_derivatives
-export compare_with_reference, DeclaredDisagreement, MigrationRecord, save_migration_fixtures, load_migration_fixtures
-export encode_fixture_value, RuleCallRecord, EngineTrajectory, save_engine_fixture, load_engine_fixture, compare_engine_trajectory
 # Named on the documentation and useful in a test, but generic enough to clash if exported.
 @compat public poison!, approximately_equal, RuleCoverageGap, rule_test_locations
 
@@ -74,8 +68,6 @@ include("coverage.jl")
 include("table_tests.jl")
 include("verification.jl")
 include("derivatives.jl")
-include("migration.jl")
-include("engine_fixtures.jl")
 
 function __init__()
     MessagePassingRulesBase.add_selection_observer!(record_direct_call!)

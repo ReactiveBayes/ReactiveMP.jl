@@ -4,7 +4,7 @@ A table lists cases. Each case is the inputs of one call to a [rule](@extref Mes
 and the result the rule must return. A table is the main test of every rule: it is cheap to
 write, it takes one line per case, and it checks each case in several ways at once.
 
-This page tests the `Gaussian` node of the [overview](@ref "A node to test"), a normal
+This page tests the `Gaussian` node of the [first tutorial](@ref tutorial-first-rule), a normal
 distribution with a known variance, with a marginal rule and an
 [average energy](@extref MessagePassingRulesBase glossary-average-energy) added:
 
@@ -182,7 +182,8 @@ and the promoted runs would fail.
 The tolerances are `atol` and `rtol`. Each is a number, or a dictionary from float type to
 number. By default, `atol` is `1e-4`, `1e-6` and `1e-8` for `Float32`, `Float64` and `BigFloat`,
 and `rtol` is `0`. Every case also records the rule it selected, for
-[the rule-coverage gate](@ref "The rule-coverage gate").
+[the rule-coverage gate](@ref "The rule-coverage gate"). [Reading a failure](@ref) shows what
+each check reports when it fails.
 
 ## API
 

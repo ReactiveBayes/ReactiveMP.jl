@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.13.0"
+julia_version = "1.13.1"
 manifest_format = "2.1"
-project_hash = "e106690bef962471095dda28c18fccb28d51ebfc"
+project_hash = "fd6b091df9ea0cac37f731af866b895cf5828803"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -807,7 +807,7 @@ version = "1.9.1+0"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl", "OpenSSL_jll", "Zlib_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
-version = "1.11.103+0"
+version = "1.11.104+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -899,7 +899,7 @@ uuid = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 version = "1.0.0"
 
 [[deps.MessagePassingRulesTestUtils]]
-deps = ["BayesBase", "Compat", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Serialization", "Statistics", "TOML", "Test"]
+deps = ["BayesBase", "Compat", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Statistics", "Test"]
 path = "../../lib/MessagePassingRulesTestUtils"
 uuid = "08c5795c-a039-451c-8c5c-d65dcf644a97"
 version = "0.1.0-DEV"

@@ -8,8 +8,9 @@
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_discrete_transition.jl
 
 include(joinpath(@__DIR__, "V6Oracle.jl"))
+include(joinpath(@__DIR__, "ReferenceComparison.jl"))
 
-using .V6Oracle, Test, Random
+using .V6Oracle, .ReferenceComparison, Test, Random
 using ExponentialFamily, BayesBase, Distributions, LinearAlgebra
 using MessagePassingRulesBase, MessagePassingRulesTestUtils, DiscreteTransitionMessagePassingRules
 import ReactiveMP

@@ -19,7 +19,7 @@ message times the exponential of its log scale is the integral itself. With
 
 ## Verify a rule
 
-The node is the `Gaussian` of the [overview](@ref "A node to test"),
+The node is the `Gaussian` of the [first tutorial](@ref tutorial-first-rule),
 ``f(y, x, v) = \mathcal{N}(y \mid x, v)``. Verification reads its log-density from
 [`nodefunction`](@extref MessagePassingRulesBase.nodefunction), which the declaration defines
 when the node is callable as the distribution of its output: here `Gaussian(μ, v)` is a
@@ -81,6 +81,9 @@ Each check is a `Test` assertion. Inside a `@testset`, the summary counts them:
 end
 nothing # hide
 ```
+
+When a check fails, the report gives the log-ratio at every point, or the log scale the node's
+density implies. [Reading a failure](@ref) shows both.
 
 ## Limitations
 

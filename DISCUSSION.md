@@ -2015,6 +2015,16 @@ wherever `V_tilde` is invertible. With it, linearisation tracks the robot as the
 transform does. Decided (user): fix it in v7, leave v6 as it is, and show both methods in the
 example without calling either a failure.
 
+### 3.56 The comparison machinery leaves TestUtils before its registration (user, 2026-10-06)
+
+MessagePassingRulesTestUtils is registered after MessagePassingRulesBase, so it must not ship the
+v6 comparison machinery, which goes at the release (§3.53). Asked whether to delete it now or
+keep it, the user chose to move it: `compare_with_reference`, `EngineTrajectory` and their fixture
+formats are `compat/v6-comparison/ReferenceComparison.jl`, a local module the scripts include
+like `V6Oracle.jl`, so the comparisons keep running until the cleanup removes `compat/`. Its two
+test files were not moved: the scripts exercise it. TestUtils loses Serialization and TOML, and
+its documentation the two pages about them.
+
 ---
 
 ## 4. Corrections — read this before re-proposing anything

@@ -7,7 +7,8 @@
 
 using RxInfer, ReactiveMP, Test
 using ReactiveMP: getannotations, has_annotation, get_annotation
-using MessagePassingRulesTestUtils
+include(joinpath(@__DIR__, "ReferenceComparison.jl"))
+using MessagePassingRulesTestUtils, .ReferenceComparison
 
 const FIXTURES = joinpath(@__DIR__, "fixtures", "engine")
 const PACKAGES = Dict("ReactiveMP" => pkgversion(ReactiveMP), "RxInfer" => pkgversion(RxInfer))
@@ -274,7 +275,7 @@ Distributions.params(d::ReactiveMP.ExponentialLinearQuadratic) = (d.a, d.b, d.c,
 
 # v6's Uninformative message is no distribution, which the fixture encoder cannot write; it is
 # recorded by name, for v6's type only.
-MessagePassingRulesTestUtils.encode_fixture_value(::ReactiveMP.Uninformative) = Dict{String, Any}("type" => "Uninformative")
+ReferenceComparison.encode_fixture_value(::ReactiveMP.Uninformative) = Dict{String, Any}("type" => "Uninformative")
 
 # Two Probit outputs of one weight: each rule towards `w` reads the message on its own edge,
 # which the other's message feeds, so they start from Probit's default initial message.

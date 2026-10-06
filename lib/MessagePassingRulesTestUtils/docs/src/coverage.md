@@ -16,7 +16,7 @@ A test selects a rule through:
 
 ## Run the gate
 
-The `Gaussian` node of the [overview](@ref "A node to test") has three rules here, and no test has
+The `Gaussian` node of the [first tutorial](@ref tutorial-first-rule) has three rules here, and no test has
 run yet. [`check_rule_coverage`](@ref) takes the modules to check, here the page's own, and
 returns a [`RuleCoverageGap`](@ref MessagePassingRulesTestUtils.RuleCoverageGap) for each rule and
 node that no test exercised:

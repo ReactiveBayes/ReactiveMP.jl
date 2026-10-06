@@ -64,7 +64,7 @@ julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/reco
 The fixtures are `fixtures/engine/<model>.toml`, one per model (the seven slice models,
 `delta_unscented_static` from Phase 4.5 case (d), `logic_bp` from Phase 5 step 4 and
 `mixture_bp` from step 8), written by
-`MessagePassingRulesTestUtils.save_engine_fixture`. Each holds the free energy per iteration,
+`save_engine_fixture` from `ReferenceComparison.jl`. Each holds the free energy per iteration,
 the final posteriors, and every message-rule call in the order v6 made it, which is
 materialisation order, with its result and log scale. They are **TOML, not `Serialization`**,
 so ReactiveMP's tests can read them on a Julia minor other than the one that recorded them
@@ -107,8 +107,11 @@ How the checker works:
 
 - `V6Oracle.jl` calls a v6 rule from the inputs a v7 rule takes, and returns its result and
   log scale. It is the only code in the repository that names ReactiveMP v6's internals.
-- Ported rules are compared with their v6 originals through `compare_with_reference` from
-  `MessagePassingRulesTestUtils`. An undeclared disagreement fails; a declared one must say
+- `ReferenceComparison.jl`, a local module the scripts include like `V6Oracle.jl`, holds the
+  comparison machinery, which lived in `MessagePassingRulesTestUtils` until that package was
+  prepared for registration: `compare_with_reference` for rules, and `EngineTrajectory` with its
+  fixture files for whole runs. Ported rules are compared with their v6 originals through
+  `compare_with_reference`. An undeclared disagreement fails; a declared one must say
   whether it is a `:migration_bug` or a `:correction`, and why.
 - v6 rules are verified against their own node definitions with `verify_message_update`.
   Failures there are findings about v6, pinned in `KNOWN_V6_FINDINGS` with their

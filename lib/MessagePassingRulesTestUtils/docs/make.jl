@@ -24,12 +24,15 @@ makedocs(
     plugins = [links],
     pages = [
         "Overview" => "index.md",
+        "Tutorials" => [
+            "Testing your first rule" => "tutorials/first-rule.md",
+            "Testing a rule package" => "tutorials/rule-package.md",
+        ],
         "Table tests" => "tables.md",
         "Verification against the node" => "verification.md",
         "Derivatives" => "derivatives.md",
         "The rule-coverage gate" => "coverage.md",
-        "Comparing with a reference" => "reference.md",
-        "Engine trajectories" => "engine.md",
+        "Reading a failure" => "failures.md",
     ],
     # Pages that show rule results as cards are larger than the defaults allow.
     format = Documenter.HTML(

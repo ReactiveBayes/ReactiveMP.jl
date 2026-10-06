@@ -4,8 +4,9 @@
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_gaussian_coupling.jl
 
 include(joinpath(@__DIR__, "V6Oracle.jl"))
+include(joinpath(@__DIR__, "ReferenceComparison.jl"))
 
-using .V6Oracle, Test
+using .V6Oracle, .ReferenceComparison, Test
 using ExponentialFamily, BayesBase
 using MessagePassingRulesBase, MessagePassingRulesTestUtils
 import GaussianCouplingMessagePassingRules as GC

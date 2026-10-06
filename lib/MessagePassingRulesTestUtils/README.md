@@ -9,9 +9,7 @@ nodes and rules with MessagePassingRulesBase:
 - verification of a message rule, and its log scale, against the node's log-density,
   integrated numerically;
 - derivative checks, ForwardDiff through a rule against finite differences;
-- the rule-coverage gate, which fails a suite when a rule has no test;
-- comparison with a reference implementation, and recorded engine trajectories for whole
-  inference runs.
+- the rule-coverage gate, which fails a suite when a rule has no test.
 
 ```julia
 using MessagePassingRulesTestUtils
