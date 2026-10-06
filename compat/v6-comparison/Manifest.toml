@@ -889,7 +889,7 @@ version = "2.28.1010+0"
 deps = ["Compat", "FastCholesky", "FastGaussQuadrature", "ForwardDiff", "LinearAlgebra"]
 path = "../../lib/MessagePassingRulesApproximations"
 uuid = "36043009-14b3-4068-9fb9-f1e492c92d7d"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.MessagePassingRulesBase]]
 deps = ["BayesBase", "Compat", "FastCholesky", "IrrationalConstants", "LinearAlgebra", "MacroTools"]
@@ -902,7 +902,7 @@ version = "1.0.0"
 deps = ["BayesBase", "Compat", "Distributions", "ForwardDiff", "HCubature", "MessagePassingRulesBase", "Statistics", "Test"]
 path = "../../lib/MessagePassingRulesTestUtils"
 uuid = "08c5795c-a039-451c-8c5c-d65dcf644a97"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.MetaGraphsNext]]
 deps = ["Graphs", "JLD2", "SimpleTraits"]
