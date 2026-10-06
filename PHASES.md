@@ -3943,7 +3943,7 @@ this phase requires it to pass for release, rather than being its first executio
       `RELEASING.md`; MessagePassingRulesApproximations and MessagePassingRulesTestUtils follow,
       the rule packages once their grouping is decided, user with Mykola. TestUtils is prepared:
       its v6 comparison machinery is in `compat/v6-comparison/ReferenceComparison.jl`, and its
-      documentation is rewritten, 2026-10-06)*
+      documentation is rewritten; Approximations' documentation is extended, 2026-10-06)*
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed
       *(the order is in `RELEASING.md`, dependencies first; every package supports Julia 1.10 and
       later, user, 2026-10-02: checked on 1.10 with the suites, RxInfer, the examples and the

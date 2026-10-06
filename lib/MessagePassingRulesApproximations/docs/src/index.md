@@ -1,24 +1,23 @@
 # MessagePassingRulesApproximations
 
+A rule for a nonlinear node needs the
+[pushforward](@extref MessagePassingRulesBase glossary-pushforward) of a normal through a
+function: if `x` is normal, what are the mean and covariance of `f(x)`? This package computes it,
+and expectations under a normal, with three methods. It works on means and covariances, plain
+numbers and arrays, and knows nothing of message passing. Node packages, such as the Delta
+node's, build their rules on it.
+
+This site is for authors of such rules, and for anyone who wants to compare the methods on a
+function of their own.
+
 ```@docs
 MessagePassingRulesApproximations
 ```
 
-## Choosing a method
+## A first approximation
 
-Each method answers one question: if `x` is normal with mean `m` and covariance `V`, what are
-the mean and covariance of `f(x)`? For an affine `f` the answer is exact and normal. For any
-other `f`, the distribution of `f(x)` is not normal, and each method approximates its moments
-in a different way.
-
-| method | needs | returns | suits |
-|---|---|---|---|
-| [`Unscented`](@ref) | `f` evaluated at `2d + 1` points | the output's mean and covariance | any function, no derivatives; accurate to second order |
-| [`Linearization`](@ref) | `f` differentiable by ForwardDiff | the local linear map `(A, b)` | functions close to linear over the inputs' spread; exact for affine ones |
-| [`GaussHermiteCubature`](@ref) | `f` evaluated at `p^d` points | weights and points, for any expectation | expectations and reweighted moments in a few dimensions |
-
-The three methods on `f(x) = exp(x)`, for `x` normal with mean `0` and variance `0.25`. The
-exact mean is `exp(m + v / 2)`:
+The three methods on `f(x) = exp(x)`, for `x` normal with mean `0` and variance `0.25`. The exact
+mean is `exp(m + v / 2)`:
 
 ```@example overview
 using MessagePassingRulesApproximations
@@ -39,11 +38,20 @@ cubature = sum(w * exp(x) for (w, x) in zip(getweights(gh, m, v), getpoints(gh, 
 
 Linearisation keeps only the slope of `exp` at the mean, so it misses the curvature that raises
 the mean. The unscented transform captures the curvature to second order. Twenty cubature points
-reproduce the exact value to machine precision, since `exp` is well approximated by a
-polynomial over the normal's spread.
+reproduce the exact value to machine precision, since `exp` is close to a polynomial over the
+normal's spread.
 
-A node package pairs the first two with [`smoothRTS`](@ref) to correct an input's marginal from a
-backward message, and uses the third for expectations its rules cannot take in closed form.
+## The site
+
+- [Choosing a method](@ref): what each method needs and costs, and the three compared on one
+  function against its exact moments.
+- [The unscented transform](@ref): sigma points, their weights, and moments through a function.
+- [Linearisation](@ref approximations-linearisation): the first-order expansion of a function,
+  by automatic differentiation.
+- [Gauss–Hermite cubature](@ref): expectations under a normal, and the moments of a normal
+  reweighted by a function.
+- [Smoothing](@ref): the Rauch–Tung–Striebel correction of an input's belief from a backward
+  message, with either transform.
 
 ## The common interface
 

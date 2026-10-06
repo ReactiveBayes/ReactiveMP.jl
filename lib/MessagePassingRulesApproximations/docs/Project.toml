@@ -1,8 +1,10 @@
 [deps]
+DocInventories = "43dc2714-ed3b-44b5-b226-857eda1aa7de"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterInterLinks = "d12716ef-a0f6-4df4-a9f1-a5a34e75c656"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [sources]
 MessagePassingRulesApproximations = {path = ".."}
