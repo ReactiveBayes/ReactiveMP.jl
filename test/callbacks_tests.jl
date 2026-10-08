@@ -746,7 +746,9 @@ end
     marginal = Marginal(0.5, false, false)
     towards_out = ReactiveMP.MessageMapping(NormalMeanVariance, MessagePassingRulesBase.Target{:out}(), Val((:μ, :v)), nothing, DefaultAlgorithm(), nothing, node, nothing)
     rule = ReactiveMP.selected_message_rule(towards_out, (Message(NormalMeanVariance(0.0, 1.0), false, false), Message(PointMass(1.0), true, false)), nothing)
-    location = string(Base.contractuser(String(rule.file)), ":", rule.line)
+    location = string(joinpath(splitpath(String(rule.file))[(end - 1):end]...), ":", rule.line)
+    # The file's last two path components and the line, the same on every machine.
+    @test occursin(r"^[^/~]+/[^/]+\.jl:\d+$", location)
 
     @test compact(BeforeMarginalRuleCallEvent(joint, (left, right), (marginal,), span)) ==
         "BeforeMarginalRuleCallEvent(mapping=MarginalMapping(NormalMeanVariance, (:out, :μ), msgs=[:out, :μ], marginals=[:v]), nmsgs=2, nmarginals=1, span=ab12…)"

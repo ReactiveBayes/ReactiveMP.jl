@@ -684,17 +684,21 @@ function _show_messages_field(io::IO, name::String, value)
 end
 
 # What gave a result: a rule by where it is defined in the compact form, by its heading and place
-# otherwise; a fallback as itself; nothing at all for `nothing`, when no rule ran.
+# otherwise; a fallback as itself; nothing at all for `nothing`, when no rule ran. The place is the
+# file's last two path components and the line, as MessagePassingRulesBase's displays print it, so
+# it reads the same on every machine.
 _show_rule(io::IO, ::Nothing) = nothing
 function _show_rule(io::IO, rule)
     print(io, ", rule=")
     if get(io, :compact, false) && rule isa MessagePassingRulesBase.RuleSpec
-        print(io, Base.contractuser(String(rule.file)), ":", rule.line)
+        print(io, _rule_place(rule.file), ":", rule.line)
     else
         show(io, rule)
     end
     return nothing
 end
+
+_rule_place(file) = (parts = splitpath(String(file)); joinpath(parts[max(end - 1, 1):end]...))
 
 _node_label(node) = node_display(functionalform(node))
 
