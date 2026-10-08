@@ -3750,6 +3750,10 @@ wait for the release):
   RxInfer's branch: `OnFreeEnergyUpdateEvent`, the free energy per iteration in TensorBoard, a
   trace manual section, and callbacks given in `options` reaching RxInfer's events and the trace,
   which they did not. Left: streaming inference's own `events = Val(…)` system stays separate.
+- *The free energy's rule resolution — done* (user, 2026-10-08): its terms carried the node's type
+  as a value, a `DataType`, so every average energy was resolved at run time; read from the node
+  now, it folds. The free energy's cost per iteration fell 37–65 % on three RxInfer models. What it
+  leaves is Rocket's per-node `combineLatest` and the two sums, structural.
 - *The audit of 2026-09-30 — done* (user: the bugs and the hygiene, the duplication recorded
   only; one commit per group): the engine, the lib packages and the working documents reviewed
   again against the code. Done: the engine gives `missing` where a folded static data input is

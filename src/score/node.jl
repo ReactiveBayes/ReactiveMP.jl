@@ -73,7 +73,7 @@ function score(
     interfaces = Tuple(getinterfaces(node))
     names = input_names(map(interface -> input_label(node, interface), interfaces))
     messages = combineLatest(map(interface -> get_stream_of_inbound_messages(interface) |> skip_initial(), interfaces), PushNew())
-    entropy = term_function(inputs_entropy_term, T, node_activation(node), node, fform, MessagePassingRulesBase.ClusterTarget(name(joint)), names, algorithm)
+    entropy = term_function(inputs_entropy_term, T, node_activation(node), node, MessagePassingRulesBase.ClusterTarget(name(joint)), names, algorithm)
     stream_of_scores = with_statics(node, messages) |> map(T, entropy)
     return postprocess_stream_of_scores(stream_postprocessors, stream_of_scores)
 end
@@ -102,11 +102,11 @@ end
 # A deterministic node's term, `-H[q]`, from the joint over its inputs that its marginal rule
 # computes from the latest messages, between the free-energy events; the marginal rule call's
 # events fall inside them.
-function inputs_entropy_term(::Type{T}, activation, node, fform, target, names, algorithm, messages) where {T}
+function inputs_entropy_term(::Type{T}, activation, node, target, names, algorithm, messages) where {T}
     ctx, diagnostics, callbacks = activation_services(activation, node)
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeFactorBoundFreeEnergyEvent(node, span_id))
-    mapping = marginal_mapping(fform, target, names, nothing, algorithm, node, diagnostics, ctx, callbacks)
+    mapping = marginal_mapping(functionalform(node), target, names, nothing, algorithm, node, diagnostics, ctx, callbacks)
     joint = Marginal(marginal_from_inputs(mapping, messages, nothing), false, false)
     entropy = score(DifferentialEntropy(), joint)
     result = convert(T, -entropy)
@@ -131,7 +131,7 @@ function score(
     stream = combineLatest(map(fnstream, localmarginals), PushNew())
 
     marginals_names = input_names(map(i -> cluster_label(node, clusters, i), Tuple(eachindex(localmarginals))))
-    mapping = term_function(average_energy_term, T, node_activation(node), node, functionalform(node), algorithm, marginals_names)
+    mapping = term_function(average_energy_term, T, node_activation(node), node, algorithm, marginals_names)
 
     stream_of_scores = stream |> map(T, mapping)
     stream_of_scores = postprocess_stream_of_scores(stream_postprocessors, stream_of_scores)
@@ -141,7 +141,10 @@ end
 
 # A stochastic node's term, its average energy less its clusters' entropies, between the
 # free-energy events.
-function average_energy_term(::Type{T}, activation, node, fform, algorithm, marginals_names, marginals) where {T}
+function average_energy_term(::Type{T}, activation, node, algorithm, marginals_names, marginals) where {T}
+    # The node's type from the node, where its type parameter holds it: a type kept in a closure or
+    # a tuple is a `DataType`, which would resolve the average energy at run time on every value.
+    fform = functionalform(node)
     ctx, diagnostics, callbacks = activation_services(activation, node)
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeFactorBoundFreeEnergyEvent(node, span_id))
