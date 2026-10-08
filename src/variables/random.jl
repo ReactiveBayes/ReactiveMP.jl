@@ -16,6 +16,9 @@ mutable struct RandomVariable <: AbstractVariable
     output_messages::Vector{MessageObservable{Message}}
     marginal::MarginalObservable
     label::Any
+    # the callbacks of its marginal's product context, set by `activate!`, which its free-energy
+    # contribution reports to as well
+    callbacks::Any
 end
 
 Base.show(io::IO, variable::RandomVariable) = print(io, "RandomVariable(", repr(variable.label), ")")
@@ -41,6 +44,7 @@ function randomvar(; label = nothing)
         Vector{MessageObservable{Message}}(),
         MarginalObservable(),
         label,
+        nothing,
     )
 end
 
@@ -100,7 +104,9 @@ postprocessor and two default [`ReactiveMP.MessageProductContext`](@ref)s.
   message but the one on its own connection, is computed;
 - `prod_context_for_marginal_computation`: how the marginal, the product of every inbound message,
   is computed. Its callbacks also receive [`ReactiveMP.BeforeMarginalComputationEvent`](@ref) and
-  [`ReactiveMP.AfterMarginalComputationEvent`](@ref).
+  [`ReactiveMP.AfterMarginalComputationEvent`](@ref), and the variable's free-energy events,
+  [`ReactiveMP.BeforeVariableBoundEntropyEvent`](@ref) and
+  [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref).
 
 See also [`ReactiveMP.activate!`](@ref).
 """
@@ -143,6 +149,7 @@ function activate!(
     d = length(randomvar.input_messages)
     outputmsgs = randomvar.output_messages
     resize!(outputmsgs, d)
+    randomvar.callbacks = options.prod_context_for_marginal_computation.callbacks
 
     @inbounds for i in 1:d
         outputmsgs[i] = MessageObservable(Message)

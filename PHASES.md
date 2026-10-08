@@ -3739,6 +3739,17 @@ Each is recorded in *Progress* below.
 without v6 as reference; history out of code and tests; docs and READMEs; the working documents,
 `compat/`, the CHANGELOG's release notes and TestUtils' comparison machinery
 wait for the release):
+- *Tracing completed — done* (user, 2026-10-08): the callbacks reach what they could not, a
+  node's marginal rule calls and every term of the free energy (`AfterMarginalRuleCallEvent`,
+  `AfterFactorBoundFreeEnergyEvent`, `AfterVariableBoundEntropyEvent` and their "before" events),
+  and an event after a rule call names the rule that ran, the fallback or `nothing`. No new
+  option: a node keeps its callbacks at activation, a variable its marginal context's. With no
+  handler listening nothing is built and nothing runs, the rule found again only for a listener;
+  measured before and after on three RxInfer models with free energy (5–9 % faster, 0.7–2.6 %
+  fewer bytes, the same results), and pinned by a test. On
+  RxInfer's branch: `OnFreeEnergyUpdateEvent`, the free energy per iteration in TensorBoard, a
+  trace manual section, and callbacks given in `options` reaching RxInfer's events and the trace,
+  which they did not. Left: streaming inference's own `events = Val(…)` system stays separate.
 - *The audit of 2026-09-30 — done* (user: the bugs and the hygiene, the duplication recorded
   only; one commit per group): the engine, the lib packages and the working documents reviewed
   again against the code. Done: the engine gives `missing` where a folded static data input is

@@ -124,20 +124,27 @@ struct FactorNode{F, I, C, N} <: AbstractFactorNode
 end
 
 # What a node was activated with that its free energy needs as well: its rule context, the engine's
-# services merged with the `context` option, and the `diagnostics` option.
-struct NodeActivation{G}
+# services merged with the `context` option, the `diagnostics` option and the `callbacks` option.
+struct NodeActivation{G, E}
     context::G
     diagnostics::EngineDiagnostics
+    callbacks::E
 end
 
-# The rule context and diagnostics a node's average energy runs with: those it was activated
-# with, or, for a node not activated, the engine's context and no audits.
-function activation_context(node::FactorNode)
-    activation = node.activation[]
-    activation === nothing && return node_context(node), EngineDiagnostics()
-    return activation.context, activation.diagnostics
-end
-activation_context(node) = node_context(node), EngineDiagnostics()
+# What a node was activated with, or `nothing` for a node not activated. Its type is known only at
+# run time, so a function that reads its fields takes it as an argument: one dispatch, and the
+# fields are concrete inside.
+node_activation(node::FactorNode) = node.activation[]
+node_activation(node) = nothing
+
+# The rule context, diagnostics and callbacks a node's average energy runs with: those it was
+# activated with, or, for a node not activated, the engine's context, no audits and no callbacks.
+activation_services(activation::NodeActivation, node) = activation.context, activation.diagnostics, activation.callbacks
+activation_services(::Nothing, node) = node_context(node), EngineDiagnostics(), nothing
+
+# The callbacks alone, for a computation that needs no rule context.
+activation_callbacks(activation::NodeActivation) = activation.callbacks
+activation_callbacks(::Nothing) = nothing
 
 """
     factornode(fform, interfaces, factorisation = nothing; nodefn = nothing) -> FactorNode
@@ -616,7 +623,7 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
     ctx = node_context(factornode, getcontext(options))
-    factornode.activation[] = NodeActivation(ctx, getdiagnostics(options))
+    factornode.activation[] = NodeActivation(ctx, getdiagnostics(options), getcallbacks(options))
     initialize_clusters!(getlocalclusters(factornode), factornode, options, ctx)
     seed_initial_messages!(factornode, getinitialmessages(options))
     return activate_messages!(factornode, options, ctx, algorithm, spec)

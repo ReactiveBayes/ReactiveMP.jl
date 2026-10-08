@@ -273,7 +273,7 @@ struct BeforeMessageRuleCallEvent{M, Ms, Mr, S} <:
 end
 
 """
-    ReactiveMP.AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, S} <: Event{:after_message_rule_call}
+    ReactiveMP.AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, S} <: Event{:after_message_rule_call}
 
 The event right after a message rule ran, or its fallback, or after a `missing` input gave a
 `missing` message.
@@ -289,9 +289,13 @@ The event right after a message rule ran, or its fallback, or after a `missing` 
   nothing may write to it;
 - `logscale`: the message's log scale (see [`getlogscale`](@ref)), or `nothing` where log scales
   are not tracked;
+- `rule`: what gave the message: the rule that ran, a
+  [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where no rule
+  matched (see [`ReactiveMP.FactorNodeActivationOptions`](@ref)); or `nothing`, when a `missing`
+  input skipped the rule;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref).
 """
-struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, S} <:
+struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, S} <:
     Event{:after_message_rule_call}
     mapping::M
     messages::Ms
@@ -299,6 +303,7 @@ struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, S} <:
     result::R
     annotations::A
     logscale::L
+    rule::U
     span_id::S
 end
 
@@ -488,6 +493,154 @@ struct AfterMarginalComputationEvent{V, C, Ms, R, S} <:
     span_id::S
 end
 
+"""
+    ReactiveMP.BeforeMarginalRuleCallEvent{M, Ms, Mr, S} <: Event{:before_marginal_rule_call}
+
+The event right before a factor node computes the joint marginal of one of its clusters with its
+marginal rule, at each call of a [`ReactiveMP.MarginalMapping`](@ref): for a cluster as its inputs
+update, and for the joint a deterministic node's free energy reads. Its callbacks are the node's
+(see [`ReactiveMP.FactorNodeActivationOptions`](@ref)).
+
+# Fields
+
+- `mapping`: the [`ReactiveMP.MarginalMapping`](@ref), which holds the node, the cluster and the
+  algorithm;
+- `messages`: the inbound messages the rule reads, a tuple, or `nothing` for none;
+- `marginals`: the marginals the rule reads, a tuple, or `nothing` for none;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterMarginalRuleCallEvent`](@ref).
+"""
+struct BeforeMarginalRuleCallEvent{M, Ms, Mr, S} <:
+    Event{:before_marginal_rule_call}
+    mapping::M
+    messages::Ms
+    marginals::Mr
+    span_id::S
+end
+
+"""
+    ReactiveMP.AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, S} <: Event{:after_marginal_rule_call}
+
+The event right after a factor node's marginal rule ran, or after a `missing` input gave a
+`missing` joint.
+
+# Fields
+
+- `mapping`: the [`ReactiveMP.MarginalMapping`](@ref), which holds the node, the cluster and the
+  algorithm;
+- `messages`: the inbound messages the rule read, a tuple, or `nothing` for none;
+- `marginals`: the marginals the rule read, a tuple, or `nothing` for none;
+- `result`: the joint's data, what the rule returned, or `missing`;
+- `rule`: the rule that ran, a [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), or
+  `nothing` when a `missing` input skipped it;
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeMarginalRuleCallEvent`](@ref).
+"""
+struct AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, S} <:
+    Event{:after_marginal_rule_call}
+    mapping::M
+    messages::Ms
+    marginals::Mr
+    result::R
+    rule::U
+    span_id::S
+end
+
+"""
+    ReactiveMP.BeforeFactorBoundFreeEnergyEvent{N, S} <: Event{:before_factor_bound_free_energy}
+
+The event right before a factor node's contribution to the Bethe free energy is computed, each
+time its stream ([`FactorBoundFreeEnergy`](@ref)) computes a value. Its callbacks are the node's
+(see [`ReactiveMP.FactorNodeActivationOptions`](@ref)); a node not activated reports none.
+
+# Fields
+
+- `node`: the factor node;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterFactorBoundFreeEnergyEvent`](@ref).
+"""
+struct BeforeFactorBoundFreeEnergyEvent{N, S} <:
+    Event{:before_factor_bound_free_energy}
+    node::N
+    span_id::S
+end
+
+"""
+    ReactiveMP.AfterFactorBoundFreeEnergyEvent{N, Ms, E, H, R, U, S} <: Event{:after_factor_bound_free_energy}
+
+The event right after a factor node's contribution to the Bethe free energy was computed:
+`result = energy - entropy` for a stochastic node, `result = -entropy` for a deterministic one.
+A deterministic node whose joint is computed for its term reports that marginal rule call, inside
+this event's span.
+
+# Fields
+
+- `node`: the factor node;
+- `marginals`: the local marginals the term is for, a tuple of [`Marginal`](@ref)s: every
+  cluster's for a stochastic node, the joint over the inputs (or the single input's marginal) for
+  a deterministic one;
+- `energy`: the average energy, or `nothing` for a deterministic node;
+- `entropy`: the sum of the marginals' differential entropies;
+- `result`: the contribution, a `BayesBase.CountingReal`;
+- `rule`: the average energy that ran, a
+  [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), or `nothing` for a deterministic node;
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeFactorBoundFreeEnergyEvent`](@ref).
+"""
+struct AfterFactorBoundFreeEnergyEvent{N, Ms, E, H, R, U, S} <:
+    Event{:after_factor_bound_free_energy}
+    node::N
+    marginals::Ms
+    energy::E
+    entropy::H
+    result::R
+    rule::U
+    span_id::S
+end
+
+"""
+    ReactiveMP.BeforeVariableBoundEntropyEvent{V, M, S} <: Event{:before_variable_bound_entropy}
+
+The event right before a random variable's contribution to the Bethe free energy is computed,
+each time its stream ([`VariableBoundEntropy`](@ref)) computes a value. Its callbacks are those of
+the variable's `prod_context_for_marginal_computation` (see
+[`RandomVariableActivationOptions`](@ref)), the ones its marginal events go to.
+
+# Fields
+
+- `variable`: the [`RandomVariable`](@ref);
+- `marginal`: its [`Marginal`](@ref);
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref).
+"""
+struct BeforeVariableBoundEntropyEvent{V, M, S} <:
+    Event{:before_variable_bound_entropy}
+    variable::V
+    marginal::M
+    span_id::S
+end
+
+"""
+    ReactiveMP.AfterVariableBoundEntropyEvent{V, M, H, R, S} <: Event{:after_variable_bound_entropy}
+
+The event right after a random variable's contribution to the Bethe free energy was computed,
+`result = scaling * entropy`.
+
+# Fields
+
+- `variable`: the [`RandomVariable`](@ref);
+- `marginal`: its [`Marginal`](@ref);
+- `entropy`: the marginal's differential entropy;
+- `scaling`: `d - 1` for the variable's [`ReactiveMP.degree`](@ref) `d`, or `d` for a point-mass
+  marginal, whose entropy is not finite;
+- `result`: the contribution, a `BayesBase.CountingReal`;
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeVariableBoundEntropyEvent`](@ref).
+"""
+struct AfterVariableBoundEntropyEvent{V, M, H, R, S} <:
+    Event{:after_variable_bound_entropy}
+    variable::V
+    marginal::M
+    entropy::H
+    scaling::Int
+    result::R
+    span_id::S
+end
+
 # -----------------------------------------------------------------------------
 # `Base.show` methods for the event types defined above.
 #
@@ -530,6 +683,21 @@ function _show_messages_field(io::IO, name::String, value)
     return nothing
 end
 
+# What gave a result: a rule by where it is defined in the compact form, by its heading and place
+# otherwise; a fallback as itself; nothing at all for `nothing`, when no rule ran.
+_show_rule(io::IO, ::Nothing) = nothing
+function _show_rule(io::IO, rule)
+    print(io, ", rule=")
+    if get(io, :compact, false) && rule isa MessagePassingRulesBase.RuleSpec
+        print(io, Base.contractuser(String(rule.file)), ":", rule.line)
+    else
+        show(io, rule)
+    end
+    return nothing
+end
+
+_node_label(node) = node_display(functionalform(node))
+
 function Base.show(io::IO, ev::BeforeMessageRuleCallEvent)
     print(io, "BeforeMessageRuleCallEvent(mapping=")
     show(io, ev.mapping)
@@ -550,6 +718,7 @@ function Base.show(io::IO, ev::AfterMessageRuleCallEvent)
     print(io, ", annotations=")
     show(io, ev.annotations)
     ev.logscale === nothing || (print(io, ", logscale="); show(io, ev.logscale))
+    _show_rule(io, ev.rule)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -643,6 +812,83 @@ function Base.show(io::IO, ev::AfterMarginalComputationEvent)
     show(io, _var_label(ev.variable))
     _show_messages_field(io, "messages", ev.messages)
     print(io, ", result=")
+    show(io, ev.result)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeMarginalRuleCallEvent)
+    print(io, "BeforeMarginalRuleCallEvent(mapping=")
+    show(io, ev.mapping)
+    _show_messages_field(io, "msgs", ev.messages)
+    _show_messages_field(io, "marginals", ev.marginals)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterMarginalRuleCallEvent)
+    print(io, "AfterMarginalRuleCallEvent(mapping=")
+    show(io, ev.mapping)
+    _show_messages_field(io, "msgs", ev.messages)
+    _show_messages_field(io, "marginals", ev.marginals)
+    print(io, ", result=")
+    show(io, ev.result)
+    _show_rule(io, ev.rule)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+# A node by its type in the compact form, with its connections otherwise.
+function _show_node_field(io::IO, node)
+    print(io, "node=")
+    get(io, :compact, false) ? print(io, _node_label(node)) : show(io, node)
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeFactorBoundFreeEnergyEvent)
+    print(io, "BeforeFactorBoundFreeEnergyEvent(")
+    _show_node_field(io, ev.node)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterFactorBoundFreeEnergyEvent)
+    print(io, "AfterFactorBoundFreeEnergyEvent(")
+    _show_node_field(io, ev.node)
+    _show_messages_field(io, "marginals", ev.marginals)
+    ev.energy === nothing || (print(io, ", energy="); show(io, ev.energy))
+    print(io, ", entropy=")
+    show(io, ev.entropy)
+    print(io, ", result=")
+    show(io, ev.result)
+    _show_rule(io, ev.rule)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeVariableBoundEntropyEvent)
+    print(io, "BeforeVariableBoundEntropyEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", marginal=")
+    show(io, ev.marginal)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterVariableBoundEntropyEvent)
+    print(io, "AfterVariableBoundEntropyEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", marginal=")
+    show(io, ev.marginal)
+    print(io, ", entropy=")
+    show(io, ev.entropy)
+    print(io, ", scaling=", ev.scaling, ", result=")
     show(io, ev.result)
     _show_span(io, ev.span_id)
     print(io, ")")

@@ -120,13 +120,13 @@ scaffolding).
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (199 of them across 25 files), each self-contained and
+Tests are `@testitem` blocks (203 of them across 26 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
 directory, `lib/` included, so a new one must not reuse a name from a lib suite.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (39) and `:engine` (159 —
-everything except the node tests and the quality items), plus `:alloc` on the two items that
+**Every test item carries a tag.** The taxonomy is `:nodes` (39) and `:engine` (163 —
+everything except the node tests and the quality items), plus `:alloc` on the three items that
 assert allocation counts and `:quality` on the engine's doctests. Rules
 are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
 measured as slow, so nothing claims to be.
@@ -214,7 +214,12 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   option `context`, any `NamedTuple`, is merged over them. A name nobody supplies reads as
   `nothing` in an interactive call; the engine refuses a rule that declares one
   (`check_services`, as it resolves the rule). The free energy's average energies run with the
-  context and diagnostics their node was activated with, which `activate!` keeps on the node.
+  context, diagnostics and callbacks their node was activated with, which `activate!` keeps on the
+  node; a variable keeps its marginal context's callbacks for its entropy term.
+- A callback event is built only where `listens` says a handler wants it (`@invoke_callback`), so
+  anything an event needs beyond what the computation has (the rule that ran, say) is computed
+  inside the event's constructor call, never on the path itself. `test/engine/tracing_tests.jl`
+  pins that a handler listening to nothing costs nothing.
 - A rule checks what its inputs' types cannot say with `args_check` (returning `true`, or `false`
   or a string saying why), raising a `RuleInputError`; a failed check never falls through to
   another rule. A combination a node does not support at all is a rule of its own that throws.

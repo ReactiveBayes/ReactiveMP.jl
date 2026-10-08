@@ -590,7 +590,7 @@ end
         mapping, (left, right), nothing, span
     )
     after_rule = AfterMessageRuleCallEvent(
-        mapping, (left, right), nothing, result, ann, nothing, span
+        mapping, (left, right), nothing, result, ann, nothing, nothing, span
     )
     @test compact(before_rule) ==
         "BeforeMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, span=ab12…)"
@@ -720,4 +720,66 @@ end
     ev = BeforeMessageRuleCallEvent(mapping, (left, right), nothing, nothing)
     @test !occursin("span", compact(ev))
     @test !occursin("span", repr(ev))
+end
+
+@testitem "Base.show for the marginal rule and free-energy events" tags = [:engine] setup = [EventShowTestUtils] begin
+    using BayesBase, ExponentialFamily, MessagePassingRulesBase, StandardMessagePassingRules
+    import ReactiveMP:
+        BeforeMarginalRuleCallEvent,
+        AfterMarginalRuleCallEvent,
+        BeforeFactorBoundFreeEnergyEvent,
+        AfterFactorBoundFreeEnergyEvent,
+        BeforeVariableBoundEntropyEvent,
+        AfterVariableBoundEntropyEvent,
+        AfterMessageRuleCallEvent,
+        MarginalMapping,
+        AnnotationDict
+    import MessagePassingRulesBase: ClusterTarget, DefaultAlgorithm
+
+    compact = EventShowTestUtils.compact
+    span = EventShowTestUtils.fixed_span()
+    var = EventShowTestUtils.MockVariable(:θ)
+    node = factornode(NormalMeanVariance, [(:out, randomvar()), (:μ, randomvar()), (:v, constvar(1.0))], ((:out, :μ), (:v,)))
+    joint = MarginalMapping(NormalMeanVariance, ClusterTarget((:out, :μ)), Val((:out, :μ)), Val((:v,)), DefaultAlgorithm(), node)
+    left = EventShowTestUtils.msg(0.1)
+    right = EventShowTestUtils.msg(0.2)
+    marginal = Marginal(0.5, false, false)
+    towards_out = ReactiveMP.MessageMapping(NormalMeanVariance, MessagePassingRulesBase.Target{:out}(), Val((:μ, :v)), nothing, DefaultAlgorithm(), nothing, node, nothing)
+    rule = ReactiveMP.selected_message_rule(towards_out, (Message(NormalMeanVariance(0.0, 1.0), false, false), Message(PointMass(1.0), true, false)), nothing)
+    location = string(Base.contractuser(String(rule.file)), ":", rule.line)
+
+    @test compact(BeforeMarginalRuleCallEvent(joint, (left, right), (marginal,), span)) ==
+        "BeforeMarginalRuleCallEvent(mapping=MarginalMapping(NormalMeanVariance, (:out, :μ), msgs=[:out, :μ], marginals=[:v]), nmsgs=2, nmarginals=1, span=ab12…)"
+    @test compact(AfterMarginalRuleCallEvent(joint, (left, right), (marginal,), 0.7, nothing, span)) ==
+        "AfterMarginalRuleCallEvent(mapping=MarginalMapping(NormalMeanVariance, (:out, :μ), msgs=[:out, :μ], marginals=[:v]), nmsgs=2, nmarginals=1, result=0.7, span=ab12…)"
+    @test compact(AfterMarginalRuleCallEvent(joint, (left, right), (marginal,), 0.7, rule, span)) ==
+        "AfterMarginalRuleCallEvent(mapping=MarginalMapping(NormalMeanVariance, (:out, :μ), msgs=[:out, :μ], marginals=[:v]), nmsgs=2, nmarginals=1, result=0.7, rule=$(location), span=ab12…)"
+    @test compact(BeforeFactorBoundFreeEnergyEvent(node, span)) == "BeforeFactorBoundFreeEnergyEvent(node=NormalMeanVariance, span=ab12…)"
+    @test compact(AfterFactorBoundFreeEnergyEvent(node, (marginal, marginal), 1.5, 0.5, 1.0, rule, span)) ==
+        "AfterFactorBoundFreeEnergyEvent(node=NormalMeanVariance, nmarginals=2, energy=1.5, entropy=0.5, result=1.0, rule=$(location), span=ab12…)"
+    @test compact(AfterFactorBoundFreeEnergyEvent(node, (marginal,), nothing, 0.5, -0.5, nothing, span)) ==
+        "AfterFactorBoundFreeEnergyEvent(node=NormalMeanVariance, nmarginals=1, entropy=0.5, result=-0.5, span=ab12…)"
+    @test compact(BeforeVariableBoundEntropyEvent(var, marginal, span)) == "BeforeVariableBoundEntropyEvent(var=:θ, marginal=Marginal(0.5), span=ab12…)"
+    @test compact(AfterVariableBoundEntropyEvent(var, marginal, 0.5, 2, 1.0, span)) ==
+        "AfterVariableBoundEntropyEvent(var=:θ, marginal=Marginal(0.5), entropy=0.5, scaling=2, result=1.0, span=ab12…)"
+
+    # A message names its rule by place in the compact form, and in full by its heading.
+    mapping = EventShowTestUtils.mapping()
+    after_rule = AfterMessageRuleCallEvent(mapping, (left, right), nothing, left, AnnotationDict(), nothing, rule, span)
+    @test endswith(compact(after_rule), ", rule=$(location), span=ab12…)")
+    @test occursin("rule=RuleSpec(message rule for NormalMeanVariance towards :out", repr(after_rule))
+
+    events = (
+        BeforeMarginalRuleCallEvent(joint, (left, right), (marginal,), span),
+        AfterMarginalRuleCallEvent(joint, (left, right), (marginal,), 0.7, rule, span),
+        BeforeFactorBoundFreeEnergyEvent(node, span),
+        AfterFactorBoundFreeEnergyEvent(node, (marginal, marginal), 1.5, 0.5, 1.0, rule, span),
+        BeforeVariableBoundEntropyEvent(var, marginal, span),
+        AfterVariableBoundEntropyEvent(var, marginal, 0.5, 2, 1.0, span),
+    )
+    for ev in events, rendered in (compact(ev), repr(ev))
+        @test !occursin("Mapping{", rendered)
+        @test !occursin("Event{", rendered)
+        @test count('\n', rendered) == 0
+    end
 end

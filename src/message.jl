@@ -723,7 +723,7 @@ is clamped or initial. When log scales are tracked, its log scale is the one the
 
 The callbacks receive [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref) and
 [`ReactiveMP.AfterMessageRuleCallEvent`](@ref) around each call, the latter also for a `missing`
-message.
+message, with what gave the message.
 
 See also [`Message`](@ref), [`ReactiveMP.rule_arguments`](@ref).
 """
@@ -854,9 +854,18 @@ function (mapping::MessageMapping)(messages, marginals)
 
     @invoke_callback(
         mapping.callbacks, AfterMessageRuleCallEvent(
-            mapping, messages, marginals, result, annotations, logscale, span_id
+            mapping, messages, marginals, result, annotations, logscale, selected_message_rule(mapping, messages, marginals), span_id
         )
     )
 
     return new_message(result, is_message_clamped, is_message_initial, annotations, logscale)
+end
+
+# What gave a call's message, found again only for an event someone listens to: the rule, the
+# fallback where no rule matched, or `nothing` where a `missing` input skipped the rule.
+function selected_message_rule(mapping::MessageMapping, messages, marginals)
+    (has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)) && return nothing
+    args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
+    found = MessagePassingRulesBase.find_message_rule(message_mapping_fform(mapping), mapping.target, mapping.algorithm, args)
+    return found isa MessagePassingRulesBase.RuleNotFound ? mapping.rulefallback : found
 end

@@ -94,7 +94,9 @@ export tiny, huge
     AfterFormConstraintAppliedEvent, AfterMarginalComputationEvent, AfterMessageRuleCallEvent,
     AfterProductOfMessagesEvent, AfterProductOfTwoMessagesEvent,
     BeforeFormConstraintAppliedEvent, BeforeMarginalComputationEvent,
-    BeforeMessageRuleCallEvent, BeforeProductOfMessagesEvent, BeforeProductOfTwoMessagesEvent
+    BeforeMessageRuleCallEvent, BeforeProductOfMessagesEvent, BeforeProductOfTwoMessagesEvent,
+    BeforeMarginalRuleCallEvent, AfterMarginalRuleCallEvent, BeforeFactorBoundFreeEnergyEvent,
+    AfterFactorBoundFreeEnergyEvent, BeforeVariableBoundEntropyEvent, AfterVariableBoundEntropyEvent
 
 include("fixes.jl")
 include("helpers/macrohelpers.jl")

@@ -721,6 +721,7 @@ anything.
 | `RuleMethodError`'s "Possible fix, define:" | the not-found report of a [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError): the closest rules, why each does not fit, and a `what to try` line |
 | nothing | [`rule_not_found_hint`](@extref MessagePassingRulesBase.rule_not_found_hint), a sentence a node's package adds to that report |
 | nothing | [`ReactiveMP.EngineDiagnostics`](@ref), the activation option `diagnostics`: audits of purity, in-place coverage and scratch reuse ([Diagnostics](@ref lib-activation-options-diagnostics)) |
+| nothing | callback events for a node's marginal rule calls and for every term of the free energy, [`ReactiveMP.AfterMarginalRuleCallEvent`](@ref), [`ReactiveMP.AfterFactorBoundFreeEnergyEvent`](@ref) and [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref) with their "before" events, and the `rule` of every event after a rule call: the rule that ran, the fallback or `nothing` ([Callbacks](@ref lib-callbacks), [Tracing the free energy](@ref lib-score-tracing)) |
 
 ## [Node packages](@id migration-v6-to-v7-node-packages)
 
@@ -912,6 +913,9 @@ Two changes in the engine concern code that reads annotations or traces rule cal
   before.
 - **Span ids** still pair a "before" event with its "after" event, but come from a counter salted
   once per session, not from `uuid4()`.
+- **[`ReactiveMP.AfterMessageRuleCallEvent`](@ref) has a field `rule`**, before `span_id`: what
+  gave the message. A handler that reads fields by name is unaffected; code that builds the event
+  positionally, as a test might, passes it.
 
 ## Removed
 

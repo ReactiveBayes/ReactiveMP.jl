@@ -1,8 +1,9 @@
 # [Callbacks](@id lib-callbacks)
 
 Callbacks observe message passing. The engine reports an event before and after every rule call,
-every product of messages, every form constraint and every marginal of a random variable. A
-callback handler reacts to the events it is interested in. Callbacks serve debugging, tracing and
+every product of messages, every form constraint, every marginal of a random variable, every
+joint marginal a node computes, and every term of the free energy. A callback handler reacts to
+the events it is interested in. Callbacks serve debugging, tracing and
 monitoring, and they change nothing the engine computes. To transform the streams themselves, use
 [stream postprocessors](@ref lib-stream-postprocessors).
 
@@ -11,12 +12,21 @@ monitoring, and they change nothing the engine computes. To transform the stream
 You give callbacks in two places:
 
 - to a factor node, as the activation option `callbacks` of
-  [`ReactiveMP.FactorNodeActivationOptions`](@ref). The node reports the rule call events,
+  [`ReactiveMP.FactorNodeActivationOptions`](@ref). The node reports its message rule calls,
   [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref) and
-  [`ReactiveMP.AfterMessageRuleCallEvent`](@ref).
+  [`ReactiveMP.AfterMessageRuleCallEvent`](@ref), its marginal rule calls, which compute the joint
+  marginals of its clusters, and its term of the free energy,
+  [`ReactiveMP.AfterFactorBoundFreeEnergyEvent`](@ref).
 - to a variable, as the `callbacks` of the [`ReactiveMP.MessageProductContext`](@ref)s in its
   [`RandomVariableActivationOptions`](@ref). The variable reports the product and form
-  constraint events, and the context of its marginal also reports the marginal events.
+  constraint events, and the context of its marginal also reports the marginal events and the
+  variable's term of the free energy, [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref).
+
+An event after a rule call names the rule that ran, its `rule`: the
+[`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), which shows where the rule is defined, the
+node's rule fallback where no rule matched, or `nothing` where a `missing` input skipped the rule.
+The engine builds an event only for a handler that listens to it, so a graph activated without
+callbacks, or with callbacks for other events, runs as fast as one that reports nothing.
 
 ```@setup callbacks
 using ReactiveMP, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, Rocket
@@ -114,6 +124,12 @@ names it. The struct of the event `:event_name` is `EventNameEvent`:
 | `:after_form_constraint_applied` | [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref) |
 | `:before_marginal_computation` | [`ReactiveMP.BeforeMarginalComputationEvent`](@ref) |
 | `:after_marginal_computation` | [`ReactiveMP.AfterMarginalComputationEvent`](@ref) |
+| `:before_marginal_rule_call` | [`ReactiveMP.BeforeMarginalRuleCallEvent`](@ref) |
+| `:after_marginal_rule_call` | [`ReactiveMP.AfterMarginalRuleCallEvent`](@ref) |
+| `:before_factor_bound_free_energy` | [`ReactiveMP.BeforeFactorBoundFreeEnergyEvent`](@ref) |
+| `:after_factor_bound_free_energy` | [`ReactiveMP.AfterFactorBoundFreeEnergyEvent`](@ref) |
+| `:before_variable_bound_entropy` | [`ReactiveMP.BeforeVariableBoundEntropyEvent`](@ref) |
+| `:after_variable_bound_entropy` | [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref) |
 
 Each event carries what happened in its fields, listed with it below.
 
@@ -140,4 +156,10 @@ ReactiveMP.BeforeFormConstraintAppliedEvent
 ReactiveMP.AfterFormConstraintAppliedEvent
 ReactiveMP.BeforeMarginalComputationEvent
 ReactiveMP.AfterMarginalComputationEvent
+ReactiveMP.BeforeMarginalRuleCallEvent
+ReactiveMP.AfterMarginalRuleCallEvent
+ReactiveMP.BeforeFactorBoundFreeEnergyEvent
+ReactiveMP.AfterFactorBoundFreeEnergyEvent
+ReactiveMP.BeforeVariableBoundEntropyEvent
+ReactiveMP.AfterVariableBoundEntropyEvent
 ```

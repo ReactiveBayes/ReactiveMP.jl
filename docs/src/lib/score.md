@@ -6,7 +6,7 @@ and one per variable, and the engine updates each term as the marginals it depen
 
 ```@setup score
 using ReactiveMP, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, Rocket
-import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals, set_initial_marginal!
+import ReactiveMP: activate!, FactorNodeActivationOptions, MessageProductContext, get_stream_of_marginals, set_initial_marginal!
 include(joinpath(pkgdir(ReactiveMP), "docs", "nodes.jl"))
 ```
 
@@ -82,6 +82,42 @@ with the rule context and the diagnostics the node was activated with.
 
 ```@docs
 bethe_free_energy
+```
+
+## [Tracing the free energy](@id lib-score-tracing)
+
+Each term reports itself to [callbacks](@ref lib-callbacks): a factor node's to the node's, as
+[`ReactiveMP.AfterFactorBoundFreeEnergyEvent`](@ref), with its average energy, its entropies and
+the average energy that ran; a variable's to those of its marginal's context, as
+[`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref). The first graph again, traced:
+
+```@example score
+terms = []
+record = (event) -> push!(terms, event)
+callbacks = (after_factor_bound_free_energy = record, after_variable_bound_entropy = record)
+
+xt, yt = randomvar(label = :x), datavar(label = :y)
+traced_constants = (constvar(0.0), constvar(10.0), constvar(1.0))
+traced = (
+    factornode(Gaussian, [(:out, xt), (:μ, traced_constants[1]), (:v, traced_constants[2])]),
+    factornode(Gaussian, [(:out, yt), (:μ, xt), (:v, traced_constants[3])]),
+)
+activate!(xt, RandomVariableActivationOptions(nothing, MessageProductContext(), MessageProductContext(; callbacks)))
+activate!(yt, DataVariableActivationOptions())
+foreach(n -> activate!(n, FactorNodeActivationOptions(; callbacks)), traced)
+
+traced_energies = Float64[]
+traced_subscription = subscribe!(bethe_free_energy(Float64, traced, (xt, yt, traced_constants...)), (f) -> push!(traced_energies, f))
+new_observation!(yt, 2.0)
+foreach(event -> println(sprint(show, event; context = :compact => true)), terms)
+```
+
+A term is a `BayesBase.CountingReal`: the entropy of a point mass is infinite, and the term counts
+those apart from its value. The free energy is the terms' sum less one point entropy for each
+connection of a data or constant variable, here four, which cancel the infinities:
+
+```@example score
+float(sum(event.result for event in terms) - BayesBase.CountingReal(Float64, 4)), last(traced_energies)
 ```
 
 ## [Score types](@id lib-score-types)
