@@ -18,7 +18,7 @@ registered(name) = Inventory(
 )
 
 links = InterLinks(
-    "MessagePassingRulesApproximations" => sibling("MessagePassingRulesApproximations"),
+    "MessagePassingRulesApproximations" => registered("MessagePassingRulesApproximations"),
     "MessagePassingRulesBase" => registered("MessagePassingRulesBase"),
     "StandardMessagePassingRules" => sibling("StandardMessagePassingRules"),
 )

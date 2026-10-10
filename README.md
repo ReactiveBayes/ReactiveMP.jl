@@ -16,7 +16,7 @@ The engine holds no update rules of its own. Nodes and rules are declared with [
 
 # Installation
 
-The current version, 7, and its rule packages are not registered yet; MessagePassingRulesBase, the rule system, is. Until the rest are, clone this repository and develop the engine together with the packages you need; each package's `[sources]` points at its siblings, and MessagePassingRulesBase comes from the registry:
+The current version, 7, and its rule packages are not registered yet; the rule system, MessagePassingRulesBase, the numerics the rules share, MessagePassingRulesApproximations, and the test tooling, MessagePassingRulesTestUtils, are. Until the rest are, clone this repository and develop the engine together with the packages you need; each package's `[sources]` points at its siblings, and the registered packages come from General:
 
 ```julia
 import Pkg

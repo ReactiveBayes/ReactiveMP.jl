@@ -11,5 +11,4 @@ StandardMessagePassingRules = "d166223a-7879-43b1-add3-64af0a178e9e"
 
 [sources]
 GCVMessagePassingRules = {path = ".."}
-MessagePassingRulesApproximations = {path = "../../MessagePassingRulesApproximations"}
 StandardMessagePassingRules = {path = "../../StandardMessagePassingRules"}

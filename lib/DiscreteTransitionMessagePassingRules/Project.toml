@@ -13,8 +13,6 @@ ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 
-[sources]
-MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
 Aqua = "0.8"

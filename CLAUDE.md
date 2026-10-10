@@ -80,9 +80,7 @@ make check-format                          # verify only, no writes
 make docs-all                              # every documentation site, in dependency order, ReactiveMP's last
 make docs-standard                         # one package's site (docs-<package>, as the test targets), into lib/<Pkg>/docs/build, after the sites it links to
 make docs                                  # ReactiveMP's site alone; it links to the package sites, so they must be built
-make test-testutils                        # lib/MessagePassingRulesTestUtils
 make test-standard                         # lib/StandardMessagePassingRules
-make test-approximations                   # lib/MessagePassingRulesApproximations, which depends on no sibling
 make test-delta                            # lib/DeltaMessagePassingRules
 make test-gaussian-coupling                # lib/GaussianCouplingMessagePassingRules
 make test-probit                           # lib/ProbitMessagePassingRules
@@ -230,17 +228,14 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   the monorepo depends on it from General (`[compat] "1"`), and its docs link to its published
   inventory. A change to it goes to that repository. `RELEASING.md` is the procedure that split it
   out, for the other packages too.
-- **`lib/MessagePassingRulesTestUtils` and `lib/MessagePassingRulesApproximations` are frozen**
-  (2026-10-06): their sources of truth are
+- **MessagePassingRulesTestUtils and MessagePassingRulesApproximations are registered** (1.0.0,
+  2026-10-09) and live in
   [ReactiveBayes/MessagePassingRulesTestUtils.jl](https://github.com/ReactiveBayes/MessagePassingRulesTestUtils.jl)
   and [ReactiveBayes/MessagePassingRulesApproximations.jl](https://github.com/ReactiveBayes/MessagePassingRulesApproximations.jl),
-  at 1.0.0 and registering. Do not edit the copies here; a change goes to those repositories. Once
-  both are in General, the siblings depend on them and the copies are deleted, as
-  MessagePassingRulesBase's was.
+  as MessagePassingRulesBase does: the siblings take them from General (`[compat] "1"`), and the
+  sites link to their published inventories. A change to either goes to its repository.
 - `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:
-  `MessagePassingRulesTestUtils`
-  (`make test-testutils`), `StandardMessagePassingRules` (`make test-standard`; every standard node: the distributions, arithmetic, logic and the mixtures), `MessagePassingRulesApproximations` (`make test-approximations`;
-  `Unscented`, `Linearization`, Gauss–Hermite cubature and `smoothRTS`, pure numerics) and `DeltaMessagePassingRules`
+  `StandardMessagePassingRules` (`make test-standard`; every standard node: the distributions, arithmetic, logic and the mixtures) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation`, its Unscented and
   Linearization rules, and `CVIProjection`, whose rules are an extension on
   ExponentialFamilyProjection) and the node packages, one per node, on Delta's template:

@@ -10,5 +10,4 @@ MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 ProbitMessagePassingRules = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
 
 [sources]
-MessagePassingRulesApproximations = {path = "../../MessagePassingRulesApproximations"}
 ProbitMessagePassingRules = {path = ".."}

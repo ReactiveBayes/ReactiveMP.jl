@@ -38,9 +38,7 @@ jobs:
         version: ['1.10', '1.11', '1.12', '1.13']
         # The Makefile's targets, one per package under lib/.
         package:
-          - testutils
           - standard
-          - approximations
           - delta
           - gaussian-coupling
           - probit

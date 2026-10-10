@@ -48,8 +48,6 @@ jobs:
               "lib/FlowMessagePassingRules",
               "lib/GCVMessagePassingRules",
               "lib/GaussianCouplingMessagePassingRules",
-              "lib/MessagePassingRulesApproximations",
-              "lib/MessagePassingRulesTestUtils",
               "lib/PolyaMessagePassingRules",
               "lib/ProbitMessagePassingRules",
               "lib/SoftDotMessagePassingRules",

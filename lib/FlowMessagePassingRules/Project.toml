@@ -16,9 +16,6 @@ MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
-[sources]
-MessagePassingRulesApproximations = {path = "../MessagePassingRulesApproximations"}
-MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
 Aqua = "0.8"

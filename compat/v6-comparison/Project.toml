@@ -32,8 +32,6 @@ DiscreteTransitionMessagePassingRules = {path = "../../lib/DiscreteTransitionMes
 GCVMessagePassingRules = {path = "../../lib/GCVMessagePassingRules"}
 FlowMessagePassingRules = {path = "../../lib/FlowMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "../../lib/GaussianCouplingMessagePassingRules"}
-MessagePassingRulesApproximations = {path = "../../lib/MessagePassingRulesApproximations"}
-MessagePassingRulesTestUtils = {path = "../../lib/MessagePassingRulesTestUtils"}
 PolyaMessagePassingRules = {path = "../../lib/PolyaMessagePassingRules"}
 ProbitMessagePassingRules = {path = "../../lib/ProbitMessagePassingRules"}
 SoftDotMessagePassingRules = {path = "../../lib/SoftDotMessagePassingRules"}

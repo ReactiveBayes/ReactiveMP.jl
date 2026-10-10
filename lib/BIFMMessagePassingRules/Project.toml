@@ -15,8 +15,6 @@ FastCholesky = "2d5283b6-8564-42b6-bb00-83ed8e915756"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 
-[sources]
-MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
 Aqua = "0.8"

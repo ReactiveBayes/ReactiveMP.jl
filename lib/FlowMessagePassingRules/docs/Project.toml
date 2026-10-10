@@ -11,4 +11,3 @@ MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 
 [sources]
 FlowMessagePassingRules = {path = ".."}
-MessagePassingRulesApproximations = {path = "../../MessagePassingRulesApproximations"}

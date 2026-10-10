@@ -194,4 +194,17 @@ Release notes:
   every version, Runic and the docs; docs live at `/dev/`; coverage 96.29% for Approximations (260
   of 270 lines, release commit `70b55a9`) and 94.83% for TestUtils (349 of 368, `4c613dd`).
   Codecov's repository summary stays empty for a while after the first upload; the commit's own
-  report, `…/commits/<sha>/`, has the totals.
+  report, `…/commits/<sha>/`, has the totals. Registered as
+  [General#170750](https://github.com/JuliaRegistries/General/pull/170750) and
+  [General#170751](https://github.com/JuliaRegistries/General/pull/170751), every AutoMerge
+  guideline met, merged 2026-10-09. TagBot could not push `v1.0.0`: the release commit adds
+  `.github/workflows`, and the push was refused for lack of the workflow scope ("Failed to push tag
+  v1.0.0 … provide workflow scope or avoid workflow changes"), although MessagePassingRulesBase's
+  went through. The tags were pushed by hand on 2026-10-10, on the registered trees (checked
+  against General's `git-tree-sha1`), and TagBot dispatched for the releases. A package's first
+  release commit adds the workflows too, so step 7 checks for the tag a day after the merge.
+- **The monorepo on the registered TestUtils and Approximations** (step 8, 2026-10-10): their
+  `[sources]` path entries gone, `lib/MessagePassingRulesTestUtils` and
+  `lib/MessagePassingRulesApproximations` deleted, the sites linking to their `stable/`
+  inventories, their Makefile targets, `LibTests.yml` jobs and `CompatHelper.yml` entries gone,
+  `compat/v6-comparison` resolved from General; RxInfer's branch the same.

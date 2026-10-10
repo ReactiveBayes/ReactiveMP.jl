@@ -3,13 +3,6 @@
 using Documenter, DocumenterInterLinks, DocInventories
 using FlowMessagePassingRules
 
-# Another package's site, for `@extref` links: its planned address, and the inventory of its local
-# build, which must exist, so sites build in dependency order (`make docs-all`).
-sibling(name) = (
-    "https://reactivebayes.github.io/$(name).jl/dev/",
-    joinpath(@__DIR__, "..", "..", name, "docs", "build", "objects.inv"),
-)
-
 # A registered package's site, by its published inventory. A first request to GitHub Pages can take
 # seconds, longer than DocInventories' default timeout of one second, so it waits longer.
 registered(name) = Inventory(
@@ -18,7 +11,7 @@ registered(name) = Inventory(
 )
 
 links = InterLinks(
-    "MessagePassingRulesApproximations" => sibling("MessagePassingRulesApproximations"),
+    "MessagePassingRulesApproximations" => registered("MessagePassingRulesApproximations"),
     "MessagePassingRulesBase" => registered("MessagePassingRulesBase"),
 )
 

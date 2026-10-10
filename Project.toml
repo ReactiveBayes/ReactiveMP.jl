@@ -26,7 +26,6 @@ DiscreteTransitionMessagePassingRules = {path = "lib/DiscreteTransitionMessagePa
 FlowMessagePassingRules = {path = "lib/FlowMessagePassingRules"}
 GCVMessagePassingRules = {path = "lib/GCVMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassingRules"}
-MessagePassingRulesApproximations = {path = "lib/MessagePassingRulesApproximations"}
 PolyaMessagePassingRules = {path = "lib/PolyaMessagePassingRules"}
 ProbitMessagePassingRules = {path = "lib/ProbitMessagePassingRules"}
 SoftDotMessagePassingRules = {path = "lib/SoftDotMessagePassingRules"}

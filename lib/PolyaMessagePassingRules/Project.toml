@@ -16,9 +16,6 @@ MessagePassingRulesBase = "4a5b64c7-30c9-4471-82f2-bbe8464b157d"
 PolyaGammaHybridSamplers = "c636ee4f-4591-4d8c-9fae-2dea21daa433"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
-[sources]
-MessagePassingRulesApproximations = {path = "../MessagePassingRulesApproximations"}
-MessagePassingRulesTestUtils = {path = "../MessagePassingRulesTestUtils"}
 
 [compat]
 Aqua = "0.8"

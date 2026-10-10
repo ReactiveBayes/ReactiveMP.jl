@@ -1,16 +1,17 @@
 # `lib/` — the message passing rule packages
 
-The test tooling, the numerics the rules share, and the rules themselves, one package per group
-of nodes. Each package has its own test suite. The rule system they are written with,
-[MessagePassingRulesBase](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl), has its
-own repository and is registered. The engine in `src/` depends on `MessagePassingRulesBase` only;
+The rule packages, one per group of nodes, each with its own test suite. The rule system they are
+written with, [MessagePassingRulesBase](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl),
+the numerics they share,
+[MessagePassingRulesApproximations](https://github.com/ReactiveBayes/MessagePassingRulesApproximations.jl),
+and their test tooling,
+[MessagePassingRulesTestUtils](https://github.com/ReactiveBayes/MessagePassingRulesTestUtils.jl),
+have repositories of their own and are registered. The engine in `src/` depends on `MessagePassingRulesBase` only;
 it finds the rules of every loaded rule package through it.
 
 | package | role |
 |---|---|
-| `MessagePassingRulesTestUtils` | test tooling, used through `[extras]`: table tests (`@test_message_update_rule`), verification against a node's definition, derivative checks, the rule-coverage gate, comparison with a reference implementation, and engine trajectories |
 | `StandardMessagePassingRules` | the standard nodes: distributions, arithmetic, logic and the mixtures |
-| `MessagePassingRulesApproximations` | numerics over means and covariances: `Unscented`, `Linearization`, Gauss–Hermite cubature and `smoothRTS` |
 | `DeltaMessagePassingRules` | the Delta node, `DeltaFn{F}`, under `DeltaApproximation(; method, inverse)` with `Unscented()`, `Linearization()` or, through an extension on ExponentialFamilyProjection, `CVIProjection()` |
 | `GaussianCouplingMessagePassingRules` | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
 | `ProbitMessagePassingRules` | the Probit node and its algorithm `ProbitEP`, expectation propagation |
@@ -26,9 +27,9 @@ it finds the rules of every loaded rule package through it.
 ## Documentation
 
 Each package has a `README.md` and its own documentation site, `docs/` beside its `src/`, built
-with `make docs-<package>` (the test target's name, `docs-standard`, `docs-testutils`, …) into
+with `make docs-<package>` (the test target's name, `docs-standard`, `docs-delta`, …) into
 `docs/build`; `make docs-all` builds every site in dependency order, as CI does. The sites link
-to each other with DocumenterInterLinks `@extref`: to MessagePassingRulesBase's published site,
+to each other with DocumenterInterLinks `@extref`: to the registered packages' published sites,
 and to the other packages' planned addresses, `https://reactivebayes.github.io/<Package>.jl/dev/`,
 with each sibling's local inventory until they are published with the repository split.
 
@@ -37,20 +38,19 @@ with each sibling's local inventory until they are published with the repository
 - `MessagePassingRulesBase` never depends on `ExponentialFamily`: the distribution machinery
   it needs is BayesBase's, and anything missing is added to BayesBase, in non-breaking
   releases, since `compat/v6-comparison` resolves against them.
-- `MessagePassingRulesApproximations` depends on no sibling and on no distribution package:
-  approximating an integral is numerics, choosing which rules run is an algorithm.
 - No rule package depends on `ReactiveMP` or on `MessagePassingRulesTestUtils`; each
   package's `quality:closure` test checks its dependency closure.
 
 ## Wiring
 
 The packages here are unregistered, so a package that depends on a sibling lists it in `[deps]`
-and in `[sources]`, with its relative path; MessagePassingRulesBase, registered, comes from General. A test-only sibling, such as
-`MessagePassingRulesTestUtils`, goes in `[extras]` and `[sources]`. `Pkg.test()` then works
+and in `[sources]`, with its relative path. MessagePassingRulesBase, MessagePassingRulesApproximations
+and MessagePassingRulesTestUtils, registered, come from General; the test tooling is a test-only
+dependency, in `[extras]`. `Pkg.test()` then works
 from each package's own project, and so does its `make` target:
 
 ```bash
-make test-testutils test-standard test-approximations test-delta \
+make test-standard test-delta \
      test-gaussian-coupling test-probit test-gcv test-autoregressive test-softdot \
      test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
 ```

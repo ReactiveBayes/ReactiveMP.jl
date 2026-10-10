@@ -11,9 +11,7 @@ sibling(name) = (
 )
 
 const SIBLINGS = [
-    "MessagePassingRulesTestUtils",
     "StandardMessagePassingRules",
-    "MessagePassingRulesApproximations",
     "DeltaMessagePassingRules",
     "GaussianCouplingMessagePassingRules",
     "ProbitMessagePassingRules",
@@ -34,7 +32,10 @@ registered(name) = Inventory(
     root_url = "https://reactivebayes.github.io/$(name).jl/stable/", timeout = 30,
 )
 
-const REGISTERED = ["MessagePassingRulesBase" => registered("MessagePassingRulesBase")]
+const REGISTERED = [
+    name => registered(name) for name in
+        ("MessagePassingRulesBase", "MessagePassingRulesTestUtils", "MessagePassingRulesApproximations")
+]
 
 links = InterLinks(REGISTERED..., (name => sibling(name) for name in SIBLINGS)...)
 
