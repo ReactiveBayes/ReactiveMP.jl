@@ -3964,7 +3964,9 @@ this phase requires it to pass for release, rather than being its first executio
       branch depend on the registered packages, their `lib/` copies deleted, 2026-10-10. The rule
       packages' grouping is decided (user with Mykola, 2026-10-12, `DISCUSSION.md` §3.57): Probit
       is part of Standard, RxInfer loads Standard, Delta, AR, DiscreteTransition, GCV,
-      GaussianCoupling and SoftDot, and Optim is its extension; the 11 packages are at 1.0.0)*
+      GaussianCoupling and SoftDot, and Optim is its extension; the 11 packages are at 1.0.0, split
+      into their own repositories, ten registering in General (#171496–#171504, #171506), GCV after
+      Standard)*
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed
       *(the order is in `RELEASING.md`, dependencies first; every package supports Julia 1.10 and
       later, user, 2026-10-02: checked on 1.10 with the suites, RxInfer, the examples and the

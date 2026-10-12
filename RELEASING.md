@@ -208,3 +208,19 @@ Release notes:
   `lib/MessagePassingRulesApproximations` deleted, the sites linking to their `stable/`
   inventories, their Makefile targets, `LibTests.yml` jobs and `CompatHelper.yml` entries gone,
   `compat/v6-comparison` resolved from General; RxInfer's branch the same.
+- **The 11 rule packages 1.0.0** (2026-10-12): the grouping decided first (user with Mykola,
+  `DISCUSSION.md` §3.57): Probit is part of Standard, RxInfer loads Standard, Delta, AR,
+  DiscreteTransition, GCV, GaussianCoupling and SoftDot, and Optim is RxInfer's extension. Every
+  suite, docs site, v6 comparison, RxInfer and all 48 examples green before anything was made
+  public (user's gate). Split with their history (Standard 66 commits, the others 15–25), session
+  links stripped (1–5 lines each), a standalone commit each, with the fixes found since:
+  `CompatHelper.main()` root only, CI setting `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC`, sibling
+  sites by `registered(...)`. `git subtree split` walks the whole monorepo history per package, about
+  half an hour each; independent packages split in parallel, three at a time. Local checks: every
+  suite on 1.10–1.13 with coverage on 1.10 and 1.13, docs and Runic. Ten published (CI green, docs
+  live, coverage 93–100 %) and registered: General#171496–#171504 and #171506 (Standard), every
+  AutoMerge guideline met. **GCV** depends on Standard, so it is set up and checked locally (with
+  Standard developed) but published and registered once Standard is in General; its docs link
+  Standard's `stable/` inventory, which exists only after Standard's tag. After each merge: check for
+  `v1.0.0`, and push it by hand on the registered tree if TagBot cannot (the release commit adds
+  workflows).

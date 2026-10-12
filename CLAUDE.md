@@ -233,6 +233,11 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   and [ReactiveBayes/MessagePassingRulesApproximations.jl](https://github.com/ReactiveBayes/MessagePassingRulesApproximations.jl),
   as MessagePassingRulesBase does: the siblings take them from General (`[compat] "1"`), and the
   sites link to their published inventories. A change to either goes to its repository.
+- **The 11 rule packages in `lib/` are frozen** (2026-10-12): each is split, with its history,
+  into `ReactiveBayes/<Package>.jl` at 1.0.0, ten registering in General (#171496–#171504 and
+  #171506 for Standard) and GCV waiting for Standard to be registered, since it depends on it. Do
+  not edit the copies here; a change goes to the package's repository. Once they are registered,
+  the monorepo and RxInfer depend on them and `lib/` is deleted.
 - `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:
   `StandardMessagePassingRules` (`make test-standard`; every standard node: the distributions, arithmetic, logic and the mixtures) and `DeltaMessagePassingRules`
   (`make test-delta`; the Delta node, its algorithm `DeltaApproximation`, its Unscented and
