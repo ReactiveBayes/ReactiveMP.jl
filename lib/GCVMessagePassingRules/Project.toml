@@ -1,6 +1,6 @@
 name = "GCVMessagePassingRules"
 uuid = "2bb838d1-ae36-49a2-8c64-82a0acccfa93"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # The GCV node, the Gaussian controlled variance, y ~ N(x, exp(κz + ω)), its algorithm and its
 # distribution ExponentialLinearQuadratic, with the rules that let NormalMeanVariance and
@@ -29,7 +29,7 @@ MessagePassingRulesBase = "1"
 MessagePassingRulesTestUtils = "1"
 Pkg = "1.10"
 StableRNGs = "1"
-StandardMessagePassingRules = "0.1"
+StandardMessagePassingRules = "1"
 StatsFuns = "1"
 Test = "1.10"
 TestItemRunner = "1"

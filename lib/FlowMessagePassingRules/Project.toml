@@ -1,6 +1,6 @@
 name = "FlowMessagePassingRules"
 uuid = "adabaeda-8474-4dd2-bb94-9124d4d2b701"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # The Flow node, a deterministic invertible transformation, with its flow models (layers and
 # coupling flows) and PermutationMatrix.

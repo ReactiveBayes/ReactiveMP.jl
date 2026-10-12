@@ -9,6 +9,8 @@ The message passing rules of the standard factor nodes, written with MessagePass
 - **arithmetic**: `+`, `-`, `*` and `dot`, the functions being the nodes;
 - **logic**: `AND`, `OR`, `NOT` and `IMPLY` over Bernoulli variables;
 - **mixtures**: `NormalMixture`, `GammaMixture` and `Mixture`;
+- **expectation propagation**: `Probit`, a binary output through the probit link, under its own
+  algorithm `ProbitEP`;
 - **helpers**: `StandaloneDistribution`, `Uninformative` and `diageye`.
 
 Most nodes are ExponentialFamily's, Distributions' and Base's own types and functions; loading
@@ -31,6 +33,6 @@ MessagePassingRulesBase.rule_coverage(NormalMeanVariance)  # which rules exist
   will be published at <https://reactivebayes.github.io/StandardMessagePassingRules.jl/dev/>.
 - Tests: `make test-standard`, which ends with a rule-coverage gate: every rule must be
   selected by some test.
-- Depends on MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions and a few
-  numerical packages (FastCholesky, MatrixCorrectionTools, SpecialFunctions, StatsFuns,
+- Depends on MessagePassingRulesBase, MessagePassingRulesApproximations (Probit's Gauss–Hermite
+  energy), BayesBase, ExponentialFamily, Distributions and a few numerical packages (FastCholesky, MatrixCorrectionTools, SpecialFunctions, StatsFuns,
   LogExpFunctions, DomainSets), not on ReactiveMP. Julia 1.10 or later. MIT licence.

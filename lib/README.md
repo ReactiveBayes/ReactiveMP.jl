@@ -14,7 +14,6 @@ it finds the rules of every loaded rule package through it.
 | `StandardMessagePassingRules` | the standard nodes: distributions, arithmetic, logic and the mixtures |
 | `DeltaMessagePassingRules` | the Delta node, `DeltaFn{F}`, under `DeltaApproximation(; method, inverse)` with `Unscented()`, `Linearization()` or, through an extension on ExponentialFamilyProjection, `CVIProjection()` |
 | `GaussianCouplingMessagePassingRules` | the GaussianCoupling node, the edge potential of Gaussian belief propagation |
-| `ProbitMessagePassingRules` | the Probit node and its algorithm `ProbitEP`, expectation propagation |
 | `GCVMessagePassingRules` | the GCV node, its `ExponentialLinearQuadratic`, and the normal nodes' rules for it |
 | `AutoregressiveMessagePassingRules` | the AR and ConjugateAR nodes under their algorithm `ARVMP` |
 | `SoftDotMessagePassingRules` | the SoftDot node, independent of the autoregressive package |
@@ -23,6 +22,11 @@ it finds the rules of every loaded rule package through it.
 | `BIFMMessagePassingRules` | BIFM and BIFMHelper under `BIFMSmoother(A, B, C)`: stateless rules, no free energy |
 | `FlowMessagePassingRules` | Flow under `FlowApproximation(model; method)`, the flow models and layers, and `PermutationMatrix` |
 | `DiscreteTransitionMessagePassingRules` | DiscreteTransition as a tensor node: one rule per target, over whatever inputs the factorisation delivers |
+
+RxInfer loads and re-exports Standard, Delta, Autoregressive, DiscreteTransition, GCV,
+GaussianCoupling and SoftDot. ContinuousTransition, Pólya, BIFM and Flow are optional: a model
+loads them itself, which keeps RxInfer's dependencies small. Probit is part of Standard, as its
+example of an expectation propagation node.
 
 ## Documentation
 
@@ -51,7 +55,7 @@ from each package's own project, and so does its `make` target:
 
 ```bash
 make test-standard test-delta \
-     test-gaussian-coupling test-probit test-gcv test-autoregressive test-softdot \
+     test-gaussian-coupling test-gcv test-autoregressive test-softdot \
      test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
 ```
 

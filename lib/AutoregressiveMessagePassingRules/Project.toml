@@ -1,6 +1,6 @@
 name = "AutoregressiveMessagePassingRules"
 uuid = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # The autoregressive nodes, AR and ConjugateAR, with their algorithm ARVMP and the companion
 # matrix and standard basis vector their rules use.

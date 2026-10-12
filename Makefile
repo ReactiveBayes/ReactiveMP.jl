@@ -21,7 +21,7 @@ check-format: scripts_init ## Check Julia code formatting (does not modify files
 # depends on through their inventories: a registered package's published one, and a lib package's
 # local build (`docs/build/objects.inv`), so each `docs-<package>` target builds those sites first, and `docs-all` builds the ReactiveMP site, which links to every
 # package, last. To rebuild one site alone, run its `make.jl` as the target's recipe does.
-.PHONY: doc_init docs docs-all docs-standard docs-delta docs-gaussian-coupling docs-probit docs-gcv docs-softdot docs-autoregressive docs-continuous-transition docs-polya docs-bifm docs-flow docs-discrete-transition
+.PHONY: doc_init docs docs-all docs-standard docs-delta docs-gaussian-coupling docs-gcv docs-softdot docs-autoregressive docs-continuous-transition docs-polya docs-bifm docs-flow docs-discrete-transition
 
 doc_init:
 	julia --project=docs -e 'using Pkg; Pkg.instantiate();'
@@ -29,7 +29,7 @@ doc_init:
 docs: doc_init ## Build ReactiveMP's documentation site, running its doctests (needs the package sites: `make docs-all`)
 	julia --startup-file=no --project=docs docs/make.jl
 
-docs-all: docs-standard docs-delta docs-gaussian-coupling docs-probit docs-gcv docs-softdot docs-autoregressive docs-continuous-transition docs-polya docs-bifm docs-flow docs-discrete-transition docs ## Build every documentation site, in dependency order
+docs-all: docs-standard docs-delta docs-gaussian-coupling docs-gcv docs-softdot docs-autoregressive docs-continuous-transition docs-polya docs-bifm docs-flow docs-discrete-transition docs ## Build every documentation site, in dependency order
 
 docs-standard: ## Build lib/StandardMessagePassingRules's documentation site into its docs/build
 	julia --startup-file=no --project=lib/StandardMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
@@ -42,10 +42,6 @@ docs-delta: ## Build lib/DeltaMessagePassingRules's documentation site into its 
 docs-gaussian-coupling: ## Build lib/GaussianCouplingMessagePassingRules's documentation site into its docs/build
 	julia --startup-file=no --project=lib/GaussianCouplingMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
 	julia --startup-file=no --project=lib/GaussianCouplingMessagePassingRules/docs lib/GaussianCouplingMessagePassingRules/docs/make.jl
-
-docs-probit: ## Build lib/ProbitMessagePassingRules's documentation site into its docs/build
-	julia --startup-file=no --project=lib/ProbitMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
-	julia --startup-file=no --project=lib/ProbitMessagePassingRules/docs lib/ProbitMessagePassingRules/docs/make.jl
 
 docs-gcv: docs-standard ## Build lib/GCVMessagePassingRules's documentation site into its docs/build
 	julia --startup-file=no --project=lib/GCVMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
@@ -79,7 +75,7 @@ docs-discrete-transition: ## Build lib/DiscreteTransitionMessagePassingRules's d
 	julia --startup-file=no --project=lib/DiscreteTransitionMessagePassingRules/docs -e 'using Pkg; Pkg.instantiate()'
 	julia --startup-file=no --project=lib/DiscreteTransitionMessagePassingRules/docs lib/DiscreteTransitionMessagePassingRules/docs/make.jl
 
-.PHONY: test test-all test-standard test-delta test-gaussian-coupling test-probit test-gcv test-softdot test-autoregressive test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
+.PHONY: test test-all test-standard test-delta test-gaussian-coupling test-gcv test-softdot test-autoregressive test-continuous-transition test-polya test-bifm test-flow test-discrete-transition
 
 test: ## Run the root suite except items tagged `:slow`. test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
@@ -95,9 +91,6 @@ test-delta: ## Test lib/DeltaMessagePassingRules against the local lib packages 
 
 test-gaussian-coupling: ## Test lib/GaussianCouplingMessagePassingRules against the local lib packages ([sources]). Takes test_args like `test`
 	julia --startup-file=no --project=lib/GaussianCouplingMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
-
-test-probit: ## Test lib/ProbitMessagePassingRules against the local lib packages ([sources]). Takes test_args like `test`
-	julia --startup-file=no --project=lib/ProbitMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 test-gcv: ## Test lib/GCVMessagePassingRules against the local lib packages ([sources]). Takes test_args like `test`
 	julia --startup-file=no --project=lib/GCVMessagePassingRules -e 'import Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'

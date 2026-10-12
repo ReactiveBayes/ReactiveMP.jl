@@ -12,6 +12,7 @@ registered(name) = Inventory(
 
 links = InterLinks(
     "MessagePassingRulesBase" => registered("MessagePassingRulesBase"),
+    "MessagePassingRulesApproximations" => registered("MessagePassingRulesApproximations"),
 )
 
 DocMeta.setdocmeta!(StandardMessagePassingRules, :DocTestSetup, :(using StandardMessagePassingRules); recursive = true)
@@ -30,6 +31,7 @@ makedocs(
         "Arithmetic" => "arithmetic.md",
         "Logic" => "logic.md",
         "Mixtures" => "mixtures.md",
+        "Expectation propagation: Probit" => "probit.md",
         "Helper nodes and message types" => "helpers.md",
         "Internals" => "internals.md",
     ],

@@ -41,7 +41,6 @@ jobs:
           - standard
           - delta
           - gaussian-coupling
-          - probit
           - gcv
           - autoregressive
           - softdot

@@ -49,7 +49,6 @@ jobs:
               "lib/GCVMessagePassingRules",
               "lib/GaussianCouplingMessagePassingRules",
               "lib/PolyaMessagePassingRules",
-              "lib/ProbitMessagePassingRules",
               "lib/SoftDotMessagePassingRules",
               "lib/StandardMessagePassingRules",
           ]

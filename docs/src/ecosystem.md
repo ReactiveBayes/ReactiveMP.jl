@@ -19,10 +19,9 @@ Every package has its own documentation site, linked from its name below.
 
 | Package | Nodes |
 |---|---|
-| [`StandardMessagePassingRules`](@extref StandardMessagePassingRules StandardMessagePassingRules) | The standard nodes: the distributions (normal, gamma, Wishart, Bernoulli, categorical, …), arithmetic (`+`, `-`, `*` and `dot`), logic ([`AND`](@extref StandardMessagePassingRules.AND), [`OR`](@extref StandardMessagePassingRules.OR), [`NOT`](@extref StandardMessagePassingRules.NOT), [`IMPLY`](@extref StandardMessagePassingRules.IMPLY)) and the mixtures ([`Mixture`](@extref StandardMessagePassingRules.Mixture), [`NormalMixture`](@extref StandardMessagePassingRules.NormalMixture), [`GammaMixture`](@extref StandardMessagePassingRules.GammaMixture)) |
+| [`StandardMessagePassingRules`](@extref StandardMessagePassingRules StandardMessagePassingRules) | The standard nodes: the distributions (normal, gamma, Wishart, Bernoulli, categorical, …), arithmetic (`+`, `-`, `*` and `dot`), logic ([`AND`](@extref StandardMessagePassingRules.AND), [`OR`](@extref StandardMessagePassingRules.OR), [`NOT`](@extref StandardMessagePassingRules.NOT), [`IMPLY`](@extref StandardMessagePassingRules.IMPLY)) the mixtures ([`Mixture`](@extref StandardMessagePassingRules.Mixture), [`NormalMixture`](@extref StandardMessagePassingRules.NormalMixture), [`GammaMixture`](@extref StandardMessagePassingRules.GammaMixture)) and [`Probit`](@extref StandardMessagePassingRules.Probit), a binary output through the normal CDF, by expectation propagation |
 | [`DeltaMessagePassingRules`](@extref DeltaMessagePassingRules DeltaMessagePassingRules) | [`DeltaFn`](@extref DeltaMessagePassingRules.DeltaFn), a deterministic function of its inputs, under [`DeltaApproximation`](@extref DeltaMessagePassingRules.DeltaApproximation): unscented, linearised, or projected with CVI |
 | [`GaussianCouplingMessagePassingRules`](@extref GaussianCouplingMessagePassingRules GaussianCouplingMessagePassingRules) | [`GaussianCoupling`](@extref GaussianCouplingMessagePassingRules.GaussianCoupling), the edge potential of Gaussian belief propagation |
-| [`ProbitMessagePassingRules`](@extref ProbitMessagePassingRules ProbitMessagePassingRules) | [`Probit`](@extref ProbitMessagePassingRules.Probit), a binary output through the normal CDF, by expectation propagation |
 | [`GCVMessagePassingRules`](@extref GCVMessagePassingRules GCVMessagePassingRules) | [`GCV`](@extref GCVMessagePassingRules.GCV), a normal whose log-variance is linear in its inputs |
 | [`SoftDotMessagePassingRules`](@extref SoftDotMessagePassingRules SoftDotMessagePassingRules) | [`SoftDot`](@extref SoftDotMessagePassingRules.SoftDot), a dot product with Gaussian noise |
 | [`AutoregressiveMessagePassingRules`](@extref AutoregressiveMessagePassingRules AutoregressiveMessagePassingRules) | [`AR`](@extref AutoregressiveMessagePassingRules.AR) and [`ConjugateAR`](@extref AutoregressiveMessagePassingRules.ConjugateAR), autoregressive processes, under [`ARVMP`](@extref AutoregressiveMessagePassingRules.ARVMP), which a model must give |
@@ -43,7 +42,9 @@ for the normal node and
 [`DeltaMessagePassingRules`](@extref DeltaMessagePassingRules DeltaMessagePassingRules) for
 [`DeltaFn`](@extref DeltaMessagePassingRules.DeltaFn). The engine then finds the rules of both.
 [RxInfer's documentation](https://reactivebayes.github.io/RxInfer.jl/stable/) shows such models
-in full.
+in full. RxInfer itself loads the packages of the nodes most models use: Standard, Delta,
+Autoregressive, DiscreteTransition, GCV, GaussianCoupling and SoftDot. A model that uses
+ContinuousTransition, Pólya, BIFM or Flow loads that package next to RxInfer.
 
 A node whose algorithm carries settings, or has no default, receives its algorithm at activation
 (see [The algorithm](@ref lib-activation-options-algorithm)). A new node and its rules can live in

@@ -731,7 +731,7 @@ enough for the engine to find its rules. Their v6 `meta` is the node's own algor
 | v6 | v7 |
 |---|---|
 | `GaussianCoupling` | [GaussianCouplingMessagePassingRules](https://reactivebayes.github.io/GaussianCouplingMessagePassingRules.jl/dev/), no algorithm of its own |
-| `Probit`, `ProbitMeta(p)` | [ProbitMessagePassingRules](https://reactivebayes.github.io/ProbitMessagePassingRules.jl/dev/), [`ProbitEP`](@extref ProbitMessagePassingRules.ProbitEP)`(; p = 32)` |
+| `Probit`, `ProbitMeta(p)` | [StandardMessagePassingRules](https://reactivebayes.github.io/StandardMessagePassingRules.jl/dev/), [`ProbitEP`](@extref StandardMessagePassingRules.ProbitEP)`(; p = 32)` |
 | `GCV`, `GCVMetadata(GaussHermiteCubature(n))` | [GCVMessagePassingRules](https://reactivebayes.github.io/GCVMessagePassingRules.jl/dev/), [`GCVApproximation`](@extref GCVMessagePassingRules.GCVApproximation)`(; method = GaussHermiteCubature(n))` |
 | `AR`, `ConjugateAR`, `ARMeta(form, order, stype)` | [AutoregressiveMessagePassingRules](https://reactivebayes.github.io/AutoregressiveMessagePassingRules.jl/dev/), [`ARVMP`](@extref AutoregressiveMessagePassingRules.ARVMP)`(form, order, stype)` with [`ARsafe`](@extref AutoregressiveMessagePassingRules.ARsafe)`()` or [`ARunsafe`](@extref AutoregressiveMessagePassingRules.ARunsafe)`()` |
 | `SoftDot` (`softdot`) | [SoftDotMessagePassingRules](https://reactivebayes.github.io/SoftDotMessagePassingRules.jl/dev/), no algorithm of its own |

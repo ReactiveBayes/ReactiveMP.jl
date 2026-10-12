@@ -1,20 +1,14 @@
-# ProbitMessagePassingRules
+# Expectation propagation: Probit
 
-The [`Probit`](@ref) node for reactive message passing: a binary observation explained by a real
-latent variable through the standard normal CDF. Use it for probit regression and binary
-classification, where each label `y` is linked to a latent score `x`, itself normal, by
-`y ~ Probit(x)` in an RxInfer model.
+The [`Probit`](@ref) node: a binary observation explained by a real latent variable through the
+standard normal CDF. Use it for probit regression and binary classification, where each label
+`y` is linked to a latent score `x`, itself normal, by `y ~ Probit(x)` in an RxInfer model.
 
-```@docs
-ProbitMessagePassingRules
-```
-
-!!! info "Where these rules run"
-    The [ReactiveMP](https://reactivebayes.github.io/ReactiveMP.jl/dev/) engine runs these rules on
-    a factor graph, which [RxInfer](https://github.com/ReactiveBayes/RxInfer.jl) builds from a model.
-    The examples here call the rules directly.
-
-The package has a single node, and this page covers it in full.
+It is also this package's example of an
+[expectation propagation](@extref MessagePassingRulesBase glossary-expectation-propagation)
+node: a node with an algorithm of its own, whose rule towards `in` reads the message on `in`
+itself and returns a normal that matches the moments of the exact product. A node that needs
+the same can follow its declaration and rules.
 
 ## Overview
 
@@ -50,7 +44,7 @@ Integrated against a normal message `N(in | μ, v)`, the probability of a `1` is
 ## Interfaces
 
 ```@example probit
-using ProbitMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase
+using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase
 MessagePassingRulesBase.nodespec(Probit)
 ```
 
@@ -134,7 +128,7 @@ mean_var(prod(GenericProd(), NormalMeanVariance(0.0, 1.0), message))
 The message towards `out`, and the message towards `in` under `DefaultAlgorithm`:
 
 ```jldoctest
-julia> using ProbitMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase
+julia> using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase
 
 julia> result = @call_message_update_rule(node = Probit, target = :out, m = (in = NormalMeanVariance(1.0, 0.5),));
 

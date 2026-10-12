@@ -2,10 +2,11 @@
 
 StandardMessagePassingRules holds the [rules](@extref MessagePassingRulesBase glossary-rule) of
 the standard [factor nodes](@extref MessagePassingRulesBase glossary-factor-node): the
-distributions a model uses most, the arithmetic functions, Boolean logic and the mixtures. Load
+distributions a model uses most, the arithmetic functions, Boolean logic, the mixtures and the
+probit link, an expectation propagation node. Load
 it next to an engine, such as ReactiveMP, and every rule is available. A model written with
 [RxInfer](https://reactivebayes.github.io/RxInfer.jl/stable/) uses the nodes by their usual names, `x ~ NormalMeanVariance(μ, v)` or `y ~ x + z`. Nodes outside this set, such
-as `Delta`, `AR` or `Probit`, have packages of their own, which build on this one.
+as `Delta` or `AR`, have packages of their own, which build on this one.
 
 ```@docs
 StandardMessagePassingRules
@@ -131,5 +132,6 @@ the rule a call would run, with its source.
 | [Arithmetic](@ref) | `+`, `-`, `*`, `dot` and [`MultiplicationSampling`](@ref) |
 | [Logic](@ref) | [`AND`](@ref), [`OR`](@ref), [`NOT`](@ref), [`IMPLY`](@ref) |
 | [Mixtures](@ref) | [`NormalMixture`](@ref), [`GammaMixture`](@ref), [`Mixture`](@ref) and their algorithms |
+| [Expectation propagation: Probit](@ref) | [`Probit`](@ref) and its algorithm [`ProbitEP`](@ref) |
 | [Helper nodes and message types](@ref) | [`StandaloneDistribution`](@ref), [`Uninformative`](@ref), [`GammaShapeLikelihood`](@ref), [`diageye`](@extref MessagePassingRulesBase.diageye) |
 | [Internals](@ref) | the helpers the rules and the node packages share |

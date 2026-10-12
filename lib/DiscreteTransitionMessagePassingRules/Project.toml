@@ -1,6 +1,6 @@
 name = "DiscreteTransitionMessagePassingRules"
 uuid = "039b7295-e235-4523-a933-c224bd9a7e58"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # DiscreteTransition, a factor over a tensor of transition probabilities with any number of
 # conditioning categoricals, as a tensor node: its rules are written once for any

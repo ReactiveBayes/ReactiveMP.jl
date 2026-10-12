@@ -3961,8 +3961,10 @@ this phase requires it to pass for release, rather than being its first executio
       its v6 comparison machinery is in `compat/v6-comparison/ReferenceComparison.jl`, and its
       documentation is rewritten; Approximations' documentation is extended; both are split into
       their own repositories at 1.0.0, registered on 2026-10-09, and the monorepo and RxInfer's
-      branch depend on the registered packages, their `lib/` copies deleted, 2026-10-10. Next: the
-      rule packages, once their grouping is decided)*
+      branch depend on the registered packages, their `lib/` copies deleted, 2026-10-10. The rule
+      packages' grouping is decided (user with Mykola, 2026-10-12, `DISCUSSION.md` §3.57): Probit
+      is part of Standard, RxInfer loads Standard, Delta, AR, DiscreteTransition, GCV,
+      GaussianCoupling and SoftDot, and Optim is its extension; the 11 packages are at 1.0.0)*
 - [ ] package registration order decided, compat bounds set, supported Julia versions agreed
       *(the order is in `RELEASING.md`, dependencies first; every package supports Julia 1.10 and
       later, user, 2026-10-02: checked on 1.10 with the suites, RxInfer, the examples and the

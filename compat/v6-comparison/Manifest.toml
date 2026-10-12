@@ -2,7 +2,7 @@
 
 julia_version = "1.13.1"
 manifest_format = "2.1"
-project_hash = "1961e4a532681bb4e705012869707a7cf51c644b"
+project_hash = "ab4aaf4581dbca365a5023661cd0bc06a213ef97"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -135,13 +135,13 @@ version = "1.11.0"
 deps = ["BayesBase", "Compat", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase", "StatsFuns"]
 path = "../../lib/AutoregressiveMessagePassingRules"
 uuid = "bbb8872a-15f9-43f6-924d-37f12d04ed53"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.BIFMMessagePassingRules]]
 deps = ["BayesBase", "Compat", "Distributions", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "MessagePassingRulesBase"]
 path = "../../lib/BIFMMessagePassingRules"
 uuid = "3092217e-9fde-41d8-8729-057ea730fd7c"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -295,7 +295,7 @@ weakdeps = ["IntervalSets", "LinearAlgebra", "StaticArrays"]
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "FastCholesky", "ForwardDiff", "LinearAlgebra", "MessagePassingRulesBase"]
 path = "../../lib/ContinuousTransitionMessagePassingRules"
 uuid = "be169b08-8551-4d4c-a46b-881478acc6d9"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"
@@ -319,7 +319,7 @@ version = "1.11.0"
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesApproximations", "MessagePassingRulesBase"]
 path = "../../lib/DeltaMessagePassingRules"
 uuid = "ea5de7a7-24c9-4a61-90ce-ef77c844b13f"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
     [deps.DeltaMessagePassingRules.extensions]
     DeltaMessagePassingRulesProjectionExt = "ExponentialFamilyProjection"
@@ -406,7 +406,7 @@ version = "0.7.21"
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "MessagePassingRulesBase"]
 path = "../../lib/DiscreteTransitionMessagePassingRules"
 uuid = "039b7295-e235-4523-a933-c224bd9a7e58"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -562,7 +562,7 @@ version = "0.1.1"
 deps = ["BayesBase", "Compat", "Distributions", "ExponentialFamily", "LinearAlgebra", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "Random", "TupleTools"]
 path = "../../lib/FlowMessagePassingRules"
 uuid = "adabaeda-8474-4dd2-bb94-9124d4d2b701"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
@@ -591,7 +591,7 @@ version = "1.11.0"
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "StandardMessagePassingRules", "StatsFuns"]
 path = "../../lib/GCVMessagePassingRules"
 uuid = "2bb838d1-ae36-49a2-8c64-82a0acccfa93"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.Gamma]]
 git-tree-sha1 = "86f86b6168a016ed88e4ae4e64577b98c3b59e8e"
@@ -610,7 +610,7 @@ version = "0.5.8"
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesBase"]
 path = "../../lib/GaussianCouplingMessagePassingRules"
 uuid = "a57ce80c-d854-4eb3-973d-f0d0550df039"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.GraphPPL]]
 deps = ["BitSetTuples", "DataStructures", "Dictionaries", "MacroTools", "MetaGraphsNext", "NamedTupleTools", "Static", "StaticArrays", "TupleTools", "Unrolled"]
@@ -1045,7 +1045,7 @@ version = "1.2.6"
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "LogExpFunctions", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "PolyaGammaHybridSamplers", "SpecialFunctions"]
 path = "../../lib/PolyaMessagePassingRules"
 uuid = "2d94fc58-1726-4ac3-9db6-3d18f146cabb"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.PositiveFactorizations]]
 deps = ["LinearAlgebra"]
@@ -1072,12 +1072,6 @@ version = "1.6.0"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 version = "1.11.0"
-
-[[deps.ProbitMessagePassingRules]]
-deps = ["BayesBase", "Distributions", "ExponentialFamily", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "StatsFuns"]
-path = "../../lib/ProbitMessagePassingRules"
-uuid = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
-version = "0.1.0-DEV"
 
 [[deps.ProgressMeter]]
 deps = ["Distributed", "Printf"]
@@ -1255,7 +1249,7 @@ version = "1.11.0"
 deps = ["BayesBase", "Distributions", "ExponentialFamily", "LinearAlgebra", "MessagePassingRulesBase", "StatsFuns"]
 path = "../../lib/SoftDotMessagePassingRules"
 uuid = "fdfab25d-afbd-4817-865a-cd280c067f5e"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -1283,10 +1277,10 @@ version = "2.9.0"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
 [[deps.StandardMessagePassingRules]]
-deps = ["BayesBase", "Compat", "Distributions", "DomainSets", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "LogExpFunctions", "MatrixCorrectionTools", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
+deps = ["BayesBase", "Compat", "Distributions", "DomainSets", "ExponentialFamily", "FastCholesky", "LinearAlgebra", "LogExpFunctions", "MatrixCorrectionTools", "MessagePassingRulesApproximations", "MessagePassingRulesBase", "SpecialFunctions", "StatsFuns"]
 path = "../../lib/StandardMessagePassingRules"
 uuid = "d166223a-7879-43b1-add3-64af0a178e9e"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 [[deps.Static]]
 deps = ["CommonWorldInvalidations", "IfElse", "PrecompileTools", "SciMLPublic"]

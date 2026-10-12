@@ -1,6 +1,6 @@
 name = "SoftDotMessagePassingRules"
 uuid = "fdfab25d-afbd-4817-865a-cd280c067f5e"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # The SoftDot node, y ~ N(θᵀx, γ⁻¹), a Gaussian-softened dot product, with its variational
 # rules. Independent of the autoregressive package: what it needs from AR is written out here.

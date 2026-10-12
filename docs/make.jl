@@ -14,7 +14,6 @@ const SIBLINGS = [
     "StandardMessagePassingRules",
     "DeltaMessagePassingRules",
     "GaussianCouplingMessagePassingRules",
-    "ProbitMessagePassingRules",
     "GCVMessagePassingRules",
     "SoftDotMessagePassingRules",
     "AutoregressiveMessagePassingRules",

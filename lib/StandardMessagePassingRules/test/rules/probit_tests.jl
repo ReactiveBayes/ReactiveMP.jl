@@ -2,7 +2,7 @@
 # at points, as TestUtils compares no log-density by value.
 
 @testitem "rules:Probit:out" tags = [:rules] begin
-    using ProbitMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     using StatsFuns: normcdf
 
     for algorithm in (ProbitEP(), DefaultAlgorithm())
@@ -29,7 +29,7 @@
 end
 
 @testitem "rules:Probit:in, expectation propagation" tags = [:rules] begin
-    using ProbitMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     using BayesBase: tiny
 
     positive = NormalWeightedMeanPrecision(0.6723616582693972, 0.32950039939606945)
@@ -52,7 +52,7 @@ end
 end
 
 @testitem "rules:Probit:in, belief propagation" tags = [:rules] begin
-    using ProbitMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     using StatsFuns: normcdf
 
     # log(1 - p + (2p - 1) Φ(z)), under DefaultAlgorithm, from a message or a point-mass marginal.
@@ -67,7 +67,7 @@ end
 end
 
 @testitem "rules:Probit:marginals" tags = [:rules] begin
-    using ProbitMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
     using StatsFuns: normpdf, normcdf
 
     # The joint of a point-mass output keeps the output, and gives `in` the tilted distribution,
@@ -93,7 +93,7 @@ end
 end
 
 @testitem "rules:Probit:energy" tags = [:rules] begin
-    using ProbitMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
+    using StandardMessagePassingRules, MessagePassingRulesTestUtils, MessagePassingRulesBase, ExponentialFamily, BayesBase, Distributions
 
     # E[-log Φ(x)] = E[-log Φ(-x)] = 1 for a standard normal x, whatever the output's probability.
     for algorithm in (ProbitEP(), ProbitEP(p = 100), DefaultAlgorithm())
@@ -112,7 +112,7 @@ end
 end
 
 @testitem "rules:Probit:node" tags = [:rules] begin
-    using ProbitMessagePassingRules, MessagePassingRulesBase, ExponentialFamily
+    using StandardMessagePassingRules, MessagePassingRulesBase, ExponentialFamily
     using MessagePassingRulesBase: initial_messages, default_algorithm, dependencies_spec, target_dependencies, Target
 
     @test default_algorithm(Probit) === ProbitEP(32)

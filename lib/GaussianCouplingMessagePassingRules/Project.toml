@@ -1,6 +1,6 @@
 name = "GaussianCouplingMessagePassingRules"
 uuid = "a57ce80c-d854-4eb3-973d-f0d0550df039"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # The GaussianCoupling node, the bilinear edge potential of Gaussian belief propagation, and its
 # rules.

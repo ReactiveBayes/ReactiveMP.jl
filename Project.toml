@@ -27,7 +27,6 @@ FlowMessagePassingRules = {path = "lib/FlowMessagePassingRules"}
 GCVMessagePassingRules = {path = "lib/GCVMessagePassingRules"}
 GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassingRules"}
 PolyaMessagePassingRules = {path = "lib/PolyaMessagePassingRules"}
-ProbitMessagePassingRules = {path = "lib/ProbitMessagePassingRules"}
 SoftDotMessagePassingRules = {path = "lib/SoftDotMessagePassingRules"}
 StandardMessagePassingRules = {path = "lib/StandardMessagePassingRules"}
 
@@ -47,26 +46,25 @@ julia = "1.10"
 # Test-target dependencies. Aqua's `deps_compat` check_extras requires a bound on every
 # `[extras]` entry, not only on the runtime deps.
 Aqua = "0.8"
-BIFMMessagePassingRules = "0.1"
-AutoregressiveMessagePassingRules = "0.1"
-ContinuousTransitionMessagePassingRules = "0.1"
-DeltaMessagePassingRules = "0.1"
+BIFMMessagePassingRules = "1"
+AutoregressiveMessagePassingRules = "1"
+ContinuousTransitionMessagePassingRules = "1"
+DeltaMessagePassingRules = "1"
 Documenter = "1"
 ExponentialFamily = "2.5.0"
 ExponentialFamilyProjection = "3"
-DiscreteTransitionMessagePassingRules = "0.1"
-FlowMessagePassingRules = "0.1"
-GCVMessagePassingRules = "0.1"
-GaussianCouplingMessagePassingRules = "0.1"
-PolyaMessagePassingRules = "0.1"
-ProbitMessagePassingRules = "0.1"
-SoftDotMessagePassingRules = "0.1"
+DiscreteTransitionMessagePassingRules = "1"
+FlowMessagePassingRules = "1"
+GCVMessagePassingRules = "1"
+GaussianCouplingMessagePassingRules = "1"
+PolyaMessagePassingRules = "1"
+SoftDotMessagePassingRules = "1"
 InteractiveUtils = "1.10"
 MessagePassingRulesApproximations = "1"
 REPL = "1.10"
 Random = "1.10"
 SpecialFunctions = "2.3"
-StandardMessagePassingRules = "0.1"
+StandardMessagePassingRules = "1"
 Test = "1.10"
 TestItemRunner = "1"
 
@@ -86,7 +84,6 @@ GaussianCouplingMessagePassingRules = "a57ce80c-d854-4eb3-973d-f0d0550df039"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 MessagePassingRulesApproximations = "36043009-14b3-4068-9fb9-f1e492c92d7d"
 PolyaMessagePassingRules = "2d94fc58-1726-4ac3-9db6-3d18f146cabb"
-ProbitMessagePassingRules = "1bb8e9a6-2578-4a1e-b3eb-7f663b479540"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 SoftDotMessagePassingRules = "fdfab25d-afbd-4817-865a-cd280c067f5e"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
@@ -95,4 +92,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "BIFMMessagePassingRules", "AutoregressiveMessagePassingRules", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "DiscreteTransitionMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "FlowMessagePassingRules", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "MessagePassingRulesApproximations", "PolyaMessagePassingRules", "ProbitMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StandardMessagePassingRules", "Test", "TestItemRunner"]
+test = ["Aqua", "BIFMMessagePassingRules", "AutoregressiveMessagePassingRules", "ContinuousTransitionMessagePassingRules", "DeltaMessagePassingRules", "DiscreteTransitionMessagePassingRules", "Documenter", "ExponentialFamily", "ExponentialFamilyProjection", "FlowMessagePassingRules", "GCVMessagePassingRules", "GaussianCouplingMessagePassingRules", "InteractiveUtils", "MessagePassingRulesApproximations", "PolyaMessagePassingRules", "REPL", "SoftDotMessagePassingRules", "SpecialFunctions", "StandardMessagePassingRules", "Test", "TestItemRunner"]

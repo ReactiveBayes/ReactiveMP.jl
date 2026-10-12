@@ -2025,6 +2025,24 @@ like `V6Oracle.jl`, so the comparisons keep running until the cleanup removes `c
 test files were not moved: the scripts exercise it. TestUtils loses Serialization and TOML, and
 its documentation the two pages about them.
 
+
+### 3.57 Probit in Standard, RxInfer's default rule packages, Optim as an extension (user with Mykola, 2026-10-12)
+
+Before the rule packages are registered, the user and Mykola settled how they are distributed:
+
+- **Probit joins StandardMessagePassingRules**, as the standard package's example of an
+  expectation propagation node; every other package stays as it was. Standard gains
+  MessagePassingRulesApproximations, for Probit's Gauss–Hermite energy, which RxInfer's closure
+  had through GCV and Delta anyway.
+- **RxInfer loads and re-exports** Standard, Delta, Autoregressive, DiscreteTransition, GCV,
+  GaussianCoupling and SoftDot. ContinuousTransition, Pólya (GPL-3), BIFM and Flow are optional, a
+  model's own `using`, so that RxInfer depends on as little as possible. Delta was not on the
+  first list; asked, the user kept it a default: RxInfer's core builds a Delta node for every
+  nonlinear function, and it adds no dependency the defaults lack.
+- **Optim leaves RxInfer's dependencies.** The concern was GammaMixture; it is closed-form and
+  stays in Standard, and no rule package uses Optim. RxInfer did, for the default optimiser of a
+  continuous point mass: that optimiser is now the `OptimExt` extension (user), and without
+  `using Optim` such a constraint says what to load.
 ---
 
 ## 4. Corrections — read this before re-proposing anything

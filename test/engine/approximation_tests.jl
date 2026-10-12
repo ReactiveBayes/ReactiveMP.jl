@@ -158,7 +158,7 @@ end
     # to its fixed point: each site's cavity, the moments of its tilted distribution in closed
     # form, and the site as their quotient. Each Probit's rule reads the message on its own edge,
     # which the other's feeds, so the engine iterates towards the same fixed point.
-    using ExponentialFamily, Distributions, StandardMessagePassingRules, ProbitMessagePassingRules
+    using ExponentialFamily, Distributions, StandardMessagePassingRules
     H = EngineHarness
 
     graph = H.Graph()

@@ -11,6 +11,9 @@ The message passing rules of the standard nodes, written with MessagePassingRule
 - **logic**: [`AND`](@ref), [`OR`](@ref), [`NOT`](@ref) and [`IMPLY`](@ref), over Bernoulli
   variables;
 - **mixtures**: [`NormalMixture`](@ref), [`GammaMixture`](@ref) and [`Mixture`](@ref);
+- **expectation propagation**: [`Probit`](@ref), a binary output through the probit link, under
+  its own algorithm [`ProbitEP`](@ref), an example of how an expectation propagation node is
+  written;
 - **helpers**: [`StandaloneDistribution`](@ref), a node for a fixed distribution,
   [`Uninformative`](@ref), a factor of one, and
   [`diageye`](@extref MessagePassingRulesBase.diageye), re-exported from MessagePassingRulesBase.
@@ -56,10 +59,10 @@ using MessagePassingRulesBase: matrix_correction
 using MessagePassingRulesBase: trace_product, scaled_outer, diageye, promote_cluster
 using MessagePassingRulesBase: gaussian_average_energy, gaussian_variational_variance, gaussian_variational_covariance
 using MessagePassingRulesBase: gaussian_coupled_precision, gaussian_difference_moment, gaussian_series_precision, gaussian_second_moment
-using StatsFuns: log2π, logπ, loghalf
+using StatsFuns: log2π, logπ, loghalf, normcdf, normlogcdf, normlogccdf, normlogpdf
 using SpecialFunctions: loggamma, logfactorial, logbeta, digamma, gamma, besselk
 using Base.Broadcast: BroadcastFunction
-using BayesBase: tiny, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
+using BayesBase: tiny, huge, mirrorlog, LinearizedProductOf, MixtureDistribution, TerminalProdArgument
 using LogExpFunctions: softmax!, softmax, logsumexp
 using BayesBase: ClosedProd, PreserveTypeProd, ContinuousUnivariateLogPdf
 import LinearAlgebra
@@ -68,9 +71,11 @@ using FastCholesky: cholinv, fastcholesky
 using MatrixCorrectionTools: correction!, ReplaceZeroDiagonalEntries
 import ExponentialFamily: InverseWishartFast, WishartFast, WishartDistributionsFamily, InverseWishartDistributionsFamily, covmats
 import DomainSets
+using MessagePassingRulesApproximations: GaussHermiteCubature
 
 export NormalMixture, GaussianMixture, NormalMixtureVMP, GammaMixture, GammaMixtureVMP, Mixture, MixtureBP, GammaShapeLikelihood, HalfNormal, Uninformative, StandaloneDistribution
 export AND, OR, NOT, IMPLY, MultiplicationSampling
+export Probit, ProbitEP
 # `dot`, LinearAlgebra's, is the node `out = dot(A, in)`, and `diageye`, MessagePassingRulesBase's,
 # builds the identity matrices models write.
 export dot, diageye
@@ -235,5 +240,10 @@ include("nodes/mixture.jl")
 include("rules/mixture/inputs.jl")
 include("rules/mixture/out.jl")
 include("rules/mixture/switch.jl")
+
+include("nodes/probit.jl")
+include("rules/probit/out.jl")
+include("rules/probit/in.jl")
+include("rules/probit/marginals.jl")
 
 end

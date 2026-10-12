@@ -8,7 +8,7 @@ include(joinpath(@__DIR__, "ReferenceComparison.jl"))
 
 using .V6Oracle, .ReferenceComparison, Test
 using ExponentialFamily, BayesBase, Distributions
-using MessagePassingRulesBase, MessagePassingRulesTestUtils, ProbitMessagePassingRules
+using MessagePassingRulesBase, MessagePassingRulesTestUtils, StandardMessagePassingRules
 import ReactiveMP
 
 const META = ReactiveMP.ProbitMeta(32)

@@ -1,6 +1,6 @@
 name = "BIFMMessagePassingRules"
 uuid = "3092217e-9fde-41d8-8729-057ea730fd7c"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # BIFM, a time slice of a linear state-space model for backward-information-filter
 # forward-marginal smoothing, and BIFMHelper, which turns its backward pass into the forward

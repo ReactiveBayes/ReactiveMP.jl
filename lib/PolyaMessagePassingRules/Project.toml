@@ -1,6 +1,6 @@
 name = "PolyaMessagePassingRules"
 uuid = "2d94fc58-1726-4ac3-9db6-3d18f146cabb"
-version = "0.1.0-DEV"
+version = "1.0.0"
 
 # The Pólya-Gamma augmented nodes, BinomialPolya and MultinomialPolya, with their algorithms.
 # GPL-3 through PolyaGammaHybridSamplers.

@@ -83,7 +83,6 @@ make docs                                  # ReactiveMP's site alone; it links t
 make test-standard                         # lib/StandardMessagePassingRules
 make test-delta                            # lib/DeltaMessagePassingRules
 make test-gaussian-coupling                # lib/GaussianCouplingMessagePassingRules
-make test-probit                           # lib/ProbitMessagePassingRules
 make test-gcv                              # lib/GCVMessagePassingRules
 make test-autoregressive                   # lib/AutoregressiveMessagePassingRules: AR, ConjugateAR
 make test-softdot                          # lib/SoftDotMessagePassingRules
@@ -240,7 +239,7 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   Linearization rules, and `CVIProjection`, whose rules are an extension on
   ExponentialFamilyProjection) and the node packages, one per node, on Delta's template:
   `GaussianCouplingMessagePassingRules` (`make test-gaussian-coupling`),
-  `ProbitMessagePassingRules` (`make test-probit`), `GCVMessagePassingRules` (`make test-gcv`),
+  `GCVMessagePassingRules` (`make test-gcv`),
   `AutoregressiveMessagePassingRules` (`make test-autoregressive`; AR and ConjugateAR under
   `ARVMP`, which the model must give), `SoftDotMessagePassingRules` (`make test-softdot`,
   independent of AR's package), `ContinuousTransitionMessagePassingRules`
