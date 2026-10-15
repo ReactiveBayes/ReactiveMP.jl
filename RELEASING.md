@@ -91,7 +91,8 @@ On `main`, in one commit:
   build the docs without the monorepo's `make`;
 - `CHANGELOG.md`, Keep a Changelog, with `[1.0.0]` saying where the history comes from;
 - `docs/make.jl`: `deploydocs(repo = "github.com/ReactiveBayes/<Package>.jl.git", devbranch =
-  "main", push_preview = true)`; the `sibling(...)` links point at the published `objects.inv` of
+  "main", push_preview = !startswith(get(ENV, "GITHUB_HEAD_REF", ""), "compathelper/"))`, a
+  preview for every pull request but CompatHelper's; the `sibling(...)` links point at the published `objects.inv` of
   each sibling already released, not at `../../<Sibling>/docs/build`;
 - `.github/workflows/`, as MessagePassingRulesBase.jl has them:
   - `CI.yml`: tests on 1.10, 1.11, 1.12, `1` and `pre` (`pre` not gating), `TEST_ALL=true`,
@@ -101,7 +102,9 @@ On `main`, in one commit:
   - `Format.yml`: Runic through `fredrikekre/runic-action@v1`;
   - `TagBot.yml` with `ssh: ${{ secrets.DOCUMENTER_KEY }}`, so a tag's docs build;
   - `CompatHelper.yml`, `subdirs = ["", "test", "docs"]`, with `COMPATHELPER_PRIV` the
-    Documenter key, so its pull requests run CI.
+    Documenter key, so its pull requests run CI;
+  - `DocPreviewCleanup.yml`: on a closed pull request, deletes its `previews/PR<n>` from
+    `gh-pages`, which Documenter never does.
 
 Then, locally: the Runic check (`julia --project=<ReactiveMP.jl>/scripts -e 'using Runic;
 exit(Runic.main(["--check", "."]))'`), the suite, and the docs (`julia --project=docs -e 'import
@@ -224,3 +227,8 @@ Release notes:
   Standard's `stable/` inventory, which exists only after Standard's tag. After each merge: check for
   `v1.0.0`, and push it by hand on the registered tree if TagBot cannot (the release commit adds
   workflows).
+- **Documentation previews** (2026-10-15, user): every pull request's preview, CompatHelper's
+  included, stayed on `gh-pages` after it closed, and each preview push ran a Pages build. All 13
+  repositories got `DocPreviewCleanup.yml` and no preview for CompatHelper's pull requests, pushed
+  to `main`; the previews of closed pull requests (Base PR11, PR12; Standard PR3; Autoregressive
+  and SoftDot PR1) were deleted by hand. GCV gets both when it is split.
