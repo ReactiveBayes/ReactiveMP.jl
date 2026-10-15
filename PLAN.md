@@ -735,8 +735,8 @@ algorithms out of the core. Sorting today's 28 deps:
 | package | contents | deps |
 |---|---|---|
 | `MessagePassingRulesBase` | macros, targets, algorithms, argument/annotation containers, context, registry, dependency language, `buffer_like`, `public_equivalent` (§3.29), scratch (§3.44), rule fallbacks (§3.49), log scales, `RuleResult` and its display (§3.50, §3.51) — **not** `Message`/`Marginal`, which stay in the engine | `BayesBase`, `MacroTools` — **and nothing else** |
-| `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`), the mixtures, `StandaloneDistribution` (§3.47), and the algebra helpers the node packages share (§3.40) | `ExponentialFamily`, `Distributions`, `BayesBase`, `StatsFuns`, `SpecialFunctions`, `LogExpFunctions`, `DomainSets`; `FastCholesky`, `LinearAlgebra` and `MatrixCorrectionTools` from Phase 5 step 5 |
-| node packages | one per non-standard node or family (user, Phase 5 step 6; `DISCUSSION.md` §3.30): `GaussianCoupling`, `Probit`, `GCV`, `Autoregressive` (AR, ConjugateAR), `SoftDot` (independent of the AR package, §3.40), `ContinuousTransition`, `Polya`, `BIFM`, `Flow`, `DiscreteTransition`, each `<Name>MessagePassingRules` | each its own |
+| `StandardMessagePassingRules` | distribution nodes, arithmetic (`+`, `-`, `*`, dot), logic (`AND`, `OR`, `NOT`, `IMPLY`), the mixtures, `Probit` and `ProbitEP` (§3.57), `StandaloneDistribution` (§3.47), and the algebra helpers the node packages share (§3.40) | `ExponentialFamily`, `Distributions`, `BayesBase`, `StatsFuns`, `SpecialFunctions`, `LogExpFunctions`, `DomainSets`; `FastCholesky`, `LinearAlgebra` and `MatrixCorrectionTools` from Phase 5 step 5; `MessagePassingRulesApproximations` for Probit's energy |
+| node packages | one per non-standard node or family (user, Phase 5 step 6; `DISCUSSION.md` §3.30): `GaussianCoupling`, `GCV`, `Autoregressive` (AR, ConjugateAR), `SoftDot` (independent of the AR package, §3.40), `ContinuousTransition`, `Polya`, `BIFM`, `Flow`, `DiscreteTransition`, each `<Name>MessagePassingRules` | each its own |
 | `MessagePassingRulesApproximations` | numerical utilities over means and covariances: `Unscented`, `Linearization`, Gauss–Hermite cubature, `approximate_meancov`, `smoothRTS`, shared point/weight machinery (§3.40). **Standalone — does *not* depend on the base package, nor on any distribution package** | `LinearAlgebra`, `FastCholesky`, `FastGaussQuadrature`, `ForwardDiff` |
 | `DeltaMessagePassingRules` | the Delta node `DeltaFn{F}`, its algorithm `DeltaApproximation(; method, inverse)`, its dependencies and rules (created in Phase 4.5 case (d)), and `CVIProjection`, its rules an extension on ExponentialFamilyProjection | the base, `MessagePassingRulesApproximations`, `ExponentialFamily`, `Distributions`, `BayesBase` |
 | `MessagePassingRulesTestUtils` | all test tooling (see Testing) | quadrature / sampling, whatever verification needs |
@@ -749,8 +749,9 @@ nodes: `PolyaGammaHybridSamplers` is a dependency of `PolyaMessagePassingRules` 
 **Where the line falls.** `StandardMessagePassingRules` holds what is generic and
 model-agnostic — distributions, arithmetic, logic, mixtures. Domain-specific models each get
 their own node package (user, Phase 5 step 6, replacing the unnamed `models` package;
-`DISCUSSION.md` §3.30): `INVENTORY.md` records them as `node:GCV`, `node:Probit`,
-`node:SoftDot` and `node:GaussianCoupling`. A node
+`DISCUSSION.md` §3.30): `INVENTORY.md` records them as `node:GCV`,
+`node:SoftDot` and `node:GaussianCoupling`; Probit, once `node:Probit`, is part of Standard
+(§3.57). A node
 leaves for its own package only for a stated reason, and every such reason is recorded in
 `INVENTORY.md`: a heavy or licence-bearing dependency (`DiscreteTransition`/Tullio,
 Pólya/GPL-3), impurity (`BIFM`, whose v6 rules mutated their meta; its package's rules are
@@ -768,7 +769,10 @@ consult when moving code.
 
 ### Repository layout
 
-**Monorepo now, split at Phase 8** (`DISCUSSION.md` §3.40). The new packages live as
+**Monorepo, split at Phase 8** (`DISCUSSION.md` §3.40); the split is done: every package has its
+repository, `ReactiveBayes/<Package>.jl`, MessagePassingRulesBase, TestUtils and Approximations
+are registered and gone from `lib/`, and the 11 rule packages are registering, their copies here
+frozen until `lib/` is deleted (`RELEASING.md`). The new packages live as
 subdirectories of this repository under `lib/`, and are promoted to their own
 `ReactiveBayes/*` repositories at registration, when compat bounds and CI are set anyway.
 Phase 3 froze the base API and Phase 4.5 proved the engine interface; a split before
@@ -779,14 +783,10 @@ packages nobody can yet install.
 ReactiveMP.jl/
   Project.toml              # the engine
   src/
-  lib/
-    MessagePassingRulesBase/
-    MessagePassingRulesTestUtils/
-    StandardMessagePassingRules/
-    MessagePassingRulesApproximations/
+  lib/                      # frozen copies of the 11 rule packages, until they are registered
+    StandardMessagePassingRules/       # Probit included
     DeltaMessagePassingRules/
     GaussianCouplingMessagePassingRules/
-    ProbitMessagePassingRules/
     GCVMessagePassingRules/
     AutoregressiveMessagePassingRules/
     SoftDotMessagePassingRules/
@@ -802,6 +802,8 @@ ReactiveMP.jl/
 
 `legacy/v6/`, the unported v6 code from Phase 4.5 step 4, was deleted in Phase 6 step 10.
 
+*(Superseded 2026-10-02, user: every package supports Julia 1.10 and later, and CI runs 1.10 to
+1.13; 1.10 ignores `[sources]`, so it installs a sibling only once that is registered.)*
 **Julia 1.13 only, for now** (Phase 4.5, user; `DISCUSSION.md` §3.22). Every inter-package
 dependency is wired with `[sources]`, test-only ones included, via `[extras]`. The floor, and
 the 1.10 workarounds described next, are revisited when the packages are registered. Until
@@ -859,7 +861,7 @@ Delta-owned value holding the approximation method and the optional known invers
 in `lib/DeltaMessagePassingRules`. Keeping them separate
 leaves the numerics usable outside this ecosystem and keeps the dependency graph flat.
 
-Node packages depend on both where they use the numerics: Delta, Flow, Probit, GCV and Pólya.
+Node packages depend on both where they use the numerics: Delta, Flow, GCV and Pólya, and Standard for Probit.
 
 **Measured disposition of `src/approximations/` (~1922 lines).** Deleting the unused parts
 is what actually removes the heavy cubature dependencies — repackaging them would not have.

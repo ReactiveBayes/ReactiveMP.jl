@@ -17,20 +17,19 @@ rather than only assert equality: Phases 4.5 and 7 consume those recordings.
 
 ## The Julia version
 
-**The committed `Manifest.toml` is resolved on Julia 1.13**, the version all work targets
-for now (Phase 4.5 step 4; `DISCUSSION.md` §3.22). Until then it was pinned to 1.10.12, the old
+**The committed `Manifest.toml` is resolved on Julia 1.13**, where local work runs (the packages
+support 1.10 and later, `DISCUSSION.md` §3.58). Until then it was pinned to 1.10.12, the old
 floor, because a manifest resolved on a newer Julia can select versions an older one cannot
 load. ReactiveMP 6.5.0 and RxInfer 5.5.2 run on 1.13, and the engine fixtures recorded on
 1.10.12 reproduce there exactly (`record_engine_fixtures.jl --check`).
 
-Regenerate it, developing the five lib packages the comparisons load in one call so Pkg never
-resolves with only some of them (`DeltaMessagePassingRules` joined in Phase 6 step 2, with
-`compare_delta.jl`):
+Regenerate it by resolving: the environment's `[sources]` points at the 11 rule packages under
+`lib/`, and MessagePassingRulesBase, TestUtils and Approximations come from General:
 
 ```bash
 julia --startup-file=no --project=compat/v6-comparison -e '
 using Pkg
-Pkg.develop([PackageSpec(path = joinpath("lib", p)) for p in ("MessagePassingRulesBase", "MessagePassingRulesTestUtils", "StandardMessagePassingRules", "MessagePassingRulesApproximations", "DeltaMessagePassingRules")])
+Pkg.resolve()
 Pkg.instantiate()'
 ```
 

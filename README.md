@@ -12,11 +12,11 @@
 
 ReactiveMP.jl is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. It does not create a specific message passing schedule in advance, but rather _reacts_ on changes in the data source (hence _reactive_ in the name of the package).
 
-The engine holds no update rules of its own. Nodes and rules are declared with [`MessagePassingRulesBase`](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl), and the rules live in packages under [`lib/`](lib/README.md): `StandardMessagePassingRules` for the standard distributions, arithmetic, logic and mixtures, and a package for each other node (Delta, Probit, GCV, Autoregressive, ContinuousTransition, Flow, DiscreteTransition and more). Loading a rule package is enough for the engine to find its rules.
+The engine holds no update rules of its own. Nodes and rules are declared with [`MessagePassingRulesBase`](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl), and the rules live in packages under [`lib/`](lib/README.md): `StandardMessagePassingRules` for the standard distributions, arithmetic, logic and mixtures, and a package for each other node (Delta, GCV, Autoregressive, ContinuousTransition, Flow, DiscreteTransition and more). Loading a rule package is enough for the engine to find its rules.
 
 # Installation
 
-The current version, 7, and its rule packages are not registered yet; the rule system, MessagePassingRulesBase, the numerics the rules share, MessagePassingRulesApproximations, and the test tooling, MessagePassingRulesTestUtils, are. Until the rest are, clone this repository and develop the engine together with the packages you need; each package's `[sources]` points at its siblings, and the registered packages come from General:
+The current version, 7, and its rule packages are not registered yet; the rule system, MessagePassingRulesBase, the numerics the rules share, MessagePassingRulesApproximations, and the test tooling, MessagePassingRulesTestUtils, are. The rule packages each have a repository of their own, `ReactiveBayes/<Package>.jl`, and are being registered; their copies under `lib/` are frozen. Until they are registered, clone this repository and develop the engine together with the packages you need; each package's `[sources]` points at its siblings, and the registered packages come from General:
 
 ```julia
 import Pkg

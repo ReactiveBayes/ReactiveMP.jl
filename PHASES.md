@@ -18,6 +18,12 @@ them again, so re-check before relying on one.
 
 ## Next action
 
+**Next: the registration of the rule packages** (§ Phase 8). The ten General pull requests
+(#171496–#171504, #171506) are open (checked 2026-10-15); once Standard is merged, GCV is published
+and registered (`RELEASING.md`); once all 11 are, the monorepo and RxInfer's branch depend on the
+registered packages and `lib/` is deleted (`RELEASING.md`, step 8). Until then the copies in `lib/`
+are frozen.
+
 **Phase C, in progress** (§ Phase C, *Progress*). Nothing in the not-done table is left to do
 before the release (checked 2026-10-01): every row is done, upstream, after the release, or
 release work (Phase 8, the examples branch). The rest of Phase C's exit criteria wait for the
@@ -60,7 +66,7 @@ models agreeing with v6. Phases 0–6 are closed too.
 | `public_equivalent` owned by BayesBase and extended by ExponentialFamily for its Fast types; the base package's copy then goes | Phase 8, the ecosystem integration | `DISCUSSION.md` §3.29 |
 | three findings of MessagePassingRulesBase's coverage pull request, left as they are (user, 2026-10-06: "maybe later if someone reports them as bugs"): a marginal rule's spec heading says "towards" where its card says "over"; `RuleContext(rng = 1)` prints a trailing comma, `RuleContext(rng = 1,)`; a rule defined for a node with no declaration fails with a raw `MethodError: no method matching nodespec(::Type{…})` | when reported, in MessagePassingRulesBase.jl | this row |
 | RxInfer's documentation adapted to v7: **done** on its branch (`1416e04e`, `2a11443c`): a learning path, the v5 → v6 guide, every v6 page rewritten, all runnable; it is published with RxInfer's release | done; published with the release (user) | § Phase 7, *Item 6 brief*; § Phase C, *Progress* |
-| a `LICENSE` file for each package under `lib/`: **done** (user, 2026-10-02), MIT for 14, the root's text, and GPL-3 for `PolyaMessagePassingRules`, gnu.org's canonical text. Each package's runtime closure was checked: every Julia package in it is MIT, Graphs (BSD, through Delta's weak dependency) and StatsFuns (MIT and Boost) aside, except PolyaGammaHybridSamplers, GPL-3 and only Pólya's. Two GPL binaries come transitively and are called by none of our code: Rmath (GPL-2) through StatsFuns, and SuiteSparse's GPL modules through SparseArrays; MIT packages of the ecosystem carry them alike. ReactiveMP and RxInfer load Pólya in their tests only, so both stay MIT | done | § Phase 8 |
+| a `LICENSE` file for each package under `lib/`: **done** (user, 2026-10-02), MIT for 14 (11 packages are left in `lib/` since TestUtils and Approximations left it and Probit joined Standard: 10 MIT and Pólya), the root's text, and GPL-3 for `PolyaMessagePassingRules`, gnu.org's canonical text. Each package's runtime closure was checked: every Julia package in it is MIT, Graphs (BSD, through Delta's weak dependency) and StatsFuns (MIT and Boost) aside, except PolyaGammaHybridSamplers, GPL-3 and only Pólya's. Two GPL binaries come transitively and are called by none of our code: Rmath (GPL-2) through StatsFuns, and SuiteSparse's GPL modules through SparseArrays; MIT packages of the ecosystem carry them alike. ReactiveMP and RxInfer load Pólya in their tests only, so both stay MIT | done | § Phase 8 |
 | `IntegrationTest.yml` reporting success on a resolver error: **done** (user, 2026-10-02), the job fails on it as on any test, since the downstream reaches this checkout through `[sources]` and a resolver error means a broken pair of branches. The release-time job pinning registered revisions is still Phase 8's | Phase 8, the release job | § Phase 8 |
 | the super check of 2026-10-02 (user): every suite, every documentation site, the 48 examples and the course on v7, and the `compat/` comparisons. **Done**: RxInfer's docs and the course's Factor Graphs called `+` with `in1`/`in2` and use the group `in`; three examples named their algorithm `meta`, two wrote positional `@initialization` Gammas and one used Optim's deprecated tolerances, all fixed on the examples branch; `compare_standard` calls the n-ary `+` and declares Categorical's log scale towards `p` a correction (v6's `-log K!` is right for a one-hot `q(out)` only). Nonlinear Sensor Fusion's 602 FastCholesky warnings were `smoothRTS` inverting a singular forward covariance under `Linearization()`, wrong in v6 too: it no longer inverts it (v6 stays as it is), and the example shows both methods tracking the robot | done | `DISCUSSION.md` §3.55 |
 | user rule sets beyond one-level extensions | not planned; #4 | `DISCUSSION.md` §3.23 |
@@ -78,22 +84,25 @@ models agreeing with v6. Phases 0–6 are closed too.
 | `PLAN.md` open item #2, a group member selected by a function of the target's index, `q[:p][f(k)]`: nothing in the repository needs it (user, 2026-10-02: not in this release, maybe eventually) | after the release, when a node needs it | `PLAN.md` open item #2 |
 | `PLAN.md` open item #13, a numerical protocol for the approximations in place of the direct FastCholesky calls: parked, no proposal (user, 2026-10-02: maybe after the release) | after the release, beside StableCholesky.jl | `PLAN.md` open items #13, #5 |
 | the package sites published with the repository split: each `InterLinks` sibling then lists the online `objects.inv` first, so a link follows the deployed pages' URL form | Phase 8 | `docs/make.jl`, `lib/*/docs/make.jl` |
+| the ReactiveBayes organisation's profile, [ReactiveBayes/.github](https://github.com/ReactiveBayes/.github) `profile/README.md` (user, 2026-10-15): its diagram and package lists name the new packages, MessagePassingRulesBase, TestUtils, Approximations and the rule packages, and its ReactiveMP entry stops saying the engine holds the rules | after the release | § Phase 8 |
 
 The rule registry was clarified with the user after step 4 and **stays as it is**: lookup is
 the base package's method table, global already, and the per-module registries are
 introspection only (`DISCUSSION.md` §3.23, Correction 25).
 
-Ground rules since Phase 4.5: work on **Julia 1.13 only** wired with `[sources]`, and everything
-verified locally (`DISCUSSION.md` §3.22). Of the CI, only `LibTests.yml`, the package suites, runs
+Ground rules since Phase 4.5: siblings wired with `[sources]`, and everything verified locally
+(`DISCUSSION.md` §3.22). Every package supports **Julia 1.10 and later** (user, 2026-10-02); local
+work runs on 1.13, and CI on 1.10 to 1.13. Of the CI, only `LibTests.yml`, the package suites, runs
 on pushes to this branch; `ci.yml` (the root suite and the docs) and `IntegrationTest.yml` run on a
 pull request.
 
-Phases 0–7 are closed. The rule system, `MessagePassingRulesBase`, is registered and has its own
-repository; `lib/` holds its test tooling
-(`MessagePassingRulesTestUtils`), the standard nodes (`StandardMessagePassingRules`), the numerics
-(`MessagePassingRulesApproximations`: `Unscented`, `Linearization`, Gauss–Hermite cubature,
-`smoothRTS`) and one package per remaining node (Delta, GaussianCoupling, Probit, GCV,
-Autoregressive, SoftDot, ContinuousTransition, Pólya, BIFM, Flow, DiscreteTransition);
+Phases 0–7 are closed. The rule system (`MessagePassingRulesBase`), its test tooling
+(`MessagePassingRulesTestUtils`) and the numerics (`MessagePassingRulesApproximations`:
+`Unscented`, `Linearization`, Gauss–Hermite cubature, `smoothRTS`) are registered and have
+repositories of their own. `lib/` holds the 11 rule packages, the standard nodes
+(`StandardMessagePassingRules`, Probit included) and one package per remaining node (Delta,
+GaussianCoupling, GCV, Autoregressive, SoftDot, ContinuousTransition, Pólya, BIFM, Flow,
+DiscreteTransition), each split into `ReactiveBayes/<Package>.jl` and frozen here until registered;
 `compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures, and
 `compat/rxinfer-examples` five RxInferExamples models on v6 and v7. ReactiveMP itself is the engine
 on the new rule system. The tooling's first finding was a real v6 bug: the variational
@@ -106,7 +115,7 @@ every check in `CLAUDE.md` § Running things: the root suite (`make test-all`), 
 `make test-<package>`, and the v6 comparisons and the fixture check in `compat/v6-comparison`
 (after `julia --project=compat/v6-comparison -e 'using Pkg; Pkg.instantiate()'`).
 
-Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.51,
+Then read, in order: `CLAUDE.md`, `PLAN.md`, `DISCUSSION.md` §4 *Corrections* and §3.14–3.57,
 and this file's § Phase 5 (its step briefs are the pattern later phases follow), § Phase 7 and
 § Phase C. Working conventions: one commit per step, failing test first,
 `PHASES.md` and `CHANGELOG.md` updated in the same commit, descriptive names rather than
@@ -131,7 +140,7 @@ generic ones, and no comments that only narrate.
 | 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | **closed**: items 1–7; RxInfer's branch pushed, no PR *(item 7's outcome, §3.48, superseded in Phase C by §3.50)* |
 | C | Cleanup: the repository rid of historical remarks, before the release | **in progress**: rule fallbacks and the open context, first-class log scales and `RuleResult` with its display, dead code, the engine tests without v6, history out of `src/` and `lib/`, the docs, declared services checked at resolution, the performance pass (§ Phase C, *Progress*) |
-| 8 | Release and downstream coordination | not started |
+| 8 | Release and downstream coordination | **in progress**: MessagePassingRulesBase, TestUtils and Approximations registered; the 11 rule packages split into their own repositories, ten registering, GCV after Standard |
 
 ---
 
@@ -3967,18 +3976,24 @@ this phase requires it to pass for release, rather than being its first executio
       GaussianCoupling and SoftDot, and Optim is its extension; the 11 packages are at 1.0.0, split
       into their own repositories, ten registering in General (#171496–#171504, #171506), GCV after
       Standard)*
-- [ ] package registration order decided, compat bounds set, supported Julia versions agreed
+- [x] package registration order decided, compat bounds set, supported Julia versions agreed
       *(the order is in `RELEASING.md`, dependencies first; every package supports Julia 1.10 and
       later, user, 2026-10-02: checked on 1.10 with the suites, RxInfer, the examples and the
-      course, and CI runs 1.10 to 1.13)*.
-      Work targets 1.13 only until then (§3.22); whether the 1.10 floor and its workarounds
-      come back is decided here
+      course, and CI runs 1.10 to 1.13; the siblings accept each other with `[compat]` `"1"`)*
 - [x] each package's `LICENSE` file: MIT, but GPL-3 for `PolyaMessagePassingRules`, which
       its README and docs say too *(done 2026-10-02, the dependencies checked; the not-done table)*
-- [ ] RxInfer's default package set updated
+- [ ] RxInfer's default package set updated *(decided, user with Mykola, 2026-10-12,
+      `DISCUSSION.md` §3.57: Standard, Delta, AR, DiscreteTransition, GCV, GaussianCoupling and
+      SoftDot, Optim an extension)*
 - [ ] documentation links across the three levels updated
 - [ ] downstream migration readiness confirmed — the v6 → v7 guide exercised against a real
       external package (RxGP is the natural candidate)
+- [ ] after the release, the ReactiveBayes organisation's profile updated (user, 2026-10-15):
+      [ReactiveBayes/.github](https://github.com/ReactiveBayes/.github), `profile/README.md`.
+      Its diagram gains MessagePassingRulesBase, TestUtils, Approximations and the rule packages
+      (ReactiveMP and the rule packages on the base package, RxInfer on the ones it loads), its
+      ReactiveMP entry stops saying the engine holds the rules, and a short section lists the
+      rule packages
 
 ---
 

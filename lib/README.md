@@ -6,7 +6,10 @@ the numerics they share,
 [MessagePassingRulesApproximations](https://github.com/ReactiveBayes/MessagePassingRulesApproximations.jl),
 and their test tooling,
 [MessagePassingRulesTestUtils](https://github.com/ReactiveBayes/MessagePassingRulesTestUtils.jl),
-have repositories of their own and are registered. The engine in `src/` depends on `MessagePassingRulesBase` only;
+have repositories of their own and are registered. So does each package here,
+`ReactiveBayes/<Package>.jl`, split with its history at 1.0.0 and being registered; the copies
+in this directory are frozen, a change goes to the package's repository, and `lib/` is deleted
+once all are registered. The engine in `src/` depends on `MessagePassingRulesBase` only;
 it finds the rules of every loaded rule package through it.
 
 | package | role |
@@ -35,7 +38,7 @@ with `make docs-<package>` (the test target's name, `docs-standard`, `docs-delta
 `docs/build`; `make docs-all` builds every site in dependency order, as CI does. The sites link
 to each other with DocumenterInterLinks `@extref`: to the registered packages' published sites,
 and to the other packages' planned addresses, `https://reactivebayes.github.io/<Package>.jl/dev/`,
-with each sibling's local inventory until they are published with the repository split.
+with each sibling's local inventory until they are published.
 
 ## Dependency constraints
 

@@ -49,7 +49,7 @@ src/
   helpers/             small internal utilities
   score/               node scores, variable entropies, bethe_free_energy
   fixes.jl             upstream hot-fixes; empty now
-lib/                   the new packages: the rule system, its test tooling, rules, numerics
+lib/                   the 11 rule packages, frozen copies until they are registered (see Gotchas)
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
 compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants
@@ -159,7 +159,7 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   for each package, and a `README.md`. A site documents its own modules only (`checkdocs = :all`,
   strict), and links into another's with `` [`name`](@extref Package.name) ``, against the planned
   address `https://reactivebayes.github.io/<Pkg>.jl/dev/` and the sibling's local
-  `docs/build/objects.inv` until the sites are published; a registered package's (MessagePassingRulesBase)
+  `docs/build/objects.inv` until the sites are published; a registered package's (MessagePassingRulesBase, TestUtils, Approximations)
   by its published `stable/objects.inv`, through `registered(name)` in `make.jl`, which waits 30 s
   where DocInventories waits 1 s: a first request to GitHub Pages took 3 s here and failed the
   build. A plain `@ref` to another package's name fails the build. Node pages follow one template (overview, definition, interfaces,
@@ -175,10 +175,10 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   **every Julia block runs** at build time (`@example`, `@setup`, `@repl`, `jldoctest`; only
   shell and `# v6` halves are plain). **A site loads only its own package's dependencies**, plus
   BayesBase, ExponentialFamily and Distributions: the engine's site declares its one example node
-  in `docs/nodes.jl` (every page includes it) and loads no rule package, and the base and TestUtils
-  sites declare toy nodes on the page; the learning path with the standard nodes is RxInfer's.
+  in `docs/nodes.jl` (every page includes it) and loads no rule package, and the sites of the base
+  package and TestUtils, in their own repositories, declare toy nodes on the page; the learning path with the standard nodes is RxInfer's.
   A spec, a rule result or a declaration left as an `@example`'s last value renders as a card with
-  the node drawn (`svg.jl`).
+  the node drawn (MessagePassingRulesBase's `svg.jl`).
 - Julia: the packages support **1.10 and later** (`julia = "1.10"`, stdlib compat entries 1.10);
   local work runs on 1.13, and siblings are wired with `[sources]`, test-only ones via `[extras]`
   too, which 1.10 ignores until the packages are registered. The comparison environment is
@@ -255,7 +255,7 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   `FlowMessagePassingRules` (`make test-flow`; Flow, its flow models and `PermutationMatrix`) and
   `DiscreteTransitionMessagePassingRules` (`make test-discrete-transition`; a tensor node, its rules
   `default` ones walking `rule_inputs`, its `T` group possibly empty). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
-- Every rule package's suite (Standard, Delta and the ten node packages) ends with a
+- Every rule package's suite (Standard, Delta and the nine other node packages) ends with a
   **rule-coverage gate**: after an unfiltered run
   (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
   find every rule selected by some test. A table case, a verification, a derivative check or
@@ -284,7 +284,8 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   `getresult(message_passing_rule(...))` still allocates nothing (the routing gates).
 - The v6 code is only in the 6.5.0 release and in git. The inventory check runs in
   `compat/v6-comparison`, locally, since only v6.5.0 still has everything it enumerates.
-- The rich displays (`svg.jl`, `display.jl`, `result_show.jl`) draw a node once, through
+- The rich displays, in MessagePassingRulesBase's repository (`svg.jl`, `display.jl`,
+  `result_show.jl`), draw a node once, through
   `svg_node`, for two uses: the cards (`text/html`), themed by their CSS, and `drawing(x)`, a
   standalone SVG whose colours are presentation attributes from `SVG_LIGHT`. The card's CSS
   overrides those attributes, so a change of colour goes in `SVG_LIGHT` and the dark CSS palette.

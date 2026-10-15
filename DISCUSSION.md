@@ -1275,7 +1275,7 @@ unregistered sibling, a separate `test/Project.toml` for a package that needs th
 tooling, and a CI matrix to match. The user's decision is to target 1.13 and wire everything
 with `[sources]`, which 1.11+ honours; the floor and its workarounds are reconsidered at
 registration. No CI runs without a PR either, so all work is verified locally, and the
-workflow files are left as they are until then.
+workflow files are left as they are until then. *(Superseded by §3.58: the floor is 1.10 again.)*
 
 ### 3.23 Step 4 built: what it settled, and what it left (2026-09-23)
 
@@ -2043,6 +2043,18 @@ Before the rule packages are registered, the user and Mykola settled how they ar
   stays in Standard, and no rule package uses Optim. RxInfer did, for the default optimiser of a
   continuous point mass: that optimiser is now the `OptimExt` extension (user), and without
   `using Optim` such a constraint says what to load.
+
+### 3.58 Julia 1.10 and later (user, 2026-10-02)
+
+Reconsidered before registration, as §3.22 said it would be: every package supports **Julia 1.10
+and later** (`julia = "1.10"`, stdlib compat entries 1.10), and the root suite, the package suites
+and the integration job run on 1.10, 1.11, 1.12 and 1.13, all gating. None of §3.22's workarounds
+came back: siblings stay wired with `[sources]`, which 1.10 ignores, so its jobs cannot install a
+sibling until that is registered (user: accepted). Checked on 1.10 with every sibling developed
+into one environment: every suite, RxInfer's, the 48 RxInferExamples notebooks and the course
+pass. What 1.10 cost: two tests no longer assert a name public with `Base.ispublic`, which 1.10
+lacks; MessagePassingRulesBase's routing gate specialises its measuring helper on the function,
+and its JET checks run on 1.12 and later.
 ---
 
 ## 4. Corrections — read this before re-proposing anything
@@ -2399,8 +2411,7 @@ Open as of the Phase 4.5 reconciliation:
   the message, declared per rule. 27 of Standard's message-only rules declare none, left as they
   are until a separate effort after the release, with no gate (user, 2026-09-30; `PHASES.md`).
 - ~~**The models package's name**~~ — *settled by §3.30: no such package; each node gets its own.*
-- **The Julia floor** — 1.13 only until registration, when 1.10 support is reconsidered
-  (§3.22).
+- ~~**The Julia floor**~~ — *settled by §3.58: 1.10 and later.*
 
 Open as of Phase C (2026-09-26; `PHASES.md`'s not-done table is the full list):
 

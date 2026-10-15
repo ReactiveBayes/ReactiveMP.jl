@@ -2,8 +2,8 @@
 
 A working document, like `PLAN.md` and `PHASES.md`, and removed with them at the release. It is
 the procedure that took MessagePassingRulesBase from `lib/MessagePassingRulesBase` to its own
-repository and registration, on 2026-10-02, written to be repeated for every package under `lib/`
-once the packages' grouping is decided (which nodes are standard: user, with Mykola).
+repository and registration, on 2026-10-02, and was repeated for every package under `lib/`
+(the grouping decided by the user with Mykola, `DISCUSSION.md` §3.57).
 
 Each step says who does it: **agent** (Claude Code with `gh` authenticated as an organisation
 admin, `repo` scope), **human** (a decision, or an action only a person can take), or **automatic**
@@ -15,10 +15,10 @@ A package registers after every sibling it depends on, test-only ones included, 
 installs them from the registry:
 
 1. MessagePassingRulesBase and MessagePassingRulesApproximations (no sibling);
-2. MessagePassingRulesTestUtils (Base), then StandardMessagePassingRules (Base; TestUtils for its
-   tests);
+2. MessagePassingRulesTestUtils (Base), then StandardMessagePassingRules (Base and Approximations, for
+   Probit's energy; TestUtils for its tests);
 3. every node package (Base, and Approximations or Standard where it says so; TestUtils for its
-   tests): Delta, Probit, Pólya, Flow (Approximations), GCV (Approximations and Standard), and
+   tests): Delta, Pólya, Flow (Approximations), GCV (Approximations and Standard), and
    AR, BIFM, ContinuousTransition, DiscreteTransition, GaussianCoupling, SoftDot.
 
 A new package waits 3 days in General before AutoMerge merges it; a new version of a registered
@@ -218,8 +218,8 @@ Release notes:
   sites by `registered(...)`. `git subtree split` walks the whole monorepo history per package, about
   half an hour each; independent packages split in parallel, three at a time. Local checks: every
   suite on 1.10–1.13 with coverage on 1.10 and 1.13, docs and Runic. Ten published (CI green, docs
-  live, coverage 93–100 %) and registered: General#171496–#171504 and #171506 (Standard), every
-  AutoMerge guideline met. **GCV** depends on Standard, so it is set up and checked locally (with
+  live, coverage 93–100 %) and submitted for registration: General#171496–#171504 and #171506
+  (Standard), every AutoMerge guideline met; all ten still open on 2026-10-15. **GCV** depends on Standard, so it is set up and checked locally (with
   Standard developed) but published and registered once Standard is in General; its docs link
   Standard's `stable/` inventory, which exists only after Standard's tag. After each merge: check for
   `v1.0.0`, and push it by hand on the registered tree if TagBot cannot (the release commit adds

@@ -24,9 +24,10 @@ concurrency:
   cancel-in-progress: true
 
 # Each package is tested from its own project, as `make test-<package>` does, on every supported
-# Julia, 1.10 and later. MessagePassingRulesBase is registered and comes from General. Julia 1.11
-# and later wire the other siblings with [sources]; 1.10 ignores [sources], so until those are
-# registered its jobs cannot install them (user: gating regardless).
+# Julia, 1.10 and later. MessagePassingRulesBase, TestUtils and Approximations are registered and
+# come from General. Julia 1.11 and later wire the other siblings with [sources]; 1.10 ignores
+# [sources], so GCV's 1.10 job cannot install Standard until it is registered (user: gating
+# regardless).
 jobs:
   test:
     name: ${{ matrix.package }} - Julia ${{ matrix.version }}

@@ -1,4 +1,4 @@
-# ProbitMessagePassingRules compared with v6's Probit on identical inputs: the messages under
+# StandardMessagePassingRules' Probit compared with v6's Probit on identical inputs: the messages under
 # expectation propagation and under the default algorithm, the joint and the average energy.
 #
 #   julia --startup-file=no --project=compat/v6-comparison compat/v6-comparison/compare_probit.jl
@@ -19,7 +19,7 @@ const ENERGY_UNDERFLOW = "v6's Probit energy computes log(normcdf(x)), which und
 const CAVITIES = [NormalMeanVariance(1.0, 0.5), NormalMeanPrecision(-0.5, 3.0), NormalWeightedMeanPrecision(2.0, 2.0), NormalMeanVariance(-2.0, 4.0)]
 const OUTPUTS = [PointMass(1.0), PointMass(0.0), Bernoulli(0.8), Bernoulli(0.3), Bernoulli(0.5)]
 
-@testset "ProbitMessagePassingRules against v6" begin
+@testset "Probit (StandardMessagePassingRules) against v6" begin
     for algorithm in (ProbitEP(), DefaultAlgorithm()), m_in in (CAVITIES..., PointMass(1.0), PointMass(-0.5))
         v7 = getresult(call_message_update_rule(Probit, :out; m = (in = m_in,), algorithm))
         v6, _ = v6_message_update(ReactiveMP.Probit, :out, (in = m_in,), NamedTuple(); meta = META)

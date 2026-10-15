@@ -90,7 +90,7 @@ replacement".
 | `NormalMixture` | `node` | `src/nodes/predefined/normal_mixture.jl` | `standard` | canary rule for the migration: `NormalMixture((:m, k))` |
 | `OR` | `node` | `src/nodes/predefined/or.jl` | `standard` | logic |
 | `Poisson` | `node` | `src/nodes/predefined/poisson.jl` | `standard` |  |
-| `Probit` | `node` | `src/nodes/predefined/probit.jl` | `node:Probit` |  |
+| `Probit` | `node` | `src/nodes/predefined/probit.jl` | `standard` | an expectation propagation node, part of Standard (DISCUSSION §3.57) |
 | `SoftDot` | `node` | `src/nodes/predefined/softdot.jl` | `node:SoftDot` | declared as `@node softdot` |
 | `Uninformative` | `node` | `src/nodes/predefined/uninformative.jl` | `standard` | source of 11 Aqua ambiguities against BayesBase `prod` in v6; Standard's `UninformativeProd` has none, and BayesBase owning the identity is the recorded upstream fix |
 | `dot` | `node` | `src/nodes/predefined/dot_product.jl` | `standard` | arithmetic |
@@ -199,8 +199,8 @@ replacement".
 | `PermutationMatrix` | `type` | `src/helpers/algebra/permutation_matrix.jl` | `node:Flow` | only consumer is Flow's `permutation_layer.jl`; its `*` methods, 119 ambiguities in 6.5.0, are narrowed to dense operands, with products of two permutations written out: none |
 | `PlanarFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/planar_flow.jl` | `node:Flow` |  |
 | `Poisson` | `type` | `src/nodes/predefined/poisson.jl` | `standard` |  |
-| `Probit` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` |  |
-| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `node:Probit` | becomes Probit's own algorithm, `ProbitEP(; p)`, declaring its dependencies and a default initial message (DISCUSSION §3.21) |
+| `Probit` | `type` | `src/nodes/predefined/probit.jl` | `standard` |  |
+| `ProbitMeta` | `type` | `src/nodes/predefined/probit.jl` | `standard` | becomes Probit's own algorithm, `ProbitEP(; p)`, declaring its dependencies and a default initial message (DISCUSSION §3.21) |
 | `ProdCVI` | `type` | `src/approximations/cvi.jl` | `delete` | superseded by `CVIProjection` |
 | `ProductInputArgumentsRecord` | `type` | `src/annotations/input_arguments.jl` | `engine` | stays in the engine (`DISCUSSION.md` §3.37): an annotation processor hooks the engine's `AnnotationDict`, `MessageMapping` and messages, which the base package does not have; the base package only carries annotations (`annotate!`, `RuleAnnotations`); retains references to rule inputs *and* results, see open item #10 on buffer ownership |
 | `RadialFlow` | `type` | `src/nodes/predefined/flow/coupling_flows/radial_flow.jl` | `node:Flow` |  |
