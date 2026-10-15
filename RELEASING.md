@@ -83,6 +83,10 @@ git remote add origin git@github.com:ReactiveBayes/<Package>.jl.git
 
 ## 4. Make it a repository of its own (agent)
 
+The files below are those of
+[MessagePassingRulesTemplate.jl](https://github.com/ReactiveBayes/MessagePassingRulesTemplate.jl),
+the template a new rule package starts from (`julia setup.jl <Name>`); compare with it.
+
 On `main`, in one commit:
 
 - `version = "1.0.0"` in `Project.toml` (AutoMerge refuses a prerelease suffix such as `-DEV`);
@@ -232,3 +236,10 @@ Release notes:
   repositories got `DocPreviewCleanup.yml` and no preview for CompatHelper's pull requests, pushed
   to `main`; the previews of closed pull requests (Base PR11, PR12; Standard PR3; Autoregressive
   and SoftDot PR1) were deleted by hand. GCV gets both when it is split.
+- **Templates** (2026-10-15, user): `ReactiveBayes/MessagePassingRulesTemplate.jl`, a template
+  repository for a new rule package, with an example node, its tests down to the coverage gate,
+  its node page, the workflows above and `setup.jl`, which renames it, and a CI job testing a
+  package made from it. MessagePassingRulesBase 1.1.1 documents it (*Your own rule package*).
+  `ReactiveBayes/PackageTemplate`, the generic one, brought up to date the same way: `setup.jl` in
+  place of an initialisation workflow needing a personal access token, Runic, current actions.
+  The 13 READMEs no longer list their dependencies.

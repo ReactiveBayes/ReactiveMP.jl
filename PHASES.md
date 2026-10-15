@@ -3993,7 +3993,7 @@ this phase requires it to pass for release, rather than being its first executio
       Its diagram gains MessagePassingRulesBase, TestUtils, Approximations and the rule packages
       (ReactiveMP and the rule packages on the base package, RxInfer on the ones it loads), its
       ReactiveMP entry stops saying the engine holds the rules, and a short section lists the
-      rule packages
+      rule packages and the template a new one starts from, MessagePassingRulesTemplate.jl
 
 ---
 
