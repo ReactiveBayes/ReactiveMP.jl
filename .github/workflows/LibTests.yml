@@ -23,11 +23,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Each package is tested from its own project, as `make test-<package>` does, on every supported
-# Julia, 1.10 and later. MessagePassingRulesBase, TestUtils and Approximations are registered and
-# come from General. Julia 1.11 and later wire the other siblings with [sources]; 1.10 ignores
-# [sources], so GCV's 1.10 job cannot install Standard until it is registered (user: gating
-# regardless).
+# GCVMessagePassingRules, the one package left under lib/ until it is registered, is tested from
+# its own project, as `make test-gcv` does, on every supported Julia, 1.10 and later. Its siblings
+# are registered and come from General.
 jobs:
   test:
     name: ${{ matrix.package }} - Julia ${{ matrix.version }}
@@ -39,17 +37,7 @@ jobs:
         version: ['1.10', '1.11', '1.12', '1.13']
         # The Makefile's targets, one per package under lib/.
         package:
-          - standard
-          - delta
-          - gaussian-coupling
           - gcv
-          - autoregressive
-          - softdot
-          - continuous-transition
-          - polya
-          - bifm
-          - flow
-          - discrete-transition
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3

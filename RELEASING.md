@@ -40,11 +40,11 @@ one, about 15 minutes. Packages with no unregistered dependency can be registere
   siblings go once those are registered.
 - `[compat]` has an upper-bounded entry for `julia` and every dependency, `[extras]` included, as
   Aqua's `deps_compat` and AutoMerge both require.
-- The suite passes on every Julia version supported, with `TEST_ALL=true` and
-  `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1` as CI sets them, and on the oldest and
-  newest with `Pkg.test(coverage = true)` too, since CI collects coverage. Test copies of the
-  package in the scratchpad (`git ls-files -co --exclude-standard`), with `julia +1.10` and so on
-  (juliaup), so the package's own Manifest is not rewritten.
+- The suite passes locally on Julia 1.13, with `TEST_ALL=true` and
+  `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1` as CI sets them, and with
+  `Pkg.test(coverage = true)`, since CI collects coverage; CI runs every other version (user,
+  2026-10-16: local checks on 1.13 only). Test a copy of the package in the scratchpad
+  (`git ls-files -co --exclude-standard`), so the package's own Manifest is not rewritten.
 - Found on MessagePassingRulesBase, and to check on every package:
   - stdlib compat entries (`LinearAlgebra`, `Pkg`, `Test`) must allow the oldest Julia;
   - an allocation gate that measures through `measure(f, args...)` reports 16 bytes on 1.10 and
@@ -225,12 +225,10 @@ Release notes:
   sites by `registered(...)`. `git subtree split` walks the whole monorepo history per package, about
   half an hour each; independent packages split in parallel, three at a time. Local checks: every
   suite on 1.10–1.13 with coverage on 1.10 and 1.13, docs and Runic. Ten published (CI green, docs
-  live, coverage 93–100 %) and submitted for registration: General#171496–#171504 and #171506
-  (Standard), every AutoMerge guideline met; all ten still open on 2026-10-15. **GCV** depends on Standard, so it is set up and checked locally (with
-  Standard developed) but published and registered once Standard is in General; its docs link
-  Standard's `stable/` inventory, which exists only after Standard's tag. After each merge: check for
-  `v1.0.0`, and push it by hand on the registered tree if TagBot cannot (the release commit adds
-  workflows).
+  live, coverage 93–100 %) and registered: General#171496–#171504 and #171506 (Standard), every
+  AutoMerge guideline met, merged 2026-10-15. TagBot tagged `v1.0.0` and made the release in all
+  ten itself, so no tag was pushed by hand this time, and every `stable/` site is up. **GCV**
+  depends on Standard, so it waited for Standard's registration (below).
 - **Documentation previews** (2026-10-15, user): every pull request's preview, CompatHelper's
   included, stayed on `gh-pages` after it closed, and each preview push ran a Pages build. All 13
   repositories got `DocPreviewCleanup.yml` and no preview for CompatHelper's pull requests, pushed
@@ -243,3 +241,15 @@ Release notes:
   `ReactiveBayes/PackageTemplate`, the generic one, brought up to date the same way: `setup.jl` in
   place of an initialisation workflow needing a personal access token, Runic, current actions.
   The 13 READMEs no longer list their dependencies.
+- **GCVMessagePassingRules 1.0.0** (2026-10-16): split once Standard was registered, with its
+  history (18 commits, one session-link line stripped) plus the standalone commit, the files
+  copied from Delta's repository, DocPreviewCleanup and the preview policy included;
+  Standard from General, its site linked by `stable/` inventory. Suite (463 checks and the coverage
+  gate), docs and Runic checked locally on 1.13. Repository created new, deploy key and
+  `DOCUMENTER_KEY` set, `main` pushed; CI green on 1.10, 1.11, 1.12, `1` and `pre`, docs live at `/dev/`, coverage 96.96% (96 of 99 lines). Registration General#172027.
+- **The monorepo on the ten registered rule packages** (step 8, 2026-10-16, user): their
+  `lib/` copies deleted and their `[sources]` path entries gone, in the root, the comparison and
+  examples environments, GCV's copy and RxInfer's branch; the sites link to their `stable/`
+  inventories; their Makefile targets, `LibTests.yml` jobs and `CompatHelper.yml` entries gone.
+  `compat/v6-comparison`'s tracked Manifest kept the deleted paths, so `Pkg.resolve` failed: the
+  ten were `Pkg.free`d instead. `lib/` holds GCV alone, until it is registered.

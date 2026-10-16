@@ -49,11 +49,11 @@ src/
   helpers/             small internal utilities
   score/               node scores, variable entropies, bethe_free_energy
   fixes.jl             upstream hot-fixes; empty now
-lib/                   the 11 rule packages, frozen copies until they are registered (see Gotchas)
+lib/                   GCVMessagePassingRules, a frozen copy until it is registered (see Gotchas)
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
 compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants
-docs/                  the engine's documentation site; each package's is lib/<Pkg>/docs/
+docs/                  the engine's documentation site; each package's is in its repository
 scripts/               the formatter (Runic, pinned) and the inventory generator; no benchmarks, which live in RxInferBenchmarks.jl
 ```
 
@@ -77,20 +77,10 @@ make test test_args="tag:nodes name:factornode"    # combined
 RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
-make docs-all                              # every documentation site, in dependency order, ReactiveMP's last
-make docs-standard                         # one package's site (docs-<package>, as the test targets), into lib/<Pkg>/docs/build, after the sites it links to
-make docs                                  # ReactiveMP's site alone; it links to the package sites, so they must be built
-make test-standard                         # lib/StandardMessagePassingRules
-make test-delta                            # lib/DeltaMessagePassingRules
-make test-gaussian-coupling                # lib/GaussianCouplingMessagePassingRules
-make test-gcv                              # lib/GCVMessagePassingRules
-make test-autoregressive                   # lib/AutoregressiveMessagePassingRules: AR, ConjugateAR
-make test-softdot                          # lib/SoftDotMessagePassingRules
-make test-continuous-transition            # lib/ContinuousTransitionMessagePassingRules
-make test-polya                            # lib/PolyaMessagePassingRules (GPL-3)
-make test-bifm                             # lib/BIFMMessagePassingRules
-make test-flow                             # lib/FlowMessagePassingRules
-make test-discrete-transition              # lib/DiscreteTransitionMessagePassingRules
+make docs-all                              # GCV's site, then ReactiveMP's, which links to it
+make docs-gcv                              # lib/GCVMessagePassingRules's site, into its docs/build
+make docs                                  # ReactiveMP's site alone; it links to GCV's local build, so build that first
+make test-gcv                              # lib/GCVMessagePassingRules, its siblings from General
 # the v6 oracle environment, local only, never on CI: comparisons, engine fixtures, inventory
 for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow compare_discrete_transition; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
@@ -98,12 +88,12 @@ julia --project=compat/v6-comparison scripts/inventory.jl --check
 ```
 
 The packages support **Julia 1.10 and later** (user, 2026-10-02), and local work runs on 1.13.
-The workflows under `.github/` run the root suite and the package suites on 1.10, 1.11, 1.12 and
+The workflows under `.github/` run the root suite and GCV's suite on 1.10, 1.11, 1.12 and
 1.13, all gating, and the docs on 1.13 (the format check on 1.10, where Runic's output is
-byte-identical). Julia 1.10 ignores `[sources]`, so until the siblings are registered its jobs
-cannot install them and fail (user: accepted; it works once they are registered). Checked locally
+byte-identical). Julia 1.10 ignores `[sources]`, so until GCV is registered the root suite's 1.10
+job cannot install it and fails (user: accepted; it works once GCV is registered). Checked locally
 on 1.10, with every sibling developed into one environment: every suite, RxInfer, the examples
-and the course pass. The v6 comparisons, the engine fixtures and the
+and the course pass. Local checks need only 1.13 (user, 2026-10-16); CI covers the others. The v6 comparisons, the engine fixtures and the
 inventory are **not** CI: they are the migration tool that verified the rewrite, run locally,
 and go at the release, `compat/` entirely, with the comparison machinery, which moved there from TestUtils
 (`ReferenceComparison.jl`), with no exceptions (user). Do not ask about their fate or polish them (`PLAN.md` § The v6 reference is
@@ -120,24 +110,23 @@ Entries of the same kind are OR'ed; different kinds are AND'ed.
 Tests are `@testitem` blocks (203 of them across 26 files), each self-contained and
 independently runnable. The root suite skips `lib/` and `compat/`, which
 TestItemRunner would otherwise scan. `@testmodule` names are global across the whole
-directory, `lib/` included, so a new one must not reuse a name from a lib suite.
+directory, `lib/` included, so a new one must not reuse a name from GCV's suite.
 
 **Every test item carries a tag.** The taxonomy is `:nodes` (39) and `:engine` (163 —
 everything except the node tests and the quality items), plus `:alloc` on the three items that
 assert allocation counts and `:quality` on the engine's doctests. Rules
-are tested in the lib suites. `:slow` exists and is **unused in `test/`**: nothing there has been
+are tested in the rule packages' suites. `:slow` exists and is **unused in `test/`**: nothing there has been
 measured as slow, so nothing claims to be.
-The lib suites honour it the same way: Delta's CVIProjection item (`cvi_projection_tests.jl`) is
-`:slow`, and a filtered run skips the rule-coverage gate, so a plain `make test-delta` never
-runs Delta's gate: use `TEST_ALL=true make test-delta`. When items are tagged `:slow` they disappear from `make test`
-and stay in `make test-all`.
+The rule packages' suites honour it the same way (Delta's CVIProjection item is `:slow`), and a
+filtered run skips the rule-coverage gate, so a package's gate runs only with `TEST_ALL=true`.
+When items are tagged `:slow` they disappear from `make test` and stay in `make test-all`.
 
 The fast default must never become a coverage reduction — the CI workflows set `TEST_ALL=true`,
 so a `:slow` tag changes what *you* run locally, never what CI runs. `ci.yml` runs the root
-suite and the docs on PRs and on pushes to `main`; `LibTests.yml` runs a job per
-`make test-<package>` target on PRs and on pushes to `main` and this branch.
+suite and the docs on PRs and on pushes to `main`; `LibTests.yml` runs `make test-gcv` on PRs
+and on pushes to `main` and this branch.
 
-Rule tests live with the rules, in the lib packages, and are table-driven via
+Rule tests live with the rules, in the rule packages, and are table-driven via
 `MessagePassingRulesTestUtils` (`@test_message_update_rule`). The engine's own tests declare
 toy nodes and rules with the base package's macros. `test/engine/harness.jl` builds a graph the
 way RxInfer does and returns its posteriors and free energies; the engine tests check them
@@ -155,11 +144,11 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   and 1.13. The version is still pinned via `scripts/Manifest.toml`, since Runic's own output may change
   between releases; use `make scripts_update` to bump it deliberately, and run `make format`
   over the repo in the same commit. `docs/` is excluded.
-- **Documentation**: every package has its own site, `docs/` for the engine and `lib/<Pkg>/docs/`
-  for each package, and a `README.md`. A site documents its own modules only (`checkdocs = :all`,
+- **Documentation**: every package has its own site, `docs/` for the engine and each package's in
+  its repository (`lib/GCVMessagePassingRules/docs/` here), and a `README.md`. A site documents its own modules only (`checkdocs = :all`,
   strict), and links into another's with `` [`name`](@extref Package.name) ``, against the planned
-  address `https://reactivebayes.github.io/<Pkg>.jl/dev/` and the sibling's local
-  `docs/build/objects.inv` until the sites are published; a registered package's (MessagePassingRulesBase, TestUtils, Approximations)
+  address `https://reactivebayes.github.io/<Pkg>.jl/dev/` and the local
+  `docs/build/objects.inv` for GCV until it is registered; a registered package's (every other one)
   by its published `stable/objects.inv`, through `registered(name)` in `make.jl`, which waits 30 s
   where DocInventories waits 1 s: a first request to GitHub Pages took 3 s here and failed the
   build. A plain `@ref` to another package's name fails the build. Node pages follow one template (overview, definition, interfaces,
@@ -180,8 +169,8 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   A spec, a rule result or a declaration left as an `@example`'s last value renders as a card with
   the node drawn (MessagePassingRulesBase's `svg.jl`).
 - Julia: the packages support **1.10 and later** (`julia = "1.10"`, stdlib compat entries 1.10);
-  local work runs on 1.13, and siblings are wired with `[sources]`, test-only ones via `[extras]`
-  too, which 1.10 ignores until the packages are registered. The comparison environment is
+  local work runs on 1.13, and GCV, the one unregistered sibling, is wired with `[sources]` (test-only
+  via `[extras]`), which 1.10 ignores until it is registered. The comparison environment is
   resolved on 1.13.
 
 ## Gotchas
@@ -202,7 +191,7 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)`.
 - **CI sets `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1`**, which makes FastCholesky throw
   on a matrix that is not symmetric within 1e-8 instead of warning; set it on local runs too
-  (`JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1 TEST_ALL=true make test-<package>`). Without it,
+  (`JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1 TEST_ALL=true make test-gcv`). Without it,
   ContinuousTransition's suite passed locally while CI failed for a week (Float32 rounding).
 - Aqua's checks run in full in `test/runtests.jl`, `ambiguities` included; `deps_compat` checks
   `[extras]` too.
@@ -233,34 +222,25 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   and [ReactiveBayes/MessagePassingRulesApproximations.jl](https://github.com/ReactiveBayes/MessagePassingRulesApproximations.jl),
   as MessagePassingRulesBase does: the siblings take them from General (`[compat] "1"`), and the
   sites link to their published inventories. A change to either goes to its repository.
-- **The 11 rule packages in `lib/` are frozen** (2026-10-12): each is split, with its history,
-  into `ReactiveBayes/<Package>.jl` at 1.0.0, ten registering in General (#171496–#171504 and
-  #171506 for Standard) and GCV waiting for Standard to be registered, since it depends on it. Do
-  not edit the copies here; a change goes to the package's repository. Once they are registered,
-  the monorepo and RxInfer depend on them and `lib/` is deleted.
-- `lib/` holds the rule packages, each with its own suite and the same `test_args` syntax:
-  `StandardMessagePassingRules` (`make test-standard`; every standard node: the distributions, arithmetic, logic and the mixtures) and `DeltaMessagePassingRules`
-  (`make test-delta`; the Delta node, its algorithm `DeltaApproximation`, its Unscented and
-  Linearization rules, and `CVIProjection`, whose rules are an extension on
-  ExponentialFamilyProjection) and the node packages, one per node, on Delta's template:
-  `GaussianCouplingMessagePassingRules` (`make test-gaussian-coupling`),
-  `GCVMessagePassingRules` (`make test-gcv`),
-  `AutoregressiveMessagePassingRules` (`make test-autoregressive`; AR and ConjugateAR under
-  `ARVMP`, which the model must give), `SoftDotMessagePassingRules` (`make test-softdot`,
-  independent of AR's package), `ContinuousTransitionMessagePassingRules`
-  (`make test-continuous-transition`; `CTVMP(f)`, its rule towards `a` reading `q(a)` beside the
-  default scheme's inputs), `PolyaMessagePassingRules` (`make test-polya`; BinomialPolya and
-  MultinomialPolya, GPL-3 through PolyaGammaHybridSamplers, the only package that is),
-  `BIFMMessagePassingRules` (`make test-bifm`; BIFM, stateless, and BIFMHelper; no free energy)
-  `FlowMessagePassingRules` (`make test-flow`; Flow, its flow models and `PermutationMatrix`) and
-  `DiscreteTransitionMessagePassingRules` (`make test-discrete-transition`; a tensor node, its rules
-  `default` ones walking `rule_inputs`, its `T` group possibly empty). Siblings are wired with `[deps]` and `[sources]`. No Manifest under `lib/` is committed; the local ones are gitignored.
-- Every rule package's suite (Standard, Delta and the nine other node packages) ends with a
+- **The rule packages are registered** (1.0.0, 2026-10-15) and live in their own repositories,
+  `ReactiveBayes/<Package>.jl`: StandardMessagePassingRules (every standard node: the distributions,
+  arithmetic, logic, the mixtures and Probit), Delta (`DeltaApproximation`, Unscented,
+  Linearization, and `CVIProjection` as an extension on ExponentialFamilyProjection),
+  GaussianCoupling, Autoregressive (AR and ConjugateAR under `ARVMP`), SoftDot, ContinuousTransition
+  (`CTVMP(f)`), Polya (GPL-3 through PolyaGammaHybridSamplers, the only package that is), BIFM,
+  Flow and DiscreteTransition. The monorepo, RxInfer's branch and the comparison environment take
+  them from General (`[compat] "1"`), and the sites link to their published inventories. A change
+  to one goes to its repository; each has a `Makefile` (`make test`, `make docs`).
+- **`lib/` holds GCVMessagePassingRules only**, frozen (`make test-gcv`): it is split into
+  `ReactiveBayes/GCVMessagePassingRules.jl` at 1.0.0 and registering in General (General#172027). Do not
+  edit the copy; a change goes to its repository. Once it is registered, the monorepo and RxInfer
+  depend on it and `lib/` is deleted. No Manifest under `lib/` is committed.
+- Every rule package's suite ends with a
   **rule-coverage gate**: after an unfiltered run
   (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
   find every rule selected by some test. A table case, a verification, a derivative check or
   a direct `call_*` counts; a rule reached only through a graph does not. A new rule needs a test
-  in its package, or its `make test-<package>` fails.
+  in its package, or its suite fails.
 - A node's `algorithm = T` with a **parametric** `T` binds its inline `dependencies`, and every rule
   that omits `algorithm`, to the type of its default instance, `T{Nothing}` say, not to `T`. A
   node whose algorithm has variants declares them against `T` itself, with `@define_dependencies`

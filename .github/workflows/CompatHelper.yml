@@ -37,20 +37,10 @@ jobs:
       - name: "Run CompatHelper"
         run: |
           import CompatHelper
-          # The root package and every package under lib/.
+          # The root package and the package under lib/.
           subdirs = [
               "",
-              "lib/AutoregressiveMessagePassingRules",
-              "lib/BIFMMessagePassingRules",
-              "lib/ContinuousTransitionMessagePassingRules",
-              "lib/DeltaMessagePassingRules",
-              "lib/DiscreteTransitionMessagePassingRules",
-              "lib/FlowMessagePassingRules",
               "lib/GCVMessagePassingRules",
-              "lib/GaussianCouplingMessagePassingRules",
-              "lib/PolyaMessagePassingRules",
-              "lib/SoftDotMessagePassingRules",
-              "lib/StandardMessagePassingRules",
           ]
           CompatHelper.main(; subdirs)
         shell: julia --color=yes {0}

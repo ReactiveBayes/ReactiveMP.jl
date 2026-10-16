@@ -771,8 +771,8 @@ consult when moving code.
 
 **Monorepo, split at Phase 8** (`DISCUSSION.md` §3.40); the split is done: every package has its
 repository, `ReactiveBayes/<Package>.jl`, MessagePassingRulesBase, TestUtils and Approximations
-are registered and gone from `lib/`, and the 11 rule packages are registering, their copies here
-frozen until `lib/` is deleted (`RELEASING.md`). The new packages live as
+are registered and gone from `lib/`, and so are ten of the 11 rule packages; GCV is registering,
+its copy here frozen until `lib/` is deleted (`RELEASING.md`). The new packages live as
 subdirectories of this repository under `lib/`, and are promoted to their own
 `ReactiveBayes/*` repositories at registration, when compat bounds and CI are set anyway.
 Phase 3 froze the base API and Phase 4.5 proved the engine interface; a split before
@@ -783,18 +783,8 @@ packages nobody can yet install.
 ReactiveMP.jl/
   Project.toml              # the engine
   src/
-  lib/                      # frozen copies of the 11 rule packages, until they are registered
-    StandardMessagePassingRules/       # Probit included
-    DeltaMessagePassingRules/
-    GaussianCouplingMessagePassingRules/
-    GCVMessagePassingRules/
-    AutoregressiveMessagePassingRules/
-    SoftDotMessagePassingRules/
-    ContinuousTransitionMessagePassingRules/
-    PolyaMessagePassingRules/          # GPL-3
-    BIFMMessagePassingRules/
-    FlowMessagePassingRules/
-    DiscreteTransitionMessagePassingRules/
+  lib/                      # GCV's frozen copy, until it is registered; the other ten
+    GCVMessagePassingRules/  # rule packages are registered, in ReactiveBayes/<Package>.jl
   compat/v6-comparison/     # ReactiveMP@6.5.0, RxInfer 5.5.2 and the new packages: the v6
                             # oracle, the comparisons and the recorded engine fixtures
   compat/rxinfer-examples/  # five RxInferExamples models, on v6 and on RxInfer's v7 branch

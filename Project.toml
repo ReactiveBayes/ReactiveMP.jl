@@ -16,19 +16,10 @@ TinyHugeNumbers = "783c9a47-75a3-44ac-a16b-f1ab7b3acf04"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
-# The lib packages are unregistered; `[sources]` (Julia 1.11+) resolves them by path.
+# GCVMessagePassingRules is unregistered; `[sources]` (Julia 1.11+) resolves it by path. The other
+# rule packages come from General.
 [sources]
-BIFMMessagePassingRules = {path = "lib/BIFMMessagePassingRules"}
-ContinuousTransitionMessagePassingRules = {path = "lib/ContinuousTransitionMessagePassingRules"}
-AutoregressiveMessagePassingRules = {path = "lib/AutoregressiveMessagePassingRules"}
-DeltaMessagePassingRules = {path = "lib/DeltaMessagePassingRules"}
-DiscreteTransitionMessagePassingRules = {path = "lib/DiscreteTransitionMessagePassingRules"}
-FlowMessagePassingRules = {path = "lib/FlowMessagePassingRules"}
 GCVMessagePassingRules = {path = "lib/GCVMessagePassingRules"}
-GaussianCouplingMessagePassingRules = {path = "lib/GaussianCouplingMessagePassingRules"}
-PolyaMessagePassingRules = {path = "lib/PolyaMessagePassingRules"}
-SoftDotMessagePassingRules = {path = "lib/SoftDotMessagePassingRules"}
-StandardMessagePassingRules = {path = "lib/StandardMessagePassingRules"}
 
 [compat]
 BayesBase = "1.5"

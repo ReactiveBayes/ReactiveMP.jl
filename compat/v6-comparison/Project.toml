@@ -23,17 +23,7 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
-BIFMMessagePassingRules = {path = "../../lib/BIFMMessagePassingRules"}
-ContinuousTransitionMessagePassingRules = {path = "../../lib/ContinuousTransitionMessagePassingRules"}
-AutoregressiveMessagePassingRules = {path = "../../lib/AutoregressiveMessagePassingRules"}
-DeltaMessagePassingRules = {path = "../../lib/DeltaMessagePassingRules"}
-DiscreteTransitionMessagePassingRules = {path = "../../lib/DiscreteTransitionMessagePassingRules"}
 GCVMessagePassingRules = {path = "../../lib/GCVMessagePassingRules"}
-FlowMessagePassingRules = {path = "../../lib/FlowMessagePassingRules"}
-GaussianCouplingMessagePassingRules = {path = "../../lib/GaussianCouplingMessagePassingRules"}
-PolyaMessagePassingRules = {path = "../../lib/PolyaMessagePassingRules"}
-SoftDotMessagePassingRules = {path = "../../lib/SoftDotMessagePassingRules"}
-StandardMessagePassingRules = {path = "../../lib/StandardMessagePassingRules"}
 
 [compat]
 ReactiveMP = "=6.5.0"

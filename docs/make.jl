@@ -1,28 +1,16 @@
 # The documentation site of ReactiveMP, the engine. Build it with `make docs` from the repository
-# root, after the package sites it links to (`make docs-all` builds them all, this one last).
+# root, after GCV's site, which it links to (`make docs-all` builds both, this one last).
 using Documenter, DocumenterInterLinks, DocInventories
 using ReactiveMP
 
-# Another package's site, for `@extref` links: its planned address, and the inventory of its local
-# build, which must exist, so sites build in dependency order (`make docs-all`).
+# GCV's site, for `@extref` links: its planned address, and the inventory of its local build, which
+# must exist, so `make docs-all` builds it first. It is registered once GCV is.
 sibling(name) = (
     "https://reactivebayes.github.io/$(name).jl/dev/",
     joinpath(@__DIR__, "..", "lib", name, "docs", "build", "objects.inv"),
 )
 
-const SIBLINGS = [
-    "StandardMessagePassingRules",
-    "DeltaMessagePassingRules",
-    "GaussianCouplingMessagePassingRules",
-    "GCVMessagePassingRules",
-    "SoftDotMessagePassingRules",
-    "AutoregressiveMessagePassingRules",
-    "ContinuousTransitionMessagePassingRules",
-    "PolyaMessagePassingRules",
-    "BIFMMessagePassingRules",
-    "FlowMessagePassingRules",
-    "DiscreteTransitionMessagePassingRules",
-]
+const SIBLINGS = ["GCVMessagePassingRules"]
 
 # A registered package's site, by its published inventory. A first request to GitHub Pages can take
 # seconds, longer than DocInventories' default timeout of one second, so it waits longer.
@@ -32,8 +20,21 @@ registered(name) = Inventory(
 )
 
 const REGISTERED = [
-    name => registered(name) for name in
-        ("MessagePassingRulesBase", "MessagePassingRulesTestUtils", "MessagePassingRulesApproximations")
+    name => registered(name) for name in (
+            "MessagePassingRulesBase",
+            "MessagePassingRulesTestUtils",
+            "MessagePassingRulesApproximations",
+            "StandardMessagePassingRules",
+            "DeltaMessagePassingRules",
+            "GaussianCouplingMessagePassingRules",
+            "SoftDotMessagePassingRules",
+            "AutoregressiveMessagePassingRules",
+            "ContinuousTransitionMessagePassingRules",
+            "PolyaMessagePassingRules",
+            "BIFMMessagePassingRules",
+            "FlowMessagePassingRules",
+            "DiscreteTransitionMessagePassingRules",
+        )
 ]
 
 links = InterLinks(REGISTERED..., (name => sibling(name) for name in SIBLINGS)...)

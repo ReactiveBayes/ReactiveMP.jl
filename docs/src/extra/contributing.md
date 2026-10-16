@@ -123,7 +123,7 @@ adapted to the ones above:
 
 We use the test-driven development (TDD) methodology for ReactiveMP.jl development. The test coverage should be as complete as possible. Please make sure that you write tests for each piece of code that you want to add.
 
-The engine's tests are in the `/test/` directory, which follows the structure of the `/src/` directory; each rule package under `/lib/` has its own `test/` directory. Test files are named `*_tests.jl` and hold `@testitem` blocks, each carrying a tag. A rule package's suite ends with a coverage check: every rule it defines must be selected by some test, a table case or a direct `call_*`. Some tests are also present in `jldoctest` docs annotations directly in the source code.
+The engine's tests are in the `/test/` directory, which follows the structure of the `/src/` directory; each rule package has its own `test/` directory, in its repository. Test files are named `*_tests.jl` and hold `@testitem` blocks, each carrying a tag. A rule package's suite ends with a coverage check: every rule it defines must be selected by some test, a table case or a direct `call_*`. Some tests are also present in `jldoctest` docs annotations directly in the source code.
 See [Julia's documentation](https://docs.julialang.org/en/v1/manual/documentation/index.html) about doctests.
 
 The tests can be evaluated by running following command in the Julia REPL:
@@ -152,10 +152,9 @@ tested on Julia 1.13.
   - `make test test_args="nodes"` runs only the tests under `test/nodes/`, and `make test test_args="engine:variational"` only `test/engine/variational_tests.jl`
   - `make test test_args="tag:engine"` and `make test test_args="name:MessageMapping"` select test items by tag and by name; entries of the same kind are alternatives, entries of different kinds all apply
   - `RUN_AQUA=false make test` skips the slow Aqua checks, which are enabled by default
-- `make test-<package>` runs one package's suite under `lib/`, with the same `test_args`, for example `make test-standard test_args="name:rules:Beta"`. The targets are `test-standard`, `test-delta`, `test-gaussian-coupling`, `test-gcv`, `test-autoregressive`, `test-softdot`, `test-continuous-transition`, `test-polya`, `test-bifm`, `test-flow` and `test-discrete-transition`. They skip items tagged `:slow` unless `TEST_ALL=true` is set, and the coverage check runs only on an unfiltered run
-- `make docs-<package>` builds one package's documentation site, for example `make docs-standard`;
-  `make docs-all` builds every site in dependency order, and `make docs` the ReactiveMP site,
-  which needs the package sites built first
+- `make test-gcv` runs the suite of `GCVMessagePassingRules`, the one rule package still under `lib/`, with the same `test_args`, for example `make test-gcv test_args="name:rules"`; every other rule package is tested in its own repository, `ReactiveBayes/<Package>.jl`, with `make test`. A suite skips items tagged `:slow` unless `TEST_ALL=true` is set, and the coverage check runs only on an unfiltered run
+- `make docs-gcv` builds GCV's documentation site; `make docs-all` builds it and then the
+  ReactiveMP site, and `make docs` the ReactiveMP site alone, which needs GCV's built first
 - `make check-format`: Checks the formatting (Runic), without modifying files
 - `make format`: Formats the code; this overwrites files
 - `make scripts_update`: Bumps the pinned Runic version in `scripts/Manifest.toml`
