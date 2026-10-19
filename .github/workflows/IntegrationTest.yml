@@ -22,11 +22,8 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                # Every supported Julia, 1.10 and later. The downstream branch wires this
-                # repository with [sources], which Julia 1.10 ignores, so until ReactiveMP v7 is
-                # registered its 1.10 job cannot install it (user: gating regardless); the rule
-                # packages come from General.
-                julia-version: ['1.10', '1.11', '1.12', '1.13']
+                # The latest Julia only: the root suite covers every supported version.
+                julia-version: ['1']
                 os: [ubuntu-latest]
                 package:
                     # Add downstream packages that depend on ReactiveMP here
