@@ -28,8 +28,7 @@ jobs:
                 package:
                     # Add downstream packages that depend on ReactiveMP here
                     # Each entry runs as a separate parallel job
-                    # RxInfer's branch for ReactiveMP v7, until RxInfer releases it.
-                    - { user: ReactiveBayes, repo: RxInfer.jl, ref: refactor/reactivemp-v7 }
+                    - { user: ReactiveBayes, repo: RxInfer.jl, ref: main }
 
 
         steps:
@@ -49,17 +48,11 @@ jobs:
                   ref: ${{ matrix.package.ref }}
                   path: downstream
 
-            # The branch reaches ReactiveMP through [sources] at the sibling path `../ReactiveMP.jl`;
-            # here this repository is the downstream's parent.
-            - name: Point the downstream's [sources] at this checkout
-              run: sed -i 's#\.\./ReactiveMP\.jl#..#g' downstream/Project.toml
-
             - name: Load this and run the downstream tests
               shell: julia --project=downstream {0}
               run: |
                   using Pkg
-                  # The downstream's [sources] use this checkout of ReactiveMP, so a
-                  # resolver error is a broken pair of branches, never an intentional breaking
-                  # release: it fails the job, as any test does.
-                  Pkg.instantiate()
+                  # The downstream runs on this checkout of ReactiveMP. A resolver error means
+                  # the downstream's compat excludes this version: it fails the job, as any test does.
+                  Pkg.develop(PackageSpec(path = "."))
                   Pkg.test()
