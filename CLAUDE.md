@@ -50,12 +50,10 @@ src/
   score/               node scores, variable entropies, bethe_free_energy
   fixes.jl             upstream hot-fixes; empty now
 ext/                   ReactiveMPReactantExt: graph building runs untraced under Reactant (see Gotchas)
-compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
-compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants;
                        test/reactant/ has its own environment, for the Reactant extension
 docs/                  the engine's documentation site; each package's is in its repository
-scripts/               the formatter (Runic, pinned) and the inventory generator; no benchmarks, which live in RxInferBenchmarks.jl
+scripts/               the formatter (Runic, pinned); no benchmarks, which live in RxInferBenchmarks.jl
 ```
 
 Include order in `src/ReactiveMP.jl` is load-bearing: `nodes/equality.jl` must precede
@@ -80,24 +78,13 @@ make format                                # apply formatting
 make check-format                          # verify only, no writes
 make docs                                  # ReactiveMP's site; it links to the rule packages' published sites
 make test-reactant                         # compile an unrolled model with Reactant, from test/reactant's environment
-# the v6 oracle environment, local only, never on CI: comparisons, engine fixtures, inventory
-for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow compare_discrete_transition; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
-julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
-julia --project=compat/v6-comparison scripts/inventory.jl --check
 ```
 
-The packages support **Julia 1.10 and later** (user, 2026-10-02), and local work runs on 1.13.
-The workflows under `.github/` run the root suite on 1.10, 1.11, 1.12 and 1.13, all gating, and
-the docs on 1.13 (the format check on 1.10, where Runic's output is byte-identical). Every
-dependency is registered, so 1.10, which ignores `[sources]`, installs them all; only the
-integration test's 1.10 job fails, since RxInfer's branch takes ReactiveMP v7 through `[sources]`
-until it is registered (user: accepted). Checked locally
-on 1.10, with every sibling developed into one environment: every suite, RxInfer, the examples
-and the course pass. Local checks need only 1.13 (user, 2026-10-16); CI covers the others. The v6 comparisons, the engine fixtures and the
-inventory are **not** CI: they are the migration tool that verified the rewrite, run locally,
-and go at the release, `compat/` entirely, with the comparison machinery, which moved there from TestUtils
-(`ReferenceComparison.jl`), with no exceptions (user). Do not ask about their fate or polish them (`PLAN.md` § The v6 reference is
-scaffolding).
+The packages support **Julia 1.10 and later**, and local work runs on 1.13. The workflows under
+`.github/` run the root suite on 1.10, 1.11, 1.12 and 1.13, all gating, and the docs on 1.13 (the
+format check on 1.10, where Runic's output is byte-identical); `IntegrationTest.yml` runs RxInfer's
+suite against this checkout, and *Reactant check* the Reactant extension. Local checks need only
+1.13; CI covers the others.
 
 `test_args` takes three kinds of entry, and they compose:
 
@@ -107,13 +94,11 @@ scaffolding).
 
 Entries of the same kind are OR'ed; different kinds are AND'ed.
 
-Tests are `@testitem` blocks (203 of them across 26 files), each self-contained and
-independently runnable. The root suite skips `compat/`, which TestItemRunner would
-otherwise scan. `@testmodule` names are global across the whole directory.
+Tests are `@testitem` blocks, each self-contained and independently runnable. `@testmodule` names are global across the whole directory.
 
-**Every test item carries a tag.** The taxonomy is `:nodes` (39) and `:engine` (163 —
-everything except the node tests and the quality items), plus `:alloc` on the three items that
-assert allocation counts and `:quality` on the engine's doctests. Rules
+**Every test item carries a tag.** The taxonomy is `:nodes` (the node tests) and `:engine`
+(everything else but the quality items), plus `:alloc` on the items that assert allocation
+counts and `:quality` on the engine's doctests. Rules
 are tested in the rule packages' suites. `:slow` exists and is **unused in `test/`**: nothing there has been
 measured as slow, so nothing claims to be.
 The rule packages' suites honour it the same way (Delta's CVIProjection item is `:slow`), and a
@@ -133,7 +118,7 @@ against closed forms computed in the test (exact models), coordinate ascent or c
 (variational ones) and quadrature or Monte Carlo (approximations). Nothing there is
 `@test_broken`: the two rule discrepancies they found, AR's mean-field rule towards `γ` and CT's
 rule towards `y` from `m[:x]` (ReactiveMP.jl#681, and #682 for the latter, which asks Thijs van de
-Laar to triple-check it), are corrected in v7 and stay as they are in v6.
+Laar to triple-check it), are corrected in the rule packages.
 
 ## Conventions
 
@@ -145,8 +130,8 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   over the repo in the same commit. `docs/` is excluded.
 - **Documentation**: every package has its own site, `docs/` for the engine and each package's in
   its repository, and a `README.md`. A site documents its own modules only (`checkdocs = :all`,
-  strict), and links into another's with `` [`name`](@extref Package.name) ``, against the planned
-  address `https://reactivebayes.github.io/<Pkg>.jl/dev/`, by its published `stable/objects.inv`, through `registered(name)` in `make.jl`, which waits 30 s
+  strict), and links into another's with `` [`name`](@extref Package.name) ``, by its published
+  `https://reactivebayes.github.io/<Pkg>.jl/stable/objects.inv`, through `registered(name)` in `make.jl`, which waits 30 s
   where DocInventories waits 1 s: a first request to GitHub Pages took 3 s here and failed the
   build. A plain `@ref` to another package's name fails the build. Node pages follow one template (overview, definition, interfaces,
   algorithm, a `rule_coverage` table, example, limitations, API). The docstring style is on the
@@ -166,8 +151,7 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   A spec, a rule result or a declaration left as an `@example`'s last value renders as a card with
   the node drawn (MessagePassingRulesBase's `svg.jl`).
 - Julia: the packages support **1.10 and later** (`julia = "1.10"`, stdlib compat entries 1.10);
-  local work runs on 1.13, and every sibling comes from General. The comparison environment is
-  resolved on 1.13.
+  local work runs on 1.13, and every sibling comes from General.
 
 ## Gotchas
 
@@ -207,26 +191,19 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   another rule. A combination a node does not support at all is a rule of its own that throws.
 - The activation option `rulefallback` (e.g. `NodeFunctionRuleFallback()`) gives a message only
   where no rule matches; an exception inside a rule always propagates.
-- **MessagePassingRulesBase is registered** (1.0.0, 2026-10-05; Julia 1.10 and later) and lives in
-  [ReactiveBayes/MessagePassingRulesBase.jl](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl):
-  the monorepo depends on it from General (`[compat] "1"`), and its docs link to its published
-  inventory. A change to it goes to that repository. `RELEASING.md` is the procedure that split it
-  out, for the other packages too.
-- **MessagePassingRulesTestUtils and MessagePassingRulesApproximations are registered** (1.0.0,
-  2026-10-09) and live in
-  [ReactiveBayes/MessagePassingRulesTestUtils.jl](https://github.com/ReactiveBayes/MessagePassingRulesTestUtils.jl)
-  and [ReactiveBayes/MessagePassingRulesApproximations.jl](https://github.com/ReactiveBayes/MessagePassingRulesApproximations.jl),
-  as MessagePassingRulesBase does: the siblings take them from General (`[compat] "1"`), and the
-  sites link to their published inventories. A change to either goes to its repository.
-- **The rule packages are registered** (1.0.0, 2026-10-15) and live in their own repositories,
-  `ReactiveBayes/<Package>.jl`: StandardMessagePassingRules (every standard node: the distributions,
-  arithmetic, logic, the mixtures and Probit), Delta (`DeltaApproximation`, Unscented,
-  Linearization, and `CVIProjection` as an extension on ExponentialFamilyProjection),
-  GaussianCoupling, Autoregressive (AR and ConjugateAR under `ARVMP`), SoftDot, ContinuousTransition
-  (`CTVMP(f)`), Polya (GPL-3 through PolyaGammaHybridSamplers, the only package that is), BIFM,
-  Flow, DiscreteTransition and GCV (1.0.0, 2026-10-19). The monorepo, RxInfer's branch and the comparison environment take
-  them from General (`[compat] "1"`), and the sites link to their published inventories. A change
-  to one goes to its repository; each has a `Makefile` (`make test`, `make docs`).
+- **The sibling packages are registered** and live in their own repositories,
+  `ReactiveBayes/<Package>.jl`: MessagePassingRulesBase (the rule system), MessagePassingRulesTestUtils
+  (testing rules), MessagePassingRulesApproximations (the numerics rules share), and the rule
+  packages: StandardMessagePassingRules (every standard node: the distributions, arithmetic, logic,
+  the mixtures and Probit), Delta (`DeltaApproximation`, Unscented, Linearization, and
+  `CVIProjection` as an extension on ExponentialFamilyProjection), GaussianCoupling, Autoregressive
+  (AR and ConjugateAR under `ARVMP`), SoftDot, ContinuousTransition (`CTVMP(f)`), Polya (GPL-3
+  through PolyaGammaHybridSamplers, the only package that is), BIFM, Flow, DiscreteTransition and
+  GCV. ReactiveMP and RxInfer take them from General (`[compat] "1"`), and the sites link to their
+  published inventories. A change to one goes to its repository; each has a `Makefile` (`make
+  test`, `make docs`) and a weekly CI run (`Weekly.yml`), and a new one starts from
+  `ReactiveBayes/MessagePassingRulesTemplate.jl`. Releasing is described on the contributing page
+  (`docs/src/extra/contributing.md`, *Releasing*).
 - Every rule package's suite ends with a
   **rule-coverage gate**: after an unfiltered run
   (no `test_args`, and `TEST_ALL=true` if anything is `:slow`), `check_rule_coverage` must
@@ -254,8 +231,7 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   `RuleResult`; `getresult` is the value, `getlogscale` its log scale. The engine uses
   `execute_rule`/`execute_rule_with_logscale` and never builds one; inlined,
   `getresult(message_passing_rule(...))` still allocates nothing (the routing gates).
-- The v6 code is only in the 6.5.0 release and in git. The inventory check runs in
-  `compat/v6-comparison`, locally, since only v6.5.0 still has everything it enumerates.
+- The v6 code is in the 6.x releases and in git.
 - The rich displays, in MessagePassingRulesBase's repository (`svg.jl`, `display.jl`,
   `result_show.jl`), draw a node once, through
   `svg_node`, for two uses: the cards (`text/html`), themed by their CSS, and `drawing(x)`, a
@@ -268,49 +244,8 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   does not keep the marks); never a function on the path of a rule. `factornode`'s positional call is
   inlined into its caller, so `create_factornode` is marked too. Its test, `make test-reactant`, has its
   own environment and the workflow *Reactant check*, apart from `ci.yml`, so Reactant breaking does not
-  block the suite (user); it compiles before running uncompiled, since `factornode`'s creation-plan
-  cache would otherwise spare the trace the code under test. RxInfer needs marks of its own.
+  block the suite; it compiles before running uncompiled, since `factornode`'s creation-plan
+  cache would otherwise spare the trace the code under test. RxInfer marks its own functions in its
+  `ReactantExt`.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
-
-## Ongoing work — read before starting
-
-This repository may carry in-progress design work in the root. Look for these, in order,
-and read whichever exist before proposing changes:
-
-1. **`PLAN.md`** — the agreed design. What was decided.
-2. **`DISCUSSION.md`** — why it was decided, which alternatives were rejected, and a
-   **Corrections** section listing ideas already tried and shot down. Read that section
-   before proposing a design; it exists to stop good-sounding dead ends being re-proposed.
-3. **`PHASES.md`** — current state: what is done, what is next, what is blocked.
-4. **`BENCHMARK.md`** — the performance pass: how it was measured, the final numbers against
-   v6, what made v7 slower and what fixed it, the findings kept (the typed spec, scratch, the GC
-   and latency, the stack, RxInfer's precompile workload), what was rejected, and what is left.
-5. **`RELEASING.md`** — how a package left `lib/` for its own repository and was registered,
-   step by step, each step marked agent, human or automatic, with a log of the packages done.
-6. **`INVENTORY.md`** — where every node, exported symbol and engine hook is going once
-   the package split happens. Generated by `scripts/inventory.jl`: edit only the
-   `destination` and `note` columns, then run `julia --project=compat/v6-comparison
-   scripts/inventory.jl --check` to confirm nothing is left `undecided`.
-
-**If none of these files exist, the repository has no unfinished business** and you can
-treat `main` as the whole story.
-
-The current work is the rule/node rewrite; Phases 4.5 and 5 are closed, with the post-close
-review's findings resolved; Phase 6 (the node packages) is closed: every node is in its own package and `legacy/` is gone. Phase 7 is closed: RxInfer is adapted on its branch `refactor/reactivemp-v7` (pushed, no PR, run by `IntegrationTest.yml`), the diagnostics are activation options (`DISCUSSION.md` §3.46). **Phase C, the cleanup, is in progress**: it has also brought back rule fallbacks and opened the rule context (§3.49), made log scales part of the message with `RuleResult` (§3.50, superseding §3.48's "as v6 has them") and given `RuleResult` its display (§3.51). The engine checks a rule's declared services as it resolves it; the performance pass is applied, with RxInfer's precompile workload (`BENCHMARK.md`; Rocket's and GraphPPL's fixes are pull requests of their own, Rocket's merged); before the release, what `PHASES.md`'s not-done table lists; the 27 rules without a log scale stay as they are until a separate effort after the release (user, decided).
-From Phase 4.5 on, the engine in `src/` is **refactored in place**, not bridged. Its reactive
-machinery is kept, and rule lookup and invocation plus node and rule definition and creation
-are replaced. Step 4 was a **clean cut**: the v6 rule system and every unported node moved to
-`legacy/v6/`, after their behaviour was recorded as fixtures in `compat/v6-comparison`; Phase 5
-step 9 then deleted the v6 engine files from there, and Phase 6 ported the rest and deleted the
-directory. Breaking downstream
-packages before the release is accepted.
-
-Remarks in code and tests that only record the rewrite's history (phases, steps, cases, what
-v6 did, pointers into these documents) are already out of `src/`; do not add new
-ones. What remains (the inventory, `compat/`, these documents, the CHANGELOG's step-by-step
-entries) waits for the release, and **Phase C** removes it then (`PHASES.md` § Phase C).
-
-When work is in progress, update `PHASES.md` **in the same commit as the change it
-describes**. Never mark something done as a separate act — status claimed without a diff
-alongside it is how a tracking file starts lying.

@@ -805,6 +805,10 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   `-d·log|a|`, and a product that would need `in * A` for a matrix operand has no rule. v6's
   `*` rules towards `in` with their arguments reversed, reachable only through `@call_rule`, are
   gone.
+- **Categorical's log scale towards `p`** from a Categorical `q(out)` is
+  `Σₖ log Γ(qₖ + 1) - log K!`, the logarithm of `B(q + 1)`, the integral of the message
+  `p ↦ ∏ₖ pₖ^qₖ`. v6 gave `-log K!`, right only for a one-hot `q(out)`, so the evidence of a model
+  with a Categorical whose `q(out)` is not one-hot changes. For a one-hot `q(out)` nothing changes.
 - **`+`** takes any number of terms, its interfaces `out` and the group `in`: v6's `in1` and `in2`
   are `(:in, 1)` and `(:in, 2)`, `call_message_update_rule(+, (:in, 2); m = (out = …, in = (…, nothing)))`
   and `((:in, 1), x)` in a hand-built graph. `a + b + c` is one node, where v6 had no rule for it,

@@ -12,19 +12,18 @@
 
 ReactiveMP.jl is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. It does not create a specific message passing schedule in advance, but rather _reacts_ on changes in the data source (hence _reactive_ in the name of the package).
 
-The engine holds no update rules of its own. Nodes and rules are declared with [`MessagePassingRulesBase`](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl), and the rules live in packages of their own ([`lib/`](lib/README.md) lists them): `StandardMessagePassingRules` for the standard distributions, arithmetic, logic and mixtures, and a package for each other node (Delta, GCV, Autoregressive, ContinuousTransition, Flow, DiscreteTransition and more). Loading a rule package is enough for the engine to find its rules.
+The engine holds no update rules of its own. Nodes and rules are declared with [`MessagePassingRulesBase`](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl), and the rules live in packages of their own, each in its repository `ReactiveBayes/<Package>.jl`: `StandardMessagePassingRules` for the standard distributions, arithmetic, logic and mixtures, and a package for each other node (Delta, GaussianCoupling, Autoregressive, SoftDot, ContinuousTransition, Polya, BIFM, Flow, DiscreteTransition and GCV). Loading a rule package is enough for the engine to find its rules. A new rule package starts from [MessagePassingRulesTemplate.jl](https://github.com/ReactiveBayes/MessagePassingRulesTemplate.jl).
 
 # Installation
 
-The current version, 7, is not registered yet. The rule system, MessagePassingRulesBase, the numerics the rules share, MessagePassingRulesApproximations, the test tooling, MessagePassingRulesTestUtils, and the rule packages are, each with a repository of their own, `ReactiveBayes/<Package>.jl`. Until the engine is registered, clone this repository, develop it, and add the rule packages you need from General:
+ReactiveMP and the rule packages are registered in Julia's General registry. Add the engine with the rule packages your model uses:
 
 ```julia
 import Pkg
-Pkg.develop(path = "path/to/ReactiveMP.jl")
-Pkg.add("StandardMessagePassingRules")
+Pkg.add(["ReactiveMP", "StandardMessagePassingRules"])
 ```
 
-The registered version 6 installs with `] add ReactiveMP`.
+Version 7 changed how nodes and rules are defined; the [migration guide](https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v6-to-v7/) explains how to port code written for version 6.
 
 # Documentation
 

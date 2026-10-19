@@ -41,13 +41,7 @@ for arg in ARGS
     end
 end
 
-# `compat/` runs against v6. TestItemRunner scans the whole directory, so it is excluded here.
-const EXCLUDED_DIRS = ("compat",)
-
-is_excluded(filename) = any(dir -> occursin(joinpath(pkgdir(ReactiveMP), dir) * "/", filename), EXCLUDED_DIRS)
-
 function test_item_filter(ti)
-    is_excluded(ti.filename) && return false
     isempty(SELECTED_PATHS) ||
         any(p -> occursin(p, ti.filename), SELECTED_PATHS) ||
         return false

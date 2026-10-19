@@ -157,3 +157,19 @@ tested on Julia 1.13.
 - `make check-format`: Checks the formatting (Runic), without modifying files
 - `make format`: Formats the code; this overwrites files
 - `make scripts_update`: Bumps the pinned Runic version in `scripts/Manifest.toml`
+- `make test-reactant`: Compiles an unrolled model with Reactant, from `test/reactant`'s own environment
+
+## Releasing
+
+A release of ReactiveMP, or of a package of the ecosystem, is the version in `Project.toml` on the
+default branch, with its `CHANGELOG.md` entry, registered in Julia's General registry:
+
+1. Merge the pull request that sets the version, with CI green.
+2. Comment on the merge commit, `@JuliaRegistrator register`, followed by `Release notes:` and the
+   notes. Only collaborators and public members of the ReactiveBayes organisation can trigger
+   Registrator; it answers on the commit with the General pull request it opened.
+3. General's AutoMerge checks the pull request and merges it. A comment on that pull request pauses
+   the merge, unless it contains `[noblock]`.
+4. TagBot then tags the release and makes a GitHub release, and the documentation job builds
+   `stable/` from the tag. TagBot cannot push a tag whose commit changes `.github/workflows`; check
+   for the tag after the merge, and push it by hand on the registered commit if it is missing.
