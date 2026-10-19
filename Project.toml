@@ -16,6 +16,12 @@ TinyHugeNumbers = "783c9a47-75a3-44ac-a16b-f1ab7b3acf04"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
+[weakdeps]
+Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+
+[extensions]
+ReactiveMPReactantExt = "Reactant"
+
 [compat]
 BayesBase = "1.5"
 Compat = "4.10"
@@ -23,6 +29,7 @@ Distributions = "0.24, 0.25"
 LinearAlgebra = "1.10"
 MacroTools = "0.5"
 MessagePassingRulesBase = "1"
+Reactant = "0.2.134"
 Rocket = "1.8.0"
 TinyHugeNumbers = "1.0.0"
 TupleTools = "1.2.0"

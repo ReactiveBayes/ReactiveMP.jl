@@ -27,13 +27,17 @@ doc_init:
 docs: doc_init ## Build ReactiveMP's documentation site, running its doctests
 	julia --startup-file=no --project=docs docs/make.jl
 
-.PHONY: test test-all
+.PHONY: test test-all test-reactant
 
 test: ## Run the root suite except items tagged `:slow`. test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 test-all: ## Run the root suite, `:slow` items included, as CI does
 	TEST_ALL=true julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
+
+test-reactant: ## Compile an unrolled model with Reactant (ReactiveMPReactantExt), from test/reactant's own environment
+	julia --startup-file=no --project=test/reactant -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=test/reactant test/reactant/runtests.jl
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

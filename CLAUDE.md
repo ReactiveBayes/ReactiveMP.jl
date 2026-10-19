@@ -49,9 +49,11 @@ src/
   helpers/             small internal utilities
   score/               node scores, variable entropies, bethe_free_energy
   fixes.jl             upstream hot-fixes; empty now
+ext/                   ReactiveMPReactantExt: graph building runs untraced under Reactant (see Gotchas)
 compat/v6-comparison/  ReactiveMP 6.5.0 + RxInfer 5.5.2: the oracle, comparisons, engine fixtures
 compat/rxinfer-examples/ five RxInferExamples models on v6 and on RxInfer's v7 branch
-test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants
+test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants;
+                       test/reactant/ has its own environment, for the Reactant extension
 docs/                  the engine's documentation site; each package's is in its repository
 scripts/               the formatter (Runic, pinned) and the inventory generator; no benchmarks, which live in RxInferBenchmarks.jl
 ```
@@ -77,6 +79,7 @@ RUN_AQUA=false make test                   # skip the slow Aqua checks
 make format                                # apply formatting
 make check-format                          # verify only, no writes
 make docs                                  # ReactiveMP's site; it links to the rule packages' published sites
+make test-reactant                         # compile an unrolled model with Reactant, from test/reactant's environment
 # the v6 oracle environment, local only, never on CI: comparisons, engine fixtures, inventory
 for s in check compare_standard compare_approximations compare_delta compare_gaussian_coupling compare_probit compare_gcv compare_autoregressive compare_softdot compare_continuous_transition compare_polya compare_bifm compare_flow compare_discrete_transition; do julia --project=compat/v6-comparison compat/v6-comparison/$s.jl; done
 julia --project=compat/v6-comparison compat/v6-comparison/record_engine_fixtures.jl --check
@@ -258,6 +261,15 @@ Laar to triple-check it), are corrected in v7 and stay as they are in v6.
   `svg_node`, for two uses: the cards (`text/html`), themed by their CSS, and `drawing(x)`, a
   standalone SVG whose colours are presentation attributes from `SVG_LIGHT`. The card's CSS
   overrides those attributes, so a change of colour goes in `SVG_LIGHT` and the dark CSS palette.
+- **Reactant** (`ext/ReactiveMPReactantExt.jl`): since Reactant 0.2.292 (EnzymeAD/Reactant.jl#3378),
+  its overlays of `all` and `any` walk every field of their arguments, which throws on Rocket's
+  linked lists (undefined placeholder fields, cycles). The extension marks the functions that build a
+  graph or tell a variable's kind with `Reactant.@skip_rewrite_func`, in `__init__` (precompilation
+  does not keep the marks); never a function on the path of a rule. `factornode`'s positional call is
+  inlined into its caller, so `create_factornode` is marked too. Its test, `make test-reactant`, has its
+  own environment and the workflow *Reactant check*, apart from `ci.yml`, so Reactant breaking does not
+  block the suite (user); it compiles before running uncompiled, since `factornode`'s creation-plan
+  cache would otherwise spare the trace the code under test. RxInfer needs marks of its own.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.
 

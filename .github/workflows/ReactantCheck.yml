@@ -1,0 +1,36 @@
+name: Reactant check
+
+# Compiling inference with Reactant (`ext/ReactiveMPReactantExt.jl`, `make test-reactant`), on its own:
+# Reactant changes often, so this check is kept apart from the test suite in `ci.yml`, and runs weekly
+# too, to learn when a Reactant release breaks it.
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - refactor/rule-node-system-rewrite
+  schedule:
+    - cron: '0 8 * * 1' # Mondays, 08:00 UTC
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  reactant:
+    name: Reactant check
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v2
+      - run: make test-reactant
+        env:
+          JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC: '1'
