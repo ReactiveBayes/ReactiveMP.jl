@@ -1,7 +1,6 @@
 **/.ipynb_checkpoints
 
 docs/build
-lib/*/docs/build
 docs/Manifest.toml
 
 demo/.ipynb_checkpoints

@@ -37,11 +37,7 @@ jobs:
       - name: "Run CompatHelper"
         run: |
           import CompatHelper
-          # The root package and the package under lib/.
-          subdirs = [
-              "",
-              "lib/GCVMessagePassingRules",
-          ]
+          subdirs = [""]
           CompatHelper.main(; subdirs)
         shell: julia --color=yes {0}
         env:

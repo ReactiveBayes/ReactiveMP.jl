@@ -16,7 +16,7 @@ The engine holds no update rules of its own. Nodes and rules are declared with [
 
 # Installation
 
-The current version, 7, is not registered yet. The rule system, MessagePassingRulesBase, the numerics the rules share, MessagePassingRulesApproximations, the test tooling, MessagePassingRulesTestUtils, and the rule packages are, each with a repository of their own, `ReactiveBayes/<Package>.jl`; GCVMessagePassingRules is registering, its copy under `lib/` frozen. Until the engine is registered, clone this repository, develop it, and add the rule packages you need from General:
+The current version, 7, is not registered yet. The rule system, MessagePassingRulesBase, the numerics the rules share, MessagePassingRulesApproximations, the test tooling, MessagePassingRulesTestUtils, and the rule packages are, each with a repository of their own, `ReactiveBayes/<Package>.jl`. Until the engine is registered, clone this repository, develop it, and add the rule packages you need from General:
 
 ```julia
 import Pkg

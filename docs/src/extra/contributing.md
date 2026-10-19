@@ -152,9 +152,8 @@ tested on Julia 1.13.
   - `make test test_args="nodes"` runs only the tests under `test/nodes/`, and `make test test_args="engine:variational"` only `test/engine/variational_tests.jl`
   - `make test test_args="tag:engine"` and `make test test_args="name:MessageMapping"` select test items by tag and by name; entries of the same kind are alternatives, entries of different kinds all apply
   - `RUN_AQUA=false make test` skips the slow Aqua checks, which are enabled by default
-- `make test-gcv` runs the suite of `GCVMessagePassingRules`, the one rule package still under `lib/`, with the same `test_args`, for example `make test-gcv test_args="name:rules"`; every other rule package is tested in its own repository, `ReactiveBayes/<Package>.jl`, with `make test`. A suite skips items tagged `:slow` unless `TEST_ALL=true` is set, and the coverage check runs only on an unfiltered run
-- `make docs-gcv` builds GCV's documentation site; `make docs-all` builds it and then the
-  ReactiveMP site, and `make docs` the ReactiveMP site alone, which needs GCV's built first
+- Every rule package is tested in its own repository, `ReactiveBayes/<Package>.jl`, with `make test`. A suite skips items tagged `:slow` unless `TEST_ALL=true` is set, and the coverage check runs only on an unfiltered run
+- `make docs` builds the ReactiveMP site, which links to the rule packages' published sites
 - `make check-format`: Checks the formatting (Runic), without modifying files
 - `make format`: Formats the code; this overwrites files
 - `make scripts_update`: Bumps the pinned Runic version in `scripts/Manifest.toml`

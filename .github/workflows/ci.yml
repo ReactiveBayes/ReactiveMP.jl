@@ -37,8 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Every supported Julia, 1.10 and later. Julia 1.10 ignores [sources], so until the
-        # siblings are registered its job cannot install them (user: gating regardless).
+        # Every supported Julia, 1.10 and later.
         version:
           - '1.10'
           - '1.11'

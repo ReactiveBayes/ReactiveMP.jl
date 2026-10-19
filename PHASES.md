@@ -18,11 +18,11 @@ them again, so re-check before relying on one.
 
 ## Next action
 
-**Next: GCV's registration** (§ Phase 8). The ten other rule packages are registered (merged
-2026-10-15), and the monorepo, the comparison environment and RxInfer's branch depend on them,
-their `lib/` copies deleted (2026-10-16). GCV is split into its own repository and registering
-(General#172027); once it is merged, the monorepo and RxInfer's branch depend on it and `lib/` is deleted
-(`RELEASING.md`, step 8). Until then `lib/GCVMessagePassingRules` is frozen.
+**The split is done** (§ Phase 8). Every package is registered and lives in its own repository:
+the ten rule packages since 2026-10-15, GCV since 2026-10-19 (General#172027). The monorepo, the
+comparison environment and RxInfer's branch take them all from General, and `lib/` is deleted
+(`RELEASING.md`, step 8). What is left of Phase 8 is the release itself: ReactiveMP v7, then
+RxInfer.
 
 **Phase C, in progress** (§ Phase C, *Progress*). Nothing in the not-done table is left to do
 before the release (checked 2026-10-01): every row is done, upstream, after the release, or
@@ -102,7 +102,7 @@ Phases 0–7 are closed. The rule system (`MessagePassingRulesBase`), its test t
 repositories of their own, and so are the 11 rule packages, the standard nodes
 (`StandardMessagePassingRules`, Probit included) and one package per remaining node (Delta,
 GaussianCoupling, GCV, Autoregressive, SoftDot, ContinuousTransition, Pólya, BIFM, Flow,
-DiscreteTransition), each in `ReactiveBayes/<Package>.jl`; `lib/` holds GCV's frozen copy until it is registered;
+DiscreteTransition), each in `ReactiveBayes/<Package>.jl`;
 `compat/v6-comparison` holds the v6 oracle, the comparisons and the engine fixtures, and
 `compat/rxinfer-examples` five RxInferExamples models on v6 and v7. ReactiveMP itself is the engine
 on the new rule system. The tooling's first finding was a real v6 bug: the variational
@@ -140,7 +140,7 @@ generic ones, and no comments that only narrate.
 | 6 | `MessagePassingRulesApproximations` + node packages | entry brief written; steps 1 (numerics), 2 (Delta), 3 (GaussianCoupling, Probit, GCV), 4 (AR, ConjugateAR, SoftDot), 5 (ContinuousTransition), 6 (the Pólya nodes), 7 (scratch space, BIFM), 8 (Flow) and 9 (DiscreteTransition) done; **closed** (step 10) |
 | 7 | Complete the engine — diagnostics, RxInfer adaptation, what the slice did not need | **closed**: items 1–7; RxInfer's branch pushed, no PR *(item 7's outcome, §3.48, superseded in Phase C by §3.50)* |
 | C | Cleanup: the repository rid of historical remarks, before the release | **in progress**: rule fallbacks and the open context, first-class log scales and `RuleResult` with its display, dead code, the engine tests without v6, history out of `src/` and `lib/`, the docs, declared services checked at resolution, the performance pass (§ Phase C, *Progress*) |
-| 8 | Release and downstream coordination | **in progress**: MessagePassingRulesBase, TestUtils and Approximations registered; the 11 rule packages in their own repositories, ten registered and out of `lib/`, GCV registering |
+| 8 | Release and downstream coordination | **in progress**: MessagePassingRulesBase, TestUtils and Approximations registered; the 11 rule packages registered, in their own repositories; `lib/` deleted |
 
 ---
 
@@ -3976,8 +3976,8 @@ this phase requires it to pass for release, rather than being its first executio
       GaussianCoupling and SoftDot, and Optim is its extension; the 11 packages are at 1.0.0, split
       into their own repositories, ten registered in General (#171496–#171504, #171506, merged
       2026-10-15) and their `lib/` copies deleted, the monorepo and RxInfer's branch on the
-      registered packages (2026-10-16); GCV split once Standard was registered, and registering
-      (General#172027))*
+      registered packages (2026-10-16); GCV split once Standard was registered, registered on
+      2026-10-19 (General#172027), and `lib/` deleted the same day)*
 - [x] package registration order decided, compat bounds set, supported Julia versions agreed
       *(the order is in `RELEASING.md`, dependencies first; every package supports Julia 1.10 and
       later, user, 2026-10-02: checked on 1.10 with the suites, RxInfer, the examples and the

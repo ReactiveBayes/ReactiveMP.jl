@@ -172,9 +172,9 @@ Release notes:
 - From the push on, the new repository is the source of truth: the monorepo's copy is frozen, not
   edited (`CLAUDE.md`).
 - Once registered: the siblings, ReactiveMP, RxInfer's branch and the docs environments depend on
-  the registered version (their `[sources]` path entries for it go), `lib/<Package>` is deleted,
-  and the Makefile targets, `LibTests.yml` and `docs-all` lose it; sibling sites link to its
-  published `objects.inv`.
+  the registered version (their `[sources]` path entries for it go), `lib/<Package>` is deleted
+  with its Makefile targets and CI jobs, and sibling sites link to its published `objects.inv`. A
+  tracked Manifest that recorded the path needs `Pkg.free`, not `Pkg.resolve`.
 
 ## Log
 
@@ -264,3 +264,10 @@ Release notes:
   RxInfer's site builds in 4 min 45 s with it.
 - **Weekly runs** (2026-10-18, user): every split repository and the template got `Weekly.yml`,
   pushed to `main`, and each run dispatched once by hand passed.
+- **The monorepo on the registered GCV** (step 8, 2026-10-19, user): General#172027 merged on
+  2026-10-19 07:35 UTC, TagBot tagged `v1.0.0` and `stable/` deployed. Its `[sources]` entries
+  gone from the root, the comparison environment (`Pkg.free`d in its tracked Manifest) and RxInfer's
+  branch; `lib/` deleted, with `make test-gcv`, `docs-gcv` and `docs-all`, `LibTests.yml` and
+  CompatHelper's entry; the engine's and RxInfer's sites link GCV's `stable/` inventory. The root
+  suite now installs on Julia 1.10; the integration test's 1.10 job still fails until ReactiveMP v7
+  is registered.

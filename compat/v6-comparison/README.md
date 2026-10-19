@@ -23,8 +23,7 @@ floor, because a manifest resolved on a newer Julia can select versions an older
 load. ReactiveMP 6.5.0 and RxInfer 5.5.2 run on 1.13, and the engine fixtures recorded on
 1.10.12 reproduce there exactly (`record_engine_fixtures.jl --check`).
 
-Regenerate it by resolving: the environment's `[sources]` points at GCVMessagePassingRules under
-`lib/`, and every other package comes from General:
+Regenerate it by resolving: every package comes from General:
 
 ```bash
 julia --startup-file=no --project=compat/v6-comparison -e '
@@ -122,6 +121,4 @@ Phase 4.5 step 4 only v6.5.0 still has all of it. It runs locally, as everything
 environment does: none of it is CI, and the environment goes at the release. The root suite's
 engine tests check the new engine against closed forms, not against these fixtures.
 
-GCVMessagePassingRules, the one `lib/` package the comparisons load, is dev'd into this environment
-by relative path, and the registered rule packages come from General, all recorded in the committed
-manifest, resolved on 1.13.
+The rule packages come from General, recorded in the committed manifest, resolved on 1.13.

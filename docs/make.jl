@@ -1,16 +1,7 @@
 # The documentation site of ReactiveMP, the engine. Build it with `make docs` from the repository
-# root, after GCV's site, which it links to (`make docs-all` builds both, this one last).
+# root.
 using Documenter, DocumenterInterLinks, DocInventories
 using ReactiveMP
-
-# GCV's site, for `@extref` links: its planned address, and the inventory of its local build, which
-# must exist, so `make docs-all` builds it first. It is registered once GCV is.
-sibling(name) = (
-    "https://reactivebayes.github.io/$(name).jl/dev/",
-    joinpath(@__DIR__, "..", "lib", name, "docs", "build", "objects.inv"),
-)
-
-const SIBLINGS = ["GCVMessagePassingRules"]
 
 # A registered package's site, by its published inventory. A first request to GitHub Pages can take
 # seconds, longer than DocInventories' default timeout of one second, so it waits longer.
@@ -34,10 +25,11 @@ const REGISTERED = [
             "BIFMMessagePassingRules",
             "FlowMessagePassingRules",
             "DiscreteTransitionMessagePassingRules",
+            "GCVMessagePassingRules",
         )
 ]
 
-links = InterLinks(REGISTERED..., (name => sibling(name) for name in SIBLINGS)...)
+links = InterLinks(REGISTERED...)
 
 DocMeta.setdocmeta!(
     ReactiveMP, :DocTestSetup, :(using ReactiveMP, BayesBase, Distributions, ExponentialFamily); recursive = true

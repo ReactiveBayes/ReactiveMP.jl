@@ -23,9 +23,9 @@ jobs:
             fail-fast: false
             matrix:
                 # Every supported Julia, 1.10 and later. The downstream branch wires this
-                # repository and GCVMessagePassingRules with [sources], which Julia 1.10 ignores,
-                # so until they are registered its 1.10 job cannot install them (user: gating
-                # regardless); the other rule packages come from General.
+                # repository with [sources], which Julia 1.10 ignores, so until ReactiveMP v7 is
+                # registered its 1.10 job cannot install it (user: gating regardless); the rule
+                # packages come from General.
                 julia-version: ['1.10', '1.11', '1.12', '1.13']
                 os: [ubuntu-latest]
                 package:
@@ -52,8 +52,8 @@ jobs:
                   ref: ${{ matrix.package.ref }}
                   path: downstream
 
-            # The branch reaches ReactiveMP and GCVMessagePassingRules through [sources] at the
-            # sibling path `../ReactiveMP.jl`; here this repository is the downstream's parent.
+            # The branch reaches ReactiveMP through [sources] at the sibling path `../ReactiveMP.jl`;
+            # here this repository is the downstream's parent.
             - name: Point the downstream's [sources] at this checkout
               run: sed -i 's#\.\./ReactiveMP\.jl#..#g' downstream/Project.toml
 
@@ -61,7 +61,7 @@ jobs:
               shell: julia --project=downstream {0}
               run: |
                   using Pkg
-                  # The downstream's [sources] use this checkout of ReactiveMP and of GCV, so a
+                  # The downstream's [sources] use this checkout of ReactiveMP, so a
                   # resolver error is a broken pair of branches, never an intentional breaking
                   # release: it fails the job, as any test does.
                   Pkg.instantiate()

@@ -771,10 +771,10 @@ consult when moving code.
 
 **Monorepo, split at Phase 8** (`DISCUSSION.md` §3.40); the split is done: every package has its
 repository, `ReactiveBayes/<Package>.jl`, MessagePassingRulesBase, TestUtils and Approximations
-are registered and gone from `lib/`, and so are ten of the 11 rule packages; GCV is registering,
-its copy here frozen until `lib/` is deleted (`RELEASING.md`). The new packages live as
-subdirectories of this repository under `lib/`, and are promoted to their own
-`ReactiveBayes/*` repositories at registration, when compat bounds and CI are set anyway.
+are registered and gone from `lib/`, and so are the 11 rule packages; `lib/` is deleted
+(`RELEASING.md`). The new packages lived as subdirectories of this repository under `lib/`, and
+were promoted to their own `ReactiveBayes/*` repositories at registration, when compat bounds and
+CI were set anyway.
 Phase 3 froze the base API and Phase 4.5 proved the engine interface; a split before
 registration would turn each cross-package change into pull requests and dev pins for
 packages nobody can yet install.
@@ -783,8 +783,6 @@ packages nobody can yet install.
 ReactiveMP.jl/
   Project.toml              # the engine
   src/
-  lib/                      # GCV's frozen copy, until it is registered; the other ten
-    GCVMessagePassingRules/  # rule packages are registered, in ReactiveBayes/<Package>.jl
   compat/v6-comparison/     # ReactiveMP@6.5.0, RxInfer 5.5.2 and the new packages: the v6
                             # oracle, the comparisons and the recorded engine fixtures
   compat/rxinfer-examples/  # five RxInferExamples models, on v6 and on RxInfer's v7 branch
@@ -807,9 +805,9 @@ inter-package dependency inside `lib/` is listed in `[deps]` — and in `[source
 no Manifest under `lib/` is committed, so each Julia version resolves for itself. (An earlier
 version of this paragraph said to commit a dev-link Manifest; one resolved on 1.10 cannot
 serve 1.11 and 1.12, so Phase 4 changed it.) It was the one concrete thing the floor
-decision cost. `lib/README.md` documents the current wiring: siblings in `[deps]` and
-`[sources]`, test-only ones in `[extras]` and `[sources]`, `Pkg.test()` from each package's own
-project, Julia 1.13, no committed Manifest.
+decision cost. `lib/README.md` documented the wiring until `lib/` was deleted: siblings in `[deps]`
+and `[sources]`, test-only ones in `[extras]` and `[sources]`, `Pkg.test()` from each package's own
+project, no committed Manifest.
 
 The reason was the open items. Boundaries were still moving when this was decided — #9
 through #13 were API decisions that had not landed (#9–#12 have since been resolved at the

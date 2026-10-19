@@ -41,9 +41,8 @@ for arg in ARGS
     end
 end
 
-# `lib/` holds packages with suites of their own; `compat/` runs against v6. TestItemRunner
-# scans the whole directory, so each is excluded here.
-const EXCLUDED_DIRS = ("lib", "compat")
+# `compat/` runs against v6. TestItemRunner scans the whole directory, so it is excluded here.
+const EXCLUDED_DIRS = ("compat",)
 
 is_excluded(filename) = any(dir -> occursin(joinpath(pkgdir(ReactiveMP), dir) * "/", filename), EXCLUDED_DIRS)
 
