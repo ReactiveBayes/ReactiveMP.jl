@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The README's installation section: RxInfer first, then the engine on its own, then the rule packages, each in a step of its own.
+
 ## [7.0.0] - 2026-10-19
 
 ReactiveMP 7 is a new rule system for the engine. Nodes and rules are declared with

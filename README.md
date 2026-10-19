@@ -17,11 +17,17 @@ The engine holds no update rules of its own. Nodes and rules are declared with [
 
 # Installation
 
-ReactiveMP and the rule packages are registered in Julia's General registry. Add the engine with the rule packages your model uses:
+Most users want [RxInfer](https://github.com/reactivebayes/RxInfer.jl), which installs ReactiveMP together with every rule package. To use the engine directly, add it from Julia's General registry:
 
 ```julia
 import Pkg
-Pkg.add(["ReactiveMP", "StandardMessagePassingRules"])
+Pkg.add("ReactiveMP")
+```
+
+The engine on its own runs your nodes and rules. To use the standard distributions, arithmetic and logic nodes, also add their rules, and any other rule package your model needs:
+
+```julia
+Pkg.add("StandardMessagePassingRules")
 ```
 
 Version 7 changed how nodes and rules are defined; the [migration guide](https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v6-to-v7/) explains how to port code written for version 6.
