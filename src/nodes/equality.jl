@@ -1,5 +1,3 @@
-
-import Base: length, map
 import Base: @propagate_inbounds
 import Rocket: tap
 
@@ -12,30 +10,33 @@ struct EqualityLeftOutbound <: EqualityNodeOutboundType end
 struct EqualityRightOutbound <: EqualityNodeOutboundType end
 
 """
-    EqualityNode
- 
-Generic idea of an equality node is to keep track of intermediate `left` and `right` messages 
-in a convenient manner so they can be reused during `prod` for random variables with large `degree`.
+    ReactiveMP.EqualityNode()
 
+One link of an [`ReactiveMP.EqualityChain`](@ref), for one connection of a random variable: the
+partial products of the inbound messages on either side of it, kept so that they are reused.
+
+```
  <- left    -------     right ->
      ----- |   =   | ------
             -------
                |
                | outbound
+```
 
-# Attributes:
-- `left`: An observable that indicates that `left` message can be computed, always sends `missing` since we are not interested in actual value. Can be treated as notification.
-- `right`: An observable that indicates that `right` message can be computed, always sends `missing` since we are not interested in actual value. Can be treated as notification.
-- `cache_left`: Keeps cached value for left outbound message, node itself does not track if cache is valid or not. Cache integrity is tracked by `EqualityChain`.
-- `cache_right`: Keeps cached value for right outbound message, node itself does not track if cache is valid or not. Cache integrity is tracked by `EqualityChain`.
+# Fields
 
-See also: [`EqualityChain`](@ref)
+- `left`: the stream that says the product of this and every later inbound message can be
+  computed; it emits `missing`, a notification only;
+- `right`: the stream that says the product of this and every earlier inbound message can be
+  computed; it emits `missing` too;
+- `cache_left`: the cached product towards the left; the chain tracks whether it is valid;
+- `cache_right`: the cached product towards the right; the chain tracks whether it is valid.
 """
 mutable struct EqualityNode
-    left        :: LazyObservable{Missing}
-    right       :: LazyObservable{Missing}
-    cache_left  :: Message
-    cache_right :: Message
+    left::LazyObservable{Missing}
+    right::LazyObservable{Missing}
+    cache_left::Message
+    cache_right::Message
 
     EqualityNode() = new(
         lazy(Missing),
@@ -45,72 +46,99 @@ mutable struct EqualityNode
     )
 end
 
-getoutbound(::EqualityLeftOutbound, node::EqualityNode)  = node.left
+getoutbound(::EqualityLeftOutbound, node::EqualityNode) = node.left
 getoutbound(::EqualityRightOutbound, node::EqualityNode) = node.right
 
-setoutbound!(::EqualityLeftOutbound, node::EqualityNode, left)   = set!(node.left, left)
+setoutbound!(::EqualityLeftOutbound, node::EqualityNode, left) = set!(node.left, left)
 setoutbound!(::EqualityRightOutbound, node::EqualityNode, right) = set!(node.right, right)
 
-getcache(::EqualityLeftOutbound, node::EqualityNode)  = node.cache_left
+getcache(::EqualityLeftOutbound, node::EqualityNode) = node.cache_left
 getcache(::EqualityRightOutbound, node::EqualityNode) = node.cache_right
 
-setcache!(::EqualityLeftOutbound, node::EqualityNode, cache::Message)  = node.cache_left = cache
+setcache!(::EqualityLeftOutbound, node::EqualityNode, cache::Message) = node.cache_left = cache
 setcache!(::EqualityRightOutbound, node::EqualityNode, cache::Message) = node.cache_right = cache
 
 # Equality chain
 
 """
-    EqualityChain
+    ReactiveMP.EqualityChain(inputmsgs::Vector{MessageObservable{AbstractMessage}}, postprocessor, variable::AbstractVariable, context::MessageProductContext)
+
+How a random variable with more than one connection computes its outbound messages. The message
+to connection `i` is the product of the inbound messages on every other connection, which the
+chain computes from two partial products, of the messages before `i` and of those after it. The
+partial products are cached in the [`ReactiveMP.EqualityNode`](@ref)s and shared by the outbound
+messages, which matters for a variable of high degree; a new inbound message on connection `i`
+invalidates only the partial products that contain it.
+
+A partial product is a part of a message, not a message: it is multiplied by `context`'s fold
+strategy alone, pairwise with [`ReactiveMP.compute_product_of_two_messages`](@ref), which applies
+the form constraint under [`FormConstraintCheckEach`](@ref). The product of the two parts is the
+message, and is computed with [`ReactiveMP.compute_product_of_messages`](@ref): under
+[`FormConstraintCheckLast`](@ref) the form constraint applies to it once, and the callbacks see
+one whole product per outbound message.
+
+# Arguments
+
+- `inputmsgs`: the variable's inbound message streams, one per connection;
+- `postprocessor`: the stream postprocessor applied to the chain's streams, or `nothing`;
+- `variable`: the variable the products are for, which the callbacks receive;
+- `context`: how the messages are multiplied; a random variable gives its
+  `prod_context_for_message_computation`.
 """
-struct EqualityChain{P, F}
-    length        :: Int
-    nodes         :: Vector{EqualityNode}
-    inputmsgs     :: Vector{MessageObservable{AbstractMessage}}
-    cacheleft     :: BitVector
-    cacheright    :: BitVector
-    postprocessor :: P
-    prod_fn       :: F
+struct EqualityChain{P, V, C}
+    length::Int
+    nodes::Vector{EqualityNode}
+    inputmsgs::Vector{MessageObservable{AbstractMessage}}
+    cacheleft::Vector{Bool}
+    cacheright::Vector{Bool}
+    postprocessor::P
+    variable::V
+    context::C
 
     function EqualityChain(
-        inputmsgs::Vector{MessageObservable{AbstractMessage}},
-        postprocessor::P,
-        prod_fn::F,
-    ) where {P, F}
+            inputmsgs::Vector{MessageObservable{AbstractMessage}},
+            postprocessor::P,
+            variable::V,
+            context::C,
+        ) where {P, V <: AbstractVariable, C <: MessageProductContext}
         n = length(inputmsgs)
         nodes = map(_ -> EqualityNode(), 1:n)
-        return new{P, F}(
-            n, nodes, inputmsgs, falses(n), falses(n), postprocessor, prod_fn
+        return new{P, V, C}(
+            n, nodes, inputmsgs, fill(false, n), fill(false, n), postprocessor, variable, context
         )
     end
 end
 
 Base.length(chain::EqualityChain) = chain.length
 
-prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
+partial_product(chain::EqualityChain, left, right) =
+    as_message(compute_product_of_messages(chain.context.fold_strategy, chain.variable, chain.context, (left, right)))
+outbound_product(chain::EqualityChain, left, right) =
+    compute_product_of_messages(chain.variable, chain.context, (left, right))
 
 getpostprocessor(chain::EqualityChain) = chain.postprocessor
 
 @propagate_inbounds getnode(chain::EqualityChain, node_index) =
     chain.nodes[node_index]
 
-__check_indices(::EqualityLeftOutbound, chain::EqualityChain, node_index)  = 1 < node_index <= length(chain)
+__check_indices(::EqualityLeftOutbound, chain::EqualityChain, node_index) = 1 < node_index <= length(chain)
 __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <= node_index < length(chain)
 
 @propagate_inbounds getoutbound(type::EqualityNodeOutboundType, chain::EqualityChain, node_index) = __check_indices(type, chain, node_index) ? getoutbound(type, getnode(chain, node_index)) : (of(missing))
-@propagate_inbounds getinbound(chain::EqualityChain, node_index)                                  = chain.inputmsgs[node_index]
+@propagate_inbounds getinbound(chain::EqualityChain, node_index) = chain.inputmsgs[node_index]
 
-@propagate_inbounds iscached(::EqualityLeftOutbound, chain::EqualityChain, node_index)  = chain.cacheleft[node_index]
+@propagate_inbounds iscached(::EqualityLeftOutbound, chain::EqualityChain, node_index) = chain.cacheleft[node_index]
 @propagate_inbounds iscached(::EqualityRightOutbound, chain::EqualityChain, node_index) = chain.cacheright[node_index]
 
-@propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, node_index)  = chain.cacheleft[node_index] = true
+@propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, node_index) = chain.cacheleft[node_index] = true
 @propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, node_index) = chain.cacheright[node_index] = true
 
-@propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, range::OrdinalRange)  = fill_bitarray!(view(chain.cacheleft, forward_range(range)), true)
-@propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, range::OrdinalRange) = fill_bitarray!(view(chain.cacheright, forward_range(range)), true)
+@propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, range::OrdinalRange) = fill!(view(chain.cacheleft, forward_range(range)), true)
+@propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, range::OrdinalRange) = fill!(view(chain.cacheright, forward_range(range)), true)
 
 @propagate_inbounds function getcache(
-    type::EqualityNodeOutboundType, chain::EqualityChain, node_index
-)
+        type::EqualityNodeOutboundType, chain::EqualityChain, node_index
+    )
     if __check_indices(type, chain, node_index)
         return getcache(type, getnode(chain, node_index))
     else
@@ -118,29 +146,32 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
     end
 end
 
-nextindex(::EqualityLeftOutbound, node_index)  = node_index + 1
+nextindex(::EqualityLeftOutbound, node_index) = node_index + 1
 nextindex(::EqualityRightOutbound, node_index) = node_index - 1
 
-@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int  = something(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain) - (node_index - 1)) + (node_index - 1)
-@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = something(findlast(view(chain.cacheright, 1:node_index)), 1)
+# The node the partial product starts from: the one next to the nearest cached product, which is
+# still valid, since a new inbound message invalidates every product that contains it; with
+# nothing cached, the end of the chain.
+@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int = something(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain) - node_index + 2) + node_index - 2
+@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = something(findlast(view(chain.cacheright, 1:node_index)), 0) + 1
 
-@propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index)  = first_unmaterialized_index(type, chain, node_index):-1:node_index
+@propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):-1:node_index
 @propagate_inbounds precompute_range(type::EqualityRightOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):node_index
 
 @propagate_inbounds function materialize!(
-    type::EqualityNodeOutboundType, chain::EqualityChain, node_index
-)
+        type::EqualityNodeOutboundType, chain::EqualityChain, node_index
+    )
     if __check_indices(type, chain, node_index)
         node = getnode(chain, node_index)
         if iscached(type, chain, node_index)
             return getcache(type, node)
         else
-            # precompute messages in linear fashion 
+            # precompute messages in linear fashion
             range = precompute_range(type, chain, node_index)
             for index in range
                 arg1 = as_message(getrecent(getinbound(chain, index)))
                 arg2 = as_message(getcache(type, chain, nextindex(type, index)))
-                result = prod(chain, arg1, arg2)
+                result = partial_product(chain, arg1, arg2)
                 setcache!(type, getnode(chain, index), result)
             end
             setcache!(type, chain, range)
@@ -154,9 +185,9 @@ end
 ##
 
 struct ChainInvalidationCallback
-    index      :: Int
-    cacheleft  :: BitVector
-    cacheright :: BitVector
+    index::Int
+    cacheleft::Vector{Bool}
+    cacheright::Vector{Bool}
 
     function ChainInvalidationCallback(index::Int, chain::EqualityChain)
         return new(index, chain.cacheleft, chain.cacheright)
@@ -167,13 +198,13 @@ Rocket.tap(callback::ChainInvalidationCallback) =
     Rocket.TapOperator{ChainInvalidationCallback}(callback)
 
 function (callback::ChainInvalidationCallback)(_)
-    fill_bitarray!(
+    fill!(
         view(
             callback.cacheleft, firstindex(callback.cacheleft):(callback.index)
         ),
         false,
     )
-    fill_bitarray!(
+    return fill!(
         view(
             callback.cacheright, (callback.index):lastindex(callback.cacheright)
         ),
@@ -181,28 +212,28 @@ function (callback::ChainInvalidationCallback)(_)
     )
 end
 
-## 
+##
 
-struct ChainOutboundMapping
+struct ChainOutboundMapping{C <: EqualityChain}
     index::Int
-    chain::EqualityChain
+    chain::C
 end
 
 function (mapping::ChainOutboundMapping)(_)
-    from_left  = materialize!(EqualityRightOutbound(), mapping.chain, nextindex(EqualityRightOutbound(), mapping.index))
+    from_left = materialize!(EqualityRightOutbound(), mapping.chain, nextindex(EqualityRightOutbound(), mapping.index))
     from_right = materialize!(EqualityLeftOutbound(), mapping.chain, nextindex(EqualityLeftOutbound(), mapping.index))
-    return as_message(prod(mapping.chain, from_left, from_right))
+    return outbound_product(mapping.chain, from_left, from_right)
 end
 
-Base.map(::Type{Message}, mapping::ChainOutboundMapping) =
-    Rocket.MapOperator{Message, ChainOutboundMapping}(mapping)
+Base.map(::Type{Message}, mapping::M) where {M <: ChainOutboundMapping} =
+    Rocket.MapOperator{Message, M}(mapping)
 
 function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
     n = length(chain)
 
     postprocessor = getpostprocessor(chain)
 
-    Left  = EqualityLeftOutbound()
+    Left = EqualityLeftOutbound()
     Right = EqualityRightOutbound()
 
     @inbounds for index in 1:n
@@ -230,7 +261,7 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
         setoutbound!(Left, node, left)
         setoutbound!(Right, node, right)
 
-        from_left  = getoutbound(Right, chain, nextindex(Right, index)) # Inbound message comming from left direction  (is a right from `index - 1`)
+        from_left = getoutbound(Right, chain, nextindex(Right, index)) # Inbound message comming from left direction  (is a right from `index - 1`)
         from_right = getoutbound(Left, chain, nextindex(Left, index))  # Inbound message comming from right direction (is a left from `index + 1`)
 
         outputmsg = combineLatestUpdates(

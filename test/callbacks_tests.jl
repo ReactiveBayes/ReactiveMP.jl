@@ -21,9 +21,9 @@
     export CustomEvent, MutableCustomEvent
 end
 
-@testitem "Callbacks handler should do absolutely nothing if no handler exists" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "Callbacks handler should do absolutely nothing if no handler exists" tags = [
+    :engine, :alloc,
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback, Event, generate_span_id
     using UUIDs
 
@@ -63,7 +63,7 @@ end
     end
 
     mutable struct EventWithTypeStableState <:
-                   Event{:event_with_typestable_state}
+        Event{:event_with_typestable_state}
         internal_state::Bool
     end
 
@@ -79,7 +79,7 @@ end
     @test @allocated(bar3(callback_handler)) === 0
 
     mutable struct EventWithTypeUnstableState <:
-                   Event{:event_with_typeunstable_state}
+        Event{:event_with_typeunstable_state}
         state
     end
 
@@ -125,7 +125,9 @@ end
     end
 end
 
-@testitem "invoke_callback should return the event" setup = [CallbacksTestUtils] begin
+@testitem "invoke_callback should return the event" tags = [:engine] setup = [
+    CallbacksTestUtils,
+] begin
     import ReactiveMP: invoke_callback
 
     event = CustomEvent(:event1, 1, 2)
@@ -146,8 +148,8 @@ end
         CustomEvent(:other, 1)
 end
 
-@testitem "event_name should work on both types and instances" setup = [
-    CallbacksTestUtils
+@testitem "event_name should work on both types and instances" tags = [:engine] setup = [
+    CallbacksTestUtils,
 ] begin
     import ReactiveMP: event_name, Event
 
@@ -170,9 +172,9 @@ end
         :after_product_of_two_messages
 end
 
-@testitem "It should be possible to define custom callback handlers via handle_event" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "It should be possible to define custom callback handlers via handle_event" tags = [
+    :engine,
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback, handle_event, Event
 
     struct MyCallbackHandler
@@ -180,8 +182,8 @@ end
     end
 
     function ReactiveMP.handle_event(
-        handler::MyCallbackHandler, event::Event{E}
-    ) where {E}
+            handler::MyCallbackHandler, event::Event{E}
+        ) where {E}
         push!(handler.events, (event = E, data = event.data))
         return nothing
     end
@@ -204,16 +206,16 @@ end
     )
 end
 
-@testitem "Custom callback handler can mutate event state" setup = [
-    CallbacksTestUtils
+@testitem "Custom callback handler can mutate event state" tags = [:engine] setup = [
+    CallbacksTestUtils,
 ] begin
     import ReactiveMP: invoke_callback, handle_event, Event
 
     struct StateModifyingHandler end
 
     function ReactiveMP.handle_event(
-        ::StateModifyingHandler, event::MutableCustomEvent{:my_event}
-    )
+            ::StateModifyingHandler, event::MutableCustomEvent{:my_event}
+        )
         event.state = :modified
         return nothing
     end
@@ -227,14 +229,16 @@ end
     @test event.state === :modified
 end
 
-@testitem "NamedTuple callback can mutate event state" setup = [
-    CallbacksTestUtils
+@testitem "NamedTuple callback can mutate event state" tags = [:engine] setup = [
+    CallbacksTestUtils,
 ] begin
     import ReactiveMP: invoke_callback
 
-    callbacks = (my_event = (event) -> begin
-        event.state = sum(event.data)
-    end,)
+    callbacks = (
+        my_event = (event) -> begin
+            event.state = sum(event.data)
+        end,
+    )
 
     event = MutableCustomEvent(:my_event, 3, 4; state = nothing)
     returned_event = invoke_callback(callbacks, event)
@@ -243,7 +247,9 @@ end
     @test event.state === 7
 end
 
-@testitem "Dict callback can mutate event state" setup = [CallbacksTestUtils] begin
+@testitem "Dict callback can mutate event state" tags = [:engine] setup = [
+    CallbacksTestUtils,
+] begin
     import ReactiveMP: invoke_callback
 
     callbacks = Dict{Symbol, Any}(
@@ -259,9 +265,9 @@ end
     @test event.state === 15
 end
 
-@testitem "invoke_callback error hint for forgotten trailing comma in NamedTuple" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "invoke_callback error hint for forgotten trailing comma in NamedTuple" tags = [
+    :engine,
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback
 
     # This simulates the common mistake: `(before_product_of_messages = fn)` without trailing comma.
@@ -285,9 +291,9 @@ end
     @test occursin("trailing comma", hint_message)
 end
 
-@testitem "invoke_callback error hint for custom handler with missing method" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "invoke_callback error hint for custom handler with missing method" tags = [
+    :engine,
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback
 
     # Custom handler that only implements handle_event for :event1 but not :event2
@@ -321,13 +327,13 @@ end
     )
 end
 
-@testitem "NamedTuple should be a supported event handler" setup = [
-    CallbacksTestUtils
+@testitem "NamedTuple should be a supported event handler" tags = [:engine] setup = [
+    CallbacksTestUtils,
 ] begin
     import ReactiveMP: invoke_callback
 
     callback_handler = (
-        sum_event = (event) -> nothing, prod_event = (event) -> nothing
+        sum_event = (event) -> nothing, prod_event = (event) -> nothing,
     )
 
     @test invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2)) isa
@@ -340,8 +346,8 @@ end
     ) isa CustomEvent{:other_event}
 end
 
-@testitem "Dict{Symbol} should be a supported event handler" setup = [
-    CallbacksTestUtils
+@testitem "Dict{Symbol} should be a supported event handler" tags = [:engine] setup = [
+    CallbacksTestUtils,
 ] begin
     import ReactiveMP: invoke_callback
 
@@ -358,8 +364,8 @@ end
     ) === CustomEvent(:other_event, 1, 2, 3)
 end
 
-@testitem "It should be possible to merge callback handlers" setup = [
-    CallbacksTestUtils
+@testitem "It should be possible to merge callback handlers" tags = [:engine] setup = [
+    CallbacksTestUtils,
 ] begin
     import ReactiveMP: invoke_callback, merge_callbacks, handle_event, Event
 
@@ -406,8 +412,8 @@ end
     @test Set(custom_handler.events) == Set([:event2])
 end
 
-@testitem "Merged callbacks should return the event" setup = [
-    CallbacksTestUtils
+@testitem "Merged callbacks should return the event" tags = [:engine] setup = [
+    CallbacksTestUtils,
 ] begin
     import ReactiveMP: invoke_callback, merge_callbacks
 
@@ -420,20 +426,24 @@ end
     @test invoke_callback(merged_handler, event) === event
 end
 
-@testitem "Merged callbacks can mutate event state across handlers" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "Merged callbacks can mutate event state across handlers" tags = [
+    :engine,
+] setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback, merge_callbacks
 
     # First handler sets state to 1
-    handler1 = (my_event = (event) -> begin
-        event.state = 1
-    end,)
+    handler1 = (
+        my_event = (event) -> begin
+            event.state = 1
+        end,
+    )
 
     # Second handler increments state
-    handler2 = (my_event = (event) -> begin
-        event.state += 10
-    end,)
+    handler2 = (
+        my_event = (event) -> begin
+            event.state += 10
+        end,
+    )
 
     merged_handler = merge_callbacks(handler1, handler2)
 
@@ -471,6 +481,7 @@ end
         FormConstraintCheckEach,
         FormConstraintCheckLast,
         MessageProductContext
+    import MessagePassingRulesBase: Target
 
     struct MockVariable
         label::Symbol
@@ -481,25 +492,14 @@ end
 
     # Build a trivial MessageMapping that exercises the new show method.
     # `F = Int` is a stand-in functional form: `show(::Type{Int})` yields "Int64".
-    mapping(; vtag = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing) =
-        MessageMapping(
-            Int,
-            vtag,
-            nothing,
-            msgs,
-            marginals,
-            nothing,
-            nothing,
-            nothing,
-            nothing,
-            nothing,
-        )
+    mapping(; target = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing, algorithm = nothing) =
+        MessageMapping(Int, Target{target}(), msgs, marginals, algorithm, nothing, nothing, nothing)
 
     msg(d) = Message(d, false, false, AnnotationDict())
 
     annotated_dict() = begin
         ann = AnnotationDict()
-        ReactiveMP.annotate!(ann, :logscale, 1.0)
+        ReactiveMP.annotate!(ann, :note, 1.0)
         ann
     end
 
@@ -509,9 +509,9 @@ end
     export MockVariable, fixed_span, mapping, msg, annotated_dict, compact
 end
 
-@testitem "Base.show for Tier C supporting types — compact vs full" setup = [
-    EventShowTestUtils
-] begin
+@testitem "Base.show for Tier C supporting types — compact vs full" tags = [
+    :engine,
+] setup = [EventShowTestUtils] begin
     import ReactiveMP:
         MessageMapping,
         MessageProductContext,
@@ -519,29 +519,33 @@ end
         FormConstraintCheckLast,
         AnnotationDict,
         MessagesProductFromLeftToRight
+    import MessagePassingRulesBase
 
     compact = EventShowTestUtils.compact
 
     # MessageMapping — same shape in both forms. The full form additionally
-    # includes `vconstraint`/`meta` when those are not `nothing`; the test
-    # mapping leaves them as `nothing`, so both forms match here.
+    # includes the algorithm when it is not `nothing`; the test mapping leaves it
+    # as `nothing`, so both forms match here.
     @test repr(EventShowTestUtils.mapping()) ==
         "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
     @test compact(EventShowTestUtils.mapping()) ==
         "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
     @test repr(
         EventShowTestUtils.mapping(
-            vtag = :μ, msgs = Val{(:out, :τ)}(), marginals = Val{(:q,)}()
+            target = :μ, msgs = Val{(:out, :τ)}(), marginals = Val{(:q,)}()
         ),
     ) == "MessageMapping(Int64, :μ, msgs=[:out, :τ], marginals=[:q])"
+    with_algorithm = EventShowTestUtils.mapping(algorithm = MessagePassingRulesBase.DefaultAlgorithm())
+    @test occursin(r"^MessageMapping\(Int64, :out, msgs=\[:μ, :τ\], algorithm=.*DefaultAlgorithm\(\)\)$", repr(with_algorithm))
+    @test compact(with_algorithm) == "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
 
     # MessageProductContext — compact strips `form_constraint`/`prod_constraint`,
     # the full form keeps them.
     ctx = MessageProductContext()
     @test compact(ctx) ==
         "MessageProductContext(strategy=CheckLast, fold=" *
-          compact(MessagesProductFromLeftToRight()) *
-          ")"
+        compact(MessagesProductFromLeftToRight()) *
+        ")"
     @test occursin("form_constraint=", repr(ctx))
     @test occursin("prod_constraint=", repr(ctx))
 
@@ -553,9 +557,9 @@ end
     @test repr(FormConstraintCheckLast()) == "FormConstraintCheckLast()"
 end
 
-@testitem "Base.show for Before/After event pairs — compact form" setup = [
-    EventShowTestUtils
-] begin
+@testitem "Base.show for Before/After event pairs — compact form" tags = [
+    :engine,
+] setup = [EventShowTestUtils] begin
     import ReactiveMP:
         BeforeMessageRuleCallEvent,
         AfterMessageRuleCallEvent,
@@ -586,7 +590,7 @@ end
         mapping, (left, right), nothing, span
     )
     after_rule = AfterMessageRuleCallEvent(
-        mapping, (left, right), nothing, result, ann, span
+        mapping, (left, right), nothing, result, ann, nothing, nothing, span
     )
     @test compact(before_rule) ==
         "BeforeMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, span=ab12…)"
@@ -631,17 +635,17 @@ end
     # Regression guard: neither form may revert to the raw struct dump that
     # prompted issue #599 / RxInfer.jl#638.
     for ev in (
-        before_rule,
-        after_rule,
-        before_p2,
-        after_p2,
-        before_pn,
-        after_pn,
-        before_form,
-        after_form,
-        before_marg,
-        after_marg,
-    )
+            before_rule,
+            after_rule,
+            before_p2,
+            after_p2,
+            before_pn,
+            after_pn,
+            before_form,
+            after_form,
+            before_marg,
+            after_marg,
+        )
         for rendered in (compact(ev), repr(ev))
             @test !occursin("MessageMapping{", rendered)
             @test !occursin("Event{", rendered)
@@ -650,8 +654,8 @@ end
     end
 end
 
-@testitem "Base.show for Before/After event pairs — full form" setup = [
-    EventShowTestUtils
+@testitem "Base.show for Before/After event pairs — full form" tags = [:engine] setup = [
+    EventShowTestUtils,
 ] begin
     import ReactiveMP:
         BeforeMessageRuleCallEvent,
@@ -686,8 +690,8 @@ end
     @test occursin("Message(0.1)", rendered_marg)
 end
 
-@testitem "Base.show omits span field when span_id is nothing" setup = [
-    EventShowTestUtils
+@testitem "Base.show omits span field when span_id is nothing" tags = [:engine] setup = [
+    EventShowTestUtils,
 ] begin
     import ReactiveMP:
         BeforeMessageRuleCallEvent,
@@ -716,4 +720,68 @@ end
     ev = BeforeMessageRuleCallEvent(mapping, (left, right), nothing, nothing)
     @test !occursin("span", compact(ev))
     @test !occursin("span", repr(ev))
+end
+
+@testitem "Base.show for the marginal rule and free-energy events" tags = [:engine] setup = [EventShowTestUtils] begin
+    using BayesBase, ExponentialFamily, MessagePassingRulesBase, StandardMessagePassingRules
+    import ReactiveMP:
+        BeforeMarginalRuleCallEvent,
+        AfterMarginalRuleCallEvent,
+        BeforeFactorBoundFreeEnergyEvent,
+        AfterFactorBoundFreeEnergyEvent,
+        BeforeVariableBoundEntropyEvent,
+        AfterVariableBoundEntropyEvent,
+        AfterMessageRuleCallEvent,
+        MarginalMapping,
+        AnnotationDict
+    import MessagePassingRulesBase: ClusterTarget, DefaultAlgorithm
+
+    compact = EventShowTestUtils.compact
+    span = EventShowTestUtils.fixed_span()
+    var = EventShowTestUtils.MockVariable(:θ)
+    node = factornode(NormalMeanVariance, [(:out, randomvar()), (:μ, randomvar()), (:v, constvar(1.0))], ((:out, :μ), (:v,)))
+    joint = MarginalMapping(NormalMeanVariance, ClusterTarget((:out, :μ)), Val((:out, :μ)), Val((:v,)), DefaultAlgorithm(), node)
+    left = EventShowTestUtils.msg(0.1)
+    right = EventShowTestUtils.msg(0.2)
+    marginal = Marginal(0.5, false, false)
+    towards_out = ReactiveMP.MessageMapping(NormalMeanVariance, MessagePassingRulesBase.Target{:out}(), Val((:μ, :v)), nothing, DefaultAlgorithm(), nothing, node, nothing)
+    rule = ReactiveMP.selected_message_rule(towards_out, (Message(NormalMeanVariance(0.0, 1.0), false, false), Message(PointMass(1.0), true, false)), nothing)
+    location = string(joinpath(splitpath(String(rule.file))[(end - 1):end]...), ":", rule.line)
+    # The file's last two path components and the line, the same on every machine.
+    @test occursin(r"^[^/~]+/[^/]+\.jl:\d+$", location)
+
+    @test compact(BeforeMarginalRuleCallEvent(joint, (left, right), (marginal,), span)) ==
+        "BeforeMarginalRuleCallEvent(mapping=MarginalMapping(NormalMeanVariance, (:out, :μ), msgs=[:out, :μ], marginals=[:v]), nmsgs=2, nmarginals=1, span=ab12…)"
+    @test compact(AfterMarginalRuleCallEvent(joint, (left, right), (marginal,), 0.7, nothing, span)) ==
+        "AfterMarginalRuleCallEvent(mapping=MarginalMapping(NormalMeanVariance, (:out, :μ), msgs=[:out, :μ], marginals=[:v]), nmsgs=2, nmarginals=1, result=0.7, span=ab12…)"
+    @test compact(AfterMarginalRuleCallEvent(joint, (left, right), (marginal,), 0.7, rule, span)) ==
+        "AfterMarginalRuleCallEvent(mapping=MarginalMapping(NormalMeanVariance, (:out, :μ), msgs=[:out, :μ], marginals=[:v]), nmsgs=2, nmarginals=1, result=0.7, rule=$(location), span=ab12…)"
+    @test compact(BeforeFactorBoundFreeEnergyEvent(node, span)) == "BeforeFactorBoundFreeEnergyEvent(node=NormalMeanVariance, span=ab12…)"
+    @test compact(AfterFactorBoundFreeEnergyEvent(node, (marginal, marginal), 1.5, 0.5, 1.0, rule, span)) ==
+        "AfterFactorBoundFreeEnergyEvent(node=NormalMeanVariance, nmarginals=2, energy=1.5, entropy=0.5, result=1.0, rule=$(location), span=ab12…)"
+    @test compact(AfterFactorBoundFreeEnergyEvent(node, (marginal,), nothing, 0.5, -0.5, nothing, span)) ==
+        "AfterFactorBoundFreeEnergyEvent(node=NormalMeanVariance, nmarginals=1, entropy=0.5, result=-0.5, span=ab12…)"
+    @test compact(BeforeVariableBoundEntropyEvent(var, marginal, span)) == "BeforeVariableBoundEntropyEvent(var=:θ, marginal=Marginal(0.5), span=ab12…)"
+    @test compact(AfterVariableBoundEntropyEvent(var, marginal, 0.5, 2, 1.0, span)) ==
+        "AfterVariableBoundEntropyEvent(var=:θ, marginal=Marginal(0.5), entropy=0.5, scaling=2, result=1.0, span=ab12…)"
+
+    # A message names its rule by place in the compact form, and in full by its heading.
+    mapping = EventShowTestUtils.mapping()
+    after_rule = AfterMessageRuleCallEvent(mapping, (left, right), nothing, left, AnnotationDict(), nothing, rule, span)
+    @test endswith(compact(after_rule), ", rule=$(location), span=ab12…)")
+    @test occursin("rule=RuleSpec(message rule for NormalMeanVariance towards :out", repr(after_rule))
+
+    events = (
+        BeforeMarginalRuleCallEvent(joint, (left, right), (marginal,), span),
+        AfterMarginalRuleCallEvent(joint, (left, right), (marginal,), 0.7, rule, span),
+        BeforeFactorBoundFreeEnergyEvent(node, span),
+        AfterFactorBoundFreeEnergyEvent(node, (marginal, marginal), 1.5, 0.5, 1.0, rule, span),
+        BeforeVariableBoundEntropyEvent(var, marginal, span),
+        AfterVariableBoundEntropyEvent(var, marginal, 0.5, 2, 1.0, span),
+    )
+    for ev in events, rendered in (compact(ev), repr(ev))
+        @test !occursin("Mapping{", rendered)
+        @test !occursin("Event{", rendered)
+        @test count('\n', rendered) == 0
+    end
 end

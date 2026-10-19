@@ -1,4 +1,4 @@
-@testitem "NodeInterface" begin
+@testitem "NodeInterface" tags = [:nodes] begin
     using Rocket
 
     import ReactiveMP:
@@ -6,7 +6,6 @@
         NodeInterface,
         get_stream_of_outbound_messages,
         get_stream_of_inbound_messages,
-        tag,
         getvariable,
         MessageObservable,
         connect!,
@@ -31,7 +30,6 @@
 
     @test name(interface) === :name
     @test occursin("name", repr(interface))
-    @test tag(interface) === Val{:name}()
     @test getvariable(interface) === variable
     @test get_stream_of_inbound_messages(interface) ===
         stream_of_outbound_messages
@@ -64,7 +62,7 @@
     ]
 end
 
-@testitem "NodeInterface israndom/isdata/isconst" begin
+@testitem "NodeInterface israndom/isdata/isconst" tags = [:nodes] begin
     import ReactiveMP:
         AbstractVariable, NodeInterface, israndom, isdata, isconst
 

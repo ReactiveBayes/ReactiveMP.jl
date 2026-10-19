@@ -1,177 +1,196 @@
-# [Nodes implementation](@id lib-node)
+# [Factor nodes](@id lib-node)
 
-In the message passing framework, one of the most important concepts is a factor node.
-A factor node represents a local function in a factorised representation of a generative model.
+A [factor node](@extref MessagePassingRulesBase glossary-factor-node) is one factor of a
+factorised model. The engine creates a [`FactorNode`](@ref) for each factor and connects it to its
+variables through [interfaces](@extref MessagePassingRulesBase glossary-interface). When you
+activate the graph, the engine wires each of the node's outbound messages to the
+[rule](@extref MessagePassingRulesBase glossary-rule) that computes it.
+
+The engine defines no node. You declare a node with
+[`@define_factor_node`](@extref MessagePassingRulesBase.@define_factor_node) and its rules with
+the other macros of [MessagePassingRulesBase](https://reactivebayes.github.io/MessagePassingRulesBase.jl/dev/).
+The standard nodes, the distributions and the arithmetic, come from
+[StandardMessagePassingRules](@extref StandardMessagePassingRules StandardMessagePassingRules),
+and the others from packages of their own ([The ecosystem](@ref ecosystem)).
+
+```@setup nodes
+using ReactiveMP, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, Rocket
+import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals
+include(joinpath(pkgdir(ReactiveMP), "docs", "nodes.jl"))
+```
+
+The examples use the `Gaussian` node of [The example node](@ref example-node).
+
+## [Creating a node](@id lib-node-create)
+
+[`factornode`](@ref) takes the node type, the variables it connects and a
+[factorisation](@extref MessagePassingRulesBase glossary-factorisation). Each interface is a
+`(name, variable)` pair. The factorisation is a tuple of
+[clusters](@extref MessagePassingRulesBase glossary-cluster), each a tuple of interface names:
+
+```@example nodes
+x, y = randomvar(label = :x), randomvar(label = :y)
+node = factornode(Gaussian, [(:v, constvar(1.0)), (:out, y), (:μ, x)], ((:out, :μ), (:v,)))
+```
+
+The node draws its interfaces, the variables they connect to and its clusters. The engine puts
+interfaces and clusters in declaration order, whatever order you give them in.
+
+Without a factorisation, a node has one cluster over every interface, and its rules are those of
+[belief propagation](@extref MessagePassingRulesBase glossary-belief-propagation). With one
+cluster per interface, `((:out,), (:μ,), (:v,))`, they are those of
+[mean-field](@extref MessagePassingRulesBase glossary-mean-field) variational message passing.
+Every interface belongs to exactly one cluster.
+
+Each cluster has a local marginal, keyed by its members. A joint cluster's key is its member
+tuple, `(:out, :μ)`:
+
+```@example nodes
+ReactiveMP.get_node_local_marginals(ReactiveMP.getlocalclusters(node))
+```
+
+A node with a [group](@extref MessagePassingRulesBase glossary-group), an interface with any
+number of members, takes each member as `((group, k), variable)`. A cluster may hold the whole
+group, keyed by its name, `(:in,)`, or some of its members, each keyed with its index,
+`(:out, (:in, 1))`. The [static inputs](@ref lib-node-static-inputs) example below creates a node
+with a group.
 
 ```@docs
-@node
-ReactiveMP.FactorNode
+ReactiveMP.AbstractFactorNode
+FactorNode
+factornode
+functionalform
+getinterfaces
+ReactiveMP.getinterface
+ReactiveMP.getlocalclusters
+ReactiveMP.get_node_local_marginals
 ReactiveMP.FactorNodeLocalMarginal
 ```
 
 ## [Interfaces](@id lib-node-interfaces)
 
-Every edge of a factor node — a connection to one variable — is represented by a [`ReactiveMP.NodeInterface`](@ref). When a `FactorNode` is constructed, one `NodeInterface` is created per edge. The constructor of `NodeInterface` immediately calls `ReactiveMP.create_new_stream_of_inbound_messages!` on the connected variable, which allocates a per-connection [`ReactiveMP.MessageObservable`](@ref) slot in the variable's `input_messages` and returns it. This observable is stored as `m_out` on the interface: it is the *outbound* message from the node's perspective (flowing toward the variable) and the *inbound* message from the variable's perspective.
+Every edge of a factor node, its connection to one variable, is a
+[`ReactiveMP.NodeInterface`](@ref):
 
-At construction time all message streams are unconnected (lazy). The actual rule computations are wired up later during graph activation (see [Activation](@ref lib-node-activation)).
+```@example nodes
+getinterfaces(node)
+```
 
-For nodes with a variable-length list of same-named edges (e.g. the `means` of a Gaussian Mixture node), [`ReactiveMP.IndexedNodeInterface`](@ref) wraps a `NodeInterface` and adds a positional index. The `ReactiveMP.ManyOf` container collects the corresponding streams for use in `@rule` dispatch; see the [Delta node](@ref lib-nodes-delta) documentation for usage examples.
+Creating an interface allocates a stream for the node's messages among the variable's inbound
+messages. So the interface's outbound message is the variable's inbound one, and the interface's
+inbound message is the variable's outbound one. The members of a group are
+[`ReactiveMP.IndexedNodeInterface`](@ref)s, which add the member's index.
+
+```@example nodes
+interface = ReactiveMP.getinterface(node, 3)
+ReactiveMP.name(interface), ReactiveMP.getvariable(interface)
+```
 
 ```@docs
 ReactiveMP.NodeInterface
 ReactiveMP.IndexedNodeInterface
-ReactiveMP.get_stream_of_inbound_messages
-ReactiveMP.get_stream_of_outbound_messages
-ReactiveMP.set_stream_of_outbound_messages!
-ReactiveMP.tag
 ReactiveMP.name
-ReactiveMP.interfaces
 ReactiveMP.getvariable
-ReactiveMP.inputinterfaces
-ReactiveMP.alias_interface
+ReactiveMP.get_stream_of_outbound_messages
+ReactiveMP.get_stream_of_inbound_messages
+ReactiveMP.set_stream_of_outbound_messages!
 ```
 
 ## [Activation](@id lib-node-activation)
 
-Graph activation is the step that connects all lazy [`ReactiveMP.MessageObservable`](@ref) and [`ReactiveMP.MarginalObservable`](@ref) streams into a live reactive network. For factor nodes this is done by calling [`ReactiveMP.activate!`](@ref) with a [`ReactiveMP.FactorNodeActivationOptions`](@ref) that bundles all inference-time configuration.
+Activation connects the node's lazy message and marginal streams into a live network. You
+activate a node after its variables. For each interface on a random or a data variable, the
+engine finds the inputs its rule needs, from the
+[dependencies](@extref MessagePassingRulesBase glossary-dependencies) the node's algorithm
+declares or from the [default scheme](@extref MessagePassingRulesBase glossary-default-scheme).
+It subscribes to them in declaration order, which in variational message passing is the update
+schedule.
+
+```@example nodes
+x, y = randomvar(label = :x), randomvar(label = :y)
+prior = factornode(Gaussian, [(:out, x), (:μ, constvar(0.0)), (:v, constvar(10.0))])
+likelihood = factornode(Gaussian, [(:out, y), (:μ, x), (:v, constvar(1.0))])
+foreach(v -> activate!(v, RandomVariableActivationOptions()), (x, y))
+foreach(n -> activate!(n, FactorNodeActivationOptions()), (prior, likelihood))
+
+subscription = subscribe!(get_stream_of_marginals(y), (q) -> println("q(y) = ", q))
+nothing # hide
+```
+
+The variables are new ones, since a variable waits for a message from every node connected to
+it. Here `y` is latent, and its marginal is the prior predictive, ``\mathcal{N}(0, 10 + 1)``. The
+node runs with its [`ReactiveMP.FactorNodeActivationOptions`](@ref): the algorithm, callbacks,
+annotations, diagnostics, services, a rule fallback and log scales, described on
+[Activation options](@ref lib-activation-options).
 
 ```@docs
-ReactiveMP.FactorNodeActivationOptions
 ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)
 ```
 
-## [Adding a custom node](@id lib-custom-node)
+The [Internals](@ref internals-dependencies) page describes how the engine chooses and labels a
+node's inputs.
 
-`ReactiveMP.jl` exports the [`@node`](@ref) macro that allows for quick definition of a factor node with a __fixed__ number of edges. The example application can be the following:
+## [Static inputs](@id lib-node-static-inputs)
 
-```julia
-struct MyNewCustomNode end
+A deterministic node declared with `static_inputs = :fold` folds the inputs whose values are
+known, constants and data, into its node function. Its rules see only the random inputs. You give
+the function when you create the node, `factornode(…; nodefn = f)`, and a rule reaches it with
+[`getnodefn`](@extref MessagePassingRulesBase.getnodefn). The Delta node of
+[DeltaMessagePassingRules](@extref DeltaMessagePassingRules DeltaMessagePassingRules) works this
+way.
 
-@node MyNewCustomNode   Stochastic         [ x, y, (z, aliases = [ d ] ) ]
-#     ^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^      ^^^^^^^^^^^
-#     Node's tag/name   Node's type        A fixed set of edges
-#                       Another possible   The very first edge (in this example `x`) is considered
-#                       value is           to be the output of the node
-#                       `Deterministic`    - Edges can have aliases, e.g. `z` can be both `z` or `d`
+The node below computes `out = f(ins...)` for an affine `f`. Its rule pushes a normal message
+through the folded function:
+
+```@example nodes
+struct Affine end
+
+@define_factor_node(node = Affine, type = Deterministic, interfaces = [:out, :ins...], static_inputs = :fold)
+
+@define_message_update_rule(
+    node = Affine, target = :out, args = (m[:ins...]::NormalMeanVariance,), ctx = (:node,),
+    body = (ctx, args) -> begin
+        f = getnodefn(ctx.node, MessagePassingRulesBase.Target(:out))
+        x = only(args.m[:ins])
+        slope = f(mean(x) + 1) - f(mean(x))
+        NormalMeanVariance(f(mean(x)), slope^2 * var(x))
+    end,
+)
+
+a, b = randomvar(label = :a), randomvar(label = :b)
+source = factornode(Gaussian, [(:out, a), (:μ, constvar(0.0)), (:v, constvar(1.0))])
+affine = factornode(Affine, [(:out, b), ((:ins, 1), a), ((:ins, 2), constvar(3.0))]; nodefn = (a, k) -> k * a + 1)
 ```
 
-This expression registers a new node that can be used with the inference engine. 
-Note, however, that the `@node` macro does not generate any message passing update rules.
-These must be defined using the [`@rule`](@ref) macro. 
+The constant `3.0` is folded into the function, so the node shows one member of `ins`, and the
+rule sees one input. The function it reaches is `a -> 3.0 * a + 1`, and it sends
+``\mathcal{N}(3 \cdot 0 + 1, 3^2 \cdot 1)`` towards `b`:
 
-A custom node is not restricted to numeric data. If its rules are written for a payload that has no moments — text, symbols, a struct — the observation has to be wrapped in a `PointMass` explicitly; see [Non-standard observations](@ref lib-variables-data-nonstandard).
-
-## [Collecting node properties](@id lib-node-collect)
-
-```@docs
-ReactiveMP.collect_factorisation
-ReactiveMP.collect_meta
-ReactiveMP.default_meta
-ReactiveMP.as_node_symbol
-ReactiveMP.nodesymbol_to_nodefform
-ReactiveMP.FunctionalDependencies
-ReactiveMP.collect_functional_dependencies
+```@example nodes
+foreach(v -> activate!(v, RandomVariableActivationOptions()), (a, b))
+foreach(n -> activate!(n, FactorNodeActivationOptions()), (source, affine))
+affine_subscription = subscribe!(get_stream_of_marginals(b), (q) -> println("q(b) = ", q))
+nothing # hide
 ```
 
-## [Node types](@id lib-node-types)
+The [Internals](@ref internals-static-inputs) page describes [`ReactiveMP.StaticFold`](@ref), which
+holds the folded function.
 
-We distinguish different types of factor nodes in order to have better control over Bethe Free Energy computation.
-Each factor node has either the [`Deterministic`](@ref) or [`Stochastic`](@ref) functional form type.
+## [Node kinds](@id lib-node-types)
+
+Each factor node is either deterministic or stochastic. A
+[stochastic node](@extref MessagePassingRulesBase glossary-stochastic-node) is a density over its
+interfaces. A [deterministic node](@extref MessagePassingRulesBase glossary-deterministic-node)
+computes its output as a function of its inputs. The kind decides how the node enters the
+[free energy](@ref lib-score): a deterministic node has no average energy, and its clusters are
+always its output and the joint over its inputs.
+
+```@example nodes
+isstochastic(sdtype(Gaussian)), isdeterministic(sdtype(Affine))
+```
 
 ```@docs
-Deterministic
-Stochastic
+sdtype
 isdeterministic
 isstochastic
-sdtype
-```
-
-```@setup lib-node-types
-using ReactiveMP, BayesBase, Distributions, ExponentialFamily
-```
-
-For example the `+` node has the [`Deterministic`](@ref) type:
-
-```@example lib-node-types
-println("Is `+` node deterministic: ", isdeterministic(sdtype(+)))
-println("Is `+` node stochastic: ", isstochastic(sdtype(+)))
-nothing #hide
-```
-
-On the other hand, the `Bernoulli` node has the [`Stochastic`](@ref) type:
-
-```@example lib-node-types
-println("Is `Bernoulli` node deterministic: ", isdeterministic(sdtype(Bernoulli)))
-println("Is `Bernoulli` node stochastic: ", isstochastic(sdtype(Bernoulli)))
-nothing #hide
-```
-
-To get an actual instance of the type object we use [`sdtype`](@ref) function:
-
-```@example lib-node-types
-println("sdtype() of `+` node is ", sdtype(+))
-println("sdtype() of `Bernoulli` node is ", sdtype(Bernoulli))
-nothing #hide
-```
-
-## [Node functional dependencies](@id lib-node-functional-dependencies)
-
-The generic implementation of factor nodes in ReactiveMP supports custom functional dependencies policies. Briefly, the __functional dependencies__ define what
-dependencies are needed to compute a single message. As an example, consider the belief-propagation message update equation for a factor node $f$ with three edges: $x$, $y$ and $z$:
-
-```math
-\mu(x) = \int \mu(y) \mu(z) f(x, y, z) \mathrm{d}y \mathrm{d}z
-```
-
-Here we see that in the standard setting for the belief-propagation message out of edge $x$, we need only messages from the edges $y$ and $z$. In contrast, consider the variational message update rule equation with mean-field assumption:
-
-```math
-\mu(x) = \exp \int q(y) q(z) \log f(x, y, z) \mathrm{d}y \mathrm{d}z
-```
-
-We see that in this setting, we do not need messages $\mu(y)$ and $\mu(z)$, but only the marginals $q(y)$ and $q(z)$. 
-
-## [List of functional dependencies policies](@id lib-node-functional-dependencies-policies)
-
-The purpose of a __functional dependencies__ policy is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in policies is presented below:
-
-```@docs
-ReactiveMP.DefaultFunctionalDependencies
-ReactiveMP.RequireMessageFunctionalDependencies
-ReactiveMP.RequireMarginalFunctionalDependencies
-ReactiveMP.RequireEverythingFunctionalDependencies
-```
-
-## [Node traits](@id lib-node-traits)
-
-Each factor node has to define the [`ReactiveMP.is_predefined_node`](@ref) trait function and to specify a [`ReactiveMP.PredefinedNodeFunctionalForm`](@ref) 
-singleton as a return object. By default [`ReactiveMP.is_predefined_node`](@ref) returns [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref). 
-Objects that do not specify this property correctly cannot be used in model specification.
-
-!!! note
-    `@node` macro does that automatically
-
-```@docs
-ReactiveMP.PredefinedNodeFunctionalForm
-ReactiveMP.UndefinedNodeFunctionalForm
-ReactiveMP.is_predefined_node
-```
-
-## [Stream postprocessors](@id lib-node-stream-postprocessors)
-
-Stream postprocessors are composable transformations applied to the reactive observables produced during activation — outbound message streams, marginal streams, and score streams. They are attached to a node via [`ReactiveMP.FactorNodeActivationOptions`](@ref) and to a random variable via [`ReactiveMP.RandomVariableActivationOptions`](@ref), and can be used for scheduling or custom instrumentation.
-
-See the dedicated [Stream postprocessors](@ref lib-stream-postprocessors) page for a full description and API reference.
-
-## [List of predefined factor node](@id lib-predefined-nodes)    
-
-To quickly check the list of all predefined factor nodes, call `?ReactiveMP.is_predefined_node` or `Base.doc(ReactiveMP.is_predefined_node)`.
-
-```
-?ReactiveMP.is_predefined_node
-```
-
-```@eval
-using ReactiveMP, Markdown
-Markdown.parse(string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node))))
 ```

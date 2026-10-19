@@ -1,5 +1,4 @@
-
-@testitem "RandomVariable: uninitialized" begin
+@testitem "RandomVariable: uninitialized" tags = [:engine] begin
     import ReactiveMP:
         get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
@@ -12,7 +11,7 @@
     end
 end
 
-@testitem "RandomVariable: getget_stream_of_inbound_messages!" begin
+@testitem "RandomVariable: getget_stream_of_inbound_messages!" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         create_new_stream_of_inbound_messages!,
@@ -35,7 +34,7 @@ end
     end
 end
 
-@testitem "RandomVariable: get_stream_of_marginals" begin
+@testitem "RandomVariable: get_stream_of_marginals" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
@@ -92,7 +91,7 @@ end
     end
 end
 
-@testitem "RandomVariable: get_stream_of_outbound_messages" begin
+@testitem "RandomVariable: get_stream_of_outbound_messages" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
@@ -109,7 +108,7 @@ end
 
     message_prod_fold =
         (variable, context, msgs) ->
-            msg(sum(filter(!ismissing, getdata.(msgs))))
+    msg(sum(filter(!ismissing, getdata.(msgs))))
     marginal_prod_fold =
         (variable, context, msgs) -> error("Marginal should not be called here")
 
@@ -138,7 +137,7 @@ end
             kmessage_expected = msg(
                 sum(
                     filter(
-                        !ismissing, getdata.(collect(skipindex(messages, k)))
+                        !ismissing, getdata.(messages[setdiff(eachindex(messages), k)])
                     ),
                 ),
             )
@@ -158,7 +157,9 @@ end
     end
 end
 
-@testitem "RandomVariable: before/after marginal computation callbacks" begin
+@testitem "RandomVariable: before/after marginal computation callbacks" tags = [
+    :engine,
+] begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
@@ -180,8 +181,8 @@ end
     end
 
     function ReactiveMP.invoke_callback(
-        handler::MarginalCallbackHandler, event::ReactiveMP.Event{E}
-    ) where {E}
+            handler::MarginalCallbackHandler, event::ReactiveMP.Event{E}
+        ) where {E}
         E ∈ handler.listen_to &&
             push!(handler.events, (event = E, data = event))
     end
@@ -191,7 +192,7 @@ end
         handler = MarginalCallbackHandler(listen_to, [])
         marginal_context = MessageProductContext(;
             fold_strategy = (variable, context, msgs) ->
-                msg(sum(getdata.(msgs))),
+            msg(sum(getdata.(msgs))),
             callbacks = handler,
         )
 
@@ -246,7 +247,7 @@ end
         handler = MarginalCallbackHandler(listen_to, [])
         marginal_context = MessageProductContext(;
             fold_strategy = (variable, context, msgs) ->
-                msg(sum(getdata.(msgs))),
+            msg(sum(getdata.(msgs))),
             callbacks = handler,
         )
 
@@ -293,7 +294,9 @@ end
     end
 end
 
-@testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" begin
+@testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" tags = [
+    :engine,
+] begin
     import ReactiveMP:
         RandomVariableActivationOptions,
         activate!,
@@ -304,4 +307,79 @@ end
             var, RandomVariableActivationOptions()
         )
     end
+end
+
+@testitem "RandomVariable: a message form constraint applies once per outbound message under FormConstraintCheckLast" tags = [
+    :engine,
+] begin
+    import ReactiveMP:
+        MessageProductContext,
+        RandomVariableActivationOptions,
+        AbstractFormConstraint,
+        FormConstraintCheckLast,
+        FormConstraintCheckEach,
+        create_new_stream_of_inbound_messages!,
+        get_stream_of_outbound_messages,
+        activate!,
+        connect!,
+        getdata
+
+    using BayesBase, Distributions, ExponentialFamily
+    import Rocket: Subject, next!, subscribe!, unsubscribe!
+
+    # Doubles the variance: applying it twice differs from applying it once, so the result says
+    # how often it was applied.
+    struct DoubleVariance <: AbstractFormConstraint end
+    ReactiveMP.constrain_form(::DoubleVariance, d) = NormalMeanVariance(mean(d), 2 * var(d))
+
+    struct ProductEvents
+        counts::Dict{Symbol, Int}
+    end
+    ReactiveMP.invoke_callback(handler::ProductEvents, ::ReactiveMP.Event{E}) where {E} =
+        (handler.counts[E] = get(handler.counts, E, 0) + 1; nothing)
+
+    product(ds...) = let w = sum(d -> 1 / var(d), ds)
+        NormalMeanVariance(sum(d -> mean(d) / var(d), ds) / w, 1 / w)
+    end
+    f(d) = NormalMeanVariance(mean(d), 2 * var(d))
+
+    μ = [NormalMeanVariance(1.0, 1.0), NormalMeanVariance(2.0, 2.0), NormalMeanVariance(-1.0, 0.5), NormalMeanVariance(0.5, 4.0)]
+
+    function outbound_messages(strategy)
+        handler = ProductEvents(Dict{Symbol, Int}())
+        context = MessageProductContext(; form_constraint = DoubleVariance(), form_constraint_check_strategy = strategy, callbacks = handler)
+        var = randomvar()
+        inbound = map(1:4) do _
+            s = Subject(AbstractMessage)
+            m, _ = create_new_stream_of_inbound_messages!(var)
+            connect!(m, s)
+            return s
+        end
+        activate!(var, RandomVariableActivationOptions(nothing, context, MessageProductContext()))
+        latest = Vector{Any}(missing, 4)
+        emissions = Ref(0)
+        subscriptions = map(1:4) do k
+            subscribe!(get_stream_of_outbound_messages(var, k), (m) -> (latest[k] = getdata(m); emissions[] += 1))
+        end
+        foreach(((s, d),) -> next!(s, Message(d, false, false)), zip(inbound, μ))
+        foreach(unsubscribe!, subscriptions)
+        return latest, emissions[], handler.counts
+    end
+
+    # Under CheckLast the message to connection k is f of the product of the other three.
+    latest, emissions, counts = outbound_messages(FormConstraintCheckLast())
+    for k in 1:4
+        expected = f(product(μ[setdiff(1:4, k)]...))
+        @test mean(latest[k]) ≈ mean(expected) && var(latest[k]) ≈ var(expected)
+    end
+    # One whole product, and one application of the constraint, per outbound message computed.
+    @test counts[:before_product_of_messages] == emissions
+    @test counts[:after_product_of_messages] == emissions
+    @test counts[:before_form_constraint_applied] == emissions
+
+    # Under CheckEach every pairwise product is constrained, the partial products the chain
+    # caches included: the message to connection 2 is f(f(μ₁) f(μ₃ f(μ₄))).
+    latest, _, _ = outbound_messages(FormConstraintCheckEach())
+    expected = f(product(f(μ[1]), f(product(μ[3], f(μ[4])))))
+    @test mean(latest[2]) ≈ mean(expected) && var(latest[2]) ≈ var(expected)
 end

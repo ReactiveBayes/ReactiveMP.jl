@@ -1,15 +1,21 @@
 export InputArgumentsAnnotations,
     RuleInputArgumentsRecord,
     ProductInputArgumentsRecord,
-    get_rule_input_arguments,
-    AddonMemory
+    get_rule_input_arguments
 
 """
     RuleInputArgumentsRecord
 
-Stores the inputs and result of a single message update rule execution: the
-`MessageMapping`, the incoming messages tuple, the incoming marginals tuple, and
-the computed result distribution.
+What one message rule call received and returned, which [`InputArgumentsAnnotations`](@ref)
+records on its message.
+
+# Fields
+
+- `mapping`: the [`ReactiveMP.MessageMapping`](@ref), which holds the node, the target and the
+  algorithm;
+- `messages`: the inbound messages the rule read, a tuple, or `nothing`;
+- `marginals`: the marginals the rule read, a tuple, or `nothing`;
+- `result`: the message's data.
 """
 struct RuleInputArgumentsRecord
     mapping
@@ -21,56 +27,65 @@ end
 """
     ProductInputArgumentsRecord
 
-Stores the collection of [`RuleInputArgumentsRecord`](@ref) objects that were
-combined during one or more message products. Each element corresponds to one
-rule execution that contributed to the product.
+The [`RuleInputArgumentsRecord`](@ref)s of the messages a product was formed from, as a flat
+list, however deeply the products nest.
+
+# Fields
+
+- `mappings`: the records, a `Vector{RuleInputArgumentsRecord}`, in the order of the product.
 """
 struct ProductInputArgumentsRecord
     mappings::Vector{RuleInputArgumentsRecord}
 end
 
 """
-    InputArgumentsAnnotations <: AbstractAnnotations
+    InputArgumentsAnnotations()
 
-Annotation processor that records the input arguments and result of each
-message update rule execution and propagates them through message products.
+The annotation processor that records what each message rule call received and returned, and
+carries the record through the products of messages: a message's provenance, for debugging and
+for callbacks. After a rule runs, it stores a [`RuleInputArgumentsRecord`](@ref) under the key
+`:rule_input_arguments`; a product merges the two sides' records into a
+[`ProductInputArgumentsRecord`](@ref), or keeps the one side's that has one. Read the record with
+[`get_rule_input_arguments`](@ref).
 
-After a rule executes, stores a [`RuleInputArgumentsRecord`](@ref) under the
-`:rule_input_arguments` key of the annotation dict. During message products,
-merges the records from the two sides into a [`ProductInputArgumentsRecord`](@ref).
+It is given to the node's activation, `FactorNodeActivationOptions(; annotations =
+(InputArgumentsAnnotations(),))`, and to the variables' `MessageProductContext(; annotations =
+(InputArgumentsAnnotations(),))`, so that products carry the records on.
 """
 struct InputArgumentsAnnotations <: AbstractAnnotations end
 
 """
     get_rule_input_arguments(ann::AnnotationDict)
 
-Return the rule input arguments stored in `ann`. The value is a
-[`RuleInputArgumentsRecord`](@ref) when the message came directly from a single
-rule execution, or a [`ProductInputArgumentsRecord`](@ref) when it is the result
-of one or more message products. Throws `KeyError` if the annotation has not been
-set.
+The record [`InputArgumentsAnnotations`](@ref) stored in `ann`: a [`RuleInputArgumentsRecord`](@ref)
+for a message a rule computed, or a [`ProductInputArgumentsRecord`](@ref) for a product of such
+messages.
+
+# Throws
+
+- `KeyError` when `ann` holds no record.
 """
 get_rule_input_arguments(ann::AnnotationDict) =
     get_annotation(ann, :rule_input_arguments)
 
 function pre_rule_annotations!(
-    ::InputArgumentsAnnotations,
-    ann::AnnotationDict,
-    mapping,
-    messages,
-    marginals,
-)
+        ::InputArgumentsAnnotations,
+        ann::AnnotationDict,
+        mapping,
+        messages,
+        marginals,
+    )
     return nothing
 end
 
 function post_rule_annotations!(
-    ::InputArgumentsAnnotations,
-    ann::AnnotationDict,
-    mapping,
-    messages,
-    marginals,
-    result,
-)
+        ::InputArgumentsAnnotations,
+        ann::AnnotationDict,
+        mapping,
+        messages,
+        marginals,
+        result,
+    )
     annotate!(
         ann,
         :rule_input_arguments,
@@ -80,46 +95,46 @@ function post_rule_annotations!(
 end
 
 function _merge_input_arguments(
-    left::RuleInputArgumentsRecord, right::RuleInputArgumentsRecord
-)
+        left::RuleInputArgumentsRecord, right::RuleInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(RuleInputArgumentsRecord[left, right])
 end
 
 function _merge_input_arguments(
-    left::RuleInputArgumentsRecord, right::ProductInputArgumentsRecord
-)
+        left::RuleInputArgumentsRecord, right::ProductInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(
         vcat(RuleInputArgumentsRecord[left], right.mappings)
     )
 end
 
 function _merge_input_arguments(
-    left::ProductInputArgumentsRecord, right::RuleInputArgumentsRecord
-)
+        left::ProductInputArgumentsRecord, right::RuleInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(
         vcat(left.mappings, RuleInputArgumentsRecord[right])
     )
 end
 
 function _merge_input_arguments(
-    left::ProductInputArgumentsRecord, right::ProductInputArgumentsRecord
-)
+        left::ProductInputArgumentsRecord, right::ProductInputArgumentsRecord
+    )
     return ProductInputArgumentsRecord(vcat(left.mappings, right.mappings))
 end
 
 function post_product_annotations!(
-    ::InputArgumentsAnnotations,
-    merged::AnnotationDict,
-    left_ann::AnnotationDict,
-    right_ann::AnnotationDict,
-    new_dist,
-    left_dist,
-    right_dist,
-)
-    has_left  = has_annotation(left_ann, :rule_input_arguments)
+        ::InputArgumentsAnnotations,
+        merged::AnnotationDict,
+        left_ann::AnnotationDict,
+        right_ann::AnnotationDict,
+        new_dist,
+        left_dist,
+        right_dist,
+    )
+    has_left = has_annotation(left_ann, :rule_input_arguments)
     has_right = has_annotation(right_ann, :rule_input_arguments)
     if has_left && has_right
-        left_record  = get_rule_input_arguments(left_ann)
+        left_record = get_rule_input_arguments(left_ann)
         right_record = get_rule_input_arguments(right_ann)
         annotate!(
             merged,
@@ -143,11 +158,10 @@ function Base.show(io::IO, record::RuleInputArgumentsRecord)
     pad = ' '^indent
     mapping = record.mapping
     println(io, pad, "Rule input arguments:")
-    println(io, pad, "  node:       ", message_mapping_fform(mapping))
-    println(io, pad, "  interface:  ", mapping.vtag)
-    println(io, pad, "  constraint: ", mapping.vconstraint)
-    if !isnothing(mapping.meta)
-        println(io, pad, "  meta:       ", mapping.meta)
+    println(io, pad, "  node:       ", node_display(message_mapping_fform(mapping)))
+    println(io, pad, "  target:     ", mapping.target)
+    if !isnothing(mapping.algorithm)
+        println(io, pad, "  algorithm:  ", mapping.algorithm)
     end
     if !isnothing(record.messages)
         names = unval(mapping.msgs_names)
@@ -161,12 +175,12 @@ function Base.show(io::IO, record::RuleInputArgumentsRecord)
             println(io, pad, "  q(", name, ") = ", mar)
         end
     end
-    print(io, pad, "  result:     ", record.result)
+    return print(io, pad, "  result:     ", record.result)
 end
 
 function Base.show(io::IO, record::ProductInputArgumentsRecord)
     indent = get(io, :indent, 0)
-    pad    = ' '^indent
+    pad = ' '^indent
     println(
         io,
         pad,
@@ -180,22 +194,5 @@ function Base.show(io::IO, record::ProductInputArgumentsRecord)
         show(inner, r)
         i < length(record.mappings) && println(io)
     end
-end
-
-"""
-    AddonMemory(args...; kwargs...)
-
-Deprecated: `AddonMemory` has been removed in ReactiveMP v6.
-Use [`InputArgumentsAnnotations`](@ref) instead. See the migration guide in the documentation for details.
-"""
-function AddonMemory(args...; kwargs...)
-    error(
-        """`AddonMemory` has been removed in ReactiveMP v6 """ *
-        """and replaced by `InputArgumentsAnnotations`.\n""" *
-        """To migrate, replace:\n""" *
-        """  addons = (AddonMemory(),)\n""" *
-        """with:\n""" *
-        """  annotations = (InputArgumentsAnnotations(),)\n""" *
-        """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
-    )
+    return
 end

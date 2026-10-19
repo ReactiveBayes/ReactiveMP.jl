@@ -1,4 +1,4 @@
-@testitem "Message/Marginal equality ignores annotations" begin
+@testitem "Message/Marginal equality ignores annotations" tags = [:engine] begin
     using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     import ReactiveMP:
@@ -17,23 +17,28 @@
             distribution = NormalMeanVariance(0.0, 1.0)
 
             @testset "differing annotations do not break equality" begin
-                plain     = Wrapper(distribution, false, false)
-                annotated = Wrapper(distribution, false, false)
-                annotate!(getannotations(annotated), :logscale, 42.0)
+                plain = Wrapper(distribution, false, false)
+                annotated = Wrapper(distribution, false, false, ReactiveMP.AnnotationDict())
+                annotate!(getannotations(annotated), :input_count, 2)
 
                 @test plain == annotated
                 # ... while the annotation dicts themselves are clearly different.
                 @test getannotations(plain) != getannotations(annotated)
             end
 
-            @testset "differing :logscale values do not break equality either" begin
-                left  = Wrapper(distribution, false, false)
-                right = Wrapper(distribution, false, false)
-                annotate!(getannotations(left), :logscale, 1.0)
-                annotate!(getannotations(right), :logscale, 2.0)
+            @testset "one built without annotations carries the shared empty ones, frozen" begin
+                message = Wrapper(distribution, false, false)
+                @test isempty(getannotations(message))
+                @test getannotations(message) === getannotations(Wrapper(distribution, true, true))
+                @test_throws "nothing is meant to write to" annotate!(getannotations(message), :input_count, 2)
+            end
+
+            @testset "differing log scales do not break equality either" begin
+                left = Wrapper(distribution, false, false, ReactiveMP.AnnotationDict(), 1.0)
+                right = Wrapper(distribution, false, false, ReactiveMP.AnnotationDict(), 2.0)
 
                 @test left == right
-                @test getannotations(left) != getannotations(right)
+                @test getlogscale(left) != getlogscale(right)
             end
 
             @testset "the three compared fields still matter" begin
@@ -50,7 +55,7 @@
     end
 end
 
-@testitem "Message" begin
+@testitem "Message" tags = [:engine] begin
     using Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     import InteractiveUtils: methodswith
@@ -67,8 +72,8 @@ end
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false),
-            data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
+                initial in (true, false),
+                data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
             msg = Message(data, clamped, initial)
             @test getdata(msg) === data
@@ -84,8 +89,8 @@ end
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false),
-            clamped2 in (true, false), initial1 in (true, false),
-            initial2 in (true, false)
+                clamped2 in (true, false), initial1 in (true, false),
+                initial2 in (true, false)
 
             msg1 = Message(dist1, clamped1, initial1)
             msg2 = Message(dist2, clamped2, initial2)
@@ -94,14 +99,16 @@ end
             @test is_clamped((msg1, msg2)) === all([clamped1, clamped2])
             @test is_initial((msg1, msg2)) === all([initial1, initial2])
         end
+        # No messages at all, which the `Message` and `Marginal` methods both matched.
+        @test getdata(()) === ()
     end
 
     @testset "compute product of two messages" begin
         _testvar = ReactiveMP.randomvar()
         × =
             (x, y) -> compute_product_of_two_messages(
-                _testvar, MessageProductContext(), x, y
-            )
+            _testvar, MessageProductContext(), x, y
+        )
 
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
@@ -117,27 +124,27 @@ end
             product(repeated([true, false], 2)...)
             @test is_clamped(
                 Message(dist1, true, left_is_initial) ×
-                Message(dist2, false, right_is_initial),
+                    Message(dist2, false, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist1, false, left_is_initial) ×
-                Message(dist2, true, right_is_initial),
+                    Message(dist2, true, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist1, true, left_is_initial) ×
-                Message(dist2, true, right_is_initial),
+                    Message(dist2, true, right_is_initial),
             ) == true
             @test is_clamped(
                 Message(dist2, true, left_is_initial) ×
-                Message(dist1, false, right_is_initial),
+                    Message(dist1, false, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist2, false, left_is_initial) ×
-                Message(dist1, true, right_is_initial),
+                    Message(dist1, true, right_is_initial),
             ) == false
             @test is_clamped(
                 Message(dist2, true, left_is_initial) ×
-                Message(dist1, true, right_is_initial),
+                    Message(dist1, true, right_is_initial),
             ) == true
         end
 
@@ -145,19 +152,19 @@ end
             product(repeated([true, false], 2)...)
             @test is_initial(
                 Message(dist1, left_is_clamped, true) ×
-                Message(dist2, right_is_clamped, true),
+                    Message(dist2, right_is_clamped, true),
             ) == !(left_is_clamped && right_is_clamped)
             @test is_initial(
                 Message(dist2, left_is_clamped, true) ×
-                Message(dist1, right_is_clamped, true),
+                    Message(dist1, right_is_clamped, true),
             ) == !(left_is_clamped && right_is_clamped)
             @test is_initial(
                 Message(dist1, left_is_clamped, false) ×
-                Message(dist2, right_is_clamped, false),
+                    Message(dist2, right_is_clamped, false),
             ) == false
             @test is_initial(
                 Message(dist2, left_is_clamped, false) ×
-                Message(dist1, right_is_clamped, false),
+                    Message(dist1, right_is_clamped, false),
             ) == false
         end
 
@@ -241,10 +248,10 @@ end
         ]
 
         for (distribution, distribution_methods) in
-            zip(distributions, dists_methods),
-            method in methods_to_test
+                zip(distributions, dists_methods),
+                method in methods_to_test
 
-            T       = typeof(distribution)
+            T = typeof(distribution)
             message = Message(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(method, (T,))
@@ -256,8 +263,8 @@ end
         fn_mean_functions = (inv, log, xtlog, mirrorlog, loggamma)
 
         for distribution in distributions, fn_mean in fn_mean_functions
-            F       = typeof(fn_mean)
-            T       = typeof(distribution)
+            F = typeof(fn_mean)
+            T = typeof(distribution)
             message = Message(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(mean, (F, T), ReactiveMP)
@@ -295,7 +302,7 @@ end
     end
 end
 
-@testitem "Deferred message" begin
+@testitem "Deferred message" tags = [:engine] begin
     using Rocket
     import ReactiveMP: DeferredMessage, as_message, getdata
 
@@ -332,98 +339,289 @@ end
     end
 end
 
-@testitem "MessageMapping should call `rulefallback` is no rule is available" begin
-    import ReactiveMP: MessageMapping, getdata, AnnotationDict
+@testmodule MessageMappingNodes begin
+    using MessagePassingRulesBase
+    using MessagePassingRulesBase: annotate!
 
-    struct SomeArbitraryNodeForRuleFallback end
+    struct Increment end
+    @define_factor_node(node = Increment, type = Stochastic, interfaces = [:out, :in])
 
-    @node SomeArbitraryNodeForRuleFallback Stochastic [out, in]
+    const CALLS = Ref(0)
 
-    struct NonexistingDistribution end
-
-    meta = "meta"
-    annotations = nothing
-
-    mapping_no_rule_fallback = MessageMapping(
-        SomeArbitraryNodeForRuleFallback,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        nothing,
-        meta,
-        annotations,
-        SomeArbitraryNodeForRuleFallback(),
-        nothing,
-        nothing,
+    @define_message_update_rule(
+        node = Increment, target = :out, args = (m[:in]::Int,),
+        body = (args, ann) -> begin
+            CALLS[] += 1
+            annotate!(ann, :called, true)
+            args.m[:in] + 1
+        end,
     )
 
-    messages  = (Message(NonexistingDistribution(), false, false),)
-    marginals = nothing
-
-    @test_throws ReactiveMP.RuleMethodError mapping_no_rule_fallback(
-        messages, marginals
+    # Reports the algorithm it was run under and the node it was given.
+    @define_message_update_rule(
+        node = Increment, target = :in, args = (q[:out]::Int,), ctx = (:node,),
+        body = (algo, ctx, args) -> (algo, ctx.node, args.q[:out] - 1),
     )
 
-    rulefallback = (args...) -> (args)
+    # Reports the random number generator its context carries.
+    struct Draw end
+    @define_factor_node(node = Draw, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Draw, target = :out, args = (m[:in]::Int,), ctx = (:rng,), body = (ctx, args) -> ctx.rng)
 
-    mapping_with_fallback = MessageMapping(
-        SomeArbitraryNodeForRuleFallback,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        nothing,
-        meta,
-        annotations,
-        SomeArbitraryNodeForRuleFallback(),
-        rulefallback,
-        nothing,
+    # Needs a service of its own, which only the node's context can supply.
+    struct Scaled end
+    @define_factor_node(node = Scaled, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(node = Scaled, target = :out, args = (m[:in]::Int,), ctx = (:scale,), body = (ctx, args) -> ctx.scale * args.m[:in])
+    @define_marginal_update_rule(
+        node = Scaled, target = (:out, :in), args = (m[:out]::Int, m[:in]::Int), ctx = (:scale,),
+        body = (ctx, args) -> ctx.scale * (args.m[:out] + args.m[:in]),
     )
 
-    @test getdata(mapping_with_fallback(messages, marginals)) == (
-        SomeArbitraryNodeForRuleFallback,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        messages,
-        nothing,
-        marginals,
-        meta,
-        AnnotationDict(),
-        SomeArbitraryNodeForRuleFallback(),
+    struct Stranger end
+
+    # Working memory: the rule counts how often its scratch is built, and uses it.
+    const SCRATCH_BUILT = Ref(0)
+    struct Scratched end
+    @define_factor_node(node = Scratched, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(
+        node = Scratched, target = :out, args = (m[:in]::Vector{Float64},),
+        scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
+        body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
+    )
+    @define_marginal_update_rule(
+        node = Scratched, target = (:out, :in), args = (m[:out]::Vector{Float64}, m[:in]::Vector{Float64}),
+        scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
+        body = (scratch, args) -> (scratch.work .= args.m[:out] .- args.m[:in]; sum(scratch.work)),
+    )
+
+    # A rule whose scratch's type follows its input's element type.
+    struct TypedScratched end
+    @define_factor_node(node = TypedScratched, type = Stochastic, interfaces = [:out, :in])
+    @define_message_update_rule(
+        node = TypedScratched, target = :out, args = (m[:in]::Vector{<:Real},),
+        scratch = (args) -> (SCRATCH_BUILT[] += 1; (work = similar(args.m[:in]),)),
+        body = (scratch, args) -> (scratch.work .= 2 .* args.m[:in]; sum(scratch.work)),
     )
 end
 
-@testitem "MessageMapping should call provided callbacks handler" begin
+@testitem "MessageMapping resolves and runs the rule" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, getdata, getannotations, get_annotation
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    node = N.Increment()
+    towards_out = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, node, nothing)
+    result = towards_out((Message(1, false, false),), nothing)
+    @test getdata(result) === 2
+    # What the rule annotates is on the message it produced
+    @test get_annotation(getannotations(result), :called) === true
+
+    towards_in = MessageMapping(N.Increment, Target{:in}(), nothing, Val((:out,)), DefaultAlgorithm(), nothing, node, nothing)
+    @test getdata(towards_in(nothing, (Marginal(3, false, false),))) === (DefaultAlgorithm(), node, 2)
+end
+
+@testitem "a mapping keeps its rule's scratch and reuses it" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, MarginalMapping, getdata
+    import MessagePassingRulesBase: Target, ClusterTarget, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    # One scratch per outbound stream, built at its first call and reused on every later one.
+    N.SCRATCH_BUILT[] = 0
+    towards_out = MessageMapping(N.Scratched, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scratched(), nothing)
+    for x in ([1.0, 2.0], [3.0, 4.0], [0.5, 0.5])
+        @test getdata(towards_out((Message(x, false, false),), nothing)) == 2 * sum(x)
+    end
+    @test N.SCRATCH_BUILT[] == 1
+    # Another stream has its own.
+    other = MessageMapping(N.Scratched, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scratched(), nothing)
+    other((Message([1.0], false, false),), nothing)
+    @test N.SCRATCH_BUILT[] == 2
+
+    # A marginal mapping keeps one too.
+    N.SCRATCH_BUILT[] = 0
+    joint = MarginalMapping(N.Scratched, ClusterTarget((:out, :in)), Val((:out, :in)), nothing, DefaultAlgorithm(), N.Scratched())
+    for _ in 1:3
+        @test ReactiveMP.compute_marginal(joint, (Message([3.0, 1.0], false, false), Message([1.0, 1.0], false, false)), nothing) == 2.0
+    end
+    @test N.SCRATCH_BUILT[] == 1
+end
+
+@testitem "a mapping keeps its scratch typed as inferred from the inputs" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    N.SCRATCH_BUILT[] = 0
+    typed = MessageMapping(N.TypedScratched, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.TypedScratched(), nothing)
+    for x in ([1.0, 2.0], [3.0, 4.0], [0.5, 0.5])
+        @test getdata(typed((Message(x, false, false),), nothing)) == 2 * sum(x)
+    end
+    @test N.SCRATCH_BUILT[] == 1
+    @test typed.scratch.scratch isa @NamedTuple{work::Vector{Float64}}
+    # inputs of another element type get a scratch of their own type
+    @test getdata(typed((Message(Float32[1, 2], false, false),), nothing)) === 6.0f0
+    @test N.SCRATCH_BUILT[] == 2
+    @test typed.scratch.scratch isa @NamedTuple{work::Vector{Float32}}
+    # a mapping whose rule declares no scratch keeps no slot
+    plain = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Increment(), nothing)
+    plain((Message(1, false, false),), nothing)
+    @test plain.scratch === nothing
+end
+
+@testitem "MessageMapping gives a rule the default random number generator" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    import Random
+    N = MessageMappingNodes
+
+    # Without a generator of its own, `ctx.rng` is the task's default one.
+    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing)
+    @test getdata(draw((Message(1, false, false),), nothing)) === Random.default_rng()
+end
+
+@testitem "the context services are an activation option" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, EngineDiagnostics, FactorNodeActivationOptions, node_context, activate!, factornode,
+        get_stream_of_marginals, set_initial_message!, RandomVariableActivationOptions, MessageProductContext, getdata, getinterfaces,
+        get_stream_of_inbound_messages
+    import MessagePassingRulesBase: Target, DefaultAlgorithm, RuleContext
+    import Random
+    using Rocket
+    N = MessageMappingNodes
+
+    rng = Random.Xoshiro(7)
+    @test FactorNodeActivationOptions().context === NamedTuple()
+    @test FactorNodeActivationOptions(; context = (rng = rng,)).context === (rng = rng,)
+
+    # One context per node, the engine's services merged with the node's: any name is allowed, and
+    # a name the engine supplies is overridden.
+    node = N.Draw()
+    ctx = node_context(node, (rng = rng, matrix_correction = :identity, gpu = :device))
+    @test ctx isa RuleContext && ctx.node === node && ctx.rng === rng && ctx.matrix_correction === :identity && ctx.gpu === :device
+    @test propertynames(node_context(node)) == (:node, :rng, :matrix_correction)
+    @test node_context(node).rng === Random.default_rng() && node_context(node).matrix_correction === nothing
+
+    # A mapping hands its node's context to the rule.
+    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, node, nothing, EngineDiagnostics(), (rng = rng,))
+    @test getdata(draw((Message(1, false, false),), nothing)) === rng
+    @test draw.context.node === node
+
+    # Through activation: the node's rules draw from its generator.
+    out, in = randomvar(), randomvar()
+    node = factornode(N.Draw, [(:out, out), (:in, in)], ((:out, :in),))
+    product = MessageProductContext()
+    foreach(v -> activate!(v, RandomVariableActivationOptions(nothing, product, product)), (out, in))
+    activate!(node, FactorNodeActivationOptions(; context = (rng = rng,)))
+    received = []
+    subscription = subscribe!(get_stream_of_marginals(out), (q) -> push!(received, getdata(q)))
+    set_initial_message!(get_stream_of_inbound_messages(last(getinterfaces(node))), 1)
+    unsubscribe!(subscription)
+    @test received == [rng]
+end
+
+@testitem "a rule's declared services are checked when it is resolved" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, MarginalMapping, EngineDiagnostics, getdata
+    import MessagePassingRulesBase: Target, ClusterTarget, DefaultAlgorithm
+    N = MessageMappingNodes
+    messages = (Message(2, false, false),)
+    joint_messages = (Message(1, false, false), Message(2, false, false))
+
+    # Not supplied: an error naming the rule and the service, before the rule runs.
+    towards_out = MessageMapping(N.Scaled, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scaled(), nothing)
+    @test_throws ArgumentError towards_out(messages, nothing)
+    message = try
+        towards_out(messages, nothing)
+    catch error
+        sprint(showerror, error)
+    end
+    @test contains(message, "Scaled") && contains(message, ":scale") && contains(message, "`context")
+
+    joint = MarginalMapping(N.Scaled, ClusterTarget((:out, :in)), Val((:out, :in)), nothing, DefaultAlgorithm(), N.Scaled())
+    @test_throws ArgumentError ReactiveMP.compute_marginal(joint, joint_messages, nothing)
+
+    # Supplied through the node's context, the rules run.
+    towards_out = MessageMapping(N.Scaled, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Scaled(), nothing, EngineDiagnostics(), (scale = 3,))
+    @test getdata(towards_out(messages, nothing)) == 6
+    joint = MarginalMapping(N.Scaled, ClusterTarget((:out, :in)), Val((:out, :in)), nothing, DefaultAlgorithm(), N.Scaled(), EngineDiagnostics(), (scale = 3,))
+    @test ReactiveMP.compute_marginal(joint, joint_messages, nothing) == 9
+
+    # The engine's own services are always supplied.
+    draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Draw(), nothing)
+    @test getdata(draw((Message(1, false, false),), nothing)) !== nothing
+end
+
+@testitem "MessageMapping throws a RuleNotFoundError when no rule fits" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, RuleNotFoundError
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    mapping = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Increment(), nothing)
+    @test_throws RuleNotFoundError mapping((Message(N.Stranger(), false, false),), nothing)
+    error = try
+        mapping((Message(N.Stranger(), false, false),), nothing)
+    catch caught
+        caught
+    end
+    @test contains(sprint(showerror, error), "type mismatch")
+end
+
+@testitem "MessageMapping short-circuits a missing input" tags = [:engine] setup = [MessageMappingNodes] begin
+    # A missing input yields a `missing` message without calling the rule. The annotation
+    # processors that run before a rule still run; the ones that run after it do not.
+    import ReactiveMP: MessageMapping, AbstractAnnotations, AnnotationDict, getdata, getannotations, has_annotation
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
+
+    struct RecordingProcessor <: AbstractAnnotations
+        log::Vector{Symbol}
+    end
+    ReactiveMP.pre_rule_annotations!(p::RecordingProcessor, ann::AnnotationDict, mapping, messages, marginals) = push!(p.log, :pre)
+    ReactiveMP.post_rule_annotations!(p::RecordingProcessor, ann::AnnotationDict, mapping, messages, marginals, result) = push!(p.log, :post)
+
+    processor = RecordingProcessor(Symbol[])
+    mapping = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), (processor,), N.Increment(), nothing)
+
+    calls = N.CALLS[]
+    result = mapping((Message(missing, false, false),), nothing)
+    @test getdata(result) === missing
+    @test N.CALLS[] == calls
+    @test processor.log == [:pre]
+    @test !has_annotation(getannotations(result), :called)
+
+    result = mapping((Message(1, false, false),), nothing)
+    @test getdata(result) === 2
+    @test N.CALLS[] == calls + 1
+    @test processor.log == [:pre, :pre, :post]
+end
+
+@testitem "MessageMapping gives a missing message an undefined log scale when it tracks them" tags = [:engine] setup = [MessageMappingNodes] begin
+    import ReactiveMP: MessageMapping, EngineDiagnostics, getdata
+    import MessagePassingRulesBase: Target, DefaultAlgorithm, UndefinedLogScale, UndefinedLogScaleError, require_logscale
+    N = MessageMappingNodes
+
+    tracked(logscales) = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, N.Increment(), nothing, EngineDiagnostics(), nothing, nothing, logscales)
+
+    result = tracked(true)((Message(missing, false, false),), nothing)
+    @test getdata(result) === missing
+    @test getlogscale(result) isa UndefinedLogScale
+    @test occursin("missing", sprint(showerror, UndefinedLogScaleError(getlogscale(result))))
+
+    # Untracked, a missing message carries no log scale, as every other one.
+    @test_throws ArgumentError getlogscale(tracked(false)((Message(missing, false, false),), nothing))
+end
+
+@testitem "MessageMapping should call provided callbacks handler" tags = [:engine] setup = [MessageMappingNodes] begin
     import ReactiveMP: MessageMapping, getdata, AnnotationDict
-
-    struct SomeArbitraryNodeCallbacksTests end
-
-    @node SomeArbitraryNodeCallbacksTests Stochastic [out, in]
-
-    @rule SomeArbitraryNodeCallbacksTests(:out, Marginalisation) (m_in::Int,) =
-        m_in + 1
+    import MessagePassingRulesBase: Target, DefaultAlgorithm
+    N = MessageMappingNodes
 
     events = []
-
     callbacks = (
-        before_message_rule_call = (event) ->
-            push!(events, (event = :before_message_rule_call, data = event)),
-        after_message_rule_call = (event) ->
-            push!(events, (event = :after_message_rule_call, data = event)),
+        before_message_rule_call = (event) -> push!(events, (event = :before_message_rule_call, data = event)),
+        after_message_rule_call = (event) -> push!(events, (event = :after_message_rule_call, data = event)),
     )
 
-    mapping = MessageMapping(
-        SomeArbitraryNodeCallbacksTests,
-        Val(:out),
-        Marginalisation(),
-        Val((:in,)),
-        nothing,
-        nothing,
-        (),
-        SomeArbitraryNodeCallbacksTests(),
-        nothing,
-        callbacks,
-    )
+    node = N.Increment()
+    mapping = MessageMapping(N.Increment, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), (), node, callbacks)
 
     messages = (Message(1, false, false),)
     marginals = nothing
@@ -431,14 +629,12 @@ end
     @test getdata(mapping(messages, marginals)) == 2
 
     @test events[1].event == :before_message_rule_call
-    @test events[1].data.mapping.factornode ===
-        SomeArbitraryNodeCallbacksTests()
+    @test events[1].data.mapping.factornode === node
     @test events[1].data.messages === messages
     @test events[1].data.marginals === marginals
 
     @test events[2].event == :after_message_rule_call
-    @test events[2].data.mapping.factornode ===
-        SomeArbitraryNodeCallbacksTests()
+    @test events[2].data.mapping.factornode === node
     @test events[2].data.messages === messages
     @test events[2].data.marginals === marginals
     @test events[2].data.result === 2
@@ -464,7 +660,7 @@ end
 
     function isapprox(left::Normal, right::Normal; kwargs...)
         return isapprox(left.mean, right.mean; kwargs...) &&
-               isapprox(left.var, right.var; kwargs...)
+            isapprox(left.var, right.var; kwargs...)
     end
 
     struct AbstractVariableForMessageProductContextTests <: AbstractVariable end
@@ -484,8 +680,8 @@ end
     end
 
     function ReactiveMP.invoke_callback(
-        handler::SaveOrderOfComputationCallbacks, event::ReactiveMP.Event{E}
-    ) where {E}
+            handler::SaveOrderOfComputationCallbacks, event::ReactiveMP.Event{E}
+        ) where {E}
         E ∈ handler.listen_to &&
             push!(handler.events, (event = E, data = event))
     end
@@ -494,9 +690,9 @@ end
         testvar, AddOneToMeanConstraint, SaveOrderOfComputationCallbacks
 end
 
-@testitem "MessageProductContext should compute product of two messages" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "MessageProductContext should compute product of two messages" tags = [
+    :engine,
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         Message, MessageProductContext, compute_product_of_two_messages, getdata
 
@@ -513,9 +709,9 @@ end
     @test getdata(result) === Normal(0, 1 / 2)
 end
 
-@testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" tags = [
+    :engine,
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         Message,
         MessageProductContext,
@@ -526,8 +722,8 @@ end
     context = MessageProductContext()
 
     for left_is_clamped in (true, false),
-        right_is_clamped in (true, false), left_is_initial in (true, false),
-        right_is_initial in (true, false)
+            right_is_clamped in (true, false), left_is_initial in (true, false),
+            right_is_initial in (true, false)
 
         msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial)
         msg2 = Message(Normal(0, 1), right_is_clamped, right_is_initial)
@@ -549,9 +745,9 @@ end
     end
 end
 
-@testitem "compute_message_product should support different folding strategies" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "compute_message_product should support different folding strategies" tags = [
+    :engine,
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
         Message,
@@ -570,7 +766,7 @@ end
         import ReactiveMP: MessagesProductFromLeftToRight
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -606,7 +802,7 @@ end
         import ReactiveMP: MessagesProductFromRightToLeft
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -642,16 +838,16 @@ end
         # Custom strategy: compute (1 × 3) × 2
         custom_fold =
             (variable, context, messages) -> begin
-                first = compute_product_of_two_messages(
-                    variable, context, messages[1], messages[3]
-                )
-                return compute_product_of_two_messages(
-                    variable, context, first, messages[2]
-                )
-            end
+            first = compute_product_of_two_messages(
+                variable, context, messages[1], messages[3]
+            )
+            return compute_product_of_two_messages(
+                variable, context, first, messages[2]
+            )
+        end
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -681,7 +877,7 @@ end
         import ReactiveMP: MessagesProductFromLeftToRight
 
         listen_to = (
-            :before_product_of_two_messages, :after_product_of_two_messages
+            :before_product_of_two_messages, :after_product_of_two_messages,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -718,9 +914,9 @@ end
     end
 end
 
-@testitem "Form constraint callbacks with FormConstraintCheckEach" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "Form constraint callbacks with FormConstraintCheckEach" tags = [
+    :engine,
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
         Message,
@@ -737,7 +933,7 @@ end
 
     @testset "CheckEach applies form constraint after each pairwise product" begin
         listen_to = (
-            :before_form_constraint_applied, :after_form_constraint_applied
+            :before_form_constraint_applied, :after_form_constraint_applied,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -779,9 +975,9 @@ end
     end
 end
 
-@testitem "Form constraint callbacks with FormConstraintCheckLast" setup = [
-    MessageProductContextUtils
-] begin
+@testitem "Form constraint callbacks with FormConstraintCheckLast" tags = [
+    :engine,
+] setup = [MessageProductContextUtils] begin
     import ReactiveMP:
         MessageProductContext,
         Message,
@@ -797,7 +993,7 @@ end
 
     @testset "CheckLast applies form constraint once at the end" begin
         listen_to = (
-            :before_form_constraint_applied, :after_form_constraint_applied
+            :before_form_constraint_applied, :after_form_constraint_applied,
         )
         handler = SaveOrderOfComputationCallbacks(listen_to, [])
         context = MessageProductContext(;
@@ -860,8 +1056,52 @@ end
     end
 end
 
-@testitem "Before/after product of messages callbacks" setup = [
-    MessageProductContextUtils
+@testitem "A missing side of a product of two messages leaves the other side as it is" tags = [:engine] begin
+    import ReactiveMP: MessageProductContext, compute_product_of_two_messages, getdata
+    using BayesBase, Distributions, ExponentialFamily
+
+    # A product with no closed form, such as a partial product of an equality chain, meets the
+    # `missing` of a message not computed yet: BayesBase's `prod(::GenericProd, ::ProductOf,
+    # ::Missing)` is ambiguous, so the engine does not call it.
+    unsupported = prod(GenericProd(), Beta(2.0, 3.0), NormalMeanVariance(0.0, 1.0))
+    @test unsupported isa ProductOf
+    context = MessageProductContext()
+    x = randomvar()
+    @test getdata(compute_product_of_two_messages(x, context, Message(unsupported, false, false), Message(missing, false, false))) === unsupported
+    @test getdata(compute_product_of_two_messages(x, context, Message(missing, false, false), Message(unsupported, false, false))) === unsupported
+    @test getdata(compute_product_of_two_messages(x, context, Message(missing, false, false), Message(missing, false, false))) === missing
+end
+
+@testitem "FormConstraintCheckPickDefault is the form constraint's own check strategy" tags = [:engine] begin
+    import ReactiveMP:
+        MessageProductContext,
+        AbstractFormConstraint,
+        FormConstraintCheckEach,
+        FormConstraintCheckLast,
+        FormConstraintCheckPickDefault,
+        UnspecifiedFormConstraint,
+        MessagesProductFromLeftToRight,
+        compute_product_of_messages,
+        getdata
+    using BayesBase, Distributions, ExponentialFamily
+
+    struct ToPointMass <: AbstractFormConstraint end
+    ReactiveMP.constrain_form(::ToPointMass, d) = PointMass(mean(d))
+    ReactiveMP.default_form_check_strategy(::ToPointMass) = FormConstraintCheckLast()
+
+    context = MessageProductContext(; form_constraint = ToPointMass(), form_constraint_check_strategy = FormConstraintCheckPickDefault())
+    @test context.form_constraint_check_strategy === FormConstraintCheckLast()
+    messages = (Message(NormalMeanVariance(1.0, 1.0), false, false), Message(NormalMeanVariance(3.0, 1.0), false, false))
+    @test getdata(compute_product_of_messages(randomvar(), context, messages)) == PointMass(2.0)
+
+    # The positional constructor resolves it too, and an explicit strategy is kept as it is.
+    positional = MessageProductContext(BayesBase.GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckPickDefault(), MessagesProductFromLeftToRight(), nothing, nothing)
+    @test positional.form_constraint_check_strategy === FormConstraintCheckLast()
+    @test MessageProductContext(; form_constraint = ToPointMass(), form_constraint_check_strategy = FormConstraintCheckEach()).form_constraint_check_strategy === FormConstraintCheckEach()
+end
+
+@testitem "Before/after product of messages callbacks" tags = [:engine] setup = [
+    MessageProductContextUtils,
 ] begin
     import ReactiveMP:
         MessageProductContext, Message, compute_product_of_messages, getdata

@@ -1,4 +1,4 @@
-@testitem "Marginal" begin
+@testitem "Marginal" tags = [:engine] begin
     using Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
     import InteractiveUtils: methodswith
@@ -10,8 +10,8 @@
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false),
-            data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
+                initial in (true, false),
+                data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
             marginal = Marginal(data, clamped, initial)
             @test getdata(marginal) === data
@@ -27,8 +27,8 @@
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false),
-            clamped2 in (true, false), initial1 in (true, false),
-            initial2 in (true, false)
+                clamped2 in (true, false), initial1 in (true, false),
+                initial2 in (true, false)
 
             msg1 = Marginal(dist1, clamped1, initial1)
             msg2 = Marginal(dist2, clamped2, initial2)
@@ -87,8 +87,8 @@
         ]
 
         for (distribution, distribution_methods) in
-            zip(distributions, dists_methods),
-            method in methods_to_test
+                zip(distributions, dists_methods),
+                method in methods_to_test
 
             T = typeof(distribution)
             marginal = Marginal(distribution, false, false)
@@ -139,4 +139,50 @@
             end
         end
     end
+end
+
+@testitem "as_marginal forms a marginal in its public type" tags = [:engine] begin
+    using ReactiveMP, BayesBase, Distributions
+    import MessagePassingRulesBase
+    import ReactiveMP: as_marginal
+
+    # A working type with a public counterpart, as a rule package would declare one.
+    struct WorkingNormal
+        μ::Float64
+    end
+    MessagePassingRulesBase.public_equivalent(d::WorkingNormal) = Normal(d.μ, 1.0)
+
+    marginal = as_marginal(Message(WorkingNormal(2.0), false, true))
+    @test getdata(marginal) == Normal(2.0, 1.0)
+    @test is_initial(marginal)
+    # Any other type is left as it is.
+    @test getdata(as_marginal(Message(Gamma(2.0, 1.0), false, false))) === Gamma(2.0, 1.0)
+end
+
+@testitem "the entropy of a point mass holding a distribution" tags = [:engine] begin
+    import ReactiveMP: score, DifferentialEntropy, Marginal
+    using BayesBase, Distributions
+
+    # A constant holding a distribution value, as a prior's `x ~ d`, is a point mass like any
+    # other: −∞, in the distribution's float type, which the free energy counts.
+    h = score(DifferentialEntropy(), Marginal(PointMass(Beta(4.0, 8.0)), true, false))
+    @test h === BayesBase.MinusInfinity(Float64)
+    @test score(DifferentialEntropy(), Marginal(PointMass(Beta(4.0f0, 8.0f0)), true, false)) === BayesBase.MinusInfinity(Float32)
+    @test score(DifferentialEntropy(), Marginal(PointMass(2.0), true, false)) === BayesBase.MinusInfinity(Float64)
+end
+
+@testitem "the entropy of a point mass holding a value with no number type" tags = [:engine] begin
+    # An observation that is not a number, text a custom node reads say, is a point mass as well:
+    # −∞, in Float64, since the value has no float type to take it in.
+    import ReactiveMP: score, DifferentialEntropy, Marginal
+    using BayesBase
+
+    struct Reading
+        label::String
+    end
+    for point in ("a review of the machine", :positive, Reading("sensor 3"))
+        @test score(DifferentialEntropy(), Marginal(PointMass(point), false, false)) === BayesBase.MinusInfinity(Float64)
+    end
+    # A number keeps its own type.
+    @test score(DifferentialEntropy(), Marginal(PointMass(1.0f0), false, false)) === BayesBase.MinusInfinity(Float32)
 end

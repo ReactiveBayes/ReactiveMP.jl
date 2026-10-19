@@ -1,102 +1,156 @@
 # [Inference lifecycle](@id concepts-inference-lifecycle)
 
-Every inference computation in ReactiveMP.jl goes through three phases: **construction**, **activation**, and **observation**. Understanding these phases is essential when working directly with the engine.
+Every inference run goes through three phases: **construction**, **activation** and
+**observation**. This page runs the three phases on one small graph, block by block.
+[Getting started](@ref getting-started) runs the same phases and adds the free energy.
 
 !!! note
-    If you are using ReactiveMP.jl through [RxInfer.jl](https://github.com/reactivebayes/RxInfer.jl), these phases are managed for you automatically by the `infer` function. This page is aimed at users working with the low-level API directly.
+    With [RxInfer.jl](https://reactivebayes.github.io/RxInfer.jl/stable/), its `infer` function
+    manages these phases. This page is for working with the engine directly.
+
+The graph is one factor, the `Gaussian` node of [the example node](@ref example-node), a normal
+density with a known variance. It relates an observation `y` to a latent mean `x`.
+
+```@example lifecycle
+using ReactiveMP, MessagePassingRulesBase, BayesBase, ExponentialFamily, Rocket
+import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals
+include(joinpath(pkgdir(ReactiveMP), "docs", "nodes.jl"))
+nothing # hide
+```
 
 ## [Phase 1: Construction](@id concepts-inference-lifecycle-construction)
 
-In the construction phase, you create the variables and factor nodes of your model and connect them together.
+You create the variables and factor nodes of the model, and connect them. Each variable is
+created by its role (see [Variables](@ref lib-variables)): [`randomvar`](@ref) for a latent
+quantity you infer, [`datavar`](@ref) for an observation, and [`constvar`](@ref) for a value that
+never changes.
 
-**Variables** are created with one of three constructors depending on their role:
-
-```julia
-x = randomvar()   # latent variable — will be inferred
-y = datavar()     # observed quantity — will receive data
-c = constvar(2.0) # fixed constant — never changes
+```@example lifecycle
+x = randomvar(label = :x)
+y = datavar(label = :y)
+v = constvar(2.0)
+nothing # hide
 ```
 
-See [Variables](@ref lib-variables) for a full description of each type.
+A [`factornode`](@ref) connects a node type to the variables on its interfaces. An optional third
+argument gives the [factorisation](@extref MessagePassingRulesBase glossary-factorisation) of the
+node's local marginals; without it, all interfaces form one cluster.
 
-**Factor nodes** are connected to variables using the `make_node` machinery (typically called by a model specification layer). Each connection registers the variable with the node and allocates a [`ReactiveMP.MessageObservable`](@ref) stream for that edge. At this point, all streams are **lazy** — they exist as placeholders but are not yet computing anything.
+```@example lifecycle
+node = factornode(Gaussian, [(:out, y), (:μ, x), (:v, v)])
+```
 
-After construction, the graph looks like this conceptually:
+Each connection allocates the variable's stream of messages for that edge, a
+[`ReactiveMP.MessageObservable`](@ref). All streams are **lazy**: they exist, but compute nothing.
 
 ```
-  [datavar: y] ──── [factor: f] ──── (randomvar: x)
+  [datavar: y] ──── [factor: node] ──── (randomvar: x)
                      unconnected         unconnected
                      streams             streams
 ```
 
 !!! note
-    The degree of a variable (number of connected factors) is determined during construction. Adding connections after activation is not supported.
+    A variable's connections are fixed during construction: a variable does not see a node
+    created after the variable is activated.
 
 ## [Phase 2: Activation](@id concepts-inference-lifecycle-activation)
 
-Activation wires the lazy observable streams into a live reactive network. This is done by calling [`ReactiveMP.activate!`](@ref) on each variable and factor node, passing an options object that bundles inference-time configuration.
+Activation wires the lazy streams into a live network. You call [`ReactiveMP.activate!`](@ref) on
+each variable, then on each factor node, with an options object:
 
-For factor nodes, activation is driven by [`ReactiveMP.FactorNodeActivationOptions`](@ref), which carries:
-- The factorization assumption (mean-field, structured, or full BP).
-- An optional [stream postprocessor](@ref lib-stream-postprocessors) applied to outbound message, marginal, and score streams (e.g. for scheduling).
-- Metadata and approximation method settings.
+- A random variable takes [`RandomVariableActivationOptions`](@ref): the
+  [`ReactiveMP.MessageProductContext`](@ref)s its outbound messages and its marginal are computed
+  with, and a [stream postprocessor](@ref lib-stream-postprocessors).
+- A data variable takes [`DataVariableActivationOptions`](@ref): whether to compute its
+  predictions, and whether its values are a function of other variables.
+- A factor node takes [`ReactiveMP.FactorNodeActivationOptions`](@ref): the algorithm its rules
+  run under, callbacks, annotations, diagnostics, services for its rules, a rule fallback, and
+  whether to track log scales (see [Activation options](@ref lib-activation-options)).
+- A constant needs no activation.
 
-For variables, activation is driven by [`ReactiveMP.RandomVariableActivationOptions`](@ref) or [`ReactiveMP.DataVariableActivationOptions`](@ref), which wire up the marginal stream and prediction stream.
+```@example lifecycle
+activate!(x, RandomVariableActivationOptions())
+activate!(y, DataVariableActivationOptions())
+activate!(node, FactorNodeActivationOptions())
+```
 
-After activation, the graph is live:
+Variational message passing and loopy graphs need initial marginals or messages to start. You set
+them between the two steps, with [`ReactiveMP.set_initial_marginal!`](@ref) and
+[`ReactiveMP.set_initial_message!`](@ref). This graph is a tree under belief propagation and needs
+none.
 
 ```
-  [datavar: y] ──── [factor: f] ──── (randomvar: x) ──► marginal q(x)
-       ▲               rules                streams
-  (waiting for         connected            connected
+  [datavar: y] ──── [factor: node] ──── (randomvar: x) ──► marginal q(x)
+       ▲                rules                streams
+  (waiting for          connected            connected
    observations)
 ```
 
-Every edge now carries a [`ReactiveMP.MessageObservable`](@ref) that is subscribed to its upstream sources. The marginal at `x` is connected to a [`ReactiveMP.MarginalObservable`](@ref) that will emit updated beliefs every time a message changes.
+After activation, every edge carries a stream subscribed to its sources. The marginal of `x`, a
+[`ReactiveMP.MarginalObservable`](@ref), emits a new belief whenever the messages it is formed
+from change. Nothing is computed until something subscribes: to a marginal, with
+[`ReactiveMP.get_stream_of_marginals`](@ref), or to the free energy, with
+[`bethe_free_energy`](@ref).
+
+```@example lifecycle
+subscription = subscribe!(get_stream_of_marginals(x), (q) -> println("q(x) updated: ", getdata(q)))
+nothing # hide
+```
 
 ## [Phase 3: Observation](@id concepts-inference-lifecycle-observation)
 
-Once the graph is activated, inference is driven by feeding data into the data variables using [`new_observation!`](@ref):
+Observations drive inference. You give them to the data variables with
+[`new_observation!`](@ref):
 
-```julia
+```@example lifecycle
 new_observation!(y, 3.14)
 ```
 
-This call pushes a new [`Message`](@ref) wrapping a `PointMass(3.14)` into the data variable's outbound stream. The change propagates reactively through all connected factor nodes, triggering rule computations, which in turn push updated messages to downstream variables, which update their marginals.
-
-Only values a `PointMass` can represent — a real number, an array of real numbers or a `UniformScaling` — may be passed this way; anything else is rejected with an error. Data that is deliberately not numeric, consumed by a custom node, must be wrapped explicitly: see [Non-standard observations](@ref lib-variables-data-nonstandard).
-
-The result is that subscribing to the marginal stream of `x` yields updated posterior beliefs automatically:
+The observation is a `PointMass(3.14)` message on the data variable's outbound stream. It
+propagates through the connected node, whose rule computes its message towards `x`, and on to
+`x`, whose marginal updates. Without a prior, the marginal of `x` is that message,
+``\mathcal{N}(x \mid 3.14, 2)``.
 
 ```
   new_observation!(y, 3.14)
          │
          ▼
-  [datavar: y] ──► message ──► [factor: f] ──► message ──► (randomvar: x)
-                                                                  │
-                                                                  ▼
-                                                           marginal q(x) emits
+  [datavar: y] ──► message ──► [factor: node] ──► message ──► (randomvar: x)
+                                                                     │
+                                                                     ▼
+                                                              marginal q(x) emits
 ```
 
-You can subscribe to the marginal stream of any [`RandomVariable`](@ref) to receive updated beliefs:
+Every call to [`new_observation!`](@ref) propagates again. In streaming inference, each call is a
+new data point. In variational inference, the same data is given once per iteration, and each
+iteration updates the marginals and the free energy.
 
-```julia
-subscribe!(get_stream_of_marginals(x), (marginal) -> println("Updated: ", mean(marginal)))
+```@example lifecycle
+new_observation!(y, 1.0)
 ```
 
-Multiple calls to [`new_observation!`](@ref) are possible after activation — each one triggers another round of reactive propagation. This makes the engine suitable for streaming/online inference scenarios.
+A value that `PointMass` can represent is observed this way: a real number, an array of real
+numbers or a `UniformScaling`. Anything else is an error. Data that is deliberately not numeric,
+read by a custom node, is wrapped explicitly (see
+[Non-standard observations](@ref lib-variables-data-nonstandard)).
+
+When the run is over, unsubscribe:
+
+```@example lifecycle
+unsubscribe!(subscription)
+```
 
 ## [Summary](@id concepts-inference-lifecycle-summary)
 
 | Phase | What happens | Key functions |
 |-------|-------------|---------------|
-| **Construction** | Variables and nodes created, edges connected, streams allocated (lazy) | [`randomvar`](@ref), [`datavar`](@ref), [`constvar`](@ref), [`@node`](@ref) |
-| **Activation** | Lazy streams wired into a live reactive network | [`ReactiveMP.activate!`](@ref), [`ReactiveMP.FactorNodeActivationOptions`](@ref) |
-| **Observation** | Data fed in, messages propagate, marginals update | [`new_observation!`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref) |
+| **Construction** | Variables and nodes are created and connected; the streams are allocated, lazy | [`randomvar`](@ref), [`datavar`](@ref), [`constvar`](@ref), [`factornode`](@ref) |
+| **Activation** | The streams are wired into a live network; initial values are set; subscriptions are made | [`ReactiveMP.activate!`](@ref), [`ReactiveMP.FactorNodeActivationOptions`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref) |
+| **Observation** | Data arrives, messages propagate, marginals update | [`new_observation!`](@ref) |
 
 ## [Next steps](@id concepts-inference-lifecycle-next)
 
-- [Factor nodes](@ref lib-node) — how nodes are implemented and activated.
-- [Variables](@ref lib-variables) — stream creation and activation details for each variable type.
-- [Callbacks](@ref lib-callbacks) — how to hook into message and marginal computation events.
-- [Custom functional form](@ref custom-functional-form) — constraining the functional form of marginals during inference.
+- [Factor nodes](@ref lib-node): how nodes are created and activated.
+- [Variables](@ref lib-variables): the streams of each kind of variable.
+- [Callbacks](@ref lib-callbacks): observing every rule call and product.
+- [Form constraints](@ref custom-functional-form): constraining the form of marginals.

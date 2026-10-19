@@ -1,54 +1,77 @@
-ReactiveMP.jl
-=============
+# ReactiveMP.jl
 
-*Julia package for reactive message passing Bayesian inference engine on a factor graph.*
+*A reactive message passing engine for Bayesian inference on factor graphs.*
 
-`ReactiveMP.jl` is a low-level inference engine that implements variational message passing on factor graphs. It is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. For most use cases, the [RxInfer.jl](https://github.com/reactivebayes/RxInfer.jl) package provides a convenient model specification layer on top of ReactiveMP.jl.
+ReactiveMP.jl runs message passing on a [factor graph](@extref MessagePassingRulesBase glossary-factor-graph).
+It runs exact [belief propagation](@extref MessagePassingRulesBase glossary-belief-propagation),
+[variational message passing](@extref MessagePassingRulesBase glossary-vmp) under a
+[factorisation](@extref MessagePassingRulesBase glossary-factorisation), and the approximations
+between them, with the [Bethe free energy](@extref MessagePassingRulesBase glossary-bethe-free-energy)
+as the objective. It builds no schedule in advance. Messages and marginals are streams, and each
+new observation propagates through the graph, recomputing only what depends on it. This suits
+streaming and online inference as well as batch inference.
 
-!!! note
-    This package exports only an inference engine. For the full ecosystem with convenient model and constraints specification, see [`RxInfer.jl`](https://github.com/reactivebayes/RxInfer.jl) and its [documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
-
-## [Start here](@id index-start-here)
-
-If you are new to ReactiveMP.jl, read the Concepts section first. It explains the key ideas without assuming prior familiarity with the codebase:
-
-1. **[Factor graphs](@ref concepts-factor-graphs)** — what factor graphs are and how ReactiveMP.jl represents them.
-2. **[Message passing](@ref concepts-message-passing)** — how belief propagation and variational message passing work, and the reactive computation model.
-3. **[Inference lifecycle](@ref concepts-inference-lifecycle)** — the three phases every inference run goes through: construction, activation, and observation.
-
-After reading the Concepts section, the Library section provides the full API reference for each component.
-
-## [Ideas and principles behind `ReactiveMP.jl`](@id index-ideas)
-
-`ReactiveMP.jl` is a particular implementation of message passing on factor graphs, which does not create any specific message passing schedule in advance, but rather _reacts_ on changes in the data source (hence _reactive_ in the name of the package). The detailed explanation of the ideas and principles behind the _Reactive Message Passing_ can be found in PhD dissertation of _Dmitry Bagaev_ titled [__Reactive Probabilistic Programming for Scalable Bayesian Inference__](https://pure.tue.nl/ws/portalfiles/portal/313860204/20231219_Bagaev_hf.pdf) ([link2](https://research.tue.nl/nl/publications/reactive-probabilistic-programming-for-scalable-bayesian-inferenc), [link3](https://github.com/bvdmitri/phdthesis)).
-
-## [Examples and tutorials](@id index-examples)
-
-The `ReactiveMP.jl` package is intended for advanced users with a deep understanding of message passing principles. 
-Accessible tutorials and examples are available in the [RxInfer documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
-
-## Table of Contents
-
-```@contents
-Pages = [
-  "concepts/factor-graphs.md",
-  "concepts/message-passing.md",
-  "concepts/inference-lifecycle.md",
-  "lib/nodes.md",
-  "lib/variables.md",
-  "lib/message.md",
-  "lib/marginal.md",
-  "lib/rules.md",
-  "lib/helpers.md",
-  "lib/algebra.md",
-  "extra/contributing.md",
-  "extra/extensions.md",
-  "extra/methods.md",
-]
-Depth = 2
+```@docs
+ReactiveMP
 ```
 
-## Index
+## [Who this site is for](@id index-audience)
 
-```@index
-```
+The engine is the computational core of the [RxInfer](https://reactivebayes.github.io/RxInfer.jl/stable/)
+ecosystem. Most users never call it directly: RxInfer's `@model` and `infer` build the graph and
+run it on this engine. This site is for you if you want to:
+
+- build a factor graph by hand and run inference on it;
+- write your own inference loop, or observe and change what the engine does, through callbacks,
+  stream postprocessors and annotations;
+- work on the engine itself.
+
+If you want to specify and fit a model, start with
+[RxInfer's documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
+
+## [What the engine is and is not](@id index-scope)
+
+The engine creates variables and factor nodes, connects them, and computes the messages, the
+marginals and the free energy as data arrives.
+
+The engine defines **no node** and **no rule**. A [factor node](@extref MessagePassingRulesBase glossary-factor-node)
+and its [rules](@extref MessagePassingRulesBase glossary-rule) are declared with
+[`MessagePassingRulesBase`](@extref MessagePassingRulesBase MessagePassingRulesBase), and the
+nodes a model uses come from rule packages, such as
+[`StandardMessagePassingRules`](@extref StandardMessagePassingRules StandardMessagePassingRules)
+(see [The ecosystem](@ref ecosystem)). Loading a rule package is enough for the engine to find its
+rules. This site's examples run on one small node, declared in the file that
+[The example node](@ref example-node) shows.
+
+The engine has **no model syntax**. You create each variable and node with a function call.
+[GraphPPL](https://github.com/ReactiveBayes/GraphPPL.jl) turns a `@model` into a graph, and RxInfer
+builds that graph on this engine.
+
+## [Ideas and principles](@id index-ideas)
+
+Reactive message passing creates no message passing schedule in advance. It reacts to changes in
+the data, hence *reactive*. The PhD dissertation of Dmitry Bagaev,
+[*Reactive Probabilistic Programming for Scalable Bayesian Inference*](https://pure.tue.nl/ws/portalfiles/portal/313860204/20231219_Bagaev_hf.pdf)
+([also here](https://research.tue.nl/nl/publications/reactive-probabilistic-programming-for-scalable-bayesian-inferenc),
+and [its sources](https://github.com/bvdmitri/phdthesis)), explains the ideas behind it. Tutorials
+and example models are in the [RxInfer documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
+
+## [The site](@id index-map)
+
+- [Getting started](@ref getting-started) builds and runs a small model by hand, from the
+  variables to the free energy.
+- [The example node](@ref example-node) shows `Gaussian`, the node every example runs on, and
+  its rules.
+- **Concepts**: [factor graphs](@ref concepts-factor-graphs),
+  [message passing](@ref concepts-message-passing), and the
+  [inference lifecycle](@ref concepts-inference-lifecycle) every run goes through.
+- **The engine**, in the order you build a graph: [variables](@ref lib-variables),
+  [factor nodes](@ref lib-node), [activation options](@ref lib-activation-options),
+  [messages](@ref lib-message), [marginals](@ref lib-marginal), [log scales](@ref lib-logscale),
+  [form constraints](@ref custom-functional-form) and the [free energy](@ref lib-score).
+- **Extension points**: [callbacks](@ref lib-callbacks) observe the engine,
+  [stream postprocessors](@ref lib-stream-postprocessors) transform its streams, and
+  [annotations](@ref lib-annotations) carry metadata on messages.
+- [The ecosystem](@ref ecosystem) lists the rule packages, each with a site of its own.
+- The [migration guides](@ref migration-v6-to-v7), [contributing](@ref contributing), and the
+  [internals](@ref internals) a contributor needs.

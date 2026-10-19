@@ -1,74 +1,85 @@
-using Documenter, ReactiveMP
+# The documentation site of ReactiveMP, the engine. Build it with `make docs` from the repository
+# root.
+using Documenter, DocumenterInterLinks, DocInventories
+using ReactiveMP
 
-## https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
-## https://gr-framework.org/workstations.html#no-output
-ENV["GKSwstype"] = "100"
+# A registered package's site, by its published inventory. A first request to GitHub Pages can take
+# seconds, longer than DocInventories' default timeout of one second, so it waits longer.
+registered(name) = Inventory(
+    "https://reactivebayes.github.io/$(name).jl/stable/objects.inv";
+    root_url = "https://reactivebayes.github.io/$(name).jl/stable/", timeout = 30,
+)
 
-DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive = true)
+const REGISTERED = [
+    name => registered(name) for name in (
+            "MessagePassingRulesBase",
+            "MessagePassingRulesTestUtils",
+            "MessagePassingRulesApproximations",
+            "StandardMessagePassingRules",
+            "DeltaMessagePassingRules",
+            "GaussianCouplingMessagePassingRules",
+            "SoftDotMessagePassingRules",
+            "AutoregressiveMessagePassingRules",
+            "ContinuousTransitionMessagePassingRules",
+            "PolyaMessagePassingRules",
+            "BIFMMessagePassingRules",
+            "FlowMessagePassingRules",
+            "DiscreteTransitionMessagePassingRules",
+            "GCVMessagePassingRules",
+        )
+]
+
+links = InterLinks(REGISTERED...)
+
+DocMeta.setdocmeta!(
+    ReactiveMP, :DocTestSetup, :(using ReactiveMP, BayesBase, Distributions, ExponentialFamily); recursive = true
+)
 
 makedocs(
-    modules  = [ReactiveMP],
-    clean    = true,
+    modules = [ReactiveMP],
     sitename = "ReactiveMP.jl",
-    pages    = [
-        "Introduction"    => "index.md",
+    # Every docstring appears on a page.
+    checkdocs = :all,
+    plugins = [links],
+    pages = [
+        "Introduction" => "index.md",
+        "Getting started" => "getting-started.md",
+        "The example node" => "example-node.md",
         "Concepts" => [
-            "Factor graphs"           => "concepts/factor-graphs.md",
-            "Message passing"         => "concepts/message-passing.md",
-            "Reactive programming"   => "concepts/reactive-programming.md",
-            "Inference lifecycle"    => "concepts/inference-lifecycle.md",
+            "Factor graphs" => "concepts/factor-graphs.md",
+            "Message passing" => "concepts/message-passing.md",
+            "Inference lifecycle" => "concepts/inference-lifecycle.md",
         ],
-        "Library" => [
-            "Factor nodes"         => "lib/nodes.md",
-            "Variables"             => "lib/variables.md",
-            "Messages"             => "lib/message.md",
-            "Marginals"            => "lib/marginal.md",
-            "Message update rules" => "lib/rules.md",
-            "Callbacks"            => "lib/callbacks.md",
+        "The engine" => [
+            "Variables" => "lib/variables.md",
+            "Factor nodes" => "lib/nodes.md",
+            "Activation options" => "lib/activation-options.md",
+            "Messages" => "lib/message.md",
+            "Marginals" => "lib/marginal.md",
+            "Log scales" => "lib/logscale.md",
+            "Form constraints" => "lib/form-constraints.md",
+            "Free energy" => "lib/score.md",
+        ],
+        "Extension points" => [
+            "Callbacks" => "lib/callbacks.md",
             "Stream postprocessors" => "lib/stream-postprocessors.md",
-            "Approximations"       => "lib/approximations.md",
-            "Score functions"      => "lib/score.md",
-            "Helper utils"         => "lib/helpers.md",
-            "Algebra utils"        => "lib/algebra.md",
-            "Specific factor nodes" => [
-                "Delta" => "lib/nodes/delta.md",
-                "Flow" => "lib/nodes/flow.md",
-                "BIFM" => "lib/nodes/bifm.md",
-                "Logical" => "lib/nodes/logical.md",
-                "Discrete Transition" => "lib/nodes/discrete_transition.md",
-                "Continuous transition" => "lib/nodes/ctransition.md",
-                "Autoregressive" => "lib/nodes/ar.md",
-                "Conjugate Autoregressive" => "lib/nodes/conjugate_ar.md",
-                "GaussianCoupling" => "lib/nodes/gaussian_coupling.md",
-                "BinomialPolya" => "lib/nodes/binomial_polya.md",
-                "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
-                "ManyPlus" => "lib/nodes/many_plus.md",
-            ]
+            "Annotations" => "lib/annotations.md",
         ],
-        "Annotations" => [
-            "Overview"         => "lib/annotations.md",
-            "Log-scale"        => "lib/annotations/logscale.md",
-            "Input arguments"  => "lib/annotations/input_arguments.md",
-        ],
-        "Custom functionality" => [
-            "Custom functional form" => "custom/custom-functional-form.md",
-        ],
+        "The ecosystem" => "ecosystem.md",
         "Migration guides" => [
+            "v6 to v7" => "migration-guides/v6-to-v7.md",
             "v5 to v6" => "migration-guides/v5-to-v6.md",
         ],
-        "Extra" => [
-            "Contributing"     => "extra/contributing.md",
-            "Extensions"       => "extra/extensions.md",
-            "Exported methods" => "extra/methods.md"
-        ]
-        
+        "Contributing" => "extra/contributing.md",
+        "Internals" => "internals.md",
     ],
-    format   = Documenter.HTML(
+    format = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true",
+        edit_link = "main",
         example_size_threshold = 400 * 1024,
         size_threshold_warn = 400 * 1024,
         size_threshold = 400 * 1024,
-    )
+    ),
 )
 
 if get(ENV, "CI", nothing) == "true"

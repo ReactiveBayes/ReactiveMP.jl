@@ -3,22 +3,27 @@ export datavar, DataVariable, new_observation!, DataVariableActivationOptions
 """
     DataVariable <: AbstractVariable
 
-Represents an observed variable in the factor graph. Unlike [`ReactiveMP.ConstVariable`](@ref), the data is not fixed
-at creation time and can be updated later via [`ReactiveMP.new_observation!`](@ref). Use [`datavar`](@ref) to create an instance.
+An observed variable, whose value arrives after the graph is built, with
+[`new_observation!`](@ref), and may change: each observation propagates through the graph. Every
+connected node shares its one outbound stream, of the observations, and has a stream of the
+messages it sends back, whose product is the variable's prediction. Its marginal is its latest
+observation. Create one with [`datavar`](@ref).
 
-See also: [`ReactiveMP.RandomVariable`](@ref), [`ReactiveMP.ConstVariable`](@ref)
+See also [`RandomVariable`](@ref), [`ConstVariable`](@ref).
 """
 mutable struct DataVariable{M, P} <: AbstractVariable
-    input_messages :: Vector{MessageObservable{AbstractMessage}}
-    marginal       :: MarginalObservable
-    messageout     :: M
-    prediction     :: P
-    label          :: Any
+    input_messages::Vector{MessageObservable{AbstractMessage}}
+    marginal::MarginalObservable
+    messageout::M
+    prediction::P
+    label::Any
 end
+
+Base.show(io::IO, variable::DataVariable) = print(io, "DataVariable(", repr(variable.label), ")")
 
 function DataVariable(; label = nothing)
     messageout = RecentSubject(Message)
-    marginal   = MarginalObservable()
+    marginal = MarginalObservable()
     prediction = MarginalObservable()
     return DataVariable(
         Vector{MessageObservable{AbstractMessage}}(),
@@ -30,20 +35,30 @@ function DataVariable(; label = nothing)
 end
 
 """
-    datavar(; label = nothing)
+    datavar(; label = nothing) -> DataVariable
 
-Creates a new [`ReactiveMP.DataVariable`](@ref) with an optional `label` for identification.
+Create a [`DataVariable`](@ref), with no observation and no connections yet. `label` names it in
+the callback events and in the error of an invalid observation.
+
+# Examples
+
+```jldoctest
+julia> y = datavar(label = :y);
+
+julia> ReactiveMP.isdata(y), ReactiveMP.degree(y)
+(true, 0)
+```
 """
 datavar(; label = nothing) = DataVariable(; label = label)
 
 degree(datavar::DataVariable) = length(datavar.input_messages)
 
-israndom(::DataVariable)                  = false
+israndom(::DataVariable) = false
 israndom(::AbstractArray{<:DataVariable}) = false
-isdata(::DataVariable)                    = true
-isdata(::AbstractArray{<:DataVariable})   = true
-isconst(::DataVariable)                   = false
-isconst(::AbstractArray{<:DataVariable})  = false
+isdata(::DataVariable) = true
+isdata(::AbstractArray{<:DataVariable}) = true
+isconst(::DataVariable) = false
+isconst(::AbstractArray{<:DataVariable}) = false
 
 get_stream_of_marginals(datavar::DataVariable) = datavar.marginal
 get_stream_of_predictions(datavar::DataVariable) = datavar.prediction
@@ -63,20 +78,34 @@ function get_stream_of_inbound_messages(datavar::DataVariable, index::Int)
     return datavar.input_messages[index]
 end
 
+set_initial_message!(::DataVariable, message) = throw(
+    ArgumentError("a data variable's messages are its observations: give it one with `new_observation!`, not `set_initial_message!`"),
+)
+
 function get_stream_of_outbound_messages(datavar::DataVariable, ::Int)
     return datavar.messageout
 end
 
 """
-    DataVariableActivationOptions
+    DataVariableActivationOptions(prediction::Bool, linked::Bool, transform, args)
+    DataVariableActivationOptions()
 
-Collects all configuration needed to activate a [`ReactiveMP.DataVariable`](@ref). Passed to [`ReactiveMP.activate!(::DataVariable, ::DataVariableActivationOptions)`](@ref).
+What activating a [`DataVariable`](@ref) needs, given positionally. With no arguments, no
+prediction and no link.
 
-Fields:
-- `prediction::Bool` — if `true`, a prediction stream is built during activation as the product of all inbound (backward) messages
-- `linked::Bool` — if `true`, the variable's observation stream is driven by a deterministic transformation of other variables' marginals rather than by direct [`ReactiveMP.new_observation!`](@ref) calls
-- `transform` — the transformation function applied to the linked variables' marginals (used only when `linked = true`)
-- `args` — the collection of linked variables or constants whose marginals are combined (used only when `linked = true`)
+# Fields
+
+- `prediction`: whether to build the prediction stream, the product of the messages the nodes
+  send to the variable (see [`ReactiveMP.get_stream_of_predictions`](@ref));
+- `linked`: whether the variable's observations are a function of other variables, rather than
+  given with [`new_observation!`](@ref);
+- `transform`: for a linked variable, the function its observation is of;
+- `args`: for a linked variable, the constants, variables and arrays of variables `transform`
+  takes, in order. `transform` is given their point values: a constant, a data variable's
+  observation (the payload of its `PointMass`, numeric or not) or, for an array, the vector of
+  its variables' observations.
+
+See also [`ReactiveMP.activate!`](@ref).
 """
 struct DataVariableActivationOptions
     prediction::Bool
@@ -91,24 +120,24 @@ DataVariableActivationOptions() =
 """
     ReactiveMP.activate!(datavar::DataVariable, options::DataVariableActivationOptions)
 
-Wires all reactive streams of a [`ReactiveMP.DataVariable`](@ref) into the factor graph.
+Wire the streams of a data variable, after every factor node it connects to has been created.
 
-Activation proceeds in up to three steps:
+1. **Prediction**, with `options.prediction`: the product of the messages the nodes send to the
+   variable, computed once every one has a value and again whenever each has updated since.
+2. **Link**, with `options.linked`: whenever each of `options.args` has a value, and again when
+   one updates, `options.transform` of their values is observed with [`new_observation!`](@ref).
+   Linking to a random variable fails at the first update, since its marginal is not a point
+   value.
+3. **Marginal**: always the latest observation, as a [`Marginal`](@ref).
 
-1. **Prediction** — if `options.prediction` is `true`, a prediction stream is built via `collectLatest` over all inbound (backward) [`ReactiveMP.MessageObservable`](@ref)s: once all backward messages have emitted and again when all of them update, their product is emitted as the model's prior expectation for this variable.
-
-2. **Linked variables** — if `options.linked` is `true`, a subscription is created over a transformed combination of other variables' marginals. Each update is forwarded automatically to [`ReactiveMP.new_observation!`](@ref), making the data variable's observation a deterministic function of those variables.
-
-3. **Marginal** — always wired: the marginal stream is `messageout |> map(as_marginal)`, so the marginal always equals the most recently pushed observation.
-
-See also: [`ReactiveMP.DataVariableActivationOptions`](@ref), [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref)
+See also [`DataVariableActivationOptions`](@ref).
 """
 function activate!(
-    datavar::DataVariable, options::DataVariableActivationOptions
-)
+        datavar::DataVariable, options::DataVariableActivationOptions
+    )
     if options.prediction
-        # if the prediction is requested, we instantiate the stream of predictions 
-        # as the product of all inbound messages to the datavar 
+        # if the prediction is requested, we instantiate the stream of predictions
+        # as the product of all inbound messages to the datavar
         # otherwise the stream of predictions is empty
         stream_of_predictions = collectLatest(
             AbstractMessage,
@@ -130,9 +159,11 @@ function activate!(
             map(l -> __link_getmarginal(l), options.args)
         )
         linkstream =
-            linkvalues |> map(Any, (args) -> let f = options.transform
+            linkvalues |> map(
+            Any, (args) -> let f = options.transform
                 return __apply_link(f, getrecent.(args))
-            end)
+            end
+        )
         # This subscription should unsubscribe automatically when the linked `datavar`s complete
         subscribe!(linkstream, (val) -> new_observation!(datavar, val))
     end
@@ -145,26 +176,32 @@ function activate!(
     return nothing
 end
 
-__link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false))
+__link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false, EMPTY_ANNOTATIONS, 0))
 __link_getmarginal(l::AbstractVariable) = get_stream_of_marginals(l)
 __link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
-    collectLatest(map(get_stream_of_marginals, l))
+    collectLatest(map(get_stream_of_marginals, l)) |> share_recent()
 
 __apply_link(f::F, args) where {F} = __apply_link_data(f, getdata.(args))
 
-__apply_link_data(f::F, data::NTuple{N, PointMass}) where {F, N} =
-    f(mean.(data)...)
+# The point value of a linked argument: a `PointMass`'s payload, or the payloads of an array of
+# them, as a linked array of variables gives; `nothing` for anything else.
+__link_point_value(data::PointMass) = BayesBase.getpointmass(data)
+__link_point_value(data::AbstractArray{<:PointMass}) = map(BayesBase.getpointmass, data)
+__link_point_value(data) = nothing
+
+__apply_link_data(f::F, data::Tuple) where {F} =
+    any(d -> isnothing(__link_point_value(d)), data) ? __link_error(f, data) : f(map(__link_point_value, data)...)
 
 # A linked `DataVariable` must be a deterministic function of *point* values: the
 # transformation is applied to plain numbers, not to distributions. Linking to a
 # `RandomVariable` therefore delivers a full posterior here, which has no meaningful
-# point value to substitute. Previously this produced a bare `MethodError` mentioning
-# only `__apply_link`, which gives no indication of what the user did wrong.
-function __apply_link_data(f::F, data::Tuple) where {F}
+# point value to substitute; the error says so, where a bare `MethodError` in
+# `__apply_link` would not.
+function __link_error(f::F, data::Tuple) where {F}
     offenders = join(
         (
             "  argument $(i) :: $(typeof(d))" for
-            (i, d) in enumerate(data) if !(d isa PointMass)
+                (i, d) in enumerate(data) if isnothing(__link_point_value(d))
         ),
         "\n",
     )
@@ -181,24 +218,47 @@ end
 
 """
     new_observation!(datavar::DataVariable, data)
+    new_observation!(datavar::DataVariable, data::PointMass)
+    new_observation!(datavar::DataVariable, ::Missing)
     new_observation!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
+    new_observation!(datavars::AbstractArray{<:DataVariable}, ::Missing)
 
-Provides a new observation to a [`ReactiveMP.DataVariable`](@ref) (or an array of data variables).
-The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
-Pass `missing` to indicate that the observation is not available.
+Observe `data` on a data variable, and propagate it through the graph: the variable sends it to
+its nodes as a `PointMass` message, with log scale zero.
 
-The value must be a real number, an array of real numbers or a `UniformScaling` — the payloads
-for which `PointMass` defines a `variate_form`, and hence a usable `mean`. Anything else is
-rejected with an informative error. An observation of a different kind, such as text consumed by
-a custom node, has to be wrapped in a `PointMass` explicitly; that method performs no validation.
-See [Non-standard observations](@ref lib-variables-data-nonstandard).
+- A real number, an array of real numbers or a `UniformScaling` is wrapped in a `PointMass`:
+  these are the values for which `PointMass` defines a `variate_form`, and so a `mean`.
+- A `PointMass` is sent as it is, without validation: this is how an observation of another
+  kind, such as text a custom node reads with `BayesBase.getpointmass`, is given. See
+  [Non-standard observations](@ref lib-variables-data-nonstandard).
+- `missing` says the observation is not available: the message is `missing`, and the rules
+  that depend on it give `missing` in turn.
+- An array of data variables observes an array of values of the same size, element by element,
+  or `missing` on every variable.
+
+# Throws
+
+- `ErrorException` for any other value, a distribution included, naming the variable and the
+  type;
+- `AssertionError` when an array of data variables and an array of values differ in size.
+
+# Examples
+
+```jldoctest
+julia> y = datavar();
+
+julia> new_observation!(y, 1.5)
+
+julia> new_observation!([datavar(), datavar()], [1.0, 2.0])
+```
 """
 function new_observation!(datavar::DataVariable, data)
     __assert_valid_observation(datavar, data)
     return new_observation!(datavar, PointMass(data))
 end
-new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
-new_observation!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false))
+# An observation is a point mass: its log scale is zero.
+new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false, EMPTY_ANNOTATIONS, 0))
+new_observation!(datavar::DataVariable, ::Missing) = next!(datavar.messageout, Message(missing, false, false))
 
 # `PointMass` only defines `variate_form` (and hence usable `mean`/`var`) for these payloads.
 # Wrapping anything else produces a `PointMass` that *constructs* fine but whose `mean` recurses
@@ -247,20 +307,20 @@ function __assert_valid_observation(datavar::DataVariable, data::D) where {D}
 end
 
 function new_observation!(
-    datavars::AbstractArray{<:DataVariable}, data::AbstractArray
-)
+        datavars::AbstractArray{<:DataVariable}, data::AbstractArray
+    )
     @assert size(datavars) === size(data) """
     Invalid `new_observation!` call: size of datavar array and data must match: `variables` has size $(size(datavars)) and `data` has size $(size(data)). 
     """
-    foreach(zip(datavars, data)) do (var, d)
+    return foreach(zip(datavars, data)) do (var, d)
         new_observation!(var, d)
     end
 end
 
 function new_observation!(
-    datavars::AbstractArray{<:DataVariable}, data::Missing
-)
-    foreach(datavars) do var
+        datavars::AbstractArray{<:DataVariable}, data::Missing
+    )
+    return foreach(datavars) do var
         new_observation!(var, data)
     end
 end

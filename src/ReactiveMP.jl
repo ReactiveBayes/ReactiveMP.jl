@@ -1,24 +1,106 @@
+"""
+    ReactiveMP
 
+A reactive message passing engine for Bayesian inference on factor graphs. A graph is built from
+variables ([`randomvar`](@ref), [`datavar`](@ref), [`constvar`](@ref)) and factor nodes
+([`factornode`](@ref)), and activated: messages and marginals are then streams, and each new
+observation ([`new_observation!`](@ref)) propagates through them. A factor node computes each
+outbound message with the update rule
+[`MessagePassingRulesBase`](https://reactivebayes.github.io/MessagePassingRulesBase.jl/dev/) finds for it,
+from the latest messages and marginals it depends on; a variable multiplies its inbound messages
+into its marginal; [`bethe_free_energy`](@ref) is the stream of the variational objective.
+
+The engine defines no node and no rule: they come from the rule packages, such as
+[`StandardMessagePassingRules`](https://reactivebayes.github.io/StandardMessagePassingRules.jl/dev/),
+which depend on the base package only. Most models are written with RxInfer, which builds and
+runs the graph on this engine.
+
+# Examples
+
+A normal prior on `x` and one observation `y ~ N(x, 1)`, with a normal node declared for the
+example, as a rule package would declare it:
+
+```jldoctest; setup = :(using Rocket)
+julia> using MessagePassingRulesBase, BayesBase, ExponentialFamily
+
+julia> import ReactiveMP: activate!, FactorNodeActivationOptions, get_stream_of_marginals
+
+julia> struct Gaussian end   # N(out | μ, v), for a known variance v
+
+julia> @define_factor_node(node = Gaussian, type = Stochastic, interfaces = [:out, :μ, :v])
+
+julia> @define_message_update_rule(
+           node = Gaussian, target = :out, args = (m[:μ]::PointMass, m[:v]::PointMass),
+           body = (args) -> NormalMeanVariance(mean(args.m[:μ]), mean(args.m[:v])),
+       )
+
+julia> @define_message_update_rule(
+           node = Gaussian, target = :μ, args = (m[:out]::PointMass, m[:v]::PointMass),
+           body = (args) -> NormalMeanVariance(mean(args.m[:out]), mean(args.m[:v])),
+       )
+
+julia> x, y = randomvar(), datavar();
+
+julia> prior = factornode(Gaussian, [(:out, x), (:μ, constvar(0.0)), (:v, constvar(10.0))]);
+
+julia> likelihood = factornode(Gaussian, [(:out, y), (:μ, x), (:v, constvar(1.0))]);
+
+julia> activate!(x, RandomVariableActivationOptions()); activate!(y, DataVariableActivationOptions());
+
+julia> foreach(node -> activate!(node, FactorNodeActivationOptions()), (prior, likelihood));
+
+julia> posterior = Ref{Any}(); subscribe!(get_stream_of_marginals(x), (q) -> posterior[] = q);
+
+julia> new_observation!(y, 2.0)
+
+julia> mean(posterior[]) ≈ 20 / 11 && var(posterior[]) ≈ 10 / 11
+true
+```
+"""
 module ReactiveMP
 
 # List global dependencies here
-using TinyHugeNumbers, MatrixCorrectionTools, FastCholesky, LinearAlgebra
-using BayesBase, ExponentialFamily
+using TinyHugeNumbers, LinearAlgebra
+using BayesBase
 using UUIDs
+using Compat: @compat
 
-import MatrixCorrectionTools: AbstractCorrectionStrategy, correction!
+import MessagePassingRulesBase
+
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
 
+# The engine's interface that RxInfer and extensions build on, which the documentation tells
+# them to use: public, not exported. `@compat` makes the declaration parse on Julia 1.10.
+@compat public AbstractFactorNode, NodeInterface, IndexedNodeInterface, FactorNodeLocalMarginal,
+    get_node_local_marginals, set_stream_of_outbound_messages!, getcallbacks, getpostprocessor,
+    ImpureRuleError, MessagesProductFromLeftToRight, MessagesProductFromRightToLeft,
+    CompositeStreamPostprocessor, create_new_stream_of_inbound_messages!, set_stream_of_marginals!,
+    set_stream_of_predictions!, skip_initial
+@compat public activate!, FactorNodeActivationOptions, MessageProductContext, EngineDiagnostics,
+    node_context, set_initial_marginal!, set_initial_message!, get_stream_of_marginals,
+    get_stream_of_predictions, Event, event_name, invoke_callback, handle_event,
+    merge_callbacks, generate_span_id, listens, AnnotationDict, annotate!, get_annotation,
+    has_annotation, AbstractAnnotations, pre_rule_annotations!, post_rule_annotations!,
+    post_product_annotations!, AbstractVariable, degree, israndom, isdata, isconst,
+    preprocess_form_constraints, WrappedFormConstraint, prepare_context, MessageMapping,
+    MarginalMapping, rule_arguments, compute_product_of_messages,
+    compute_product_of_two_messages, MessageObservable, MarginalObservable,
+    get_stream_of_inbound_messages, get_stream_of_outbound_messages, getvariable, getinterface,
+    name, getlocalclusters, AbstractStreamPostprocessor,
+    postprocess_stream_of_outbound_messages, postprocess_stream_of_marginals,
+    postprocess_stream_of_scores, ScheduleOnStreamPostprocessor,
+    AfterFormConstraintAppliedEvent, AfterMarginalComputationEvent, AfterMessageRuleCallEvent,
+    AfterProductOfMessagesEvent, AfterProductOfTwoMessagesEvent,
+    BeforeFormConstraintAppliedEvent, BeforeMarginalComputationEvent,
+    BeforeMessageRuleCallEvent, BeforeProductOfMessagesEvent, BeforeProductOfTwoMessagesEvent,
+    BeforeMarginalRuleCallEvent, AfterMarginalRuleCallEvent, BeforeFactorBoundFreeEnergyEvent,
+    AfterFactorBoundFreeEnergyEvent, BeforeVariableBoundEntropyEvent, AfterVariableBoundEntropyEvent
+
 include("fixes.jl")
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
-
-include("helpers/algebra/companion_matrix.jl")
-include("helpers/algebra/common.jl")
-include("helpers/algebra/permutation_matrix.jl")
-include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/form.jl")
 
@@ -26,47 +108,27 @@ include("callbacks.jl")
 include("postprocessors.jl")
 include("variable.jl")
 include("annotations.jl")
-include("annotations/logscale.jl")
+include("logscale.jl")
 include("annotations/input_arguments.jl")
+include("scratch.jl")
+include("diagnostics.jl")
 include("message.jl")
 include("marginal.jl")
 
-"""
-    to_marginal(any)
+# A marginal is formed in its public type (`MessagePassingRulesBase.public_equivalent`): an
+# efficient working type such as `WishartFast` does not leave the product of messages.
+as_marginal(message::Message) = Marginal(MessagePassingRulesBase.public_equivalent(getdata(message)), is_clamped(message), is_initial(message), getannotations(message), message.logscale)
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal), marginal.logscale)
 
-Transforms an input to a proper marginal distribution.
-Called inside `as_marginal`. Some nodes do not use `Distributions.jl`, but instead implement their own equivalents for messages for better efficiency.
-Effectively `to_marginal` is needed to convert internal effective implementation to a user-friendly equivalent (e.g. from `Distributions.jl`).
-By default does nothing and returns its input, but some nodes may override this behaviour (see for example `Wishart` and `InverseWishart`).
-
-Note: This function is a part of the private API and is not intended to be used outside of the ReactiveMP package.
-"""
-to_marginal(any) = any
-
-as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
-as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal))
-
-getdata(::Nothing)                 = nothing
-getdata(collection::Tuple)         = map(getdata, collection)
+getdata(::Nothing) = nothing
+getdata(collection::Tuple) = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
 
-# TupleTools.prod is a more efficient version of Base.all for Tuple here
-is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
-is_initial(tuple::Tuple) = TupleTools.prod(map(is_initial, tuple))
+is_clamped(tuple::Tuple) = __check_all(is_clamped, tuple)
+is_initial(tuple::Tuple) = __check_all(is_initial, tuple)
 
-include("approximations/approximations.jl")
-include("approximations/shared.jl")
-include("approximations/gausshermite.jl")
-include("approximations/gausslaguerre.jl")
-include("approximations/sphericalradial.jl")
-include("approximations/laplace.jl")
-include("approximations/importance.jl")
-include("approximations/optimizers.jl")
-include("approximations/rts.jl")
-include("approximations/linearization.jl")
-include("approximations/unscented.jl")
-include("approximations/cvi.jl")
-include("approximations/cvi_projection.jl")
+include("rule_arguments.jl")
+include("context.jl")
 
 # Predefined postprocessors
 include("postprocessors/scheduled.jl")
@@ -79,30 +141,17 @@ include("variables/constant.jl")
 include("variables/data.jl")
 
 include("nodes/nodes.jl")
-include("rule.jl")
 
 include("score/score.jl")
 include("score/variable.jl")
 include("score/node.jl")
-
-include("nodes/predefined.jl")
-include("rules/predefined.jl")
-include("rules/fallbacks.jl")
+include("score/bethe.jl")
 
 function __init__()
+    SPAN_SALT[] = UInt128(uuid4())
     Base.Experimental.register_error_hint(
         MethodError
     ) do io, exc, argtypes, kwargs
-        if exc.f == ReactiveMP.factornode &&
-            length(argtypes) >= 2 &&
-            argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
-            errmsg = """
-            `$(argtypes[2])` has been used but the `ReactiveMP` backend does not support `$(argtypes[2])` as a factor node.
-
-            Please refer to the [factor nodes](https://reactivebayes.github.io/ReactiveMP.jl/stable/lib/nodes/) section of the documentation for more details.
-            """
-            println(io, errmsg)
-        end
         if exc.f === ReactiveMP.handle_event && length(argtypes) >= 2
             event_type = argtypes[2]
             event_hint = if event_type <: ReactiveMP.Event

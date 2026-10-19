@@ -1,17 +1,14 @@
 SHELL = /bin/bash
 .DEFAULT_GOAL = help
 
-.PHONY: lint format
+.PHONY: help scripts_init scripts_update format check-format
 
-# No `Pkg.update()` in `scripts_init` on purpose: it defeated `scripts/Manifest.toml` by
-# re-resolving JuliaFormatter to the newest allowed version on every `make format` /
-# `make check-format`, so which formatter you got depended only on when you last ran it --
-# and CI and contributors could therefore disagree with no code change involved.
-# Use `make scripts_update` to bump deliberately.
+# `scripts_init` only instantiates `scripts/Manifest.toml`, so every `make format` and
+# `make check-format` runs the same pinned Runic; `make scripts_update` bumps it deliberately.
 scripts_init:
 	julia --project=scripts/ -e 'using Pkg; Pkg.instantiate(); Pkg.precompile();'
 
-scripts_update: ## Re-resolve scripts/Manifest.toml (bumps JuliaFormatter within its compat bound)
+scripts_update: ## Re-resolve scripts/Manifest.toml (bumps Runic within its compat bound)
 	julia --project=scripts/ -e 'using Pkg; Pkg.update(); Pkg.precompile();'
 
 format: scripts_init ## Format Julia code
@@ -20,23 +17,27 @@ format: scripts_init ## Format Julia code
 check-format: scripts_init ## Check Julia code formatting (does not modify files)
 	julia --project=scripts/ scripts/formatter.jl
 
-.PHONY: benchmark
-
-bench: ## Run benchmark, use `make bench branch=...` to test against a specific branch
-	julia --startup-file=no --project=scripts/ scripts/bench.jl $(branch)
-
-.PHONY: docs
+# Every package has its own documentation site. ReactiveMP's links to the rule packages' sites
+# through their published inventories.
+.PHONY: doc_init docs
 
 doc_init:
-	julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate();'
+	julia --project=docs -e 'using Pkg; Pkg.instantiate();'
 
-docs: doc_init ## Generate documentation
-	julia --project=docs/ docs/make.jl
+docs: doc_init ## Build ReactiveMP's documentation site, running its doctests
+	julia --startup-file=no --project=docs docs/make.jl
 
-.PHONY: test
+.PHONY: test test-all test-reactant
 
-test: ## Run tests (make test test_args="folder1:test1 folder2:test2" to run reduced testsets. RUN_AQUA=false make test ... to skip slow Aqua checks enabled by default)
-	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'	
-	
+test: ## Run the root suite except items tagged `:slow`. test_args="nodes", "tag:engine", "name:MessageMapping" all work; RUN_AQUA=false skips the slow Aqua checks
+	julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
+
+test-all: ## Run the root suite, `:slow` items included, as CI does
+	TEST_ALL=true julia -e 'import Pkg; Pkg.activate("."); Pkg.test(test_args = split("$(test_args)") .|> string)'
+
+test-reactant: ## Compile an unrolled model with Reactant (ReactiveMPReactantExt), from test/reactant's own environment
+	julia --startup-file=no --project=test/reactant -e 'using Pkg; Pkg.instantiate()'
+	julia --startup-file=no --project=test/reactant test/reactant/runtests.jl
+
 help:  ## Display this help
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.0.0] - 2026-10-19
+
+ReactiveMP 7 is a new rule system for the engine. Nodes and rules are declared with
+[MessagePassingRulesBase](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl), and the
+engine holds no rules of its own: they live in registered packages, one for the standard nodes and
+one for each other node. Code that defines nodes or rules needs porting; the
+[migration guide](https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v6-to-v7/)
+walks through it, from what moved where to a checklist for a mechanical port. Models that only use
+nodes and rules from the packages run as before.
+
+### Breaking
+
+- Nodes and rules are declared with MessagePassingRulesBase's keyword macros,
+  `@define_factor_node`, `@define_message_update_rule`, `@define_marginal_update_rule` and
+  `@define_average_energy`, in place of `@node`, `@rule`, `@marginalrule` and `@average_energy`.
+  Rules are called with `@call_message_update_rule`, `@call_marginal_update_rule` and
+  `@call_average_energy`, which return a `RuleResult`: `getresult` is the value, `getlogscale` its
+  log scale.
+- The rules live in packages of their own, each in its repository `ReactiveBayes/<Package>.jl`:
+  StandardMessagePassingRules (the distributions, arithmetic, logic, the mixtures and Probit), and
+  Delta, GaussianCoupling, Autoregressive, SoftDot, ContinuousTransition, Polya, BIFM, Flow,
+  DiscreteTransition and GCV. Loading a package is enough for the engine to find its rules.
+  PolyaMessagePassingRules is GPL-3; every other package is MIT.
+- A node's `meta` is replaced by an algorithm, such as `ARVMP`, `CTVMP`, `GCVApproximation`,
+  `ProbitEP`, `DeltaApproximation` or `FlowApproximation`, and by services in the rule context
+  (`ctx.rng`, `ctx.matrix_correction`), given with the activation option `context`.
+- Functional dependencies are replaced by dependency declarations (`@define_dependencies`,
+  `dependencies = …` on a node), which may extend the default scheme with `default`.
+- `factornode` takes its interfaces and its factorisation by name, `(:out, x)` and
+  `((:out, :μ), (:v,))`, and `FactorNodeActivationOptions` takes keywords.
+- A log scale is part of a message, `Message{D, L}` and `Marginal{D, L}`, tracked with the
+  activation option `logscales = true`, in place of `LogScaleAnnotations`.
+- The Delta node takes three methods: `Unscented()`, `Linearization()` and, once
+  ExponentialFamilyProjection is loaded, `CVIProjection()`. `CVI`, `ProdCVI`, `LaplaceApproximation`,
+  `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature` and the spherical-radial cubature
+  are gone.
+- `+` takes any number of terms, its interfaces `out` and the group `in`, so `a + b + c` is one
+  node; `ManyPlus` is gone.
+- Several rules and average energies are corrected where v6's were wrong, and a few run under
+  slightly different conditions: the migration guide's *Behaviour that changed* lists every one.
+- Julia 1.10 or later is required.
+
+### Added
+
+- Rule fallbacks: the activation option `rulefallback`, such as `NodeFunctionRuleFallback()`,
+  gives the message where no rule matches, computed from the node's log-density.
+- The rule context is open: any `NamedTuple` given with the activation option `context` reaches the
+  rules as `ctx.name`, and the engine checks a rule's declared services as it resolves it.
+- Engine diagnostics, off by default (`EngineDiagnostics`): purity, in-place forms and checked
+  buffers of the rules a model runs.
+- Tracing: the callbacks receive every rule call, every marginal rule call and every term of the
+  free energy, with the rule that ran; with no handler listening, nothing is built.
+- The activation option `initial_messages`, a node's default initial messages, and
+  `MarginalRelaxation`, which starts factorisations whose clusters wait on each other.
+- Scratch space and in-place forms for rules, and checks of a rule's inputs (`args_check`,
+  `RuleInputError`); a `RuleNotFoundError` lists the near misses and what to try.
+- Rich displays: a node, a rule, a rule's result or a dependency declaration draws itself in
+  notebooks and the documentation, and `drawing(x)` gives the drawing as SVG.
+- `ReactiveMPReactantExt`: graphs build untraced under Reactant, so a model compiled with Reactant
+  runs its rules traced (partial Reactant support; see EnzymeAD/Reactant.jl#3506).
+- New documentation: concepts, an example node every page runs, and the v6 → v7 migration guide.
+
+### Changed
+
+- The integration test runs RxInfer's suite on the latest Julia only; the root suite covers every supported version.
+- The code is formatted with Runic, checked in CI by the workflow *Format* (`make format` fixes a diff), in place of JuliaFormatter and its pull requests that applied the formatting.
+- The engine runs faster than v6 on the models measured, and the free energy's average energies
+  resolve their rule at compile time.
+- `FormConstraintCheckLast` applies once to each outbound message, as documented.
+- A message or marginal that nothing may annotate shares one frozen, empty `AnnotationDict`, and
+  span ids come from a counter instead of `uuid4()`.
+
+### Removed
+
+- The v6 rule macros and every node's rules from the engine (now in the rule packages), `ManyPlus`,
+  and the Delta methods listed above.
+
 ## [6.6.0] - 2026-09-25
 
 ### Added
@@ -185,11 +262,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.6.6] - 2026-03-13
 
+### Changed
+- Added performance test for structured rule specialized for `MvNormalMeanScalePrecision`
+
 ### Fixed
 - Implemented effective rules with specialized dispatch for `MvNormalMeanScalePrecision` ([#579](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/579))
-
-### Tests
-- Added performance test for structured rule specialized for `MvNormalMeanScalePrecision`
 
 ## [5.6.5] - 2026-02-02
 
@@ -203,21 +280,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed vibe coded required fields from issue template ([#562](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/562))
 - Bumped compat for Optim to 2 ([#574](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/574))
 - Removed `Zygote` extension requirement for compatibility
+- Pre-computed double loops in CT model ([#571](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/571))
 
 ### Fixed
 - Fixed documentation build ([#567](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/567))
 
-### Performance
-- Pre-computed double loops in CT model ([#571](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/571))
-
 ## [5.6.4] - 2025-11-18
+
+### Changed
+- Added `MessageMapping` documentation ([#550](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/550))
 
 ### Fixed
 - Fixed bug in average energy of `Uninformative` type ([#553](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/553))
 - Improved robustness of inverse precision matrix computation in `MvNormalMeanPrecision` rule ([#540](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/540))
-
-### Documentation
-- Added `MessageMapping` documentation ([#550](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/550))
 
 ## [5.6.3] - 2025-11-04
 
@@ -227,15 +302,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Changed dispatch to `AbstractVector` to allow other vector implementations ([#536](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/536))
+- Improved code coverage with tests for BIFM, Autoregressive, Mixture, GammaMixture, Wishart, InverseWishart, DotProduct, Multiplication, and Uniform nodes ([#539](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/539))
 
 ### Fixed
 - Renamed softdot marginal rules test file to include it in test runs ([#535](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/535))
 - Avoided `Vararg` deprecation warnings ([#537](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/537))
 - Defined `AverageEnergy` for `Mixture` node with warning ([#546](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/546))
 - Allowed different numeric types for `GammaShapeLikelihood` constructor ([#544](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/544))
-
-### Tests
-- Improved code coverage with tests for BIFM, Autoregressive, Mixture, GammaMixture, Wishart, InverseWishart, DotProduct, Multiplication, and Uniform nodes ([#539](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/539))
 
 ## [5.6.2] - 2025-10-21
 

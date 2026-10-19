@@ -29,14 +29,5 @@ examples/*Compiled
 
 **/Manifest.toml
 **/LocalPreferences.toml
-!benchmark/Manifest.toml
-# Tracked so `make format` uses a reproducible JuliaFormatter version everywhere.
+# Tracked so `make format` uses a reproducible Runic version everywhere.
 !scripts/Manifest.toml
-
-**/.benchmarkci
-benchmark/*.json
-
-benchmark_logs/*
-
-AGENTS.md
-CLAUDE.md

@@ -5,6 +5,7 @@
 [![Build Status](https://github.com/reactivebayes/ReactiveMP.jl/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/reactivebayes/ReactiveMP.jl/actions)
 [![Coverage](https://codecov.io/gh/reactivebayes/ReactiveMP.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/reactivebayes/ReactiveMP.jl)
 [![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.8381133.svg)](https://zenodo.org/doi/10.5281/zenodo.5913616)
+[![Code style: Runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
 
 # Overview
 
@@ -12,15 +13,18 @@
 
 ReactiveMP.jl is designed for advanced users who need fine-grained control over message passing, custom factor nodes, and custom update rules. It does not create a specific message passing schedule in advance, but rather _reacts_ on changes in the data source (hence _reactive_ in the name of the package).
 
+The engine holds no update rules of its own. Nodes and rules are declared with [`MessagePassingRulesBase`](https://github.com/ReactiveBayes/MessagePassingRulesBase.jl), and the rules live in packages of their own, each in its repository `ReactiveBayes/<Package>.jl`: `StandardMessagePassingRules` for the standard distributions, arithmetic, logic and mixtures, and a package for each other node (Delta, GaussianCoupling, Autoregressive, SoftDot, ContinuousTransition, Polya, BIFM, Flow, DiscreteTransition and GCV). Loading a rule package is enough for the engine to find its rules. A new rule package starts from [MessagePassingRulesTemplate.jl](https://github.com/ReactiveBayes/MessagePassingRulesTemplate.jl).
+
 # Installation
 
-Install ReactiveMP through the Julia package manager:
+ReactiveMP and the rule packages are registered in Julia's General registry. Add the engine with the rule packages your model uses:
 
 ```julia
-] add ReactiveMP
+import Pkg
+Pkg.add(["ReactiveMP", "StandardMessagePassingRules"])
 ```
 
-Optionally, use `] test ReactiveMP` to validate the installation by running the test suite.
+Version 7 changed how nodes and rules are defined; the [migration guide](https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v6-to-v7/) explains how to port code written for version 6.
 
 # Documentation
 
@@ -32,7 +36,7 @@ The ReactiveMP.jl package is intended for advanced users with a deep understandi
 
 # Ecosystem
 
-The `RxInfer` framework consists of four *core* packages developed by [ReactiveBayes](https://github.com/reactivebayes/):
+The `RxInfer` framework consists of five *core* packages developed by [ReactiveBayes](https://github.com/reactivebayes/):
 
 - [`ReactiveMP.jl`](https://github.com/reactivebayes/ReactiveMP.jl) - the underlying message passing-based inference engine (this package)
 - [`RxInfer.jl`](https://github.com/reactivebayes/RxInfer.jl) - user-friendly modeling and inference layer

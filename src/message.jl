@@ -5,169 +5,250 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, *, +, ndims, precision, length, size, show
 import BayesBase: prod
 
+# Text shared by the docstrings of `Message` and `Marginal` and of their accessors.
+const DOC_CLAMPED = """
+A clamped value is the result of computations on constants and observations alone: it never
+changes during inference."""
+
+const DOC_INITIAL = """
+An initial value was set before inference, with [`ReactiveMP.set_initial_message!`](@ref) or
+[`ReactiveMP.set_initial_marginal!`](@ref), or computed from clamped and initial values only,
+at least one of them initial."""
+
+const DOC_EQUALITY = """
+`==` compares the data and the `is_clamped` and `is_initial` flags, not the annotations or the
+log scale: those describe how a value was computed, not the belief it holds. Compare
+[`getannotations`](@ref) and [`getlogscale`](@ref) explicitly where they matter."""
+
+const DOC_STATISTICS = """
+The statistics of the data are forwarded: `mean`, `median`, `mode`, `var`, `std`, `cov`,
+`invcov`, `precision`, `entropy`, `params`, `mean_cov`, `mean_var`, `mean_invcov`,
+`mean_precision`, `weightedmean` and its variants, `shape`, `scale`, `rate`, `probvec`,
+`logdetcov`, `length`, `ndims`, `size`, `pdf` and `logpdf`."""
+
 """
-An abstract supertype for all concrete message types.
+    AbstractMessage
+
+The supertype of the messages the engine passes: a [`Message`](@ref), which holds its value, and a
+[`DeferredMessage`](@ref), which computes it on demand. [`as_message`](@ref) turns either into a
+`Message`.
 """
 abstract type AbstractMessage end
 
+# The representation is a mutable struct with `const` fields: measured faster than an
+# immutable one through the equality chain, and lighter everywhere.
 """
-    Message(data, is_clamped, is_initial[, annotations])
+    Message(data, is_clamped::Bool, is_initial::Bool)
+    Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict)
+    Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict, logscale)
 
-An implementation of a message in variational message passing framework.
+A message along an edge of the factor graph: its data, usually a distribution, with the flags
+and the metadata the engine tracks for it.
 
 # Arguments
-- `data::D`: message always holds some data object associated with it, which is usually a probability distribution, but can also be an arbitrary function
-- `is_clamped::Bool`, specifies if this message was the result of constant computations (e.g. clamped constants)
-- `is_initial::Bool`, specifies if this message was used for initialization
-- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. log-scale, input arguments). Defaults to an empty `AnnotationDict()`.
 
-# Example
+- `data`: the message itself, usually a distribution, and `missing` where it is not known,
+  such as an unobserved data point;
+- `is_clamped`: whether the message comes from constants and observations alone. $(DOC_CLAMPED)
+- `is_initial`: whether the message was set before inference or computed from initial values
+  only. $(DOC_INITIAL)
+- `annotations`: the [`ReactiveMP.AnnotationDict`](@ref) of optional metadata (see
+  [`ReactiveMP.AbstractAnnotations`](@ref)). By default the engine's shared empty annotations,
+  which nothing may write to: a message meant to be annotated is given its own
+  `AnnotationDict()`;
+- `logscale`: the log of the constant the normalised `data` leaves out (see
+  [`getlogscale`](@ref)): a number, an
+  [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) with its reason, or
+  `nothing`, the default, where log scales are not tracked.
+
+$(DOC_STATISTICS)
+
+$(DOC_EQUALITY)
+
+# Examples
 
 ```jldoctest
-julia> distribution = Gamma(10.0, 2.0)
-Distributions.Gamma{Float64}(α=10.0, θ=2.0)
-
-julia> message = Message(distribution, false, true)
+julia> message = Message(Gamma(10.0, 2.0), false, true)
 Message(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
 
 julia> mean(message)
 20.0
 
-julia> getdata(message)
-Distributions.Gamma{Float64}(α=10.0, θ=2.0)
-
-julia> is_clamped(message)
-false
-
-julia> is_initial(message)
-true
-
-```
-
-# Equality
-
-`==` compares `data`, `is_clamped` and `is_initial`, but **not** `annotations`. Two messages
-carrying the same distribution are equal even when their annotations differ — including
-`:logscale`, which underpins free-energy bookkeeping:
-
-```jldoctest
-julia> using ReactiveMP, BayesBase, ExponentialFamily
+julia> is_clamped(message), is_initial(message)
+(false, true)
 
 julia> a = Message(NormalMeanVariance(0.0, 1.0), false, false);
 
-julia> b = Message(NormalMeanVariance(0.0, 1.0), false, false);
+julia> b = Message(NormalMeanVariance(0.0, 1.0), false, false, ReactiveMP.AnnotationDict(), -0.5);
 
-julia> ReactiveMP.annotate!(ReactiveMP.getannotations(b), :logscale, 42.0);
-
-julia> a == b
-true
-
-julia> ReactiveMP.getannotations(a) == ReactiveMP.getannotations(b)
-false
-
+julia> a == b, getlogscale(b)
+(true, -0.5)
 ```
 
-This is intentional: annotations are out-of-band metadata about *how* a message was computed,
-not part of the belief the message represents. Compare `getannotations` explicitly when you
-need annotation-sensitive equality.
+See also [`Marginal`](@ref), [`DeferredMessage`](@ref), [`as_message`](@ref).
 """
-mutable struct Message{D} <: AbstractMessage    # `mutable` structure here appears to be more performance
-    const data        :: D                      # in `RxInfer` benchmarks
-    const is_clamped  :: Bool                   # could be revised at some point though
-    const is_initial  :: Bool
-    const annotations :: AnnotationDict
+mutable struct Message{D, L} <: AbstractMessage
+    const data::D
+    const is_clamped::Bool
+    const is_initial::Bool
+    const annotations::AnnotationDict
+    const logscale::L
 end
 
 Message(data, is_clamped::Bool, is_initial::Bool) =
-    Message(data, is_clamped, is_initial, AnnotationDict())
+    Message(data, is_clamped, is_initial, EMPTY_ANNOTATIONS, nothing)
+Message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict) =
+    Message(data, is_clamped, is_initial, annotations, nothing)
+
+# A barrier for a message built from a value inferred abstractly, such as a rule's result: the
+# call dispatches on the value's type, where an inlined constructor would compute `D` and `L`
+# at run time (`Core._compute_sparams`), several times slower.
+@noinline new_message(data, is_clamped::Bool, is_initial::Bool, annotations::AnnotationDict, logscale) =
+    Message(data, is_clamped, is_initial, annotations, logscale)
 
 """
-    as_message(::AbstractMessage)
+    as_message(message::AbstractMessage) -> Message
+    as_message(marginal::Marginal) -> Message
 
-A function that converts an abstract message to an instance of `Message`.
+The [`Message`](@ref) a value stands for: a `Message` itself; the message a
+[`DeferredMessage`](@ref) computes, computed on the first call and cached for the next; or a
+`Marginal`'s data, flags, annotations and log scale as a message.
 """
 function as_message end
 
 as_message(message::Message) = message
 
 """
-    getdata(message::Message)    
+    getdata(message::Message)
 
-Returns `data` associated with the `message`.
+The data of `message`, usually a distribution, or `missing`.
 """
 getdata(message::Message) = message.data
 
 """
-    is_clamped(message::Message)
+    is_clamped(message::Message) -> Bool
 
-Checks if `message` is clamped or not.
+Whether `message` comes from constants and observations alone. $(DOC_CLAMPED)
 """
 is_clamped(message::Message) = message.is_clamped
 
 """
-    is_initial(message::Message)
+    is_initial(message::Message) -> Bool
 
-Checks if `message` is initial or not.
+Whether `message` was set before inference or computed from initial values only. $(DOC_INITIAL)
 """
 is_initial(message::Message) = message.is_initial
 
 """
-    getannotations(message::Message)
+    getannotations(message::Message) -> AnnotationDict
 
-Returns the [`AnnotationDict`](@ref) associated with the `message`.
+The [`ReactiveMP.AnnotationDict`](@ref) of `message`, empty unless annotation processors or a rule
+taking the `ann` slot wrote to it. Where nothing may write to it, it is the shared, frozen empty
+value, which cannot be annotated afterwards.
 """
 getannotations(message::Message) = message.annotations
 
-typeofdata(message::Message) = typeof(getdata(message))
+"""
+    getlogscale(message::Message)
+
+The log scale of `message`: the log of the constant its normalised distribution leaves out, a
+number, or an [`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale) saying why
+it is not known. Log scales are tracked when the node that computed the message was activated
+with `logscales = true` (see [`ReactiveMP.FactorNodeActivationOptions`](@ref)).
+
+# Throws
+
+- `ArgumentError` when log scales are not tracked, the message carrying `nothing`.
+"""
+getlogscale(message::Message) = tracked_logscale(message.logscale)
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
-getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
+# No inputs at all, which the `Message` and `Marginal` methods above would both match.
+getdata(::Tuple{}) = ()
+getdata(messages::AbstractArray{<:Message}) = map(getdata, messages)
 
 function show(io::IO, message::Message)
-    print(io, "Message(", getdata(message), ")")
+    print(io, "Message(", MessagePassingRulesBase.prettify_modules(sprint(print, getdata(message); context = io)), ")")
+    message.logscale === nothing || print(io, " with logscale = ", message.logscale)
     ann = getannotations(message)
-    if !isempty(ann)
+    return if !isempty(ann)
         print(io, " with ", ann)
     end
 end
 
-# We need this dummy method as Julia is not smart enough to 
+# We need this dummy method as Julia is not smart enough to
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
     return left.is_clamped == right.is_clamped &&
-           left.is_initial == right.is_initial &&
-           left.data == right.data
+        left.is_initial == right.is_initial &&
+        left.data == right.data
 end
 
 """
-    MessageProductContext(kwargs...)
+    MessageProductContext(; prod_constraint = GenericProd(), form_constraint = UnspecifiedFormConstraint(), form_constraint_check_strategy = FormConstraintCheckLast(), fold_strategy = MessagesProductFromLeftToRight(), annotations = nothing, callbacks = nothing)
 
-The structure that defines the context for the product of **two** messages within ReactiveMP.
-The product is executed with the [`ReactiveMP.compute_product_of_messages`](@ref) function and 
-uses the `BayesBase.prod` under the hood. See BayesBase product API documentation for detailed description.
+How a variable multiplies messages: the settings [`ReactiveMP.compute_product_of_messages`](@ref)
+and [`ReactiveMP.compute_product_of_two_messages`](@ref) read. A random variable holds two, one for
+its outbound messages and one for its marginal (see
+[`RandomVariableActivationOptions`](@ref)).
 
-The following `kwargs` are supported:
-- `prod_constraint`: defines the first argument for the `BayesBase.prod` function (default is `BayesBase.GenericProd`)
-- `form_constraint`: defines the form constraint to be applied on the result of computation, default is [`ReactiveMP.UnspecifiedFormConstraint`](@ref)
-- `form_constraint_check_strategy`: defines the strategy to check the specified form constraint, either [`ReactiveMP.FormConstraintCheckLast`](@ref) or [`ReactiveMP.FormConstraintCheckEach`](@ref), default is [`ReactiveMP.FormConstraintCheckLast`](@ref)
-    + [`ReactiveMP.FormConstraintCheckLast`](@ref) will only call [`ReactiveMP.constrain_form`](@ref) at the end of the `[ReactiveMP.compute_product_of_messages]`
-    + [`ReactiveMP.FormConstraintCheckEach`](@ref) will call [`ReactiveMP.constrain_form`](@ref) at each of the [`ReactiveMP.compute_product_of_two_messages`](@ref)
-- `fold_strategy`: defines the strategy (or simply speaking the direction) of the messages product for [`ReactiveMP.compute_product_of_messages`](@ref), default is [`MessagesProductFromLeftToRight`](@ref). Can be a custom function that accepts a `variable`, `context` and collection of `messages` and does arbitrary order, but still needs to call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood (unless you do some experimental stuff). By the way it is called __fold__ to reflect the computer science term with "left-fold" or "right-fold" (and we use the builtin Julia `foldl` and `foldr` functions for that).
-- `callbacks`: callbacks handler, see [`ReactiveMP.invoke_callback`](@ref) for more details.
+# Keywords
 
-See also: [`ReactiveMP.compute_product_of_messages`](@ref), [`ReactiveMP.compute_product_of_two_messages`]
+- `prod_constraint`: the strategy `BayesBase.prod` multiplies two distributions with. Default
+  `BayesBase.GenericProd()`, which keeps a product it has no closed form for as a
+  `BayesBase.ProductOf`;
+- `form_constraint`: the form the product is constrained to (see [`constrain_form`](@ref)).
+  Default [`UnspecifiedFormConstraint`](@ref), which leaves it as it is;
+- `form_constraint_check_strategy`: when the form constraint applies, once to the whole product,
+  [`FormConstraintCheckLast`](@ref), the default, or after each pairwise product,
+  [`FormConstraintCheckEach`](@ref); [`FormConstraintCheckPickDefault`](@ref) is resolved here to
+  the constraint's own, [`default_form_check_strategy`](@ref);
+- `fold_strategy`: the order the messages are multiplied in:
+  [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), the default,
+  [`ReactiveMP.MessagesProductFromRightToLeft`](@ref), or a function `f(variable, context,
+  messages)` that multiplies them with [`ReactiveMP.compute_product_of_two_messages`](@ref) in any
+  order;
+- `annotations`: the annotation processors that merge the two sides' annotations in each
+  pairwise product, a collection of [`ReactiveMP.AbstractAnnotations`](@ref). Default `nothing`,
+  which gives each product empty annotations, except that a product with a `missing` side keeps
+  the other side's;
+- `callbacks`: the handler of the product events, such as
+  [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref) (see [`ReactiveMP.invoke_callback`](@ref)).
+  Default `nothing`, none.
+
+RxInfer builds it from a variable's form constraint, with [`default_prod_constraint`](@ref) and
+[`default_form_check_strategy`](@ref) of that constraint.
+
+See also [`ReactiveMP.compute_product_of_messages`](@ref),
+[`ReactiveMP.compute_product_of_two_messages`](@ref).
 """
-Base.@kwdef struct MessageProductContext{C, F, S, L, N, A}
-    prod_constraint::C = BayesBase.GenericProd()
-    form_constraint::F = UnspecifiedFormConstraint()
-    form_constraint_check_strategy::S = FormConstraintCheckLast()
-    fold_strategy::L = MessagesProductFromLeftToRight()
-    annotations::N = nothing
-    callbacks::A = nothing
+struct MessageProductContext{C, F, S, L, N, A}
+    prod_constraint::C
+    form_constraint::F
+    form_constraint_check_strategy::S
+    fold_strategy::L
+    annotations::N
+    callbacks::A
+
+    function MessageProductContext(prod_constraint::C, form_constraint::F, form_constraint_check_strategy, fold_strategy::L, annotations::N, callbacks::A) where {C, F, L, N, A}
+        strategy = resolve_form_check_strategy(form_constraint_check_strategy, form_constraint)
+        return new{C, F, typeof(strategy), L, N, A}(prod_constraint, form_constraint, strategy, fold_strategy, annotations, callbacks)
+    end
 end
+
+MessageProductContext(;
+    prod_constraint = BayesBase.GenericProd(),
+    form_constraint = UnspecifiedFormConstraint(),
+    form_constraint_check_strategy = FormConstraintCheckLast(),
+    fold_strategy = MessagesProductFromLeftToRight(),
+    annotations = nothing,
+    callbacks = nothing,
+) = MessageProductContext(prod_constraint, form_constraint, form_constraint_check_strategy, fold_strategy, annotations, callbacks)
+
+resolve_form_check_strategy(strategy, form_constraint) = strategy
+resolve_form_check_strategy(::FormConstraintCheckPickDefault, form_constraint) = default_form_check_strategy(form_constraint)
 
 function Base.show(io::IO, ctx::MessageProductContext)
     print(io, "MessageProductContext(strategy=")
@@ -185,36 +266,44 @@ function Base.show(io::IO, ctx::MessageProductContext)
 end
 
 """
-    compute_product_of_two_messages(variable::AbstractVariable, context::MessageProductContext, left::Message, right::Message)
+    compute_product_of_two_messages(variable::AbstractVariable, context::MessageProductContext, left, right) -> Message
 
-Computes the product of two messages `left` and `right` for a given `variable` using the provided `context`.
-Returns a new message with the result of the multiplication (not necessarily normalized).
-Applies `context.form_constraint` if `context.form_constraint_check_strategy` is set to [`ReactiveMP.FormConstraintCheckEach`](@ref).
+Multiply two messages for `variable`, with `BayesBase.prod` under `context.prod_constraint`. A
+[`DeferredMessage`](@ref) is computed first (see [`as_message`](@ref)). The product is a
+[`Message`](@ref), not necessarily normalised; `context.form_constraint` applies to it here when
+the strategy is [`FormConstraintCheckEach`](@ref).
 
-The `variable` argument identifies which variable this product is being computed for, which is useful for callbacks (see [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)).
+The product is clamped when both messages are, and initial when it is not clamped and each
+side is clamped or initial.
 
-## `is_clamped` and `is_initial`
+Its log scale is the sum of the two messages' log scales and the product's own,
+`BayesBase.compute_logscale(new, left, right)`. A `missing` side leaves the other side's; either
+side's `nothing`, log scales not tracked, gives `nothing`. It is undefined, an
+[`UndefinedLogScale`](@extref MessagePassingRulesBase.UndefinedLogScale), when either side's is,
+when the pair has no `compute_logscale`, and when a form constraint changes the product, returning
+something other than it was given.
 
-The [`ReactiveMP.Message`](@ref) carries the `is_clamped` and `is_initial` flags.
-The rules for the product are the following:
-- If both messages are clamped, the result is clamped, OR
-- If both messages are either clamped or initial, the result is initial, OR
-- The result is neither clamped nor initial
+Its annotations are merged by the processors in `context.annotations` (see
+[`ReactiveMP.post_product_annotations!`](@ref)).
 
-See: [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref)
+`variable` names the variable the product is for; it reaches the callbacks, which receive
+[`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref) and
+[`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref), and, with the strategy
+[`FormConstraintCheckEach`](@ref), the form constraint events.
+
+See also [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref).
 """
 function compute_product_of_two_messages(
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    left::Message,
-    right::Message,
-)
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        left::Message,
+        right::Message,
+    )
     span_id = generate_span_id(context.callbacks)
-    invoke_callback(
-        context.callbacks,
-        BeforeProductOfTwoMessagesEvent(
+    @invoke_callback(
+        context.callbacks, BeforeProductOfTwoMessagesEvent(
             variable, context, left, right, span_id
-        ),
+        )
     )
 
     # We propagate clamped message, in case if both are clamped
@@ -226,77 +315,100 @@ function compute_product_of_two_messages(
         (is_clamped_or_initial(right))
 
     # process distributions
-    left_dist  = getdata(left)
+    left_dist = getdata(left)
     right_dist = getdata(right)
-    new_dist   = prod(context.prod_constraint, left_dist, right_dist)
+    new_dist = product_of_data(context.prod_constraint, left_dist, right_dist)
+    new_logscale = product_logscale(new_dist, left_dist, right_dist, left.logscale, right.logscale)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
         form_span_id = generate_span_id(context.callbacks)
-        invoke_callback(
-            context.callbacks,
-            BeforeFormConstraintAppliedEvent(
+        @invoke_callback(
+            context.callbacks, BeforeFormConstraintAppliedEvent(
                 variable,
                 context,
                 FormConstraintCheckEach(),
                 new_dist,
                 form_span_id,
-            ),
+            )
         )
         unconstrained_dist = new_dist
         new_dist = constrain_form(context.form_constraint, new_dist)
-        invoke_callback(
-            context.callbacks,
-            AfterFormConstraintAppliedEvent(
+        new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale)
+        @invoke_callback(
+            context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
                 context,
                 FormConstraintCheckEach(),
                 unconstrained_dist,
                 new_dist,
                 form_span_id,
-            ),
+            )
         )
     end
 
     # process annotations
-    left_ann  = getannotations(left)
+    left_ann = getannotations(left)
     right_ann = getannotations(right)
-    new_ann   = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
-    result    = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
+    new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann, new_logscale)
 
-    invoke_callback(
-        context.callbacks,
-        AfterProductOfTwoMessagesEvent(
+    @invoke_callback(
+        context.callbacks, AfterProductOfTwoMessagesEvent(
             variable, context, left, right, result, new_ann, span_id
-        ),
+        )
     )
 
     return result
 end
 
+# `missing`, a message not computed yet, is the product's identity, whatever the product
+# strategy; BayesBase's `prod(::GenericProd, ::ProductOf, ::Missing)` is ambiguous, and a
+# product with no closed form meets `missing` in an equality chain's partial products.
+product_of_data(strategy, left, right) = prod(strategy, left, right)
+product_of_data(strategy, ::Missing, right) = right
+product_of_data(strategy, left, ::Missing) = left
+product_of_data(strategy, ::Missing, ::Missing) = missing
+
 # Sometimes we call the product on the `DeferredMessage` that need to be casted to a `Message`
 function compute_product_of_two_messages(
-    variable::AbstractVariable, context::MessageProductContext, left, right
-)
+        variable::AbstractVariable, context::MessageProductContext, left, right
+    )
     return compute_product_of_two_messages(
         variable, context, as_message(left), as_message(right)
     )
 end
 
 """
-    compute_product_of_messages(variable::AbstractVariable, context::MessageProductContext, messages)
+    compute_product_of_messages(variable::AbstractVariable, context::MessageProductContext, messages) -> Message
 
-Computes the product of a **collection** of messages for a given `variable` (as opposed to [`ReactiveMP.compute_product_of_two_messages`](@ref), which handles exactly **two** messages). Uses `context.fold_strategy` to determine the order in which [`ReactiveMP.compute_product_of_two_messages`](@ref) is called. By default this is [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), but can be set to an arbitrary function that accepts `variable`, `context` and `messages` and which **must** call [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood.
+Multiply a collection of messages for `variable`, pairwise with
+[`ReactiveMP.compute_product_of_two_messages`](@ref), in the order `context.fold_strategy` gives.
+With the strategy [`FormConstraintCheckLast`](@ref), `context.form_constraint` applies once, to the
+whole product, and a form constraint that changes it leaves its log scale undefined.
 
-See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref)
+The callbacks receive [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref) and
+[`ReactiveMP.AfterProductOfMessagesEvent`](@ref) around the whole product.
+
+# Examples
+
+```jldoctest
+julia> x = randomvar();
+
+julia> messages = (Message(NormalMeanVariance(0.0, 1.0), false, false), Message(NormalMeanVariance(2.0, 1.0), false, false));
+
+julia> product = ReactiveMP.compute_product_of_messages(x, ReactiveMP.MessageProductContext(), messages);
+
+julia> mean(product) ≈ 1.0 && var(product) ≈ 0.5
+true
+```
+
+See also [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref).
 """
 function compute_product_of_messages(
-    variable::AbstractVariable, context::MessageProductContext, messages
-)
-    span_id = generate_span_id(context.callbacks)
-    invoke_callback(
-        context.callbacks,
-        BeforeProductOfMessagesEvent(variable, context, messages, span_id),
+        variable::AbstractVariable, context::MessageProductContext, messages
     )
+    span_id = generate_span_id(context.callbacks)
+    @invoke_callback(context.callbacks, BeforeProductOfMessagesEvent(variable, context, messages, span_id))
 
     result = as_message(
         compute_product_of_messages(
@@ -304,40 +416,47 @@ function compute_product_of_messages(
         ),
     )
 
+    return finish_product_of_messages(variable, context, messages, result, span_id)
+end
+
+# A barrier: the fold's result is inferred abstractly, since the messages come from abstractly
+# typed streams, so the form constraint and the events run behind a call that dispatches on its
+# concrete type. A constraint that returns its input keeps the product as it is.
+@noinline function finish_product_of_messages(variable::AbstractVariable, context::MessageProductContext, messages, result::Message, span_id)
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
         dist = getdata(result)
         form_span_id = generate_span_id(context.callbacks)
-        invoke_callback(
-            context.callbacks,
-            BeforeFormConstraintAppliedEvent(
+        @invoke_callback(
+            context.callbacks, BeforeFormConstraintAppliedEvent(
                 variable, context, FormConstraintCheckLast(), dist, form_span_id
-            ),
+            )
         )
         constrained_dist = constrain_form(context.form_constraint, dist)
-        invoke_callback(
-            context.callbacks,
-            AfterFormConstraintAppliedEvent(
+        @invoke_callback(
+            context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
                 context,
                 FormConstraintCheckLast(),
                 dist,
                 constrained_dist,
                 form_span_id,
-            ),
+            )
         )
-        result = Message(
-            constrained_dist,
-            is_clamped(result),
-            is_initial(result),
-            getannotations(result),
-        )
+        if constrained_dist !== dist
+            result = Message(
+                constrained_dist,
+                is_clamped(result),
+                is_initial(result),
+                getannotations(result),
+                constrained_logscale(dist, constrained_dist, result.logscale),
+            )
+        end
     end
 
-    invoke_callback(
-        context.callbacks,
-        AfterProductOfMessagesEvent(
+    @invoke_callback(
+        context.callbacks, AfterProductOfMessagesEvent(
             variable, context, messages, result, span_id
-        ),
+        )
     )
 
     return result
@@ -346,19 +465,22 @@ end
 """
     MessagesProductFromLeftToRight()
 
-The default fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Computes the product of messages from left to right using `foldl` within [`ReactiveMP.compute_product_of_messages`](@ref).
+The fold strategy that multiplies messages from the first to the last, with `foldl`: the
+default of [`ReactiveMP.MessageProductContext`](@ref).
+
+See also [`ReactiveMP.MessagesProductFromRightToLeft`](@ref).
 """
 struct MessagesProductFromLeftToRight end
 
 function compute_product_of_messages(
-    ::MessagesProductFromLeftToRight,
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    messages,
-)
+        ::MessagesProductFromLeftToRight,
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        messages,
+    )
     return foldl(
         (left, right) ->
-            compute_product_of_two_messages(variable, context, left, right),
+        compute_product_of_two_messages(variable, context, left, right),
         messages,
     )
 end
@@ -366,19 +488,21 @@ end
 """
     MessagesProductFromRightToLeft()
 
-Alternative fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Computes the product of messages from right to left using `foldr` within [`ReactiveMP.compute_product_of_messages`](@ref).
+The fold strategy that multiplies messages from the last to the first, with `foldr`.
+
+See also [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), [`ReactiveMP.MessageProductContext`](@ref).
 """
 struct MessagesProductFromRightToLeft end
 
 function compute_product_of_messages(
-    ::MessagesProductFromRightToLeft,
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    messages,
-)
+        ::MessagesProductFromRightToLeft,
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        messages,
+    )
     return foldr(
         (left, right) ->
-            compute_product_of_two_messages(variable, context, left, right),
+        compute_product_of_two_messages(variable, context, left, right),
         messages,
     )
 end
@@ -386,20 +510,21 @@ end
 """
     compute_product_of_messages(f::Function, variable::AbstractVariable, context::MessageProductContext, messages)
 
-Custom fold strategy for [`ReactiveMP.compute_product_of_messages`](@ref). When `context.fold_strategy` is set to a `Function`,
-it will be called with `variable`, `context` and `messages` as arguments. The function must call
-[`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood to compute the pairwise products.
+The product under a custom fold strategy, `context.fold_strategy = f`: calls
+`f(variable, context, messages)`, which multiplies the messages with
+[`ReactiveMP.compute_product_of_two_messages`](@ref) in whatever order it chooses and returns the
+product.
 """
 function compute_product_of_messages(
-    f::Function,
-    variable::AbstractVariable,
-    context::MessageProductContext,
-    messages,
-)
+        f::Function,
+        variable::AbstractVariable,
+        context::MessageProductContext,
+        messages,
+    )
     return f(variable, context, messages)
 end
 
-Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
+Distributions.pdf(message::Message, x) = Distributions.pdf(getdata(message), x)
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 
 MacroHelpers.@proxy_methods Message getdata [
@@ -441,14 +566,27 @@ Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
 ## Deferred Message
 
 """
-A special type of a message, for which the actual message is not computed immediately, but is computed later on demand (potentially never).
-To compute and get the actual message, one needs to call the `as_message` method.
+    DeferredMessage(messages, marginals, mapping)
+
+A message computed on demand: what a factor node emits on an outbound stream, so that a message
+nobody reads is never computed. [`as_message`](@ref) computes it on the first call, as
+`mapping(getrecent(messages), getrecent(marginals))`, from the latest values of its inputs at
+that time, and caches the resulting [`Message`](@ref) for the next calls.
+
+# Arguments
+
+- `messages`: the stream of the rule's inbound messages, or `nothing` for none;
+- `marginals`: the stream of the rule's marginals, or `nothing` for none;
+- `mapping`: a function of the two, usually a [`ReactiveMP.MessageMapping`](@ref), that returns
+  the `Message`.
+
+A variable computes the deferred messages it receives when it multiplies them.
 """
 mutable struct DeferredMessage{R, S, F} <: AbstractMessage
-    const messages  :: R
-    const marginals :: S
-    const mappingFn :: F
-    cache           :: Union{Nothing, Message}
+    const messages::R
+    const marginals::S
+    const mappingFn::F
+    cache::Union{Nothing, Message}
 end
 
 DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
@@ -456,7 +594,7 @@ DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
-    if isnothing(cache)
+    return if isnothing(cache)
         print(
             io, "DeferredMessage([ use `as_message` to compute the message ])"
         )
@@ -486,35 +624,36 @@ function as_message(message::DeferredMessage, cache::Nothing)::Message
 end
 
 function as_message(
-    message::DeferredMessage, cache::Nothing, messages, marginals
-)::Message
+        message::DeferredMessage, cache::Nothing, messages, marginals
+    )::Message
     computed = message.mappingFn(messages, marginals)
     setcache!(message, computed)
     return computed
 end
 
-dropproxytype(::Type{<:Message{T}}) where {T} = T
 
 ## Message observable
 
 """
-    ReactiveMP.MessageObservable{M <: AbstractMessage}
+    MessageObservable(M::Type = AbstractMessage)
 
-A lazy, connectable reactive stream for message values of type `M <: AbstractMessage`, used as the per-connection message stream of every variable in the factor graph.
+The stream of the messages along one connection between a variable and a factor node, with
+values of type `M`. Every subscriber shares one upstream subscription, and the latest message is
+kept, so `Rocket.getrecent` returns it and a late subscriber receives it at once.
 
-Internally combines two Rocket.jl primitives:
-- a `RecentSubject{M}` that caches the most recently emitted value, so `Rocket.getrecent` always returns the latest message and late subscribers receive it immediately
-- a `LazyObservable{M}` that is the actual subscription target — initially unconnected, and wired to an upstream source during graph activation via `ReactiveMP.connect!`
+The stream is lazy: activation connects it to its source, the node's rule or the variable's
+product. Before that, [`ReactiveMP.set_initial_message!`](@ref) can seed it with an initial
+message, which is what a rule reads before any message has been computed.
 
-`connect!(observable, source)` sets the lazy stream to `source |> multicast(subject) |> ref_count()`: all subscribers share one upstream subscription, and every emission is forwarded through the cached subject. Before the upstream is connected, [`ReactiveMP.set_initial_message!`](@ref) can push an initial message directly into the subject to seed the graph before inference begins.
+A random and a data variable allocate one per connection
+([`ReactiveMP.create_new_stream_of_inbound_messages!`](@ref)); a constant has one, shared by all
+its connections.
 
-Each variable-to-node connection owns one `MessageObservable`. For [`ReactiveMP.RandomVariable`](@ref) and [`ReactiveMP.DataVariable`](@ref) these are allocated on demand by `ReactiveMP.create_new_stream_of_inbound_messages!`; for [`ReactiveMP.ConstVariable`](@ref) a single shared instance is created at construction time.
-
-See also: [`ReactiveMP.MarginalObservable`](@ref), [`ReactiveMP.set_initial_message!`](@ref)
+See also [`ReactiveMP.MarginalObservable`](@ref).
 """
 struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
-    subject :: Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
-    stream  :: LazyObservable{M}
+    subject::Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
+    stream::LazyObservable{M}
 end
 
 MessageObservable(::Type{M} = AbstractMessage) where {M} =
@@ -526,16 +665,16 @@ Rocket.getrecent(observable::MessageObservable) =
 @inline Rocket.on_subscribe!(observable::MessageObservable, actor) =
     subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ErrorActor{<:AbstractMessage})      = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ErrorActor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.CompletionActor{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Subject{<:AbstractMessage})                 = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Subject{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.BehaviorSubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.PendingSubjectInstance{<:AbstractMessage})  = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.RecentSubjectInstance{<:AbstractMessage})   = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ReplaySubjectInstance{<:AbstractMessage})   = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.PendingSubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.RecentSubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ReplaySubjectInstance{<:AbstractMessage}) = Rocket.on_subscribe!(observable.stream, actor)
 
 function connect!(message::MessageObservable, source)
     set!(message.stream, source |> multicast(message.subject) |> ref_count())
@@ -543,40 +682,67 @@ function connect!(message::MessageObservable, source)
 end
 
 function set_initial_message!(message::MessageObservable, value)
-    next!(message.subject, Message(value, false, true))
+    next!(message.subject, Message(value, false, true, EMPTY_ANNOTATIONS, INITIAL_LOGSCALE))
     return nothing
 end
 
 ## Message Mapping structure
-## https://github.com/JuliaLang/julia/issues/42559
-## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
-## We create a lambda-like callable structure to improve type inference and make it more stable
-## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
+## A callable structure rather than a closure, which `activate!` (src/nodes/nodes.jl) would
+## capture with types Julia cannot fully infer (https://github.com/JuliaLang/julia/issues/42559).
 """
     MessageMapping
 
-A callable structure representing a deferred computation of a message in the
-variational message passing framework. It stores all contextual information
-necessary to compute a message later, such as variable tags, constraints,
-annotations, and the associated factor node.
+What computes a node's message towards one interface, called with the latest inbound messages
+and marginals the rule depends on: `mapping(messages, marginals) -> Message`. A factor node
+builds one per interface at activation and wraps it in each [`DeferredMessage`](@ref) it emits.
 
-`MessageMapping` replaces the original lambda-based implementation to improve
-type stability and inference. When invoked as a function, it computes an
-outgoing `Message` from given input messages and marginals using the appropriate
-`@rule`.
+It holds the node type, the rule's target, the names of its inputs, the algorithm, the
+annotation processors, the factor node, the callbacks, the [`ReactiveMP.EngineDiagnostics`](@ref),
+the rule context (see [`ReactiveMP.node_context`](@ref)), the rule fallback, the rule's scratch
+(reused from call to call) and whether log scales are tracked.
 
-See also: [`Message`](@ref), [`DeferredMessage`](@ref)
+A call:
+
+1. returns a `missing` message, and runs no rule, when an input is `missing`, or a static input
+   folded into the node's function is data observed as `missing`;
+2. resolves the rule with
+   [`find_message_rule`](@extref MessagePassingRulesBase.find_message_rule) under the node's
+   algorithm, from the inputs' types;
+3. where no rule matches, gives the rule fallback's message, if one is set, with an undefined log
+   scale; otherwise throws a
+   [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) listing the near
+   misses;
+4. checks the rule: against the diagnostics, for a declared reading of log scales that are not
+   tracked, and for a declared context service the node's context does not supply
+   ([`check_services`](@extref MessagePassingRulesBase.check_services));
+5. runs it with [`execute_rule`](@extref MessagePassingRulesBase.execute_rule), with the
+   annotation processors before and after it.
+
+The message is clamped when every input is, and initial when it is not clamped and every input
+is clamped or initial. When log scales are tracked, its log scale is the one the rule declares.
+
+The callbacks receive [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref) and
+[`ReactiveMP.AfterMessageRuleCallEvent`](@ref) around each call, the latter also for a `missing`
+message, with what gave the message.
+
+See also [`Message`](@ref), [`ReactiveMP.rule_arguments`](@ref).
 """
-struct MessageMapping{F, T, C, N, M, A, X, R, K, E}
-    vtag            :: T
-    vconstraint     :: C
-    msgs_names      :: N
-    marginals_names :: M
-    meta            :: A
-    annotations     :: X
-    factornode      :: R
-    rulefallback    :: K
-    callbacks       :: E
+mutable struct MessageMapping{F, T, N, M, A, X, R, E, G, B, S}
+    # Mutable, its fields but the scratch slot constant: every `DeferredMessage` an outbound stream
+    # emits holds its mapping, and an immutable mapping, the factor node inside it, would be copied
+    # into each.
+    const target::T
+    const msgs_names::N
+    const marginals_names::M
+    const algorithm::A
+    const annotations::X
+    const factornode::R
+    const callbacks::E
+    const diagnostics::EngineDiagnostics
+    const context::G
+    const rulefallback::B
+    scratch::Union{Nothing, ScratchSlot}
+    const logscales::S
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -584,74 +750,43 @@ message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
 function Base.show(io::IO, mapping::MessageMapping)
     print(io, "MessageMapping(")
-    print(io, message_mapping_fform(mapping))
-    print(io, ", ", repr(mapping.vtag))
+    print(io, node_display(message_mapping_fform(mapping)))
+    print(io, ", ", repr(mapping.target))
     if mapping.msgs_names !== nothing
         print(io, ", msgs=", collect(unval(mapping.msgs_names)))
     end
     if mapping.marginals_names !== nothing
         print(io, ", marginals=", collect(unval(mapping.marginals_names)))
     end
-    if !get(io, :compact, false)
-        if mapping.vconstraint !== nothing
-            print(io, ", vconstraint=", mapping.vconstraint)
-        end
-        if mapping.meta !== nothing
-            print(io, ", meta=", mapping.meta)
-        end
+    if !get(io, :compact, false) && mapping.algorithm !== nothing
+        print(io, ", algorithm=", mapping.algorithm)
     end
     print(io, ")")
     return nothing
 end
 
-function MessageMapping(
-    ::Type{F},
-    vtag::T,
-    vconstraint::C,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    annotations::X,
-    factornode::R,
-    rulefallback::K,
-    callbacks::E,
-) where {F, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
-        vtag,
-        vconstraint,
-        msgs_names,
-        marginals_names,
-        meta,
-        annotations,
-        factornode,
-        rulefallback,
-        callbacks,
-    )
-end
+# `logscales` becomes `Val(true)` or `Val(false)` by a branch, so the mapping's type is known where
+# it is built rather than computed at run time from the value.
+# `context` holds the services the rules run with, merged over the engine's (`node_context`);
+# `rulefallback` gives the message where no rule matches, `nothing` for none; `logscales` tracks
+# log scales.
+MessageMapping(fform, target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, rulefallback = nothing, logscales::Bool = false) =
+    message_mapping(fform, target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, node_context(factornode, context), rulefallback, logscales)
 
-function MessageMapping(
-    ::F,
-    vtag::T,
-    vconstraint::C,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    annotations::X,
-    factornode::R,
-    rulefallback::K,
-    callbacks::E,
-) where {F <: Function, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
-        vtag,
-        vconstraint,
-        msgs_names,
-        marginals_names,
-        meta,
-        annotations,
-        factornode,
-        rulefallback,
-        callbacks,
-    )
+# A mapping with its rule context already built: activation builds one per node and gives it to
+# every mapping of the node.
+message_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
+    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, nothing, s))
+message_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, annotations::X, factornode::R, callbacks::E, diagnostics::EngineDiagnostics, ctx::G, rulefallback::B, logscales::Bool) where {F <: Function, T, N, M, A, X, R, E, G <: MessagePassingRulesBase.RuleContext, B} =
+    (s = logscales ? Val(true) : Val(false); MessageMapping{F, T, N, M, A, X, R, E, G, B, typeof(s)}(target, msgs_names, marginals_names, algorithm, annotations, factornode, callbacks, diagnostics, ctx, rulefallback, nothing, s))
+
+tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
+
+# The fallback's message where no rule matched; the not-found error where it has none either.
+function fallback_message(fallback, notfound, fform, target, args)
+    message = fallback(fform, target, args)
+    isnothing(message) && throw(RuleNotFoundError(notfound))
+    return message
 end
 
 function (mapping::MessageMapping)(messages, marginals)
@@ -662,17 +797,16 @@ function (mapping::MessageMapping)(messages, marginals)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial =
         !is_message_clamped && (
-            __check_all(is_clamped_or_initial, messages) &&
+        __check_all(is_clamped_or_initial, messages) &&
             __check_all(is_clamped_or_initial, marginals)
-        )
-
-    span_id = generate_span_id(mapping.callbacks)
-    invoke_callback(
-        mapping.callbacks,
-        BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id),
     )
 
-    annotations = AnnotationDict()
+    span_id = generate_span_id(mapping.callbacks)
+    @invoke_callback(mapping.callbacks, BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id))
+
+    # Fresh annotations only where something may write them: the processors, or below a rule that
+    # takes the `ann` slot.
+    annotations = isnothing(mapping.annotations) ? EMPTY_ANNOTATIONS : AnnotationDict()
 
     # Run annotation processors before the rule has been executed
     if !isnothing(mapping.annotations)
@@ -681,44 +815,35 @@ function (mapping::MessageMapping)(messages, marginals)
         end
     end
 
-    result =
-        if !isnothing(messages) &&
-            any(ismissing, TupleTools.flatten(getdata.(messages)))
-            missing
-        elseif !isnothing(marginals) &&
-            any(ismissing, TupleTools.flatten(getdata.(marginals)))
-            missing
+    result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)
+        missing, (tracks_logscales(mapping) ? MISSING_INPUT_LOGSCALE : nothing)
+    else
+        fform = message_mapping_fform(mapping)
+        args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
+        found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
+        if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
+            fallback_message(mapping.rulefallback, found, fform, mapping.target, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
         else
-            ruleargs = (
-                message_mapping_fform(mapping),
-                mapping.vtag,
-                mapping.vconstraint,
-                mapping.msgs_names,
-                messages,
-                mapping.marginals_names,
-                marginals,
-                mapping.meta,
-                annotations,
-                mapping.factornode,
-            )
-            ruleoutput = rule(ruleargs...)
-            # if `@rule` is not defined, the default behaviour is to return
-            # the `RuleMethodError` object
-            if ruleoutput isa RuleMethodError
-                if !isnothing(mapping.rulefallback)
-                    mapping.rulefallback(ruleargs...)
-                else
-                    throw(ruleoutput)
-                end
+            spec = audit_rule(mapping.diagnostics, resolve_rule(found))
+            MessagePassingRulesBase.check_reads_logscale(spec, args)
+            ctx = mapping.context
+            MessagePassingRulesBase.check_services(spec, ctx)
+            if spec.annotates && annotations === EMPTY_ANNOTATIONS
+                annotations = AnnotationDict()
+            end
+            ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, annotations)
+            algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
+            scratch = mapping_scratch(mapping, spec, algorithm, ctx, args)
+            if tracks_logscales(mapping)
+                MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
             else
-                ruleoutput
+                MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing
             end
         end
+    end
 
-    # Run annotation processors after the rule has been executed
-    # Skip them entirely when the rule was short-circuited to `missing`: no rule ran, so
-    # post-rule processors (e.g. `LogScaleAnnotations`, which `error()`s when `:logscale`
-    # was never set and inputs are not all `PointMass`) must not run on a deferred message.
+    # Run annotation processors after the rule has been executed. Skip them entirely when the
+    # rule was short-circuited to `missing`: no rule ran, so there is nothing to annotate.
     if !isnothing(mapping.annotations) && result !== missing
         for p in mapping.annotations
             post_rule_annotations!(
@@ -727,12 +852,20 @@ function (mapping::MessageMapping)(messages, marginals)
         end
     end
 
-    invoke_callback(
-        mapping.callbacks,
-        AfterMessageRuleCallEvent(
-            mapping, messages, marginals, result, annotations, span_id
-        ),
+    @invoke_callback(
+        mapping.callbacks, AfterMessageRuleCallEvent(
+            mapping, messages, marginals, result, annotations, logscale, selected_message_rule(mapping, messages, marginals), span_id
+        )
     )
 
-    return Message(result, is_message_clamped, is_message_initial, annotations)
+    return new_message(result, is_message_clamped, is_message_initial, annotations, logscale)
+end
+
+# What gave a call's message, found again only for an event someone listens to: the rule, the
+# fallback where no rule matched, or `nothing` where a `missing` input skipped the rule.
+function selected_message_rule(mapping::MessageMapping, messages, marginals)
+    (has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)) && return nothing
+    args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
+    found = MessagePassingRulesBase.find_message_rule(message_mapping_fform(mapping), mapping.target, mapping.algorithm, args)
+    return found isa MessagePassingRulesBase.RuleNotFound ? mapping.rulefallback : found
 end

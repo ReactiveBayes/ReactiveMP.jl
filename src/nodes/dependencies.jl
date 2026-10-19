@@ -1,353 +1,333 @@
-export DefaultFunctionalDependencies,
-    RequireMessageFunctionalDependencies,
-    RequireMarginalFunctionalDependencies,
-    RequireEverythingFunctionalDependencies
+# What each outbound message is computed from, and the streams that deliver it.
 
-collect_latest_messages(dependencies, factornode, collection) =
-    __collect_latest_updates(
-        get_stream_of_inbound_messages, nothing, collection
-    )
-collect_latest_marginals(dependencies, factornode, collection) =
-    __collect_latest_updates(
-        get_stream_of_marginals, __reset_vstatus_of_sources, collection
-    )
-
-function __collect_latest_updates(f::F, callback::C, collection) where {F, C}
-    return __collect_latest_updates(f, callback, Tuple(collection))
+# `labels` name each input for the rule (see `input_names`); without them an input is known by
+# its `name`, which is enough when no group member is among them.
+collect_latest_messages(interfaces) = collect_latest_messages(map(name, Tuple(interfaces)), interfaces)
+collect_latest_messages(labels, interfaces) =
+    collect_latest_updates(labels, map(get_stream_of_inbound_messages, Tuple(interfaces)), nothing)
+collect_latest_marginals(sources) = collect_latest_marginals(map(name, Tuple(sources)), sources)
+function collect_latest_marginals(labels, sources)
+    relaxation = MarginalRelaxation()
+    inputs = map(source -> RelaxedInput(get_stream_of_marginals(source), relaxation), Tuple(sources))
+    return collect_latest_updates(labels, inputs, relaxation)
 end
 
-function __collect_latest_updates(
-    f::F, callback::C, collection::Tuple
-) where {F, C}
-    return if isempty(collection)
-        (nothing, of(nothing))
-    else
-        streams = map(f, collection)
-        (
-            Val{map(name, collection)}(),
-            combineLatestUpdates(
-                streams, PushNew(), typeof(streams), identity, callback
-            ),
-        )
+# Inputs are subscribed in the order they are listed, which for declared dependencies is the
+# declaration's: in variational message passing that order is the update schedule.
+function collect_latest_updates(labels, streams::Tuple, callback::C) where {C}
+    isempty(streams) && return isempty(labels) ? (nothing, of(nothing)) : (input_names(labels), of(()))
+    return (input_names(labels), combineLatestUpdates(streams, PushNew(), typeof(streams), identity, callback))
+end
+
+"""
+    ReactiveMP.MarginalRelaxation()
+
+When a rule's marginal inputs fire it: the callback of their combination, and the state its
+[`ReactiveMP.RelaxedInput`](@ref)s share. The combination fires once every input has a new value
+since the last firing, with two exceptions, both after a firing that consumed initial marginals
+alone, those [`ReactiveMP.set_initial_marginal!`](@ref) set or computed from them:
+
+- the next update of any single input fires it again, **once** for each subscription;
+- an update that is not initial, a value computed from data, fires it again, every time.
+
+Strict refreshing would otherwise deadlock structured or mean-field factorisations whose
+clusters wait on each other: each waits for the others to refresh, and an initial value
+consumed by a firing is never refreshed on its own (RxInfer#344). Real values reach a rule far
+from the data only after several rounds, so a rule may need restarting more than once, whenever
+one arrives. Initial values alone restart it at most once: restarting on every one let the rules
+re-fire each other on initial values before any data arrived, tens of thousands of rule calls for
+a mixture of two components on five points, where these two exceptions make a few dozen.
+
+It applies to the marginal inputs only: a rule's message inputs keep strict refreshing. It keeps
+the subscription it belongs to, so a combination subscribed again relaxes once more.
+"""
+mutable struct MarginalRelaxation
+    subscription::Any
+    armed::Bool
+    spent::Bool
+end
+
+MarginalRelaxation() = MarginalRelaxation(nothing, false, false)
+
+# After every firing: whether it consumed initial marginals alone, and the one relaxation for them.
+function (relaxation::MarginalRelaxation)(wrapper, inputs)
+    if relaxation.subscription !== wrapper
+        relaxation.subscription = wrapper
+        relaxation.spent = false
     end
-end
-
-# Mirrors `reset_vstatus` from `clusters.jl`/`random.jl`: without this, a sibling that only ever
-# emitted a provisional (`is_initial`) value permanently retires `PushNew()`'s mutual-refresh
-# requirement for the rest of the group once it settles on its real value.
-# The reset is applied to marginal dependencies only. Applying it to message dependencies as well
-# alters the message-update schedule in models that are not affected by the deadlock (an outbound
-# message would be recomputed as soon as a single dependency refreshes while the others are still
-# `is_initial`), which changes free-energy trajectories and breaks strict FE-monotonicity
-# guarantees downstream. Marginal dependencies alone are sufficient to resolve the deadlock.
-function __reset_vstatus_of_sources(wrapper, sources)
-    values = map(getrecent, sources)
-    if is_initial(values)
+    relaxation.armed = is_initial(map(getrecent, inputs))
+    if relaxation.armed && !relaxation.spent
+        relaxation.spent = true
         Rocket.fill_vstatus!(wrapper, true)
     end
+    return nothing
+end
+
+# On every update of an input: a value that is not initial, after a firing on initial ones alone.
+function relax_on_update!(relaxation::MarginalRelaxation, value)
+    if relaxation.armed && relaxation.subscription !== nothing && !is_initial(value)
+        relaxation.armed = false
+        Rocket.fill_vstatus!(relaxation.subscription, true)
+    end
+    return nothing
 end
 
 """
-    ReactiveMP.FunctionalDependencies
+    ReactiveMP.RelaxedInput(source, relaxation::MarginalRelaxation)
 
-Abstract supertype for policies that determine which messages and marginals are required to compute each outbound message at a factor node. A concrete subtype is passed as `options.dependencies` in [`ReactiveMP.FactorNodeActivationOptions`](@ref) and consulted during [`ReactiveMP.activate!(::FactorNode, ::FactorNodeActivationOptions)`](@ref).
-
-See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+A rule's marginal input as its combination subscribes to it: the marginals of `source`, a stream
+such as a [`ReactiveMP.MarginalObservable`](@ref), each
+reported to `relaxation` as it arrives (see [`ReactiveMP.MarginalRelaxation`](@ref)). Its latest
+value is `source`'s.
 """
-abstract type FunctionalDependencies end
+struct RelaxedInput{S} <: Subscribable{Marginal}
+    source::S
+    relaxation::MarginalRelaxation
+end
 
-function activate!(dependencies::FunctionalDependencies, factornode, options)
-    annotations          = getannotations(options)
-    rulefallback         = getrulefallback(options)
-    callbacks            = getcallbacks(options)
-    fform                = functionalform(factornode)
-    meta                 = collect_meta(fform, getmetadata(options))
+Rocket.getrecent(input::RelaxedInput) = Rocket.getrecent(input.source)
+
+function Rocket.on_subscribe!(input::RelaxedInput, actor)
+    relaxation = input.relaxation
+    return subscribe!(input.source |> tap((value) -> relax_on_update!(relaxation, value)), actor)
+end
+
+"""
+    ReactiveMP.input_label(factornode, interface)
+
+What a rule knows an input on `interface` by: its name, or a [`ReactiveMP.GroupMember`](@ref)
+for a member of a group.
+"""
+input_label(factornode, interface::NodeInterface) = name(interface)
+input_label(factornode, interface::IndexedNodeInterface) =
+    GroupMember(name(interface), index(interface), group_length(factornode, name(interface)))
+
+group_length(factornode, group::Symbol) = count(i -> i isa IndexedNodeInterface && name(i) === group, getinterfaces(factornode))
+group_members(factornode, group::Symbol) = filter(i -> i isa IndexedNodeInterface && name(i) === group, getinterfaces(factornode))
+
+# A cluster's label: its interface's for a single interface, the member tuple for a joint.
+function cluster_label(factornode, clusters, cindex)
+    marginal = get_node_local_marginals(clusters)[cindex]
+    isjoint(marginal) && return name(marginal)
+    return input_label(factornode, getinterface(factornode, only(getfactorization(clusters, cindex))))
+end
+
+"""
+    ReactiveMP.default_dependencies(factornode, iindex::Int) -> ((labels, interfaces), (labels, sources))
+
+The engine's default scheme, a regular variational message passing scheme driven by the
+factorisation: the message out of interface `iindex` is computed from the inbound messages on
+the other interfaces of its cluster, and the marginals of every other cluster. For a
+deterministic node it is the inbound messages on every other interface, and no marginal.
+
+Returns the labelled message dependencies and marginal dependencies, each as
+`(labels, sources)`: labels from [`ReactiveMP.input_label`](@ref), or a cluster's key, and the
+interfaces or local marginals they come from.
+"""
+function default_dependencies(factornode, iindex)
+    # A deterministic node's clusters only say what free energy counts; belief propagation
+    # through it reads the messages on every other interface.
+    if isdeterministic(sdtype(factornode))
+        others = Tuple(i for (j, i) in enumerate(getinterfaces(factornode)) if j != iindex)
+        return ((map(i -> input_label(factornode, i), others), others), ((), ()))
+    end
+    clusters = getlocalclusters(factornode)
+    cindex = clusterindex(clusters, iindex)
+    cluster = getfactorization(clusters, cindex)
+    message_dependencies = map(i -> getinterface(factornode, i), filter(i -> i !== iindex, cluster))
+    others = Tuple(i for i in eachindex(get_node_local_marginals(clusters)) if i != cindex)
+    return (
+        (map(i -> input_label(factornode, i), message_dependencies), message_dependencies),
+        (map(i -> cluster_label(factornode, clusters, i), others), map(i -> get_node_local_marginals(clusters)[i], others)),
+    )
+end
+
+"""
+    ReactiveMP.declared_dependencies(factornode, spec::DependenciesSpec, interface) -> ((labels, interfaces), (labels, sources))
+
+What the message out of `interface` is computed from under a declared
+[`DependenciesSpec`](@extref MessagePassingRulesBase.DependenciesSpec), in the order the
+declaration lists them: `m[:x]` is an interface's inbound message, `q[:x]` its variable's
+marginal, and `q[:a, :b]` the local marginal of that cluster. A group dependency selects members
+relative to the target's own index. A target declared with `default` is
+[`ReactiveMP.extended_default_dependencies`](@ref).
+
+# Throws
+
+- `ArgumentError` when the declaration has no dependencies for the target, asks for the message
+  of a cluster, or names a cluster the factorisation does not have.
+"""
+function declared_dependencies(factornode, spec::MessagePassingRulesBase.DependenciesSpec, interface)
+    target = rule_target(interface)
+    inputs = MessagePassingRulesBase.target_dependencies(spec, target)
+    inputs === nothing && throw(
+        ArgumentError("`$(functionalform(factornode))` declares no dependencies for the target `$(repr(interface_key(interface)))` under $(nameof(spec.algorithm)), so its rules cannot run towards that edge in this graph; the algorithm's `@define_dependencies` must list every target a graph connects (`target => (default,)` for one that follows the default scheme)"),
+    )
+    MessagePassingRulesBase.extends_default_scheme(spec, target) && return extended_default_dependencies(factornode, interface, inputs)
+    messages, marginals = (Any[], Any[]), (Any[], Any[])
+    for input in inputs
+        selected = selected_interfaces(factornode, input, interface)
+        collection = input.container === :m ? messages : marginals
+        if input.key isa Tuple
+            input.container === :q || throw(ArgumentError("`m[$(input.key)]`: a cluster has a marginal, not a message"))
+            push!(collection[1], input.key)
+            push!(collection[2], cluster_marginal(factornode, input.key))
+        else
+            for selection in selected
+                push!(collection[1], input_label(factornode, selection))
+                push!(collection[2], input.container === :m ? selection : getvariable(selection))
+            end
+            # A group selection of no members still reaches the rule, as a tuple of `nothing`s.
+            isempty(selected) && !(input.selector isa MessagePassingRulesBase.SingleInterface) &&
+                push!(collection[1], EmptyGroup(input.key, group_length(factornode, input.key)))
+        end
+    end
+    return map(Tuple, messages), map(Tuple, marginals)
+end
+
+"""
+    ReactiveMP.extended_default_dependencies(factornode, interface, inputs)
+
+The dependencies of a target declared with `default`, `:a => (default, q[:a])`: the default
+scheme's inputs, and each of `inputs`, a single interface's message or marginal, placed in
+interface order. A marginal added this way is the variable's own, and an input the default
+scheme has already is not added twice.
+"""
+function extended_default_dependencies(factornode, interface, inputs)
+    iindex = findfirst(i -> i === interface, getinterfaces(factornode))
+    (messagelabels, messages), (marginallabels, marginals) = default_dependencies(factornode, iindex)
+    messages, messagelabels = collect(Any, messages), collect(Any, messagelabels)
+    marginals, marginallabels = collect(Any, marginals), collect(Any, marginallabels)
+    position(i) = findfirst(j -> j === i, getinterfaces(factornode))
+    clusters = getlocalclusters(factornode)
+    # The default scheme's marginals are the other clusters, in cluster order; each is placed by
+    # the position of its first member.
+    cindex = clusterindex(clusters, iindex)
+    firsts = Any[first(getfactorization(clusters, c)) for c in eachindex(get_node_local_marginals(clusters)) if c != cindex]
+    for input in inputs
+        added = getinterface(factornode, interfaceindex(factornode, input.key))
+        label = input_label(factornode, added)
+        at = position(added)
+        if input.container === :m
+            label in messagelabels && continue
+            k = count(i -> position(i) < at, messages) + 1
+            insert!(messages, k, added)
+            insert!(messagelabels, k, label)
+        else
+            label in marginallabels && continue
+            k = count(<(at), firsts) + 1
+            insert!(marginals, k, getvariable(added))
+            insert!(marginallabels, k, label)
+            insert!(firsts, k, at)
+        end
+    end
+    return (Tuple(messagelabels), Tuple(messages)), (Tuple(marginallabels), Tuple(marginals))
+end
+
+function selected_interfaces(factornode, input::MessagePassingRulesBase.Dependency, interface)
+    input.key isa Tuple && return ()
+    input.selector isa MessagePassingRulesBase.SingleInterface && return (getinterface(factornode, interfaceindex(factornode, input.key)),)
+    members = group_members(factornode, input.key)
+    k = interface isa IndexedNodeInterface ? index(interface) : 0
+    return map(i -> members[i], MessagePassingRulesBase.selected_indices(input.selector, k, length(members)))
+end
+
+function cluster_marginal(factornode, key::Tuple)
+    marginals = get_node_local_marginals(getlocalclusters(factornode))
+    position = findfirst(marginal -> name(marginal) == key, marginals)
+    position === nothing && throw(
+        ArgumentError("`$(functionalform(factornode))` consumes `q[$(join(repr.(key), ", "))]`, which is not a cluster of its factorisation: its clusters are $(join(map(m -> repr(name(m)), marginals), ", ")). The factorisation (in RxInfer, `@constraints`) must keep these interfaces together, or the node's algorithm must declare other dependencies"),
+    )
+    return marginals[position]
+end
+
+# `algorithm` and `spec` are the node's algorithm and its dependency declaration, `nothing` for
+# the default scheme, as `activate!` resolved them.
+function activate_messages!(factornode, options, ctx, algorithm, spec)
+    fform = functionalform(factornode)
+    annotations = getannotations(options)
+    callbacks = getcallbacks(options)
     stream_postprocessor = getpostprocessor(options)
 
-    foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
+    return foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
-            with_functional_dependencies(
-                dependencies, factornode, interface, iindex
-            ) do message_dependencies, marginal_dependencies
-                messagestag, messages = collect_latest_messages(
-                    dependencies, factornode, message_dependencies
-                )
-                marginalstag, marginals = collect_latest_marginals(
-                    dependencies, factornode, marginal_dependencies
-                )
+            (messagelabels, message_dependencies), (marginallabels, marginal_dependencies) =
+                planned_dependencies(factornode, spec, iindex, interface)
+            messagesnames, messages = collect_latest_messages(messagelabels, message_dependencies)
+            marginalsnames, marginals = collect_latest_marginals(marginallabels, marginal_dependencies)
 
-                vtag        = tag(interface)
-                vconstraint = Marginalisation()
+            stream_of_outbound_messages = with_statics(factornode, combineLatest((messages, marginals), PushNew()))
 
-                stream_of_outbound_messages = combineLatest(
-                    (messages, marginals), PushNew()
+            mapping = let messagemap = message_mapping(
+                    fform, rule_target(interface), messagesnames, marginalsnames,
+                    algorithm, annotations, factornode, callbacks, getdiagnostics(options), ctx, getrulefallback(options), getlogscales(options),
                 )
-
-                mapping =
-                    let messagemap = MessageMapping(
-                            fform,
-                            vtag,
-                            vconstraint,
-                            messagestag,
-                            marginalstag,
-                            meta,
-                            annotations,
-                            node_if_required(fform, factornode),
-                            rulefallback,
-                            callbacks,
-                        )
-                        (dependencies) -> DeferredMessage(
-                            dependencies[1], dependencies[2], messagemap
-                        )
-                    end
-
-                stream_of_outbound_messages =
-                    stream_of_outbound_messages |> map(AbstractMessage, mapping)
-                stream_of_outbound_messages = postprocess_stream_of_outbound_messages(
-                    stream_postprocessor, stream_of_outbound_messages
-                )
-                set_stream_of_outbound_messages!(
-                    interface, stream_of_outbound_messages
-                )
+                (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
             end
-        end
-    end
-end
 
-function functional_dependencies end
-
-function with_functional_dependencies(
-    callback::F, strategy::FunctionalDependencies, factornode, interface, iindex
-) where {F}
-    message_dependencies, marginal_dependencies = functional_dependencies(
-        strategy, factornode, interface, iindex
-    )
-    return callback(message_dependencies, marginal_dependencies)
-end
-
-"""
-    DefaultFunctionalDependencies
-
-This functional dependencies translate directly to a regular variational message passing scheme. 
-In order to compute a message out of some interface, this strategy requires messages from interfaces within the same cluster and marginals over other clusters.
-"""
-struct DefaultFunctionalDependencies <: FunctionalDependencies end
-
-"""
-    ReactiveMP.collect_functional_dependencies(fform, dependencies)
-
-Returns the [`ReactiveMP.FunctionalDependencies`](@ref) instance to use for a factor node with functional form `fform`.
-If `dependencies` is `nothing`, falls back to `default_functional_dependencies(fform)`, which returns [`ReactiveMP.DefaultFunctionalDependencies`](@ref) for most nodes.
-Otherwise returns `dependencies` unchanged, allowing callers to override the policy per node.
-"""
-function collect_functional_dependencies end
-
-collect_functional_dependencies(fform::F, ::Nothing) where {F} =
-    default_functional_dependencies(fform)
-collect_functional_dependencies(fform::F, something) where {F} = something
-
-default_functional_dependencies(any) = DefaultFunctionalDependencies()
-
-function functional_dependencies(
-    ::DefaultFunctionalDependencies, factornode, interface, iindex
-)
-    clusters = getlocalclusters(factornode)
-    # Find the index of the cluster for the current interface
-    cindex = clusterindex(clusters, iindex)
-    # Fetch the actual cluster
-    cluster = getfactorization(clusters, cindex)
-    # Remove current edge index from the list of dependencies in the given cluster
-    vdependencies = filter(ci -> ci !== iindex, cluster)
-    # Map interface indices to the actual interfaces to get the messages dependencies
-    message_dependencies = Iterators.map(
-        inds -> map(i -> getinterface(factornode, i), inds), vdependencies
-    )
-
-    # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(
-        get_node_local_marginals(clusters), cindex
-    )
-
-    return message_dependencies, marginal_dependencies
-end
-
-"""
-    RequireMessageFunctionalDependencies(specifications::NamedTuple)
-    RequireMessageFunctionalDependencies(; specifications...)
-
-The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
-
-The specification parameter is a named tuple that contains the names of the edges and their initial messages. 
-When a name is present in the named tuple, that indicates that the computation of the outbound message on the same edge must use the inbound message.
-If `nothing` is passed as a value in the named tuple, the initial message is not set. Note that the construction allows passing keyword argument to the constructor 
-instead of using `NamedTuple` directly.
-
-```julia
-RequireMessageFunctionalDependencies(μ = vague(NormalMeanPrecision),     τ = nothing)
-                                     # ^^^                               ^^^
-                                     # request 'inbound' for 'x'         we may do the same for 'τ',
-                                     # and initialise with `vague(...)`  but here we skip initialisation
-```
-
-See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
-"""
-struct RequireMessageFunctionalDependencies{S <: NamedTuple} <:
-       FunctionalDependencies
-    specification::S
-end
-
-RequireMessageFunctionalDependencies(; kwargs...) =
-    RequireMessageFunctionalDependencies((; kwargs...))
-
-function functional_dependencies(
-    dependencies::RequireMessageFunctionalDependencies,
-    factornode,
-    interface,
-    iindex,
-)
-    specification = dependencies.specification
-
-    clusters = getlocalclusters(factornode)
-    # Find the index of the cluster for the current interface
-    cindex = clusterindex(clusters, iindex)
-    # Fetch the actual cluster
-    cluster = getfactorization(clusters, cindex)
-    # Remove current edge index from the list of dependencies in the given cluster
-    # only if its not in the specification for `RequireMessageFunctionalDependencies`
-    # otherwise keep it and initialize with a message if the value of the specification is not nothing
-    vdependencies = if name(interface) ∉ keys(specification)
-        filter(ci -> ci !== iindex, cluster)
-    else
-        initialmessage = specification[name(interface)]
-        # Set the initial message if its not `nothing`
-        if !isnothing(initialmessage)
-            set_initial_message!(
-                get_stream_of_inbound_messages(interface), initialmessage
+            stream_of_outbound_messages = stream_of_outbound_messages |> map(AbstractMessage, mapping)
+            stream_of_outbound_messages = postprocess_stream_of_outbound_messages(
+                stream_postprocessor, stream_of_outbound_messages
             )
+            set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
         end
-        # And return the cluster as is
-        cluster
     end
-
-    # Map interface indices to the actual interfaces to get the messages dependencies
-    message_dependencies = Iterators.map(
-        inds -> map(i -> getinterface(factornode, i), inds), vdependencies
-    )
-
-    # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(
-        get_node_local_marginals(clusters), cindex
-    )
-
-    return message_dependencies, marginal_dependencies
 end
 
-"""
-    RequireMarginalFunctionalDependencies(specifications::NamedTuple)
-    RequireMarginalFunctionalDependencies(; specifications...)
-
-The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the marginal on the this edge.
-
-The specification parameter is a named tuple that contains the names of the edges and their initial marginals. 
-When a name is present in the named tuple, that indicates that the computation of the outbound message on the same edge must use the marginal on this edge.
-If `nothing` is passed as a value in the named tuple, the initial marginal is not set. Note that the construction allows passing keyword argument to the constructor 
-instead of using `NamedTuple` directly.
-
-```julia
-RequireMarginalFunctionalDependencies(μ = vague(NormalMeanPrecision),     τ = nothing)
-                                     # ^^^                               ^^^
-                                     # request 'marginal' for 'x'        we may do the same for 'τ',
-                                     # and initialise with `vague(...)`  but here we skip initialisation
-```
-
-See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
-"""
-struct RequireMarginalFunctionalDependencies{S <: NamedTuple} <:
-       FunctionalDependencies
-    specification::S
-end
-
-RequireMarginalFunctionalDependencies(; kwargs...) =
-    RequireMarginalFunctionalDependencies((; kwargs...))
-
-function functional_dependencies(
-    dependencies::RequireMarginalFunctionalDependencies,
-    factornode,
-    interface,
-    iindex,
-)
-    specification = dependencies.specification
-
-    clusters = getlocalclusters(factornode)
-    # Find the index of the cluster for the current interface
-    cindex = clusterindex(clusters, iindex)
-    # Fetch the actual cluster
-    cluster = getfactorization(clusters, cindex)
-    # Remove current edge index from the list of dependencies in the given cluster
-    vdependencies = filter(ci -> ci !== iindex, cluster)
-    # Map interface indices to the actual interfaces to get the messages dependencies
-    message_dependencies = Iterators.map(
-        inds -> map(i -> getinterface(factornode, i), inds), vdependencies
-    )
-
-    # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies_default_clusters      = skipindex(get_node_local_marginals(clusters), cindex)
-    marginal_dependencies_default_factorization = skipindex(getfactorization(clusters), cindex)
-
-    marginal_dependencies = if name(interface) ∈ keys(specification)
-
-        # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
-        extra_localmarginal = FactorNodeLocalMarginal(name(interface))
-        # Create a stream of marginals and connect it with the streams of marginals of the actual variable
-        extra_stream = MarginalObservable()
-        connect!(extra_stream, get_stream_of_marginals(getvariable(interface)))
-        set_stream_of_marginals!(extra_localmarginal, extra_stream)
-
-        initialmarginals = specification[name(interface)]
-        if !isnothing(initialmarginals)
-            set_initial_marginal!(extra_stream, initialmarginals)
-        end
-
-        insertafter = sum(
-            first(el) < iindex ? 1 : 0 for
-            el in marginal_dependencies_default_factorization;
-            init = 0,
-        )
-        TupleTools.insertafter(
-            marginal_dependencies_default_clusters,
-            insertafter,
-            (extra_localmarginal,),
-        )
-    else
-        marginal_dependencies_default_clusters
+# The dependencies of the message out of interface `iindex`. They depend only on the node's shape
+# and the declaration, so a node with a creation plan resolves them once per shape: the plan keeps
+# them as positions, of interfaces for the messages and of clusters or interfaces for the
+# marginals, and each node reads its own objects at those positions.
+function planned_dependencies(factornode, spec, iindex, interface)
+    plan = creation_plan(factornode)
+    plan === nothing && return resolve_dependencies(factornode, spec, iindex, interface)
+    key = (spec === nothing ? zero(UInt) : objectid(spec), iindex)
+    cached = @lock CREATION_PLANS_LOCK get(plan.dependencies, key, nothing)
+    if cached === nothing
+        resolved = resolve_dependencies(factornode, spec, iindex, interface)
+        encoded = encode_dependencies(factornode, resolved)
+        @lock CREATION_PLANS_LOCK plan.dependencies[key] = something(encoded, :unplanned)
+        return resolved
     end
+    cached === :unplanned && return resolve_dependencies(factornode, spec, iindex, interface)
+    return decode_dependencies(factornode, cached)
+end
 
-    return message_dependencies, marginal_dependencies
+resolve_dependencies(factornode, spec, iindex, interface) =
+    spec === nothing ? default_dependencies(factornode, iindex) : declared_dependencies(factornode, spec, interface)
+
+# Positions of the dependencies in the node, or `nothing` where a source cannot be told apart by
+# position (one variable on two interfaces).
+function encode_dependencies(factornode, ((messagelabels, messages), (marginallabels, marginals)))
+    interfaces = getinterfaces(factornode)
+    locals = get_node_local_marginals(getlocalclusters(factornode))
+    mpositions = map(m -> findfirst(i -> i === m, interfaces), messages)
+    any(isnothing, mpositions) && return nothing
+    qpositions = map(marginals) do q
+        c = findfirst(l -> l === q, locals)
+        c === nothing || return (true, c)
+        matching = findall(i -> getvariable(i) === q, interfaces)
+        return length(matching) == 1 ? (false, only(matching)) : nothing
+    end
+    any(isnothing, qpositions) && return nothing
+    return ((messagelabels, mpositions), (marginallabels, qpositions))
+end
+
+function decode_dependencies(factornode, ((messagelabels, mpositions), (marginallabels, qpositions)))
+    interfaces = getinterfaces(factornode)
+    locals = get_node_local_marginals(getlocalclusters(factornode))
+    messages = map(i -> interfaces[i], mpositions)
+    marginals = map(((iscluster, i),) -> iscluster ? locals[i] : getvariable(interfaces[i]), qpositions)
+    return ((messagelabels, messages), (marginallabels, marginals))
 end
 
 """
-   RequireEverythingFunctionalDependencies
+    ReactiveMP.rule_target(interface)
 
-This strategy specifies that in order to compute a message of some edge update rules request everything that is available locally.
-This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
-
-See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)
+The target a message rule computes for `interface`:
+[`Target`](@extref MessagePassingRulesBase.Target)`{:out}()`, or
+[`IndexedTarget`](@extref MessagePassingRulesBase.IndexedTarget)`{:m}(k)` for member `k` of the
+group `m`.
 """
-struct RequireEverythingFunctionalDependencies <: FunctionalDependencies end
-
-function functional_dependencies(
-    ::RequireEverythingFunctionalDependencies, factornode, interface, iindex
-)
-    clusters = getlocalclusters(factornode)
-    # Find the index of the cluster for the current interface
-    cindex = clusterindex(clusters, iindex)
-    # Fetch the actual cluster
-    cluster = getfactorization(clusters, cindex)
-
-    message_dependencies = Iterators.map(
-        inds -> map(i -> getinterface(factornode, i), inds), cluster
-    )
-    marginal_dependencies = get_node_local_marginals(clusters)
-
-    return message_dependencies, marginal_dependencies
-end
+rule_target(interface::NodeInterface) = MessagePassingRulesBase.Target{name(interface)}()
+rule_target(interface::IndexedNodeInterface) = MessagePassingRulesBase.IndexedTarget{name(interface)}(index(interface))

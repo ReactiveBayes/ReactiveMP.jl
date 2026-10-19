@@ -1,5 +1,4 @@
-
-@testitem "DataVariable: uninitialized" begin
+@testitem "DataVariable: uninitialized" tags = [:engine] begin
     import ReactiveMP:
         get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
@@ -13,7 +12,7 @@
     end
 end
 
-@testitem "DataVariable: get_stream_of_inbound_messages" begin
+@testitem "DataVariable: get_stream_of_inbound_messages" tags = [:engine] begin
     import ReactiveMP:
         MessageObservable,
         create_new_stream_of_inbound_messages!,
@@ -36,7 +35,7 @@ end
     end
 end
 
-@testitem "DataVariable: getmarginal" begin
+@testitem "DataVariable: getmarginal" tags = [:engine] begin
     using BayesBase
 
     import ReactiveMP:
@@ -92,7 +91,9 @@ end
     end
 end
 
-@testitem "DataVariable: linking to a non-PointMass marginal gives an informative error" begin
+@testitem "DataVariable: linking to a non-PointMass marginal gives an informative error" tags = [
+    :engine,
+] begin
     using BayesBase, Distributions, ExponentialFamily
     import ReactiveMP:
         DataVariable,
@@ -183,9 +184,14 @@ end
     end
 end
 
-@testitem "DataVariable: invalid observation types are rejected with a clear error" begin
+@testitem "DataVariable: invalid observation types are rejected with a clear error" tags = [
+    :engine,
+] begin
     using BayesBase, Distributions, ExponentialFamily, LinearAlgebra
-    import ReactiveMP: DataVariable, datavar, new_observation!, Uninformative
+    import ReactiveMP: DataVariable, datavar, new_observation!
+
+    # An object that is not an observation, as the prior `Uninformative()` was in #588
+    struct Uninformative end
 
     # `PointMass` defines `variate_form` -- and therefore a usable `mean` -- only for reals,
     # arrays of reals and `UniformScaling`. Wrapping anything else builds a `PointMass` that
@@ -252,16 +258,16 @@ end
     @testset "all supported payloads still work" begin
         # The guard must not narrow what has always been accepted.
         for value in (
-            1.0,
-            -3,
-            true,
-            Float32(2.5),
-            big(1.0),
-            [1.0, 2.0],
-            [1 2; 3 4],
-            ones(2, 2, 2),
-            Diagonal([1.0, 2.0]),
-        )
+                1.0,
+                -3,
+                true,
+                Float32(2.5),
+                big(1.0),
+                [1.0, 2.0],
+                [1 2; 3 4],
+                ones(2, 2, 2),
+                Diagonal([1.0, 2.0]),
+            )
             var = datavar()
             new_observation!(var, value)
             @test true # did not throw
@@ -289,7 +295,9 @@ end
     end
 end
 
-@testitem "DataVariable: an explicitly wrapped non-numeric observation reaches the nodes" begin
+@testitem "DataVariable: an explicitly wrapped non-numeric observation reaches the nodes" tags = [
+    :engine,
+] begin
     using BayesBase, Rocket
 
     import BayesBase: getpointmass
@@ -328,7 +336,7 @@ end
     @test getdata(marginals[1]) === PointMass("some observed text")
 end
 
-@testitem "DataVariable: linked variable" begin
+@testitem "DataVariable: linked variable" tags = [:engine] begin
     using BayesBase
     import ReactiveMP:
         DataVariable,
@@ -489,5 +497,32 @@ end
             end
             @test getdata(marginal) === PointMass(4)
         end
+    end
+end
+
+@testitem "DataVariable: linked to observations of other kinds and to an array of variables" tags = [:engine] begin
+    using BayesBase
+    import ReactiveMP: DataVariableActivationOptions, activate!, get_stream_of_marginals, new_observation!
+
+    include("../testutilities.jl")
+
+    # A non-numeric observation, given as a `PointMass`, is linked by its payload.
+    let word = datavar(), var = datavar()
+        activate!(word, DataVariableActivationOptions(false, false, nothing, nothing))
+        activate!(var, DataVariableActivationOptions(false, true, length, (word,)))
+        marginal = check_stream_updated_once(get_stream_of_marginals(var)) do
+            new_observation!(word, PointMass("text"))
+        end
+        @test getdata(marginal) == PointMass(4)
+    end
+
+    # An array of data variables is linked as the vector of their observations.
+    let xs = [datavar() for _ in 1:3], var = datavar()
+        foreach(x -> activate!(x, DataVariableActivationOptions(false, false, nothing, nothing)), xs)
+        activate!(var, DataVariableActivationOptions(false, true, (v, c) -> sum(v) + c, (xs, 10.0)))
+        marginal = check_stream_updated_once(get_stream_of_marginals(var)) do
+            new_observation!(xs, [1.0, 2.0, 3.0])
+        end
+        @test getdata(marginal) == PointMass(16.0)
     end
 end

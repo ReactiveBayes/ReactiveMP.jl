@@ -1,13 +1,18 @@
 """
-    ReactiveMP.NodeInterface
+    ReactiveMP.NodeInterface(name::Symbol, variable)
 
-Represents a single directed connection between a factor node and an [`ReactiveMP.AbstractVariable`](@ref).
+One edge of a factor node: the interface `name` and the variable it connects to. Creating it
+calls [`ReactiveMP.create_new_stream_of_inbound_messages!`](@ref) on the variable, and keeps the
+stream it returns as the interface's outbound message stream: the node's message towards the
+variable is the variable's inbound message on this connection. `variable` is converted to an
+[`AbstractVariable`](@ref) when it is not one.
 
-Each interface owns one [`ReactiveMP.MessageObservable`](@ref) (`m_out`) — the *outbound* message stream from this node toward the connected variable. The constructor immediately calls [`ReactiveMP.create_new_stream_of_inbound_messages!`](@ref) on the variable, which allocates a per-connection slot in the variable's `input_messages` and returns the same observable together with its index. This means `m_out` for the interface is the inbound message stream from the variable's perspective.
+The streams are lazy until the node is activated, which connects the outbound stream to the
+rule's messages with [`ReactiveMP.set_stream_of_outbound_messages!`](@ref).
 
-After graph construction the streams are unconnected (lazy). [`ReactiveMP.activate!`](@ref) wires `m_out` to the result of the message update rule via [`ReactiveMP.set_stream_of_outbound_messages!`](@ref).
-
-See also: [`ReactiveMP.IndexedNodeInterface`](@ref), [`ReactiveMP.get_stream_of_outbound_messages`](@ref), [`ReactiveMP.get_stream_of_inbound_messages`](@ref)
+See also [`ReactiveMP.IndexedNodeInterface`](@ref),
+[`ReactiveMP.get_stream_of_outbound_messages`](@ref),
+[`ReactiveMP.get_stream_of_inbound_messages`](@ref).
 """
 struct NodeInterface
     name::Symbol
@@ -30,66 +35,74 @@ Base.show(io::IO, interface::NodeInterface) =
     print(io, "Interface(", name(interface), ")")
 
 israndom(interface::NodeInterface) = israndom(interface.variable)
-isdata(interface::NodeInterface)   = isdata(interface.variable)
-isconst(interface::NodeInterface)  = isconst(interface.variable)
+isdata(interface::NodeInterface) = isdata(interface.variable)
+isconst(interface::NodeInterface) = isconst(interface.variable)
 
 """
-    name(interface)
+    ReactiveMP.name(interface::NodeInterface) -> Symbol
+    ReactiveMP.name(interface::IndexedNodeInterface) -> Symbol
+    ReactiveMP.name(localmarginal::FactorNodeLocalMarginal)
 
-Returns a name of the interface.
+The name of an interface, `:out` or a group's name for a member of the group; the key of a
+cluster's local marginal, a name or a tuple of member names. A `Symbol` is its own name.
 """
 name(symbol::Symbol) = symbol
 name(interface::NodeInterface) = name(interface.name)
 
-"""
-    tag(interface)
-
-Returns a tag of the interface in the form of `Val{ name(interface) }`.
-The major difference between tag and name is that it is possible to dispath on interface's tag in message computation rule.
-"""
-tag(interface::NodeInterface) = Val{name(interface)}()
 
 """
-    get_stream_of_outbound_messages(interface)
+    ReactiveMP.get_stream_of_outbound_messages(interface)
 
-Returns an outbound messages stream from the given interface.
+The stream of the messages the node sends along `interface`, towards its variable: a
+[`ReactiveMP.MessageObservable`](@ref), which is also the variable's inbound stream on this
+connection.
+
+See also [`ReactiveMP.get_stream_of_inbound_messages`](@ref).
 """
 get_stream_of_outbound_messages(interface::NodeInterface) = interface.m_out
 
 """
     ReactiveMP.set_stream_of_outbound_messages!(interface, stream)
 
-Connects `stream` to the outbound message observable of `interface`.
-See also [`ReactiveMP.get_stream_of_outbound_messages`](@ref), [`ReactiveMP.get_stream_of_inbound_messages`](@ref).
+Connect the outbound message stream of `interface` to `stream`, the node's messages towards the
+variable, which activation does.
+
+See also [`ReactiveMP.get_stream_of_outbound_messages`](@ref).
 """
 set_stream_of_outbound_messages!(interface::NodeInterface, stream) =
     connect!(get_stream_of_outbound_messages(interface), stream)
 
 """
-    get_stream_of_inbound_messages(interface)
+    ReactiveMP.get_stream_of_inbound_messages(interface)
 
-Returns an inbound messages stream from the given interface.
+The stream of the messages the variable sends along `interface`, towards the node: the
+variable's outbound stream on this connection, which is what the node's rules read as `m[:name]`.
+For a constant it is the constant's message; for a data variable, its observations.
+
+See also [`ReactiveMP.get_stream_of_outbound_messages`](@ref).
 """
 get_stream_of_inbound_messages(interface::NodeInterface) =
     get_stream_of_outbound_messages(interface.variable, interface.message_index)
 
 """
-    getvariable(interface)
+    ReactiveMP.getvariable(interface) -> AbstractVariable
 
-Returns a variable connected to the given interface.
+The variable `interface` connects to.
 """
 getvariable(interface::NodeInterface) = interface.variable
 
 """
-    ReactiveMP.IndexedNodeInterface
+    ReactiveMP.IndexedNodeInterface(index::Int, interface::NodeInterface)
 
-A thin wrapper around [`ReactiveMP.NodeInterface`](@ref) that adds a positional `index`, used for nodes with a variable-length list of same-named edges (e.g. the `means` or `precisions` of a Gaussian Mixture node). All stream and variable accessors delegate to the wrapped interface.
+A member of an interface group: a [`ReactiveMP.NodeInterface`](@ref) with its index in the group,
+such as member `k` of the means `m` and of the precisions `p` of a `NormalMixture`, keyed
+`(:m, k)`. Its name is the group's, and its streams and variable are the wrapped interface's.
 
-See also: [`ReactiveMP.NodeInterface`](@ref), [`ReactiveMP.ManyOf`](@ref)
+See also [`ReactiveMP.NodeInterface`](@ref).
 """
 struct IndexedNodeInterface
-    index     :: Int
-    interface :: NodeInterface
+    index::Int
+    interface::NodeInterface
 end
 
 Base.show(io::IO, interface::IndexedNodeInterface) = print(
@@ -98,8 +111,7 @@ Base.show(io::IO, interface::IndexedNodeInterface) = print(
 )
 
 index(interface::IndexedNodeInterface) = interface.index
-name(interface::IndexedNodeInterface)  = name(interface.interface)
-tag(interface::IndexedNodeInterface)   = (tag(interface.interface), index(interface))
+name(interface::IndexedNodeInterface) = name(interface.interface)
 
 get_stream_of_outbound_messages(interface::IndexedNodeInterface) =
     get_stream_of_outbound_messages(interface.interface)
@@ -110,75 +122,5 @@ get_stream_of_inbound_messages(interface::IndexedNodeInterface) =
 getvariable(interface::IndexedNodeInterface) = getvariable(interface.interface)
 
 israndom(interface::IndexedNodeInterface) = israndom(interface.interface)
-isdata(interface::IndexedNodeInterface)   = isdata(interface.interface)
-isconst(interface::IndexedNodeInterface)  = isconst(interface.interface)
-
-"""
-Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s. `@rule` macro 
-also treats `ManyOf` specially.
-"""
-struct ManyOf{T}
-    collection::T
-end
-
-Base.show(io::IO, manyof::ManyOf) =
-    print(io, "ManyOf(", join(manyof.collection, ",", ""), ")")
-
-Rocket.getrecent(many::ManyOf) = ManyOf(getrecent(many.collection))
-
-getdata(many::ManyOf)    = getdata(many.collection)
-is_clamped(many::ManyOf) = is_clamped(many.collection)
-is_initial(many::ManyOf) = is_initial(many.collection)
-typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
-
-BayesBase.paramfloattype(many::ManyOf) = paramfloattype(many.collection)
-
-rule_method_error_type_nameof(::Type{T}) where {V, T <: ManyOf{V}} = begin
-    # V is the tuple type carried in ManyOf{V}
-    fts = fieldtypes(V)               # get the element type tuple, works for NTuple and Tuple
-    N = length(fts)                   # number of elements
-
-    if N == 0
-        return "ManyOf{0, }"
-    end
-
-    # If all element types are the same, produce the compact NTuple-style message:
-    if all(ft -> ft === fts[1], fts)
-        elt = dropproxytype(fts[1])
-        return string(
-            "ManyOf{", N, ", ", rule_method_error_type_nameof(elt), "}"
-        )
-    end
-
-    # Otherwise produce the Union of element type names:
-    unions = join(
-        map(r -> rule_method_error_type_nameof(dropproxytype(r)), fts), ","
-    )
-    return string("ManyOf{", N, ", Union{", unions, "}}")
-end
-
-Base.iterate(many::ManyOf)        = iterate(many.collection)
-Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
-
-Base.length(many::ManyOf) = length(many.collection)
-
-struct ManyOfObservable{S} <: Subscribable{ManyOf}
-    source::S
-end
-
-Rocket.getrecent(observable::ManyOfObservable) =
-    ManyOf(Rocket.getrecent(observable.source))
-
-@inline function Rocket.on_subscribe!(observable::ManyOfObservable, actor)
-    return subscribe!(observable.source |> map(ManyOf, (d) -> ManyOf(d)), actor)
-end
-
-function combineLatestMessagesInUpdates(
-    indexed::NTuple{N, <:IndexedNodeInterface}
-) where {N}
-    return ManyOfObservable(
-        combineLatestUpdates(
-            map((in) -> get_stream_of_inbound_messages(in), indexed), PushNew()
-        ),
-    )
-end
+isdata(interface::IndexedNodeInterface) = isdata(interface.interface)
+isconst(interface::IndexedNodeInterface) = isconst(interface.interface)

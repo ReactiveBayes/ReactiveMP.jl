@@ -1,48 +1,64 @@
-
 """
-    FactorNodeLocalMarginal
+    ReactiveMP.FactorNodeLocalMarginal(key)
 
-This object represents local marginals for some specific factor node.
-The local marginal can be joint in case of structured factorisation.
-Local to factor node marginal also can be shared with a corresponding marginal of some random variable.
+The marginal of one cluster of a factor node's factorisation, and the stream it arrives on once
+the node is activated. Its `key` is what a rule reads it by: the interface name for a cluster of
+one interface, `:μ`, and the tuple of member names for a joint, `(:out, :μ)` (see
+[`ReactiveMP.clusterkey`](@ref)). A cluster of one interface shares the stream of its variable's
+marginal; a joint's stream is computed by the node's marginal rule.
 """
-mutable struct FactorNodeLocalMarginal
-    const name::Symbol
+mutable struct FactorNodeLocalMarginal{K}
+    const key::K
     marginal::MarginalObservable
 
-    FactorNodeLocalMarginal(name::Symbol) = new(name)
+    FactorNodeLocalMarginal(key::K) where {K <: Union{Symbol, Tuple{Vararg{Union{Symbol, Tuple{Symbol, Int}}}}}} = new{K}(key)
 end
 
-name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
-tag(localmarginal::FactorNodeLocalMarginal)  = Val{name(localmarginal)}()
+name(localmarginal::FactorNodeLocalMarginal) = localmarginal.key
 
 get_stream_of_marginals(localmarginal::FactorNodeLocalMarginal) =
     localmarginal.marginal
 
 function set_stream_of_marginals!(
-    localmarginal::FactorNodeLocalMarginal, stream::MarginalObservable
-)
-    localmarginal.marginal = stream
+        localmarginal::FactorNodeLocalMarginal, stream::MarginalObservable
+    )
+    return localmarginal.marginal = stream
 end
 
 function set_stream_of_marginals!(
-    localmarginal::FactorNodeLocalMarginal, stream
-)
+        localmarginal::FactorNodeLocalMarginal, stream
+    )
     marginal = MarginalObservable()
     connect!(marginal, stream)
-    localmarginal.marginal = marginal
+    return localmarginal.marginal = marginal
 end
 
 Base.show(io::IO, marginal::FactorNodeLocalMarginal) =
-    print(io, "FactorNodeLocalMarginal(", name(marginal), ")")
+    print(io, "FactorNodeLocalMarginal(", repr(name(marginal)), ")")
 
 ## FactorNodeLocalClusters
 
+"""
+    ReactiveMP.FactorNodeLocalClusters(interfaces, factorization::Tuple; lone_group_joint = true)
+
+The clusters of a factor node: the factorisation, as tuples of positions into `interfaces`, and
+one [`ReactiveMP.FactorNodeLocalMarginal`](@ref) per cluster, keyed with
+[`ReactiveMP.clusterkey`](@ref). `lone_group_joint` says whether a cluster that is a whole group
+of one member, and nothing else, is the joint over the group, as a deterministic node's inputs
+are; [`factornode`](@ref) passes `false` for a stochastic node, where such a cluster is the
+member's own marginal.
+"""
 struct FactorNodeLocalClusters{M, F}
     marginals::M
     factorization::F
 end
 
+"""
+    ReactiveMP.get_node_local_marginals(clusters::FactorNodeLocalClusters)
+
+The local marginals of a node's clusters, one [`ReactiveMP.FactorNodeLocalMarginal`](@ref) per
+cluster of its factorisation, in the factorisation's order: `get_node_local_marginals(getlocalclusters(node))`.
+"""
 get_node_local_marginals(clusters::FactorNodeLocalClusters) = clusters.marginals
 set_node_local_marginal_stream!(
     clusters::FactorNodeLocalClusters, index, stream
@@ -52,117 +68,110 @@ getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) =
     clusters.factorization[index]
 
-function FactorNodeLocalClusters(
-    interfaces::AbstractArray{NodeInterface}, factorization
-)
-    marginals = map(
-        factor -> FactorNodeLocalMarginal(clustername(factor, interfaces)),
-        factorization,
-    )
-    return FactorNodeLocalClusters(marginals, factorization)
+function FactorNodeLocalClusters(interfaces::Union{AbstractVector, Tuple}, factorization::Tuple; lone_group_joint::Bool = true)
+    marginals = map(cluster -> FactorNodeLocalMarginal(clusterkey(cluster, interfaces; lone_group_joint)), factorization)
+    return FactorNodeLocalClusters{typeof(marginals), typeof(factorization)}(marginals, factorization)
 end
-
-function FactorNodeLocalClusters(
-    interfaces::NTuple{N, NodeInterface}, factorization
-) where {N}
-    marginals = map(
-        factor -> FactorNodeLocalMarginal(clustername(factor, interfaces)),
-        factorization,
-    )
-    return FactorNodeLocalClusters(marginals, factorization)
-end
-
-## FactorNodeLocalCluster
 
 clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) =
-    clusterindex(clusters, clusters.factorization, vindex)
-clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) =
-    findfirst(cluster -> vindex in cluster, factorization)
+    findfirst(cluster -> vindex in cluster, clusters.factorization)
 
-clustername(cluster::Tuple, interfaces) =
-    mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
-clustername(cluster, interfaces) = reduce(
-    (a, b) -> Symbol(a, :_, b),
-    Iterators.map(v -> name(interfaces[v]), cluster),
-)
-clustername(interfaces) = reduce(
-    (a, b) -> Symbol(a, :_, b),
-    Iterators.map(interface -> name(interface), interfaces),
-)
 
-function initialize_clusters!(
-    clusters::FactorNodeLocalClusters, dependencies, factornode, options
-)
-    # We first need to initialize all the clusters, since the `activate_cluster!` function may use any of the marginals
-    for i in eachindex(get_node_local_marginals(clusters))
-        initialize_cluster!(clusters, i, dependencies, factornode, options)
+"""
+    ReactiveMP.clusterkey(cluster::Tuple{Vararg{Int}}, interfaces; lone_group_joint = true)
+
+The key a cluster of interface positions is read by:
+
+- the name of its only interface, `:μ`, for a cluster of one interface, which shares its
+  variable's marginal;
+- otherwise the tuple of its members' names, a joint, in which a group whose members are all in
+  the cluster appears once, by its name: `(:in,)` is the joint over the group `in`. A joint
+  holding only some of a group's members names each as `(group, index)`, `(:out, (:T, 1))`.
+
+A cluster that is a whole group of one member, and nothing else, is the joint over the group,
+`(:in,)`, as a deterministic node's inputs are, with `lone_group_joint = true`; with `false`, as
+in a stochastic node, it is a cluster of one interface, `:in`.
+"""
+function clusterkey(cluster::Tuple{Vararg{Int}}, interfaces; lone_group_joint::Bool = true)
+    members = map(i -> interfaces[i], cluster)
+    names = Union{Symbol, Tuple{Symbol, Int}}[]
+    for member in members
+        if member isa IndexedNodeInterface && whole_group(member, members, interfaces)
+            name(member) in names || push!(names, name(member))
+        elseif member isa IndexedNodeInterface && length(cluster) > 1
+            push!(names, interface_key(member))
+        else
+            push!(names, name(member))
+        end
     end
-    for i in eachindex(get_node_local_marginals(clusters))
-        activate_cluster!(clusters, i, dependencies, factornode, options)
-    end
+    lone_group = first(members) isa IndexedNodeInterface && whole_group(first(members), members, interfaces)
+    return isone(length(cluster)) && isone(length(names)) && !(lone_group_joint && lone_group) ? only(names) : Tuple(names)
 end
 
-function initialize_cluster!(
-    clusters::FactorNodeLocalClusters,
-    index::Int,
-    dependencies,
-    factornode,
-    options,
-)
+# Whether every member of `member`'s group is among `members`.
+whole_group(member::IndexedNodeInterface, members, interfaces) =
+    count(i -> i isa IndexedNodeInterface && name(i) === name(member), members) ==
+    count(i -> i isa IndexedNodeInterface && name(i) === name(member), interfaces)
+
+isjoint(localmarginal::FactorNodeLocalMarginal) = name(localmarginal) isa Tuple
+
+initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options) =
+    initialize_clusters!(clusters, factornode, options, node_context(factornode, getcontext(options)))
+
+# `ctx` is the node's rule context, built once by activation for every mapping of the node.
+function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options, ctx)
+    # Every stream exists before any is wired, since a joint's rule may read any other cluster
+    for i in eachindex(get_node_local_marginals(clusters))
+        initialize_cluster!(clusters, i, factornode)
+    end
+    for i in eachindex(get_node_local_marginals(clusters))
+        activate_cluster!(clusters, i, factornode, options, ctx)
+    end
+    return
+end
+
+function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode)
     localfactorization = getfactorization(clusters, index)
-    # For the clusters of length `1` there is no need to create a new `MarginalObservable` object
-    # We can simply reuse it from the variable connected to the factor node. Potentially it saves a bit of memory 
-    stream_of_cluster_marginals = if isone(length(localfactorization))
-        get_stream_of_marginals(
-            getvariable(getinterface(factornode, first(localfactorization)))
-        )
+    stream_of_cluster_marginals = if !isjoint(get_node_local_marginals(clusters)[index])
+        get_stream_of_marginals(getvariable(getinterface(factornode, only(localfactorization))))
     else
-        # For the clusters of length `>1` we need to create the new strean, but it will be assigned later
         MarginalObservable()
     end
-    set_node_local_marginal_stream!(
-        clusters, index, stream_of_cluster_marginals
-    )
+    return set_node_local_marginal_stream!(clusters, index, stream_of_cluster_marginals)
 end
 
-function activate_cluster!(
-    clusters::FactorNodeLocalClusters,
-    index::Int,
-    dependencies,
-    factornode,
-    options,
-)
-    localfactorization = getfactorization(clusters, index)
-    stream_postprocessors = getpostprocessor(options)
+# A joint is computed by the node's marginal rule. In a stochastic node it reads the messages of
+# its members and the marginals of the other clusters. In a deterministic node, whose output is
+# a function of its inputs, the joint over the inputs reads the messages on every interface, the
+# output's included.
+function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options, ctx)
+    marginal = get_node_local_marginals(clusters)[index]
+    isjoint(marginal) || return nothing
 
-    if !isone(length(localfactorization))
-        # For the clusters which length is not equal to one we should collect the dependencies 
-        # and call the `MarginalMapping` to compute the result. The `MarginalObservable` should have 
-        # been initialized in the `initialize_cluster!` before
-        marginal = get_node_local_marginals(clusters)[index]
+    others = isdeterministic(sdtype(factornode)) ? () : Tuple(i for i in eachindex(get_node_local_marginals(clusters)) if i != index)
+    message_dependencies = isdeterministic(sdtype(factornode)) ? Tuple(getinterfaces(factornode)) :
+        map(i -> getinterface(factornode, i), getfactorization(clusters, index))
 
-        clusterinterfaces = map(
-            i -> getinterface(factornode, i), localfactorization
-        )
+    messagesnames, messages = collect_latest_messages(map(i -> input_label(factornode, i), message_dependencies), message_dependencies)
+    marginalsnames, marginals = collect_latest_marginals(
+        map(i -> cluster_label(factornode, clusters, i), others), map(i -> get_node_local_marginals(clusters)[i], others),
+    )
+    messages, marginals = with_statics(factornode, messages), with_statics(factornode, marginals)
 
-        message_dependencies  = tuple(clusterinterfaces...)
-        marginal_dependencies = tuple(TupleTools.deleteat(get_node_local_marginals(clusters), index)...)
+    fform = functionalform(factornode)
+    mapping = marginal_mapping(
+        fform,
+        MessagePassingRulesBase.ClusterTarget(name(marginal)),
+        messagesnames,
+        marginalsnames,
+        getalgorithm(fform, options),
+        factornode,
+        getdiagnostics(options),
+        ctx,
+        getcallbacks(options),
+    )
+    marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
+    marginalout = postprocess_stream_of_marginals(getpostprocessor(options), marginalout)
 
-        messagestag, messages = collect_latest_messages(
-            dependencies, factornode, message_dependencies
-        )
-        marginalstag, marginals = collect_latest_marginals(
-            dependencies, factornode, marginal_dependencies
-        )
-
-        fform = functionalform(factornode)
-        vtag  = tag(get_node_local_marginals(clusters)[index])
-        meta  = collect_meta(fform, getmetadata(options))
-
-        mapping     = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
-        marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
-        marginalout = postprocess_stream_of_marginals(stream_postprocessors, marginalout)
-
-        set_stream_of_marginals!(marginal, marginalout)
-    end
+    return set_stream_of_marginals!(marginal, marginalout)
 end

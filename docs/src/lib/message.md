@@ -1,99 +1,99 @@
+# [Messages](@id lib-message)
 
-# [Messages implementation](@id lib-message)
+A [message](@extref MessagePassingRulesBase glossary-message) is what flows along an edge of the
+factor graph: a summary, about the variable on that edge, of the part of the graph it comes from.
+In belief propagation it is an unnormalised function. In variational message passing it is the
+exponent of an expected log-factor (see [Message passing](@ref concepts-message-passing)).
 
-In the message passing framework, one of the most important concepts is the message.
-Given a factor graph, messages are arbitrary functions that flow along the edges of the graph and hold information about the part of the graph from which they originate.
-
-## [Message as a distribution](@id lib-messages-as-distributions)
-
-Often, a message can be represented in the form of a probability distribution, as a probability distribution can be matched with its _probability density function_.
-The representation of messages as probability distributions is not only for convenience but also for performance reasons. For example, a univariate _Gaussian_ distribution can be parameterized with two numbers, which significantly reduce the amount of information needed to pass along the edges of the graph.
-
-```@example
-using StatsPlots, Distributions
-
-plot(Normal(0.0, 1.0), label = "Univariate Gaussian distribution", fillalpha = 0.4, fill = 0)
+```@setup message
+using ReactiveMP, MessagePassingRulesBase, BayesBase, ExponentialFamily, Distributions, Rocket
+import ReactiveMP: activate!, FactorNodeActivationOptions, MessageProductContext, get_stream_of_marginals
+include(joinpath(pkgdir(ReactiveMP), "docs", "nodes.jl"))
 ```
 
-## [Variational Message Passing](@id lib-message-vmp)
+The examples use the `Gaussian` node of [The example node](@ref example-node).
 
-The message passing technique is useful for finding the posterior distribution over certain parameters in a model, originating from exact Bayesian inference, which is also known as __Belief Propagation__. However, the message passing technique can also be used to find _approximate_ solutions to posteriors - a technique known as __Variational inference__. The `ReactiveMP.jl` package implements __Variational Message Passing__ since it is a more general form than exact inference, and also because the exact solution can be framed as an approximate solution subject to no constraints. Here are visual schematics of the differences between messages in Belief propagation and Variational inference.
+## [Messages as distributions](@id lib-messages-as-distributions)
 
-### [Belief-Propagation (or Sum-Product) message](@id lib-belief-propagation-message)
+A message is usually a normalised probability distribution. A univariate normal is two numbers,
+which is all that passes along the edge:
 
-![message](../assets/img/bp-message.svg)
-*Belief propagation message*
+```@example message
+message = Message(NormalMeanVariance(0.0, 1.0), false, false)
+mean(message), var(message), logpdf(message, 1.0)
+```
 
-### [Variational message](@id lib-variational-message)
+The message forwards the statistics to its distribution. The constant the normalisation leaves
+out is the message's log scale, which the engine tracks when you ask it to (see
+[Log scales](@ref lib-logscale)).
 
-![message](../assets/img/vmp-message.svg)
-*Variational message with structured factorisation q(x, y)q(z) assumption*
+## [The message type](@id lib-message-type)
 
+Every message is a [`Message`](@ref). It holds its data and records two flags:
 
-## Message type
+- *clamped*: the message is computed from constants and observations only;
+- *initial*: the message was set before inference, or computed from initial values.
 
-All messages are encoded with the type `Message`. 
+The [product of messages](@ref lib-messages-product) derives both flags from its sides'. A
+message also carries its log scale and a [`ReactiveMP.AnnotationDict`](@ref) of optional
+metadata (see [Annotations](@ref lib-annotations)).
+
+```@example message
+tracked = Message(NormalMeanVariance(0.0, 1.0), false, false, ReactiveMP.AnnotationDict(), -1.5)
+tracked == message, getlogscale(tracked)
+```
+
+!!! note "Equality ignores annotations and log scales"
+    `==` on `Message` and on [`Marginal`](@ref) compares the data and the two flags, not the
+    annotations or the log scale. These describe *how* a value was computed, not the belief it
+    holds. Compare [`getannotations`](@ref) and [`getlogscale`](@ref) explicitly where they
+    matter, such as in a cache key.
 
 ```@docs
 AbstractMessage
 Message
+getdata(::Message)
+is_clamped(::Message)
+is_initial(::Message)
+getannotations(::Message)
+getlogscale(::Message)
+as_message
 ```
 
-From an implementation point a view the `Message` structure does nothing but hold some `data` object and redirects most of the statistical related functions to that `data` object. 
-However, this object is used extensively in Julia's multiple dispatch. 
-Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if [product of two messages](@ref lib-messages-product) results in `is_initial` or `is_clamped` posterior marginal. Each message also carries an [`AnnotationDict`](@ref) for optional metadata such as log-scale factors or computation history (see [Annotations](@ref lib-annotations)).
+## [Message streams](@id lib-message-observable)
 
-!!! note "Equality ignores annotations"
-    `==` on `Message` (and on [`Marginal`](@ref)) compares `data`, `is_clamped` and `is_initial`, but **not** `annotations`. Two messages carrying the same distribution therefore compare equal even when their annotations differ — including `:logscale`, which underpins free-energy bookkeeping. This is intentional: annotations describe *how* a message was computed, not the belief it represents. If you need annotation-sensitive equality (in a cache key, a `unique` call, or your own code), compare [`ReactiveMP.getannotations`](@ref) explicitly alongside the messages. See the `Message` docstring for a worked example.
-
-```@docs
-ReactiveMP.getdata(message::Message)
-ReactiveMP.is_clamped(message::Message)
-ReactiveMP.is_initial(message::Message)
-ReactiveMP.getannotations(message::Message)
-ReactiveMP.as_message
-```
-
-```@example message
-using ReactiveMP, BayesBase, ExponentialFamily
-
-distribution = ExponentialFamily.NormalMeanPrecision(0.0, 1.0)
-message      = Message(distribution, false, true)
-```
-
-```@example message
-mean(message), precision(message)
-```
-
-```@example message
-logpdf(message, 1.0)
-```
-
-```@example message
-is_clamped(message), is_initial(message)
-```
-
-## Message observable
-
-Within the reactive message passing framework, messages are not computed once and stored as values — instead each edge of the factor graph carries a *stream* that continuously emits updated messages as the inference iterates. `MessageObservable` is the container for such a stream.
+The engine does not compute a message once and store it. Each connection between a variable and
+a node carries a *stream* of messages, a [`ReactiveMP.MessageObservable`](@ref), which emits a new
+message whenever its inputs change. The stream is lazy until activation connects it to its
+source. Before that, [`ReactiveMP.set_initial_message!`](@ref) can seed it, so that a rule that
+reads it at the start has something to read. The stream keeps its latest message: a subscriber
+that joins late receives it at once.
 
 ```@docs
 ReactiveMP.MessageObservable
 ```
 
-Each connection between a variable and a factor node owns one `MessageObservable`. From the variable's perspective it is an *inbound* message stream (a message arriving from a connected node); from the node's perspective the same object is the message that will eventually be used to compute the outbound message on another edge. The observable starts *unconnected*: its internal `LazyObservable` has no upstream source until the factor graph is activated. During activation, `ReactiveMP.connect!` wires the lazy stream to the result of the message update rule computation. After that point, every upstream change (a new observation, a changed prior, an iterated belief) propagates reactively through the `MessageObservable` to all its subscribers.
+## [Product of messages](@id lib-messages-product)
 
-The internal `RecentSubject` ensures that:
-- any subscriber that joins after the first emission immediately receives the current message via `Rocket.getrecent`
-- [`ReactiveMP.set_initial_message!`](@ref) can seed a value *before* activation, so that rules that read an inbound message at iteration zero have something to read
+A variable multiplies its inbound messages: all of them for its marginal, and all but one for
+each outbound message. The product of two messages is `BayesBase.prod` of their distributions,
+under a product strategy. It is in general not normalised, and its log scale accounts for the
+constant.
 
-All downstream subscriptions go through the `LazyObservable`, not the subject directly, so they see the full computed stream rather than only manually pushed values.
+A [`ReactiveMP.MessageProductContext`](@ref) holds the settings: the product strategy, the
+[form constraint](@ref custom-functional-form) and when it applies, the order of the fold, the
+annotation processors and the callbacks.
 
-### [Product of messages](@id lib-messages-product)
+```@example message
+messages = [
+    Message(NormalMeanVariance(0.0, 10.0), true, false),
+    Message(NormalMeanVariance(2.0, 1.0), false, true),
+]
+product = ReactiveMP.compute_product_of_messages(randomvar(), MessageProductContext(), messages)
+getdata(product), is_clamped(product), is_initial(product)
+```
 
-In message passing framework, in order to compute a posterior we must compute a normalized product of two messages.
-For this purpose the `ReactiveMP.jl` uses the [`ReactiveMP.MessageProductContext`](@ref) structure, together with the [`ReactiveMP.compute_product_of_messages`](@ref) and [`ReactiveMP.compute_product_of_two_messages`](@ref) functions. Both functions accept a [`ReactiveMP.AbstractVariable`](@ref) as the first argument to identify which variable the product is being computed for — this is useful for callbacks (e.g. [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)). The [`ReactiveMP.compute_product_of_two_messages`](@ref) function internally uses the `prod` function
-defined in `BayesBase.jl` with various product strategies. We refer an interested reader to the documentation of the `BayesBase.jl` package for more information.
+One side is clamped and the other initial, so the product is initial.
 
 ```@docs
 ReactiveMP.MessageProductContext
@@ -103,17 +103,50 @@ ReactiveMP.MessagesProductFromLeftToRight
 ReactiveMP.MessagesProductFromRightToLeft
 ```
 
+## [Deferred messages](@id lib-messages-deferred)
 
-### [Deferred messages](@id lib-messages-deferred)
+A factor node emits its messages deferred. The engine computes each when a variable first reads
+it, and caches it, so that a message nobody reads is never computed. [`as_message`](@ref)
+computes a deferred message.
 
-```@docs 
-ReactiveMP.DeferredMessage
+```@docs
+DeferredMessage
 ```
 
-### [Message mappings](@id lib-messages-mapping)
+## [Message mappings](@id lib-messages-mapping)
 
-A *message mapping* defines how messages are transformed or mapped during the propagation process — for example, when combining multiple incoming messages or applying specific transformation rules. This structure helps organize and reuse mapping logic across different inference algorithms.
+A [`ReactiveMP.MessageMapping`](@ref) computes a node's message towards one interface. It
+resolves the rule for the latest inputs, checks it, and runs it. When an input is `missing`, it
+gives `missing` without running a rule. It keeps the [scratch](@ref internals-scratch) of the
+rule it runs between calls. The callback events of a rule call carry it, so a callback reads the
+node, the target and the algorithm from it:
+
+```@example message
+x, y = randomvar(label = :x), datavar(label = :y)
+prior = factornode(Gaussian, [(:out, x), (:μ, constvar(0.0)), (:v, constvar(10.0))])
+likelihood = factornode(Gaussian, [(:out, y), (:μ, x), (:v, constvar(1.0))])
+
+mappings = []
+callbacks = (before_message_rule_call = (event) -> push!(mappings, event.mapping),)
+activate!(x, RandomVariableActivationOptions())
+activate!(y, DataVariableActivationOptions())
+foreach(n -> activate!(n, FactorNodeActivationOptions(; callbacks)), (prior, likelihood))
+
+subscription = subscribe!(get_stream_of_marginals(x), (q) -> nothing)
+new_observation!(y, 2.0)
+unsubscribe!(subscription)
+mappings
+```
+
+Each mapping names its node, its target and the messages its rule takes.
 
 ```@docs
 ReactiveMP.MessageMapping
+```
+
+A mapping hands the rule the data of the messages and marginals it depends on, keyed as the rule
+declares them, with their annotations alongside.
+
+```@docs
+ReactiveMP.rule_arguments
 ```

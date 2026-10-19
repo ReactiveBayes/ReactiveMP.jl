@@ -22,12 +22,14 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
+                # The latest Julia only: the root suite covers every supported version.
                 julia-version: ['1']
                 os: [ubuntu-latest]
                 package:
                     # Add downstream packages that depend on ReactiveMP here
                     # Each entry runs as a separate parallel job
-                    - { user: ReactiveBayes, repo: RxInfer.jl }
+                    # RxInfer's branch for ReactiveMP v7, until RxInfer releases it.
+                    - { user: ReactiveBayes, repo: RxInfer.jl, ref: refactor/reactivemp-v7 }
 
 
         steps:
@@ -44,20 +46,20 @@ jobs:
               uses: actions/checkout@v6
               with:
                   repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
+                  ref: ${{ matrix.package.ref }}
                   path: downstream
+
+            # The branch reaches ReactiveMP through [sources] at the sibling path `../ReactiveMP.jl`;
+            # here this repository is the downstream's parent.
+            - name: Point the downstream's [sources] at this checkout
+              run: sed -i 's#\.\./ReactiveMP\.jl#..#g' downstream/Project.toml
 
             - name: Load this and run the downstream tests
               shell: julia --project=downstream {0}
               run: |
                   using Pkg
-                  try
-                      # Force downstream to use this PR version of ReactiveMP
-                      Pkg.develop(PackageSpec(path="."))  # add this version
-                      Pkg.update()
-                      Pkg.test()  # run downstream tests
-                  catch err
-                      err isa Pkg.Resolve.ResolverError || rethrow()
-                      # If resolver fails, assume intentional breaking change (SemVer)
-                      @info "Not compatible with this release. No problem." exception=err
-                      exit(0)  # Treat as success
-                  end
+                  # The downstream's [sources] use this checkout of ReactiveMP, so a
+                  # resolver error is a broken pair of branches, never an intentional breaking
+                  # release: it fails the job, as any test does.
+                  Pkg.instantiate()
+                  Pkg.test()
