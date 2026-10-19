@@ -5,6 +5,7 @@
 [![Build Status](https://github.com/reactivebayes/ReactiveMP.jl/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/reactivebayes/ReactiveMP.jl/actions)
 [![Coverage](https://codecov.io/gh/reactivebayes/ReactiveMP.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/reactivebayes/ReactiveMP.jl)
 [![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.8381133.svg)](https://zenodo.org/doi/10.5281/zenodo.5913616)
+[![Code style: Runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
 
 # Overview
 

@@ -71,6 +71,7 @@ nodes and rules from the packages run as before.
 
 ### Changed
 
+- The code is formatted with Runic, checked in CI by the workflow *Format* (`make format` fixes a diff), in place of JuliaFormatter and its pull requests that applied the formatting.
 - The engine runs faster than v6 on the models measured, and the free energy's average energies
   resolve their rule at compile time.
 - `FormConstraintCheckLast` applies once to each outbound message, as documented.

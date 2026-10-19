@@ -81,8 +81,8 @@ make test-reactant                         # compile an unrolled model with Reac
 ```
 
 The packages support **Julia 1.10 and later**, and local work runs on 1.13. The workflows under
-`.github/` run the root suite on 1.10, 1.11, 1.12 and 1.13, all gating, and the docs on 1.13 (the
-format check on 1.10, where Runic's output is byte-identical); `IntegrationTest.yml` runs RxInfer's
+`.github/` run the root suite on 1.10, 1.11, 1.12 and 1.13, all gating, and the docs on 1.13;
+`Format.yml` runs `make check-format`, the Runic version `scripts/` pins; `IntegrationTest.yml` runs RxInfer's
 suite against this checkout, and *Reactant check* the Reactant extension. Local checks need only
 1.13; CI covers the others.
 
