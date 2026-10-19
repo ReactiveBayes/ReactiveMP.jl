@@ -109,6 +109,9 @@ On `main`, in one commit:
     Documenter key, so its pull requests run CI;
   - `DocPreviewCleanup.yml`: on a closed pull request, deletes its `previews/PR<n>` from
     `gh-pages`, which Documenter never does.
+  - `Weekly.yml`: every Monday, and on demand, the suite on Julia `1` with the latest release of
+    every dependency, `TEST_ALL=true`, no coverage: once a package is out of the monorepo, nothing
+    else tests it between its own commits.
 
 Then, locally: the Runic check (`julia --project=<ReactiveMP.jl>/scripts -e 'using Runic;
 exit(Runic.main(["--check", "."]))'`), the suite, and the docs (`julia --project=docs -e 'import
@@ -253,3 +256,11 @@ Release notes:
   inventories; their Makefile targets, `LibTests.yml` jobs and `CompatHelper.yml` entries gone.
   `compat/v6-comparison`'s tracked Manifest kept the deleted paths, so `Pkg.resolve` failed: the
   ten were `Pkg.free`d instead. `lib/` holds GCV alone, until it is registered.
+- **MessagePassingRulesBase 1.1.2** (2026-10-18, user): RxInfer's documentation build stalled on
+  *Undefined message update rules*, which projects 1,000 `NodeFunctionRuleFallback` messages to a
+  `Beta`: each message splatted `E => x` into keyword arguments, building a `NamedTuple` type at
+  run time on every evaluation (704 ns and 16 allocations against 6 ns and none). Issue #13, pull
+  request #14 with an allocation test, CI green; registration General#172365, merged the same day.
+  RxInfer's site builds in 4 min 45 s with it.
+- **Weekly runs** (2026-10-18, user): every split repository and the template got `Weekly.yml`,
+  pushed to `main`, and each run dispatched once by hand passed.
