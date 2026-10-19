@@ -9,7 +9,6 @@ on:
   push:
     branches:
       - main
-      - refactor/rule-node-system-rewrite
   schedule:
     - cron: '0 8 * * 1' # Mondays, 08:00 UTC
 
