@@ -245,7 +245,9 @@ Laar to triple-check it), are corrected in the rule packages.
   inlined into its caller, so `create_factornode` is marked too. Its test, `make test-reactant`, has its
   own environment and the workflow *Reactant check*, apart from `ci.yml`, so Reactant breaking does not
   block the suite; it compiles before running uncompiled, since `factornode`'s creation-plan
-  cache would otherwise spare the trace the code under test. RxInfer marks its own functions in its
+  cache would otherwise spare the trace the code under test. `group_length` is marked too: its
+  `count` otherwise walks interface streams. The small regression scales a traced array by a
+  real node's group size and evaluates two inputs. RxInfer marks its own functions in its
   `ReactantExt`.
 - `src/fixes.jl` holds deliberate hot-fixes for upstream packages; it is expected to be
   empty when everything upstream has released.

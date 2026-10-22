@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Skip Reactant rewriting of `group_length` so nodes with grouped interfaces compile without walking their message streams.
+
 ### Changed
 - The integration test runs RxInfer's `main` (RxInfer 6) on this checkout of ReactiveMP, which it develops, instead of RxInfer's v7 branch through `[sources]`.
 - The README's installation section: RxInfer first, then the engine on its own, then the rule packages, each in a step of its own.

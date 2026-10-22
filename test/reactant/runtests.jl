@@ -131,3 +131,19 @@ ys = [[cos(t / 10), sin(t / 10)] .* 10 for t in 1:5]
         @test all(isapprox.(Array.(computed), expected; atol = 1.0e-10))
     end
 end
+
+struct GroupedInputs end
+@define_factor_node(node = GroupedInputs, type = Deterministic, interfaces = [:out, :in...])
+
+function scale_by_group_length(x)
+    node = factornode(GroupedInputs, [(:out, randomvar()), ((:in, 1), randomvar()), ((:in, 2), randomvar())])
+    return x .* ReactiveMP.group_length(node, :in)
+end
+
+@testset "group length under Reactant tracing" begin
+    x = Reactant.to_rarray([3.0])
+    compiled = @compile scale_by_group_length(x)
+    @test Array(compiled(x)) == [6.0]
+    # Reuse the compiled function: the input must still be traced.
+    @test Array(compiled(Reactant.to_rarray([5.0]))) == [10.0]
+end
