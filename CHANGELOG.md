@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.0.1] - 2026-10-23
+
 ### Fixed
 - Skip Reactant rewriting of `group_length` so nodes with grouped interfaces compile without walking their message streams.
 
@@ -390,7 +392,9 @@ nodes and rules from the packages run as before.
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.6.0...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.1...HEAD
+[7.0.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.0...v7.0.1
+[7.0.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.6.0...v7.0.0
 [6.6.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.5.0...v6.6.0
 [6.5.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.4.1...v6.5.0
 [6.4.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.4.0...v6.4.1
