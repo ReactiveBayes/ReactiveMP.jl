@@ -16,7 +16,9 @@ using ReactiveMP, Reactant
 # clusters and node function, and `create_factornode` does the work: a call such as
 # `factornode(fform, interfaces, factorisation)` is inlined into its caller, so Reactant never sees
 # `factornode` itself. `israndom`, `isdata` and `isconst` tell the kind of one variable or of a
-# collection of them. The marks can go once Reactant's walk tolerates undefined fields and cycles
+# collection of them. `group_length` counts a group's interfaces; tracing its `count` would walk
+# their streams even though only their types and names matter. The marks can go once Reactant's
+# walk tolerates undefined fields and cycles
 # (EnzymeAD/Reactant.jl#3506).
 #
 # The marks go into a set in Reactant, which precompilation does not keep, so they are made when the
@@ -27,6 +29,7 @@ function __init__()
     Reactant.@skip_rewrite_func ReactiveMP.israndom
     Reactant.@skip_rewrite_func ReactiveMP.isdata
     Reactant.@skip_rewrite_func ReactiveMP.isconst
+    Reactant.@skip_rewrite_func ReactiveMP.group_length
     return nothing
 end
 
