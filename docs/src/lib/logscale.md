@@ -168,7 +168,10 @@ Then:
 - initial messages were computed by no rule, so their log scale is undefined;
 - a product combines the log scales as above. An undefined side propagates, keeping its reason.
   A pair of distributions with no `compute_logscale` gives an undefined log scale, and so does a
-  form constraint that changes the product. A `missing` side leaves the other side's log scale;
+  form constraint that changes the product. A product with no closed form, a `ProductOf`, records
+  its sides' log scales, and a form constraint that reports the product's normaliser
+  ([`constrain_form_logscale`](@ref)) completes it. A `missing` side leaves the other side's log
+  scale;
 - a random variable's marginal carries the log scale of the product it was formed from;
 - an initial marginal, set with [`ReactiveMP.set_initial_marginal!`](@ref), and a factor node's
   joint marginal carry none: reading theirs is an error, as where log scales are not tracked.

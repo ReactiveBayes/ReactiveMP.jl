@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `expectation` backend.
 - The engine supplies the service `expectation`, `nothing` unless the context sets one, so that
   its services are MessagePassingRulesBase's `DEFAULT_CONTEXT_SERVICES`.
+- `constrain_form_logscale(constraint, distribution)`, a form constraint's `constrain_form` with
+  the log of the normaliser of its input, `nothing` by default. A projection that computes it
+  gives a product with no closed form a log scale: such a product, a `ProductOf`, records its
+  sides' log scales (the cause `:unnormalised_product`), and the normaliser completes them.
 - `MarginalMapping` takes a `rulefallback`, and events name the fallback as the `rule` of a joint
   or an average energy it gave.
 

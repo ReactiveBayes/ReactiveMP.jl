@@ -332,8 +332,8 @@ function compute_product_of_two_messages(
             )
         )
         unconstrained_dist = new_dist
-        new_dist = constrain_form(context.form_constraint, new_dist)
-        new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale)
+        new_dist, lognormaliser = constrain_form_logscale(context.form_constraint, new_dist)
+        new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale, lognormaliser)
         @invoke_callback(
             context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
@@ -431,7 +431,7 @@ end
                 variable, context, FormConstraintCheckLast(), dist, form_span_id
             )
         )
-        constrained_dist = constrain_form(context.form_constraint, dist)
+        constrained_dist, lognormaliser = constrain_form_logscale(context.form_constraint, dist)
         @invoke_callback(
             context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
@@ -442,13 +442,13 @@ end
                 form_span_id,
             )
         )
-        if constrained_dist !== dist
+        if constrained_dist !== dist || lognormaliser !== nothing
             result = Message(
                 constrained_dist,
                 is_clamped(result),
                 is_initial(result),
                 getannotations(result),
-                constrained_logscale(dist, constrained_dist, result.logscale),
+                constrained_logscale(dist, constrained_dist, result.logscale, lognormaliser),
             )
         end
     end
