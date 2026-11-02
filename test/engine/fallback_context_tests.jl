@@ -28,12 +28,12 @@
     # A three-point rule, exact for polynomials of degree five under a Gaussian.
     struct ThreePoints end
     const Gaussian = ExponentialFamily.UnivariateNormalDistributionsFamily
-    BayesBase.supports(::ThreePoints, ::Type, ::Type{<:Union{Gaussian, PointMass}}) = true
+    BayesBase.supports_expectation(::ThreePoints, ::Type, ::Type{<:Union{Gaussian, PointMass}}) = true
     function BayesBase.prepare_expectation(::ThreePoints, q::Gaussian)
         s = sqrt(3 * var(q))
-        return BayesBase.PointSet((mean(q) - s, mean(q), mean(q) + s), (1 / 6, 2 / 3, 1 / 6))
+        return BayesBase.ExpectationPointSet((mean(q) - s, mean(q), mean(q) + s), (1 / 6, 2 / 3, 1 / 6))
     end
-    BayesBase.prepare_expectation(::ThreePoints, q::PointMass) = BayesBase.PointSet((mean(q),), (1.0,))
+    BayesBase.prepare_expectation(::ThreePoints, q::PointMass) = BayesBase.ExpectationPointSet((mean(q),), (1.0,))
 end
 
 @testitem "rulefallback: a message fallback gets the algorithm and the rule context" tags = [:engine] setup = [ContextFallbackNodes] begin
