@@ -529,9 +529,10 @@ The event right after a factor node's marginal rule ran, or after a `missing` in
   algorithm;
 - `messages`: the inbound messages the rule read, a tuple, or `nothing` for none;
 - `marginals`: the marginals the rule read, a tuple, or `nothing` for none;
-- `result`: the joint's data, what the rule returned, or `missing`;
-- `rule`: the rule that ran, a [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), or
-  `nothing` when a `missing` input skipped it;
+- `result`: the joint's data, what the rule or the fallback returned, or `missing`;
+- `rule`: what gave the joint: the rule that ran, a
+  [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where no rule
+  matched; or `nothing` when a `missing` input skipped the rule;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeMarginalRuleCallEvent`](@ref).
 """
 struct AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, S} <:
@@ -580,7 +581,8 @@ this event's span.
 - `entropy`: the sum of the marginals' differential entropies;
 - `result`: the contribution, a `BayesBase.CountingReal`;
 - `rule`: the average energy that ran, a
-  [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), or `nothing` for a deterministic node;
+  [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where none is
+  defined; or `nothing` for a deterministic node;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeFactorBoundFreeEnergyEvent`](@ref).
 """
 struct AfterFactorBoundFreeEnergyEvent{N, Ms, E, H, R, U, S} <:

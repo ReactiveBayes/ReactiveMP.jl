@@ -22,13 +22,19 @@ Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 [extensions]
 ReactiveMPReactantExt = "Reactant"
 
+# TEMPORARY: the branches of U3 (universal inference), until they are released. The path is
+# switched to the pushed branch before anything is pushed.
+[sources]
+BayesBase = {url = "https://github.com/ReactiveBayes/BayesBase.jl", rev = "universal-inference"}
+MessagePassingRulesBase = {path = "../MessagePassingRulesBase.jl"}
+
 [compat]
-BayesBase = "1.5"
+BayesBase = "1.7"
 Compat = "4.10"
 Distributions = "0.24, 0.25"
 LinearAlgebra = "1.10"
 MacroTools = "0.5"
-MessagePassingRulesBase = "1"
+MessagePassingRulesBase = "1.2"
 Reactant = "0.2.134"
 Rocket = "1.8.0"
 TinyHugeNumbers = "1.0.0"

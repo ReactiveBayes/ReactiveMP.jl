@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A rule fallback is asked with `MessagePassingRulesBase.call_fallback` and `call_energy_fallback`,
+  with the node's algorithm and its rule context, and also where a joint marginal or an average
+  energy has no rule. A three-argument fallback is asked about messages only, as before;
+  `NodeFunctionRuleFallback` gives the average energy of a mean-field node through the context's
+  `expectation` backend.
+- `MarginalMapping` takes a `rulefallback`, and events name the fallback as the `rule` of a joint
+  or an average energy it gave.
+
+### Changed
+- MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.
+
 ## [7.0.1] - 2026-10-23
 
 ### Fixed

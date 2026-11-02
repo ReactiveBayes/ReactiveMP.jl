@@ -782,11 +782,18 @@ message_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A,
 
 tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
 
-# The fallback's message where no rule matched; the not-found error where it has none either.
-function fallback_message(fallback, notfound, fform, target, args)
-    message = fallback(fform, target, args)
+# The fallback's answer where no rule matched, asked with the node's algorithm and rule context
+# (`call_fallback`, `call_energy_fallback`); the not-found error where it has none either.
+function fallback_message(fallback, notfound, fform, target, algorithm, ctx, args)
+    message = MessagePassingRulesBase.call_fallback(fallback, fform, target, algorithm, ctx, args)
     isnothing(message) && throw(RuleNotFoundError(notfound))
     return message
+end
+
+function fallback_energy(fallback, notfound, fform, algorithm, ctx, args)
+    energy = MessagePassingRulesBase.call_energy_fallback(fallback, fform, algorithm, ctx, args)
+    isnothing(energy) && throw(RuleNotFoundError(notfound))
+    return energy
 end
 
 function (mapping::MessageMapping)(messages, marginals)
@@ -822,7 +829,7 @@ function (mapping::MessageMapping)(messages, marginals)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
         found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
         if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
-            fallback_message(mapping.rulefallback, found, fform, mapping.target, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
+            fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, mapping.context, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
         else
             spec = audit_rule(mapping.diagnostics, resolve_rule(found))
             MessagePassingRulesBase.check_reads_logscale(spec, args)

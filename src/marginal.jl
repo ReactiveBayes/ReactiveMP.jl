@@ -267,9 +267,11 @@ resolves the marginal rule with
 [`find_marginal_rule`](@extref MessagePassingRulesBase.find_marginal_rule) under the node's
 algorithm, checks it against the [`ReactiveMP.EngineDiagnostics`](@ref) and the services the node's
 context supplies ([`check_services`](@extref MessagePassingRulesBase.check_services)), and runs it.
-Where no rule matches, it throws a
-[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError): a rule fallback does
-not apply to a marginal.
+Where no rule matches, it asks the node's rule fallback with
+[`call_fallback`](@extref MessagePassingRulesBase.call_fallback), the target a
+[`ClusterTarget`](@extref MessagePassingRulesBase.ClusterTarget), and throws a
+[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) where there is none or it
+answers `nothing`, as a fallback written for messages does.
 
 The marginal is clamped when every input is, and initial when it is not clamped and every input
 is clamped or initial. It carries no annotations and no log scale.
@@ -278,7 +280,7 @@ The callbacks receive [`ReactiveMP.BeforeMarginalRuleCallEvent`](@ref) and
 [`ReactiveMP.AfterMarginalRuleCallEvent`](@ref) around each call, the latter also for a `missing`
 marginal.
 """
-mutable struct MarginalMapping{F, T, N, M, A, R, G, E}
+mutable struct MarginalMapping{F, T, N, M, A, R, G, E, B}
     # Mutable, its fields but the scratch slot constant, as `MessageMapping` is.
     const target::T
     const msgs_names::N
@@ -288,6 +290,7 @@ mutable struct MarginalMapping{F, T, N, M, A, R, G, E}
     const diagnostics::EngineDiagnostics
     const context::G
     const callbacks::E
+    const rulefallback::B
     scratch::Union{Nothing, ScratchSlot}
 end
 
@@ -311,14 +314,14 @@ function Base.show(io::IO, mapping::MarginalMapping)
     return nothing
 end
 
-MarginalMapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, callbacks = nothing) =
-    marginal_mapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics, node_context(factornode, context), callbacks)
+MarginalMapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, callbacks = nothing, rulefallback = nothing) =
+    marginal_mapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics, node_context(factornode, context), callbacks, rulefallback)
 
 # A mapping with its rule context already built, as `message_mapping`.
-marginal_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E) where {F, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E} =
-    MarginalMapping{F, T, N, M, A, R, G, E}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, nothing)
-marginal_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E) where {F <: Function, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E} =
-    MarginalMapping{F, T, N, M, A, R, G, E}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, nothing)
+marginal_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E, rulefallback::B = nothing) where {F, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E, B} =
+    MarginalMapping{F, T, N, M, A, R, G, E, B}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, rulefallback, nothing)
+marginal_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E, rulefallback::B = nothing) where {F <: Function, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E, B} =
+    MarginalMapping{F, T, N, M, A, R, G, E, B}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, rulefallback, nothing)
 
 # As `new_message`: a barrier for a marginal built from a value inferred abstractly.
 @noinline new_marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(data, is_clamped, is_initial)
@@ -362,19 +365,24 @@ end
 skips_rule(mapping::MarginalMapping, messages, marginals) =
     has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)
 
-# The rule a call ran, found again only for an event someone listens to; `nothing` where a
-# `missing` input skipped it.
+# The rule a call ran, found again only for an event someone listens to: the fallback where no
+# rule matched, or `nothing` where a `missing` input skipped it.
 function selected_marginal_rule(mapping::MarginalMapping, messages, marginals)
     skips_rule(mapping, messages, marginals) && return nothing
     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
-    return MessagePassingRulesBase.find_marginal_rule(marginal_mapping_fform(mapping), mapping.target, mapping.algorithm, args)
+    found = MessagePassingRulesBase.find_marginal_rule(marginal_mapping_fform(mapping), mapping.target, mapping.algorithm, args)
+    return found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback) ? mapping.rulefallback : found
 end
 
 function compute_marginal(mapping::MarginalMapping, messages, marginals)
     fform = marginal_mapping_fform(mapping)
     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
-    spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)))
+    found = MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)
     ctx = mapping.context
+    if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
+        return fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, ctx, args)
+    end
+    spec = audit_rule(mapping.diagnostics, resolve_rule(found))
     MessagePassingRulesBase.check_services(spec, ctx)
     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)

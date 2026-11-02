@@ -124,11 +124,13 @@ struct FactorNode{F, I, C, N} <: AbstractFactorNode
 end
 
 # What a node was activated with that its free energy needs as well: its rule context, the engine's
-# services merged with the `context` option, the `diagnostics` option and the `callbacks` option.
-struct NodeActivation{G, E}
+# services merged with the `context` option, the `diagnostics`, `callbacks` and `rulefallback`
+# options.
+struct NodeActivation{G, E, B}
     context::G
     diagnostics::EngineDiagnostics
     callbacks::E
+    rulefallback::B
 end
 
 # What a node was activated with, or `nothing` for a node not activated. Its type is known only at
@@ -145,6 +147,10 @@ activation_services(::Nothing, node) = node_context(node), EngineDiagnostics(), 
 # The callbacks alone, for a computation that needs no rule context.
 activation_callbacks(activation::NodeActivation) = activation.callbacks
 activation_callbacks(::Nothing) = nothing
+
+# The rule fallback, `nothing` for a node not activated.
+activation_rulefallback(activation::NodeActivation) = activation.rulefallback
+activation_rulefallback(::Nothing) = nothing
 
 """
     factornode(fform, interfaces, factorisation = nothing; nodefn = nothing) -> FactorNode
@@ -521,11 +527,16 @@ the others taking their defaults.
   engine's (see [`ReactiveMP.node_context`](@ref)): it adds any service a rule declares and
   overrides the engine's. `nothing` is `NamedTuple()`, the default. A rule declaring a service
   nobody supplies is an error when it is resolved, naming the rule and the service;
-- `rulefallback`: what gives a message where no rule matches, such as
+- `rulefallback`: what gives a message, a joint marginal or an average energy where no rule
+  matches, such as
   [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()`,
-  called as `rulefallback(fform, target, args)`. Default `nothing`, which makes that a
-  [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError). It never replaces a
-  rule that matches, and an error inside a rule propagates;
+  asked with [`call_fallback`](@extref MessagePassingRulesBase.call_fallback) and
+  [`call_energy_fallback`](@extref MessagePassingRulesBase.call_energy_fallback), with the node's
+  algorithm and rule context. A function `rulefallback(fform, target, args)` is asked about
+  messages only. Default `nothing`, which makes a missing rule a
+  [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError), as does a fallback
+  answering `nothing`. It never replaces a rule that matches, and an error inside a rule
+  propagates;
 - `logscales`: whether the node's messages carry log scales (see [`getlogscale`](@ref)): each
   rule's declared one, with its inputs' ones given to the rules that read them. Default
   `false`, none, and a rule that reads its inputs' log scales is then an error;
@@ -623,7 +634,7 @@ function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     spec = MessagePassingRulesBase.dependencies_spec(fform, algorithm)
     spec === nothing || check_partition(factornode, algorithm, MessagePassingRulesBase.free_energy_partition(spec))
     ctx = node_context(factornode, getcontext(options))
-    factornode.activation[] = NodeActivation(ctx, getdiagnostics(options), getcallbacks(options))
+    factornode.activation[] = NodeActivation(ctx, getdiagnostics(options), getcallbacks(options), getrulefallback(options))
     initialize_clusters!(getlocalclusters(factornode), factornode, options, ctx)
     seed_initial_messages!(factornode, getinitialmessages(options))
     return activate_messages!(factornode, options, ctx, algorithm, spec)

@@ -24,7 +24,8 @@ You give callbacks in two places:
 
 An event after a rule call names the rule that ran, its `rule`: the
 [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), which shows where the rule is defined, the
-node's rule fallback where no rule matched, or `nothing` where a `missing` input skipped the rule.
+node's rule fallback where no rule matched, for a message, a joint or an average energy, or
+`nothing` where a `missing` input skipped the rule.
 The engine builds an event only for a handler that listens to it, so a graph activated without
 callbacks, or with callbacks for other events, runs as fast as one that reports nothing.
 
