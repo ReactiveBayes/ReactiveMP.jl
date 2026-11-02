@@ -83,11 +83,13 @@ algorithm per node, for the average energies.
 
 A rule reads the [services](@extref MessagePassingRulesBase glossary-service) it needs, such as a
 random number generator, from its context, `ctx`, and declares them, `ctx = (:rng,)`. The engine
-supplies three to every node's rules, with [`ReactiveMP.node_context`](@ref):
+supplies four to every node's rules, with [`ReactiveMP.node_context`](@ref):
 
 - `node`, the factor node;
 - `rng`, the task's random number generator;
-- `matrix_correction`, `nothing`, so that each rule applies its own.
+- `matrix_correction`, `nothing`, so that each rule applies its own;
+- `expectation`, `nothing`, no backend of BayesBase's expectation protocol unless the model
+  sets one, for the rules and the rule fallbacks that compute expectations.
 
 The option `context`, a `NamedTuple`, is merged over them: it adds services and overrides the
 engine's.

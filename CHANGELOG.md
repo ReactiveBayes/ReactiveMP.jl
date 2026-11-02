@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   energy has no rule. A three-argument fallback is asked about messages only, as before;
   `NodeFunctionRuleFallback` gives the average energy of a mean-field node through the context's
   `expectation` backend.
+- The engine supplies the service `expectation`, `nothing` unless the context sets one, so that
+  its services are MessagePassingRulesBase's `DEFAULT_CONTEXT_SERVICES`.
 - `MarginalMapping` takes a `rulefallback`, and events name the fallback as the `rule` of a joint
   or an average energy it gave.
 
