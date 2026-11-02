@@ -24,11 +24,10 @@ Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 ReactiveMPExponentialFamilyExt = "ExponentialFamily"
 ReactiveMPReactantExt = "Reactant"
 
-# TEMPORARY: the branches of U3 (universal inference), until they are released. The path is
-# switched to the pushed branch before anything is pushed.
+# TEMPORARY: the branches of U3 (universal inference), until they are released
 [sources]
 BayesBase = {url = "https://github.com/ReactiveBayes/BayesBase.jl", rev = "universal-inference"}
-MessagePassingRulesBase = {path = "../MessagePassingRulesBase.jl"}
+MessagePassingRulesBase = {url = "https://github.com/ReactiveBayes/MessagePassingRulesBase.jl", rev = "universal-inference"}
 
 [compat]
 BayesBase = "1.7"
