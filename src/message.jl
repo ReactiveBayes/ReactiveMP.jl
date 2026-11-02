@@ -783,11 +783,12 @@ message_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A,
 tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
 
 # The fallback's answer where no rule matched, asked with the node's algorithm and rule context
-# (`call_fallback`, `call_energy_fallback`); the not-found error where it has none either.
+# (`call_fallback`, `call_energy_fallback`); the not-found error where it has none either. The
+# answer and its log scale, the one a fallback declares with `with_logscale` or an undefined one.
 function fallback_message(fallback, notfound, fform, target, algorithm, ctx, args)
-    message = MessagePassingRulesBase.call_fallback(fallback, fform, target, algorithm, ctx, args)
-    isnothing(message) && throw(RuleNotFoundError(notfound))
-    return message
+    answer = MessagePassingRulesBase.call_fallback(fallback, fform, target, algorithm, ctx, args)
+    isnothing(answer) && throw(RuleNotFoundError(notfound))
+    return MessagePassingRulesBase.unwrap_fallback(answer)
 end
 
 function fallback_energy(fallback, notfound, fform, algorithm, ctx, args)
@@ -829,7 +830,8 @@ function (mapping::MessageMapping)(messages, marginals)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
         found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
         if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
-            fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, mapping.context, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
+            message, logscale = fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, mapping.context, args)
+            message, (tracks_logscales(mapping) ? logscale : nothing)
         else
             spec = audit_rule(mapping.diagnostics, resolve_rule(found))
             MessagePassingRulesBase.check_reads_logscale(spec, args)

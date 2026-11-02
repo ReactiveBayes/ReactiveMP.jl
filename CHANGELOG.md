@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DampingPostprocessor(β)`, a stream postprocessor that mixes each outbound message with its
   stream's previous one, through `ReactiveMP.damp`: in natural parameters for two members of one
   exponential family, by the new extension on ExponentialFamily.jl.
+- A rule fallback may declare its message's log scale by returning `with_logscale(message,
+  logscale)`, which the engine unwraps with MessagePassingRulesBase's `unwrap_fallback`; a joint
+  marginal drops it.
 - `MarginalMapping` takes a `rulefallback`, and events name the fallback as the `rule` of a joint
   or an average energy it gave.
 

@@ -8,8 +8,6 @@ export getlogscale
 
 # The log scale of a message that no rule computed: an initial one.
 const INITIAL_LOGSCALE = UndefinedLogScale(:initial)
-# The log scale of a message a rule fallback computed.
-const FALLBACK_LOGSCALE = UndefinedLogScale(:fallback)
 # The log scale of a product a form constraint changed.
 const FORM_CONSTRAINT_LOGSCALE = UndefinedLogScale(:form_constraint)
 # The cause of the log scale of a product with no closed form, whose normaliser is unknown.

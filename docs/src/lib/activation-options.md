@@ -161,7 +161,8 @@ logpdf(q, 1.0) - logpdf(q, 0.0), logpdf(exact, 1.0) - logpdf(exact, 0.0)
 The posterior is the product of the prior's message and the fallback's, a `BayesBase.ProductOf`
 with no closed form. Its log-density agrees with the exact posterior's up to a constant. A
 [form constraint](@ref custom-functional-form) turns such a product into a distribution. A
-message a fallback computed has an undefined log scale.
+message a fallback computed has an undefined log scale, unless the fallback declares one by
+returning [`with_logscale`](@extref MessagePassingRulesBase.with_logscale)`(message, logscale)`.
 
 A joint marginal and an average energy with no rule ask the fallback too, with
 [`call_fallback`](@extref MessagePassingRulesBase.call_fallback) and a

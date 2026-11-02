@@ -163,7 +163,7 @@ The engine tracks log scales when you activate the nodes with `logscales = true`
 Then:
 
 - every message carries the log scale its rule declares, and a message a rule fallback computed
-  carries an undefined one;
+  the one the fallback declares with `with_logscale`, otherwise an undefined one;
 - observations and constants are point masses, with log scale zero;
 - initial messages were computed by no rule, so their log scale is undefined;
 - a product combines the log scales as above. An undefined side propagates, keeping its reason.

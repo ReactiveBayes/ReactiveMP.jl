@@ -380,7 +380,8 @@ function compute_marginal(mapping::MarginalMapping, messages, marginals)
     found = MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)
     ctx = mapping.context
     if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
-        return fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, ctx, args)
+        # a joint has no log scale
+        return first(fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, ctx, args))
     end
     spec = audit_rule(mapping.diagnostics, resolve_rule(found))
     MessagePassingRulesBase.check_services(spec, ctx)

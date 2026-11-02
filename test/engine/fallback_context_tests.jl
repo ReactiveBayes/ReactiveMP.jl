@@ -34,6 +34,10 @@
         return BayesBase.ExpectationPointSet((mean(q) - s, mean(q), mean(q) + s), (1 / 6, 2 / 3, 1 / 6))
     end
     BayesBase.prepare_expectation(::ThreePoints, q::PointMass) = BayesBase.ExpectationPointSet((mean(q),), (1.0,))
+
+    # A fallback that knows its message's log scale.
+    struct Scaled end
+    MessagePassingRulesBase.call_fallback(::Scaled, node, target, algorithm, ctx, args) = with_logscale(PointMass(42.0), -0.5)
 end
 
 @testitem "rulefallback: a message fallback gets the algorithm and the rule context" tags = [:engine] setup = [ContextFallbackNodes] begin
@@ -50,6 +54,27 @@ end
     call = only(recorder.calls)
     @test call.node === N.Toy && call.target === Target{:out}() && call.algorithm === DefaultAlgorithm()
     @test call.ctx.node === instance && call.ctx.scale == 2 && call.ctx.expectation === nothing
+end
+
+@testitem "rulefallback: a fallback may declare its message's log scale" tags = [:engine] setup = [ContextFallbackNodes] begin
+    import ReactiveMP: MessageMapping, MarginalMapping, EngineDiagnostics, getdata, compute_marginal
+    import MessagePassingRulesBase: Target, ClusterTarget, DefaultAlgorithm
+    using BayesBase
+    N = ContextFallbackNodes
+
+    mapping(fallback, logscales) = MessageMapping(N.Toy, Target{:out}(), Val((:a,)), nothing, DefaultAlgorithm(), nothing, N.Toy(0.0), nothing, EngineDiagnostics(), nothing, fallback, logscales)
+    inputs = (Message(PointMass(1.0), false, false),)
+    # The declared log scale where log scales are tracked, and the message alone where they are not.
+    message = mapping(N.Scaled(), true)(inputs, nothing)
+    @test getdata(message) === PointMass(42.0) && getlogscale(message) === -0.5
+    untracked = mapping(N.Scaled(), false)(inputs, nothing)
+    @test getdata(untracked) === PointMass(42.0) && untracked.logscale === nothing
+    # A fallback that declares none leaves it undefined, as before.
+    @test getlogscale(mapping(N.Recorder(), true)(inputs, nothing)).cause === :fallback
+    # A joint has no log scale: the declared one is dropped.
+    messages = (Message(PointMass(1.0), false, false), Message(PointMass(2.0), false, false))
+    joint = MarginalMapping(N.Toy, ClusterTarget((:out, :a)), Val((:out, :a)), nothing, DefaultAlgorithm(), N.Toy(0.0), EngineDiagnostics(), nothing, nothing, N.Scaled())
+    @test compute_marginal(joint, messages, nothing) === PointMass(42.0)
 end
 
 @testitem "rulefallback: a marginal without a rule" tags = [:engine] setup = [ContextFallbackNodes] begin
