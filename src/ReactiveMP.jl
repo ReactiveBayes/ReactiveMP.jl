@@ -132,6 +132,7 @@ include("context.jl")
 
 # Predefined postprocessors
 include("postprocessors/scheduled.jl")
+include("postprocessors/damping.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")

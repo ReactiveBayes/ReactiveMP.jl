@@ -17,9 +17,11 @@ TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [weakdeps]
+ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 
 [extensions]
+ReactiveMPExponentialFamilyExt = "ExponentialFamily"
 ReactiveMPReactantExt = "Reactant"
 
 # TEMPORARY: the branches of U3 (universal inference), until they are released. The path is
