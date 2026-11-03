@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is created without `nodefn`: `getnodefn(node, Target(:out))` gives it, its inputs in the order
   the node declares them, so a rule fallback pulls messages back through it as through a Delta
   node.
+- A `Marginal` samples as its distribution, `rand([rng,] marginal[, dims...])`, so a posterior
+  kept with its log scale (RxInfer's `logscales = true`) samples as one without.
 
 ### Changed
 - MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.

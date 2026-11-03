@@ -4,6 +4,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
+import Random
 
 # The representation is a mutable struct with `const` fields: measured faster than an
 # immutable one through the equality chain, and lighter everywhere.
@@ -179,6 +180,16 @@ Base.eltype(::Type{<:Marginal{D}}) where {D} = Base.eltype(D)
 
 Distributions.mean(fn::Function, marginal::Marginal) =
     mean(fn, getdata(marginal))
+
+# Samples are its distribution's, so a posterior kept with its log scale samples as one without.
+# Without a generator too: Random's fallback would turn `rand(marginal, n)` into a shape, where
+# Distributions gives a multivariate distribution's samples as the columns of a matrix
+Random.rand(rng::Random.AbstractRNG, marginal::Marginal) = rand(rng, getdata(marginal))
+Random.rand(rng::Random.AbstractRNG, marginal::Marginal, n::Integer, dims::Integer...) = rand(rng, getdata(marginal), n, dims...)
+Random.rand(rng::Random.AbstractRNG, marginal::Marginal, dims::Dims) = rand(rng, getdata(marginal), dims)
+Random.rand(marginal::Marginal) = rand(getdata(marginal))
+Random.rand(marginal::Marginal, n::Integer, dims::Integer...) = rand(getdata(marginal), n, dims...)
+Random.rand(marginal::Marginal, dims::Dims) = rand(getdata(marginal), dims)
 
 """
     as_marginal(message::Message) -> Marginal
