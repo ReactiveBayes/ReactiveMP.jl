@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Make the `Message` and `Marginal` doctests independent of how Distributions prints distributions, which changed in Distributions v0.25.133.
+
 ## [7.0.1] - 2026-10-23
 
 ### Fixed
