@@ -36,8 +36,10 @@ $(DOC_EQUALITY)
 # Examples
 
 ```jldoctest
-julia> marginal = Marginal(Gamma(10.0, 2.0), false, true)
-Marginal(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
+julia> marginal = Marginal(Gamma(10.0, 2.0), false, true);
+
+julia> getdata(marginal) == Gamma(10.0, 2.0)
+true
 
 julia> mean(marginal)
 20.0
