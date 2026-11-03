@@ -175,7 +175,9 @@ activated with [`ReactiveMP.activate!`](@ref).
 
 - `nodefn`: the function the node computes, which a rule reaches with
   [`getnodefn`](@extref MessagePassingRulesBase.getnodefn)`(ctx.node, Target(:out))`. Default
-  `nothing`, none. A node declared with `static_inputs = :fold` needs it: the members of its
+  `nothing`: a node whose form is a function, such as `+` or `dot`, computes that function of its
+  inputs in the order it declares them, and any other node has none. A node declared with
+  `static_inputs = :fold` needs it: the members of its
   group connected to a constant or to data are folded into it (see
   [`ReactiveMP.StaticFold`](@ref)), and the others are numbered `1:n` in their order.
 

@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   marginal drops it.
 - `MarginalMapping` takes a `rulefallback`, and events name the fallback as the `rule` of a joint
   or an average energy it gave.
+- A node whose form is a function, such as `+`, `-`, `*` or `dot`, computes that function when it
+  is created without `nodefn`: `getnodefn(node, Target(:out))` gives it, its inputs in the order
+  the node declares them, so a rule fallback pulls messages back through it as through a Delta
+  node.
 
 ### Changed
 - MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.
