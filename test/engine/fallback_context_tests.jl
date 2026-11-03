@@ -38,6 +38,13 @@
     # A fallback that knows its message's log scale.
     struct Scaled end
     MessagePassingRulesBase.call_fallback(::Scaled, node, target, algorithm, ctx, args) = with_logscale(PointMass(42.0), -0.5)
+
+    # A fallback that says how it computed each answer, the message's with its log scale.
+    struct Telling end
+    MessagePassingRulesBase.call_fallback(::Telling, node, target, algorithm, ctx, args) =
+        MessagePassingRulesBase.with_outcome(with_logscale(PointMass(42.0), -0.5), (method = :told, target = target))
+    MessagePassingRulesBase.call_energy_fallback(::Telling, node, algorithm, ctx, args) =
+        MessagePassingRulesBase.with_outcome(7.0, (method = :told_energy,))
 end
 
 @testitem "rulefallback: a message fallback gets the algorithm and the rule context" tags = [:engine] setup = [ContextFallbackNodes] begin
@@ -75,6 +82,47 @@ end
     messages = (Message(PointMass(1.0), false, false), Message(PointMass(2.0), false, false))
     joint = MarginalMapping(N.Toy, ClusterTarget((:out, :a)), Val((:out, :a)), nothing, DefaultAlgorithm(), N.Toy(0.0), EngineDiagnostics(), nothing, nothing, N.Scaled())
     @test compute_marginal(joint, messages, nothing) === PointMass(42.0)
+end
+
+@testitem "rulefallback: the events carry the outcome a fallback declares" tags = [:engine] setup = [ContextFallbackNodes] begin
+    import ReactiveMP: MessageMapping, MarginalMapping, EngineDiagnostics, getdata, compute_marginal, marginal_from_inputs,
+        activate!, factornode, node_activation, average_energy_term, FactorNodeActivationOptions, RandomVariableActivationOptions,
+        MessageProductContext, AfterMessageRuleCallEvent, AfterMarginalRuleCallEvent, AfterFactorBoundFreeEnergyEvent
+    import MessagePassingRulesBase: Target, ClusterTarget, DefaultAlgorithm
+    using BayesBase, ExponentialFamily
+    N = ContextFallbackNodes
+
+    # Every After event, kept as it comes
+    events = Any[]
+    callbacks = (after_message_rule_call = e -> push!(events, e), after_marginal_rule_call = e -> push!(events, e), after_factor_bound_free_energy = e -> push!(events, e))
+
+    # A message: the outcome reaches the event, and the log scale under it the message
+    mapping = MessageMapping(N.Toy, Target{:out}(), Val((:a,)), nothing, DefaultAlgorithm(), nothing, N.Toy(0.0), callbacks, EngineDiagnostics(), nothing, N.Telling(), true)
+    message = mapping((Message(PointMass(1.0), false, false),), nothing)
+    @test getdata(message) === PointMass(42.0) && getlogscale(message) === -0.5
+    event = only(e for e in events if e isa AfterMessageRuleCallEvent)
+    @test event.outcome === (method = :told, target = Target{:out}())
+
+    # A joint: the outcome reaches the event, and the joint alone the caller
+    messages = (Message(PointMass(1.0), false, false), Message(PointMass(2.0), false, false))
+    joint = MarginalMapping(N.Toy, ClusterTarget((:out, :a)), Val((:out, :a)), nothing, DefaultAlgorithm(), N.Toy(0.0), EngineDiagnostics(), nothing, callbacks, N.Telling())
+    @test marginal_from_inputs(joint, messages, nothing) === PointMass(42.0)
+    @test compute_marginal(joint, messages, nothing) === PointMass(42.0)
+    @test only(e for e in events if e isa AfterMarginalRuleCallEvent).outcome.method === :told
+
+    # An average energy: its outcome reaches the event
+    out, a = randomvar(), randomvar()
+    node = factornode(N.Toy, [(:out, out), (:a, a)], ((:out,), (:a,)))
+    foreach(v -> activate!(v, RandomVariableActivationOptions(nothing, MessageProductContext(), MessageProductContext())), (out, a))
+    activate!(node, FactorNodeActivationOptions(; rulefallback = N.Telling(), callbacks = callbacks))
+    marginals = (Marginal(NormalMeanVariance(1.0, 0.5), false, false), Marginal(NormalMeanVariance(0.25, 0.1), false, false))
+    average_energy_term(Float64, node_activation(node), node, DefaultAlgorithm(), Val((:out, :a)), marginals)
+    @test only(e for e in events if e isa AfterFactorBoundFreeEnergyEvent).outcome === (method = :told_energy,)
+
+    # A rule, and a fallback that declares none, give none
+    plain = MessageMapping(N.Toy, Target{:out}(), Val((:a,)), nothing, DefaultAlgorithm(), nothing, N.Toy(0.0), callbacks, EngineDiagnostics(), nothing, N.Scaled(), true)
+    plain((Message(PointMass(1.0), false, false),), nothing)
+    @test last(e for e in events if e isa AfterMessageRuleCallEvent).outcome === nothing
 end
 
 @testitem "rulefallback: a marginal without a rule" tags = [:engine] setup = [ContextFallbackNodes] begin

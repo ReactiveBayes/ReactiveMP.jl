@@ -362,11 +362,11 @@ function marginal_from_inputs(mapping::MarginalMapping, messages, marginals)
     span_id = generate_span_id(mapping.callbacks)
     @invoke_callback(mapping.callbacks, BeforeMarginalRuleCallEvent(mapping, messages, marginals, span_id))
 
-    marginal = skips_rule(mapping, messages, marginals) ? missing : compute_marginal(mapping, messages, marginals)
+    marginal, outcome = skips_rule(mapping, messages, marginals) ? (missing, nothing) : marginal_and_outcome(mapping, messages, marginals)
 
     @invoke_callback(
         mapping.callbacks, AfterMarginalRuleCallEvent(
-            mapping, messages, marginals, marginal, selected_marginal_rule(mapping, messages, marginals), span_id
+            mapping, messages, marginals, marginal, selected_marginal_rule(mapping, messages, marginals), outcome, span_id
         )
     )
     return marginal
@@ -385,21 +385,26 @@ function selected_marginal_rule(mapping::MarginalMapping, messages, marginals)
     return found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback) ? mapping.rulefallback : found
 end
 
-function compute_marginal(mapping::MarginalMapping, messages, marginals)
+# The joint alone: what a marginal mapping computes, without the fallback's outcome
+compute_marginal(mapping::MarginalMapping, messages, marginals) = first(marginal_and_outcome(mapping, messages, marginals))
+
+# The joint and how the fallback computed it, its `with_outcome`, `nothing` for a rule
+function marginal_and_outcome(mapping::MarginalMapping, messages, marginals)
     fform = marginal_mapping_fform(mapping)
     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
     found = MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)
     ctx = mapping.context
     if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
         # a joint has no log scale
-        return first(fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, ctx, args))
+        joint, _, outcome = fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, ctx, args)
+        return joint, outcome
     end
     spec = audit_rule(mapping.diagnostics, resolve_rule(found))
     MessagePassingRulesBase.check_services(spec, ctx)
     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
     scratch = mapping_scratch(mapping, spec, algorithm, ctx, args)
-    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =

@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   node.
 - A `Marginal` samples as its distribution, `rand([rng,] marginal[, dims...])`, so a posterior
   kept with its log scale (RxInfer's `logscales = true`) samples as one without.
+- The events `AfterMessageRuleCallEvent`, `AfterMarginalRuleCallEvent` and
+  `AfterFactorBoundFreeEnergyEvent` carry an `outcome`: how the rule fallback computed the answer,
+  as it declared it with MessagePassingRulesBase's `with_outcome`, or `nothing`. Their constructors
+  without it remain.
 
 ### Changed
 - MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.

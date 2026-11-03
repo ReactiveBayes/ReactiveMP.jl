@@ -152,8 +152,10 @@ function average_energy_term(::Type{T}, activation, node, algorithm, marginals_n
     found = MessagePassingRulesBase.find_average_energy(fform, algorithm, args)
     fallback = activation_rulefallback(activation)
     # `found`'s type is known, so only one branch is compiled.
+    outcome = nothing
     if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(fallback)
-        spec, average_energy = fallback, fallback_energy(fallback, found, fform, algorithm, ctx, args)
+        spec = fallback
+        average_energy, outcome = fallback_energy(fallback, found, fform, algorithm, ctx, args)
     else
         spec = audit_rule(diagnostics, resolve_rule(found))
         MessagePassingRulesBase.check_services(spec, ctx)
@@ -162,6 +164,6 @@ function average_energy_term(::Type{T}, activation, node, algorithm, marginals_n
     end
     clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
     result = convert(T, average_energy - clusters_entropy)
-    @invoke_callback(callbacks, AfterFactorBoundFreeEnergyEvent(node, marginals, average_energy, clusters_entropy, result, spec, span_id))
+    @invoke_callback(callbacks, AfterFactorBoundFreeEnergyEvent(node, marginals, average_energy, clusters_entropy, result, spec, outcome, span_id))
     return result
 end

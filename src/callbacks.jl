@@ -273,7 +273,7 @@ struct BeforeMessageRuleCallEvent{M, Ms, Mr, S} <:
 end
 
 """
-    ReactiveMP.AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, S} <: Event{:after_message_rule_call}
+    ReactiveMP.AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, O, S} <: Event{:after_message_rule_call}
 
 The event right after a message rule ran, or its fallback, or after a `missing` input gave a
 `missing` message.
@@ -293,9 +293,12 @@ The event right after a message rule ran, or its fallback, or after a `missing` 
   [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where no rule
   matched (see [`ReactiveMP.FactorNodeActivationOptions`](@ref)); or `nothing`, when a `missing`
   input skipped the rule;
+- `outcome`: how the fallback computed it, what it declared with
+  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome), such as whether a Laplace
+  approximation converged; `nothing` for a rule, and for a fallback that declared none;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref).
 """
-struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, S} <:
+struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, O, S} <:
     Event{:after_message_rule_call}
     mapping::M
     messages::Ms
@@ -304,8 +307,12 @@ struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, S} <:
     annotations::A
     logscale::L
     rule::U
+    outcome::O
     span_id::S
 end
+
+AfterMessageRuleCallEvent(mapping, messages, marginals, result, annotations, logscale, rule, span_id) =
+    AfterMessageRuleCallEvent(mapping, messages, marginals, result, annotations, logscale, rule, nothing, span_id)
 
 """
     ReactiveMP.BeforeProductOfTwoMessagesEvent{V, C, L, R, S} <: Event{:before_product_of_two_messages}
@@ -518,7 +525,7 @@ struct BeforeMarginalRuleCallEvent{M, Ms, Mr, S} <:
 end
 
 """
-    ReactiveMP.AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, S} <: Event{:after_marginal_rule_call}
+    ReactiveMP.AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, O, S} <: Event{:after_marginal_rule_call}
 
 The event right after a factor node's marginal rule ran, or after a `missing` input gave a
 `missing` joint.
@@ -533,17 +540,24 @@ The event right after a factor node's marginal rule ran, or after a `missing` in
 - `rule`: what gave the joint: the rule that ran, a
   [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where no rule
   matched; or `nothing` when a `missing` input skipped the rule;
+- `outcome`: how the fallback computed it, what it declared with
+  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome), such as whether a Laplace
+  approximation converged; `nothing` for a rule, and for a fallback that declared none;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeMarginalRuleCallEvent`](@ref).
 """
-struct AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, S} <:
+struct AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, O, S} <:
     Event{:after_marginal_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
     result::R
     rule::U
+    outcome::O
     span_id::S
 end
+
+AfterMarginalRuleCallEvent(mapping, messages, marginals, result, rule, span_id) =
+    AfterMarginalRuleCallEvent(mapping, messages, marginals, result, rule, nothing, span_id)
 
 """
     ReactiveMP.BeforeFactorBoundFreeEnergyEvent{N, S} <: Event{:before_factor_bound_free_energy}
@@ -583,9 +597,12 @@ this event's span.
 - `rule`: the average energy that ran, a
   [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where none is
   defined; or `nothing` for a deterministic node;
+- `outcome`: how the fallback computed it, what it declared with
+  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome), such as whether a Laplace
+  approximation converged; `nothing` for a rule, and for a fallback that declared none;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeFactorBoundFreeEnergyEvent`](@ref).
 """
-struct AfterFactorBoundFreeEnergyEvent{N, Ms, E, H, R, U, S} <:
+struct AfterFactorBoundFreeEnergyEvent{N, Ms, E, H, R, U, O, S} <:
     Event{:after_factor_bound_free_energy}
     node::N
     marginals::Ms
@@ -593,8 +610,12 @@ struct AfterFactorBoundFreeEnergyEvent{N, Ms, E, H, R, U, S} <:
     entropy::H
     result::R
     rule::U
+    outcome::O
     span_id::S
 end
+
+AfterFactorBoundFreeEnergyEvent(node, marginals, energy, entropy, result, rule, span_id) =
+    AfterFactorBoundFreeEnergyEvent(node, marginals, energy, entropy, result, rule, nothing, span_id)
 
 """
     ReactiveMP.BeforeVariableBoundEntropyEvent{V, M, S} <: Event{:before_variable_bound_entropy}
@@ -700,6 +721,9 @@ function _show_rule(io::IO, rule)
     return nothing
 end
 
+_show_outcome(io::IO, ::Nothing) = nothing
+_show_outcome(io::IO, outcome) = (print(io, ", outcome="); show(io, outcome); nothing)
+
 _rule_place(file) = (parts = splitpath(String(file)); joinpath(parts[max(end - 1, 1):end]...))
 
 _node_label(node) = node_display(functionalform(node))
@@ -725,6 +749,7 @@ function Base.show(io::IO, ev::AfterMessageRuleCallEvent)
     show(io, ev.annotations)
     ev.logscale === nothing || (print(io, ", logscale="); show(io, ev.logscale))
     _show_rule(io, ev.rule)
+    _show_outcome(io, ev.outcome)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -842,6 +867,7 @@ function Base.show(io::IO, ev::AfterMarginalRuleCallEvent)
     print(io, ", result=")
     show(io, ev.result)
     _show_rule(io, ev.rule)
+    _show_outcome(io, ev.outcome)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -872,6 +898,7 @@ function Base.show(io::IO, ev::AfterFactorBoundFreeEnergyEvent)
     print(io, ", result=")
     show(io, ev.result)
     _show_rule(io, ev.rule)
+    _show_outcome(io, ev.outcome)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
