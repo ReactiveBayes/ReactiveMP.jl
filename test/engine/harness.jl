@@ -88,7 +88,7 @@
     final(histories::Vector{<:Vector}) = map(final, histories)
 
     """
-        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing)
+        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = EngineDiagnostics(), rulefallback = nothing, postprocessor = nothing)
 
     Activate `graph` as RxInfer does (variables, each followed by its entry in
     `initial_marginals` and then in `initial_messages` (variable => distribution), the latter set
@@ -97,8 +97,10 @@
     variables, then to the free energy, and feed `data` (variable => value, or vectors of
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
     `activated`, if given, is called once the nodes are activated, before anything is subscribed to.
+    `context`, `diagnostics` and `rulefallback` are the factor nodes' activation options, and
+    `postprocessor` the stream postprocessor of every node and random variable.
     """
-    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = ReactiveMP.EngineDiagnostics())
+    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = ReactiveMP.EngineDiagnostics(), rulefallback = nothing, postprocessor = nothing)
         trace = RuleCall[]
         iteration = Ref(0)
         callbacks = (
@@ -112,7 +114,7 @@
         product = MessageProductContext()
         for variable in graph.variables
             if israndom(variable)
-                activate!(variable, RandomVariableActivationOptions(nothing, product, product))
+                activate!(variable, RandomVariableActivationOptions(postprocessor, product, product))
             elseif isdata(variable)
                 activate!(variable, DataVariableActivationOptions(true, false, nothing, nothing))
             end
@@ -124,7 +126,7 @@
             end
         end
         for node in graph.nodes
-            activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], callbacks, logscales, context, diagnostics))
+            activate!(node, FactorNodeActivationOptions(; algorithm = graph.algorithms[node], callbacks, logscales, context, diagnostics, rulefallback, postprocessor))
         end
         activated === nothing || activated()
 

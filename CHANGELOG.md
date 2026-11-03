@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A rule fallback is asked with `MessagePassingRulesBase.call_fallback` and `call_energy_fallback`,
+  with the node's algorithm and its rule context, and also where a joint marginal or an average
+  energy has no rule. A three-argument fallback is asked about messages only, as before;
+  `NodeFunctionRuleFallback` gives the average energy of a mean-field node through the context's
+  `expectation` backend.
+- The engine supplies the service `expectation`, `nothing` unless the context sets one, so that
+  its services are MessagePassingRulesBase's `DEFAULT_CONTEXT_SERVICES`.
+- `constrain_form_logscale(constraint, distribution)`, a form constraint's `constrain_form` with
+  the log of the normaliser of its input, `nothing` by default. A projection that computes it
+  gives a product with no closed form a log scale: such a product, a `ProductOf`, records its
+  sides' log scales (the cause `:unnormalised_product`), and the normaliser completes them.
+- `DampingPostprocessor(β)`, a stream postprocessor that mixes each outbound message with its
+  stream's previous one, through `ReactiveMP.damp`: in natural parameters for two members of one
+  exponential family, by the new extension on ExponentialFamily.jl.
+- A rule fallback may declare its message's log scale by returning `with_logscale(message,
+  logscale)`, which the engine unwraps with MessagePassingRulesBase's `unwrap_fallback`; a joint
+  marginal drops it.
+- `MarginalMapping` takes a `rulefallback`, and events name the fallback as the `rule` of a joint
+  or an average energy it gave.
+- A node whose form is a function, such as `+`, `-`, `*` or `dot`, computes that function when it
+  is created without `nodefn`: `getnodefn(node, Target(:out))` gives it, its inputs in the order
+  the node declares them, so a rule fallback pulls messages back through it as through a Delta
+  node.
+- A `Marginal` samples as its distribution, `rand([rng,] marginal[, dims...])`, so a posterior
+  kept with its log scale (RxInfer's `logscales = true`) samples as one without.
+- The events `AfterMessageRuleCallEvent`, `AfterMarginalRuleCallEvent` and
+  `AfterFactorBoundFreeEnergyEvent` carry an `outcome`: how the rule fallback computed the answer,
+  as it declared it with MessagePassingRulesBase's `with_outcome`, or `nothing`. Their constructors
+  without it remain.
+
+### Changed
+- MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.
+
 ## [7.0.1] - 2026-10-23
 
 ### Fixed

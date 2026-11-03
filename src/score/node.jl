@@ -106,7 +106,7 @@ function inputs_entropy_term(::Type{T}, activation, node, target, names, algorit
     ctx, diagnostics, callbacks = activation_services(activation, node)
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeFactorBoundFreeEnergyEvent(node, span_id))
-    mapping = marginal_mapping(functionalform(node), target, names, nothing, algorithm, node, diagnostics, ctx, callbacks)
+    mapping = marginal_mapping(functionalform(node), target, names, nothing, algorithm, node, diagnostics, ctx, callbacks, activation_rulefallback(activation))
     joint = Marginal(marginal_from_inputs(mapping, messages, nothing), false, false)
     entropy = score(DifferentialEntropy(), joint)
     result = convert(T, -entropy)
@@ -149,14 +149,21 @@ function average_energy_term(::Type{T}, activation, node, algorithm, marginals_n
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeFactorBoundFreeEnergyEvent(node, span_id))
     args = rule_arguments(nothing, nothing, marginals_names, marginals)
-    spec = audit_rule(diagnostics, resolve_rule(MessagePassingRulesBase.find_average_energy(fform, algorithm, args)))
-    MessagePassingRulesBase.check_services(spec, ctx)
-    ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
-    average_energy = MessagePassingRulesBase.execute_rule(
-        spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing
-    )
+    found = MessagePassingRulesBase.find_average_energy(fform, algorithm, args)
+    fallback = activation_rulefallback(activation)
+    # `found`'s type is known, so only one branch is compiled.
+    outcome = nothing
+    if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(fallback)
+        spec = fallback
+        average_energy, outcome = fallback_energy(fallback, found, fform, algorithm, ctx, args)
+    else
+        spec = audit_rule(diagnostics, resolve_rule(found))
+        MessagePassingRulesBase.check_services(spec, ctx)
+        ann = rule_annotations(nothing, nothing, marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
+        average_energy = MessagePassingRulesBase.execute_rule(spec, nothing, MessagePassingRulesBase.rule_algorithm(spec, algorithm), ctx, args, ann, nothing)
+    end
     clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
     result = convert(T, average_energy - clusters_entropy)
-    @invoke_callback(callbacks, AfterFactorBoundFreeEnergyEvent(node, marginals, average_energy, clusters_entropy, result, spec, span_id))
+    @invoke_callback(callbacks, AfterFactorBoundFreeEnergyEvent(node, marginals, average_energy, clusters_entropy, result, spec, outcome, span_id))
     return result
 end

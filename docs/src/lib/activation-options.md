@@ -83,11 +83,13 @@ algorithm per node, for the average energies.
 
 A rule reads the [services](@extref MessagePassingRulesBase glossary-service) it needs, such as a
 random number generator, from its context, `ctx`, and declares them, `ctx = (:rng,)`. The engine
-supplies three to every node's rules, with [`ReactiveMP.node_context`](@ref):
+supplies four to every node's rules, with [`ReactiveMP.node_context`](@ref):
 
 - `node`, the factor node;
 - `rng`, the task's random number generator;
-- `matrix_correction`, `nothing`, so that each rule applies its own.
+- `matrix_correction`, `nothing`, so that each rule applies its own;
+- `expectation`, `nothing`, no backend of BayesBase's expectation protocol unless the model
+  sets one, for the rules and the rule fallbacks that compute expectations.
 
 The option `context`, a `NamedTuple`, is merged over them: it adds services and overrides the
 engine's.
@@ -143,8 +145,10 @@ end
 ```
 
 The option `rulefallback` gives a message instead, only where no rule matches. It never replaces
-a rule, and an error inside a rule propagates. The engine calls it as
-`rulefallback(fform, target, args)`, and a return value of `nothing` restores the error.
+a rule, and an error inside a rule propagates. The engine asks it with
+[`call_fallback`](@extref MessagePassingRulesBase.call_fallback)`(rulefallback, fform, target, algorithm, ctx, args)`,
+with the node's algorithm and its rule context, whose default calls
+`rulefallback(fform, target, args)`. A return value of `nothing` restores the error.
 [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()` gives
 the node's log-density as a function of the target, an unnormalised message:
 
@@ -157,8 +161,17 @@ logpdf(q, 1.0) - logpdf(q, 0.0), logpdf(exact, 1.0) - logpdf(exact, 0.0)
 The posterior is the product of the prior's message and the fallback's, a `BayesBase.ProductOf`
 with no closed form. Its log-density agrees with the exact posterior's up to a constant. A
 [form constraint](@ref custom-functional-form) turns such a product into a distribution. A
-message a fallback computed has an undefined log scale. A marginal rule and an average energy
-have no fallback.
+message a fallback computed has an undefined log scale, unless the fallback declares one by
+returning [`with_logscale`](@extref MessagePassingRulesBase.with_logscale)`(message, logscale)`.
+
+A joint marginal and an average energy with no rule ask the fallback too, with
+[`call_fallback`](@extref MessagePassingRulesBase.call_fallback) and a
+[`ClusterTarget`](@extref MessagePassingRulesBase.ClusterTarget), and with
+[`call_energy_fallback`](@extref MessagePassingRulesBase.call_energy_fallback). A function of three
+arguments is never asked about them, so they stay errors. `NodeFunctionRuleFallback` gives the
+average energy `-E_q[log f]` of a mean-field node through the context's `expectation` backend,
+the option `context = (expectation = backend,)`, and so a free energy for a node whose average
+energy is not defined; without a backend, the error stays.
 
 ## [Initial messages](@id lib-activation-options-initial-messages)
 

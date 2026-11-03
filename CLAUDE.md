@@ -49,7 +49,8 @@ src/
   helpers/             small internal utilities
   score/               node scores, variable entropies, bethe_free_energy
   fixes.jl             upstream hot-fixes; empty now
-ext/                   ReactiveMPReactantExt: graph building runs untraced under Reactant (see Gotchas)
+ext/                   ReactiveMPReactantExt: graph building runs untraced under Reactant (see Gotchas);
+                       ReactiveMPExponentialFamilyExt: damping in natural parameters
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants;
                        test/reactant/ has its own environment, for the Reactant extension
 docs/                  the engine's documentation site; each package's is in its repository

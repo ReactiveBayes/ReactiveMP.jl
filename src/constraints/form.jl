@@ -1,7 +1,7 @@
 export AbstractFormConstraint
 export FormConstraintCheckEach,
     FormConstraintCheckLast, FormConstraintCheckPickDefault
-export constrain_form, default_prod_constraint, default_form_check_strategy
+export constrain_form, constrain_form_logscale, default_prod_constraint, default_form_check_strategy
 export UnspecifiedFormConstraint, CompositeFormConstraint
 
 using TupleTools
@@ -110,6 +110,23 @@ See also [`AbstractFormConstraint`](@ref), [`ReactiveMP.MessageProductContext`](
 function constrain_form end
 
 """
+    constrain_form_logscale(constraint, distribution) -> (constrained, lognormaliser)
+    constrain_form_logscale(constraint, context, distribution) -> (constrained, lognormaliser)
+
+[`constrain_form`](@ref) with the log of the normaliser of `distribution`, `log ∫ p(x) dx` for
+its density `p` as `logpdf` gives it, or `nothing` where the constraint does not compute it, the
+default. A projection that computes it, such as a Laplace approximation, implements this
+method, and the engine adds the normaliser to the product's log scale: a product with no closed
+form, a `BayesBase.ProductOf`, then has a log scale, which it otherwise lacks (see
+[`getlogscale`](@ref)). A [`CompositeFormConstraint`](@ref) reports the sum of its parts'
+normalisers, or `nothing` when a part that does not report one changes its input.
+
+See also [`AbstractFormConstraint`](@ref).
+"""
+constrain_form_logscale(constraint, distribution) = (constrain_form(constraint, distribution), nothing)
+constrain_form_logscale(constraint, context, distribution) = (constrain_form(constraint, context, distribution), nothing)
+
+"""
     UnspecifiedFormConstraint()
 
 The form constraint that constrains nothing, returning the distribution as it is: the default of
@@ -159,6 +176,13 @@ constrain_form(
 constrain_form(wrapped::WrappedFormConstraint, context, something) =
     constrain_form(wrapped.constraint, context, something)
 
+constrain_form_logscale(wrapped::WrappedFormConstraint, something) =
+    constrain_form_logscale(wrapped, wrapped.context, something)
+constrain_form_logscale(wrapped::WrappedFormConstraint, ::WrappedFormConstraintNoContext, something) =
+    constrain_form_logscale(wrapped.constraint, something)
+constrain_form_logscale(wrapped::WrappedFormConstraint, context, something) =
+    constrain_form_logscale(wrapped.constraint, context, something)
+
 default_form_check_strategy(wrapped::WrappedFormConstraint) =
     default_form_check_strategy(wrapped.constraint)
 default_prod_constraint(wrapped::WrappedFormConstraint) =
@@ -205,6 +229,22 @@ function constrain_form(composite::CompositeFormConstraint, something)
         composite.constraints;
         init = something,
     )
+end
+
+# The normalisers add up, each of its part's input: `nothing` from a part that changes its input
+# without one makes the whole `nothing`, and one that leaves it unchanged adds nothing.
+function constrain_form_logscale(composite::CompositeFormConstraint, something)
+    form, total, known = something, nothing, true
+    for constraint in composite.constraints
+        constrained, lognormaliser = constrain_form_logscale(constraint, form)
+        if lognormaliser === nothing
+            known &= constrained === form
+        else
+            total = isnothing(total) ? lognormaliser : total + lognormaliser
+        end
+        form = constrained
+    end
+    return form, known ? total : nothing
 end
 
 function default_prod_constraint(constraint::CompositeFormConstraint)
