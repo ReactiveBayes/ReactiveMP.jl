@@ -24,12 +24,12 @@ Each value is reported to the node's callbacks as
 included; a node not activated reports none.
 
 `FactorBoundFreeEnergy(cavity = true)` is the term under cavity propagation, where the random
-variables have a site policy (see [`ReactiveMP.compute_site`](@ref)): a node whose term needs its
-rule fallback, a stochastic node with no average energy or a deterministic one with no rule
-towards `out`, takes the fallback's energy from its inbound messages, the cavities, and its
-variables' marginals, both given to `call_energy_fallback` as the rule arguments' `m` and `q` by
-interface: expectation propagation's term, which needs no entropy taken off. Every other node's
-term is Bethe's, as above. The stream emits whenever an input updates, with the latest of each.
+variables have a site policy (see [`ReactiveMP.compute_site`](@ref)): a node with no rules under
+its algorithm, whose messages its rule fallback sends, takes the fallback's energy from its inbound
+messages, the cavities, and its variables' marginals, both given to `call_energy_fallback` as the
+rule arguments' `m` and `q` by interface: expectation propagation's term, less the point masses'
+entropies. Its stream emits a [`ReactiveMP.DeferredScore`](@ref) whenever an input updates, computed
+once it is asked for. Every other node's term is Bethe's, as above.
 """
 struct FactorBoundFreeEnergy{C} end
 
@@ -187,8 +187,22 @@ score(::Type{T}, ::FactorBoundFreeEnergy{true}, type::Stochastic, node::Abstract
 score(::Type{T}, ::FactorBoundFreeEnergy{true}, type::Deterministic, node::AbstractFactorNode, algorithm, stream_postprocessors) where {T <: CountingReal} =
     cavity_score(T, type, node, algorithm, stream_postprocessors)
 
+# Whether a node type has rules under an algorithm, once per pair: listing the rules reads every
+# loaded module's registry
+const HAS_RULES_CACHE = Dict{Tuple{Any, Any}, Bool}()
+const HAS_RULES_LOCK = ReentrantLock()
+
+function has_rules(fform, algorithm)
+    key = (fform, algorithm)
+    cached = @lock HAS_RULES_LOCK get(HAS_RULES_CACHE, key, nothing)
+    isnothing(cached) || return cached
+    found = !isempty(MessagePassingRulesBase.list_rules(fform; algorithm))
+    @lock HAS_RULES_LOCK HAS_RULES_CACHE[key] = found
+    return found
+end
+
 function cavity_score(::Type{T}, type, node, algorithm, stream_postprocessors) where {T}
-    isempty(MessagePassingRulesBase.list_rules(functionalform(node); algorithm)) ||
+    has_rules(functionalform(node), algorithm) &&
         return score(T, FactorBoundFreeEnergy(), type, node, algorithm, stream_postprocessors)
     interfaces = Tuple(getinterfaces(node))
     names = input_names(map(interface -> input_label(node, interface), interfaces))
@@ -196,7 +210,9 @@ function cavity_score(::Type{T}, type, node, algorithm, stream_postprocessors) w
     marginals = map(interface -> get_stream_of_marginals(getvariable(interface)) |> skip_initial(), interfaces)
     points = Tuple(i for (i, interface) in enumerate(interfaces) if !israndom(getvariable(interface)))
     mapping = term_function(cavity_energy_term, T, node_activation(node), node, algorithm, names, Val(length(interfaces)), points)
-    return postprocess_stream_of_scores(stream_postprocessors, combineLatest((messages..., marginals...), PushEach()) |> map(T, mapping))
+    # computed once it is asked for: its inputs update as the sites do, several times an iteration
+    deferred = (values) -> DeferredScore(() -> mapping(values))
+    return postprocess_stream_of_scores(stream_postprocessors, combineLatest((messages..., marginals...), PushEach()) |> map(DeferredScore, deferred))
 end
 
 # The fallback's term from the inbound messages, the cavities, and the variables' marginals, both
@@ -214,7 +230,7 @@ function cavity_energy_term(::Type{T}, activation, node, algorithm, names, ::Val
     notfound = MessagePassingRulesBase.RuleNotFound(:average_energy, fform, nothing, algorithm, typeof(args))
     isnothing(fallback) && throw(RuleNotFoundError(notfound))
     energy, outcome = fallback_energy(fallback, notfound, fform, algorithm, ctx, args)
-    entropy = mapreduce(i -> score(DifferentialEntropy(), marginals[i]), +, points; init = zero(T))
+    entropy = isempty(points) ? 0.0 : sum(i -> score(DifferentialEntropy(), marginals[i]), points)
     result = convert(T, energy - entropy)
     @invoke_callback(callbacks, AfterFactorBoundFreeEnergyEvent(node, marginals, energy, entropy, result, fallback, outcome, span_id))
     return result

@@ -29,8 +29,8 @@ function compute_site end
 # The state of a variable's sites. A site is computed when its edge's inbound message arrives,
 # against the product of the other sites as they are then; a site still waiting for a cavity,
 # when one exists. The variable's outbound messages and its marginal are the products of its
-# sites, sent each time a site changes, the outbound message on an edge only when a site of
-# another edge changed, and only once it is not `missing`; each keeps its latest value for a
+# sites: the outbound message on an edge sent when a site of another edge changed, and only once
+# it is not `missing`, and the marginal at each inbound message; each keeps its latest value for a
 # subscriber that comes later, since the stage computes as messages arrive, not as it is
 # subscribed to, as the equality chain does. With the data of an iteration arriving
 # one by one, and the products updated at once, each iteration is a sweep of expectation
@@ -111,8 +111,9 @@ function update_site!(stage::SiteStage, index, changed)
     return true
 end
 
+# The outbound messages on the edges whose cavity changed; the marginal at each inbound message,
+# changed or not, so that a variable's posterior updates once an iteration as without sites
 function emit!(stage::SiteStage, changed)
-    any(changed) || return nothing
     for j in 1:length(stage)
         any(i -> changed[i] && i != j, 1:length(stage)) || continue
         outbound = sites_product(stage, stage.message_context, j)
