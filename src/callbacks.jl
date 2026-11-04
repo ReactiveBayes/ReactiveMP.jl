@@ -664,6 +664,58 @@ struct AfterVariableBoundEntropyEvent{V, M, H, R, S} <:
     span_id::S
 end
 
+"""
+    ReactiveMP.BeforeSiteComputationEvent{V, M, C, S} <: Event{:before_site_computation}
+
+The event right before a [`RandomVariable`](@ref) with a site policy computes the site of one of
+its edges from the edge's inbound message and its cavity, the variable's outbound message on the
+same edge (see [`ReactiveMP.compute_site`](@ref)). Its callbacks are those of the variable's
+`prod_context_for_marginal_computation`.
+
+# Fields
+
+- `variable`: the [`RandomVariable`](@ref);
+- `index`: the edge, the index of its inbound message;
+- `message`: the inbound message, a [`Message`](@ref);
+- `cavity`: the outbound message on the edge, a [`Message`](@ref) whose data is `missing` while
+  no other edge has a site;
+- `span_id`: the identifier shared with the [`ReactiveMP.AfterSiteComputationEvent`](@ref).
+"""
+struct BeforeSiteComputationEvent{V, M, C, S} <: Event{:before_site_computation}
+    variable::V
+    index::Int
+    message::M
+    cavity::C
+    span_id::S
+end
+
+"""
+    ReactiveMP.AfterSiteComputationEvent{V, M, C, R, O, S} <: Event{:after_site_computation}
+
+The event right after a [`RandomVariable`](@ref) with a site policy computed the site of one of
+its edges. Its callbacks are those of the variable's `prod_context_for_marginal_computation`.
+
+# Fields
+
+- `variable`: the [`RandomVariable`](@ref);
+- `index`: the edge;
+- `message`: the inbound message;
+- `cavity`: the outbound message on the edge;
+- `result`: the site's data, or `nothing` where the site did not change and none was sent;
+- `outcome`: how the policy computed it, whatever it returns, such as
+  `(method = :laplace, converged = true, iterations = 5)`;
+- `span_id`: the identifier shared with the [`ReactiveMP.BeforeSiteComputationEvent`](@ref).
+"""
+struct AfterSiteComputationEvent{V, M, C, R, O, S} <: Event{:after_site_computation}
+    variable::V
+    index::Int
+    message::M
+    cavity::C
+    result::R
+    outcome::O
+    span_id::S
+end
+
 # -----------------------------------------------------------------------------
 # `Base.show` methods for the event types defined above.
 #
@@ -923,6 +975,26 @@ function Base.show(io::IO, ev::AfterVariableBoundEntropyEvent)
     show(io, ev.entropy)
     print(io, ", scaling=", ev.scaling, ", result=")
     show(io, ev.result)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeSiteComputationEvent)
+    print(io, "BeforeSiteComputationEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", index=", ev.index)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterSiteComputationEvent)
+    print(io, "AfterSiteComputationEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", index=", ev.index, ", result=")
+    show(io, ev.result)
+    _show_outcome(io, ev.outcome)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing

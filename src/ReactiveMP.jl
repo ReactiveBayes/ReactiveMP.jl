@@ -96,7 +96,8 @@ export tiny, huge
     BeforeFormConstraintAppliedEvent, BeforeMarginalComputationEvent,
     BeforeMessageRuleCallEvent, BeforeProductOfMessagesEvent, BeforeProductOfTwoMessagesEvent,
     BeforeMarginalRuleCallEvent, AfterMarginalRuleCallEvent, BeforeFactorBoundFreeEnergyEvent,
-    AfterFactorBoundFreeEnergyEvent, BeforeVariableBoundEntropyEvent, AfterVariableBoundEntropyEvent
+    AfterFactorBoundFreeEnergyEvent, BeforeVariableBoundEntropyEvent, AfterVariableBoundEntropyEvent,
+    BeforeSiteComputationEvent, AfterSiteComputationEvent, compute_site, sum_of_terms
 
 include("fixes.jl")
 include("helpers/macrohelpers.jl")
@@ -137,6 +138,7 @@ include("postprocessors/damping.jl")
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
+include("variables/sites.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")

@@ -89,11 +89,11 @@ function get_stream_of_outbound_messages(randomvar::RandomVariable, index::Int)
 end
 
 """
-    RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation::MessageProductContext, prod_context_for_marginal_computation::MessageProductContext)
+    RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation::MessageProductContext, prod_context_for_marginal_computation::MessageProductContext, site_policy = nothing)
     RandomVariableActivationOptions()
 
 What activating a [`RandomVariable`](@ref) needs, given positionally. With no arguments, no
-postprocessor and two default [`ReactiveMP.MessageProductContext`](@ref)s.
+postprocessor, two default [`ReactiveMP.MessageProductContext`](@ref)s and no site policy.
 
 # Fields
 
@@ -107,16 +107,25 @@ postprocessor and two default [`ReactiveMP.MessageProductContext`](@ref)s.
   [`ReactiveMP.AfterMarginalComputationEvent`](@ref), and the variable's free-energy events,
   [`ReactiveMP.BeforeVariableBoundEntropyEvent`](@ref) and
   [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref).
+- `site_policy`: `nothing`, or a policy that gives each edge a site, cavity propagation: the
+  products then take each edge's site, [`ReactiveMP.compute_site`](@ref)`(site_policy, …)` of its
+  inbound message against its outbound one, in place of the inbound message. The marginal
+  context's callbacks also receive [`ReactiveMP.BeforeSiteComputationEvent`](@ref) and
+  [`ReactiveMP.AfterSiteComputationEvent`](@ref).
 
 See also [`ReactiveMP.activate!`](@ref).
 """
 struct RandomVariableActivationOptions{
-        S, F <: MessageProductContext, M <: MessageProductContext,
+        S, F <: MessageProductContext, M <: MessageProductContext, P,
     }
     stream_postprocessor::S
     prod_context_for_message_computation::F
     prod_context_for_marginal_computation::M
+    site_policy::P
 end
+
+RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation::MessageProductContext, prod_context_for_marginal_computation::MessageProductContext) =
+    RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation, prod_context_for_marginal_computation, nothing)
 
 RandomVariableActivationOptions() = RandomVariableActivationOptions(
     nothing, MessageProductContext(), MessageProductContext()
@@ -133,6 +142,13 @@ Wire the streams of a random variable, after every factor node it connects to ha
    connection, the outbound message never emits: there is nothing to multiply.
 2. **Marginal**: the product of all inbound messages, formed with [`as_marginal`](@ref). It is
    computed once every inbound message has a value, and again whenever each has updated since.
+3. **Sites**, with a site policy and more than one connection: each edge's site (see
+   [`ReactiveMP.compute_site`](@ref)) takes the place of its inbound message in both products, in
+   place of the equality chain. A site is computed as its inbound message arrives, against the
+   product of the other sites then; the outbound messages and the marginal are sent as the sites
+   change, the outbound message on an edge when another edge's site changed. A site starts as
+   `missing`, the products' identity, and an outbound message or a marginal that is still
+   `missing` is not sent.
 
 A product that is initial does not consume its inputs, so the next update of any of them
 computes it again.
@@ -155,7 +171,16 @@ function activate!(
         outputmsgs[i] = MessageObservable(Message)
     end
 
-    if length(randomvar.input_messages) > 1
+    if !isnothing(options.site_policy) && d > 1
+        # The sites take the place of the equality chain: the stage computes the outbound messages
+        # and the marginal from them, as each inbound message arrives.
+        stage = SiteStage(options.site_policy, randomvar, options.prod_context_for_message_computation, options.prod_context_for_marginal_computation, d)
+        foreach(index -> connect!(outputmsgs[index], stage.outputs[index]), 1:d)
+        foreach(index -> subscribe!(randomvar.input_messages[index], (message) -> on_inbound!(stage, index, message)), 1:d)
+        stream_of_marginals = postprocess_stream_of_marginals(options.stream_postprocessor, stage.marginal)
+        set_stream_of_marginals!(randomvar, stream_of_marginals)
+        return nothing
+    elseif length(randomvar.input_messages) > 1
         chain = EqualityChain(
             randomvar.input_messages,
             options.stream_postprocessor,

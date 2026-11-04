@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Cavity propagation, design B of U7a: a random variable activated with a site policy, the
+  fourth field `site_policy` of `RandomVariableActivationOptions` (`nothing` by default, the
+  three-argument constructor unchanged), keeps one site per edge, `ReactiveMP.compute_site(policy,
+  variable, index, message, cavity, previous)`: the inbound message projected against its cavity,
+  the product of the other edges' sites, which is the variable's outbound message on that edge.
+  The sites take the place of the equality chain: a site is computed as its inbound message
+  arrives, against the latest sites, and the outbound messages and the marginal are their
+  products, sent as the sites change, an outbound message only when another edge's site changed
+  and once it is not `missing`. Each iteration is then a sweep of expectation propagation over
+  the sites. The events `BeforeSiteComputationEvent` and `AfterSiteComputationEvent` report each
+  site to the marginal context's callbacks. The engine knows no projection; RxInfer's cavity
+  schemes give the policy.
+- `FactorBoundFreeEnergy(cavity = true)`, a node's free-energy term under cavity propagation: a
+  node with no rules under its algorithm takes its rule fallback's energy from its inbound
+  messages, the cavities, and its variables' marginals, both given to `call_energy_fallback` as
+  the rule arguments' `m` and `q`, less the point masses' entropies; every other node's term is
+  Bethe's. `bethe_free_energy(...; cavity = true)` sums the latest terms, emitted whenever one
+  updates, through `ReactiveMP.sum_of_terms`.
 - A rule fallback is asked with `MessagePassingRulesBase.call_fallback` and `call_energy_fallback`,
   with the node's algorithm and its rule context, and also where a joint marginal or an average
   energy has no rule. A three-argument fallback is asked about messages only, as before;

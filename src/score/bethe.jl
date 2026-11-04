@@ -25,6 +25,9 @@ terms.
 
 - `algorithm`: a function of a node, the algorithm the node runs under, as given at activation.
   Default `(node) -> nothing`, every node's default.
+- `cavity`: the free energy under cavity propagation, where the random variables have a site
+  policy: each node's term is `FactorBoundFreeEnergy(cavity = true)`, and the sum is of the
+  latest terms, emitted whenever one updates. Default `false`.
 
 # Returns
 
@@ -47,23 +50,33 @@ energies = Float64[]
 subscription = subscribe!(bethe_free_energy(Float64, nodes, variables), (f) -> push!(energies, f))
 ```
 """
-function bethe_free_energy(::Type{T}, factornodes, variables; algorithm = (node) -> nothing) where {T <: Real}
+function bethe_free_energy(::Type{T}, factornodes, variables; algorithm = (node) -> nothing, cavity::Bool = false) where {T <: Real}
     CT = counting_real_type(T)
 
-    node_bound_free_energies = map(node -> score(CT, FactorBoundFreeEnergy(), node, algorithm(node), nothing), collect(factornodes))
+    node_bound_free_energies = map(node -> score(CT, FactorBoundFreeEnergy(; cavity), node, algorithm(node), nothing), collect(factornodes))
     randomvars = filter(israndom, collect(variables))
     variable_bound_entropies = map(variable -> score(CT, VariableBoundEntropy(), variable, nothing), randomvars)
 
     sum_of_latest = (values) -> reduce(+, values)
-    node_bound_free_energies_sum = collectLatest(CT, CT, node_bound_free_energies, sum_of_latest)
-    variable_bound_entropies_sum = collectLatest(CT, CT, variable_bound_entropies, sum_of_latest)
+    node_bound_free_energies_sum = sum_of_terms(CT, node_bound_free_energies, sum_of_latest, cavity)
+    variable_bound_entropies_sum = sum_of_terms(CT, variable_bound_entropies, sum_of_latest, cavity)
 
     point_entropies_n = mapreduce(degree, +, Iterators.filter(v -> isdata(v) || isconst(v), variables); init = 0)
     point_entropies = CountingReal(T, point_entropies_n)
 
-    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |>
+    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), cavity ? PushEach() : PushNew()) |>
         map(T, sums -> float(sums[1] + sums[2] - point_entropies))
 end
+
+"""
+    ReactiveMP.sum_of_terms(::Type{T}, terms, sum, latest::Bool)
+
+The stream of the sum of the free-energy terms' streams: once each has updated since the last sum,
+or, with `latest`, whenever one updates, of the latest of each, as under cavity propagation, where
+a term may update several times in one iteration and another not at all.
+"""
+sum_of_terms(::Type{T}, terms, sum, latest::Bool) where {T} =
+    latest ? (combineLatest(Tuple(terms), PushEach()) |> map(T, values -> sum(collect(values)))) : collectLatest(T, T, terms, sum)
 
 counting_real_type(::Type{Real}) = CountingReal{<:Real}
 counting_real_type(::Type{T}) where {T <: Real} = CountingReal{T}

@@ -88,7 +88,7 @@
     final(histories::Vector{<:Vector}) = map(final, histories)
 
     """
-        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = EngineDiagnostics(), rulefallback = nothing, postprocessor = nothing)
+        run(graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = EngineDiagnostics(), rulefallback = nothing, postprocessor = nothing, site_policy = nothing, variable_callbacks = nothing)
 
     Activate `graph` as RxInfer does (variables, each followed by its entry in
     `initial_marginals` and then in `initial_messages` (variable => distribution), the latter set
@@ -98,9 +98,10 @@
     both) once per iteration. RxInfer predicts a data variable when its data has a `missing`.
     `activated`, if given, is called once the nodes are activated, before anything is subscribed to.
     `context`, `diagnostics` and `rulefallback` are the factor nodes' activation options, and
-    `postprocessor` the stream postprocessor of every node and random variable.
+    `postprocessor` the stream postprocessor of every node and random variable. `site_policy` and
+    `variable_callbacks` are every random variable's site policy and product callbacks.
     """
-    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = ReactiveMP.EngineDiagnostics(), rulefallback = nothing, postprocessor = nothing)
+    function run(graph::Graph; data, iterations, posteriors, id = "", predictions = [], initial_marginals = [], initial_messages = [], logscales = false, free_energy = true, activated = nothing, context = NamedTuple(), diagnostics = ReactiveMP.EngineDiagnostics(), rulefallback = nothing, postprocessor = nothing, site_policy = nothing, variable_callbacks = nothing)
         trace = RuleCall[]
         iteration = Ref(0)
         callbacks = (
@@ -111,10 +112,10 @@
             end,
         )
 
-        product = MessageProductContext()
+        product = MessageProductContext(callbacks = variable_callbacks)
         for variable in graph.variables
             if israndom(variable)
-                activate!(variable, RandomVariableActivationOptions(postprocessor, product, product))
+                activate!(variable, RandomVariableActivationOptions(postprocessor, product, product, site_policy))
             elseif isdata(variable)
                 activate!(variable, DataVariableActivationOptions(true, false, nothing, nothing))
             end
@@ -146,7 +147,7 @@
         end
         energies = Float64[]
         if free_energy
-            push!(subscriptions, subscribe!(bethe_free_energy(Float64, graph.nodes, graph.variables; algorithm = (node) -> graph.algorithms[node]), (f) -> push!(energies, f)))
+            push!(subscriptions, subscribe!(bethe_free_energy(Float64, graph.nodes, graph.variables; algorithm = (node) -> graph.algorithms[node], cavity = !isnothing(site_policy)), (f) -> push!(energies, f)))
         end
 
         for it in 1:iterations
