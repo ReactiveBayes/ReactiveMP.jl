@@ -1,4 +1,4 @@
-## The site stage of a random variable: cavity propagation
+## The sites of a random variable: cavity propagation
 
 """
     ReactiveMP.compute_site(policy, variable, index, message, cavity, previous) -> (site, outcome)
@@ -6,129 +6,92 @@
 The site of edge `index` of a [`RandomVariable`](@ref) activated with a site policy (see
 [`RandomVariableActivationOptions`](@ref)): what replaces the edge's inbound message in the
 variable's products, its outbound messages and its marginal. A site is the inbound message
-projected against its cavity, `proj(message · cavity) / cavity`, the cavity being the variable's
-outbound message on the same edge, the product of the other edges' sites: expectation
+projected against its cavity, `proj(message · cavity) / cavity`, the cavity being the product of
+the other edges' sites, the variable's outbound message on the same edge: expectation
 propagation, or Laplace propagation, where every belief of the variable is a product of sites.
 
 - `message`: the inbound message's data;
-- `cavity`: the outbound message's data, `missing` while no other edge has a site;
+- `cavity`: the product of the other edges' latest sites, `missing` while none has one;
 - `previous`: the `outcome` of the edge's last site, `nothing` at first, where a projection can
   start from.
 
 It returns the site's data and an `outcome`, any value, which the
 [`ReactiveMP.AfterSiteComputationEvent`](@ref) carries. A site `missing` means none yet, as while
-the cavity is `missing`: the edge then contributes nothing to the products, and its site is
-computed again once the cavity has a value. A site `nothing` means that the edge's site has not
-changed, and nothing is sent.
+the cavity is `missing`: the edge then contributes nothing to the products until its next inbound
+message. A site `nothing` means that the edge's site has not changed: the last one is sent again.
 
 The engine knows no projection: an inference package defines a method for its policy. RxInfer's
 cavity schemes, `LaplacePropagation()` and `ExpectationPropagation()`, give one.
 """
 function compute_site end
 
-# The state of a variable's sites. A site is computed when its edge's inbound message arrives,
-# against the product of the other sites as they are then; a site still waiting for a cavity,
-# when one exists. The variable's outbound messages and its marginal are the products of its
-# sites: the outbound message on an edge sent when a site of another edge changed, and only once
-# it is not `missing`, and the marginal at each inbound message; each keeps its latest value for a
-# subscriber that comes later, since the stage computes as messages arrive, not as it is
-# subscribed to, as the equality chain does. With the data of an iteration arriving
-# one by one, and the products updated at once, each iteration is a sweep of expectation
-# propagation over the sites, each against the cavity of the latest sites.
-mutable struct SiteStage{P, V, C, M}
+# The site of one edge, computed as the edge's inbound message arrives, against the cavity the
+# variable's equality chain holds then: the product of the other edges' latest sites, from the
+# chain's cached partial products. The sites are the chain's inputs and only an inbound message
+# triggers a site, so the streams have no cycle, and the chain consumes the sites as it would the
+# inbound messages: the outbound messages and the marginal are sent once each has new inputs. With
+# the messages of an iteration arriving one by one, each site against the latest others, an
+# iteration is a sweep of expectation propagation over the sites.
+mutable struct SiteMapping{P, V, C, H}
     policy::P
     variable::V
-    message_context::C
-    marginal_context::M
-    inbound::Vector{Any}
-    sites::Vector{Message}
-    outcomes::Vector{Any}
-    waiting::Vector{Bool}
-    outputs::Vector{Rocket.RecentSubjectInstance{Message, Subject{Message, AsapScheduler, AsapScheduler}}}
-    marginal::Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
+    index::Int
+    callbacks::C
+    chain::H
+    outcome::Any
+    site::Message
 end
 
-function SiteStage(policy, variable, message_context, marginal_context, d)
-    return SiteStage(
-        policy, variable, message_context, marginal_context,
-        Any[nothing for _ in 1:d],
-        Message[Message(missing, false, true) for _ in 1:d],
-        Any[nothing for _ in 1:d],
-        fill(false, d),
-        [RecentSubject(Message) for _ in 1:d],
-        RecentSubject(Marginal),
-    )
-end
+SiteMapping(policy, variable, index, callbacks, chain) =
+    SiteMapping(policy, variable, index, callbacks, chain, nothing, Message(missing, false, true))
 
-Base.length(stage::SiteStage) = length(stage.sites)
-
-# The product of the sites but `skip`'s, as the outbound message on that edge, between the
-# product events and with the messages' form constraint; `missing` while every other site is
-function sites_product(stage::SiteStage, context, skip)
-    others = [stage.sites[i] for i in 1:length(stage) if i != skip]
-    isempty(others) && return Message(missing, true, true)
-    return compute_product_of_messages(stage.variable, context, others)
-end
-
-function on_inbound!(stage::SiteStage, index, message)
-    stage.inbound[index] = message
-    changed = fill(false, length(stage))
-    update_site!(stage, index, changed)
-    # sites that waited for a cavity, now that another site may have given one
-    progress = true
-    while progress
-        progress = false
-        for i in 1:length(stage)
-            stage.waiting[i] || continue
-            update_site!(stage, i, changed) && (progress = true)
-        end
-    end
-    emit!(stage, changed)
-    return nothing
-end
-
-# The site of edge `index`, between the site events; whether it changed
-function update_site!(stage::SiteStage, index, changed)
-    message = as_message(stage.inbound[index])
-    cavity = sites_product(stage, stage.message_context, index)
-    callbacks = stage.marginal_context.callbacks
+function (mapping::SiteMapping)(inbound)
+    message = as_message(inbound)
+    chain, index, callbacks = mapping.chain, mapping.index, mapping.callbacks
+    cavity = ChainOutboundMapping(index, chain)(nothing)
     span_id = generate_span_id(callbacks)
-    @invoke_callback(callbacks, BeforeSiteComputationEvent(stage.variable, index, message, cavity, span_id))
-    site, outcome = compute_site(stage.policy, stage.variable, index, getdata(message), getdata(cavity), stage.outcomes[index])
-    @invoke_callback(callbacks, AfterSiteComputationEvent(stage.variable, index, message, cavity, site, outcome, span_id))
-    isnothing(outcome) || (stage.outcomes[index] = outcome)
-    stage.waiting[index] = ismissing(site)
-    (ismissing(site) || isnothing(site)) && return false
+    @invoke_callback(callbacks, BeforeSiteComputationEvent(mapping.variable, index, message, cavity, span_id))
+    site, outcome = compute_site(mapping.policy, mapping.variable, index, getdata(message), getdata(cavity), mapping.outcome)
+    @invoke_callback(callbacks, AfterSiteComputationEvent(mapping.variable, index, message, cavity, site, outcome, span_id))
+    isnothing(outcome) || (mapping.outcome = outcome)
     # the inbound message's own flags where it is its own site; a projection is clamped only
     # where both are, and initial where both are clamped or initial, as a rule's output is
-    stage.sites[index] = if site === getdata(message)
+    mapping.site = if isnothing(site)
+        mapping.site
+    elseif ismissing(site)
+        Message(missing, false, true)
+    elseif site === getdata(message)
         Message(site, is_clamped(message), is_initial(message), getannotations(message), nothing)
     else
         clamped = is_clamped(message) && is_clamped(cavity)
         Message(site, clamped, !clamped && is_clamped_or_initial(message) && is_clamped_or_initial(cavity))
     end
-    changed[index] = true
-    return true
+    # the chain's products that hold this edge's site are stale, whichever of its streams have
+    # subscribers
+    ChainInvalidationCallback(index, chain)(nothing)
+    return mapping.site
 end
 
-# The outbound messages on the edges whose cavity changed; the marginal at each inbound message,
-# changed or not, so that a variable's posterior updates once an iteration as without sites
-function emit!(stage::SiteStage, changed)
-    for j in 1:length(stage)
-        any(i -> changed[i] && i != j, 1:length(stage)) || continue
-        outbound = sites_product(stage, stage.message_context, j)
-        ismissing(getdata(outbound)) || next!(stage.outputs[j], outbound)
+Base.map(::Type{Message}, mapping::M) where {M <: SiteMapping} =
+    Rocket.MapOperator{Message, M}(mapping)
+
+has_data(value) = !ismissing(getdata(value))
+
+# The sites of a variable with `d > 1` connections: the equality chain over them, with the
+# variable's outbound messages and marginal as its products. A product still `missing`, every
+# site it holds waiting, is not sent.
+function activate_sites!(randomvar, options::RandomVariableActivationOptions, d)
+    callbacks = options.prod_context_for_marginal_computation.callbacks
+    sites = [MessageObservable(AbstractMessage) for _ in 1:d]
+    chain = EqualityChain(sites, options.stream_postprocessor, randomvar, options.prod_context_for_message_computation)
+    for index in 1:d
+        mapping = SiteMapping(options.site_policy, randomvar, index, callbacks, chain)
+        connect!(sites[index], randomvar.input_messages[index] |> map(Message, mapping))
     end
-    marginal = compute_marginal_from_sites(stage)
-    ismissing(getdata(marginal)) || next!(stage.marginal, marginal)
+    products = [MessageObservable(Message) for _ in 1:d]
+    initialize!(chain, products)
+    foreach(index -> connect!(randomvar.output_messages[index], products[index] |> filter(has_data)), 1:d)
+    marginals = collectLatest(AbstractMessage, Marginal, sites, (messages) -> _compute_marginal_from_messages(randomvar, options, messages), reset_vstatus)
+    set_stream_of_marginals!(randomvar, postprocess_stream_of_marginals(options.stream_postprocessor, marginals |> filter(has_data)))
     return nothing
-end
-
-function compute_marginal_from_sites(stage::SiteStage)
-    context = stage.marginal_context
-    span_id = generate_span_id(context.callbacks)
-    @invoke_callback(context.callbacks, BeforeMarginalComputationEvent(stage.variable, context, Tuple(stage.sites), span_id))
-    result = as_marginal(compute_product_of_messages(stage.variable, context, stage.sites))
-    @invoke_callback(context.callbacks, AfterMarginalComputationEvent(stage.variable, context, Tuple(stage.sites), result, span_id))
-    return result
 end

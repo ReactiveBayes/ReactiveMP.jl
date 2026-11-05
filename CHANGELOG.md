@@ -13,11 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   three-argument constructor unchanged), keeps one site per edge, `ReactiveMP.compute_site(policy,
   variable, index, message, cavity, previous)`: the inbound message projected against its cavity,
   the product of the other edges' sites, which is the variable's outbound message on that edge.
-  The sites take the place of the equality chain: a site is computed as its inbound message
-  arrives, against the latest sites, and the outbound messages and the marginal are their
-  products, sent as the sites change, an outbound message only when another edge's site changed
-  and once it is not `missing`. Each iteration is then a sweep of expectation propagation over
-  the sites. The events `BeforeSiteComputationEvent` and `AfterSiteComputationEvent` report each
+  The sites are the equality chain's inputs: a site is computed as its inbound message arrives,
+  against the cavity the chain holds then, read from its cached partial products, and the
+  outbound messages and the marginal are sent as without sites, once each has new inputs and
+  is not `missing`. Each iteration is then a sweep of expectation propagation over the sites, at
+  the chain's cost: linear in the number of connections when the messages arrive in order. The events `BeforeSiteComputationEvent` and `AfterSiteComputationEvent` report each
   site to the marginal context's callbacks. The engine knows no projection; RxInfer's cavity
   schemes give the policy.
 - `FactorBoundFreeEnergy(cavity = true)`, a node's free-energy term under cavity propagation: a

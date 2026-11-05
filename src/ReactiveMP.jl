@@ -138,8 +138,8 @@ include("postprocessors/damping.jl")
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
-include("variables/sites.jl")
 include("variables/random.jl")
+include("variables/sites.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 

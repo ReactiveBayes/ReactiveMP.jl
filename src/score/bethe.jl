@@ -86,14 +86,16 @@ function sum_of_latest(terms, sum)
         latest = Any[nothing for _ in terms]
         waiting = Ref(length(latest))
         for (index, term) in enumerate(terms)
-            subscribe!(term, lambda(
-                on_next = (value) -> begin
-                    isnothing(latest[index]) && (waiting[] -= 1)
-                    latest[index] = value
-                    waiting[] == 0 && next!(actor, DeferredScore(() -> sum(map(evaluate, latest))))
-                end,
-                on_error = (error) -> error!(actor, error),
-            ))
+            subscribe!(
+                term, lambda(
+                    on_next = (value) -> begin
+                        isnothing(latest[index]) && (waiting[] -= 1)
+                        latest[index] = value
+                        waiting[] == 0 && next!(actor, DeferredScore(() -> sum(map(evaluate, latest))))
+                    end,
+                    on_error = (error) -> error!(actor, error),
+                )
+            )
         end
     end
 end

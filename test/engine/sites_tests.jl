@@ -1,5 +1,6 @@
-# The site stage of a random variable, cavity propagation: with a site policy each edge's inbound
-# message is replaced by its site, computed against the variable's outbound message on the edge.
+# The sites of a random variable, cavity propagation: with a site policy each edge's inbound
+# message is replaced by its site, computed against the variable's outbound message on the edge,
+# and the equality chain takes the sites as its inputs.
 # A toy policy moment-matches a likelihood on a grid: expectation propagation.
 
 @testmodule SitePolicies begin
@@ -154,4 +155,37 @@ end
     p = pdf.(Normal(), grid) .* exp.(S.loglik.(1, grid))
     p ./= sum(p)
     @test mean(q) ≈ sum(p .* grid) atol = 1.0e-6
+end
+
+@testitem "engine:sites: a variable with a thousand likelihoods, each site once per message" tags = [:engine] setup = [EngineHarness, SitePolicies] begin
+    # x ~ N(0, 1) and a thousand observations y_i ~ Logit(x): the cavity of each site is read from
+    # the equality chain's cached products, so an iteration computes one site per inbound message
+    # and one marginal, and expectation propagation is within its own error of the exact posterior.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, Random
+    H, S = EngineHarness, SitePolicies
+
+    N = 1000
+    rng = MersenneTwister(11)
+    data = [rand(rng) < 1 / (1 + exp(-0.7)) ? 1 : 0 for _ in 1:N]
+    graph = H.Graph()
+    x = H.random!(graph)
+    y = [H.data!(graph) for _ in 1:N]
+    H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+    foreach(yi -> H.node!(graph, S.Logit, [(:out, yi), (:x, x)]), y)
+    sites, marginals = Ref(0), Ref(0)
+    callbacks = (after_site_computation = (_) -> (sites[] += 1), after_marginal_computation = (_) -> (marginals[] += 1))
+    iterations = 4
+    result = H.run(graph; data = [y => data], iterations, posteriors = [:x => x], free_energy = false, site_policy = S.GridEP(), rulefallback = S.ToyFallback(), variable_callbacks = callbacks)
+
+    @test sites[] == N * iterations + 1
+    @test length(result.history["x"]) == iterations
+    @test marginals[] == iterations
+    grid = S.GRID
+    logp = logpdf.(Normal(), grid) .+ [sum(yi -> S.loglik(yi, u), data) for u in grid]
+    p = exp.(logp .- maximum(logp))
+    p ./= sum(p)
+    m = sum(p .* grid)
+    q = result.posteriors["x"]
+    @test mean(q) ≈ m atol = 1.0e-4
+    @test var(q) ≈ sum(p .* (grid .- m) .^ 2) rtol = 1.0e-2
 end

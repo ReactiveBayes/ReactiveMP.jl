@@ -143,12 +143,12 @@ Wire the streams of a random variable, after every factor node it connects to ha
 2. **Marginal**: the product of all inbound messages, formed with [`as_marginal`](@ref). It is
    computed once every inbound message has a value, and again whenever each has updated since.
 3. **Sites**, with a site policy and more than one connection: each edge's site (see
-   [`ReactiveMP.compute_site`](@ref)) takes the place of its inbound message in both products, in
-   place of the equality chain. A site is computed as its inbound message arrives, against the
-   product of the other sites then; the outbound messages and the marginal are sent as the sites
-   change, the outbound message on an edge when another edge's site changed. A site starts as
-   `missing`, the products' identity, and an outbound message or a marginal that is still
-   `missing` is not sent.
+   [`ReactiveMP.compute_site`](@ref)) takes the place of its inbound message in both products,
+   the equality chain's inputs. A site is computed as its inbound message arrives, against the
+   cavity the chain holds then, the product of the other edges' latest sites from its cached
+   partial products; the outbound messages and the marginal are sent as without sites. A site
+   starts as `missing`, the products' identity, and an outbound message or a marginal that is
+   still `missing` is not sent.
 
 A product that is initial does not consume its inputs, so the next update of any of them
 computes it again.
@@ -172,14 +172,7 @@ function activate!(
     end
 
     if !isnothing(options.site_policy) && d > 1
-        # The sites take the place of the equality chain: the stage computes the outbound messages
-        # and the marginal from them, as each inbound message arrives.
-        stage = SiteStage(options.site_policy, randomvar, options.prod_context_for_message_computation, options.prod_context_for_marginal_computation, d)
-        foreach(index -> connect!(outputmsgs[index], stage.outputs[index]), 1:d)
-        foreach(index -> subscribe!(randomvar.input_messages[index], (message) -> on_inbound!(stage, index, message)), 1:d)
-        stream_of_marginals = postprocess_stream_of_marginals(options.stream_postprocessor, stage.marginal)
-        set_stream_of_marginals!(randomvar, stream_of_marginals)
-        return nothing
+        return activate_sites!(randomvar, options, d)
     elseif length(randomvar.input_messages) > 1
         chain = EqualityChain(
             randomvar.input_messages,
