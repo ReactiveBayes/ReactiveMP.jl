@@ -149,7 +149,9 @@ end
     H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
     H.node!(graph, S.Logit, [(:out, y), (:x, x)])
     result = H.run(graph; data = [y => 1], iterations = 3, posteriors = [:x => x], site_policy = S.GridEP(), rulefallback = S.ToyFallback())
-    @test last(result.free_energy) ≈ log(2.0) atol = 1.0e-6
+    # one value per iteration, each the fixed point's: a single site settles at once
+    @test length(result.free_energy) == 3
+    @test all(f -> isapprox(f, log(2.0); atol = 1.0e-6), result.free_energy)
     q = result.posteriors["x"]
     grid = S.GRID
     p = pdf.(Normal(), grid) .* exp.(S.loglik.(1, grid))

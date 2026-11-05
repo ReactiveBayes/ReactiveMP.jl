@@ -24,12 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   node with no rules under its algorithm takes its rule fallback's energy from its inbound
   messages, the cavities, and its variables' marginals, both given to `call_energy_fallback` as
   the rule arguments' `m` and `q`, less the point masses' entropies; every other node's term is
-  Bethe's. `bethe_free_energy(...; cavity = true)` sums the latest terms, emitted whenever one
-  updates, through `ReactiveMP.sum_of_terms`. A term of a node without rules and the sums are
-  `ReactiveMP.DeferredScore`s, computed once when `ReactiveMP.evaluate` asks: their inputs update
-  as the sites do, several times an iteration, and each value is a projection. The latest terms
-  are kept in place, without a copy per update. A variable with sites sends its marginal at each
-  inbound message, so that its posterior updates once an iteration.
+  Bethe's. `bethe_free_energy(...; cavity = true)` takes these terms; the sums are as without
+  sites. A term updates once each of its inputs has, once per iteration, so the free energy is
+  emitted once per iteration, as Bethe's is.
 - A rule fallback is asked with `MessagePassingRulesBase.call_fallback` and `call_energy_fallback`,
   with the node's algorithm and its rule context, and also where a joint marginal or an average
   energy has no rule. A three-argument fallback is asked about messages only, as before;

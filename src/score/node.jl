@@ -28,8 +28,9 @@ variables have a site policy (see [`ReactiveMP.compute_site`](@ref)): a node wit
 its algorithm, whose messages its rule fallback sends, takes the fallback's energy from its inbound
 messages, the cavities, and its variables' marginals, both given to `call_energy_fallback` as the
 rule arguments' `m` and `q` by interface: expectation propagation's term, less the point masses'
-entropies. Its stream emits a [`ReactiveMP.DeferredScore`](@ref) whenever an input updates, computed
-once it is asked for. Every other node's term is Bethe's, as above.
+entropies. Its stream emits once each of those inputs has updated, once per iteration, since the
+sites' variables send their messages and marginals once each. Every other node's term is
+Bethe's, as above.
 """
 struct FactorBoundFreeEnergy{C} end
 
@@ -210,9 +211,7 @@ function cavity_score(::Type{T}, type, node, algorithm, stream_postprocessors) w
     marginals = map(interface -> get_stream_of_marginals(getvariable(interface)) |> skip_initial(), interfaces)
     points = Tuple(i for (i, interface) in enumerate(interfaces) if !israndom(getvariable(interface)))
     mapping = term_function(cavity_energy_term, T, node_activation(node), node, algorithm, names, Val(length(interfaces)), points)
-    # computed once it is asked for: its inputs update as the sites do, several times an iteration
-    deferred = (values) -> DeferredScore(() -> mapping(values))
-    return postprocess_stream_of_scores(stream_postprocessors, combineLatest((messages..., marginals...), PushEach()) |> map(DeferredScore, deferred))
+    return postprocess_stream_of_scores(stream_postprocessors, combineLatest((messages..., marginals...), PushNew()) |> map(T, mapping))
 end
 
 # The fallback's term from the inbound messages, the cavities, and the variables' marginals, both

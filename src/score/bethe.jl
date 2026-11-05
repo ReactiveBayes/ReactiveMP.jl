@@ -26,8 +26,7 @@ terms.
 - `algorithm`: a function of a node, the algorithm the node runs under, as given at activation.
   Default `(node) -> nothing`, every node's default.
 - `cavity`: the free energy under cavity propagation, where the random variables have a site
-  policy: each node's term is `FactorBoundFreeEnergy(cavity = true)`, and the sum is of the
-  latest terms, emitted whenever one updates. Default `false`.
+  policy: each node's term is `FactorBoundFreeEnergy(cavity = true)`. Default `false`.
 
 # Returns
 
@@ -58,46 +57,14 @@ function bethe_free_energy(::Type{T}, factornodes, variables; algorithm = (node)
     variable_bound_entropies = map(variable -> score(CT, VariableBoundEntropy(), variable, nothing), randomvars)
 
     sum_of_latest = (values) -> reduce(+, values)
-    node_bound_free_energies_sum = sum_of_terms(CT, node_bound_free_energies, sum_of_latest, cavity)
-    variable_bound_entropies_sum = sum_of_terms(CT, variable_bound_entropies, sum_of_latest, cavity)
+    node_bound_free_energies_sum = collectLatest(CT, CT, node_bound_free_energies, sum_of_latest)
+    variable_bound_entropies_sum = collectLatest(CT, CT, variable_bound_entropies, sum_of_latest)
 
     point_entropies_n = mapreduce(degree, +, Iterators.filter(v -> isdata(v) || isconst(v), variables); init = 0)
     point_entropies = CountingReal(T, point_entropies_n)
 
-    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), cavity ? PushEach() : PushNew()) |>
-        map(T, sums -> float(evaluate(sums[1]) + evaluate(sums[2]) - point_entropies))
-end
-
-"""
-    ReactiveMP.sum_of_terms(::Type{T}, terms, sum, latest::Bool)
-
-The stream of the sum of the free-energy terms' streams: once each has updated since the last sum,
-or, with `latest`, whenever one updates, of the latest of each, as under cavity propagation, where
-a term may update several times in one iteration and another not at all. The latest sums are
-[`ReactiveMP.DeferredScore`](@ref)s, computed when [`ReactiveMP.evaluate`](@ref) asks.
-"""
-sum_of_terms(::Type{T}, terms, sum, latest::Bool) where {T} = latest ? sum_of_latest(terms, sum) : collectLatest(T, T, terms, sum)
-
-# The latest of each term kept in place, and on each update, once every term has a value, a sum
-# that reads them when it is evaluated: no copy of the terms per update, which under cavity
-# propagation come as often as the sites change.
-function sum_of_latest(terms, sum)
-    return make(DeferredScore) do actor
-        latest = Any[nothing for _ in terms]
-        waiting = Ref(length(latest))
-        for (index, term) in enumerate(terms)
-            subscribe!(
-                term, lambda(
-                    on_next = (value) -> begin
-                        isnothing(latest[index]) && (waiting[] -= 1)
-                        latest[index] = value
-                        waiting[] == 0 && next!(actor, DeferredScore(() -> sum(map(evaluate, latest))))
-                    end,
-                    on_error = (error) -> error!(actor, error),
-                )
-            )
-        end
-    end
+    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |>
+        map(T, sums -> float(sums[1] + sums[2] - point_entropies))
 end
 
 counting_real_type(::Type{Real}) = CountingReal{<:Real}

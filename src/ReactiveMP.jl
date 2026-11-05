@@ -97,7 +97,7 @@ export tiny, huge
     BeforeMessageRuleCallEvent, BeforeProductOfMessagesEvent, BeforeProductOfTwoMessagesEvent,
     BeforeMarginalRuleCallEvent, AfterMarginalRuleCallEvent, BeforeFactorBoundFreeEnergyEvent,
     AfterFactorBoundFreeEnergyEvent, BeforeVariableBoundEntropyEvent, AfterVariableBoundEntropyEvent,
-    BeforeSiteComputationEvent, AfterSiteComputationEvent, compute_site, sum_of_terms, DeferredScore, evaluate
+    BeforeSiteComputationEvent, AfterSiteComputationEvent, compute_site
 
 include("fixes.jl")
 include("helpers/macrohelpers.jl")

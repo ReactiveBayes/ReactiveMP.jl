@@ -52,26 +52,3 @@ score(::DifferentialEntropy, marginal::Marginal{<:PointMass}) = point_entropy(Ba
 point_entropy(point::Distribution, marginal) = BayesBase.MinusInfinity(paramfloattype(point))
 point_entropy(point::Union{Number, AbstractArray, UniformScaling}, marginal) = entropy(marginal)
 point_entropy(point, marginal) = BayesBase.MinusInfinity(Float64)
-
-"""
-    ReactiveMP.DeferredScore(compute)
-
-A free-energy term, or a sum of terms, computed when its value is asked for, with
-[`ReactiveMP.evaluate`](@ref), and once: what the term streams of cavity propagation emit, since
-their inputs update as the sites do, several times in an iteration, and each value of a node
-without rules is a projection.
-"""
-mutable struct DeferredScore{F}
-    compute::F
-    value::Any
-end
-
-DeferredScore(compute::F) where {F} = DeferredScore{F}(compute, nothing)
-
-"""
-    ReactiveMP.evaluate(score)
-
-The value of a [`ReactiveMP.DeferredScore`](@ref), computed the first time; any other value as it is.
-"""
-evaluate(score) = score
-evaluate(score::DeferredScore) = isnothing(score.value) ? (score.value = score.compute()) : score.value
