@@ -34,6 +34,14 @@
         return (site, site)
     end
 
+    # the cavity seeded by an initial message: `initial^(waiting / (degree - 1))` times the sites'
+    function ReactiveMP.seeded_cavity(::GridEP, cavity, initial, waiting, degree)
+        ξ0, w0 = weightedmean_precision(initial)
+        ξ, w = ismissing(cavity) ? (0.0, 0.0) : weightedmean_precision(cavity)
+        share = waiting / (degree - 1)
+        return NormalWeightedMeanPrecision(ξ + share * ξ0, w + share * w0)
+    end
+
     # `y ~ Logit(x)`: a node with no rules, whose likelihood of x is log σ(±x); a toy fallback sends
     # it, and its free-energy term, EP's, from the cavity on x and x's marginal, on the grid
     struct Logit{X}
@@ -190,4 +198,91 @@ end
     q = result.posteriors["x"]
     @test mean(q) ≈ m atol = 1.0e-4
     @test var(q) ≈ sum(p .* (grid .- m) .^ 2) rtol = 1.0e-2
+end
+
+@testitem "engine:sites: an initial message seeds the cavities of a variable with only raw edges" tags = [:engine] setup = [EngineHarness, SitePolicies] begin
+    # x with two likelihoods, log σ(x) and log σ(-x), and no prior: each raw message waits for a
+    # cavity, which only the other edge's site gives, so without an initial message no site is
+    # ever computed; with one, it is each edge's first cavity, and the sites reach expectation
+    # propagation's fixed point, which no longer depends on it.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules, BayesBase
+    H, S = EngineHarness, SitePolicies
+
+    function graph_of()
+        graph = H.Graph()
+        x = H.random!(graph)
+        y1, y2 = H.data!(graph), H.data!(graph)
+        H.node!(graph, S.Logit, [(:out, y1), (:x, x)])
+        H.node!(graph, S.Logit, [(:out, y2), (:x, x)])
+        return graph, x, y1, y2
+    end
+    graph, x, y1, y2 = graph_of()
+    policy = S.GridEP()
+    marginals = Ref(0)
+    H.run(graph; data = [y1 => 1, y2 => 0], iterations = 3, posteriors = [], free_energy = false, site_policy = policy, rulefallback = S.ToyFallback(), variable_callbacks = (after_marginal_computation = (_) -> (marginals[] += 1),))
+    @test marginals[] == 0 && policy.projections == 0
+
+    events = Any[]
+    callbacks = (before_site_computation = (event) -> push!(events, event),)
+    results = map((NormalMeanVariance(0.0, 1.0), NormalMeanVariance(2.0, 9.0))) do initial
+        graph, x, y1, y2 = graph_of()
+        empty!(events)
+        result = H.run(graph; data = [y1 => 1, y2 => 0], iterations = 30, posteriors = [:x => x], free_energy = false, site_policy = S.GridEP(), rulefallback = S.ToyFallback(), initial_messages = [x => initial], variable_callbacks = callbacks)
+        # the first site is projected against the initial message itself, an initial cavity
+        first_cavity = first(events).cavity
+        @test ReactiveMP.is_initial(first_cavity)
+        @test weightedmean_precision(ReactiveMP.getdata(first_cavity)) == weightedmean_precision(initial)
+        result.posteriors["x"]
+    end
+
+    # expectation propagation by hand: each site against the other
+    grid = S.GRID
+    sites = [(0.0, 0.25), (0.0, 0.25)]
+    for _ in 1:200, i in 1:2
+        ξc, wc = sites[3 - i]
+        logt = [S.loglik(i == 1 ? 1 : 0, u) + ξc * u - wc * u^2 / 2 for u in grid]
+        p = exp.(logt .- maximum(logt))
+        p ./= sum(p)
+        m = sum(p .* grid)
+        v = sum(p .* (grid .- m) .^ 2)
+        sites[i] = (m / v - ξc, 1 / v - wc)
+    end
+    ξ, w = sum(first, sites), sum(last, sites)
+    for q in results
+        @test mean(q) ≈ ξ / w atol = 1.0e-6
+        @test var(q) ≈ 1 / w rtol = 1.0e-6
+    end
+end
+
+@testitem "engine:sites: a raw message from constants is projected again each round" tags = [:engine] setup = [EngineHarness, SitePolicies] begin
+    # x ~ N(0, 1), a likelihood log σ(x) whose observation is a constant, and one log σ(-x) whose
+    # observation is data: the first arrives once, clamped, and its stream completes, before the
+    # other edges have sites; its site is projected again each round, so that the sites reach
+    # expectation propagation's fixed point
+    using ExponentialFamily, Distributions, StandardMessagePassingRules
+    H, S = EngineHarness, SitePolicies
+
+    graph = H.Graph()
+    x = H.random!(graph)
+    y = H.data!(graph)
+    H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+    H.node!(graph, S.Logit, [(:out, H.constant!(graph, 1)), (:x, x)])
+    H.node!(graph, S.Logit, [(:out, y), (:x, x)])
+    result = H.run(graph; data = [y => 0], iterations = 30, posteriors = [:x => x], free_energy = false, site_policy = S.GridEP(), rulefallback = S.ToyFallback())
+
+    grid = S.GRID
+    sites = [(0.0, 0.0), (0.0, 0.0)]
+    for _ in 1:200, i in 1:2
+        ξc, wc = sites[3 - i][1], 1.0 + sites[3 - i][2]
+        logt = [S.loglik(i == 1 ? 1 : 0, u) + ξc * u - wc * u^2 / 2 for u in grid]
+        p = exp.(logt .- maximum(logt))
+        p ./= sum(p)
+        m = sum(p .* grid)
+        v = sum(p .* (grid .- m) .^ 2)
+        sites[i] = (m / v - ξc, 1 / v - wc)
+    end
+    ξ, w = sum(first, sites), 1.0 + sum(last, sites)
+    q = result.posteriors["x"]
+    @test mean(q) ≈ ξ / w atol = 1.0e-6
+    @test var(q) ≈ 1 / w rtol = 1.0e-6
 end

@@ -19,6 +19,9 @@ mutable struct RandomVariable <: AbstractVariable
     # the callbacks of its marginal's product context, set by `activate!`, which its free-energy
     # contribution reports to as well
     callbacks::Any
+    # with a site policy, what its sites share: the initial message that seeds their cavities,
+    # and the edges, for the sites that are projected again each round
+    sites::Any
 end
 
 Base.show(io::IO, variable::RandomVariable) = print(io, "RandomVariable(", repr(variable.label), ")")
@@ -44,6 +47,7 @@ function randomvar(; label = nothing)
         Vector{MessageObservable{Message}}(),
         MarginalObservable(),
         label,
+        nothing,
         nothing,
     )
 end
@@ -81,6 +85,8 @@ function set_initial_message!(randomvar::RandomVariable, message)
         ArgumentError("a random variable's outbound messages exist once it is activated: call `activate!` on it before `set_initial_message!`"),
     )
     foreach(stream -> set_initial_message!(stream, message), randomvar.output_messages)
+    # with sites, the initial message is also every edge's first cavity
+    randomvar.sites isa SiteState && (randomvar.sites.initial = message)
     return nothing
 end
 
@@ -148,7 +154,13 @@ Wire the streams of a random variable, after every factor node it connects to ha
    cavity the chain holds then, the product of the other edges' latest sites from its cached
    partial products; the outbound messages and the marginal are sent as without sites. A site
    starts as `missing`, the products' identity, and an outbound message or a marginal that is
-   still `missing` is not sent.
+   still `missing` is not sent. An initial message, [`ReactiveMP.set_initial_message!`](@ref),
+   is also each edge's first cavity: while some other edges have no site yet, the cavity counts
+   each of them as the initial message's `1/(d - 1)`-th power (see
+   [`ReactiveMP.seeded_cavity`](@ref)), so that a raw message need not wait for one. A raw
+   message that is clamped, from a node whose inputs are all constants, arrives only once: its
+   site is projected again each round, against its cavity then, as the last edge with a message
+   that is not clamped receives one, and sent as an initial message.
 
 A product that is initial does not consume its inputs, so the next update of any of them
 computes it again.

@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the chain's cost: linear in the number of connections when the messages arrive in order. The events `BeforeSiteComputationEvent` and `AfterSiteComputationEvent` report each
   site to the marginal context's callbacks. The engine knows no projection; RxInfer's cavity
   schemes give the policy.
+  - An initial message, `set_initial_message!`, is also every edge's first cavity: while some
+    other edges have no site, the cavity counts each as the initial message's `1/(d - 1)`-th
+    power, through `ReactiveMP.seeded_cavity(policy, cavity, initial, waiting, degree)`, so that a
+    variable whose edges are all raw starts. The outbound messages and the marginal are products
+    of the sites alone.
+  - A raw message from a node whose inputs are all constants, clamped, arrives once and its stream
+    completes: its site is projected again each round, as the last edge with a message that is
+    not clamped receives one, and the chain and the marginal read each site's latest. Without it
+    such a site, a prior without rules on constants, waited for a cavity for ever and the prior
+    was dropped.
 - `FactorBoundFreeEnergy(cavity = true)`, a node's free-energy term under cavity propagation: a
   node with no rules under its algorithm takes its rule fallback's energy from its inbound
   messages, the cavities, and its variables' marginals, both given to `call_energy_fallback` as

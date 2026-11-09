@@ -25,6 +25,53 @@ cavity schemes, `LaplacePropagation()` and `ExpectationPropagation()`, give one.
 """
 function compute_site end
 
+"""
+    ReactiveMP.seeded_cavity(policy, cavity, initial, waiting, degree) -> cavity
+
+The cavity of a site while `waiting` of the other edges of a variable with `degree` connections
+have no site yet, and the variable has an initial message `initial` (`@initialization`'s `μ(x)`):
+`cavity` (`missing` while no other edge has a site) times `initial^(waiting / (degree - 1))`.
+Every edge's first cavity is then the initial message itself, whatever the degree, and the seed
+fades as the edges' own sites arrive. It enters the cavities only: the outbound messages and the
+marginal are products of the sites alone.
+
+The default returns `cavity` as it is; an inference package defines a method for its policy, as
+for [`ReactiveMP.compute_site`](@ref).
+"""
+seeded_cavity(policy, cavity, initial, waiting, degree) = cavity
+
+# What the sites of a variable share: the initial message, if any, which edges have a site, and
+# the edges themselves, so that a static one can be projected again (`refresh_static!`)
+mutable struct SiteState
+    initial::Any
+    present::Vector{Bool}
+    count::Int
+    mappings::Vector{Any}
+    sites::Vector{MessageObservable{AbstractMessage}}
+    # the last edge, by index, whose inbound message is not clamped: its site starts a round
+    last_dynamic::Int
+end
+
+SiteState(sites::Vector{MessageObservable{AbstractMessage}}) =
+    SiteState(nothing, fill(false, length(sites)), 0, Any[], sites, 0)
+
+function mark!(state::SiteState, index, present::Bool)
+    state.present[index] == present && return nothing
+    state.present[index] = present
+    state.count += present ? 1 : -1
+    return nothing
+end
+
+# The cavity from the chain, and, while other edges have no site, the initial message for each
+function seeded(mapping, cavity)
+    state = mapping.state
+    isnothing(state.initial) && return cavity
+    d = length(state.present)
+    waiting = d - state.count - (state.present[mapping.index] ? 0 : 1)
+    waiting == 0 && return cavity
+    return Message(seeded_cavity(mapping.policy, getdata(cavity), state.initial, waiting, d), false, true)
+end
+
 # The site of one edge, computed as the edge's inbound message arrives, against the cavity the
 # variable's equality chain holds then: the product of the other edges' latest sites, from the
 # chain's cached partial products. The sites are the chain's inputs and only an inbound message
@@ -32,44 +79,81 @@ function compute_site end
 # inbound messages: the outbound messages and the marginal are sent once each has new inputs. With
 # the messages of an iteration arriving one by one, each site against the latest others, an
 # iteration is a sweep of expectation propagation over the sites.
+#
+# A raw message that is clamped, from a node whose inputs are all constants, arrives once, and its
+# stream completes: its site, static, would keep the cavity of that moment, or wait for ever where
+# it had none. So each round, as the last dynamic edge's message arrives, every static site is
+# projected again against its cavity then (`refresh_static!`), and the chain and the marginal read
+# each site's latest.
 mutable struct SiteMapping{P, V, C, H}
     policy::P
     variable::V
     index::Int
     callbacks::C
     chain::H
+    state::SiteState
     outcome::Any
     site::Message
+    inbound::Any   # the last inbound message, `nothing` before the first
+    projected::Bool # whether the site is a projection, or waits for one, rather than the message
 end
 
-SiteMapping(policy, variable, index, callbacks, chain) =
-    SiteMapping(policy, variable, index, callbacks, chain, nothing, Message(missing, false, true))
+SiteMapping(policy, variable, index, callbacks, chain, state = SiteState(chain.inputmsgs)) =
+    SiteMapping(policy, variable, index, callbacks, chain, state, nothing, Message(missing, false, true), nothing, false)
 
 function (mapping::SiteMapping)(inbound)
     message = as_message(inbound)
+    state, index = mapping.state, mapping.index
+    if !is_clamped(message)
+        state.last_dynamic = max(state.last_dynamic, index)
+        index == state.last_dynamic && refresh_static!(state, index)
+    end
+    return compute_site!(mapping, message)
+end
+
+function compute_site!(mapping::SiteMapping, message::Message)
     chain, index, callbacks = mapping.chain, mapping.index, mapping.callbacks
-    cavity = ChainOutboundMapping(index, chain)(nothing)
+    cavity = seeded(mapping, ChainOutboundMapping(index, chain)(nothing))
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeSiteComputationEvent(mapping.variable, index, message, cavity, span_id))
     site, outcome = compute_site(mapping.policy, mapping.variable, index, getdata(message), getdata(cavity), mapping.outcome)
     @invoke_callback(callbacks, AfterSiteComputationEvent(mapping.variable, index, message, cavity, site, outcome, span_id))
     isnothing(outcome) || (mapping.outcome = outcome)
+    mapping.inbound = message
     # the inbound message's own flags where it is its own site; a projection is clamped only
     # where both are, and initial where both are clamped or initial, as a rule's output is
     mapping.site = if isnothing(site)
         mapping.site
     elseif ismissing(site)
+        mapping.projected = true
         Message(missing, false, true)
     elseif site === getdata(message)
+        mapping.projected = false
         Message(site, is_clamped(message), is_initial(message), getannotations(message), nothing)
     else
+        mapping.projected = true
         clamped = is_clamped(message) && is_clamped(cavity)
         Message(site, clamped, !clamped && is_clamped_or_initial(message) && is_clamped_or_initial(cavity))
     end
+    mark!(mapping.state, index, has_data(mapping.site))
     # the chain's products that hold this edge's site are stale, whichever of its streams have
     # subscribers
     ChainInvalidationCallback(index, chain)(nothing)
     return mapping.site
+end
+
+latest_sites(sites, messages) = map((site, message) -> something(getrecent(site), message), sites, messages)
+
+# Every static site, a projection of a clamped message, projected again against its cavity now,
+# and sent as an initial message
+function refresh_static!(state::SiteState, trigger)
+    for (k, other) in enumerate(state.mappings)
+        (k == trigger || isnothing(other.inbound) || !other.projected || !is_clamped(other.inbound)) && continue
+        site = compute_site!(other, other.inbound)
+        other.site = Message(getdata(site), false, true)
+        next!(state.sites[k].subject, other.site)
+    end
+    return nothing
 end
 
 Base.map(::Type{Message}, mapping::M) where {M <: SiteMapping} =
@@ -84,14 +168,19 @@ function activate_sites!(randomvar, options::RandomVariableActivationOptions, d)
     callbacks = options.prod_context_for_marginal_computation.callbacks
     sites = [MessageObservable(AbstractMessage) for _ in 1:d]
     chain = EqualityChain(sites, options.stream_postprocessor, randomvar, options.prod_context_for_message_computation)
+    state = SiteState(sites)
+    randomvar.sites = state
     for index in 1:d
-        mapping = SiteMapping(options.site_policy, randomvar, index, callbacks, chain)
+        mapping = SiteMapping(options.site_policy, randomvar, index, callbacks, chain, state)
+        push!(state.mappings, mapping)
         connect!(sites[index], randomvar.input_messages[index] |> map(Message, mapping))
     end
     products = [MessageObservable(Message) for _ in 1:d]
     initialize!(chain, products)
     foreach(index -> connect!(randomvar.output_messages[index], products[index] |> filter(has_data)), 1:d)
-    marginals = collectLatest(AbstractMessage, Marginal, sites, (messages) -> _compute_marginal_from_messages(randomvar, options, messages), reset_vstatus)
+    # each site as the chain reads it, its latest: a static site's stream completes with its
+    # message's, and is projected again after that (`refresh_static!`)
+    marginals = collectLatest(AbstractMessage, Marginal, sites, (messages) -> _compute_marginal_from_messages(randomvar, options, latest_sites(sites, messages)), reset_vstatus)
     set_stream_of_marginals!(randomvar, postprocess_stream_of_marginals(options.stream_postprocessor, marginals |> filter(has_data)))
     return nothing
 end
