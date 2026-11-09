@@ -28,6 +28,7 @@ ReactiveMPReactantExt = "Reactant"
 [sources]
 BayesBase = {url = "https://github.com/ReactiveBayes/BayesBase.jl", rev = "universal-inference"}
 MessagePassingRulesBase = {url = "https://github.com/ReactiveBayes/MessagePassingRulesBase.jl", rev = "universal-inference"}
+StandardMessagePassingRules = {url = "https://github.com/ReactiveBayes/StandardMessagePassingRules.jl", rev = "universal-inference"}
 
 [compat]
 BayesBase = "1.7"
