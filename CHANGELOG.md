@@ -70,6 +70,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.
 
+## [7.0.2] - 2026-11-03
+
+### Fixed
+- Make the `Message` and `Marginal` doctests independent of how Distributions prints distributions, which changed in Distributions v0.25.133.
+
 ## [7.0.1] - 2026-10-23
 
 ### Fixed
@@ -455,7 +460,8 @@ nodes and rules from the packages run as before.
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.1...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.2...HEAD
+[7.0.2]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.1...v7.0.2
 [7.0.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.6.0...v7.0.0
 [6.6.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.5.0...v6.6.0

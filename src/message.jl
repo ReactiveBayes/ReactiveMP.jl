@@ -70,8 +70,10 @@ $(DOC_EQUALITY)
 # Examples
 
 ```jldoctest
-julia> message = Message(Gamma(10.0, 2.0), false, true)
-Message(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
+julia> message = Message(Gamma(10.0, 2.0), false, true);
+
+julia> getdata(message) == Gamma(10.0, 2.0)
+true
 
 julia> mean(message)
 20.0
