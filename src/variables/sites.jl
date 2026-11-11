@@ -21,7 +21,8 @@ the cavity is `missing`: the edge then contributes nothing to the products until
 message. A site `nothing` means that the edge's site has not changed: the last one is sent again.
 
 The engine knows no projection: an inference package defines a method for its policy. RxInfer's
-cavity schemes, `LaplacePropagation()` and `ExpectationPropagation()`, give one.
+cavity schemes, `LaplacePropagation()`, `ExpectationPropagation()` and
+`NaturalGradientPropagation()`, give one.
 """
 function compute_site end
 

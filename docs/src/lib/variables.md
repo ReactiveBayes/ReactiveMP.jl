@@ -216,7 +216,7 @@ without a policy.
 
 The engine knows no projection. A policy is any value for which an inference package defines
 [`ReactiveMP.compute_site`](@ref) and, optionally, [`ReactiveMP.seeded_cavity`](@ref); RxInfer's
-`LaplacePropagation()` and `ExpectationPropagation()` give one. The sites are the inputs of the
+`LaplacePropagation()`, `ExpectationPropagation()` and `NaturalGradientPropagation()` give one. The sites are the inputs of the
 variable's equality chain, and a site is computed as its inbound message arrives, against the
 cavity the chain holds at that moment. With the messages of an iteration arriving one after the
 other, each iteration is a sweep over the sites, at the chain's cost: linear in the number of
