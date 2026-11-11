@@ -186,6 +186,10 @@ function activate_sites!(randomvar, options::RandomVariableActivationOptions, d)
         mapping = SiteMapping(options.site_policy, randomvar, index, callbacks, chain, state)
         push!(state.mappings, mapping)
         connect!(sites[index], randomvar.input_messages[index] |> map(Message, mapping))
+        # every site is computed as its inbound message arrives, whether or not a product reads
+        # it: each is in the other edges' cavities, which a schedule that never asks for this
+        # edge's outbound messages, nor the marginal, would leave at their seeds
+        subscribe!(sites[index], void(AbstractMessage))
     end
     products = [MessageObservable(Message) for _ in 1:d]
     initialize!(chain, products)
