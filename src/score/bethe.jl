@@ -25,6 +25,8 @@ terms.
 
 - `algorithm`: a function of a node, the algorithm the node runs under, as given at activation.
   Default `(node) -> nothing`, every node's default.
+- `cavity`: the free energy under cavity propagation, where the random variables have a site
+  policy: each node's term is `FactorBoundFreeEnergy(cavity = true)`. Default `false`.
 
 # Returns
 
@@ -47,10 +49,10 @@ energies = Float64[]
 subscription = subscribe!(bethe_free_energy(Float64, nodes, variables), (f) -> push!(energies, f))
 ```
 """
-function bethe_free_energy(::Type{T}, factornodes, variables; algorithm = (node) -> nothing) where {T <: Real}
+function bethe_free_energy(::Type{T}, factornodes, variables; algorithm = (node) -> nothing, cavity::Bool = false) where {T <: Real}
     CT = counting_real_type(T)
 
-    node_bound_free_energies = map(node -> score(CT, FactorBoundFreeEnergy(), node, algorithm(node), nothing), collect(factornodes))
+    node_bound_free_energies = map(node -> score(CT, FactorBoundFreeEnergy(; cavity), node, algorithm(node), nothing), collect(factornodes))
     randomvars = filter(israndom, collect(variables))
     variable_bound_entropies = map(variable -> score(CT, VariableBoundEntropy(), variable, nothing), randomvars)
 

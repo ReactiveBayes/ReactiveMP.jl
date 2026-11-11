@@ -334,8 +334,8 @@ function compute_product_of_two_messages(
             )
         )
         unconstrained_dist = new_dist
-        new_dist = constrain_form(context.form_constraint, new_dist)
-        new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale)
+        new_dist, lognormaliser = constrain_form_logscale(context.form_constraint, new_dist)
+        new_logscale = constrained_logscale(unconstrained_dist, new_dist, new_logscale, lognormaliser)
         @invoke_callback(
             context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
@@ -433,7 +433,7 @@ end
                 variable, context, FormConstraintCheckLast(), dist, form_span_id
             )
         )
-        constrained_dist = constrain_form(context.form_constraint, dist)
+        constrained_dist, lognormaliser = constrain_form_logscale(context.form_constraint, dist)
         @invoke_callback(
             context.callbacks, AfterFormConstraintAppliedEvent(
                 variable,
@@ -444,13 +444,13 @@ end
                 form_span_id,
             )
         )
-        if constrained_dist !== dist
+        if constrained_dist !== dist || lognormaliser !== nothing
             result = Message(
                 constrained_dist,
                 is_clamped(result),
                 is_initial(result),
                 getannotations(result),
-                constrained_logscale(dist, constrained_dist, result.logscale),
+                constrained_logscale(dist, constrained_dist, result.logscale, lognormaliser),
             )
         end
     end
@@ -784,11 +784,22 @@ message_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A,
 
 tracks_logscales(mapping::MessageMapping) = mapping.logscales isa Val{true}
 
-# The fallback's message where no rule matched; the not-found error where it has none either.
-function fallback_message(fallback, notfound, fform, target, args)
-    message = fallback(fform, target, args)
-    isnothing(message) && throw(RuleNotFoundError(notfound))
-    return message
+# The fallback's answer where no rule matched, asked with the node's algorithm and rule context
+# (`call_fallback`, `call_energy_fallback`); the not-found error where it has none either. The
+# answer, its log scale, the one a fallback declares with `with_logscale` or an undefined one, and
+# its outcome, the one it declares with `with_outcome` or `nothing`.
+function fallback_message(fallback, notfound, fform, target, algorithm, ctx, args)
+    answer = MessagePassingRulesBase.call_fallback(fallback, fform, target, algorithm, ctx, args)
+    isnothing(answer) && throw(RuleNotFoundError(notfound))
+    answer, outcome = MessagePassingRulesBase.unwrap_outcome(answer)
+    result, logscale = MessagePassingRulesBase.unwrap_fallback(answer)
+    return result, logscale, outcome
+end
+
+function fallback_energy(fallback, notfound, fform, algorithm, ctx, args)
+    energy = MessagePassingRulesBase.call_energy_fallback(fallback, fform, algorithm, ctx, args)
+    isnothing(energy) && throw(RuleNotFoundError(notfound))
+    return MessagePassingRulesBase.unwrap_outcome(energy)
 end
 
 function (mapping::MessageMapping)(messages, marginals)
@@ -817,14 +828,15 @@ function (mapping::MessageMapping)(messages, marginals)
         end
     end
 
-    result, logscale = if has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)
-        missing, (tracks_logscales(mapping) ? MISSING_INPUT_LOGSCALE : nothing)
+    result, logscale, outcome = if has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)
+        missing, (tracks_logscales(mapping) ? MISSING_INPUT_LOGSCALE : nothing), nothing
     else
         fform = message_mapping_fform(mapping)
         args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.logscales)
         found = MessagePassingRulesBase.find_message_rule(fform, mapping.target, mapping.algorithm, args)
         if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
-            fallback_message(mapping.rulefallback, found, fform, mapping.target, args), (tracks_logscales(mapping) ? FALLBACK_LOGSCALE : nothing)
+            message, logscale, outcome = fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, mapping.context, args)
+            message, (tracks_logscales(mapping) ? logscale : nothing), outcome
         else
             spec = audit_rule(mapping.diagnostics, resolve_rule(found))
             MessagePassingRulesBase.check_reads_logscale(spec, args)
@@ -837,9 +849,9 @@ function (mapping::MessageMapping)(messages, marginals)
             algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
             scratch = mapping_scratch(mapping, spec, algorithm, ctx, args)
             if tracks_logscales(mapping)
-                MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+                (MessagePassingRulesBase.execute_rule_with_logscale(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)..., nothing)
             else
-                MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing
+                MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing, nothing
             end
         end
     end
@@ -856,7 +868,7 @@ function (mapping::MessageMapping)(messages, marginals)
 
     @invoke_callback(
         mapping.callbacks, AfterMessageRuleCallEvent(
-            mapping, messages, marginals, result, annotations, logscale, selected_message_rule(mapping, messages, marginals), span_id
+            mapping, messages, marginals, result, annotations, logscale, selected_message_rule(mapping, messages, marginals), outcome, span_id
         )
     )
 

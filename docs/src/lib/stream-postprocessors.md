@@ -42,6 +42,7 @@ nothing # hide
 |---------------|---------|
 | `nothing` | None, the default: each `postprocess_stream_of_*` returns the stream unchanged. |
 | [`ReactiveMP.ScheduleOnStreamPostprocessor`](@ref) | Delivers every emission through a Rocket.jl scheduler, with the `schedule_on(scheduler)` operator. |
+| [`ReactiveMP.DampingPostprocessor`](@ref) | Damps messages: each is mixed with the stream's previous one, in natural parameters. |
 | [`ReactiveMP.CompositeStreamPostprocessor`](@ref) | Applies several postprocessors in order. |
 
 A `PendingScheduler` holds every update until you release it. This batches a wave of
@@ -63,6 +64,23 @@ unsubscribe!(subscription)
 The scheduler holds the nodes' messages until the first release. Their product, the marginal,
 passes through the scheduler too, and arrives at the second release. An `AsyncScheduler` moves
 the work onto another task instead.
+
+### [Damping](@id lib-stream-postprocessors-damping)
+
+[`ReactiveMP.DampingPostprocessor`](@ref)`(β)` replaces each message of a stream with
+[`ReactiveMP.damp`](@ref)`(β, previous, new)`, the mix of the new message and the stream's
+previous one: `β η_previous + (1 - β) η_new` in natural parameters, for two members of one
+exponential family, with ExponentialFamily.jl loaded. It keeps the fixed points of message
+passing and takes smaller steps towards them, which helps a loopy or non-conjugate schedule
+that oscillates. The first message of a stream passes, as do clamped messages and data it
+cannot mix, and a damped message's log scale is undefined:
+
+```@example postprocessors
+ReactiveMP.damp(0.5, NormalMeanVariance(0.0, 1.0), NormalMeanVariance(2.0, 4.0))
+```
+
+Attached to a random variable as well, it damps the messages of the factor nodes only: the
+equality chain's streams carry triggers, and the marginals pass unchanged.
 
 ## [Attaching a stream postprocessor](@id lib-stream-postprocessors-attach)
 
@@ -133,4 +151,6 @@ ReactiveMP.postprocess_stream_of_marginals
 ReactiveMP.postprocess_stream_of_scores
 ReactiveMP.CompositeStreamPostprocessor
 ReactiveMP.ScheduleOnStreamPostprocessor
+ReactiveMP.DampingPostprocessor
+ReactiveMP.damp
 ```

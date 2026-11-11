@@ -37,9 +37,14 @@ static_value(variable::DataVariable) = BayesBase.getpointmass(getdata(Rocket.get
 end
 
 function MessagePassingRulesBase.getnodefn(factornode::FactorNode, ::MessagePassingRulesBase.Target{:out})
-    factornode.nodefn === nothing && throw(ArgumentError("`$(functionalform(factornode))` was created without `nodefn`, so it has no function to give a rule"))
-    return factornode.nodefn
+    return node_function_or_form(factornode.nodefn, functionalform(factornode))
 end
+
+# A node created without its function computes its form, where that is a function: `+` for
+# `z := a + b`, its inputs in the order the node declares them
+node_function_or_form(nodefn, _) = nodefn
+node_function_or_form(::Nothing, form::Function) = form
+node_function_or_form(::Nothing, form) = throw(ArgumentError("`$(form)` was created without `nodefn`, so it has no function to give a rule"))
 
 """
     ReactiveMP.with_statics(factornode, stream)

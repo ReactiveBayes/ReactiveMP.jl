@@ -71,6 +71,40 @@ end
     @test only(result.free_energy) ≈ -logpdf(Normal(3.0, 2.0), 4.0)
 end
 
+# A node whose form is a function computes it, its inputs in the order the node declares them
+# whatever order they are given in, so a rule fallback can pull a message back through `-`, `*`
+# or `dot` as through a Delta node. A node whose form is a type has no function unless given one.
+@testitem "engine:a function node computes its form" tags = [:engine] setup = [EngineHarness] begin
+    using ExponentialFamily, StandardMessagePassingRules, BayesBase, LinearAlgebra
+    import MessagePassingRulesBase: getnodefn, Target
+    import ReactiveMP: getinterfaces, name
+    H = EngineHarness
+
+    graph = H.Graph()
+    z, a, b = H.random!(graph), H.random!(graph), H.random!(graph)
+    inputs(node) = Tuple(name(interface) for interface in getinterfaces(node))[2:end]
+    A, x, w = [1.0 2.0; 3.0 4.0], [1.0, -1.0], [2.0, 0.5]
+
+    minus = H.node!(graph, -, [(:in2, b), (:out, z), (:in1, a)])
+    @test inputs(minus) == (:in1, :in2)
+    @test getnodefn(minus, Target(:out))(5.0, 2.0) == 3.0
+
+    times = H.node!(graph, *, [(:in, b), (:A, a), (:out, z)])
+    @test inputs(times) == (:A, :in)
+    @test getnodefn(times, Target(:out))(A, x) == A * x
+
+    product = H.node!(graph, dot, [(:out, z), (:in1, a), (:in2, b)])
+    @test inputs(product) == (:in1, :in2)
+    @test getnodefn(product, Target(:out))(w, x) == dot(w, x)
+
+    sum3 = H.node!(graph, +, [(:out, z), ((:in, 2), a), ((:in, 1), b), ((:in, 3), H.random!(graph))])
+    @test getnodefn(sum3, Target(:out))(1.0, 2.0, 3.0) == 6.0
+
+    # A function given at creation wins over the form
+    @test getnodefn(H.node!(graph, +, [(:out, z), ((:in, 1), a), ((:in, 2), b)]; nodefn = max), Target(:out)) === max
+    @test_throws "`$(H.Copy)` was created without `nodefn`" getnodefn(H.node!(graph, H.Copy, [(:out, z), (:in, a)]), Target(:out))
+end
+
 # `CVIProjection`'s message towards `out` is a `DivisionOf`, the projected marginal of `out` over
 # the message on its edge: the engine's product at the variable, not the rule, divides it out.
 # Through a linear function the posterior is exact: x ~ N(0.5, 1), z = x + 1, y ~ N(z, 0.1)

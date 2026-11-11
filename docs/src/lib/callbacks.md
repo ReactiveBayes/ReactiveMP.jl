@@ -20,11 +20,15 @@ You give callbacks in two places:
 - to a variable, as the `callbacks` of the [`ReactiveMP.MessageProductContext`](@ref)s in its
   [`RandomVariableActivationOptions`](@ref). The variable reports the product and form
   constraint events, and the context of its marginal also reports the marginal events and the
-  variable's term of the free energy, [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref).
+  variable's term of the free energy, [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref). A
+  variable with a site policy reports there each site it computes,
+  [`ReactiveMP.BeforeSiteComputationEvent`](@ref) and
+  [`ReactiveMP.AfterSiteComputationEvent`](@ref) (see [Sites](@ref lib-variables-sites)).
 
 An event after a rule call names the rule that ran, its `rule`: the
 [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), which shows where the rule is defined, the
-node's rule fallback where no rule matched, or `nothing` where a `missing` input skipped the rule.
+node's rule fallback where no rule matched, for a message, a joint or an average energy, or
+`nothing` where a `missing` input skipped the rule.
 The engine builds an event only for a handler that listens to it, so a graph activated without
 callbacks, or with callbacks for other events, runs as fast as one that reports nothing.
 
@@ -130,6 +134,8 @@ names it. The struct of the event `:event_name` is `EventNameEvent`:
 | `:after_factor_bound_free_energy` | [`ReactiveMP.AfterFactorBoundFreeEnergyEvent`](@ref) |
 | `:before_variable_bound_entropy` | [`ReactiveMP.BeforeVariableBoundEntropyEvent`](@ref) |
 | `:after_variable_bound_entropy` | [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref) |
+| `:before_site_computation` | [`ReactiveMP.BeforeSiteComputationEvent`](@ref) |
+| `:after_site_computation` | [`ReactiveMP.AfterSiteComputationEvent`](@ref) |
 
 Each event carries what happened in its fields, listed with it below.
 
@@ -162,4 +168,6 @@ ReactiveMP.BeforeFactorBoundFreeEnergyEvent
 ReactiveMP.AfterFactorBoundFreeEnergyEvent
 ReactiveMP.BeforeVariableBoundEntropyEvent
 ReactiveMP.AfterVariableBoundEntropyEvent
+ReactiveMP.BeforeSiteComputationEvent
+ReactiveMP.AfterSiteComputationEvent
 ```

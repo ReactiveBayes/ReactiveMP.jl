@@ -4,6 +4,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
+import Random
 
 # The representation is a mutable struct with `const` fields: measured faster than an
 # immutable one through the equality chain, and lighter everywhere.
@@ -182,6 +183,16 @@ Base.eltype(::Type{<:Marginal{D}}) where {D} = Base.eltype(D)
 Distributions.mean(fn::Function, marginal::Marginal) =
     mean(fn, getdata(marginal))
 
+# Samples are its distribution's, so a posterior kept with its log scale samples as one without.
+# Without a generator too: Random's fallback would turn `rand(marginal, n)` into a shape, where
+# Distributions gives a multivariate distribution's samples as the columns of a matrix
+Random.rand(rng::Random.AbstractRNG, marginal::Marginal) = rand(rng, getdata(marginal))
+Random.rand(rng::Random.AbstractRNG, marginal::Marginal, n::Integer, dims::Integer...) = rand(rng, getdata(marginal), n, dims...)
+Random.rand(rng::Random.AbstractRNG, marginal::Marginal, dims::Dims) = rand(rng, getdata(marginal), dims)
+Random.rand(marginal::Marginal) = rand(getdata(marginal))
+Random.rand(marginal::Marginal, n::Integer, dims::Integer...) = rand(getdata(marginal), n, dims...)
+Random.rand(marginal::Marginal, dims::Dims) = rand(getdata(marginal), dims)
+
 """
     as_marginal(message::Message) -> Marginal
     as_marginal(marginal::Marginal) -> Marginal
@@ -269,9 +280,11 @@ resolves the marginal rule with
 [`find_marginal_rule`](@extref MessagePassingRulesBase.find_marginal_rule) under the node's
 algorithm, checks it against the [`ReactiveMP.EngineDiagnostics`](@ref) and the services the node's
 context supplies ([`check_services`](@extref MessagePassingRulesBase.check_services)), and runs it.
-Where no rule matches, it throws a
-[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError): a rule fallback does
-not apply to a marginal.
+Where no rule matches, it asks the node's rule fallback with
+[`call_fallback`](@extref MessagePassingRulesBase.call_fallback), the target a
+[`ClusterTarget`](@extref MessagePassingRulesBase.ClusterTarget), and throws a
+[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) where there is none or it
+answers `nothing`, as a fallback written for messages does.
 
 The marginal is clamped when every input is, and initial when it is not clamped and every input
 is clamped or initial. It carries no annotations and no log scale.
@@ -280,7 +293,7 @@ The callbacks receive [`ReactiveMP.BeforeMarginalRuleCallEvent`](@ref) and
 [`ReactiveMP.AfterMarginalRuleCallEvent`](@ref) around each call, the latter also for a `missing`
 marginal.
 """
-mutable struct MarginalMapping{F, T, N, M, A, R, G, E}
+mutable struct MarginalMapping{F, T, N, M, A, R, G, E, B}
     # Mutable, its fields but the scratch slot constant, as `MessageMapping` is.
     const target::T
     const msgs_names::N
@@ -290,6 +303,7 @@ mutable struct MarginalMapping{F, T, N, M, A, R, G, E}
     const diagnostics::EngineDiagnostics
     const context::G
     const callbacks::E
+    const rulefallback::B
     scratch::Union{Nothing, ScratchSlot}
 end
 
@@ -313,14 +327,14 @@ function Base.show(io::IO, mapping::MarginalMapping)
     return nothing
 end
 
-MarginalMapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, callbacks = nothing) =
-    marginal_mapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics, node_context(factornode, context), callbacks)
+MarginalMapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics::EngineDiagnostics = EngineDiagnostics(), context = nothing, callbacks = nothing, rulefallback = nothing) =
+    marginal_mapping(fform, target, msgs_names, marginals_names, algorithm, factornode, diagnostics, node_context(factornode, context), callbacks, rulefallback)
 
 # A mapping with its rule context already built, as `message_mapping`.
-marginal_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E) where {F, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E} =
-    MarginalMapping{F, T, N, M, A, R, G, E}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, nothing)
-marginal_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E) where {F <: Function, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E} =
-    MarginalMapping{F, T, N, M, A, R, G, E}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, nothing)
+marginal_mapping(::Type{F}, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E, rulefallback::B = nothing) where {F, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E, B} =
+    MarginalMapping{F, T, N, M, A, R, G, E, B}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, rulefallback, nothing)
+marginal_mapping(::F, target::T, msgs_names::N, marginals_names::M, algorithm::A, factornode::R, diagnostics::EngineDiagnostics, ctx::G, callbacks::E, rulefallback::B = nothing) where {F <: Function, T, N, M, A, R, G <: MessagePassingRulesBase.RuleContext, E, B} =
+    MarginalMapping{F, T, N, M, A, R, G, E, B}(target, msgs_names, marginals_names, algorithm, factornode, diagnostics, ctx, callbacks, rulefallback, nothing)
 
 # As `new_message`: a barrier for a marginal built from a value inferred abstractly.
 @noinline new_marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(data, is_clamped, is_initial)
@@ -350,11 +364,11 @@ function marginal_from_inputs(mapping::MarginalMapping, messages, marginals)
     span_id = generate_span_id(mapping.callbacks)
     @invoke_callback(mapping.callbacks, BeforeMarginalRuleCallEvent(mapping, messages, marginals, span_id))
 
-    marginal = skips_rule(mapping, messages, marginals) ? missing : compute_marginal(mapping, messages, marginals)
+    marginal, outcome = skips_rule(mapping, messages, marginals) ? (missing, nothing) : marginal_and_outcome(mapping, messages, marginals)
 
     @invoke_callback(
         mapping.callbacks, AfterMarginalRuleCallEvent(
-            mapping, messages, marginals, marginal, selected_marginal_rule(mapping, messages, marginals), span_id
+            mapping, messages, marginals, marginal, selected_marginal_rule(mapping, messages, marginals), outcome, span_id
         )
     )
     return marginal
@@ -364,24 +378,35 @@ end
 skips_rule(mapping::MarginalMapping, messages, marginals) =
     has_missing_inputs(messages) || has_missing_inputs(marginals) || has_missing_statics(mapping.factornode)
 
-# The rule a call ran, found again only for an event someone listens to; `nothing` where a
-# `missing` input skipped it.
+# The rule a call ran, found again only for an event someone listens to: the fallback where no
+# rule matched, or `nothing` where a `missing` input skipped it.
 function selected_marginal_rule(mapping::MarginalMapping, messages, marginals)
     skips_rule(mapping, messages, marginals) && return nothing
     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
-    return MessagePassingRulesBase.find_marginal_rule(marginal_mapping_fform(mapping), mapping.target, mapping.algorithm, args)
+    found = MessagePassingRulesBase.find_marginal_rule(marginal_mapping_fform(mapping), mapping.target, mapping.algorithm, args)
+    return found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback) ? mapping.rulefallback : found
 end
 
-function compute_marginal(mapping::MarginalMapping, messages, marginals)
+# The joint alone: what a marginal mapping computes, without the fallback's outcome
+compute_marginal(mapping::MarginalMapping, messages, marginals) = first(marginal_and_outcome(mapping, messages, marginals))
+
+# The joint and how the fallback computed it, its `with_outcome`, `nothing` for a rule
+function marginal_and_outcome(mapping::MarginalMapping, messages, marginals)
     fform = marginal_mapping_fform(mapping)
     args = rule_arguments(mapping.msgs_names, messages, mapping.marginals_names, marginals)
-    spec = audit_rule(mapping.diagnostics, resolve_rule(MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)))
+    found = MessagePassingRulesBase.find_marginal_rule(fform, mapping.target, mapping.algorithm, args)
     ctx = mapping.context
+    if found isa MessagePassingRulesBase.RuleNotFound && !isnothing(mapping.rulefallback)
+        # a joint has no log scale
+        joint, _, outcome = fallback_message(mapping.rulefallback, found, fform, mapping.target, mapping.algorithm, ctx, args)
+        return joint, outcome
+    end
+    spec = audit_rule(mapping.diagnostics, resolve_rule(found))
     MessagePassingRulesBase.check_services(spec, ctx)
     ann = rule_annotations(mapping.msgs_names, messages, mapping.marginals_names, marginals, MessagePassingRulesBase.NoAnnotations())
     algorithm = MessagePassingRulesBase.rule_algorithm(spec, mapping.algorithm)
     scratch = mapping_scratch(mapping, spec, algorithm, ctx, args)
-    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target)
+    return MessagePassingRulesBase.execute_rule(spec, nothing, scratch, algorithm, ctx, args, ann, mapping.target), nothing
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =

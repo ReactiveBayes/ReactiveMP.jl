@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A rule fallback is asked with MessagePassingRulesBase's `call_fallback` and
+  `call_energy_fallback`, with the node's algorithm and its rule context, also where a joint
+  marginal or an average energy has no rule. A three-argument fallback is asked about messages
+  only, as before; `NodeFunctionRuleFallback` gives the average energy of a mean-field node
+  through the context's `expectation` backend. `MarginalMapping` takes a `rulefallback`, and
+  events name the fallback as the `rule` of a message, a joint or an average energy it gave.
+- The engine supplies the service `expectation`, `nothing` unless the context sets one, so that
+  its services are MessagePassingRulesBase's `DEFAULT_CONTEXT_SERVICES`.
+- A rule fallback may declare its message's log scale by returning `with_logscale(message,
+  logscale)`, which the engine unwraps with MessagePassingRulesBase's `unwrap_fallback`; a joint
+  marginal drops it.
+- `constrain_form_logscale(constraint, distribution)`, a form constraint's `constrain_form` with
+  the log of the normaliser of its input, `nothing` by default. A product with no closed form, a
+  `ProductOf`, records its sides' log scales (the cause `:unnormalised_product`), and a
+  projection that computes the normaliser completes them.
+- `DampingPostprocessor(β)`, a stream postprocessor that mixes each outbound message with its
+  stream's previous one, through `ReactiveMP.damp`: in natural parameters for two members of one
+  exponential family, by the new extension on ExponentialFamily.jl. A damped message's log scale
+  is undefined, with the cause `:damping`.
+- A node whose form is a function, such as `+`, `-`, `*` or `dot`, computes that function when it
+  is created without `nodefn`: `getnodefn(node, Target(:out))` gives it, its inputs in the order
+  the node declares them, so a rule fallback pulls messages back through it as through a Delta
+  node.
+- A `Marginal` samples as its distribution, `rand([rng,] marginal[, dims...])`, so a posterior
+  kept with its log scale (RxInfer's `logscales = true`) samples as one without.
+- The events `AfterMessageRuleCallEvent`, `AfterMarginalRuleCallEvent` and
+  `AfterFactorBoundFreeEnergyEvent` carry an `outcome`: how the rule fallback computed the answer,
+  as it declared it with MessagePassingRulesBase's `with_outcome`, or `nothing`. Their constructors
+  without it remain.
+- Cavity propagation, the engine side of expectation propagation and Laplace propagation. A random
+  variable activated with a site policy, the fourth field `site_policy` of
+  `RandomVariableActivationOptions` (`nothing` by default; the three-argument constructor is
+  unchanged), keeps one site per edge, `ReactiveMP.compute_site(policy, variable, index, message,
+  cavity, previous)`: the inbound message projected against its cavity, the product of the other
+  edges' sites, which is the variable's outbound message on that edge. The sites are the equality
+  chain's inputs: a site is computed as its inbound message arrives, against the cavity the chain
+  holds then, and the outbound messages and the marginal are products of the sites, sent as
+  without sites. Each iteration is a sweep over the sites, at the chain's cost: linear in the
+  number of connections when the messages arrive in order. The events
+  `BeforeSiteComputationEvent` and `AfterSiteComputationEvent` report each site to the marginal
+  context's callbacks. The engine knows no projection; an inference package, such as RxInfer,
+  gives the policy.
+  - A site that nothing reads, neither a product nor the marginal, is computed just before another
+    edge's projection, whose cavity holds it, from the inbound message recorded as it arrived; so
+    a site's cavity is the latest whatever the inference returns, and a site nothing needs costs
+    nothing. `ReactiveMP.is_own_site(policy, message, site, outcome)`, `site === message` by
+    default, says that a site is the message itself, a closed message in another representation,
+    which needs no cavity.
+  - An initial message, `set_initial_message!`, is also every edge's first cavity: while some
+    other edges have no site, the cavity counts each as the initial message's `1/(d - 1)`-th
+    power, through `ReactiveMP.seeded_cavity(policy, cavity, initial, waiting, degree)`, so that a
+    variable whose edges all carry raw messages starts.
+  - A raw message from a node whose inputs are all constants arrives once, clamped, and its
+    stream completes: its site is projected again each round, as the last edge with a message
+    that is not clamped receives one, and the chain and the marginal read each site's latest.
+- `FactorBoundFreeEnergy(cavity = true)`, a node's free-energy term under cavity propagation: a
+  node with no rules under its algorithm takes its rule fallback's energy from its inbound
+  messages, the cavities, and its variables' marginals, both given to `call_energy_fallback` as
+  the rule arguments' `m` and `q`, less the point masses' entropies; every other node's term is
+  Bethe's. `bethe_free_energy(...; cavity = true)` takes these terms, and emits once per
+  iteration, as Bethe's does. The sum, expectation propagation's free energy, is not a bound.
+
+### Changed
+- MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.
+
 ## [7.0.2] - 2026-11-03
 
 ### Fixed

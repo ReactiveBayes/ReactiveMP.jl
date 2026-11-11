@@ -19,6 +19,9 @@ mutable struct RandomVariable <: AbstractVariable
     # the callbacks of its marginal's product context, set by `activate!`, which its free-energy
     # contribution reports to as well
     callbacks::Any
+    # with a site policy, what its sites share: the initial message that seeds their cavities,
+    # and the edges, for the sites that are projected again each round
+    sites::Any
 end
 
 Base.show(io::IO, variable::RandomVariable) = print(io, "RandomVariable(", repr(variable.label), ")")
@@ -44,6 +47,7 @@ function randomvar(; label = nothing)
         Vector{MessageObservable{Message}}(),
         MarginalObservable(),
         label,
+        nothing,
         nothing,
     )
 end
@@ -81,6 +85,8 @@ function set_initial_message!(randomvar::RandomVariable, message)
         ArgumentError("a random variable's outbound messages exist once it is activated: call `activate!` on it before `set_initial_message!`"),
     )
     foreach(stream -> set_initial_message!(stream, message), randomvar.output_messages)
+    # with sites, the initial message is also every edge's first cavity
+    randomvar.sites isa SiteState && (randomvar.sites.initial = message)
     return nothing
 end
 
@@ -89,11 +95,11 @@ function get_stream_of_outbound_messages(randomvar::RandomVariable, index::Int)
 end
 
 """
-    RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation::MessageProductContext, prod_context_for_marginal_computation::MessageProductContext)
+    RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation::MessageProductContext, prod_context_for_marginal_computation::MessageProductContext, site_policy = nothing)
     RandomVariableActivationOptions()
 
 What activating a [`RandomVariable`](@ref) needs, given positionally. With no arguments, no
-postprocessor and two default [`ReactiveMP.MessageProductContext`](@ref)s.
+postprocessor, two default [`ReactiveMP.MessageProductContext`](@ref)s and no site policy.
 
 # Fields
 
@@ -107,16 +113,25 @@ postprocessor and two default [`ReactiveMP.MessageProductContext`](@ref)s.
   [`ReactiveMP.AfterMarginalComputationEvent`](@ref), and the variable's free-energy events,
   [`ReactiveMP.BeforeVariableBoundEntropyEvent`](@ref) and
   [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref).
+- `site_policy`: `nothing`, or a policy that gives each edge a site, cavity propagation: the
+  products then take each edge's site, [`ReactiveMP.compute_site`](@ref)`(site_policy, …)` of its
+  inbound message against its outbound one, in place of the inbound message. The marginal
+  context's callbacks also receive [`ReactiveMP.BeforeSiteComputationEvent`](@ref) and
+  [`ReactiveMP.AfterSiteComputationEvent`](@ref).
 
 See also [`ReactiveMP.activate!`](@ref).
 """
 struct RandomVariableActivationOptions{
-        S, F <: MessageProductContext, M <: MessageProductContext,
+        S, F <: MessageProductContext, M <: MessageProductContext, P,
     }
     stream_postprocessor::S
     prod_context_for_message_computation::F
     prod_context_for_marginal_computation::M
+    site_policy::P
 end
+
+RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation::MessageProductContext, prod_context_for_marginal_computation::MessageProductContext) =
+    RandomVariableActivationOptions(stream_postprocessor, prod_context_for_message_computation, prod_context_for_marginal_computation, nothing)
 
 RandomVariableActivationOptions() = RandomVariableActivationOptions(
     nothing, MessageProductContext(), MessageProductContext()
@@ -133,6 +148,19 @@ Wire the streams of a random variable, after every factor node it connects to ha
    connection, the outbound message never emits: there is nothing to multiply.
 2. **Marginal**: the product of all inbound messages, formed with [`as_marginal`](@ref). It is
    computed once every inbound message has a value, and again whenever each has updated since.
+3. **Sites**, with a site policy and more than one connection: each edge's site (see
+   [`ReactiveMP.compute_site`](@ref)) takes the place of its inbound message in both products,
+   the equality chain's inputs. A site is computed as its inbound message arrives, against the
+   cavity the chain holds then, the product of the other edges' latest sites from its cached
+   partial products; the outbound messages and the marginal are sent as without sites. A site
+   starts as `missing`, the products' identity, and an outbound message or a marginal that is
+   still `missing` is not sent. An initial message, [`ReactiveMP.set_initial_message!`](@ref),
+   is also each edge's first cavity: while some other edges have no site yet, the cavity counts
+   each of them as the initial message's `1/(d - 1)`-th power (see
+   [`ReactiveMP.seeded_cavity`](@ref)), so that a raw message need not wait for one. A raw
+   message that is clamped, from a node whose inputs are all constants, arrives only once: its
+   site is projected again each round, against its cavity then, as the last edge with a message
+   that is not clamped receives one, and sent as an initial message.
 
 A product that is initial does not consume its inputs, so the next update of any of them
 computes it again.
@@ -155,7 +183,9 @@ function activate!(
         outputmsgs[i] = MessageObservable(Message)
     end
 
-    if length(randomvar.input_messages) > 1
+    if !isnothing(options.site_policy) && d > 1
+        return activate_sites!(randomvar, options, d)
+    elseif length(randomvar.input_messages) > 1
         chain = EqualityChain(
             randomvar.input_messages,
             options.stream_postprocessor,
