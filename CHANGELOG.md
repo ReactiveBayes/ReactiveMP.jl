@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `BeforeSiteComputationEvent` and `AfterSiteComputationEvent` report each site to the marginal
   context's callbacks. The engine knows no projection; an inference package, such as RxInfer,
   gives the policy.
+  - A site that nothing reads, neither a product nor the marginal, is computed just before another
+    edge's projection, whose cavity holds it, from the inbound message recorded as it arrived; so
+    a site's cavity is the latest whatever the inference returns, and a site nothing needs costs
+    nothing. `ReactiveMP.is_own_site(policy, message, site, outcome)`, `site === message` by
+    default, says that a site is the message itself, a closed message in another representation,
+    which needs no cavity.
   - An initial message, `set_initial_message!`, is also every edge's first cavity: while some
     other edges have no site, the cavity counts each as the initial message's `1/(d - 1)`-th
     power, through `ReactiveMP.seeded_cavity(policy, cavity, initial, waiting, degree)`, so that a
