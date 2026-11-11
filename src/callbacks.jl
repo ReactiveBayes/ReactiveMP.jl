@@ -701,7 +701,8 @@ its edges. Its callbacks are those of the variable's `prod_context_for_marginal_
 - `index`: the edge;
 - `message`: the inbound message;
 - `cavity`: the outbound message on the edge;
-- `result`: the site's data, or `nothing` where the site did not change and none was sent;
+- `result`: the site's data, `missing` while there is none yet, or `nothing` where the site did
+  not change, and the edge's last site is sent again;
 - `outcome`: how the policy computed it, whatever it returns, such as
   `(method = :laplace, converged = true, iterations = 5)`;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeSiteComputationEvent`](@ref).

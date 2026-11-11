@@ -80,6 +80,17 @@ end
 # the messages of an iteration arriving one by one, each site against the latest others, an
 # iteration is a sweep of expectation propagation over the sites.
 #
+# Other wirings were tried and rejected. A site computed from the latest inbound and outbound
+# messages of its edge (`combineLatestUpdates`) deadlocks: site k waits for a new outbound message
+# k, which waits for new sites on the other edges, which wait for theirs. Firing on the inbound
+# message and sampling the outbound one (`PushEachBut`) reads a cavity about an iteration old, a
+# parallel schedule: 264 to 524 iterations where the sweep takes 4 to 12. And a separate stage
+# that kept the sites and sent each product as a site changed grew as d³ per iteration in the
+# number of connections d: one iteration of a logistic regression with 1000 observations took
+# 117 s, against 0.34 s through the chain. A site is sent even when it has not changed: holding it
+# back froze the consumers that fire once each of their inputs is new, such as a rule with two
+# inputs.
+#
 # A raw message that is clamped, from a node whose inputs are all constants, arrives once, and its
 # stream completes: its site, static, would keep the cavity of that moment, or wait for ever where
 # it had none. So each round, as the last dynamic edge's message arrives, every static site is

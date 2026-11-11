@@ -173,6 +173,9 @@ Then:
   ([`constrain_form_logscale`](@ref)) completes it. A `missing` side leaves the other side's log
   scale;
 - a random variable's marginal carries the log scale of the product it was formed from;
+- a message mixed with its predecessor by a
+  [`ReactiveMP.DampingPostprocessor`](@ref) has an undefined log scale, with the
+  cause `:damping`: the mix of two messages has none of its own;
 - an initial marginal, set with [`ReactiveMP.set_initial_marginal!`](@ref), and a factor node's
   joint marginal carry none: reading theirs is an error, as where log scales are not tracked.
 

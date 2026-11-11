@@ -30,7 +30,9 @@ messages, the cavities, and its variables' marginals, both given to `call_energy
 rule arguments' `m` and `q` by interface: expectation propagation's term, less the point masses'
 entropies. Its stream emits once each of those inputs has updated, once per iteration, since the
 sites' variables send their messages and marginals once each. Every other node's term is
-Bethe's, as above.
+Bethe's, as above. Their sum, expectation propagation's free energy, approximates minus the log
+evidence at a fixed point of the sites, but it is not a bound: a lower value does not mean a
+better approximation.
 """
 struct FactorBoundFreeEnergy{C} end
 

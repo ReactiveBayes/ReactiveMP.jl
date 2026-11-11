@@ -192,6 +192,44 @@ ReactiveMP.RandomVariableActivationOptions
 ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)
 ```
 
+### [Sites: cavity propagation](@id lib-variables-sites)
+
+Without a site policy, a random variable multiplies the messages it receives as they are. When a
+message has no closed form, such as a likelihood's message that is only a log-density, a form
+constraint projects each product it appears in onto a distribution, separately: the marginal and
+every outbound message are approximated one by one, and need not agree with each other.
+
+A site policy, the last field of [`RandomVariableActivationOptions`](@ref), changes what the
+variable multiplies. Each edge `k` keeps a *site*, an approximation of its inbound message `m_k`
+fitted where it matters: against the edge's *cavity* `c_k`, the product of the other edges'
+sites, which is the variable's outbound message on that edge,
+
+```math
+s_k = \frac{\operatorname{proj}(m_k \, c_k)}{c_k}.
+```
+
+The variable then multiplies sites instead of messages, so its marginal and its outbound messages
+are products of the same approximations, one belief seen from each edge. This is expectation
+propagation with one site per edge, or Laplace propagation where the projection is Laplace's. A
+message that already has a closed form is its own site, so a model with closed-form rules runs as
+without a policy.
+
+The engine knows no projection. A policy is any value for which an inference package defines
+[`ReactiveMP.compute_site`](@ref) and, optionally, [`ReactiveMP.seeded_cavity`](@ref); RxInfer's
+`LaplacePropagation()` and `ExpectationPropagation()` give one. The sites are the inputs of the
+variable's equality chain, and a site is computed as its inbound message arrives, against the
+cavity the chain holds at that moment. With the messages of an iteration arriving one after the
+other, each iteration is a sweep over the sites, at the chain's cost: linear in the number of
+connections. Each site computation is reported to the marginal context's callbacks as
+[`ReactiveMP.BeforeSiteComputationEvent`](@ref) and
+[`ReactiveMP.AfterSiteComputationEvent`](@ref). Under sites, the free energy takes the nodes'
+terms from [`FactorBoundFreeEnergy`](@ref)`(cavity = true)`.
+
+```@docs
+ReactiveMP.compute_site
+ReactiveMP.seeded_cavity
+```
+
 ## [Data variables](@id lib-variables-data)
 
 A data variable is an observed quantity. It has no value until you give it one with
