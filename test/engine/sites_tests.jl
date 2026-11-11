@@ -286,3 +286,32 @@ end
     @test mean(q) ≈ ξ / w atol = 1.0e-6
     @test var(q) ≈ 1 / w rtol = 1.0e-6
 end
+
+@testitem "engine:sites: a site is in its cavities whether or not anything reads it" tags = [:engine] setup = [EngineHarness, SitePolicies] begin
+    # x ~ N(0, 1), z ~ N(x, 0.5) and y ~ Logit(z): the site of z's likelihood is projected against
+    # the message from x's side, which nothing else asks for when only x's posterior is read. The
+    # posterior of x is then the same as when z's is read too, and the exact one, a single site.
+    using ExponentialFamily, Distributions, StandardMessagePassingRules
+    H, S = EngineHarness, SitePolicies
+
+    function run(read_z)
+        graph = H.Graph()
+        x, z = H.random!(graph), H.random!(graph)
+        y = H.data!(graph)
+        H.node!(graph, NormalMeanVariance, [(:out, x), (:μ, H.constant!(graph, 0.0)), (:v, H.constant!(graph, 1.0))])
+        H.node!(graph, NormalMeanVariance, [(:out, z), (:μ, x), (:v, H.constant!(graph, 0.5))])
+        H.node!(graph, S.Logit, [(:out, y), (:x, z)])
+        posteriors = read_z ? [:x => x, :z => z] : [:x => x]
+        return H.run(graph; data = [y => 1], iterations = 3, posteriors, free_energy = false, site_policy = S.GridEP(), rulefallback = S.ToyFallback()).posteriors["x"]
+    end
+    alone, read = run(false), run(true)
+    @test mean(alone) ≈ mean(read) && var(alone) ≈ var(read)
+    # z's marginal is N(0, 1.5) times σ(z); x's mean is E[z] / 1.5 and its variance
+    # 1 - 1/1.5 + var(z) / 1.5², the Gaussian x | z regressed on z
+    grid = S.GRID
+    p = pdf.(Normal(0.0, sqrt(1.5)), grid) .* exp.(S.loglik.(1, grid))
+    p ./= sum(p)
+    m = sum(p .* grid)
+    @test mean(alone) ≈ m / 1.5 atol = 1.0e-6
+    @test var(alone) ≈ 1 - 1 / 1.5 + sum(p .* (grid .- m) .^ 2) / 1.5^2 atol = 1.0e-6
+end

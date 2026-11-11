@@ -27,6 +27,17 @@ cavity schemes, `LaplacePropagation()`, `ExpectationPropagation()` and
 function compute_site end
 
 """
+    ReactiveMP.is_own_site(policy, message, site, outcome) -> Bool
+
+Whether a [`ReactiveMP.compute_site`](@ref) result is the inbound message itself, as a closed
+message is, rather than a projection against the cavity: `site === message` by default. A policy
+that returns a closed message in another representation says so here. A site that is its own
+message keeps the message's flags, and the engine computes it only when something reads it; a
+projection first brings the other edges' sites, its cavity, up to date.
+"""
+is_own_site(policy, message, site, outcome) = site === message
+
+"""
     ReactiveMP.seeded_cavity(policy, cavity, initial, waiting, degree) -> cavity
 
 The cavity of a site while `waiting` of the other edges of a variable with `degree` connections
@@ -108,12 +119,15 @@ mutable struct SiteMapping{P, V, C, H}
     site::Message
     inbound::Any   # the last inbound message, `nothing` before the first
     projected::Bool # whether the site is a projection, or waits for one, rather than the message
+    arrived::Any   # the last inbound message as it arrived, whose site is computed
+    pending::Any   # an inbound message whose site no product has asked for yet, or `nothing`
 end
 
 SiteMapping(policy, variable, index, callbacks, chain, state = SiteState(chain.inputmsgs)) =
-    SiteMapping(policy, variable, index, callbacks, chain, state, nothing, Message(missing, false, true), nothing, false)
+    SiteMapping(policy, variable, index, callbacks, chain, state, nothing, Message(missing, false, true), nothing, false, nothing, nothing)
 
 function (mapping::SiteMapping)(inbound)
+    mapping.arrived, mapping.pending = inbound, nothing
     message = as_message(inbound)
     state, index = mapping.state, mapping.index
     if !is_clamped(message)
@@ -125,6 +139,8 @@ end
 
 function compute_site!(mapping::SiteMapping, message::Message)
     chain, index, callbacks = mapping.chain, mapping.index, mapping.callbacks
+    # a projection's cavity holds the other edges' latest sites
+    (isnothing(mapping.inbound) || mapping.projected) && flush_pending!(mapping.state, index)
     cavity = seeded(mapping, ChainOutboundMapping(index, chain)(nothing))
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeSiteComputationEvent(mapping.variable, index, message, cavity, span_id))
@@ -139,7 +155,7 @@ function compute_site!(mapping::SiteMapping, message::Message)
     elseif ismissing(site)
         mapping.projected = true
         Message(missing, false, true)
-    elseif site === getdata(message)
+    elseif is_own_site(mapping.policy, getdata(message), site, outcome)
         mapping.projected = false
         Message(site, is_clamped(message), is_initial(message), getannotations(message), nothing)
     else
@@ -168,6 +184,19 @@ function refresh_static!(state::SiteState, trigger)
     return nothing
 end
 
+# An inbound message is recorded as it arrives, and its site computed then if a product reads the
+# site's stream; otherwise only before a projection of another edge, whose cavity holds it, so
+# that a site nothing needs, such as a rate's beside a closed likelihood, costs nothing
+record_pending!(mapping::SiteMapping, inbound) = (inbound === mapping.arrived || (mapping.pending = inbound); nothing)
+
+function flush_pending!(state::SiteState, trigger)
+    for (k, other) in enumerate(state.mappings)
+        (k == trigger || isnothing(other.pending)) && continue
+        next!(state.sites[k].subject, other(other.pending))
+    end
+    return nothing
+end
+
 Base.map(::Type{Message}, mapping::M) where {M <: SiteMapping} =
     Rocket.MapOperator{Message, M}(mapping)
 
@@ -186,10 +215,10 @@ function activate_sites!(randomvar, options::RandomVariableActivationOptions, d)
         mapping = SiteMapping(options.site_policy, randomvar, index, callbacks, chain, state)
         push!(state.mappings, mapping)
         connect!(sites[index], randomvar.input_messages[index] |> map(Message, mapping))
-        # every site is computed as its inbound message arrives, whether or not a product reads
-        # it: each is in the other edges' cavities, which a schedule that never asks for this
-        # edge's outbound messages, nor the marginal, would leave at their seeds
-        subscribe!(sites[index], void(AbstractMessage))
+        # every inbound message is recorded, whether or not a product reads the site: each site is
+        # in the other edges' cavities, which a schedule that never asks for this edge's outbound
+        # messages, nor the marginal, would otherwise leave at their seeds
+        subscribe!(randomvar.input_messages[index], lambda(AbstractMessage; on_next = inbound -> record_pending!(mapping, inbound)))
     end
     products = [MessageObservable(Message) for _ in 1:d]
     initialize!(chain, products)

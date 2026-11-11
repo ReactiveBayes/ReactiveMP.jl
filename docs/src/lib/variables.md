@@ -227,6 +227,7 @@ terms from [`FactorBoundFreeEnergy`](@ref)`(cavity = true)`.
 
 ```@docs
 ReactiveMP.compute_site
+ReactiveMP.is_own_site
 ReactiveMP.seeded_cavity
 ```
 
