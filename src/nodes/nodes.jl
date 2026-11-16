@@ -420,6 +420,8 @@ end
 function node_function(fform, spec::NodeSpec, nodefn, statics)
     spec.static_inputs === :fold || return nodefn
     nodefn === nothing && throw(ArgumentError("`$(fform)` folds its static inputs into its function, so it needs `nodefn`, the function it computes"))
+    # with no static input, the function is its own, so that rules can dispatch on it
+    isempty(statics) && return nodefn
     return StaticFold(nodefn, statics)
 end
 

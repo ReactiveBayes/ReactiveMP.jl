@@ -72,6 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.
+- A node that folds its static inputs into its function, and has none, keeps its function as it
+  is rather than a `StaticFold` of nothing, so that rules can dispatch on it: `getnodefn` of such
+  a `DeltaFn{typeof(exp)}` is `exp`.
 
 ## [7.0.2] - 2026-11-03
 
