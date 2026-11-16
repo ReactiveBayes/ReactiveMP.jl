@@ -5,9 +5,10 @@
     ReactiveMP.StaticFold(f, statics::Tuple)
 
 The function of a node that folds its static inputs (`static_inputs = :fold`), which
-[`factornode`](@ref) builds from its `nodefn`. Called with the free inputs, it calls `f` with every
-input in its place, each static one at its position `k` taking the latest value of its variable:
-the constant, or the last observation. `statics` holds `(k, variable)` pairs.
+[`factornode`](@ref) builds from its `nodefn` when at least one input is static; without one, the
+node keeps `nodefn` itself, which rules can dispatch on. Called with the free inputs, it calls `f`
+with every input in its place, each static one at its position `k` taking the latest value of its
+variable: the constant, or the last observation. `statics` holds `(k, variable)` pairs.
 """
 struct StaticFold{F, P, V, N}
     f::F

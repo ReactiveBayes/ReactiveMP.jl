@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   iteration, as Bethe's does. The sum, expectation propagation's free energy, is not a bound.
 
 ### Changed
-- MessagePassingRulesBase 1.2 and BayesBase 1.7 are required.
+- MessagePassingRulesBase 1.2, BayesBase 1.7 and StandardMessagePassingRules 1.1 are required.
 - A node that folds its static inputs into its function, and has none, keeps its function as it
   is rather than a `StaticFold` of nothing, so that rules can dispatch on it: `getnodefn` of such
   a `DeltaFn{typeof(exp)}` is `exp`.

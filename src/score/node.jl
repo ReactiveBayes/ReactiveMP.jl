@@ -66,7 +66,8 @@ end
 # update replaces until every input is renewed, and the free energy of the iterations before
 # convergence would not be that of one set of messages. A node whose algorithm declares its
 # dependencies has rules that read the cluster, which may be computed by an impure rule, such as
-# Delta's under `CVIProjection`: its term is that joint's, from the cluster's stream.
+# a sampling projection's (Delta's deprecated `CVIProjection`): its term is that joint's, from the
+# cluster's stream.
 function score(
         ::Type{T},
         ::FactorBoundFreeEnergy,
