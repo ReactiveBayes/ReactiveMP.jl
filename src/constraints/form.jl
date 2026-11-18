@@ -113,13 +113,14 @@ function constrain_form end
     constrain_form_logscale(constraint, distribution) -> (constrained, lognormaliser)
     constrain_form_logscale(constraint, context, distribution) -> (constrained, lognormaliser)
 
-[`constrain_form`](@ref) with the log of the normaliser of `distribution`, `log ∫ p(x) dx` for
-its density `p` as `logpdf` gives it, or `nothing` where the constraint does not compute it, the
-default. A projection that computes it, such as a Laplace approximation, implements this
-method, and the engine adds the normaliser to the product's log scale: a product with no closed
-form, a `BayesBase.ProductOf`, then has a log scale, which it otherwise lacks (see
-[`getlogscale`](@ref)). A [`CompositeFormConstraint`](@ref) reports the sum of its parts'
-normalisers, or `nothing` when a part that does not report one changes its input.
+Return the result of [`constrain_form`](@ref) together with the log of the normaliser of
+`distribution`, `log ∫ p(x) dx` for the density `p` that `logpdf` gives. The normaliser is
+`nothing` if the constraint does not compute it, which is the default. A projection that computes
+it, such as a Laplace approximation, implements this method, and the engine adds the normaliser
+to the product's log scale. A product with no closed form, a `BayesBase.ProductOf`, then has a
+defined log scale, which it otherwise lacks (see [`getlogscale`](@ref)). A
+[`CompositeFormConstraint`](@ref) reports the sum of its parts' normalisers, or `nothing` if a
+part changes its input without reporting a normaliser.
 
 See also [`AbstractFormConstraint`](@ref).
 """

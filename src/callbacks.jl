@@ -293,9 +293,10 @@ The event right after a message rule ran, or its fallback, or after a `missing` 
   [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where no rule
   matched (see [`ReactiveMP.FactorNodeActivationOptions`](@ref)); or `nothing`, when a `missing`
   input skipped the rule;
-- `outcome`: how the fallback computed it, what it declared with
-  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome), such as whether a Laplace
-  approximation converged; `nothing` for a rule, and for a fallback that declared none;
+- `outcome`: what the fallback declared with
+  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome) about how it computed the
+  result, for example whether a Laplace approximation converged; `nothing` for a rule and for a
+  fallback that declared none;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref).
 """
 struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, L, U, O, S} <:
@@ -540,9 +541,10 @@ The event right after a factor node's marginal rule ran, or after a `missing` in
 - `rule`: what gave the joint: the rule that ran, a
   [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where no rule
   matched; or `nothing` when a `missing` input skipped the rule;
-- `outcome`: how the fallback computed it, what it declared with
-  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome), such as whether a Laplace
-  approximation converged; `nothing` for a rule, and for a fallback that declared none;
+- `outcome`: what the fallback declared with
+  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome) about how it computed the
+  result, for example whether a Laplace approximation converged; `nothing` for a rule and for a
+  fallback that declared none;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeMarginalRuleCallEvent`](@ref).
 """
 struct AfterMarginalRuleCallEvent{M, Ms, Mr, R, U, O, S} <:
@@ -597,9 +599,10 @@ this event's span.
 - `rule`: the average energy that ran, a
   [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec); the node's rule fallback, where none is
   defined; or `nothing` for a deterministic node;
-- `outcome`: how the fallback computed it, what it declared with
-  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome), such as whether a Laplace
-  approximation converged; `nothing` for a rule, and for a fallback that declared none;
+- `outcome`: what the fallback declared with
+  [`with_outcome`](@extref MessagePassingRulesBase.with_outcome) about how it computed the
+  result, for example whether a Laplace approximation converged; `nothing` for a rule and for a
+  fallback that declared none;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeFactorBoundFreeEnergyEvent`](@ref).
 """
 struct AfterFactorBoundFreeEnergyEvent{N, Ms, E, H, R, U, O, S} <:
@@ -668,17 +671,16 @@ end
     ReactiveMP.BeforeSiteComputationEvent{V, M, C, S} <: Event{:before_site_computation}
 
 The event right before a [`RandomVariable`](@ref) with a site policy computes the site of one of
-its edges from the edge's inbound message and its cavity, the variable's outbound message on the
-same edge (see [`ReactiveMP.compute_site`](@ref)). Its callbacks are those of the variable's
-`prod_context_for_marginal_computation`.
+its edges from the edge's inbound message and its cavity (see [`ReactiveMP.compute_site`](@ref)).
+It goes to the callbacks of the variable's `prod_context_for_marginal_computation`.
 
 # Fields
 
 - `variable`: the [`RandomVariable`](@ref);
-- `index`: the edge, the index of its inbound message;
+- `index`: the index of the edge and of its inbound message;
 - `message`: the inbound message, a [`Message`](@ref);
-- `cavity`: the outbound message on the edge, a [`Message`](@ref) whose data is `missing` while
-  no other edge has a site;
+- `cavity`: the cavity, which is the variable's outbound message on the edge: a
+  [`Message`](@ref) whose data is `missing` while no other edge has a site;
 - `span_id`: the identifier shared with the [`ReactiveMP.AfterSiteComputationEvent`](@ref).
 """
 struct BeforeSiteComputationEvent{V, M, C, S} <: Event{:before_site_computation}
@@ -693,17 +695,17 @@ end
     ReactiveMP.AfterSiteComputationEvent{V, M, C, R, O, S} <: Event{:after_site_computation}
 
 The event right after a [`RandomVariable`](@ref) with a site policy computed the site of one of
-its edges. Its callbacks are those of the variable's `prod_context_for_marginal_computation`.
+its edges. It goes to the callbacks of the variable's `prod_context_for_marginal_computation`.
 
 # Fields
 
 - `variable`: the [`RandomVariable`](@ref);
 - `index`: the edge;
 - `message`: the inbound message;
-- `cavity`: the outbound message on the edge;
-- `result`: the site's data, `missing` while there is none yet, or `nothing` where the site did
-  not change, and the edge's last site is sent again;
-- `outcome`: how the policy computed it, whatever it returns, such as
+- `cavity`: the cavity, the variable's outbound message on the edge;
+- `result`: the site's data; `missing` while there is no site yet, or `nothing` if the site did
+  not change and the edge's last site is sent again;
+- `outcome`: the outcome the policy returned, any value, for example
   `(method = :laplace, converged = true, iterations = 5)`;
 - `span_id`: the identifier shared with the [`ReactiveMP.BeforeSiteComputationEvent`](@ref).
 """

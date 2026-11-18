@@ -21,14 +21,14 @@ You give callbacks in two places:
   [`RandomVariableActivationOptions`](@ref). The variable reports the product and form
   constraint events, and the context of its marginal also reports the marginal events and the
   variable's term of the free energy, [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref). A
-  variable with a site policy reports there each site it computes,
+  variable with a site policy also reports each site it computes to this context, as
   [`ReactiveMP.BeforeSiteComputationEvent`](@ref) and
   [`ReactiveMP.AfterSiteComputationEvent`](@ref) (see [Sites](@ref lib-variables-sites)).
 
 An event after a rule call names the rule that ran, its `rule`: the
 [`RuleSpec`](@extref MessagePassingRulesBase.RuleSpec), which shows where the rule is defined, the
-node's rule fallback where no rule matched, for a message, a joint or an average energy, or
-`nothing` where a `missing` input skipped the rule.
+node's rule fallback where no rule matched (for a message, a joint marginal or an average
+energy), or `nothing` where a `missing` input skipped the rule.
 The engine builds an event only for a handler that listens to it, so a graph activated without
 callbacks, or with callbacks for other events, runs as fast as one that reports nothing.
 

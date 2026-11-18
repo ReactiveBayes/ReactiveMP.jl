@@ -13,9 +13,9 @@ with, read by a rule as `ctx`. The engine supplies every service of
   ([`getnodefn`](@extref MessagePassingRulesBase.getnodefn));
 - `rng`: the task's own random number generator, `Random.default_rng()`;
 - `matrix_correction`: `nothing`, so each rule applies its own;
-- `expectation`: `nothing`, no backend of BayesBase's expectation protocol; the engine is
-  agnostic, and the model sets one, `(expectation = backend,)`, for a rule or a fallback that
-  computes expectations.
+- `expectation`: `nothing`. This is the backend of BayesBase's expectation protocol for rules
+  and fallbacks that compute expectations. The engine sets none; a model sets one with
+  `(expectation = backend,)`.
 
 `context` is merged over them: a `NamedTuple` of services, a `RuleContext`, or `nothing` for
 none. It adds the services a rule declares and the engine does not supply, and overrides the

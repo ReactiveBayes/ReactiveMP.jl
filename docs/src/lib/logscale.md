@@ -162,20 +162,21 @@ The engine tracks log scales when you activate the nodes with `logscales = true`
 ([`ReactiveMP.FactorNodeActivationOptions`](@ref); RxInfer's `infer(...; logscales = true)`).
 Then:
 
-- every message carries the log scale its rule declares, and a message a rule fallback computed
-  the one the fallback declares with `with_logscale`, otherwise an undefined one;
+- every message carries the log scale its rule declares. A message computed by a rule fallback
+  carries the log scale the fallback declares with `with_logscale`, or an undefined one if it
+  declares none;
 - observations and constants are point masses, with log scale zero;
 - initial messages were computed by no rule, so their log scale is undefined;
 - a product combines the log scales as above. An undefined side propagates, keeping its reason.
   A pair of distributions with no `compute_logscale` gives an undefined log scale, and so does a
-  form constraint that changes the product. A product with no closed form, a `ProductOf`, records
-  its sides' log scales, and a form constraint that reports the product's normaliser
-  ([`constrain_form_logscale`](@ref)) completes it. A `missing` side leaves the other side's log
-  scale;
+  form constraint that changes the product. A product with no closed form, such as a
+  `ProductOf`, has an undefined log scale that records the sum of its sides' log scales. A form
+  constraint that reports the product's normaliser with [`constrain_form_logscale`](@ref) adds
+  the normaliser to that sum, and the log scale is then defined. A `missing` side leaves the other
+  side's log scale;
 - a random variable's marginal carries the log scale of the product it was formed from;
-- a message mixed with its predecessor by a
-  [`ReactiveMP.DampingPostprocessor`](@ref) has an undefined log scale, with the
-  cause `:damping`: the mix of two messages has none of its own;
+- a message damped by a [`ReactiveMP.DampingPostprocessor`](@ref) has an undefined log scale
+  with the cause `:damping`, because a mix of two messages has no log scale of its own;
 - an initial marginal, set with [`ReactiveMP.set_initial_marginal!`](@ref), and a factor node's
   joint marginal carry none: reading theirs is an error, as where log scales are not tracked.
 

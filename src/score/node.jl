@@ -23,16 +23,17 @@ Each value is reported to the node's callbacks as
 [`ReactiveMP.AfterFactorBoundFreeEnergyEvent`](@ref), the average energy and the entropies
 included; a node not activated reports none.
 
-`FactorBoundFreeEnergy(cavity = true)` is the term under cavity propagation, where the random
-variables have a site policy (see [`ReactiveMP.compute_site`](@ref)): a node with no rules under
-its algorithm, whose messages its rule fallback sends, takes the fallback's energy from its inbound
-messages, the cavities, and its variables' marginals, both given to `call_energy_fallback` as the
-rule arguments' `m` and `q` by interface: expectation propagation's term, less the point masses'
-entropies. Its stream emits once each of those inputs has updated, once per iteration, since the
-sites' variables send their messages and marginals once each. Every other node's term is
-Bethe's, as above. Their sum, expectation propagation's free energy, approximates minus the log
-evidence at a fixed point of the sites, but it is not a bound: a lower value does not mean a
-better approximation.
+`FactorBoundFreeEnergy(cavity = true)` selects the term under cavity propagation, where the
+random variables have a site policy (see [`ReactiveMP.compute_site`](@ref)). A node that has no
+rules under its algorithm, so that its rule fallback computes its messages, takes its term from
+the fallback's energy. `call_energy_fallback` receives, for each interface, the inbound message
+(the cavity) as `m` and the variable's marginal as `q` in the rule arguments. The term is
+expectation propagation's, minus the entropies of the point masses. Its stream emits once all of
+these inputs have updated, which is once per iteration, because variables with sites send each
+message and marginal once per iteration. Every other node's term is the Bethe term described
+above. The sum of the terms is expectation propagation's free energy. At a fixed point of the
+sites it approximates minus the log evidence, but it is not a bound, so a lower value does not
+mean a better approximation.
 """
 struct FactorBoundFreeEnergy{C} end
 

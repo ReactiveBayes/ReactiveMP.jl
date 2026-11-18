@@ -113,10 +113,10 @@ postprocessor, two default [`ReactiveMP.MessageProductContext`](@ref)s and no si
   [`ReactiveMP.AfterMarginalComputationEvent`](@ref), and the variable's free-energy events,
   [`ReactiveMP.BeforeVariableBoundEntropyEvent`](@ref) and
   [`ReactiveMP.AfterVariableBoundEntropyEvent`](@ref).
-- `site_policy`: `nothing`, or a policy that gives each edge a site, cavity propagation: the
-  products then take each edge's site, [`ReactiveMP.compute_site`](@ref)`(site_policy, …)` of its
-  inbound message against its outbound one, in place of the inbound message. The marginal
-  context's callbacks also receive [`ReactiveMP.BeforeSiteComputationEvent`](@ref) and
+- `site_policy`: `nothing`, or a policy that gives each edge a site, for cavity propagation. The
+  products then use each edge's site, [`ReactiveMP.compute_site`](@ref)`(site_policy, …)` of its
+  inbound message against its outbound message, in place of the inbound message. The callbacks
+  of the marginal's context also receive [`ReactiveMP.BeforeSiteComputationEvent`](@ref) and
   [`ReactiveMP.AfterSiteComputationEvent`](@ref).
 
 See also [`ReactiveMP.activate!`](@ref).
@@ -149,18 +149,19 @@ Wire the streams of a random variable, after every factor node it connects to ha
 2. **Marginal**: the product of all inbound messages, formed with [`as_marginal`](@ref). It is
    computed once every inbound message has a value, and again whenever each has updated since.
 3. **Sites**, with a site policy and more than one connection: each edge's site (see
-   [`ReactiveMP.compute_site`](@ref)) takes the place of its inbound message in both products,
-   the equality chain's inputs. A site is computed as its inbound message arrives, against the
-   cavity the chain holds then, the product of the other edges' latest sites from its cached
-   partial products; the outbound messages and the marginal are sent as without sites. A site
-   starts as `missing`, the products' identity, and an outbound message or a marginal that is
-   still `missing` is not sent. An initial message, [`ReactiveMP.set_initial_message!`](@ref),
-   is also each edge's first cavity: while some other edges have no site yet, the cavity counts
-   each of them as the initial message's `1/(d - 1)`-th power (see
-   [`ReactiveMP.seeded_cavity`](@ref)), so that a raw message need not wait for one. A raw
-   message that is clamped, from a node whose inputs are all constants, arrives only once: its
-   site is projected again each round, against its cavity then, as the last edge with a message
-   that is not clamped receives one, and sent as an initial message.
+   [`ReactiveMP.compute_site`](@ref)) replaces its inbound message as an input of the equality
+   chain, and so in both products. A site is computed when its inbound message arrives, against
+   the cavity the chain holds at that moment: the product of the latest sites of the other edges,
+   taken from the chain's cached partial products. The outbound messages and the marginal are
+   sent as they are without sites. A site starts as `missing`, the identity of the product, and
+   an outbound message or a marginal that is still `missing` is not sent. An initial message, set
+   with [`ReactiveMP.set_initial_message!`](@ref), is also the first cavity of every edge. While
+   some other edges have no site yet, the cavity counts each of them as the initial message raised
+   to the power `1/(d - 1)` (see [`ReactiveMP.seeded_cavity`](@ref)), so that a raw message does
+   not have to wait for a site. A clamped raw message, from a node whose inputs are all
+   constants, arrives only once. Its site is projected again in each round, against the cavity at
+   that time, when the last edge with a message that is not clamped receives one, and is sent as
+   an initial message.
 
 A product that is initial does not consume its inputs, so the next update of any of them
 computes it again.

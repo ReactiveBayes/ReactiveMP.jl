@@ -3,52 +3,60 @@
 """
     ReactiveMP.compute_site(policy, variable, index, message, cavity, previous) -> (site, outcome)
 
-The site of edge `index` of a [`RandomVariable`](@ref) activated with a site policy (see
-[`RandomVariableActivationOptions`](@ref)): what replaces the edge's inbound message in the
-variable's products, its outbound messages and its marginal. A site is the inbound message
-projected against its cavity, `proj(message · cavity) / cavity`, the cavity being the product of
-the other edges' sites, the variable's outbound message on the same edge: expectation
-propagation, or Laplace propagation, where every belief of the variable is a product of sites.
+Compute the site of edge `index` of a [`RandomVariable`](@ref) activated with a site policy (see
+[`RandomVariableActivationOptions`](@ref)). The site replaces the edge's inbound message in the
+variable's products, that is, in its outbound messages and its marginal. It is the inbound message
+projected against its cavity, `proj(message · cavity) / cavity`. The cavity is the product of the
+sites of the other edges, which is the variable's outbound message on the same edge. This is
+expectation propagation, or Laplace propagation when the projection is a Laplace approximation.
 
-- `message`: the inbound message's data;
-- `cavity`: the product of the other edges' latest sites, `missing` while none has one;
-- `previous`: the `outcome` of the edge's last site, `nothing` at first, where a projection can
-  start from.
+# Arguments
 
-It returns the site's data and an `outcome`, any value, which the
-[`ReactiveMP.AfterSiteComputationEvent`](@ref) carries. A site `missing` means none yet, as while
-the cavity is `missing`: the edge then contributes nothing to the products until its next inbound
-message. A site `nothing` means that the edge's site has not changed: the last one is sent again.
+- `message`: the data of the inbound message;
+- `cavity`: the product of the latest sites of the other edges, `missing` while none of them has
+  a site;
+- `previous`: the `outcome` of the edge's last site, `nothing` the first time. A projection can
+  start from it.
 
-The engine knows no projection: an inference package defines a method for its policy. RxInfer's
-cavity schemes, `LaplacePropagation()`, `ExpectationPropagation()` and
-`NaturalGradientPropagation()`, give one.
+# Returns
+
+The site's data and an `outcome`, which can be any value and is carried by
+[`ReactiveMP.AfterSiteComputationEvent`](@ref). A site of `missing` means that there is no site
+yet, for example while the cavity is `missing`. The edge then contributes nothing to the products
+until its next inbound message. A site of `nothing` means that the edge's site has not changed,
+and the last one is sent again.
+
+The engine does not implement a projection: an inference package defines a method for its policy.
+RxInfer defines one for each of its cavity schemes, `LaplacePropagation()`,
+`ExpectationPropagation()` and `NaturalGradientPropagation()`.
 """
 function compute_site end
 
 """
     ReactiveMP.is_own_site(policy, message, site, outcome) -> Bool
 
-Whether a [`ReactiveMP.compute_site`](@ref) result is the inbound message itself, as a closed
-message is, rather than a projection against the cavity: `site === message` by default. A policy
-that returns a closed message in another representation says so here. A site that is its own
-message keeps the message's flags, and the engine computes it only when something reads it; a
-projection first brings the other edges' sites, its cavity, up to date.
+Return whether a [`ReactiveMP.compute_site`](@ref) result is the inbound message itself, as it
+is for a closed-form message, and not a projection against the cavity. The default is
+`site === message`. A policy that returns a closed-form message in another representation adds a
+method that returns `true` for it. A site that is its own message keeps the message's flags, and
+the engine computes it only when something reads it. Before a projection, the engine brings the
+sites of the other edges, which make up the cavity, up to date.
 """
 is_own_site(policy, message, site, outcome) = site === message
 
 """
     ReactiveMP.seeded_cavity(policy, cavity, initial, waiting, degree) -> cavity
 
-The cavity of a site while `waiting` of the other edges of a variable with `degree` connections
-have no site yet, and the variable has an initial message `initial` (`@initialization`'s `μ(x)`):
-`cavity` (`missing` while no other edge has a site) times `initial^(waiting / (degree - 1))`.
-Every edge's first cavity is then the initial message itself, whatever the degree, and the seed
-fades as the edges' own sites arrive. It enters the cavities only: the outbound messages and the
-marginal are products of the sites alone.
+Return the cavity of a site while `waiting` of the other edges of a variable with `degree`
+connections have no site yet, and the variable has an initial message `initial` (`μ(x)` in
+`@initialization`). The result is `cavity` (`missing` while no other edge has a site) times
+`initial^(waiting / (degree - 1))`. The first cavity of each edge is then the initial message
+itself, for any degree, and the share of the initial message shrinks as the other edges' sites
+arrive. The initial message enters the cavities only: the outbound messages and the marginal are
+products of the sites alone.
 
-The default returns `cavity` as it is; an inference package defines a method for its policy, as
-for [`ReactiveMP.compute_site`](@ref).
+The default returns `cavity` unchanged. As for [`ReactiveMP.compute_site`](@ref), an inference
+package defines a method for its policy.
 """
 seeded_cavity(policy, cavity, initial, waiting, degree) = cavity
 

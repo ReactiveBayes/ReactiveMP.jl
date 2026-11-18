@@ -25,8 +25,9 @@ terms.
 
 - `algorithm`: a function of a node, the algorithm the node runs under, as given at activation.
   Default `(node) -> nothing`, every node's default.
-- `cavity`: the free energy under cavity propagation, where the random variables have a site
-  policy: each node's term is `FactorBoundFreeEnergy(cavity = true)`. Default `false`.
+- `cavity`: whether to compute the free energy under cavity propagation, for random variables
+  with a site policy. Each node's term is then `FactorBoundFreeEnergy(cavity = true)`. Default
+  `false`.
 
 # Returns
 

@@ -175,9 +175,9 @@ activated with [`ReactiveMP.activate!`](@ref).
 
 - `nodefn`: the function the node computes, which a rule reaches with
   [`getnodefn`](@extref MessagePassingRulesBase.getnodefn)`(ctx.node, Target(:out))`. Default
-  `nothing`: a node whose form is a function, such as `+` or `dot`, computes that function of its
-  inputs in the order it declares them, and any other node has none. A node declared with
-  `static_inputs = :fold` needs it: the members of its
+  `nothing`. A node whose form is a function, such as `+` or `dot`, then computes that function
+  of its inputs, in the order the node declares them; any other node has no function. A node
+  declared with `static_inputs = :fold` needs it: the members of its
   group connected to a constant or to data are folded into it (see
   [`ReactiveMP.StaticFold`](@ref)), and the others are numbered `1:n` in their order.
 
@@ -531,16 +531,16 @@ the others taking their defaults.
   engine's (see [`ReactiveMP.node_context`](@ref)): it adds any service a rule declares and
   overrides the engine's. `nothing` is `NamedTuple()`, the default. A rule declaring a service
   nobody supplies is an error when it is resolved, naming the rule and the service;
-- `rulefallback`: what gives a message, a joint marginal or an average energy where no rule
+- `rulefallback`: what computes a message, a joint marginal or an average energy where no rule
   matches, such as
-  [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()`,
-  asked with [`call_fallback`](@extref MessagePassingRulesBase.call_fallback) and
-  [`call_energy_fallback`](@extref MessagePassingRulesBase.call_energy_fallback), with the node's
-  algorithm and rule context. A function `rulefallback(fform, target, args)` is asked about
-  messages only. Default `nothing`, which makes a missing rule a
-  [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError), as does a fallback
-  answering `nothing`. It never replaces a rule that matches, and an error inside a rule
-  propagates;
+  [`NodeFunctionRuleFallback`](@extref MessagePassingRulesBase.NodeFunctionRuleFallback)`()`.
+  The engine calls it through [`call_fallback`](@extref MessagePassingRulesBase.call_fallback)
+  and [`call_energy_fallback`](@extref MessagePassingRulesBase.call_energy_fallback), with the
+  node's algorithm and rule context. A plain function `rulefallback(fform, target, args)` is
+  asked about messages only. Default `nothing`: a missing rule is then a
+  [`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError), and so is a fallback
+  that returns `nothing`. A fallback never replaces a rule that matches, and an error inside a
+  rule propagates;
 - `logscales`: whether the node's messages carry log scales (see [`getlogscale`](@ref)): each
   rule's declared one, with its inputs' ones given to the rules that read them. Default
   `false`, none, and a rule that reads its inputs' log scales is then an error;

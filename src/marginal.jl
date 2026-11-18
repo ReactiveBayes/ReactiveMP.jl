@@ -280,11 +280,11 @@ resolves the marginal rule with
 [`find_marginal_rule`](@extref MessagePassingRulesBase.find_marginal_rule) under the node's
 algorithm, checks it against the [`ReactiveMP.EngineDiagnostics`](@ref) and the services the node's
 context supplies ([`check_services`](@extref MessagePassingRulesBase.check_services)), and runs it.
-Where no rule matches, it asks the node's rule fallback with
-[`call_fallback`](@extref MessagePassingRulesBase.call_fallback), the target a
-[`ClusterTarget`](@extref MessagePassingRulesBase.ClusterTarget), and throws a
-[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) where there is none or it
-answers `nothing`, as a fallback written for messages does.
+Where no rule matches, it asks the node's rule fallback through
+[`call_fallback`](@extref MessagePassingRulesBase.call_fallback), with a
+[`ClusterTarget`](@extref MessagePassingRulesBase.ClusterTarget) as the target. It throws a
+[`RuleNotFoundError`](@extref MessagePassingRulesBase.RuleNotFoundError) if there is no fallback
+or the fallback returns `nothing`, which a fallback written for messages only does.
 
 The marginal is clamped when every input is, and initial when it is not clamped and every input
 is clamped or initial. It carries no annotations and no log scale.
