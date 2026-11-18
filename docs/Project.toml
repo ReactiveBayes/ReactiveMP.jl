@@ -15,9 +15,6 @@ Rocket = "df971d30-c9d6-4b37-b8ff-e965b2cb3a40"
 # names are linked to their own sites (`make.jl`).
 [sources]
 ReactiveMP = {path = ".."}
-# TEMPORARY: the universal-inference branches of these packages, until they are released
-BayesBase = {url = "https://github.com/ReactiveBayes/BayesBase.jl", rev = "universal-inference"}
-MessagePassingRulesBase = {url = "https://github.com/ReactiveBayes/MessagePassingRulesBase.jl", rev = "universal-inference"}
 
 [compat]
 DocInventories = "1"
