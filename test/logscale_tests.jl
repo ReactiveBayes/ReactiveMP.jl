@@ -121,6 +121,77 @@ end
     @test getlogscale(unchanged) ≈ logpdf(NormalMeanVariance(0.0, 3.0), 1.0)
 end
 
+@testitem "logscale:a projection reports the normaliser of a product with no closed form" tags = [:engine] setup = [EngineLogScaleUtils] begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Distributions
+    import ReactiveMP: compute_product_of_two_messages, compute_product_of_messages, MessageProductContext, constrain_form_logscale
+    import MessagePassingRulesBase: UndefinedLogScale
+    U = EngineLogScaleUtils
+
+    # A normal density BayesBase has no product for, so that a product of two is a `ProductOf`.
+    struct Bell
+        m::Float64
+        v::Float64
+    end
+    BayesBase.logpdf(d::Bell, x) = logpdf(NormalMeanVariance(d.m, d.v), x)
+    moments(d::Bell) = (d.m, d.v)
+    moments(d::NormalDistributionsFamily) = (mean(d), var(d))
+    # The exact projection of a product of two normal densities, and the log of its normaliser.
+    struct Exact <: AbstractFormConstraint end
+    function ReactiveMP.constrain_form_logscale(::Exact, p::ProductOf)
+        (m1, v1), (m2, v2) = moments(BayesBase.getleft(p)), moments(BayesBase.getright(p))
+        v = inv(inv(v1) + inv(v2))
+        return NormalMeanVariance(v * (m1 / v1 + m2 / v2), v), logpdf(NormalMeanVariance(m1, v1 + v2), m2)
+    end
+    ReactiveMP.constrain_form(constraint::Exact, p) = first(constrain_form_logscale(constraint, p))
+    struct ToStandard <: AbstractFormConstraint end
+    ReactiveMP.constrain_form(::ToStandard, d) = NormalMeanVariance(0.0, 1.0)
+    struct Check <: AbstractFormConstraint end
+    ReactiveMP.constrain_form(::Check, d) = d
+
+    bells = (Bell(0.0, 1.0), Bell(1.0, 2.0), Bell(-0.5, 0.5))
+    normals = map(b -> NormalMeanVariance(b.m, b.v), bells)
+    scales = (0.5, -1.0, 2.0)
+    messages(ds) = map(U.message, ds, scales)
+    product(l, r; kwargs...) = compute_product_of_two_messages(randomvar(), MessageProductContext(; kwargs...), l, r)
+    fold(ds; kwargs...) = compute_product_of_messages(randomvar(), MessageProductContext(; kwargs...), messages(ds))
+
+    # The reference: the same product of closed-form normals, whose log scale BayesBase computes.
+    exact2 = getlogscale(fold(normals[1:2]))
+    exact3 = getlogscale(fold(normals))
+
+    # A product with no closed form records its parts' log scales, the normaliser unknown; a
+    # product with one of them as a part too.
+    pending = getlogscale(fold(bells[1:2]))
+    @test pending isa UndefinedLogScale && pending.cause === :unnormalised_product && pending.detail ≈ 0.5 - 1.0
+    @test getlogscale(fold(bells)).detail ≈ sum(scales)
+    @test occursin("normaliser", sprint(show, MIME"text/plain"(), pending))
+    # Another undefined side wins: its normaliser is not what is missing.
+    fallback = product(U.message(bells[1], 0.0), U.message(bells[2], UndefinedLogScale(:fallback)))
+    @test getlogscale(fallback).cause === :fallback
+
+    # A projection that reports the normaliser defines it, applied last or after each product.
+    @test getlogscale(fold(bells[1:2]; form_constraint = Exact())) ≈ exact2
+    @test getlogscale(fold(bells; form_constraint = Exact(), form_constraint_check_strategy = FormConstraintCheckEach())) ≈ exact3
+    # So does a composite whose other parts change nothing.
+    @test getlogscale(fold(bells[1:2]; form_constraint = Check() + Exact() + Check())) ≈ exact2
+    # A constraint that changes the product without reporting leaves it undefined, alone or
+    # after the projection.
+    @test getlogscale(fold(bells[1:2]; form_constraint = ToStandard())).cause === :form_constraint
+    @test getlogscale(fold(bells[1:2]; form_constraint = Exact() + ToStandard())).cause === :form_constraint
+    # On a closed-form product, a normaliser is added to the log scale it already has.
+    struct Shift <: AbstractFormConstraint end
+    ReactiveMP.constrain_form_logscale(::Shift, d) = d, 1.5
+    ReactiveMP.constrain_form(::Shift, d) = d
+    @test getlogscale(fold(normals[1:2]; form_constraint = Shift())) ≈ exact2 + 1.5
+
+    # The default reports nothing, and a constraint of another type is asked through its wrapper.
+    @test constrain_form_logscale(ToStandard(), normals[1]) === (NormalMeanVariance(0.0, 1.0), nothing)
+    struct Plain end
+    ReactiveMP.constrain_form_logscale(::Plain, d) = d, 1.5
+    ReactiveMP.constrain_form(::Plain, d) = d
+    @test constrain_form_logscale(ReactiveMP.preprocess_form_constraints(Plain()), normals[1]) === (normals[1], 1.5)
+end
+
 @testitem "logscale:variables" tags = [:engine] begin
     using ReactiveMP, BayesBase, Rocket
     import ReactiveMP: MessageObservable, set_initial_message!

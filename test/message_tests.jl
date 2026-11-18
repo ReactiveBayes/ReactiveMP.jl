@@ -484,6 +484,7 @@ end
         get_stream_of_marginals, set_initial_message!, RandomVariableActivationOptions, MessageProductContext, getdata, getinterfaces,
         get_stream_of_inbound_messages
     import MessagePassingRulesBase: Target, DefaultAlgorithm, RuleContext
+    import MessagePassingRulesBase
     import Random
     using Rocket
     N = MessageMappingNodes
@@ -497,8 +498,11 @@ end
     node = N.Draw()
     ctx = node_context(node, (rng = rng, matrix_correction = :identity, gpu = :device))
     @test ctx isa RuleContext && ctx.node === node && ctx.rng === rng && ctx.matrix_correction === :identity && ctx.gpu === :device
-    @test propertynames(node_context(node)) == (:node, :rng, :matrix_correction)
+    # The engine supplies every service the base package names, an expectation backend among
+    # them, none unless the context sets one.
+    @test propertynames(node_context(node)) == MessagePassingRulesBase.DEFAULT_CONTEXT_SERVICES
     @test node_context(node).rng === Random.default_rng() && node_context(node).matrix_correction === nothing
+    @test node_context(node).expectation === nothing && node_context(node, (expectation = :backend,)).expectation === :backend
 
     # A mapping hands its node's context to the rule.
     draw = MessageMapping(N.Draw, Target{:out}(), Val((:in,)), nothing, DefaultAlgorithm(), nothing, node, nothing, EngineDiagnostics(), (rng = rng,))

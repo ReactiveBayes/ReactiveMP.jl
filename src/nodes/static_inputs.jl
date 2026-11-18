@@ -5,9 +5,11 @@
     ReactiveMP.StaticFold(f, statics::Tuple)
 
 The function of a node that folds its static inputs (`static_inputs = :fold`), which
-[`factornode`](@ref) builds from its `nodefn`. Called with the free inputs, it calls `f` with every
-input in its place, each static one at its position `k` taking the latest value of its variable:
-the constant, or the last observation. `statics` holds `(k, variable)` pairs.
+[`factornode`](@ref) builds from its `nodefn` when at least one input is static. Without static
+inputs, the node keeps `nodefn` itself, so that rules can dispatch on it. Called with the free
+inputs, it calls `f` with every input in its place, each static one at its position `k` taking the
+latest value of its variable: the constant, or the last observation. `statics` holds
+`(k, variable)` pairs.
 """
 struct StaticFold{F, P, V, N}
     f::F
@@ -37,9 +39,14 @@ static_value(variable::DataVariable) = BayesBase.getpointmass(getdata(Rocket.get
 end
 
 function MessagePassingRulesBase.getnodefn(factornode::FactorNode, ::MessagePassingRulesBase.Target{:out})
-    factornode.nodefn === nothing && throw(ArgumentError("`$(functionalform(factornode))` was created without `nodefn`, so it has no function to give a rule"))
-    return factornode.nodefn
+    return node_function_or_form(factornode.nodefn, functionalform(factornode))
 end
+
+# A node created without its function computes its form, where that is a function: `+` for
+# `z := a + b`, its inputs in the order the node declares them
+node_function_or_form(nodefn, _) = nodefn
+node_function_or_form(::Nothing, form::Function) = form
+node_function_or_form(::Nothing, form) = throw(ArgumentError("`$(form)` was created without `nodefn`, so it has no function to give a rule"))
 
 """
     ReactiveMP.with_statics(factornode, stream)

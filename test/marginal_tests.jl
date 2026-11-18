@@ -141,6 +141,19 @@
     end
 end
 
+@testitem "a marginal samples as its distribution" tags = [:engine] begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Distributions, Random
+
+    for distribution in (NormalMeanVariance(1.0, 2.0), MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]), Gamma(2.0, 3.0), Categorical([0.8, 0.2]))
+        marginal = Marginal(distribution, false, false)
+        @test rand(MersenneTwister(1), marginal) == rand(MersenneTwister(1), distribution)
+        @test rand(MersenneTwister(1), marginal, 3) == rand(MersenneTwister(1), distribution, 3)
+        @test size(rand(marginal, 4)) == size(rand(distribution, 4))
+    end
+    @test rand(MersenneTwister(1), Marginal(Gamma(2.0, 3.0), false, false), (2, 3)) == rand(MersenneTwister(1), Gamma(2.0, 3.0), (2, 3))
+    @test rand(MersenneTwister(1), Marginal(Gamma(2.0, 3.0), false, false), 2, 3) == rand(MersenneTwister(1), Gamma(2.0, 3.0), 2, 3)
+end
+
 @testitem "as_marginal forms a marginal in its public type" tags = [:engine] begin
     using ReactiveMP, BayesBase, Distributions
     import MessagePassingRulesBase

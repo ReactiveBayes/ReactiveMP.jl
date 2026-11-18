@@ -876,8 +876,11 @@ fix errors v6 had. A result that differs from v6's for these nodes is expected:
   (ReactiveMP.jl#681, #682). With `a` known, nothing changes.
 - **The Delta node takes three methods**: [`Unscented`](@extref MessagePassingRulesApproximations.Unscented)`()`, [`Linearization`](@extref MessagePassingRulesApproximations.Linearization)`()` and, once
   `using ExponentialFamilyProjection` loads its rules, [`CVIProjection`](@extref DeltaMessagePassingRules.CVIProjection)`()`. v6's other methods are
-  gone, with no replacement: `CVI` and `ProdCVI`, `LaplaceApproximation`,
-  `ImportanceSamplingApproximation`, `GaussLaguerreQuadrature` and the spherical-radial cubature.
+  gone: `CVI` and `ProdCVI`, `LaplaceApproximation`, `ImportanceSamplingApproximation`,
+  `GaussLaguerreQuadrature` and the spherical-radial cubature. For a model whose functions have
+  no rules, use one of RxInfer's fallback schemes, for example
+  `fallback = NaturalGradientPropagation()` (natural-gradient message passing), which replaces
+  CVI. DeltaMessagePassingRules 1.1 deprecates `CVIProjection` in favour of it.
   [`DeltaApproximation`](@extref DeltaMessagePassingRules.DeltaApproximation) refuses any other method with an error that lists these three and, for
   `CVIProjection` without its package, says which package to load. `CVIProjection` has no `rng`
   field: it samples from the generator the engine gives the rule, and its joint rule, which
