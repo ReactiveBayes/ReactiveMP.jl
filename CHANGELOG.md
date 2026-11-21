@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A factor node with two or more joint clusters no longer stalls: a joint activated before another kept reading a placeholder stream that the later activation replaced, so it never received the other joint's marginal and inference stopped after the initial values.
+
 ## [7.0.2] - 2026-11-03
 
 ### Fixed
