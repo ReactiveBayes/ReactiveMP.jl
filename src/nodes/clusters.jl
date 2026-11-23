@@ -173,5 +173,8 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
     marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
     marginalout = postprocess_stream_of_marginals(getpostprocessor(options), marginalout)
 
-    return set_stream_of_marginals!(marginal, marginalout)
+    # The joint's stream, made by `initialize_cluster!`, may already be an input of a joint activated
+    # before this one, so it is connected to the rule's output, never replaced by a new stream
+    connect!(get_stream_of_marginals(marginal), marginalout)
+    return nothing
 end
