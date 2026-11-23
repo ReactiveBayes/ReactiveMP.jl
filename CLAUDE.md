@@ -169,6 +169,10 @@ Laar to triple-check it), are corrected in the rule packages.
   the default scheme's inputs plus the listed ones, placed in interface order. A
   deterministic node's clusters are always `out` and the joint over its inputs,
   and a `static_inputs = :fold` node needs `factornode(…; nodefn = f)`.
+- A joint's `MarginalObservable`, made by `initialize_cluster!`, is **connected, never replaced**,
+  in `activate_cluster!`: the joints of one node read each other, so a joint activated earlier
+  already holds the later ones' streams. Replacing them stalled any node with two or more joints
+  (#689; `test/engine/coupled_joints_tests.jl`).
 - **CI sets `JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1`**, which makes FastCholesky throw
   on a matrix that is not symmetric within 1e-8 instead of warning; set it on local runs too
   (`JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC=1 TEST_ALL=true make test` in a package). Without it,
