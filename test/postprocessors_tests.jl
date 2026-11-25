@@ -32,6 +32,30 @@ end
     @test damp(0.5, new, missing) === missing
 end
 
+@testitem "damp: Gaussians mix in weighted-mean form, whatever their precision" tags = [:engine] begin
+    import ReactiveMP: damp
+    using BayesBase, ExponentialFamily, Distributions, LinearAlgebra
+
+    # A message pulled back through `dot` has a rank-one precision; mixing it with itself is itself
+    x = [0.3, -1.2]
+    singular = MvNormalWeightedMeanPrecision(x .* 2.0, x * x' ./ 0.5)
+    damped = damp(0.5, singular, singular)
+    @test damped isa MvNormalWeightedMeanPrecision
+    @test weightedmean_precision(damped)[1] ≈ weightedmean_precision(singular)[1]
+    @test weightedmean_precision(damped)[2] ≈ weightedmean_precision(singular)[2]
+    # an indefinite precision is mixed as it is, with no detour through a covariance
+    indefinite = MvNormalWeightedMeanPrecision([1.0, 0.0], [1.0 0.0; 0.0 -0.5])
+    proper = MvNormalMeanPrecision([0.0, 1.0], [2.0 0.0; 0.0 2.0])
+    ξ, W = weightedmean_precision(damp(0.25, indefinite, proper))
+    @test ξ ≈ 0.25 .* [1.0, 0.0] .+ 0.75 .* [0.0, 2.0]
+    @test W ≈ 0.25 .* [1.0 0.0; 0.0 -0.5] .+ 0.75 .* [2.0 0.0; 0.0 2.0]
+    # a flat or negative scalar precision, and Gaussians of different dimensions
+    flat = NormalWeightedMeanPrecision(0.0, 0.0)
+    @test weightedmean_precision(damp(0.5, flat, NormalWeightedMeanPrecision(1.0, -1.0))) == (0.5, -0.5)
+    new = MvNormalMeanCovariance(zeros(3), Matrix(1.0I, 3, 3))
+    @test damp(0.5, proper, new) === new
+end
+
 @testitem "DampingPostprocessor: a stream of messages" tags = [:engine] begin
     import ReactiveMP: DampingPostprocessor, postprocess_stream_of_outbound_messages, postprocess_stream_of_marginals,
         postprocess_stream_of_scores, AbstractMessage, AnnotationDict

@@ -59,6 +59,8 @@ Return the mix of the message data `previous` and `new` that
 [`ReactiveMP.DampingPostprocessor`](@ref) emits. The default returns `new`. With
 ExponentialFamily.jl loaded, two members of one exponential family with the same conditioner are
 mixed in natural parameters, `β η_previous + (1 - β) η_new`, and the result is returned in the
-family's default parameterisation. To damp other data, add a method for its type.
+family's default parameterisation, or `new` when the mix is not a member of the family. Gaussians
+are mixed and returned in weighted-mean form, `(Mv)NormalWeightedMeanPrecision`, so a singular or
+indefinite precision is mixed exactly. To damp other data, add a method for its type.
 """
 damp(β, previous, new) = new
