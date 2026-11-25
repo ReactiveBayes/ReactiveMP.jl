@@ -49,7 +49,7 @@ is_own_site(policy, message, site, outcome) = site === message
 
 Return the cavity of a site while `waiting` of the other edges of a variable with `degree`
 connections have no site yet, and the variable has an initial message `initial` (`μ(x)` in
-`@initialization`). The result is `cavity` (`missing` while no other edge has a site) times
+`@initialization`), or else an initial marginal (`q(x)`), which then stands in for it. The result is `cavity` (`missing` while no other edge has a site) times
 `initial^(waiting / (degree - 1))`. The first cavity of each edge is then the initial message
 itself, for any degree, and the share of the initial message shrinks as the other edges' sites
 arrive. The initial message enters the cavities only: the outbound messages and the marginal are
@@ -64,16 +64,20 @@ seeded_cavity(policy, cavity, initial, waiting, degree) = cavity
 # the edges themselves, so that a static one can be projected again (`refresh_static!`)
 mutable struct SiteState
     initial::Any
+    # the variable's initial marginal, which seeds the cavities where no initial message does
+    marginal::Any
     present::Vector{Bool}
     count::Int
     mappings::Vector{Any}
     sites::Vector{MessageObservable{AbstractMessage}}
     # the last edge, by index, whose inbound message is not clamped: its site starts a round
     last_dynamic::Int
+    # whether sites waiting for a cavity are being projected again (`refresh_waiting!`)
+    refreshing::Bool
 end
 
 SiteState(sites::Vector{MessageObservable{AbstractMessage}}) =
-    SiteState(nothing, fill(false, length(sites)), 0, Any[], sites, 0)
+    SiteState(nothing, nothing, fill(false, length(sites)), 0, Any[], sites, 0, false)
 
 function mark!(state::SiteState, index, present::Bool)
     state.present[index] == present && return nothing
@@ -82,14 +86,17 @@ function mark!(state::SiteState, index, present::Bool)
     return nothing
 end
 
-# The cavity from the chain, and, while other edges have no site, the initial message for each
+# The cavity from the chain, and, while other edges have no site, the initial message for each,
+# or else the variable's initial marginal: a variable initialized from its prior starts its sites
+# against it, and its raw messages need not wait for one another
 function seeded(mapping, cavity)
     state = mapping.state
-    isnothing(state.initial) && return cavity
+    initial = something(state.initial, state.marginal, Some(nothing))
+    isnothing(initial) && return cavity
     d = length(state.present)
     waiting = d - state.count - (state.present[mapping.index] ? 0 : 1)
     waiting == 0 && return cavity
-    return Message(seeded_cavity(mapping.policy, getdata(cavity), state.initial, waiting, d), false, true)
+    return Message(seeded_cavity(mapping.policy, getdata(cavity), initial, waiting, d), false, true)
 end
 
 # The site of one edge, computed as the edge's inbound message arrives, against the cavity the
@@ -129,10 +136,11 @@ mutable struct SiteMapping{P, V, C, H}
     projected::Bool # whether the site is a projection, or waits for one, rather than the message
     arrived::Any   # the last inbound message as it arrived, whose site is computed
     pending::Any   # an inbound message whose site no product has asked for yet, or `nothing`
+    waiting::Bool  # whether the site is a projection computed while the edge had no cavity
 end
 
 SiteMapping(policy, variable, index, callbacks, chain, state = SiteState(chain.inputmsgs)) =
-    SiteMapping(policy, variable, index, callbacks, chain, state, nothing, Message(missing, false, true), nothing, false, nothing, nothing)
+    SiteMapping(policy, variable, index, callbacks, chain, state, nothing, Message(missing, false, true), nothing, false, nothing, nothing, false)
 
 function (mapping::SiteMapping)(inbound)
     mapping.arrived, mapping.pending = inbound, nothing
@@ -149,6 +157,7 @@ function compute_site!(mapping::SiteMapping, message::Message)
     chain, index, callbacks = mapping.chain, mapping.index, mapping.callbacks
     # a projection's cavity holds the other edges' latest sites
     (isnothing(mapping.inbound) || mapping.projected) && flush_pending!(mapping.state, index)
+    refresh_waiting!(mapping.state, index)
     cavity = seeded(mapping, ChainOutboundMapping(index, chain)(nothing))
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeSiteComputationEvent(mapping.variable, index, message, cavity, span_id))
@@ -171,6 +180,7 @@ function compute_site!(mapping::SiteMapping, message::Message)
         clamped = is_clamped(message) && is_clamped(cavity)
         Message(site, clamped, !clamped && is_clamped_or_initial(message) && is_clamped_or_initial(cavity))
     end
+    mapping.waiting = mapping.projected && !has_data(cavity)
     mark!(mapping.state, index, has_data(mapping.site))
     # the chain's products that hold this edge's site are stale, whichever of its streams have
     # subscribers
@@ -179,6 +189,25 @@ function compute_site!(mapping::SiteMapping, message::Message)
 end
 
 latest_sites(sites, messages) = map((site, message) -> something(getrecent(site), message), sites, messages)
+
+# Every site that was computed while its edge had no cavity, projected again once the other
+# edges' sites give it one. A message that arrived before any other edge had a site waits, or
+# passes as it is, until then; one that does not arrive again, as when nothing upstream changes,
+# would otherwise wait for ever. Run before a site is computed, so that its cavity holds them.
+function refresh_waiting!(state::SiteState, trigger)
+    state.refreshing && return nothing
+    state.refreshing = true
+    try
+        for (k, other) in enumerate(state.mappings)
+            (k == trigger || !other.waiting || isnothing(other.inbound)) && continue
+            has_data(ChainOutboundMapping(k, other.chain)(nothing)) || continue
+            next!(state.sites[k].subject, compute_site!(other, other.inbound))
+        end
+    finally
+        state.refreshing = false
+    end
+    return nothing
+end
 
 # Every static site, a projection of a clamped message, projected again against its cavity now,
 # and sent as an initial message

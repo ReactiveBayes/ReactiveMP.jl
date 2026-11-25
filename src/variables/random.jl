@@ -90,6 +90,13 @@ function set_initial_message!(randomvar::RandomVariable, message)
     return nothing
 end
 
+function set_initial_marginal!(randomvar::RandomVariable, marginal)
+    set_initial_marginal!(get_stream_of_marginals(randomvar), marginal)
+    # with sites, the initial marginal seeds the cavities where no initial message does
+    randomvar.sites isa SiteState && (randomvar.sites.marginal = marginal)
+    return nothing
+end
+
 function get_stream_of_outbound_messages(randomvar::RandomVariable, index::Int)
     return randomvar.output_messages[index]
 end

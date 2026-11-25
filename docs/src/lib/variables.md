@@ -228,6 +228,16 @@ callbacks of the marginal's product context as [`ReactiveMP.BeforeSiteComputatio
 and [`ReactiveMP.AfterSiteComputationEvent`](@ref). For the free energy under sites, use the node
 terms of [`FactorBoundFreeEnergy`](@ref)`(cavity = true)`.
 
+Before the other edges have sites, an edge has no cavity. An initial message (`μ(x)`) seeds the
+cavities until then, or else an initial marginal (`q(x)`), and [`ReactiveMP.seeded_cavity`](@ref)
+says how. Without either, a policy may compute no site or pass the message as it is. Such a site,
+one that is not the message's own ([`ReactiveMP.is_own_site`](@ref)), is computed again once the
+other edges' sites give it a cavity, even if its message does not arrive again.
+
+The sites carry no log scale, so a variable with a site policy has none, even with log scales
+tracked: its marginal is a product of sites, which are approximations of the messages. Under
+cavity propagation the evidence is the free energy of `FactorBoundFreeEnergy(cavity = true)`.
+
 ```@docs
 ReactiveMP.compute_site
 ReactiveMP.is_own_site

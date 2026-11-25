@@ -200,7 +200,7 @@ end
     @test var(q) ≈ sum(p .* (grid .- m) .^ 2) rtol = 1.0e-2
 end
 
-@testitem "engine:sites: an initial message seeds the cavities of a variable with only raw edges" tags = [:engine] setup = [EngineHarness, SitePolicies] begin
+@testitem "engine:sites: an initial message or marginal seeds the cavities of a variable with only raw edges" tags = [:engine] setup = [EngineHarness, SitePolicies] begin
     # x with two likelihoods, log σ(x) and log σ(-x), and no prior: each raw message waits for a
     # cavity, which only the other edge's site gives, so without an initial message no site is
     # ever computed; with one, it is each edge's first cavity, and the sites reach expectation
@@ -252,6 +252,12 @@ end
         @test mean(q) ≈ ξ / w atol = 1.0e-6
         @test var(q) ≈ 1 / w rtol = 1.0e-6
     end
+
+    # an initial marginal seeds the cavities where no initial message does, to the same end
+    graph, x, y1, y2 = graph_of()
+    seeded = H.run(graph; data = [y1 => 1, y2 => 0], iterations = 30, posteriors = [:x => x], free_energy = false, site_policy = S.GridEP(), rulefallback = S.ToyFallback(), initial_marginals = [x => NormalMeanVariance(1.0, 4.0)])
+    @test mean(seeded.posteriors["x"]) ≈ ξ / w atol = 1.0e-6
+    @test var(seeded.posteriors["x"]) ≈ 1 / w rtol = 1.0e-6
 end
 
 @testitem "engine:sites: a raw message from constants is projected again each round" tags = [:engine] setup = [EngineHarness, SitePolicies] begin
