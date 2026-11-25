@@ -32,7 +32,11 @@ function product_logscale(new, left, right, left_logscale, right_logscale)
     (left_logscale === nothing || right_logscale === nothing) && return nothing
     if is_unnormalised_product(new) && !applicable(BayesBase.compute_logscale, new, left, right)
         known_left, known_right = known_logscale(left_logscale), known_logscale(right_logscale)
-        (known_left === nothing || known_right === nothing) || return UndefinedLogScale(UNNORMALISED_PRODUCT, known_left + known_right)
+        if !(known_left === nothing || known_right === nothing)
+            fused = fused_logscale(new, left, right)
+            fused === nothing && return UndefinedLogScale(:no_compute_logscale, (typeof(left), typeof(right)))
+            return UndefinedLogScale(UNNORMALISED_PRODUCT, known_left + known_right + fused)
+        end
     end
     left_logscale isa UndefinedLogScale && return left_logscale
     right_logscale isa UndefinedLogScale && return right_logscale
@@ -40,6 +44,35 @@ function product_logscale(new, left, right, left_logscale, right_logscale)
         return UndefinedLogScale(:no_compute_logscale, (typeof(left), typeof(right)))
     return left_logscale + right_logscale + BayesBase.compute_logscale(new, left, right)
 end
+
+# The log of the normaliser that BayesBase dropped when it formed the unnormalised product `new`
+# of `left` and `right`. BayesBase's `prod` fuses a part of a product with the other side where
+# the two have a closed-form product, `(L × R) × T` into `(L × T) × R` for example, and that
+# product is normalised, so its normaliser `compute_logscale(L × T, L, T)` is no longer in the
+# sum of the parts' densities. It is zero when nothing was fused, and `nothing` when the fusion
+# cannot be told from the shape of `new` or its normaliser is unknown.
+function fused_logscale(new::BayesBase.ProductOf, left, right)
+    BayesBase.getleft(new) === left && BayesBase.getright(new) === right && return 0
+    if left isa BayesBase.ProductOf
+        BayesBase.getright(new) === BayesBase.getright(left) &&
+            return fused_pair_logscale(BayesBase.getleft(new), BayesBase.getleft(left), right)
+        BayesBase.getleft(new) === BayesBase.getleft(left) &&
+            return fused_pair_logscale(BayesBase.getright(new), BayesBase.getright(left), right)
+    end
+    if right isa BayesBase.ProductOf
+        BayesBase.getright(new) === BayesBase.getright(right) &&
+            return fused_pair_logscale(BayesBase.getleft(new), left, BayesBase.getleft(right))
+        BayesBase.getleft(new) === BayesBase.getleft(right) &&
+            return fused_pair_logscale(BayesBase.getright(new), left, BayesBase.getright(right))
+    end
+    return nothing
+end
+# A linearised product only groups its parts, and their densities still sum.
+fused_logscale(::BayesBase.LinearizedProductOf, left, right) = 0
+
+fused_pair_logscale(fused, a, b) =
+    is_unnormalised_product(fused) ? 0 :
+    applicable(BayesBase.compute_logscale, fused, a, b) ? BayesBase.compute_logscale(fused, a, b) : nothing
 
 # Whose density is the product of its parts' densities, not normalised.
 is_unnormalised_product(::Union{BayesBase.ProductOf, BayesBase.LinearizedProductOf}) = true

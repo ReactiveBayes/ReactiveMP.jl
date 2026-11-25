@@ -121,6 +121,26 @@ end
     @test getlogscale(unchanged) ≈ logpdf(NormalMeanVariance(0.0, 3.0), 1.0)
 end
 
+@testitem "logscale:a product that BayesBase fuses keeps the fused normaliser" tags = [:engine] setup = [EngineLogScaleUtils] begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Distributions
+    import ReactiveMP: MessageProductContext, compute_product_of_messages, randomvar
+    U = EngineLogScaleUtils
+    # A Laplace has no closed-form product with a Gaussian, the two Gaussians have one. BayesBase
+    # fuses the Gaussians inside the product, whatever the order, and normalises their product;
+    # the log scale must keep its normaliser, so that the scaled density is the product of the
+    # scaled messages at every point.
+    a, b, c = NormalMeanVariance(0.0, 1.0), Laplace(1.0, 0.5), NormalMeanVariance(0.5, 2.0)
+    scales = Dict(a => 0.3, b => -0.2, c => 0.1)
+    for order in ((a, b, c), (b, a, c), (a, c, b), (c, b, a), (b, c, a))
+        result = compute_product_of_messages(randomvar(), MessageProductContext(), map(d -> U.message(d, scales[d]), order))
+        logscale = getlogscale(result)
+        @test logscale.cause === :unnormalised_product
+        for x in (-0.4, 0.37, 1.2)
+            @test logscale.detail + logpdf(getdata(result), x) ≈ sum(d -> scales[d] + logpdf(d, x), order)
+        end
+    end
+end
+
 @testitem "logscale:a projection reports the normaliser of a product with no closed form" tags = [:engine] setup = [EngineLogScaleUtils] begin
     using ReactiveMP, BayesBase, ExponentialFamily, Distributions
     import ReactiveMP: compute_product_of_two_messages, compute_product_of_messages, MessageProductContext, constrain_form_logscale
