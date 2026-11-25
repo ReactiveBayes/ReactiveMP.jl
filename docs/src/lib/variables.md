@@ -232,7 +232,8 @@ Before the other edges have sites, an edge has no cavity. An initial message (`Î
 cavities until then, or else an initial marginal (`q(x)`), and [`ReactiveMP.seeded_cavity`](@ref)
 says how. Without either, a policy may compute no site or pass the message as it is. Such a site,
 one that is not the message's own ([`ReactiveMP.is_own_site`](@ref)), is computed again once the
-other edges' sites give it a cavity, even if its message does not arrive again.
+other edges' sites give it a cavity, even if its message does not arrive again: as any site, when
+a product reads it or before another edge's projection, whose cavity holds it.
 
 The sites carry no log scale, so a variable with a site policy has none, even with log scales
 tracked: its marginal is a product of sites, which are approximations of the messages. Under

@@ -72,12 +72,10 @@ mutable struct SiteState
     sites::Vector{MessageObservable{AbstractMessage}}
     # the last edge, by index, whose inbound message is not clamped: its site starts a round
     last_dynamic::Int
-    # whether sites waiting for a cavity are being projected again (`refresh_waiting!`)
-    refreshing::Bool
 end
 
 SiteState(sites::Vector{MessageObservable{AbstractMessage}}) =
-    SiteState(nothing, nothing, fill(false, length(sites)), 0, Any[], sites, 0, false)
+    SiteState(nothing, nothing, fill(false, length(sites)), 0, Any[], sites, 0)
 
 function mark!(state::SiteState, index, present::Bool)
     state.present[index] == present && return nothing
@@ -156,8 +154,8 @@ end
 function compute_site!(mapping::SiteMapping, message::Message)
     chain, index, callbacks = mapping.chain, mapping.index, mapping.callbacks
     # a projection's cavity holds the other edges' latest sites
-    (isnothing(mapping.inbound) || mapping.projected) && flush_pending!(mapping.state, index)
     refresh_waiting!(mapping.state, index)
+    (isnothing(mapping.inbound) || mapping.projected) && flush_pending!(mapping.state, index)
     cavity = seeded(mapping, ChainOutboundMapping(index, chain)(nothing))
     span_id = generate_span_id(callbacks)
     @invoke_callback(callbacks, BeforeSiteComputationEvent(mapping.variable, index, message, cavity, span_id))
@@ -190,21 +188,17 @@ end
 
 latest_sites(sites, messages) = map((site, message) -> something(getrecent(site), message), sites, messages)
 
-# Every site that was computed while its edge had no cavity, projected again once the other
+# Every site that was computed while its edge had no cavity, computed again once the other
 # edges' sites give it one. A message that arrived before any other edge had a site waits, or
 # passes as it is, until then; one that does not arrive again, as when nothing upstream changes,
-# would otherwise wait for ever. Run before a site is computed, so that its cavity holds them.
+# would otherwise wait for ever. Its message is recorded as pending, so that, as any site, it is
+# computed when a product reads it or before another edge's projection, whose cavity holds it.
 function refresh_waiting!(state::SiteState, trigger)
-    state.refreshing && return nothing
-    state.refreshing = true
-    try
-        for (k, other) in enumerate(state.mappings)
-            (k == trigger || !other.waiting || isnothing(other.inbound)) && continue
-            has_data(ChainOutboundMapping(k, other.chain)(nothing)) || continue
-            next!(state.sites[k].subject, compute_site!(other, other.inbound))
-        end
-    finally
-        state.refreshing = false
+    for (k, other) in enumerate(state.mappings)
+        (k == trigger || !other.waiting || isnothing(other.arrived)) && continue
+        has_data(ChainOutboundMapping(k, other.chain)(nothing)) || continue
+        other.waiting = false
+        isnothing(other.pending) && (other.pending = other.arrived)
     end
     return nothing
 end
