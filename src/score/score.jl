@@ -50,7 +50,7 @@ struct DifferentialEntropy end
 # such a marginal.
 function score(::DifferentialEntropy, marginal::Marginal)
     h = entropy(marginal)
-    return h isa AbstractFloat && h == -Inf ? BayesBase.MinusInfinity(typeof(h)) : h
+    return h isa AbstractFloat && isinf(h) && signbit(h) ? BayesBase.MinusInfinity(typeof(h)) : h
 end
 # A point mass is −∞, in the float type of its point. A point that is a distribution, the
 # constant of a prior `x ~ d`, has its parameters' type, which BayesBase would not take; a point
