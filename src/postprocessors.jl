@@ -17,8 +17,8 @@ A postprocessor is given at activation, as the `postprocessor` of
 [`RandomVariableActivationOptions`](@ref), and to [`score`](@ref) directly;
 [`bethe_free_energy`](@ref) applies none. `nothing` is no postprocessor.
 
-The postprocessors defined here are [`ReactiveMP.ScheduleOnStreamPostprocessor`](@ref) and
-[`ReactiveMP.CompositeStreamPostprocessor`](@ref).
+The postprocessors defined here are [`ReactiveMP.ScheduleOnStreamPostprocessor`](@ref),
+[`ReactiveMP.DampingPostprocessor`](@ref) and [`ReactiveMP.CompositeStreamPostprocessor`](@ref).
 """
 abstract type AbstractStreamPostprocessor end
 

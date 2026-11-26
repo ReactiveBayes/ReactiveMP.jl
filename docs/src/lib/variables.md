@@ -192,6 +192,59 @@ ReactiveMP.RandomVariableActivationOptions
 ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)
 ```
 
+### [Sites: cavity propagation](@id lib-variables-sites)
+
+Without a site policy, a random variable multiplies the messages it receives as they are. If a
+message has no closed form, for example a likelihood message that is only a log-density, a form
+constraint projects each product that contains it onto a distribution. Each product is projected
+separately, so the marginal and the outbound messages are approximated independently and need not
+agree with each other.
+
+A site policy, the last field of [`RandomVariableActivationOptions`](@ref), changes what the
+variable multiplies. Each edge `k` keeps a *site* `s_k`, an approximation of its inbound message
+`m_k`. The site is fitted against the edge's *cavity* `c_k`, the product of the sites of the other
+edges, which is also the variable's outbound message on edge `k`:
+
+```math
+s_k = \frac{\operatorname{proj}(m_k \, c_k)}{c_k}.
+```
+
+The variable then multiplies the sites in place of the messages. Its marginal and its outbound
+messages are all products of the same sites, so they agree with each other. With one site per edge
+this is expectation propagation, or Laplace propagation when the projection is a Laplace
+approximation. A message that already has a closed form is its own site, so a model whose rules
+all have closed forms runs as it does without a policy.
+
+The engine does not implement a projection. A policy is a value for which an inference package
+defines [`ReactiveMP.compute_site`](@ref) and, optionally, [`ReactiveMP.seeded_cavity`](@ref).
+RxInfer defines them for `LaplacePropagation()`, `ExpectationPropagation()` and
+`NaturalGradientPropagation()`.
+
+The sites are the inputs of the variable's equality chain. A site is computed when its inbound
+message arrives, against the cavity the chain holds at that moment. When the messages of an
+iteration arrive one after another, the iteration is one sweep over the sites, and it costs as
+much as the chain: linear in the number of connections. Each site computation is reported to the
+callbacks of the marginal's product context as [`ReactiveMP.BeforeSiteComputationEvent`](@ref)
+and [`ReactiveMP.AfterSiteComputationEvent`](@ref). For the free energy under sites, use the node
+terms of [`FactorBoundFreeEnergy`](@ref)`(cavity = true)`.
+
+Before the other edges have sites, an edge has no cavity. An initial message (`μ(x)`) seeds the
+cavities until then, and [`ReactiveMP.seeded_cavity`](@ref) says how; an initial marginal
+(`q(x)`) does not. Without either, a policy may compute no site or pass the message as it is. Such a site,
+one that is not the message's own ([`ReactiveMP.is_own_site`](@ref)), is computed again once the
+other edges' sites give it a cavity, even if its message does not arrive again: as any site, when
+a product reads it or before another edge's projection, whose cavity holds it.
+
+The sites carry no log scale, so a variable with a site policy has none, even with log scales
+tracked: its marginal is a product of sites, which are approximations of the messages. Under
+cavity propagation the evidence is the free energy of `FactorBoundFreeEnergy(cavity = true)`.
+
+```@docs
+ReactiveMP.compute_site
+ReactiveMP.is_own_site
+ReactiveMP.seeded_cavity
+```
+
 ## [Data variables](@id lib-variables-data)
 
 A data variable is an observed quantity. It has no value until you give it one with

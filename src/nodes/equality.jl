@@ -158,6 +158,10 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
 @propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):-1:node_index
 @propagate_inbounds precompute_range(type::EqualityRightOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):node_index
 
+# The latest inbound message, the product's identity before the first: a cavity of a site (see
+# `ReactiveMP.compute_site`) is read from the chain before every edge has a site.
+recent_message(observable) = (recent = getrecent(observable); isnothing(recent) ? Message(missing, true, true) : as_message(recent))
+
 @propagate_inbounds function materialize!(
         type::EqualityNodeOutboundType, chain::EqualityChain, node_index
     )
@@ -169,7 +173,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
             # precompute messages in linear fashion
             range = precompute_range(type, chain, node_index)
             for index in range
-                arg1 = as_message(getrecent(getinbound(chain, index)))
+                arg1 = recent_message(getinbound(chain, index))
                 arg2 = as_message(getcache(type, chain, nextindex(type, index)))
                 result = partial_product(chain, arg1, arg2)
                 setcache!(type, getnode(chain, index), result)

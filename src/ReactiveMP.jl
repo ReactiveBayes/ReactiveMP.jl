@@ -96,7 +96,8 @@ export tiny, huge
     BeforeFormConstraintAppliedEvent, BeforeMarginalComputationEvent,
     BeforeMessageRuleCallEvent, BeforeProductOfMessagesEvent, BeforeProductOfTwoMessagesEvent,
     BeforeMarginalRuleCallEvent, AfterMarginalRuleCallEvent, BeforeFactorBoundFreeEnergyEvent,
-    AfterFactorBoundFreeEnergyEvent, BeforeVariableBoundEntropyEvent, AfterVariableBoundEntropyEvent
+    AfterFactorBoundFreeEnergyEvent, BeforeVariableBoundEntropyEvent, AfterVariableBoundEntropyEvent,
+    BeforeSiteComputationEvent, AfterSiteComputationEvent, compute_site, is_own_site, seeded_cavity
 
 include("fixes.jl")
 include("helpers/macrohelpers.jl")
@@ -132,11 +133,13 @@ include("context.jl")
 
 # Predefined postprocessors
 include("postprocessors/scheduled.jl")
+include("postprocessors/damping.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
 include("variables/random.jl")
+include("variables/sites.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 

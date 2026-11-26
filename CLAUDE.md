@@ -49,7 +49,8 @@ src/
   helpers/             small internal utilities
   score/               node scores, variable entropies, bethe_free_energy
   fixes.jl             upstream hot-fixes; empty now
-ext/                   ReactiveMPReactantExt: graph building runs untraced under Reactant (see Gotchas)
+ext/                   ReactiveMPReactantExt: graph building runs untraced under Reactant (see Gotchas);
+                       ReactiveMPExponentialFamilyExt: damping in natural parameters
 test/                  mostly mirrors src/; test/engine/ runs whole graphs against closed forms and invariants;
                        test/reactant/ has its own environment, for the Reactant extension
 docs/                  the engine's documentation site; each package's is in its repository
@@ -101,7 +102,7 @@ Tests are `@testitem` blocks, each self-contained and independently runnable. `@
 counts and `:quality` on the engine's doctests. Rules
 are tested in the rule packages' suites. `:slow` exists and is **unused in `test/`**: nothing there has been
 measured as slow, so nothing claims to be.
-The rule packages' suites honour it the same way (Delta's CVIProjection item is `:slow`), and a
+The rule packages' suites honour it the same way (Delta's deprecated CVIProjection item is `:slow`), and a
 filtered run skips the rule-coverage gate, so a package's gate runs only with `TEST_ALL=true`.
 When items are tagged `:slow` they disappear from `make test` and stay in `make test-all`.
 
@@ -200,7 +201,8 @@ Laar to triple-check it), are corrected in the rule packages.
   (testing rules), MessagePassingRulesApproximations (the numerics rules share), and the rule
   packages: StandardMessagePassingRules (every standard node: the distributions, arithmetic, logic,
   the mixtures and Probit), Delta (`DeltaApproximation`, Unscented, Linearization, and
-  `CVIProjection` as an extension on ExponentialFamilyProjection), GaussianCoupling, Autoregressive
+  the deprecated `CVIProjection` as an extension on ExponentialFamilyProjection, superseded by
+  RxInfer's `fallback = NaturalGradientPropagation()`), GaussianCoupling, Autoregressive
   (AR and ConjugateAR under `ARVMP`), SoftDot, ContinuousTransition (`CTVMP(f)`), Polya (GPL-3
   through PolyaGammaHybridSamplers, the only package that is), BIFM, Flow, DiscreteTransition and
   GCV. ReactiveMP and RxInfer take them from General (`[compat] "1"`), and the sites link to their

@@ -70,10 +70,13 @@ default_prod_constraint
 
 [`constrain_form`](@ref) is the ``f`` above: it takes the product and returns a distribution of
 the chosen form. A constraint that changes the product, returning something other than it was
-given, leaves the product's [log scale](@ref lib-logscale) undefined.
+given, leaves the product's [log scale](@ref lib-logscale) undefined, unless it also returns
+the log of its input's normaliser from [`constrain_form_logscale`](@ref) (see
+[Reporting the normaliser](@ref custom-functional-form-normaliser)).
 
 ```@docs
 constrain_form
+constrain_form_logscale
 ```
 
 ## [An example](@id custom-functional-form-example)
@@ -139,6 +142,35 @@ unsubscribe!(subscription)
 
 The posterior is a `NormalMeanPrecision`. The constraint changed the product's type, so its log
 scale is undefined, and says it was the form constraint.
+
+## [Reporting the normaliser](@id custom-functional-form-normaliser)
+
+A product with no closed form, such as the `ProductOf` above, has an undefined log scale. The
+log scales of its two messages are known, but the log of its normaliser,
+``\log \int μ₁(x) μ₂(x) dx``, is not. A constraint that can compute the normaliser, for example
+a projection by quadrature or a Laplace approximation, returns it from
+[`constrain_form_logscale`](@ref). The engine adds it to the sum of the messages' log scales:
+
+```@example form
+function ReactiveMP.constrain_form_logscale(constraint::MeanPrecisionFormConstraint, product::ProductOf)
+    left = product.left
+    xs = range(mean(left) - 10 * std(left), mean(left) + 10 * std(left); length = 2001)
+    lognormaliser = log(sum(exp.(logpdf.(Ref(product), xs))) * step(xs))
+    return constrain_form(constraint, product), lognormaliser
+end
+
+messages = (
+    Message(NormalMeanVariance(0.0, 1.0), false, false, ReactiveMP.AnnotationDict(), 0.0),
+    Message(Laplace(1.0, 0.5), false, false, ReactiveMP.AnnotationDict(), 0.0),
+)
+unconstrained = ReactiveMP.compute_product_of_messages(randomvar(), MessageProductContext(), messages)
+projected = ReactiveMP.compute_product_of_messages(randomvar(), MessageProductContext(; form_constraint = c), messages)
+getlogscale(unconstrained), getlogscale(projected)
+```
+
+Without the constraint, the log scale is undefined and records the sum of the messages' log
+scales. With the constraint, the normaliser is added to that sum and the log scale is defined. The
+normaliser is added even when the constraint returns its input unchanged.
 
 ## [Wrapped form constraints](@id custom-functional-form-wrapped)
 

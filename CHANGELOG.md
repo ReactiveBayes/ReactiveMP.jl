@@ -7,6 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Rule fallbacks are called through MessagePassingRulesBase's `call_fallback` and
+  `call_energy_fallback`, which also pass the node's algorithm and rule context. A fallback is now
+  also asked for a joint marginal or an average energy that has no rule. A fallback that is a
+  function of three arguments is still asked about messages only. `NodeFunctionRuleFallback`
+  computes the average energy of a mean-field node with the rule context's `expectation` backend.
+  `MarginalMapping` takes a `rulefallback`, and the events report the fallback as the `rule` of a
+  message, joint marginal or average energy it computed.
+- The engine supplies the service `expectation`, which is `nothing` unless the context sets one,
+  so that the engine's services are MessagePassingRulesBase's `DEFAULT_CONTEXT_SERVICES`.
+- A rule fallback can declare the log scale of its message by returning
+  `with_logscale(message, logscale)`. The engine unwraps it with MessagePassingRulesBase's
+  `unwrap_fallback`. A joint marginal drops the log scale.
+- `constrain_form_logscale(constraint, distribution)`, which returns the result of a form
+  constraint's `constrain_form` together with the log of the normaliser of its input, or
+  `nothing` by default. A product with no closed form, a `ProductOf`, now records the sum of its
+  sides' log scales (with the cause `:unnormalised_product`), and a projection that computes the
+  normaliser adds it, so the log scale is defined.
+- `DampingPostprocessor(β)`, a stream postprocessor that mixes each outbound message with the
+  previous message of its stream through `ReactiveMP.damp`. The new extension on
+  ExponentialFamily.jl mixes two members of one exponential family in natural parameters. A
+  damped message has an undefined log scale with the cause `:damping`.
+- A node whose form is a function, such as `+`, `-`, `*` or `dot`, and that is created without
+  `nodefn` now computes that function. `getnodefn(node, Target(:out))` returns it, with the
+  inputs in the order the node declares them, so a rule fallback can pull messages back through
+  it as it does through a Delta node.
+- `rand([rng,] marginal[, dims...])` samples from a `Marginal`'s distribution, so a posterior
+  kept with its log scale (RxInfer's `logscales = true`) samples like one without.
+- The events `AfterMessageRuleCallEvent`, `AfterMarginalRuleCallEvent` and
+  `AfterFactorBoundFreeEnergyEvent` have an `outcome` field: what the rule fallback declared with
+  MessagePassingRulesBase's `with_outcome` about how it computed the result, or `nothing`. The
+  constructors without it still work.
+- Cavity propagation, the engine side of expectation propagation and Laplace propagation.
+  `RandomVariableActivationOptions` has a fourth field, `site_policy` (`nothing` by default; the
+  three-argument constructor is unchanged). A random variable activated with a site policy keeps
+  one site per edge, computed by
+  `ReactiveMP.compute_site(policy, variable, index, message, cavity, previous)`: the inbound
+  message projected against its cavity. The cavity is the product of the other edges' sites,
+  which is the variable's outbound message on that edge. The sites are the inputs of the
+  equality chain. A site is computed when its inbound message arrives, against the cavity the
+  chain holds at that moment, and the outbound messages and the marginal are products of the
+  sites, sent as they are without sites. When the messages arrive in order, an iteration is one
+  sweep over the sites and costs as much as the chain: linear in the number of connections. The
+  events `BeforeSiteComputationEvent` and `AfterSiteComputationEvent` report each site to the
+  callbacks of the marginal's product context. The engine does not implement a projection; an
+  inference package, such as RxInfer, provides the policy.
+  - A site that no product and no marginal reads is computed just before another edge's
+    projection, whose cavity contains it, from the inbound message recorded when it arrived. A
+    site's cavity is therefore up to date whatever the inference reads, and a site that nothing
+    needs is not computed. `ReactiveMP.is_own_site(policy, message, site, outcome)`, by default
+    `site === message`, tells the engine that a site is the message itself, for example a
+    closed-form message in another representation, which needs no cavity.
+  - An initial message, set with `set_initial_message!`, is also the first cavity of every edge.
+    While some other edges have no site, the cavity counts each of them as the initial message
+    raised to the power `1/(d - 1)`, through
+    `ReactiveMP.seeded_cavity(policy, cavity, initial, waiting, degree)`. This lets a variable
+    whose edges all carry raw messages start.
+  - A raw message from a node whose inputs are all constants arrives once, clamped, and its
+    stream completes. Its site is projected again in each round, when the last edge with a
+    message that is not clamped receives one, and the chain and the marginal read the latest
+    version of each site.
+- `FactorBoundFreeEnergy(cavity = true)`, a node's free-energy term under cavity propagation. For
+  a node with no rules under its algorithm, the term is the rule fallback's energy, computed from
+  the node's inbound messages (the cavities) and its variables' marginals, which
+  `call_energy_fallback` receives as the rule arguments `m` and `q`, minus the entropies of the
+  point masses. Every other node's term is the Bethe term. `bethe_free_energy(...; cavity = true)`
+  uses these terms and emits once per iteration, as the Bethe free energy does. The sum is
+  expectation propagation's free energy, which is not a bound.
+
+### Changed
+- Requires MessagePassingRulesBase 1.2, BayesBase 1.7 and StandardMessagePassingRules 1.1.
+- A node that folds its static inputs into its function but has no static inputs keeps its
+  function unchanged, instead of a `StaticFold` with no static inputs, so that rules can dispatch
+  on it. For example, `getnodefn` of such a `DeltaFn{typeof(exp)}` returns `exp`.
+
 ## [7.0.3] - 2026-11-23
 
 ### Fixed

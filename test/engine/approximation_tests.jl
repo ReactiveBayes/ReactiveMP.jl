@@ -100,6 +100,7 @@ end
     # transform, and y ~ N(z, 0.1) is observed at 3.
     using ExponentialFamily, Distributions, StandardMessagePassingRules, DeltaMessagePassingRules, MessagePassingRulesApproximations
     import ReactiveMP: getinterfaces
+    import MessagePassingRulesBase: getnodefn, Target
     H, R = EngineHarness, DeltaReference
     f = R.scaled_square_plus
 
@@ -119,6 +120,12 @@ end
         posteriors = [:z => z, :x => x], initial_marginals = [z => NormalMeanVariance(1.0, 1.0)],
     )
     @test length(getinterfaces(delta)) == 2
+    @test getnodefn(delta, Target(:out)) isa ReactiveMP.StaticFold
+    # With no static input there is nothing to fold: the function is the node's own, which rules
+    # can dispatch on
+    other = H.Graph()
+    plain = H.node!(other, DeltaFn{typeof(f)}, [(:out, H.random!(other)), ((:in, 1), H.random!(other)), ((:in, 2), H.random!(other)), ((:in, 3), H.random!(other))]; algorithm = DeltaApproximation(method = Unscented()), nodefn = f)
+    @test getnodefn(plain, Target(:out)) === f
     folded(x) = f(2.0, x, 1.0)
     q = R.posteriors(0.5, 1.0, R.unscented(folded, 0.5, 1.0)..., 3.0, 0.1)
     @test mean(result.posteriors["z"]) ≈ q.mean_z atol = 1.0e-9

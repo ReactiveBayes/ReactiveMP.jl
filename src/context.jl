@@ -6,12 +6,16 @@
     ReactiveMP.node_context(factornode, context = NamedTuple()) -> RuleContext
 
 The [`RuleContext`](@extref MessagePassingRulesBase.RuleContext) the rules of `factornode` run
-with, read by a rule as `ctx`. The engine supplies three services:
+with, read by a rule as `ctx`. The engine supplies every service of
+[`DEFAULT_CONTEXT_SERVICES`](@extref MessagePassingRulesBase.DEFAULT_CONTEXT_SERVICES):
 
 - `node`: the factor node itself, which a rule reaches its function through
   ([`getnodefn`](@extref MessagePassingRulesBase.getnodefn));
 - `rng`: the task's own random number generator, `Random.default_rng()`;
-- `matrix_correction`: `nothing`, so each rule applies its own.
+- `matrix_correction`: `nothing`, so each rule applies its own;
+- `expectation`: `nothing`. This is the backend of BayesBase's expectation protocol for rules
+  and fallbacks that compute expectations. The engine sets none; a model sets one with
+  `(expectation = backend,)`.
 
 `context` is merged over them: a `NamedTuple` of services, a `RuleContext`, or `nothing` for
 none. It adds the services a rule declares and the engine does not supply, and overrides the
@@ -28,6 +32,9 @@ julia> ctx.scale, ctx.matrix_correction
 ```
 """
 node_context(factornode, context::NamedTuple = NamedTuple()) =
-    RuleContext(merge((node = factornode, rng = Random.default_rng(), matrix_correction = nothing), context))
+    RuleContext(merge(default_services(factornode), context))
+
+# The services of `DEFAULT_CONTEXT_SERVICES`, in its order; a test checks that they agree.
+default_services(factornode) = (node = factornode, rng = Random.default_rng(), matrix_correction = nothing, expectation = nothing)
 node_context(factornode, context::RuleContext) = node_context(factornode, getfield(context, :services))
 node_context(factornode, ::Nothing) = node_context(factornode)

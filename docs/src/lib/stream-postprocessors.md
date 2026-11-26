@@ -42,6 +42,7 @@ nothing # hide
 |---------------|---------|
 | `nothing` | None, the default: each `postprocess_stream_of_*` returns the stream unchanged. |
 | [`ReactiveMP.ScheduleOnStreamPostprocessor`](@ref) | Delivers every emission through a Rocket.jl scheduler, with the `schedule_on(scheduler)` operator. |
+| [`ReactiveMP.DampingPostprocessor`](@ref) | Damps each message by mixing it with the previous message of its stream. |
 | [`ReactiveMP.CompositeStreamPostprocessor`](@ref) | Applies several postprocessors in order. |
 
 A `PendingScheduler` holds every update until you release it. This batches a wave of
@@ -63,6 +64,25 @@ unsubscribe!(subscription)
 The scheduler holds the nodes' messages until the first release. Their product, the marginal,
 passes through the scheduler too, and arrives at the second release. An `AsyncScheduler` moves
 the work onto another task instead.
+
+### [Damping](@id lib-stream-postprocessors-damping)
+
+[`ReactiveMP.DampingPostprocessor`](@ref)`(β)` replaces each message of a stream with
+[`ReactiveMP.damp`](@ref)`(β, previous, new)`, a mix of the new message and the previous message
+of the same stream. With ExponentialFamily.jl loaded, two members of one exponential family are
+mixed in natural parameters, `β η_previous + (1 - β) η_new`. Damping does not move the fixed
+points of message passing, but takes smaller steps towards them, which can help a loopy or
+non-conjugate schedule that oscillates. The first message of a stream, clamped messages and data
+that `damp` cannot mix pass unchanged. A damped message has an undefined log scale.
+
+For example, two normal distributions mixed with `β = 0.5`:
+
+```@example postprocessors
+ReactiveMP.damp(0.5, NormalMeanVariance(0.0, 1.0), NormalMeanVariance(2.0, 4.0))
+```
+
+If it is also attached to a random variable, only the factor nodes' messages are damped. The
+streams of the variable's equality chain carry triggers and pass unchanged, and so do marginals.
 
 ## [Attaching a stream postprocessor](@id lib-stream-postprocessors-attach)
 
@@ -133,4 +153,6 @@ ReactiveMP.postprocess_stream_of_marginals
 ReactiveMP.postprocess_stream_of_scores
 ReactiveMP.CompositeStreamPostprocessor
 ReactiveMP.ScheduleOnStreamPostprocessor
+ReactiveMP.DampingPostprocessor
+ReactiveMP.damp
 ```
