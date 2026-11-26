@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A marginal whose differential entropy is −∞, such as a Gaussian with a zero variance, now counts in the free energy as the symbolic `BayesBase.MinusInfinity` of a point mass, which cancels between the variable's term and its nodes' terms. The free energy of a model with `dot(zeros(n), x)` failed with an infinite variable term ([#690](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/690)).
+
 ## [7.0.3] - 2026-11-23
 
 ### Fixed
