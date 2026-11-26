@@ -82,6 +82,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   function unchanged, instead of a `StaticFold` with no static inputs, so that rules can dispatch
   on it. For example, `getnodefn` of such a `DeltaFn{typeof(exp)}` returns `exp`.
 
+## [7.0.3] - 2026-11-23
+
+### Fixed
+- A factor node with two or more joint clusters no longer stalls: a joint activated before another kept reading a placeholder stream that the later activation replaced, so it never received the other joint's marginal and inference stopped after the initial values. Activation now connects each joint's stream instead of replacing it. The bug was in v6 too.
+
 ## [7.0.2] - 2026-11-03
 
 ### Fixed
@@ -472,7 +477,8 @@ nodes and rules from the packages run as before.
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.2...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.3...HEAD
+[7.0.3]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.2...v7.0.3
 [7.0.2]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.1...v7.0.2
 [7.0.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.6.0...v7.0.0
