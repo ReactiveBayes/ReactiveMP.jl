@@ -186,3 +186,24 @@ end
     # A number keeps its own type.
     @test score(DifferentialEntropy(), Marginal(PointMass(1.0f0), false, false)) === BayesBase.MinusInfinity(Float32)
 end
+
+@testitem "the entropy of a degenerate marginal is the symbolic −∞ of a point mass" tags = [:engine] begin
+    import ReactiveMP: score, DifferentialEntropy, Marginal
+    using BayesBase, ExponentialFamily
+
+    # A Gaussian with a zero variance, the output of `dot(zeros(n), x)`, has the entropy −∞. It is
+    # the symbolic −∞ of a point mass, so that the free energy cancels it between the variable's
+    # term and its nodes' terms instead of summing `-Inf` and `Inf`.
+    @test score(DifferentialEntropy(), Marginal(NormalMeanVariance(0.0, 0.0), false, false)) === BayesBase.MinusInfinity(Float64)
+    # It is in the float type `entropy` returns.
+    degenerate32 = NormalMeanVariance(0.0f0, 0.0f0)
+    @test score(DifferentialEntropy(), Marginal(degenerate32, false, false)) === BayesBase.MinusInfinity(typeof(entropy(degenerate32)))
+    # A variable of degree 2 between a deterministic node and a stochastic one: the stochastic node
+    # counts `-h` and the variable `(2 - 1) * h`, which cancel.
+    h = score(DifferentialEntropy(), Marginal(NormalMeanVariance(0.0, 0.0), false, false))
+    @test float(-h + (2 - 1) * h + 1.5) === 1.5
+
+    # A proper marginal keeps its number.
+    @test score(DifferentialEntropy(), Marginal(NormalMeanVariance(0.0, 2.0), false, false)) ≈ entropy(NormalMeanVariance(0.0, 2.0))
+    @test score(DifferentialEntropy(), Marginal(NormalMeanVariance(0.0, 2.0), false, false)) isa Float64
+end

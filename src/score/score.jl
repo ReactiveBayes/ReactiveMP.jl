@@ -42,8 +42,16 @@ struct DifferentialEntropy end
 ## Differential entropy function helpers
 
 # A `FactorizedCluster`'s entropy is the sum over its blocks, which BayesBase's
-# `FactorizedJoint` gives.
-score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
+# `FactorizedJoint` gives. A marginal whose entropy is −∞, such as a Gaussian with a zero
+# variance, is as degenerate as a point mass, and its −∞ is the same symbolic
+# `BayesBase.MinusInfinity`: the free energy then counts it and cancels it between the
+# variable's term and its nodes' terms, as for a point mass, instead of summing `-Inf` and `Inf`.
+# The output of a deterministic node whose constant input is zero, `dot(zeros(n), x)` say, is
+# such a marginal.
+function score(::DifferentialEntropy, marginal::Marginal)
+    h = entropy(marginal)
+    return h isa AbstractFloat && h == -Inf ? BayesBase.MinusInfinity(typeof(h)) : h
+end
 # A point mass is −∞, in the float type of its point. A point that is a distribution, the
 # constant of a prior `x ~ d`, has its parameters' type, which BayesBase would not take; a point
 # with no number type at all, an observed text or any other object a custom node reads, is in
