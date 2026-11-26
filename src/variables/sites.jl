@@ -49,7 +49,7 @@ is_own_site(policy, message, site, outcome) = site === message
 
 Return the cavity of a site while `waiting` of the other edges of a variable with `degree`
 connections have no site yet, and the variable has an initial message `initial` (`μ(x)` in
-`@initialization`), or else an initial marginal (`q(x)`), which then stands in for it. The result is `cavity` (`missing` while no other edge has a site) times
+`@initialization`). The result is `cavity` (`missing` while no other edge has a site) times
 `initial^(waiting / (degree - 1))`. The first cavity of each edge is then the initial message
 itself, for any degree, and the share of the initial message shrinks as the other edges' sites
 arrive. The initial message enters the cavities only: the outbound messages and the marginal are
@@ -64,8 +64,6 @@ seeded_cavity(policy, cavity, initial, waiting, degree) = cavity
 # the edges themselves, so that a static one can be projected again (`refresh_static!`)
 mutable struct SiteState
     initial::Any
-    # the variable's initial marginal, which seeds the cavities where no initial message does
-    marginal::Any
     present::Vector{Bool}
     count::Int
     mappings::Vector{Any}
@@ -75,7 +73,7 @@ mutable struct SiteState
 end
 
 SiteState(sites::Vector{MessageObservable{AbstractMessage}}) =
-    SiteState(nothing, nothing, fill(false, length(sites)), 0, Any[], sites, 0)
+    SiteState(nothing, fill(false, length(sites)), 0, Any[], sites, 0)
 
 function mark!(state::SiteState, index, present::Bool)
     state.present[index] == present && return nothing
@@ -84,12 +82,12 @@ function mark!(state::SiteState, index, present::Bool)
     return nothing
 end
 
-# The cavity from the chain, and, while other edges have no site, the initial message for each,
-# or else the variable's initial marginal: a variable initialized from its prior starts its sites
-# against it, and its raw messages need not wait for one another
+# The cavity from the chain, and, while other edges have no site, the initial message for each.
+# An initial marginal does not enter: a prior evaluated at its parents' means, as `FromPriors`
+# gives, is far narrower than the belief, and its projections run away along a long chain.
 function seeded(mapping, cavity)
     state = mapping.state
-    initial = something(state.initial, state.marginal, Some(nothing))
+    initial = state.initial
     isnothing(initial) && return cavity
     d = length(state.present)
     waiting = d - state.count - (state.present[mapping.index] ? 0 : 1)

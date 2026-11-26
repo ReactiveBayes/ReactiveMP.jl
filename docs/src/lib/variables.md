@@ -229,8 +229,8 @@ and [`ReactiveMP.AfterSiteComputationEvent`](@ref). For the free energy under si
 terms of [`FactorBoundFreeEnergy`](@ref)`(cavity = true)`.
 
 Before the other edges have sites, an edge has no cavity. An initial message (`μ(x)`) seeds the
-cavities until then, or else an initial marginal (`q(x)`), and [`ReactiveMP.seeded_cavity`](@ref)
-says how. Without either, a policy may compute no site or pass the message as it is. Such a site,
+cavities until then, and [`ReactiveMP.seeded_cavity`](@ref) says how; an initial marginal
+(`q(x)`) does not. Without either, a policy may compute no site or pass the message as it is. Such a site,
 one that is not the message's own ([`ReactiveMP.is_own_site`](@ref)), is computed again once the
 other edges' sites give it a cavity, even if its message does not arrive again: as any site, when
 a product reads it or before another edge's projection, whose cavity holds it.
