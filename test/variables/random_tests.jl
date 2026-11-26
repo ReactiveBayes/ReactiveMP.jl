@@ -366,11 +366,13 @@ end
         return latest, emissions[], handler.counts
     end
 
-    # Under CheckLast the message to connection k is f of the product of the other three.
+    # Under CheckLast the message to connection k is f of the product of the other three. The
+    # mean of the message to connection 4 is zero, which `≈` matches only with an `atol`: how the
+    # product rounds depends on the form it is computed in.
     latest, emissions, counts = outbound_messages(FormConstraintCheckLast())
     for k in 1:4
         expected = f(product(μ[setdiff(1:4, k)]...))
-        @test mean(latest[k]) ≈ mean(expected) && var(latest[k]) ≈ var(expected)
+        @test isapprox(mean(latest[k]), mean(expected); atol = 1.0e-12) && var(latest[k]) ≈ var(expected)
     end
     # One whole product, and one application of the constraint, per outbound message computed.
     @test counts[:before_product_of_messages] == emissions
@@ -381,5 +383,5 @@ end
     # caches included: the message to connection 2 is f(f(μ₁) f(μ₃ f(μ₄))).
     latest, _, _ = outbound_messages(FormConstraintCheckEach())
     expected = f(product(f(μ[1]), f(product(μ[3], f(μ[4])))))
-    @test mean(latest[2]) ≈ mean(expected) && var(latest[2]) ≈ var(expected)
+    @test isapprox(mean(latest[2]), mean(expected); atol = 1.0e-12) && var(latest[2]) ≈ var(expected)
 end
